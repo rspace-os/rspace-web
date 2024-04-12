@@ -64,7 +64,7 @@ const COLOR = {
   darker: {
     hue: 190,
     saturation: 30,
-    lightness: 40,
+    lightness: 32,
   },
   contrastText: {
     hue: 190,
