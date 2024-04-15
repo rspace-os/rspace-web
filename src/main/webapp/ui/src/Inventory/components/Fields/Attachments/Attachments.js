@@ -157,6 +157,7 @@ const FileSelector = ({
     });
   };
 
+  if (!editable) return;
   return (
     <FileField
       accept="*"
@@ -209,11 +210,6 @@ const FilesCard = observer(
           subheaderTypographyProps={{ variant: "body2" }}
           action={
             <>
-              <FileSelector
-                activeResult={activeResult}
-                setOpen={setOpen}
-                editable={editable}
-              />
               <ToggleButton
                 attachmentCount={attachments.length}
                 open={open}
@@ -221,6 +217,11 @@ const FilesCard = observer(
               />
             </>
           }
+        />
+        <FileSelector
+          activeResult={activeResult}
+          setOpen={setOpen}
+          editable={editable}
         />
         <Collapse in={open}>
           <CollapseContents
