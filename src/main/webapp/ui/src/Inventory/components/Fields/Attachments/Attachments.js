@@ -176,57 +176,63 @@ const FileSelector = ({
   );
 };
 
-const FilesCard = observer(function FilesCard<
-  Fields: {
-    image: ?BlobUrl,
-    newBase64Image: ?string,
-    ...
-  },
-  FieldOwner: HasEditableFields<Fields>
->({ fieldOwner }: { fieldOwner?: FieldOwner }): Node {
-  const [open, setOpen] = useState(false);
+const FilesCard = observer(
+  <
+    Fields: {
+      image: ?BlobUrl,
+      newBase64Image: ?string,
+      ...
+    },
+    FieldOwner: HasEditableFields<Fields>
+  >({
+    fieldOwner,
+  }: {
+    fieldOwner?: FieldOwner,
+  }): Node => {
+    const [open, setOpen] = useState(false);
 
-  const {
-    searchStore: { activeResult },
-  } = useStores();
-  if (!activeResult) throw new Error("ActiveResult must be a Record");
-  const editable = activeResult.isFieldEditable("attachments");
-  const attachments = activeResult.attachments ?? [];
+    const {
+      searchStore: { activeResult },
+    } = useStores();
+    if (!activeResult) throw new Error("ActiveResult must be a Record");
+    const editable = activeResult.isFieldEditable("attachments");
+    const attachments = activeResult.attachments ?? [];
 
-  useEffect(() => {
-    setOpen(attachments.length > 0);
-  }, [attachments]);
+    useEffect(() => {
+      setOpen(attachments.length > 0);
+    }, [attachments]);
 
-  return (
-    <Card variant="outlined">
-      <CustomCardHeader
-        subheader="Attach files of any type, e.g. images, documents, or chemistry files."
-        subheaderTypographyProps={{ variant: "body2" }}
-        action={
-          <>
-            <FileSelector
-              activeResult={activeResult}
-              setOpen={setOpen}
-              editable={editable}
-            />
-            <ToggleButton
-              attachmentCount={attachments.length}
-              open={open}
-              setOpen={setOpen}
-            />
-          </>
-        }
-      />
-      <Collapse in={open}>
-        <CollapseContents
-          attachments={attachments}
-          fieldOwner={fieldOwner}
-          editable={editable}
+    return (
+      <Card variant="outlined">
+        <CustomCardHeader
+          subheader="Attach files of any type, e.g. images, documents, or chemistry files."
+          subheaderTypographyProps={{ variant: "body2" }}
+          action={
+            <>
+              <FileSelector
+                activeResult={activeResult}
+                setOpen={setOpen}
+                editable={editable}
+              />
+              <ToggleButton
+                attachmentCount={attachments.length}
+                open={open}
+                setOpen={setOpen}
+              />
+            </>
+          }
         />
-      </Collapse>
-    </Card>
-  );
-});
+        <Collapse in={open}>
+          <CollapseContents
+            attachments={attachments}
+            fieldOwner={fieldOwner}
+            editable={editable}
+          />
+        </Collapse>
+      </Card>
+    );
+  }
+);
 
 function Attachments<
   Fields: {
