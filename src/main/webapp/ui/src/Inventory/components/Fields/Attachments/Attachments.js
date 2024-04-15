@@ -182,7 +182,12 @@ const FileSelector = ({
           ),
         }}
       />
-      <GalleryMockup open={galleryDialogOpen} />
+      <GalleryMockup
+        open={galleryDialogOpen}
+        onClose={() => {
+          setGalleryDialogOpen(false);
+        }}
+      />
     </>
   );
 };

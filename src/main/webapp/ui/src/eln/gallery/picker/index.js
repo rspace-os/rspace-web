@@ -194,19 +194,34 @@ const FileCard = styled(({ filename, className, checked }) => (
   boxShadow: checked ? "none" : "hsl(19 66% 20% / 20%) 0px 2px 8px 0px",
 }));
 
-export default function Wrapper({ open }: {| open: boolean |}): Node {
+export default function Wrapper({
+  open,
+  onClose,
+}: {|
+  open: boolean,
+  onClose: () => void,
+|}): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <Picker open={open} />
+      <Picker open={open} onClose={onClose} />
     </ThemeProvider>
   );
 }
 
-function Picker({ open }: {| open: boolean |}): Node {
+function Picker({
+  open,
+  onClose,
+}: {|
+  open: boolean,
+  onClose: () => void,
+|}): Node {
   const [drawerOpen, setDrawerOpen] = React.useState(true);
 
   return (
-    <CustomDialog open={open}>
+    <CustomDialog
+      open={open}
+      onClose={onClose}
+    >
       <AppBar position="relative" open={true}>
         <Toolbar variant="dense">
           <IconButton
@@ -369,7 +384,7 @@ function Picker({ open }: {| open: boolean |}): Node {
             </Grid>
           </DialogContent>
           <DialogActions>
-            <Button>Cancel</Button>
+            <Button onClick={() => onClose()}>Cancel</Button>
             <Button variant="contained">Add</Button>
           </DialogActions>
         </Box>
