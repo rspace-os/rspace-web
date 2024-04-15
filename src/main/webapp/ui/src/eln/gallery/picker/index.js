@@ -206,7 +206,7 @@ function Picker(): Node {
   const [drawerOpen, setDrawerOpen] = React.useState(true);
 
   return (
-    <CustomDialog open>
+    <CustomDialog open={false}>
       <AppBar position="relative" open={true}>
         <Toolbar variant="dense">
           <IconButton
