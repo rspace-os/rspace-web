@@ -18,6 +18,7 @@ import { makeStyles } from "tss-react/mui";
 import SelectedFileInfo from "./SelectedFileInfo";
 import { readFileAsBinaryString } from "../../util/Util";
 import InputBase from "@mui/material/InputBase";
+import BigIconButton from "../BigIconButton";
 import Grid from "@mui/material/Grid";
 
 const useStyles = makeStyles()((theme) => ({
@@ -41,11 +42,14 @@ const useStyles = makeStyles()((theme) => ({
 type ButtonThatTriggersInvisibleInputArgs = {|
   buttonLabel: string,
   InputProps: {
+    startAdornment?: Node,
     endAdornment?: Node,
   },
   disabled?: boolean,
   id: string,
   icon: Node,
+  explanatoryText?: string,
+  adornmentWrapping?: string,
 |};
 
 const ButtonThatTriggersInvisibleInput = forwardRef<
@@ -59,23 +63,34 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
       disabled,
       id,
       icon,
+      explanatoryText,
+      adornmentWrapping,
     }: ButtonThatTriggersInvisibleInputArgs,
     ref
   ) => (
-    <Grid container spacing={1}>
+    <Grid container spacing={1} wrap={adornmentWrapping}>
+      {InputProps.startAdornment}
       <Grid item flexGrow={1}>
         <label htmlFor={id} ref={ref}>
-          <Button
-            size="large"
-            color="primary"
-            variant="outlined"
-            component="span"
-            fullWidth
-            startIcon={icon}
-            disabled={disabled}
-          >
-            {buttonLabel}
-          </Button>
+          {explanatoryText ? (
+            <BigIconButton
+              icon={icon}
+              label={buttonLabel}
+              explanatoryText={explanatoryText}
+            />
+          ) : (
+            <Button
+              size="large"
+              color="primary"
+              variant="outlined"
+              component="span"
+              fullWidth
+              startIcon={icon}
+              disabled={disabled}
+            >
+              {buttonLabel}
+            </Button>
+          )}
         </label>
       </Grid>
       {InputProps.endAdornment}
@@ -97,6 +112,7 @@ export type FileFieldArgs = {|
   // optional
   id?: string,
   InputProps?: {
+    startAdornment?: Node,
     endAdornment?: Node,
   },
   buttonLabel?: string,
@@ -111,6 +127,8 @@ export type FileFieldArgs = {|
   triggerButton?: ({| id: string |}) => Node,
   value?: string,
   warningAlert?: string,
+  explanatoryText?: string,
+  adornmentWrapping?: string,
 |};
 
 function FileField({
@@ -130,6 +148,8 @@ function FileField({
   datatestid,
   triggerButton,
   loadedFile,
+  explanatoryText,
+  adornmentWrapping,
 }: FileFieldArgs): Node {
   const generatedId = React.useId();
   const id = passedId ?? generatedId;
@@ -194,6 +214,8 @@ function FileField({
                 id={id}
                 icon={icon}
                 ref={ref}
+                explanatoryText={explanatoryText}
+                adornmentWrapping={adornmentWrapping}
               />
             ))}
             error={failedToLoad}

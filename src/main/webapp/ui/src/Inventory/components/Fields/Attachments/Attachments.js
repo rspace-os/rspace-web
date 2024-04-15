@@ -36,6 +36,9 @@ import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { type Attachment } from "../../../../stores/definitions/Attachment";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { type BlobUrl } from "../../../../stores/stores/ImageStore";
+import BigIconButton from "../../../../components/BigIconButton";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
 
 const CustomCardHeader = withStyles<
   ElementProps<typeof CardHeader>,
@@ -91,21 +94,6 @@ const CollapseContents = <
   );
 };
 
-const AddButtonWrapper = ({
-  disabled,
-  id,
-}: {|
-  disabled: boolean,
-  id: string,
-|}): Node => (
-  <label htmlFor={id}>
-    <AddButton
-      disabled={disabled}
-      title={disabled ? "Press Edit to add a file" : "Select a file to attach"}
-    />
-  </label>
-);
-
 const ToggleButton = ({
   attachmentCount,
   open,
@@ -157,7 +145,6 @@ const FileSelector = ({
     });
   };
 
-  if (!editable) return;
   return (
     <FileField
       accept="*"
@@ -170,9 +157,23 @@ const FileSelector = ({
       error={false}
       key={0}
       disabled={!editable}
-      triggerButton={({ id }) => (
-        <AddButtonWrapper disabled={!editable} id={id} />
-      )}
+      explanatoryText="File will be added to the Gallery once saved"
+      adornmentWrapping="nowrap"
+      InputProps={{
+        startAdornment: (
+          <Grid item sm={6}>
+            <BigIconButton
+              // disabled={!imageAsObjectURL}
+              // onClick={() => {
+              //   setEditorOpen(true);
+              // }}
+              icon={<AttachFileIcon />}
+              label="Browse Gallery"
+              explanatoryText="Link to existing items in the Gallery"
+            />
+          </Grid>
+        ),
+      }}
     />
   );
 };
@@ -218,11 +219,15 @@ const FilesCard = observer(
             </>
           }
         />
-        <FileSelector
-          activeResult={activeResult}
-          setOpen={setOpen}
-          editable={editable}
-        />
+        {editable && (
+          <CardContent>
+            <FileSelector
+              activeResult={activeResult}
+              setOpen={setOpen}
+              editable={editable}
+            />
+          </CardContent>
+        )}
         <Collapse in={open}>
           <CollapseContents
             attachments={attachments}
