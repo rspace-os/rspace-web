@@ -99,7 +99,7 @@ const CustomDialog = styled(Dialog)(({ theme }) => ({
     width: "100%",
     height: "calc(100% - 52px)", // 52px being the height of DialogActions
     overflowY: "unset",
-    padding: 8,
+    padding: theme.spacing(1.5, 2),
   },
 }));
 
@@ -416,7 +416,7 @@ function Picker({
             <Grid
               container
               direction="column"
-              spacing={2}
+              spacing={3}
               sx={{ height: "100%", flexWrap: "nowrap" }}
             >
               <Grid item>
@@ -430,12 +430,7 @@ function Picker({
                   <Chip size="small" clickable label="Examples" />
                 </Breadcrumbs>
               </Grid>
-              <Grid item></Grid>
-              <Grid
-                item
-                sx={{ overflowY: "auto", pt: "0 !important" }}
-                flexGrow={1}
-              >
+              <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
                 <Grid container spacing={2}>
                   <FileCard filename="Aminoglutethimide.mol" />
                   <FileCard
