@@ -4,6 +4,7 @@ import React, {
   type Node,
   type ComponentType,
   type ElementRef,
+  type ElementConfig,
   useState,
   useEffect,
   forwardRef,
@@ -50,6 +51,8 @@ type ButtonThatTriggersInvisibleInputArgs = {|
   icon: Node,
   explanatoryText?: string,
   adornmentWrapping?: string,
+  containerProps?: ElementConfig<typeof Grid>,
+  itemProps?: ElementConfig<typeof Grid>,
 |};
 
 const ButtonThatTriggersInvisibleInput = forwardRef<
@@ -64,13 +67,14 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
       id,
       icon,
       explanatoryText,
-      adornmentWrapping,
+      containerProps,
+      itemProps,
     }: ButtonThatTriggersInvisibleInputArgs,
     ref
   ) => (
-    <Grid container spacing={1} wrap={adornmentWrapping}>
+    <Grid container spacing={1} {...containerProps}>
       {InputProps.startAdornment}
-      <Grid item flexGrow={1}>
+      <Grid item flexGrow={1} {...itemProps}>
         <label htmlFor={id} ref={ref}>
           {explanatoryText ? (
             <BigIconButton
@@ -128,7 +132,8 @@ export type FileFieldArgs = {|
   value?: string,
   warningAlert?: string,
   explanatoryText?: string,
-  adornmentWrapping?: string,
+  containerProps?: ElementConfig<typeof Grid>,
+  itemProps?: ElementConfig<typeof Grid>,
 |};
 
 function FileField({
@@ -149,7 +154,8 @@ function FileField({
   triggerButton,
   loadedFile,
   explanatoryText,
-  adornmentWrapping,
+  containerProps,
+  itemProps,
 }: FileFieldArgs): Node {
   const generatedId = React.useId();
   const id = passedId ?? generatedId;
@@ -215,7 +221,8 @@ function FileField({
                 icon={icon}
                 ref={ref}
                 explanatoryText={explanatoryText}
-                adornmentWrapping={adornmentWrapping}
+                containerProps={containerProps}
+                itemProps={itemProps}
               />
             ))}
             error={failedToLoad}

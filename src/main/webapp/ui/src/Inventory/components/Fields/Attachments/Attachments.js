@@ -145,6 +145,9 @@ const FileSelector = ({
     });
   };
 
+  const itemProps = {
+    sm: 6,
+  };
   return (
     <FileField
       accept="*"
@@ -158,10 +161,13 @@ const FileSelector = ({
       key={0}
       disabled={!editable}
       explanatoryText="File will be added to the Gallery once saved"
-      adornmentWrapping="nowrap"
+      containerProps={{
+        wrap: "nowrap",
+      }}
+      itemProps={itemProps}
       InputProps={{
         startAdornment: (
-          <Grid item sm={6}>
+          <Grid item {...itemProps}>
             <BigIconButton
               // disabled={!imageAsObjectURL}
               // onClick={() => {
