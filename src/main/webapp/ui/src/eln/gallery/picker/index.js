@@ -99,7 +99,7 @@ const CustomDialog = styled(Dialog)(({ theme }) => ({
     width: "100%",
     height: "calc(100% - 52px)", // 52px being the height of DialogActions
     overflowY: "unset",
-    paddingBottom: 0,
+    padding: 8,
   },
 }));
 

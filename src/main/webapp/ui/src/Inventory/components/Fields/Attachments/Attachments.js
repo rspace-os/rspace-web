@@ -47,7 +47,7 @@ const CustomCardHeader = withStyles<
   { root: string, action: string }
 >((theme) => ({
   root: {
-    padding: theme.spacing(0, 0, 0, 1.5),
+    padding: theme.spacing(0.5, 1.5, 0.25, 2),
   },
   action: {
     margin: 0,
