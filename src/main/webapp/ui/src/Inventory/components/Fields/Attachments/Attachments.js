@@ -40,6 +40,7 @@ import BigIconButton from "../../../../components/BigIconButton";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import GalleryMockup from "../../../../eln/gallery/picker";
+import UploadIcon from "@mui/icons-material/Publish";
 
 const CustomCardHeader = withStyles<
   ElementProps<typeof CardHeader>,
@@ -147,37 +148,35 @@ const FileSelector = ({
     });
   };
 
-  const itemProps = {
-    sm: 6,
-  };
   return (
     <>
       <FileField
         accept="*"
-        buttonLabel="Add Attachment"
+        buttonLabel="Upload"
         name="attachments"
         onChange={onFileSelection}
         showSelectedFilename={false}
-        icon={<AttachFileIcon />}
+        icon={<UploadIcon />}
         loading={false}
         error={false}
         key={0}
         disabled={!editable}
-        explanatoryText="File will be added to the Gallery once saved"
+        explanatoryText="File will be added to the Gallery once saved."
         containerProps={{
           wrap: "nowrap",
+          alignItems: "stretch",
+          flexDirection: "column",
         }}
-        itemProps={itemProps}
         InputProps={{
           startAdornment: (
-            <Grid item {...itemProps}>
+            <Grid item>
               <BigIconButton
                 onClick={() => {
                   setGalleryDialogOpen(true);
                 }}
                 icon={<AttachFileIcon />}
                 label="Browse Gallery"
-                explanatoryText="Link to existing items in the Gallery"
+                explanatoryText="Link to existing items in the Gallery."
               />
             </Grid>
           ),
@@ -230,7 +229,7 @@ const FilesCard = observer(
           }
         />
         {editable && (
-          <CardContent>
+          <CardContent sx={{ pt: 0.5 }}>
             <FileSelector
               activeResult={activeResult}
               setOpen={setOpen}

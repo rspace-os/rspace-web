@@ -51,7 +51,6 @@ type ButtonThatTriggersInvisibleInputArgs = {|
   icon: Node,
   explanatoryText?: string,
   containerProps?: ElementConfig<typeof Grid>,
-  itemProps?: ElementConfig<typeof Grid>,
 |};
 
 const ButtonThatTriggersInvisibleInput = forwardRef<
@@ -67,13 +66,12 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
       icon,
       explanatoryText,
       containerProps,
-      itemProps,
     }: ButtonThatTriggersInvisibleInputArgs,
     ref
   ) => (
     <Grid container spacing={1} {...containerProps}>
       {InputProps.startAdornment}
-      <Grid item flexGrow={1} {...itemProps}>
+      <Grid item flexGrow={1}>
         <label htmlFor={id} ref={ref}>
           {/* These buttons are rendered as HTMLSpanElements so that
            * tapping them results in the click event bubbling up to the
@@ -139,7 +137,6 @@ export type FileFieldArgs = {|
   warningAlert?: string,
   explanatoryText?: string,
   containerProps?: ElementConfig<typeof Grid>,
-  itemProps?: ElementConfig<typeof Grid>,
 |};
 
 function FileField({
@@ -161,7 +158,6 @@ function FileField({
   loadedFile,
   explanatoryText,
   containerProps,
-  itemProps,
 }: FileFieldArgs): Node {
   const generatedId = React.useId();
   const id = passedId ?? generatedId;
@@ -211,7 +207,7 @@ function FileField({
         disabled={disabled}
       />
       {triggerButton?.({ id }) ?? (
-        <FormControl>
+        <FormControl sx={{ width: "100%" }}>
           <InputBase
             type="file"
             inputProps={{
@@ -228,7 +224,6 @@ function FileField({
                 ref={ref}
                 explanatoryText={explanatoryText}
                 containerProps={containerProps}
-                itemProps={itemProps}
               />
             ))}
             error={failedToLoad}

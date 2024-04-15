@@ -1,9 +1,12 @@
 //@flow
 
 import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
 import React, { type Node } from "react";
+import { styled } from "@mui/material/styles";
+import ListItemText from "@mui/material/ListItemText";
+import ListItem from "@mui/material/ListItem";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import Avatar from "@mui/material/Avatar";
 
 /**
  * This component is for displaying a button that has a large icon and a short
@@ -25,6 +28,16 @@ type BigIconButtonArgs = {|
   component?: string,
 |};
 
+const CustomButton = styled(Button)(({ theme }) => ({
+  textTransform: "none",
+  boxShadow:
+    "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)",
+  "& .MuiAvatar-root": {
+    backgroundColor: theme.palette.primary.background,
+    color: theme.palette.standardIcon.main,
+  },
+}));
+
 export default function BigIconButton({
   label,
   icon,
@@ -33,29 +46,19 @@ export default function BigIconButton({
   component,
 }: BigIconButtonArgs): Node {
   return (
-    <Button
+    <CustomButton
+      fullWidth
       color="primary"
       variant="outlined"
       onClick={onClick}
       component={component}
-      sx={{
-        /*
-         * Whilst browsers with default buttons do center text, if the caller
-         * sets the component to something like "span" then we need to ensure
-         * that the text is centered. The prop `component` may be set to "span"
-         * when this button is used to trigger a parent HTMLLabelElement and
-         * thus an invisible HTMLInputElement with type "file"
-         */
-        textAlign: "center",
-      }}
     >
-      <Grid container direction="column">
-        <Grid item>{icon}</Grid>
-        <Grid item>{label}</Grid>
-        <Grid item>
-          <Typography variant="caption">{explanatoryText}</Typography>
-        </Grid>
-      </Grid>
-    </Button>
+      <ListItem disablePadding>
+        <ListItemAvatar>
+          <Avatar>{icon}</Avatar>
+        </ListItemAvatar>
+        <ListItemText primary={label} secondary={explanatoryText} />
+      </ListItem>
+    </CustomButton>
   );
 }
