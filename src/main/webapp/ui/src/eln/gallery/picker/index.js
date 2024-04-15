@@ -1,7 +1,7 @@
 //@flow
 
 import Dialog from "@mui/material/Dialog";
-import React, { type Node } from "react";
+import React, { type Node, type ElementConfig, type Ref } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import DialogContent from "@mui/material/DialogContent";
 import AppBar from "@mui/material/AppBar";
@@ -45,6 +45,7 @@ import { COLORS as baseThemeColors } from "../../../theme";
 import ChemistryIcon from "./ChemistryIcon";
 import Avatar from "@mui/material/Avatar";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import Grow from "@mui/material/Grow";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -99,14 +100,14 @@ const CustomDialog = styled(Dialog)(() => ({
 
 const CustomDrawer = styled(Drawer)(({ open }) => ({
   width: open ? "200px" : "64px",
-  transition: "width .15s ease-in-out",
+  transition: "width .25s ease-in-out",
   "& .MuiPaper-root": {
     position: "relative",
   },
   "& .MuiListItemText-root": {
-    transition: "all .1s ease-in-out",
+    transition: "all .2s ease-in-out",
     opacity: open ? 1 : 0,
-    transform: open ? "unset" : "translateX(-10px)",
+    transform: open ? "unset" : "translateX(-20px)",
   },
 }));
 
@@ -208,6 +209,23 @@ export default function Wrapper({
   );
 }
 
+const CustomGrow = React.forwardRef<ElementConfig<typeof Grow>, {||}>(
+  (props: ElementConfig<typeof Grow>, ref: Ref<typeof Grow>) => (
+    <Grow
+      {...props}
+      ref={ref}
+      timeout={
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300
+      }
+      easing="ease-in-out"
+      style={{
+        transformOrigin: "center 70%",
+      }}
+    />
+  )
+);
+CustomGrow.displayName = "CustomGrow";
+
 function Picker({
   open,
   onClose,
@@ -220,6 +238,7 @@ function Picker({
   return (
     <CustomDialog
       open={open}
+      TransitionComponent={CustomGrow}
       onClose={onClose}
     >
       <AppBar position="relative" open={true}>
@@ -259,7 +278,10 @@ function Picker({
                   <ListItemIcon>
                     <FontAwesomeIcon icon="image" />
                   </ListItemIcon>
-                  <ListItemText primary="IMAGES" />
+                  <ListItemText
+                    primary="IMAGES"
+                    sx={{ transitionDelay: "0.02s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
@@ -267,7 +289,10 @@ function Picker({
                   <ListItemIcon>
                     <FontAwesomeIcon icon="volume-low" />
                   </ListItemIcon>
-                  <ListItemText primary="AUDIO" />
+                  <ListItemText
+                    primary="AUDIO"
+                    sx={{ transitionDelay: "0.04s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
@@ -275,7 +300,10 @@ function Picker({
                   <ListItemIcon>
                     <FontAwesomeIcon icon="film" />
                   </ListItemIcon>
-                  <ListItemText primary="VIDEOS" />
+                  <ListItemText
+                    primary="VIDEOS"
+                    sx={{ transitionDelay: "0.06s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
@@ -283,7 +311,10 @@ function Picker({
                   <ListItemIcon>
                     <FontAwesomeIcon icon="file" />
                   </ListItemIcon>
-                  <ListItemText primary="DOCUMENTS" />
+                  <ListItemText
+                    primary="DOCUMENTS"
+                    sx={{ transitionDelay: "0.08s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
@@ -291,7 +322,10 @@ function Picker({
                   <ListItemIcon>
                     <ChemistryIcon />
                   </ListItemIcon>
-                  <ListItemText primary="CHEMISTRY" />
+                  <ListItemText
+                    primary="CHEMISTRY"
+                    sx={{ transitionDelay: "0.10s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
@@ -299,7 +333,10 @@ function Picker({
                   <ListItemIcon>
                     <FontAwesomeIcon icon="file-invoice" />
                   </ListItemIcon>
-                  <ListItemText primary="DMPS" />
+                  <ListItemText
+                    primary="DMPS"
+                    sx={{ transitionDelay: "0.12s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
@@ -307,7 +344,10 @@ function Picker({
                   <ListItemIcon>
                     <FontAwesomeIcon icon="database" />
                   </ListItemIcon>
-                  <ListItemText primary="FILESTORES" />
+                  <ListItemText
+                    primary="FILESTORES"
+                    sx={{ transitionDelay: "0.14s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
@@ -315,7 +355,10 @@ function Picker({
                   <ListItemIcon>
                     <FontAwesomeIcon icon="fa-regular fa-note-sticky" />
                   </ListItemIcon>
-                  <ListItemText primary="SNIPPETS" />
+                  <ListItemText
+                    primary="SNIPPETS"
+                    sx={{ transitionDelay: "0.16s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
@@ -323,7 +366,10 @@ function Picker({
                   <ListItemIcon>
                     <FontAwesomeIcon icon="shapes" />
                   </ListItemIcon>
-                  <ListItemText primary="MISCELLANEOUS" />
+                  <ListItemText
+                    primary="MISCELLANEOUS"
+                    sx={{ transitionDelay: "0.18s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
             </List>
@@ -334,7 +380,10 @@ function Picker({
                   <ListItemIcon>
                     <FontAwesomeIcon icon="fa-circle-down" />
                   </ListItemIcon>
-                  <ListItemText primary="EXPORTS" />
+                  <ListItemText
+                    primary="EXPORTS"
+                    sx={{ transitionDelay: "0.20s !important" }}
+                  />
                 </ListItemButton>
               </ListItem>
             </List>
