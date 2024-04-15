@@ -50,7 +50,6 @@ type ButtonThatTriggersInvisibleInputArgs = {|
   id: string,
   icon: Node,
   explanatoryText?: string,
-  adornmentWrapping?: string,
   containerProps?: ElementConfig<typeof Grid>,
   itemProps?: ElementConfig<typeof Grid>,
 |};

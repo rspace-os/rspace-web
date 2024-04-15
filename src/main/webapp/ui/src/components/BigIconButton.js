@@ -14,15 +14,17 @@ type BigIconButtonArgs = {|
   label: string,
   icon: Node,
   explanatoryText: string,
+  onClick?: () => void,
 |};
 
 export default function BigIconButton({
   label,
   icon,
   explanatoryText,
+  onClick,
 }: BigIconButtonArgs): Node {
   return (
-    <Button color="primary" variant="outlined">
+    <Button color="primary" variant="outlined" onClick={onClick}>
       <Grid container direction="column">
         <Grid item>{icon}</Grid>
         <Grid item>{label}</Grid>

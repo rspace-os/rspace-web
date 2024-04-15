@@ -15,7 +15,6 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import Alerts from "./components/Alerts";
 import Analytics from "./Analytics";
 import Box from "@mui/material/Box";
-import GalleryMockup from "../eln/gallery/picker";
 
 const RedirectToBench = () => {
   const {
@@ -72,7 +71,6 @@ function InventoryRouter(): Node {
             </Routes>
           </Box>
           <MoveDialog />
-          <GalleryMockup />
         </Alerts>
       </ErrorBoundary>
     </Analytics>

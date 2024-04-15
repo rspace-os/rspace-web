@@ -39,6 +39,7 @@ import { type BlobUrl } from "../../../../stores/stores/ImageStore";
 import BigIconButton from "../../../../components/BigIconButton";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
+import GalleryMockup from "../../../../eln/gallery/picker";
 
 const CustomCardHeader = withStyles<
   ElementProps<typeof CardHeader>,
@@ -128,6 +129,7 @@ const FileSelector = ({
   editable: boolean,
 }): Node => {
   const { trackingStore } = useStores();
+  const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
 
   const onFileSelection = ({ file }: { file: File }) => {
     activeResult.setAttributesDirty({
@@ -149,38 +151,40 @@ const FileSelector = ({
     sm: 6,
   };
   return (
-    <FileField
-      accept="*"
-      buttonLabel="Add Attachment"
-      name="attachments"
-      onChange={onFileSelection}
-      showSelectedFilename={false}
-      icon={<AttachFileIcon />}
-      loading={false}
-      error={false}
-      key={0}
-      disabled={!editable}
-      explanatoryText="File will be added to the Gallery once saved"
-      containerProps={{
-        wrap: "nowrap",
-      }}
-      itemProps={itemProps}
-      InputProps={{
-        startAdornment: (
-          <Grid item {...itemProps}>
-            <BigIconButton
-              // disabled={!imageAsObjectURL}
-              // onClick={() => {
-              //   setEditorOpen(true);
-              // }}
-              icon={<AttachFileIcon />}
-              label="Browse Gallery"
-              explanatoryText="Link to existing items in the Gallery"
-            />
-          </Grid>
-        ),
-      }}
-    />
+    <>
+      <FileField
+        accept="*"
+        buttonLabel="Add Attachment"
+        name="attachments"
+        onChange={onFileSelection}
+        showSelectedFilename={false}
+        icon={<AttachFileIcon />}
+        loading={false}
+        error={false}
+        key={0}
+        disabled={!editable}
+        explanatoryText="File will be added to the Gallery once saved"
+        containerProps={{
+          wrap: "nowrap",
+        }}
+        itemProps={itemProps}
+        InputProps={{
+          startAdornment: (
+            <Grid item {...itemProps}>
+              <BigIconButton
+                onClick={() => {
+                  setGalleryDialogOpen(true);
+                }}
+                icon={<AttachFileIcon />}
+                label="Browse Gallery"
+                explanatoryText="Link to existing items in the Gallery"
+              />
+            </Grid>
+          ),
+        }}
+      />
+      <GalleryMockup open={galleryDialogOpen} />
+    </>
   );
 };
 

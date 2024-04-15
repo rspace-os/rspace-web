@@ -194,19 +194,19 @@ const FileCard = styled(({ filename, className, checked }) => (
   boxShadow: checked ? "none" : "hsl(19 66% 20% / 20%) 0px 2px 8px 0px",
 }));
 
-export default function Wrapper(): Node {
+export default function Wrapper({ open }: {| open: boolean |}): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <Picker />
+      <Picker open={open} />
     </ThemeProvider>
   );
 }
 
-function Picker(): Node {
+function Picker({ open }: {| open: boolean |}): Node {
   const [drawerOpen, setDrawerOpen] = React.useState(true);
 
   return (
-    <CustomDialog open={false}>
+    <CustomDialog open={open}>
       <AppBar position="relative" open={true}>
         <Toolbar variant="dense">
           <IconButton
