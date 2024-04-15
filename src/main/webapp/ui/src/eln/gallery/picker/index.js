@@ -46,6 +46,7 @@ import ChemistryIcon from "./ChemistryIcon";
 import Avatar from "@mui/material/Avatar";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Grow from "@mui/material/Grow";
+import useViewportDimensions from "../../../util/useViewportDimensions";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -84,11 +85,15 @@ const COLOR = {
   },
 };
 
-const CustomDialog = styled(Dialog)(() => ({
+const CustomDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-container > .MuiPaper-root": {
     width: "1000px",
     maxWidth: "1000px",
     height: "calc(100% - 32px)", // 16px margin above and below dialog
+    [theme.breakpoints.only("xs")]: {
+      height: "100%",
+      borderRadius: 0,
+    },
   },
   "& .MuiDialogContent-root": {
     width: "100%",
@@ -112,7 +117,7 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
 }));
 
 const FileCard = styled(({ filename, className, checked }) => (
-  <Grid item xs={3}>
+  <Grid item xs={6} sm={4} md={3}>
     <Card elevation={0} className={className}>
       <Grid container direction="column" height="100%" flexWrap="nowrap">
         <Grid
@@ -233,13 +238,15 @@ function Picker({
   open: boolean,
   onClose: () => void,
 |}): Node {
-  const [drawerOpen, setDrawerOpen] = React.useState(true);
+  const { isViewportSmall } = useViewportDimensions();
+  const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
 
   return (
     <CustomDialog
       open={open}
       TransitionComponent={CustomGrow}
       onClose={onClose}
+      fullScreen={isViewportSmall}
     >
       <AppBar position="relative" open={true}>
         <Toolbar variant="dense">
@@ -256,6 +263,14 @@ function Picker({
           <Box flexGrow={1}></Box>
           <TextField
             placeholder="Search"
+            sx={{
+              /*
+               * This is so that it doesn't obscure the "Gallery" heading on
+               * very small mobile viewports
+               */
+              maxWidth: isViewportSmall ? 184 : 300,
+              width: isViewportSmall ? 184 : 300,
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
