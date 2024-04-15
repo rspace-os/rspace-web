@@ -75,11 +75,18 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
       {InputProps.startAdornment}
       <Grid item flexGrow={1} {...itemProps}>
         <label htmlFor={id} ref={ref}>
+          {/* These buttons are rendered as HTMLSpanElements so that
+           * tapping them results in the click event bubbling up to the
+           * HTMLLableElement above, which in turn triggers the
+           * HTMLInputElement with type "file" that is rendered in this
+           * file, below.
+           */}
           {explanatoryText ? (
             <BigIconButton
               icon={icon}
               label={buttonLabel}
               explanatoryText={explanatoryText}
+              component="span"
             />
           ) : (
             <Button
