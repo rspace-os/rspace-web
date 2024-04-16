@@ -47,6 +47,7 @@ import Avatar from "@mui/material/Avatar";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Grow from "@mui/material/Grow";
 import useViewportDimensions from "../../../util/useViewportDimensions";
+import { darken } from "@mui/system";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -108,26 +109,55 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
   transition: "width .25s ease-in-out",
   "& .MuiPaper-root": {
     position: "relative",
+    overflowX: "hidden",
   },
 }));
 
-const DrawerTab = styled(({ icon, label, index, className, selected }) => (
-  <ListItem disablePadding className={className}>
-    <ListItemButton selected={selected}>
-      <ListItemIcon>{icon}</ListItemIcon>
-      <ListItemText
-        primary={label}
-        sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
-      />
-    </ListItemButton>
-  </ListItem>
-))(({ drawerOpen }) => ({
+const DrawerTab = styled(
+  ({ icon, label, index, className, selected, onClick }) => (
+    <ListItem disablePadding className={className}>
+      <ListItemButton selected={selected} onClick={onClick}>
+        <ListItemIcon>{icon}</ListItemIcon>
+        <ListItemText
+          primary={label}
+          sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
+        />
+      </ListItemButton>
+    </ListItem>
+  )
+)(({ drawerOpen }) => ({
+  position: "static",
   "& .MuiListItemText-root": {
     transition: "all .2s ease-in-out",
     opacity: drawerOpen ? 1 : 0,
     transform: drawerOpen ? "unset" : "translateX(-20px)",
     textTransform: "uppercase",
   },
+  "& .MuiListItemButton-root": {
+    "&:hover": {
+      backgroundColor: darken(
+        `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 100%)`,
+        0.05
+      ),
+    },
+    "&.Mui-selected": {
+      backgroundColor: "unset",
+      "&:hover": {
+        backgroundColor: "unset",
+      },
+    },
+  },
+}));
+
+const SelectedDrawerTabIndicator = styled(({ className }) => (
+  <div className={className}></div>
+))(({ verticalPosition }) => ({
+  width: "198px",
+  height: "43px",
+  backgroundColor: `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+  position: "absolute",
+  top: verticalPosition,
+  transition: "top 0.4s ease-in-out",
 }));
 
 const FileCard = styled(({ filename, className, checked }) => (
@@ -254,6 +284,9 @@ function Picker({
 |}): Node {
   const { isViewportSmall } = useViewportDimensions();
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
+  const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
+    React.useState(181);
+  const [selected, setSelected] = React.useState("chemistry");
 
   return (
     <CustomDialog
@@ -301,70 +334,122 @@ function Picker({
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <CustomDrawer open={drawerOpen} anchor="left" variant="permanent">
           <Box sx={{ overflowY: "auto", overflowX: "hidden" }}>
-            <List>
+            <SelectedDrawerTabIndicator
+              verticalPosition={selectedIndicatorOffset}
+            />
+            <List sx={{ position: "static" }}>
               <DrawerTab
                 label="images"
                 icon={<FaIcon icon="image" />}
                 index={0}
                 drawerOpen={drawerOpen}
+                selected={selected === "images"}
+                onClick={(event) => {
+                  setSelected("images");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
               <DrawerTab
                 label="audio"
                 icon={<FaIcon icon="volume-low" />}
                 index={1}
                 drawerOpen={drawerOpen}
+                selected={selected === "audio"}
+                onClick={(event) => {
+                  setSelected("audio");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
               <DrawerTab
                 label="videos"
                 icon={<FaIcon icon="film" />}
                 index={2}
                 drawerOpen={drawerOpen}
+                selected={selected === "videos"}
+                onClick={(event) => {
+                  setSelected("videos");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
               <DrawerTab
                 label="documents"
                 icon={<FaIcon icon="file" />}
                 index={3}
                 drawerOpen={drawerOpen}
+                selected={selected === "documents"}
+                onClick={(event) => {
+                  setSelected("documents");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
               <DrawerTab
                 label="chemistry"
                 icon={<ChemistryIcon />}
                 index={4}
                 drawerOpen={drawerOpen}
+                selected={selected === "chemistry"}
+                onClick={(event) => {
+                  setSelected("chemistry");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
               <DrawerTab
                 label="dmps"
-                selected
                 icon={<FaIcon icon="file-invoice" />}
                 index={5}
                 drawerOpen={drawerOpen}
+                selected={selected === "dmps"}
+                onClick={(event) => {
+                  setSelected("dmps");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
               <DrawerTab
                 label="filestores"
                 icon={<FaIcon icon="database" />}
                 index={6}
                 drawerOpen={drawerOpen}
+                selected={selected === "filestores"}
+                onClick={(event) => {
+                  setSelected("filestores");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
               <DrawerTab
                 label="snippets"
                 icon={<FaIcon icon="fa-regular fa-note-sticky" />}
                 index={7}
                 drawerOpen={drawerOpen}
+                selected={selected === "snippets"}
+                onClick={(event) => {
+                  setSelected("snippets");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
               <DrawerTab
                 label="miscellaneous"
                 icon={<FaIcon icon="shapes" />}
                 index={8}
                 drawerOpen={drawerOpen}
+                selected={selected === "miscellaneous"}
+                onClick={(event) => {
+                  setSelected("miscellaneous");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
             </List>
             <Divider />
-            <List>
+            <List sx={{ position: "static" }}>
               <DrawerTab
                 label="exports"
                 icon={<FaIcon icon="fa-circle-down" />}
                 index={9}
                 drawerOpen={drawerOpen}
+                selected={selected === "exports"}
+                onClick={(event) => {
+                  setSelected("exports");
+                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+                }}
               />
             </List>
           </Box>

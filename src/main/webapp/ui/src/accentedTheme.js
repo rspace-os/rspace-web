@@ -274,6 +274,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                     hoverDarkenCoefficient
                   ),
                 },
+                "& .MuiTouchRipple-root": {
+                  color: accentedBackground,
+                },
                 "& .MuiListItemIcon-root": {
                   minWidth: baseTheme.spacing(4),
                   color: prefersMoreContrast ? "rgb(0,0,0)" : linkColor,
