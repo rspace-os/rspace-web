@@ -25,7 +25,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faImage,
@@ -109,10 +109,24 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
   "& .MuiPaper-root": {
     position: "relative",
   },
+}));
+
+const DrawerTab = styled(({ icon, label, index, className, selected }) => (
+  <ListItem disablePadding className={className}>
+    <ListItemButton selected={selected}>
+      <ListItemIcon>{icon}</ListItemIcon>
+      <ListItemText
+        primary={label}
+        sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
+      />
+    </ListItemButton>
+  </ListItem>
+))(({ drawerOpen }) => ({
   "& .MuiListItemText-root": {
     transition: "all .2s ease-in-out",
-    opacity: open ? 1 : 0,
-    transform: open ? "unset" : "translateX(-20px)",
+    opacity: drawerOpen ? 1 : 0,
+    transform: drawerOpen ? "unset" : "translateX(-20px)",
+    textTransform: "uppercase",
   },
 }));
 
@@ -288,119 +302,70 @@ function Picker({
         <CustomDrawer open={drawerOpen} anchor="left" variant="permanent">
           <Box sx={{ overflowY: "auto", overflowX: "hidden" }}>
             <List>
-              <ListItem disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <FontAwesomeIcon icon="image" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="IMAGES"
-                    sx={{ transitionDelay: "0.02s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <FontAwesomeIcon icon="volume-low" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="AUDIO"
-                    sx={{ transitionDelay: "0.04s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <FontAwesomeIcon icon="film" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="VIDEOS"
-                    sx={{ transitionDelay: "0.06s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <FontAwesomeIcon icon="file" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="DOCUMENTS"
-                    sx={{ transitionDelay: "0.08s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton selected>
-                  <ListItemIcon>
-                    <ChemistryIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="CHEMISTRY"
-                    sx={{ transitionDelay: "0.10s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <FontAwesomeIcon icon="file-invoice" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="DMPS"
-                    sx={{ transitionDelay: "0.12s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <FontAwesomeIcon icon="database" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="FILESTORES"
-                    sx={{ transitionDelay: "0.14s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <FontAwesomeIcon icon="fa-regular fa-note-sticky" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="SNIPPETS"
-                    sx={{ transitionDelay: "0.16s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <FontAwesomeIcon icon="shapes" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="MISCELLANEOUS"
-                    sx={{ transitionDelay: "0.18s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
+              <DrawerTab
+                label="images"
+                icon={<FaIcon icon="image" />}
+                index={0}
+                drawerOpen={drawerOpen}
+              />
+              <DrawerTab
+                label="audio"
+                icon={<FaIcon icon="volume-low" />}
+                index={1}
+                drawerOpen={drawerOpen}
+              />
+              <DrawerTab
+                label="videos"
+                icon={<FaIcon icon="film" />}
+                index={2}
+                drawerOpen={drawerOpen}
+              />
+              <DrawerTab
+                label="documents"
+                icon={<FaIcon icon="file" />}
+                index={3}
+                drawerOpen={drawerOpen}
+              />
+              <DrawerTab
+                label="chemistry"
+                icon={<ChemistryIcon />}
+                index={4}
+                drawerOpen={drawerOpen}
+              />
+              <DrawerTab
+                label="dmps"
+                selected
+                icon={<FaIcon icon="file-invoice" />}
+                index={5}
+                drawerOpen={drawerOpen}
+              />
+              <DrawerTab
+                label="filestores"
+                icon={<FaIcon icon="database" />}
+                index={6}
+                drawerOpen={drawerOpen}
+              />
+              <DrawerTab
+                label="snippets"
+                icon={<FaIcon icon="fa-regular fa-note-sticky" />}
+                index={7}
+                drawerOpen={drawerOpen}
+              />
+              <DrawerTab
+                label="miscellaneous"
+                icon={<FaIcon icon="shapes" />}
+                index={8}
+                drawerOpen={drawerOpen}
+              />
             </List>
             <Divider />
             <List>
-              <ListItem disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <FontAwesomeIcon icon="fa-circle-down" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="EXPORTS"
-                    sx={{ transitionDelay: "0.20s !important" }}
-                  />
-                </ListItemButton>
-              </ListItem>
+              <DrawerTab
+                label="exports"
+                icon={<FaIcon icon="fa-circle-down" />}
+                index={9}
+                drawerOpen={drawerOpen}
+              />
             </List>
           </Box>
         </CustomDrawer>
