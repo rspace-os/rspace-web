@@ -48,6 +48,7 @@ import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Grow from "@mui/material/Grow";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { darken } from "@mui/system";
+import useGalleryListing from "./useGalleryListing";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -287,6 +288,7 @@ function Picker({
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(181);
   const [selected, setSelected] = React.useState("chemistry");
+  const { galleryListing } = useGalleryListing({ section: "Chemistry" });
 
   return (
     <CustomDialog

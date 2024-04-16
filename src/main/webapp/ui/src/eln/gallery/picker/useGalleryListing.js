@@ -18,7 +18,11 @@ const check =
   (t: T): Optional<T> =>
     predicate(t) ? Optional.present(t) : Optional.empty();
 
-export function useGalleryListing({ section }: {| section: string |}): {|
+export default function useGalleryListing({
+  section,
+}: {|
+  section: string,
+|}): {|
   galleryListing: Array<GalleryFile>,
 |} {
   const [galleryListing, setGalleryListing] = React.useState<
@@ -27,8 +31,15 @@ export function useGalleryListing({ section }: {| section: string |}): {|
 
   async function getGalleryFiles(params: {| section: string |}): Promise<void> {
     try {
-      const { data } = await axios.get<mixed>(`gallery/getUploadedFiles`, {
-        params: new URLSearchParams({ ...params }),
+      const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
+        params: new URLSearchParams({
+          mediatype: params.section,
+          currentFolderId: "0",
+          name: "",
+          pageNumber: "0",
+          sortOrder: "DESC",
+          orderBy: "",
+        }),
       });
 
       const isObject = (m: mixed): Result<{ ... } | null> =>
@@ -46,6 +57,9 @@ export function useGalleryListing({ section }: {| section: string |}): {|
 
       const arrayOfThings: Result<$ReadOnlyArray<{ ... }>> = isObject(data)
         .flatMap(isNotNull)
+        .flatMap(getValueWithKey("data"))
+        .flatMap(isObject)
+        .flatMap(isNotNull)
         .flatMap(getValueWithKey("items"))
         .flatMap(isObject)
         .flatMap(isNotNull)
@@ -54,6 +68,14 @@ export function useGalleryListing({ section }: {| section: string |}): {|
         .flatMap((array) =>
           Result.all(...array.map((m) => isObject(m).flatMap(isNotNull)))
         );
+
+      arrayOfThings
+        .map((x) => console.debug(x))
+        .orElseGet((errors) => {
+          errors.forEach((e) => {
+            console.error(e);
+          });
+        });
 
       // setGalleryListing(foo7);
     } catch (e) {
