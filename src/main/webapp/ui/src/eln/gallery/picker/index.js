@@ -50,6 +50,7 @@ import useViewportDimensions from "../../../util/useViewportDimensions";
 import { darken } from "@mui/system";
 import useGalleryListing from "./useGalleryListing";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
+import Fade from "@mui/material/Fade";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -490,8 +491,10 @@ function Picker({
               sx={{ height: "100%", flexWrap: "nowrap" }}
             >
               <Grid item>
-                <Typography variant="h3">
-                  {gallerySectionLabel[selected]}
+                <Typography variant="h3" key={selected}>
+                  <Fade in={true} timeout={1000}>
+                    <div>{gallerySectionLabel[selected]}</div>
+                  </Fade>
                 </Typography>
                 <Breadcrumbs
                   separator="›"
