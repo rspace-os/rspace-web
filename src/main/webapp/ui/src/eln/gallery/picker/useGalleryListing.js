@@ -2,7 +2,7 @@
 
 import React from "react";
 import axios from "axios";
-import { Optional, getByKey } from "../../../util/optional";
+import { getByKey } from "../../../util/optional";
 import { Result } from "../../../util/result";
 
 type GalleryFile = {|
@@ -12,11 +12,6 @@ type GalleryFile = {|
   type: string,
   thumbnailUrl: string,
 |};
-
-const check =
-  <T>(predicate: (T) => boolean): ((T) => Optional<T>) =>
-  (t: T): Optional<T> =>
-    predicate(t) ? Optional.present(t) : Optional.empty();
 
 export default function useGalleryListing({
   section,
@@ -52,10 +47,18 @@ export default function useGalleryListing({
         Array.isArray(m)
           ? Result.Ok(m)
           : Result.Error([new TypeError("Is not an array")]);
+      const isString = (m: mixed): Result<string> =>
+        typeof m === "string"
+          ? Result.Ok(m)
+          : Result.Error([new TypeError("Is not a string")]);
+      const isNumber = (m: mixed): Result<number> =>
+        typeof m === "number"
+          ? Result.Ok(m)
+          : Result.Error([new TypeError("Is not a number")]);
       const getValueWithKey = (key: string) => (obj: { ... }) =>
         getByKey(key, obj).toResult(() => new Error(`key '${key}' is missing`));
 
-      const arrayOfThings: Result<$ReadOnlyArray<{ ... }>> = isObject(data)
+      const arrayOfThings: Result<$ReadOnlyArray<GalleryFile>> = isObject(data)
         .flatMap(isNotNull)
         .flatMap(getValueWithKey("data"))
         .flatMap(isObject)
@@ -66,7 +69,25 @@ export default function useGalleryListing({
         .flatMap(getValueWithKey("results"))
         .flatMap(isArray)
         .flatMap((array) =>
-          Result.all(...array.map((m) => isObject(m).flatMap(isNotNull)))
+          Result.all(
+            ...array.map((m) =>
+              isObject(m)
+                .flatMap(isNotNull)
+                .map((obj) => {
+                  const idR = getValueWithKey("name")(obj).flatMap(isNumber);
+                  const nameR = getValueWithKey("name")(obj).flatMap(isString);
+                  const modificationDateR =
+                    getValueWithKey("modificationDate")(obj).flatMap(isNumber);
+                  const typeR = getValueWithKey("type")(obj).flatMap(isString);
+                  return {
+                    id: idR.orElse(0),
+                    name: nameR.orElse(""),
+                    modificationDate: modificationDateR.orElse(0),
+                    type: typeR.orElse(""),
+                  };
+                })
+            )
+          )
         );
 
       arrayOfThings
