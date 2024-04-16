@@ -484,12 +484,9 @@ function Picker({
               </Grid>
               <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
                 <Grid container spacing={2}>
-                  <FileCard filename="Aminoglutethimide.mol" />
-                  <FileCard
-                    filename="Thisfilehasareallylongnamethatneedstowrap"
-                    checked
-                  />
-                  <FileCard filename="Thisfilehasareallylongnamethatneedstowrap_itssolongthatitwrapsontomanymanylines" />
+                  {galleryListing.map((file) => (
+                    <FileCard filename={file.name} key={file.id} />
+                  ))}
                 </Grid>
               </Grid>
             </Grid>

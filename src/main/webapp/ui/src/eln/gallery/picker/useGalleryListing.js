@@ -18,10 +18,10 @@ export default function useGalleryListing({
 }: {|
   section: string,
 |}): {|
-  galleryListing: Array<GalleryFile>,
+  galleryListing: $ReadOnlyArray<GalleryFile>,
 |} {
   const [galleryListing, setGalleryListing] = React.useState<
-    Array<GalleryFile>
+    $ReadOnlyArray<GalleryFile>
   >([]);
 
   async function getGalleryFiles(params: {| section: string |}): Promise<void> {
@@ -58,45 +58,51 @@ export default function useGalleryListing({
       const getValueWithKey = (key: string) => (obj: { ... }) =>
         getByKey(key, obj).toResult(() => new Error(`key '${key}' is missing`));
 
-      const arrayOfThings: Result<$ReadOnlyArray<GalleryFile>> = isObject(data)
-        .flatMap(isNotNull)
-        .flatMap(getValueWithKey("data"))
-        .flatMap(isObject)
-        .flatMap(isNotNull)
-        .flatMap(getValueWithKey("items"))
-        .flatMap(isObject)
-        .flatMap(isNotNull)
-        .flatMap(getValueWithKey("results"))
-        .flatMap(isArray)
-        .flatMap((array) =>
-          Result.all(
-            ...array.map((m) =>
-              isObject(m)
-                .flatMap(isNotNull)
-                .map((obj) => {
-                  const idR = getValueWithKey("name")(obj).flatMap(isNumber);
-                  const nameR = getValueWithKey("name")(obj).flatMap(isString);
-                  const modificationDateR =
-                    getValueWithKey("modificationDate")(obj).flatMap(isNumber);
-                  const typeR = getValueWithKey("type")(obj).flatMap(isString);
-                  return {
-                    id: idR.orElse(0),
-                    name: nameR.orElse(""),
-                    modificationDate: modificationDateR.orElse(0),
-                    type: typeR.orElse(""),
-                  };
-                })
-            )
-          )
-        );
-
-      arrayOfThings
-        .map((x) => console.debug(x))
-        .orElseGet((errors) => {
-          errors.forEach((e) => {
-            console.error(e);
-          });
-        });
+      setGalleryListing(
+        isObject(data)
+          .flatMap(isNotNull)
+          .flatMap(getValueWithKey("data"))
+          .flatMap(isObject)
+          .flatMap(isNotNull)
+          .flatMap(getValueWithKey("items"))
+          .flatMap(isObject)
+          .flatMap(isNotNull)
+          .flatMap(getValueWithKey("results"))
+          .flatMap(isArray)
+          .flatMap((array) => {
+            if (array.length === 0)
+              return Result.Ok<$ReadOnlyArray<GalleryFile>>([]);
+            return Result.all(
+              ...array.map((m) =>
+                isObject(m)
+                  .flatMap(isNotNull)
+                  .map((obj) => {
+                    const idR = getValueWithKey("name")(obj).flatMap(isNumber);
+                    const nameR =
+                      getValueWithKey("name")(obj).flatMap(isString);
+                    const modificationDateR =
+                      getValueWithKey("modificationDate")(obj).flatMap(
+                        isNumber
+                      );
+                    const typeR =
+                      getValueWithKey("type")(obj).flatMap(isString);
+                    return {
+                      id: idR.orElse(0),
+                      name: nameR.orElse(""),
+                      modificationDate: modificationDateR.orElse(0),
+                      type: typeR.orElse(""),
+                    };
+                  })
+              )
+            );
+          })
+          .orElseGet((errors) => {
+            errors.forEach((e) => {
+              console.error(e);
+            });
+            return [];
+          })
+      );
 
       // setGalleryListing(foo7);
     } catch (e) {
