@@ -42,7 +42,7 @@ import Divider from "@mui/material/Divider";
 import Chip from "@mui/material/Chip";
 import createAccentedTheme from "../../../accentedTheme";
 import { COLORS as baseThemeColors } from "../../../theme";
-import ChemistryIcon from "./ChemistryIcon";
+import ChemistryIcon from "./chemistryIcon";
 import Avatar from "@mui/material/Avatar";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Grow from "@mui/material/Grow";
