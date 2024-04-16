@@ -161,8 +161,8 @@ const SelectedDrawerTabIndicator = styled(({ className }) => (
   transition: "top 0.4s ease-in-out",
 }));
 
-const FileCard = styled(({ filename, className, checked }) => (
-  <Grid item xs={6} sm={4} md={3}>
+const FileCard = styled(({ file, className, checked }) => (
+  <Grid item xs={6} sm={4} md={3} lg={2}>
     <Card elevation={0} className={className}>
       <Grid container direction="column" height="100%" flexWrap="nowrap">
         <Grid
