@@ -607,6 +607,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
           },
         },
+        MuiAvatar: {
+          styleOverrides: {
+            root: {
+              backgroundColor: "rgb(255,255,255)",
+              color: mainAccentColor,
+            },
+          },
+        },
       },
     })
   );

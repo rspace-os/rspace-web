@@ -49,6 +49,7 @@ import Grow from "@mui/material/Grow";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { darken } from "@mui/system";
 import useGalleryListing from "./useGalleryListing";
+import FileIcon from "@mui/icons-material/InsertDriveFile";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -179,13 +180,17 @@ const FileCard = styled(({ file, className, checked }) => (
           }}
         >
           <Avatar
-            src="/images/icons/chemistry-file.png"
+            src={file.thumbnailUrl}
+            variant="rounded"
             sx={{
               width: "auto",
               height: "100%",
               aspectRatio: "1 / 1",
+              fontSize: "5em",
             }}
-          />
+          >
+            <FileIcon fontSize="inherit" />
+          </Avatar>
         </Grid>
         <Grid
           item
@@ -229,7 +234,7 @@ const FileCard = styled(({ file, className, checked }) => (
                 "-webkit-box-orient": "vertical",
               }}
             >
-              {filename}
+              {file.name}
             </Typography>
           </Grid>
         </Grid>
@@ -485,7 +490,7 @@ function Picker({
               <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
                 <Grid container spacing={2}>
                   {galleryListing.map((file) => (
-                    <FileCard filename={file.name} key={file.id} />
+                    <FileCard file={file} key={file.id} />
                   ))}
                 </Grid>
               </Grid>

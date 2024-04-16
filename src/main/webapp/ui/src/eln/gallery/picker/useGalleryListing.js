@@ -13,6 +13,145 @@ type GalleryFile = {|
   thumbnailUrl: string,
 |};
 
+/**
+ * These are all the files types for which we have a thumbnail specific for the
+ * file type.
+ */
+function getIconPathForExtension(extension: string) {
+  const chemFileExtensions = [
+    "skc",
+    "mrv",
+    "cxsmiles",
+    "cxsmarts",
+    "cdx",
+    "cdxml",
+    "csrdf",
+    "cml",
+    "csmol",
+    "cssdf",
+    "csrxn",
+    "mol",
+    "mol2",
+    "pdb",
+    "rxn",
+    "rdf",
+    "smiles",
+    "smarts",
+    "sdf",
+    "inchi",
+  ];
+  const dnaFiles = [
+    "fa",
+    "gb",
+    "gbk",
+    "fasta",
+    "fa",
+    "dna",
+    "seq",
+    "sbd",
+    "embl",
+    "ab1",
+  ];
+  const iconOfSameName = [
+    "avi",
+    "bmp",
+    "doc",
+    "docx",
+    "flv",
+    "gif",
+    "jpg",
+    "jpeg",
+    "m4v",
+    "mov",
+    "mp3",
+    "mp4",
+    "mpg",
+    "ods",
+    "odp",
+    "csv",
+    "pps",
+    "odt",
+    "pdf",
+    "png",
+    "rtf",
+    "wav",
+    "wma",
+    "wmv",
+    "xls",
+    "xlsx",
+    "xml",
+    "zip",
+  ];
+
+  const ext = extension.toLowerCase();
+  if (chemFileExtensions.includes(ext))
+    return "/images/icons/chemistry-file.png";
+  if (dnaFiles.includes(ext)) return "/images/icons/dna-file.svg";
+  if (iconOfSameName.includes(ext)) return `/images/icons/${ext}.png`;
+  return (
+    {
+      htm: "/images/icons/html.png",
+      html: "/images/icons/html.png",
+      ppt: "/images/icons/powerpoint.png",
+      pptx: "/images/icons/powerpoint.png",
+      txt: "/images/icons/txt.png",
+      text: "/images/icons/txt.png",
+      md: "/images/icons/txt.png",
+    }[ext] ?? "/images/icons/unknownDocument.png"
+  );
+}
+
+/**
+ * For some file types we generate thumbnails of the content. For others we
+ * have thumbnails to represent all files of that type.
+ */
+function generateIconSrc(
+  type: string,
+  extension: string,
+  thumbnailId: number,
+  id: number,
+  modificationDate: number
+) {
+  // TODO: when exactly can id be null?
+  if (type === "Image")
+    return `/gallery/getThumbnail/${id}/${modificationDate}`;
+  if ((type === "Documents" || type === "PdfDocuments") && id !== null)
+    return `/image/docThumbnail/${id}/${thumbnailId ?? "none"}`;
+  if (type === "Chemistry")
+    return `/gallery/getChemThumbnail/${id}/${modificationDate}`;
+  return getIconPathForExtension(extension);
+}
+
+function mkGalleryFile({
+  id,
+  name,
+  modificationDate,
+  type,
+  extension,
+  thumbnailId,
+}: {|
+  id: number,
+  name: string,
+  modificationDate: number,
+  type: string,
+  extension: string,
+  thumbnailId: number,
+|}): GalleryFile {
+  return {
+    id,
+    name,
+    modificationDate,
+    type,
+    thumbnailUrl: generateIconSrc(
+      type,
+      extension,
+      thumbnailId,
+      id,
+      modificationDate
+    ),
+  };
+}
+
 export default function useGalleryListing({
   section,
 }: {|
@@ -77,7 +216,12 @@ export default function useGalleryListing({
                 isObject(m)
                   .flatMap(isNotNull)
                   .map((obj) => {
-                    const idR = getValueWithKey("name")(obj).flatMap(isNumber);
+                    const idR = getValueWithKey("id")(obj)
+                      .flatMap(isNumber)
+                      .mapError((errors) => {
+                        console.error(errors[0]);
+                        return errors[0];
+                      });
                     const nameR =
                       getValueWithKey("name")(obj).flatMap(isString);
                     const modificationDateR =
@@ -86,12 +230,23 @@ export default function useGalleryListing({
                       );
                     const typeR =
                       getValueWithKey("type")(obj).flatMap(isString);
-                    return {
+                    const extensionR =
+                      getValueWithKey("extension")(obj).flatMap(isString);
+                    // TODO: thumbnailIdR could be null
+                    const thumbnailIdR = getValueWithKey("thumbnailId")(obj)
+                      .flatMap(isNumber)
+                      .mapError((errors) => {
+                        console.error(errors[0]);
+                        return errors[0];
+                      });
+                    return mkGalleryFile({
                       id: idR.orElse(0),
                       name: nameR.orElse(""),
                       modificationDate: modificationDateR.orElse(0),
                       type: typeR.orElse(""),
-                    };
+                      extension: extensionR.orElse(""),
+                      thumbnailId: thumbnailIdR.orElse(0),
+                    });
                   })
               )
             );
