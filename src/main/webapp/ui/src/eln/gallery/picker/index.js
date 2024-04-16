@@ -88,6 +88,19 @@ const COLOR = {
   },
 };
 
+const gallerySectionLabel = {
+  Images: "images",
+  Audios: "audio",
+  Videos: "videos",
+  Documents: "documents",
+  Chemistry: "chemistry",
+  DMPs: "dmps",
+  NetworkFiles: "filestores",
+  Snippets: "snippets",
+  Miscellaneous: "miscellaneous",
+  PdfDocuments: "exports",
+};
+
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-container > .MuiPaper-root": {
     width: "1000px",
@@ -346,7 +359,7 @@ function Picker({
             />
             <List sx={{ position: "static" }}>
               <DrawerTab
-                label="images"
+                label={gallerySectionLabel.Images}
                 icon={<FaIcon icon="image" />}
                 index={0}
                 drawerOpen={drawerOpen}
@@ -357,7 +370,7 @@ function Picker({
                 }}
               />
               <DrawerTab
-                label="audio"
+                label={gallerySectionLabel.Audios}
                 icon={<FaIcon icon="volume-low" />}
                 index={1}
                 drawerOpen={drawerOpen}
@@ -368,7 +381,7 @@ function Picker({
                 }}
               />
               <DrawerTab
-                label="videos"
+                label={gallerySectionLabel.Videos}
                 icon={<FaIcon icon="film" />}
                 index={2}
                 drawerOpen={drawerOpen}
@@ -379,7 +392,7 @@ function Picker({
                 }}
               />
               <DrawerTab
-                label="documents"
+                label={gallerySectionLabel.Documents}
                 icon={<FaIcon icon="file" />}
                 index={3}
                 drawerOpen={drawerOpen}
@@ -390,7 +403,7 @@ function Picker({
                 }}
               />
               <DrawerTab
-                label="chemistry"
+                label={gallerySectionLabel.Chemistry}
                 icon={<ChemistryIcon />}
                 index={4}
                 drawerOpen={drawerOpen}
@@ -401,7 +414,7 @@ function Picker({
                 }}
               />
               <DrawerTab
-                label="dmps"
+                label={gallerySectionLabel.DMPs}
                 icon={<FaIcon icon="file-invoice" />}
                 index={5}
                 drawerOpen={drawerOpen}
@@ -412,7 +425,7 @@ function Picker({
                 }}
               />
               <DrawerTab
-                label="filestores"
+                label={gallerySectionLabel.NetworkFiles}
                 icon={<FaIcon icon="database" />}
                 index={6}
                 drawerOpen={drawerOpen}
@@ -423,7 +436,7 @@ function Picker({
                 }}
               />
               <DrawerTab
-                label="snippets"
+                label={gallerySectionLabel.Snippets}
                 icon={<FaIcon icon="fa-regular fa-note-sticky" />}
                 index={7}
                 drawerOpen={drawerOpen}
@@ -434,7 +447,7 @@ function Picker({
                 }}
               />
               <DrawerTab
-                label="miscellaneous"
+                label={gallerySectionLabel.Miscellaneous}
                 icon={<FaIcon icon="shapes" />}
                 index={8}
                 drawerOpen={drawerOpen}
@@ -448,7 +461,7 @@ function Picker({
             <Divider />
             <List sx={{ position: "static" }}>
               <DrawerTab
-                label="exports"
+                label={gallerySectionLabel.PdfDocuments}
                 icon={<FaIcon icon="fa-circle-down" />}
                 index={9}
                 drawerOpen={drawerOpen}
@@ -477,7 +490,9 @@ function Picker({
               sx={{ height: "100%", flexWrap: "nowrap" }}
             >
               <Grid item>
-                <Typography variant="h3">chemistry</Typography>
+                <Typography variant="h3">
+                  {gallerySectionLabel[selected]}
+                </Typography>
                 <Breadcrumbs
                   separator="›"
                   aria-label="breadcrumb"
