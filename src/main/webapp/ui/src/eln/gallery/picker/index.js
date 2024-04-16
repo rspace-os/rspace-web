@@ -287,8 +287,8 @@ function Picker({
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(181);
-  const [selected, setSelected] = React.useState("chemistry");
-  const { galleryListing } = useGalleryListing({ section: "Chemistry" });
+  const [selected, setSelected] = React.useState("Chemistry");
+  const { galleryListing } = useGalleryListing({ section: selected });
 
   return (
     <CustomDialog
@@ -345,9 +345,9 @@ function Picker({
                 icon={<FaIcon icon="image" />}
                 index={0}
                 drawerOpen={drawerOpen}
-                selected={selected === "images"}
+                selected={selected === "Images"}
                 onClick={(event) => {
-                  setSelected("images");
+                  setSelected("Images");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -356,9 +356,9 @@ function Picker({
                 icon={<FaIcon icon="volume-low" />}
                 index={1}
                 drawerOpen={drawerOpen}
-                selected={selected === "audio"}
+                selected={selected === "Audios"}
                 onClick={(event) => {
-                  setSelected("audio");
+                  setSelected("Audios");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -367,9 +367,9 @@ function Picker({
                 icon={<FaIcon icon="film" />}
                 index={2}
                 drawerOpen={drawerOpen}
-                selected={selected === "videos"}
+                selected={selected === "Videos"}
                 onClick={(event) => {
-                  setSelected("videos");
+                  setSelected("Videos");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -378,9 +378,9 @@ function Picker({
                 icon={<FaIcon icon="file" />}
                 index={3}
                 drawerOpen={drawerOpen}
-                selected={selected === "documents"}
+                selected={selected === "Documents"}
                 onClick={(event) => {
-                  setSelected("documents");
+                  setSelected("Documents");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -389,9 +389,9 @@ function Picker({
                 icon={<ChemistryIcon />}
                 index={4}
                 drawerOpen={drawerOpen}
-                selected={selected === "chemistry"}
+                selected={selected === "Chemistry"}
                 onClick={(event) => {
-                  setSelected("chemistry");
+                  setSelected("Chemistry");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -400,9 +400,9 @@ function Picker({
                 icon={<FaIcon icon="file-invoice" />}
                 index={5}
                 drawerOpen={drawerOpen}
-                selected={selected === "dmps"}
+                selected={selected === "DMPs"}
                 onClick={(event) => {
-                  setSelected("dmps");
+                  setSelected("DMPs");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -411,9 +411,9 @@ function Picker({
                 icon={<FaIcon icon="database" />}
                 index={6}
                 drawerOpen={drawerOpen}
-                selected={selected === "filestores"}
+                selected={selected === "NetworkFiles"}
                 onClick={(event) => {
-                  setSelected("filestores");
+                  setSelected("NetworkFiles");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -422,9 +422,9 @@ function Picker({
                 icon={<FaIcon icon="fa-regular fa-note-sticky" />}
                 index={7}
                 drawerOpen={drawerOpen}
-                selected={selected === "snippets"}
+                selected={selected === "Snippets"}
                 onClick={(event) => {
-                  setSelected("snippets");
+                  setSelected("Snippets");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -433,9 +433,9 @@ function Picker({
                 icon={<FaIcon icon="shapes" />}
                 index={8}
                 drawerOpen={drawerOpen}
-                selected={selected === "miscellaneous"}
+                selected={selected === "Miscellaneous"}
                 onClick={(event) => {
-                  setSelected("miscellaneous");
+                  setSelected("Miscellaneous");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -447,9 +447,9 @@ function Picker({
                 icon={<FaIcon icon="fa-circle-down" />}
                 index={9}
                 drawerOpen={drawerOpen}
-                selected={selected === "exports"}
+                selected={selected === "PdfDocuments"}
                 onClick={(event) => {
-                  setSelected("exports");
+                  setSelected("PdfDocuments");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
