@@ -121,7 +121,7 @@ const CustomDialog = styled(Dialog)(({ theme }) => ({
 
 const CustomDrawer = styled(Drawer)(({ open }) => ({
   width: open ? "200px" : "64px",
-  transition: "width .25s ease-in-out",
+  transition: "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
   "& .MuiPaper-root": {
     position: "relative",
     overflowX: "hidden",
@@ -143,7 +143,7 @@ const DrawerTab = styled(
 )(({ drawerOpen }) => ({
   position: "static",
   "& .MuiListItemText-root": {
-    transition: "all .2s ease-in-out",
+    transition: "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
     opacity: drawerOpen ? 1 : 0,
     transform: drawerOpen ? "unset" : "translateX(-20px)",
     textTransform: "uppercase",
@@ -172,7 +172,7 @@ const SelectedDrawerTabIndicator = styled(({ className }) => (
   backgroundColor: `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
   position: "absolute",
   top: verticalPosition,
-  transition: "top 0.4s ease-in-out",
+  transition: "top 400ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
 }));
 
 const FileCard = styled(({ file, className, checked }) => (
