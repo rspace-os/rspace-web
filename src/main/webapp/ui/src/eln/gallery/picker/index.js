@@ -177,7 +177,9 @@ const SelectedDrawerTabIndicator = styled(({ className }) => (
 ))(({ verticalPosition }) => ({
   width: "198px",
   height: "43px",
-  backgroundColor: `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+  backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
+    ? "black"
+    : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
   position: "absolute",
   top: verticalPosition,
   transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -266,7 +268,11 @@ const FileCard = styled(({ file, className, checked, index }) => {
                     flexGrow: 1,
                     ...(checked
                       ? {
-                          backgroundColor: "#35afef",
+                          backgroundColor: window.matchMedia(
+                            "(prefers-contrast: more)"
+                          ).matches
+                            ? "black"
+                            : "#35afef",
                           p: 0.25,
                           borderRadius: "4px",
                           mx: 0.5,
@@ -276,10 +282,22 @@ const FileCard = styled(({ file, className, checked, index }) => {
                 >
                   <Typography
                     sx={{
-                      color: checked
-                        ? `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`
-                        : `hsl(${COLOR.contrastText.hue} ${COLOR.contrastText.saturation}% ${COLOR.contrastText.lightness}% / 100%)`,
+                      ...(checked
+                        ? {
+                            color: window.matchMedia("(prefers-contrast: more)")
+                              .matches
+                              ? "white"
+                              : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
+                          }
+                        : {}),
+                      // color: checked
+                      //   ? `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`
+                      //   : `hsl(${COLOR.contrastText.hue} ${COLOR.contrastText.saturation}% ${COLOR.contrastText.lightness}% / 100%)`,
                       fontSize: "0.8125rem",
+                      fontWeight: window.matchMedia("(prefers-contrast: more)")
+                        .matches
+                        ? 700
+                        : 400,
 
                       // wrap onto a second line, but use an ellipsis after that
                       overflowWrap: "anywhere",
@@ -302,9 +320,13 @@ const FileCard = styled(({ file, className, checked, index }) => {
   );
 })(({ checked }) => ({
   height: "150px",
-  border: checked
-    ? `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`
-    : `2px solid hsl(${COLOR.main.hue} ${COLOR.main.saturation}% ${COLOR.main.lightness}%)`,
+  ...(checked
+    ? {
+        border: window.matchMedia("(prefers-contrast: more)").matches
+          ? "2px solid black"
+          : `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+      }
+    : {}),
   borderRadius: "8px",
   boxShadow: checked ? "none" : "hsl(19 66% 20% / 20%) 0px 2px 8px 0px",
 }));
