@@ -2,7 +2,7 @@
 
 import Dialog from "@mui/material/Dialog";
 import React, { type Node, type ElementConfig, type Ref } from "react";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider, styled } from "@mui/material/styles";
 import DialogContent from "@mui/material/DialogContent";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
@@ -17,7 +17,6 @@ import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
-import styled from "@mui/material/styles/styled";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
