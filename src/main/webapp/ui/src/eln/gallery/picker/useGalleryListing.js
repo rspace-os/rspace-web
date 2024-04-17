@@ -203,6 +203,10 @@ export default function useGalleryListing({
           : Result.Error([new TypeError("Not an object")]);
       const isNotNull = <T>(b: T | null): Result<T> =>
         b === null ? Result.Error<T>([new TypeError("Is null")]) : Result.Ok(b);
+      const isNull = <T>(b: T | null): Result<null> =>
+        b === null
+          ? Result.Ok(b)
+          : Result.Error<null>([new TypeError("Is not null")]);
       const isArray = (m: mixed): Result<$ReadOnlyArray<mixed>> =>
         Array.isArray(m)
           ? Result.Ok(m)
@@ -246,14 +250,8 @@ export default function useGalleryListing({
                       ),
                       getValueWithKey("type")(obj).flatMap(isString),
                       getValueWithKey("extension")(obj).flatMap(isString),
-                      getValueWithKey("thumbnailId")(obj).flatMap<
-                        number | null
-                      >((t) =>
-                        typeof t === "number" || t === null
-                          ? Result.Ok(t)
-                          : Result.Error([
-                              new Error("thumbnailId must be number or null"),
-                            ])
+                      getValueWithKey("thumbnailId")(obj).flatMap((t) =>
+                        isNumber(t).orElseTry(() => isNull(t))
                       )
                     );
                   })
