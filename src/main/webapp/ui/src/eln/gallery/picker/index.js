@@ -178,86 +178,111 @@ const SelectedDrawerTabIndicator = styled(({ className }) => (
   transition: "top 400ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
 }));
 
-const FileCard = styled(({ file, className, checked }) => (
-  <Grid item xs={6} sm={4} md={3} lg={2}>
-    <Card elevation={0} className={className}>
-      <Grid container direction="column" height="100%" flexWrap="nowrap">
-        <Grid
-          item
-          sx={{
-            flexShrink: 0,
-            padding: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "calc(100% - 9999999px)",
-            flexDirection: "column",
-            flexGrow: 1,
-          }}
-        >
-          <Avatar
-            src={file.thumbnailUrl}
-            variant="rounded"
-            sx={{
-              width: "auto",
-              height: "100%",
-              aspectRatio: "1 / 1",
-              fontSize: "5em",
-            }}
-          >
-            <FileIcon fontSize="inherit" />
-          </Avatar>
-        </Grid>
-        <Grid
-          item
-          container
-          direction="row"
-          flexWrap="nowrap"
-          alignItems="baseline"
-          sx={{
-            padding: "8px",
-            paddingTop: 0,
-          }}
-        >
-          <Grid
-            item
-            sx={{
-              textAlign: "center",
-              flexGrow: 1,
-              ...(checked
-                ? {
-                    backgroundColor: "#35afef",
-                    p: 0.25,
-                    borderRadius: "4px",
-                    mx: 0.5,
-                  }
-                : {}),
-            }}
-          >
-            <Typography
-              sx={{
-                color: checked
-                  ? `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`
-                  : `hsl(${COLOR.contrastText.hue} ${COLOR.contrastText.saturation}% ${COLOR.contrastText.lightness}% / 100%)`,
-                fontSize: "0.8125rem",
+const FileCard = styled(({ file, className, checked, index }) => {
+  const viewportDimensions = useViewportDimensions();
+  const cardWidth = {
+    xs: 6,
+    sm: 4,
+    md: 3,
+    lg: 2,
+    xl: 2,
+  };
 
-                // wrap onto a second line, but use an ellipsis after that
-                overflowWrap: "anywhere",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "-webkit-box",
-                "-webkit-line-clamp": "2",
-                "-webkit-box-orient": "vertical",
+  return (
+    <Fade in={true} timeout={400}>
+      <Grid
+        item
+        {...cardWidth}
+        sx={{
+          /*
+           * This way, the animation takes the same amount of time (36ms) for
+           * each row of cards
+           */
+          transitionDelay: `${
+            (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
+          }ms !important`,
+        }}
+      >
+        <Card elevation={0} className={className}>
+          <Grid container direction="column" height="100%" flexWrap="nowrap">
+            <Grid
+              item
+              sx={{
+                flexShrink: 0,
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "calc(100% - 9999999px)",
+                flexDirection: "column",
+                flexGrow: 1,
               }}
             >
-              {file.name}
-            </Typography>
+              <Avatar
+                src={file.thumbnailUrl}
+                variant="rounded"
+                sx={{
+                  width: "auto",
+                  height: "100%",
+                  aspectRatio: "1 / 1",
+                  fontSize: "5em",
+                }}
+              >
+                <FileIcon fontSize="inherit" />
+              </Avatar>
+            </Grid>
+            <Grid
+              item
+              container
+              direction="row"
+              flexWrap="nowrap"
+              alignItems="baseline"
+              sx={{
+                padding: "8px",
+                paddingTop: 0,
+              }}
+            >
+              <Grid
+                item
+                sx={{
+                  textAlign: "center",
+                  flexGrow: 1,
+                  ...(checked
+                    ? {
+                        backgroundColor: "#35afef",
+                        p: 0.25,
+                        borderRadius: "4px",
+                        mx: 0.5,
+                      }
+                    : {}),
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: checked
+                      ? `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`
+                      : `hsl(${COLOR.contrastText.hue} ${COLOR.contrastText.saturation}% ${COLOR.contrastText.lightness}% / 100%)`,
+                    fontSize: "0.8125rem",
+
+                    // wrap onto a second line, but use an ellipsis after that
+                    overflowWrap: "anywhere",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    "-webkit-line-clamp": "2",
+                    "-webkit-box-orient": "vertical",
+                  }}
+                >
+                  {file.name}
+                </Typography>
+              </Grid>
+            </Grid>
           </Grid>
-        </Grid>
+        </Card>
       </Grid>
-    </Card>
-  </Grid>
-))(({ checked }) => ({
+    </Fade>
+  );
+})(({ checked }) => ({
   height: "150px",
   border: checked
     ? `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`
@@ -541,8 +566,8 @@ function Picker({
               </Grid>
               <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
                 <Grid container spacing={2}>
-                  {galleryListing.map((file) => (
-                    <FileCard file={file} key={file.id} />
+                  {galleryListing.map((file, index) => (
+                    <FileCard file={file} key={file.id} index={index} />
                   ))}
                 </Grid>
               </Grid>

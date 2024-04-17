@@ -169,6 +169,7 @@ export default function useGalleryListing({
     section: string,
     searchTerm: string,
   |}): Promise<void> {
+    setGalleryListing([]);
     try {
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
