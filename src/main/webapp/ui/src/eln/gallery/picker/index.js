@@ -53,6 +53,7 @@ import FileIcon from "@mui/icons-material/InsertDriveFile";
 import Fade from "@mui/material/Fade";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import CloseIcon from "@mui/icons-material/Close";
+import CardActionArea from "@mui/material/CardActionArea";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -92,16 +93,16 @@ const COLOR = {
 };
 
 const gallerySectionLabel = {
-  Images: "images",
-  Audios: "audio",
-  Videos: "videos",
-  Documents: "documents",
-  Chemistry: "chemistry",
-  DMPs: "dmps",
-  NetworkFiles: "filestores",
-  Snippets: "snippets",
-  Miscellaneous: "miscellaneous",
-  PdfDocuments: "exports",
+  Images: "Images",
+  Audios: "Audio",
+  Videos: "Videos",
+  Documents: "Documents",
+  Chemistry: "Chemistry",
+  DMPs: "DMPs",
+  NetworkFiles: "Filestores",
+  Snippets: "Snippets",
+  Miscellaneous: "Miscellaneous",
+  PdfDocuments: "Exports",
 };
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
@@ -204,80 +205,82 @@ const FileCard = styled(({ file, className, checked, index }) => {
         }}
       >
         <Card elevation={0} className={className}>
-          <Grid container direction="column" height="100%" flexWrap="nowrap">
-            <Grid
-              item
-              sx={{
-                flexShrink: 0,
-                padding: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "calc(100% - 9999999px)",
-                flexDirection: "column",
-                flexGrow: 1,
-              }}
-            >
-              <Avatar
-                src={file.thumbnailUrl}
-                variant="rounded"
-                sx={{
-                  width: "auto",
-                  height: "100%",
-                  aspectRatio: "1 / 1",
-                  fontSize: "5em",
-                }}
-              >
-                <FileIcon fontSize="inherit" />
-              </Avatar>
-            </Grid>
-            <Grid
-              item
-              container
-              direction="row"
-              flexWrap="nowrap"
-              alignItems="baseline"
-              sx={{
-                padding: "8px",
-                paddingTop: 0,
-              }}
-            >
+          <CardActionArea onClick={() => file.open?.()}>
+            <Grid container direction="column" height="100%" flexWrap="nowrap">
               <Grid
                 item
                 sx={{
-                  textAlign: "center",
+                  flexShrink: 0,
+                  padding: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "calc(100% - 9999999px)",
+                  flexDirection: "column",
                   flexGrow: 1,
-                  ...(checked
-                    ? {
-                        backgroundColor: "#35afef",
-                        p: 0.25,
-                        borderRadius: "4px",
-                        mx: 0.5,
-                      }
-                    : {}),
                 }}
               >
-                <Typography
+                <Avatar
+                  src={file.thumbnailUrl}
+                  variant="rounded"
                   sx={{
-                    color: checked
-                      ? `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`
-                      : `hsl(${COLOR.contrastText.hue} ${COLOR.contrastText.saturation}% ${COLOR.contrastText.lightness}% / 100%)`,
-                    fontSize: "0.8125rem",
-
-                    // wrap onto a second line, but use an ellipsis after that
-                    overflowWrap: "anywhere",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    "-webkit-line-clamp": "2",
-                    "-webkit-box-orient": "vertical",
+                    width: "auto",
+                    height: "100%",
+                    aspectRatio: "1 / 1",
+                    fontSize: "5em",
                   }}
                 >
-                  {file.name}
-                </Typography>
+                  <FileIcon fontSize="inherit" />
+                </Avatar>
+              </Grid>
+              <Grid
+                item
+                container
+                direction="row"
+                flexWrap="nowrap"
+                alignItems="baseline"
+                sx={{
+                  padding: "8px",
+                  paddingTop: 0,
+                }}
+              >
+                <Grid
+                  item
+                  sx={{
+                    textAlign: "center",
+                    flexGrow: 1,
+                    ...(checked
+                      ? {
+                          backgroundColor: "#35afef",
+                          p: 0.25,
+                          borderRadius: "4px",
+                          mx: 0.5,
+                        }
+                      : {}),
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      color: checked
+                        ? `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`
+                        : `hsl(${COLOR.contrastText.hue} ${COLOR.contrastText.saturation}% ${COLOR.contrastText.lightness}% / 100%)`,
+                      fontSize: "0.8125rem",
+
+                      // wrap onto a second line, but use an ellipsis after that
+                      overflowWrap: "anywhere",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      "-webkit-line-clamp": "2",
+                      "-webkit-box-orient": "vertical",
+                    }}
+                  >
+                    {file.name}
+                  </Typography>
+                </Grid>
               </Grid>
             </Grid>
-          </Grid>
+          </CardActionArea>
         </Card>
       </Grid>
     </Fade>
@@ -342,7 +345,7 @@ function Picker({
   const [selected, setSelected] = React.useState("Chemistry");
   const [searchTerm, setSearchTerm] = React.useState("");
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
-  const { galleryListing } = useGalleryListing({
+  const { galleryListing, path, clearPath } = useGalleryListing({
     section: selected,
     searchTerm: appliedSearchTerm,
   });
@@ -560,8 +563,22 @@ function Picker({
                   aria-label="breadcrumb"
                   sx={{ mt: 1 }}
                 >
-                  <Chip size="small" clickable label="Chemistry" />
-                  <Chip size="small" clickable label="Examples" />
+                  <Chip
+                    size="small"
+                    clickable
+                    label={gallerySectionLabel[selected]}
+                    onClick={() => clearPath()}
+                  />
+                  {path.map((folder) => (
+                    <Chip
+                      size="small"
+                      clickable
+                      label={folder.name}
+                      key={folder.id}
+                      disabled={!folder.open}
+                      onClick={() => folder.open?.()}
+                    />
+                  ))}
                 </Breadcrumbs>
               </Grid>
               <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>

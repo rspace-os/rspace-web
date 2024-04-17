@@ -11,6 +11,7 @@ type GalleryFile = {|
   modificationDate: number,
   type: string,
   thumbnailUrl: string,
+  open?: () => void,
 |};
 
 /**
@@ -130,37 +131,6 @@ function generateIconSrc(
   return getIconPathForExtension(extension);
 }
 
-function mkGalleryFile({
-  id,
-  name,
-  modificationDate,
-  type,
-  extension,
-  thumbnailId,
-}: {|
-  id: number,
-  name: string,
-  modificationDate: number,
-  type: string,
-  extension: string,
-  thumbnailId: number | null,
-|}): GalleryFile {
-  return {
-    id,
-    name,
-    modificationDate,
-    type,
-    thumbnailUrl: generateIconSrc(
-      name,
-      type,
-      extension,
-      thumbnailId,
-      id,
-      modificationDate
-    ),
-  };
-}
-
 export default function useGalleryListing({
   section,
   searchTerm,
@@ -169,10 +139,52 @@ export default function useGalleryListing({
   searchTerm: string,
 |}): {|
   galleryListing: $ReadOnlyArray<GalleryFile>,
+  path: $ReadOnlyArray<GalleryFile>,
+  clearPath: () => void,
 |} {
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
+  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+
+  function mkGalleryFile({
+    id,
+    name,
+    modificationDate,
+    type,
+    extension,
+    thumbnailId,
+  }: {|
+    id: number,
+    name: string,
+    modificationDate: number,
+    type: string,
+    extension: string,
+    thumbnailId: number | null,
+  |}): GalleryFile {
+    const ret: GalleryFile = {
+      id,
+      name,
+      modificationDate,
+      type,
+      thumbnailUrl: generateIconSrc(
+        name,
+        type,
+        extension,
+        thumbnailId,
+        id,
+        modificationDate
+      ),
+      ...(/Folder/.test(type)
+        ? {
+            open: () => {
+              setPath([...path, ret]);
+            },
+          }
+        : {}),
+    };
+    return ret;
+  }
 
   async function getGalleryFiles(params: {|
     section: string,
@@ -183,7 +195,8 @@ export default function useGalleryListing({
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: params.section,
-          currentFolderId: "0",
+          currentFolderId:
+            path.length > 0 ? `${path[path.length - 1].id}` : "0",
           name: searchTerm,
           pageNumber: "0",
           sortOrder: "DESC",
@@ -287,9 +300,11 @@ export default function useGalleryListing({
 
   React.useEffect(() => {
     void getGalleryFiles({ section, searchTerm });
-  }, [section, searchTerm]);
+  }, [section, searchTerm, path]);
 
   return {
     galleryListing,
+    path,
+    clearPath: () => setPath([]),
   };
 }
