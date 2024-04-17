@@ -302,6 +302,10 @@ export default function useGalleryListing({
     void getGalleryFiles({ section, searchTerm });
   }, [section, searchTerm, path]);
 
+  React.useEffect(() => {
+    setPath([]);
+  }, [section]);
+
   return {
     galleryListing,
     path,
