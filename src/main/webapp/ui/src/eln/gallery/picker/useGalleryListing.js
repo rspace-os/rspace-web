@@ -154,8 +154,10 @@ function mkGalleryFile({
 
 export default function useGalleryListing({
   section,
+  searchTerm,
 }: {|
   section: string,
+  searchTerm: string,
 |}): {|
   galleryListing: $ReadOnlyArray<GalleryFile>,
 |} {
@@ -163,13 +165,16 @@ export default function useGalleryListing({
     $ReadOnlyArray<GalleryFile>
   >([]);
 
-  async function getGalleryFiles(params: {| section: string |}): Promise<void> {
+  async function getGalleryFiles(params: {|
+    section: string,
+    searchTerm: string,
+  |}): Promise<void> {
     try {
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: params.section,
           currentFolderId: "0",
-          name: "",
+          name: searchTerm,
           pageNumber: "0",
           sortOrder: "DESC",
           orderBy: "",
@@ -266,8 +271,8 @@ export default function useGalleryListing({
   }
 
   React.useEffect(() => {
-    void getGalleryFiles({ section });
-  }, [section]);
+    void getGalleryFiles({ section, searchTerm });
+  }, [section, searchTerm]);
 
   return {
     galleryListing,

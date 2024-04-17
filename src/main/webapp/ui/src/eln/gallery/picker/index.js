@@ -51,6 +51,8 @@ import { darken } from "@mui/system";
 import useGalleryListing from "./useGalleryListing";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import Fade from "@mui/material/Fade";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import CloseIcon from "@mui/icons-material/Close";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -295,6 +297,12 @@ const CustomGrow = React.forwardRef<ElementConfig<typeof Grow>, {||}>(
 );
 CustomGrow.displayName = "CustomGrow";
 
+const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
+  color: theme.palette.standardIcon.main,
+  height: 20,
+  width: 20,
+}));
+
 function Picker({
   open,
   onClose,
@@ -307,7 +315,12 @@ function Picker({
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(181);
   const [selected, setSelected] = React.useState("Chemistry");
-  const { galleryListing } = useGalleryListing({ section: selected });
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
+  const { galleryListing } = useGalleryListing({
+    section: selected,
+    searchTerm: appliedSearchTerm,
+  });
 
   return (
     <CustomDialog
@@ -329,24 +342,45 @@ function Picker({
             Gallery
           </Typography>
           <Box flexGrow={1}></Box>
-          <TextField
-            placeholder="Search"
-            sx={{
-              /*
-               * This is so that it doesn't obscure the "Gallery" heading on
-               * very small mobile viewports
-               */
-              maxWidth: isViewportSmall ? 184 : 300,
-              width: isViewportSmall ? 184 : 300,
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              setAppliedSearchTerm(searchTerm);
             }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
+          >
+            <TextField
+              placeholder="Search"
+              sx={{
+                /*
+                 * This is so that it doesn't obscure the "Gallery" heading on
+                 * very small mobile viewports
+                 */
+                maxWidth: isViewportSmall ? 184 : 300,
+                width: isViewportSmall ? 184 : 300,
+              }}
+              value={searchTerm}
+              onChange={({ currentTarget: { value } }) => setSearchTerm(value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment:
+                  searchTerm !== "" ? (
+                    <IconButtonWithTooltip
+                      title="Clear"
+                      icon={<StyledCloseIcon />}
+                      size="small"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setAppliedSearchTerm("");
+                      }}
+                    />
+                  ) : null,
+              }}
+            />
+          </form>
           <Box ml={1} sx={{ transform: "translateY(2px)" }}>
             <HelpLinkIcon title="Importing from Gallery help" link="#" />
           </Box>
