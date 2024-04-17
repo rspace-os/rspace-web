@@ -108,7 +108,7 @@ function getIconPathForExtension(extension: string) {
 function generateIconSrc(
   type: string,
   extension: string,
-  thumbnailId: number,
+  thumbnailId: number | null,
   id: number,
   modificationDate: number
 ) {
@@ -135,7 +135,7 @@ function mkGalleryFile({
   modificationDate: number,
   type: string,
   extension: string,
-  thumbnailId: number,
+  thumbnailId: number | null,
 |}): GalleryFile {
   return {
     id,
@@ -238,9 +238,14 @@ export default function useGalleryListing({
                       getValueWithKey("type")(obj).flatMap(isString);
                     const extensionR =
                       getValueWithKey("extension")(obj).flatMap(isString);
-                    // TODO: thumbnailIdR could be null
                     const thumbnailIdR = getValueWithKey("thumbnailId")(obj)
-                      .flatMap(isNumber)
+                      .flatMap((t) =>
+                        typeof t === "number" || t === null
+                          ? Result.Ok(t)
+                          : Result.Error([
+                              new Error("thumbnailId must be number or null"),
+                            ])
+                      )
                       .mapError((errors) => {
                         console.error(errors[0]);
                         return errors[0];
