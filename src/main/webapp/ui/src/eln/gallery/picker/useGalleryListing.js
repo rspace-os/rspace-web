@@ -3,7 +3,7 @@
 import React from "react";
 import axios from "axios";
 import { getByKey } from "../../../util/optional";
-import { Result } from "../../../util/result";
+import { Result, lift6 } from "../../../util/result";
 
 export type GalleryFile = {|
   id: number,
@@ -147,21 +147,14 @@ export default function useGalleryListing({
   >([]);
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
 
-  function mkGalleryFile({
-    id,
-    name,
-    modificationDate,
-    type,
-    extension,
-    thumbnailId,
-  }: {|
+  function mkGalleryFile(
     id: number,
     name: string,
     modificationDate: number,
     type: string,
     extension: string,
-    thumbnailId: number | null,
-  |}): GalleryFile {
+    thumbnailId: number | null
+  ): GalleryFile {
     const ret: GalleryFile = {
       id,
       name,
@@ -243,43 +236,26 @@ export default function useGalleryListing({
               ...array.map((m) =>
                 isObject(m)
                   .flatMap(isNotNull)
-                  .map((obj) => {
-                    const idR = getValueWithKey("id")(obj)
-                      .flatMap(isNumber)
-                      .mapError((errors) => {
-                        console.error(errors[0]);
-                        return errors[0];
-                      });
-                    const nameR =
-                      getValueWithKey("name")(obj).flatMap(isString);
-                    const modificationDateR =
+                  .flatMap((obj) => {
+                    return lift6(
+                      mkGalleryFile,
+                      getValueWithKey("id")(obj).flatMap(isNumber),
+                      getValueWithKey("name")(obj).flatMap(isString),
                       getValueWithKey("modificationDate")(obj).flatMap(
                         isNumber
-                      );
-                    const typeR =
-                      getValueWithKey("type")(obj).flatMap(isString);
-                    const extensionR =
-                      getValueWithKey("extension")(obj).flatMap(isString);
-                    const thumbnailIdR = getValueWithKey("thumbnailId")(obj)
-                      .flatMap((t) =>
+                      ),
+                      getValueWithKey("type")(obj).flatMap(isString),
+                      getValueWithKey("extension")(obj).flatMap(isString),
+                      getValueWithKey("thumbnailId")(obj).flatMap<
+                        number | null
+                      >((t) =>
                         typeof t === "number" || t === null
                           ? Result.Ok(t)
                           : Result.Error([
                               new Error("thumbnailId must be number or null"),
                             ])
                       )
-                      .mapError((errors) => {
-                        console.error(errors[0]);
-                        return errors[0];
-                      });
-                    return mkGalleryFile({
-                      id: idR.orElse(0),
-                      name: nameR.orElse(""),
-                      modificationDate: modificationDateR.orElse(0),
-                      type: typeR.orElse(""),
-                      extension: extensionR.orElse(""),
-                      thumbnailId: thumbnailIdR.orElse(0),
-                    });
+                    );
                   })
               )
             );
