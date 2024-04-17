@@ -48,7 +48,7 @@ import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Grow from "@mui/material/Grow";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { darken } from "@mui/system";
-import useGalleryListing from "./useGalleryListing";
+import useGalleryListing, { type GalleryFile } from "./useGalleryListing";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import Fade from "@mui/material/Fade";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
@@ -187,148 +187,165 @@ const SelectedDrawerTabIndicator = styled(({ className }) => (
     : "top 400ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
 }));
 
-const FileCard = styled(({ file, className, checked, index }) => {
-  const viewportDimensions = useViewportDimensions();
-  const cardWidth = {
-    xs: 6,
-    sm: 4,
-    md: 3,
-    lg: 2,
-    xl: 2,
-  };
+const FileCard = styled(
+  ({ file, className, selected, index, setSelectedFile }) => {
+    const viewportDimensions = useViewportDimensions();
+    const cardWidth = {
+      xs: 6,
+      sm: 4,
+      md: 3,
+      lg: 2,
+      xl: 2,
+    };
 
-  return (
-    <Fade
-      in={true}
-      timeout={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400
-      }
-    >
-      <Grid
-        item
-        {...cardWidth}
-        sx={{
-          /*
-           * This way, the animation takes the same amount of time (36ms) for
-           * each row of cards
-           */
-          transitionDelay: window.matchMedia("(prefers-reduced-motion: reduce)")
-            .matches
-            ? "0s"
-            : `${
-                (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
-              }ms !important`,
-        }}
+    return (
+      <Fade
+        in={true}
+        timeout={
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? 0
+            : 400
+        }
       >
-        <Card elevation={0} className={className}>
-          <CardActionArea onClick={() => file.open?.()} sx={{ height: "100%" }}>
-            <Grid container direction="column" height="100%" flexWrap="nowrap">
+        <Grid
+          item
+          {...cardWidth}
+          sx={{
+            /*
+             * This way, the animation takes the same amount of time (36ms) for
+             * each row of cards
+             */
+            transitionDelay: window.matchMedia(
+              "(prefers-reduced-motion: reduce)"
+            ).matches
+              ? "0s"
+              : `${
+                  (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
+                }ms !important`,
+          }}
+        >
+          <Card elevation={0} className={className}>
+            <CardActionArea
+              onClick={() => (file.open ?? setSelectedFile)()}
+              sx={{ height: "100%" }}
+            >
               <Grid
-                item
-                sx={{
-                  flexShrink: 0,
-                  padding: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "calc(100% - 9999999px)",
-                  flexDirection: "column",
-                  flexGrow: 1,
-                }}
-              >
-                <Avatar
-                  src={file.thumbnailUrl}
-                  variant="rounded"
-                  sx={{
-                    width: "auto",
-                    height: "100%",
-                    aspectRatio: "1 / 1",
-                    fontSize: "5em",
-                    backgroundColor: "transparent",
-                  }}
-                >
-                  <FileIcon fontSize="inherit" />
-                </Avatar>
-              </Grid>
-              <Grid
-                item
                 container
-                direction="row"
+                direction="column"
+                height="100%"
                 flexWrap="nowrap"
-                alignItems="baseline"
-                sx={{
-                  padding: "8px",
-                  paddingTop: 0,
-                }}
               >
                 <Grid
                   item
                   sx={{
-                    textAlign: "center",
+                    flexShrink: 0,
+                    padding: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "calc(100% - 9999999px)",
+                    flexDirection: "column",
                     flexGrow: 1,
-                    ...(checked
-                      ? {
-                          backgroundColor: window.matchMedia(
-                            "(prefers-contrast: more)"
-                          ).matches
-                            ? "black"
-                            : "#35afef",
-                          p: 0.25,
-                          borderRadius: "4px",
-                          mx: 0.5,
-                        }
-                      : {}),
                   }}
                 >
-                  <Typography
+                  <Avatar
+                    src={file.thumbnailUrl}
+                    variant="rounded"
                     sx={{
-                      ...(checked
-                        ? {
-                            color: window.matchMedia("(prefers-contrast: more)")
-                              .matches
-                              ? "white"
-                              : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-                          }
-                        : {}),
-                      // color: checked
-                      //   ? `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`
-                      //   : `hsl(${COLOR.contrastText.hue} ${COLOR.contrastText.saturation}% ${COLOR.contrastText.lightness}% / 100%)`,
-                      fontSize: "0.8125rem",
-                      fontWeight: window.matchMedia("(prefers-contrast: more)")
-                        .matches
-                        ? 700
-                        : 400,
-
-                      // wrap onto a second line, but use an ellipsis after that
-                      overflowWrap: "anywhere",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      display: "-webkit-box",
-                      "-webkit-line-clamp": "2",
-                      "-webkit-box-orient": "vertical",
+                      width: "auto",
+                      height: "100%",
+                      aspectRatio: "1 / 1",
+                      fontSize: "5em",
+                      backgroundColor: "transparent",
                     }}
                   >
-                    {file.name}
-                  </Typography>
+                    <FileIcon fontSize="inherit" />
+                  </Avatar>
+                </Grid>
+                <Grid
+                  item
+                  container
+                  direction="row"
+                  flexWrap="nowrap"
+                  alignItems="baseline"
+                  sx={{
+                    padding: "8px",
+                    paddingTop: 0,
+                  }}
+                >
+                  <Grid
+                    item
+                    sx={{
+                      textAlign: "center",
+                      flexGrow: 1,
+                      ...(selected
+                        ? {
+                            backgroundColor: window.matchMedia(
+                              "(prefers-contrast: more)"
+                            ).matches
+                              ? "black"
+                              : "#35afef",
+                            p: 0.25,
+                            borderRadius: "4px",
+                            mx: 0.5,
+                          }
+                        : {}),
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        ...(selected
+                          ? {
+                              color: window.matchMedia(
+                                "(prefers-contrast: more)"
+                              ).matches
+                                ? "white"
+                                : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
+                            }
+                          : {}),
+                        fontSize: "0.8125rem",
+                        fontWeight: window.matchMedia(
+                          "(prefers-contrast: more)"
+                        ).matches
+                          ? 700
+                          : 400,
+
+                        // wrap onto a second line, but use an ellipsis after that
+                        overflowWrap: "anywhere",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        "-webkit-line-clamp": "2",
+                        "-webkit-box-orient": "vertical",
+                      }}
+                    >
+                      {file.name}
+                    </Typography>
+                  </Grid>
                 </Grid>
               </Grid>
-            </Grid>
-          </CardActionArea>
-        </Card>
-      </Grid>
-    </Fade>
-  );
-})(({ checked }) => ({
+            </CardActionArea>
+          </Card>
+        </Grid>
+      </Fade>
+    );
+  }
+)(({ selected }) => ({
   height: "150px",
-  ...(checked
+  ...(selected
     ? {
         border: window.matchMedia("(prefers-contrast: more)").matches
           ? "2px solid black"
           : `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        "&:hover": {
+          border: window.matchMedia("(prefers-contrast: more)").matches
+            ? "2px solid black !important"
+            : `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%) !important`,
+        },
       }
     : {}),
   borderRadius: "8px",
-  boxShadow: checked ? "none" : "hsl(19 66% 20% / 20%) 0px 2px 8px 0px",
+  boxShadow: selected ? "none" : "hsl(19 66% 20% / 20%) 0px 2px 8px 0px",
 }));
 
 export default function Wrapper({
@@ -380,6 +397,9 @@ function Picker({
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(181);
   const [selectedSection, setSelectedSection] = React.useState("Chemistry");
+  const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
+    null
+  );
   const [searchTerm, setSearchTerm] = React.useState("");
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const { galleryListing, path, clearPath } = useGalleryListing({
@@ -629,7 +649,13 @@ function Picker({
               <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
                 <Grid container spacing={2}>
                   {galleryListing.map((file, index) => (
-                    <FileCard file={file} key={file.id} index={index} />
+                    <FileCard
+                      selected={file === selectedFile}
+                      file={file}
+                      key={file.id}
+                      index={index}
+                      setSelectedFile={() => setSelectedFile(file)}
+                    />
                   ))}
                 </Grid>
               </Grid>
@@ -637,7 +663,15 @@ function Picker({
           </DialogContent>
           <DialogActions>
             <Button onClick={() => onClose()}>Cancel</Button>
-            <Button variant="contained">Add</Button>
+            <Button
+              disabled={!selectedFile}
+              variant="contained"
+              onClick={() => {
+                alert("Yet to be implemented!");
+              }}
+            >
+              Add
+            </Button>
           </DialogActions>
         </Box>
       </Box>

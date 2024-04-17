@@ -5,7 +5,7 @@ import axios from "axios";
 import { getByKey } from "../../../util/optional";
 import { Result } from "../../../util/result";
 
-type GalleryFile = {|
+export type GalleryFile = {|
   id: number,
   name: string,
   modificationDate: number,
