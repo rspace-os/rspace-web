@@ -106,6 +106,7 @@ function getIconPathForExtension(extension: string) {
  * have thumbnails to represent all files of that type.
  */
 function generateIconSrc(
+  name: string,
   type: string,
   extension: string,
   thumbnailId: number | null,
@@ -113,6 +114,13 @@ function generateIconSrc(
   modificationDate: number
 ) {
   // TODO: when exactly can id be null?
+  if (/Folder/.test(type)) {
+    if (/System/.test(type)) {
+      if (/snippets/i.test(name)) return "/images/icons/folder-shared.png";
+      return "/images/icons/folder-api-inbox.png";
+    }
+    return "/images/icons/folder.png";
+  }
   if (type === "Image")
     return `/gallery/getThumbnail/${id}/${modificationDate}`;
   if ((type === "Documents" || type === "PdfDocuments") && id !== null)
@@ -143,6 +151,7 @@ function mkGalleryFile({
     modificationDate,
     type,
     thumbnailUrl: generateIconSrc(
+      name,
       type,
       extension,
       thumbnailId,
