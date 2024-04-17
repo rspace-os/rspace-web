@@ -379,11 +379,11 @@ function Picker({
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(181);
-  const [selected, setSelected] = React.useState("Chemistry");
+  const [selectedSection, setSelectedSection] = React.useState("Chemistry");
   const [searchTerm, setSearchTerm] = React.useState("");
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const { galleryListing, path, clearPath } = useGalleryListing({
-    section: selected,
+    section: selectedSection,
     searchTerm: appliedSearchTerm,
   });
 
@@ -463,9 +463,9 @@ function Picker({
                 icon={<FaIcon icon="image" />}
                 index={0}
                 drawerOpen={drawerOpen}
-                selected={selected === "Images"}
+                selected={selectedSection === "Images"}
                 onClick={(event) => {
-                  setSelected("Images");
+                  setSelectedSection("Images");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -474,9 +474,9 @@ function Picker({
                 icon={<FaIcon icon="volume-low" />}
                 index={1}
                 drawerOpen={drawerOpen}
-                selected={selected === "Audios"}
+                selected={selectedSection === "Audios"}
                 onClick={(event) => {
-                  setSelected("Audios");
+                  setSelectedSection("Audios");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -485,9 +485,9 @@ function Picker({
                 icon={<FaIcon icon="film" />}
                 index={2}
                 drawerOpen={drawerOpen}
-                selected={selected === "Videos"}
+                selected={selectedSection === "Videos"}
                 onClick={(event) => {
-                  setSelected("Videos");
+                  setSelectedSection("Videos");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -496,9 +496,9 @@ function Picker({
                 icon={<FaIcon icon="file" />}
                 index={3}
                 drawerOpen={drawerOpen}
-                selected={selected === "Documents"}
+                selected={selectedSection === "Documents"}
                 onClick={(event) => {
-                  setSelected("Documents");
+                  setSelectedSection("Documents");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -507,9 +507,9 @@ function Picker({
                 icon={<ChemistryIcon />}
                 index={4}
                 drawerOpen={drawerOpen}
-                selected={selected === "Chemistry"}
+                selected={selectedSection === "Chemistry"}
                 onClick={(event) => {
-                  setSelected("Chemistry");
+                  setSelectedSection("Chemistry");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -518,9 +518,9 @@ function Picker({
                 icon={<FaIcon icon="file-invoice" />}
                 index={5}
                 drawerOpen={drawerOpen}
-                selected={selected === "DMPs"}
+                selected={selectedSection === "DMPs"}
                 onClick={(event) => {
-                  setSelected("DMPs");
+                  setSelectedSection("DMPs");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -529,9 +529,9 @@ function Picker({
                 icon={<FaIcon icon="database" />}
                 index={6}
                 drawerOpen={drawerOpen}
-                selected={selected === "NetworkFiles"}
+                selected={selectedSection === "NetworkFiles"}
                 onClick={(event) => {
-                  setSelected("NetworkFiles");
+                  setSelectedSection("NetworkFiles");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -540,9 +540,9 @@ function Picker({
                 icon={<FaIcon icon="fa-regular fa-note-sticky" />}
                 index={7}
                 drawerOpen={drawerOpen}
-                selected={selected === "Snippets"}
+                selected={selectedSection === "Snippets"}
                 onClick={(event) => {
-                  setSelected("Snippets");
+                  setSelectedSection("Snippets");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -551,9 +551,9 @@ function Picker({
                 icon={<FaIcon icon="shapes" />}
                 index={8}
                 drawerOpen={drawerOpen}
-                selected={selected === "Miscellaneous"}
+                selected={selectedSection === "Miscellaneous"}
                 onClick={(event) => {
-                  setSelected("Miscellaneous");
+                  setSelectedSection("Miscellaneous");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -565,9 +565,9 @@ function Picker({
                 icon={<FaIcon icon="fa-circle-down" />}
                 index={9}
                 drawerOpen={drawerOpen}
-                selected={selected === "PdfDocuments"}
+                selected={selectedSection === "PdfDocuments"}
                 onClick={(event) => {
-                  setSelected("PdfDocuments");
+                  setSelectedSection("PdfDocuments");
                   setSelectedIndicatorOffset(event.currentTarget.offsetTop);
                 }}
               />
@@ -590,7 +590,7 @@ function Picker({
               sx={{ height: "100%", flexWrap: "nowrap" }}
             >
               <Grid item>
-                <Typography variant="h3" key={selected}>
+                <Typography variant="h3" key={selectedSection}>
                   <Fade
                     in={true}
                     timeout={
@@ -600,7 +600,7 @@ function Picker({
                         : 1000
                     }
                   >
-                    <div>{gallerySectionLabel[selected]}</div>
+                    <div>{gallerySectionLabel[selectedSection]}</div>
                   </Fade>
                 </Typography>
                 <Breadcrumbs
@@ -611,7 +611,7 @@ function Picker({
                   <Chip
                     size="small"
                     clickable
-                    label={gallerySectionLabel[selected]}
+                    label={gallerySectionLabel[selectedSection]}
                     onClick={() => clearPath()}
                   />
                   {path.map((folder) => (
