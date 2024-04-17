@@ -292,6 +292,22 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
           },
         },
+        MuiCard: {
+          styleOverrides: {
+            root: {
+              border: accentedBorder,
+              "&:has(.MuiCardActionArea-root)": {
+                "&:hover": {
+                  backgroundColor: "white",
+                  borderColor: darken(
+                    accentedBackground,
+                    hoverDarkenCoefficient
+                  ),
+                },
+              },
+            },
+          },
+        },
         MuiButton: {
           defaultProps: {
             disableElevation: true,

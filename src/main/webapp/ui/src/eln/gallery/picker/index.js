@@ -205,7 +205,7 @@ const FileCard = styled(({ file, className, checked, index }) => {
         }}
       >
         <Card elevation={0} className={className}>
-          <CardActionArea onClick={() => file.open?.()}>
+          <CardActionArea onClick={() => file.open?.()} sx={{ height: "100%" }}>
             <Grid container direction="column" height="100%" flexWrap="nowrap">
               <Grid
                 item
@@ -228,6 +228,7 @@ const FileCard = styled(({ file, className, checked, index }) => {
                     height: "100%",
                     aspectRatio: "1 / 1",
                     fontSize: "5em",
+                    backgroundColor: "transparent",
                   }}
                 >
                   <FileIcon fontSize="inherit" />
