@@ -221,17 +221,20 @@ export default function useGalleryListing({
           : Result.Error([new TypeError("Is not a number")]);
       const getValueWithKey = (key: string) => (obj: { ... }) =>
         getByKey(key, obj).toResult(() => new Error(`key '${key}' is missing`));
+      const parsePath = (
+        path_: $ReadOnlyArray<string>,
+        obj: mixed
+      ): Result<mixed> => {
+        if (path_.length === 0) return Result.Ok(obj);
+        const [head, ...tail] = path_;
+        return isObject(obj)
+          .flatMap(isNotNull)
+          .flatMap(getValueWithKey(head))
+          .flatMap((x) => parsePath(tail, x));
+      };
 
       setGalleryListing(
-        isObject(data)
-          .flatMap(isNotNull)
-          .flatMap(getValueWithKey("data"))
-          .flatMap(isObject)
-          .flatMap(isNotNull)
-          .flatMap(getValueWithKey("items"))
-          .flatMap(isObject)
-          .flatMap(isNotNull)
-          .flatMap(getValueWithKey("results"))
+        parsePath(["data", "items", "results"], data)
           .flatMap(isArray)
           .flatMap((array) => {
             if (array.length === 0)
