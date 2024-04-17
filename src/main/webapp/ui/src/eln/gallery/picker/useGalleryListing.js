@@ -2,8 +2,8 @@
 
 import React from "react";
 import axios from "axios";
-import { getByKey } from "../../../util/optional";
 import { Result, lift6 } from "../../../util/result";
+import * as Parsers from "../../../util/parsers";
 
 export type GalleryFile = {|
   id: number,
@@ -197,64 +197,36 @@ export default function useGalleryListing({
         }),
       });
 
-      const isObject = (m: mixed): Result<{ ... } | null> =>
-        typeof m === "object"
-          ? Result.Ok(m)
-          : Result.Error([new TypeError("Not an object")]);
-      const isNotNull = <T>(b: T | null): Result<T> =>
-        b === null ? Result.Error<T>([new TypeError("Is null")]) : Result.Ok(b);
-      const isNull = <T>(b: T | null): Result<null> =>
-        b === null
-          ? Result.Ok(b)
-          : Result.Error<null>([new TypeError("Is not null")]);
-      const isArray = (m: mixed): Result<$ReadOnlyArray<mixed>> =>
-        Array.isArray(m)
-          ? Result.Ok(m)
-          : Result.Error([new TypeError("Is not an array")]);
-      const isString = (m: mixed): Result<string> =>
-        typeof m === "string"
-          ? Result.Ok(m)
-          : Result.Error([new TypeError("Is not a string")]);
-      const isNumber = (m: mixed): Result<number> =>
-        typeof m === "number"
-          ? Result.Ok(m)
-          : Result.Error([new TypeError("Is not a number")]);
-      const getValueWithKey = (key: string) => (obj: { ... }) =>
-        getByKey(key, obj).toResult(() => new Error(`key '${key}' is missing`));
-      const parsePath = (
-        path_: $ReadOnlyArray<string>,
-        obj: mixed
-      ): Result<mixed> => {
-        if (path_.length === 0) return Result.Ok(obj);
-        const [head, ...tail] = path_;
-        return isObject(obj)
-          .flatMap(isNotNull)
-          .flatMap(getValueWithKey(head))
-          .flatMap((x) => parsePath(tail, x));
-      };
-
       setGalleryListing(
-        parsePath(["data", "items", "results"], data)
-          .flatMap(isArray)
+        Parsers.objectPath(["data", "items", "results"], data)
+          .flatMap(Parsers.isArray)
           .flatMap((array) => {
             if (array.length === 0)
               return Result.Ok<$ReadOnlyArray<GalleryFile>>([]);
             return Result.all(
               ...array.map((m) =>
-                isObject(m)
-                  .flatMap(isNotNull)
+                Parsers.isObject(m)
+                  .flatMap(Parsers.isNotNull)
                   .flatMap((obj) => {
                     return lift6(
                       mkGalleryFile,
-                      getValueWithKey("id")(obj).flatMap(isNumber),
-                      getValueWithKey("name")(obj).flatMap(isString),
-                      getValueWithKey("modificationDate")(obj).flatMap(
-                        isNumber
+                      Parsers.getValueWithKey("id")(obj).flatMap(
+                        Parsers.isNumber
                       ),
-                      getValueWithKey("type")(obj).flatMap(isString),
-                      getValueWithKey("extension")(obj).flatMap(isString),
-                      getValueWithKey("thumbnailId")(obj).flatMap((t) =>
-                        isNumber(t).orElseTry(() => isNull(t))
+                      Parsers.getValueWithKey("name")(obj).flatMap(
+                        Parsers.isString
+                      ),
+                      Parsers.getValueWithKey("modificationDate")(obj).flatMap(
+                        Parsers.isNumber
+                      ),
+                      Parsers.getValueWithKey("type")(obj).flatMap(
+                        Parsers.isString
+                      ),
+                      Parsers.getValueWithKey("extension")(obj).flatMap(
+                        Parsers.isString
+                      ),
+                      Parsers.getValueWithKey("thumbnailId")(obj).flatMap((t) =>
+                        Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
                       )
                     );
                   })
