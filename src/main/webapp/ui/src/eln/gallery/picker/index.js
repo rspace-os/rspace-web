@@ -125,7 +125,9 @@ const CustomDialog = styled(Dialog)(({ theme }) => ({
 
 const CustomDrawer = styled(Drawer)(({ open }) => ({
   width: open ? "200px" : "64px",
-  transition: "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
+  transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ? "none"
+    : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
   "& .MuiPaper-root": {
     position: "relative",
     overflowX: "hidden",
@@ -147,7 +149,9 @@ const DrawerTab = styled(
 )(({ drawerOpen }) => ({
   position: "static",
   "& .MuiListItemText-root": {
-    transition: "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+    transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "none"
+      : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
     opacity: drawerOpen ? 1 : 0,
     transform: drawerOpen ? "unset" : "translateX(-20px)",
     textTransform: "uppercase",
@@ -176,7 +180,9 @@ const SelectedDrawerTabIndicator = styled(({ className }) => (
   backgroundColor: `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
   position: "absolute",
   top: verticalPosition,
-  transition: "top 400ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
+  transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ? "none"
+    : "top 400ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
 }));
 
 const FileCard = styled(({ file, className, checked, index }) => {
@@ -190,7 +196,12 @@ const FileCard = styled(({ file, className, checked, index }) => {
   };
 
   return (
-    <Fade in={true} timeout={400}>
+    <Fade
+      in={true}
+      timeout={
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400
+      }
+    >
       <Grid
         item
         {...cardWidth}
@@ -199,9 +210,12 @@ const FileCard = styled(({ file, className, checked, index }) => {
            * This way, the animation takes the same amount of time (36ms) for
            * each row of cards
            */
-          transitionDelay: `${
-            (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
-          }ms !important`,
+          transitionDelay: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "0s"
+            : `${
+                (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
+              }ms !important`,
         }}
       >
         <Card elevation={0} className={className}>
@@ -555,7 +569,15 @@ function Picker({
             >
               <Grid item>
                 <Typography variant="h3" key={selected}>
-                  <Fade in={true} timeout={1000}>
+                  <Fade
+                    in={true}
+                    timeout={
+                      window.matchMedia("(prefers-reduced-motion: reduce)")
+                        .matches
+                        ? 0
+                        : 1000
+                    }
+                  >
                     <div>{gallerySectionLabel[selected]}</div>
                   </Fade>
                 </Typography>
