@@ -225,6 +225,8 @@ const FileCard = styled(
         >
           <Card elevation={0} className={className}>
             <CardActionArea
+              role={file.open ? "button" : "radio"}
+              aria-checked={selected}
               onClick={() => (file.open ?? setSelectedFile)()}
               sx={{ height: "100%" }}
             >
@@ -249,6 +251,9 @@ const FileCard = styled(
                 >
                   <Avatar
                     src={file.thumbnailUrl}
+                    imgProps={{
+                      role: "presentation",
+                    }}
                     variant="rounded"
                     sx={{
                       width: "auto",
@@ -418,13 +423,14 @@ function Picker({
       <AppBar position="relative" open={true}>
         <Toolbar variant="dense">
           <IconButton
+            aria-label={drawerOpen ? "close drawer" : "open drawer"}
             onClick={() => {
               setDrawerOpen(!drawerOpen);
             }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="h3">
+          <Typography variant="h6" noWrap component="h2">
             Gallery
           </Typography>
           <Box flexGrow={1}></Box>
@@ -473,12 +479,17 @@ function Picker({
         </Toolbar>
       </AppBar>
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-        <CustomDrawer open={drawerOpen} anchor="left" variant="permanent">
+        <CustomDrawer
+          open={drawerOpen}
+          anchor="left"
+          variant="permanent"
+          aria-label="gallery sections drawer"
+        >
           <Box sx={{ overflowY: "auto", overflowX: "hidden" }}>
             <SelectedDrawerTabIndicator
               verticalPosition={selectedIndicatorOffset}
             />
-            <List sx={{ position: "static" }}>
+            <List sx={{ position: "static" }} role="navigation">
               <DrawerTab
                 label={gallerySectionLabel.Images}
                 icon={<FaIcon icon="image" />}
@@ -580,7 +591,7 @@ function Picker({
               />
             </List>
             <Divider />
-            <List sx={{ position: "static" }}>
+            <List sx={{ position: "static" }} role="navigation">
               <DrawerTab
                 label={gallerySectionLabel.PdfDocuments}
                 icon={<FaIcon icon="fa-circle-down" />}
@@ -603,7 +614,7 @@ function Picker({
             flexGrow: 1,
           }}
         >
-          <DialogContent>
+          <DialogContent aria-live="polite">
             <Grid
               container
               direction="column"
