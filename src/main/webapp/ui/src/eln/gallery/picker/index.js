@@ -344,7 +344,9 @@ const FileCard = styled(
       }
     : {}),
   borderRadius: "8px",
-  boxShadow: selected ? "none" : "hsl(19 66% 20% / 20%) 0px 2px 8px 0px",
+  boxShadow: selected
+    ? "none"
+    : `hsl(${COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
 }));
 
 export default function Wrapper({
