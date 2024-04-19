@@ -241,8 +241,6 @@ export default function useGalleryListing({
             return [];
           })
       );
-
-      // setGalleryListing(foo7);
     } catch (e) {
       console.error(e);
     }
