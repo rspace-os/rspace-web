@@ -38,8 +38,11 @@ import { type BlobUrl } from "../../../../stores/stores/ImageStore";
 import BigIconButton from "../../../../components/BigIconButton";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
-import GalleryPicker from "../../../../eln/gallery/picker";
 import UploadIcon from "@mui/icons-material/Publish";
+
+const GalleryPicker = React.lazy(() =>
+  import("../../../../eln/gallery/picker")
+);
 
 const CustomCardHeader = withStyles<
   ElementProps<typeof CardHeader>,
@@ -181,12 +184,16 @@ const FileSelector = ({
           ),
         }}
       />
-      <GalleryPicker
-        open={galleryDialogOpen}
-        onClose={() => {
-          setGalleryDialogOpen(false);
-        }}
-      />
+      {galleryDialogOpen && (
+        <React.Suspense fallback={<></>}>
+          <GalleryPicker
+            open={true}
+            onClose={() => {
+              setGalleryDialogOpen(false);
+            }}
+          />
+        </React.Suspense>
+      )}
     </>
   );
 };
