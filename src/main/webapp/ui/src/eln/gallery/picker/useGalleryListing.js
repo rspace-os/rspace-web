@@ -233,6 +233,22 @@ export default function useGalleryListing({
               )
             );
           })
+          .orElseTry(() => {
+            Parsers.isObject(data)
+              .flatMap(Parsers.isNotNull)
+              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+              .flatMap(Parsers.isString)
+              .do((exceptionMessage) => {
+                addAlert(
+                  mkAlert({
+                    variant: "error",
+                    title: "Error retrieving gallery files.",
+                    message: exceptionMessage,
+                  })
+                );
+              });
+            return Result.Ok<$ReadOnlyArray<GalleryFile>>([]);
+          })
           .orElseGet((errors) => {
             addAlert(
               mkAlert({
