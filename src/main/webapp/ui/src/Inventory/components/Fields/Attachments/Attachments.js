@@ -38,7 +38,7 @@ import { type BlobUrl } from "../../../../stores/stores/ImageStore";
 import BigIconButton from "../../../../components/BigIconButton";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
-import GalleryMockup from "../../../../eln/gallery/picker";
+import GalleryPicker from "../../../../eln/gallery/picker";
 import UploadIcon from "@mui/icons-material/Publish";
 
 const CustomCardHeader = withStyles<
@@ -181,7 +181,7 @@ const FileSelector = ({
           ),
         }}
       />
-      <GalleryMockup
+      <GalleryPicker
         open={galleryDialogOpen}
         onClose={() => {
           setGalleryDialogOpen(false);
