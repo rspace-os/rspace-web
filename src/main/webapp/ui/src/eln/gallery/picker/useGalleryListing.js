@@ -182,15 +182,12 @@ export default function useGalleryListing({
     return ret;
   }
 
-  async function getGalleryFiles(params: {|
-    section: string,
-    searchTerm: string,
-  |}): Promise<void> {
+  async function getGalleryFiles(): Promise<void> {
     setGalleryListing([]);
     try {
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
-          mediatype: params.section,
+          mediatype: section,
           currentFolderId:
             path.length > 0 ? `${path[path.length - 1].id}` : "0",
           name: searchTerm,
@@ -256,8 +253,8 @@ export default function useGalleryListing({
   }
 
   React.useEffect(() => {
-    void getGalleryFiles({ section, searchTerm });
-  }, [section, searchTerm, path]);
+    void getGalleryFiles();
+  }, [searchTerm, path]);
 
   React.useEffect(() => {
     setPath([]);
