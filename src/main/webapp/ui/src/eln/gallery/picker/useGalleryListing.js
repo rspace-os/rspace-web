@@ -4,6 +4,7 @@ import React from "react";
 import axios from "axios";
 import { Result, lift6 } from "../../../util/result";
 import * as Parsers from "../../../util/parsers";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 export type GalleryFile = {|
   id: number,
@@ -143,6 +144,7 @@ export default function useGalleryListing({
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
 |} {
+  const { addAlert } = React.useContext(AlertContext);
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
@@ -235,6 +237,13 @@ export default function useGalleryListing({
             );
           })
           .orElseGet((errors) => {
+            addAlert(
+              mkAlert({
+                variant: "error",
+                title: "Could not process Gallery content.",
+                message: "Please try refreshing.",
+              })
+            );
             errors.forEach((e) => {
               console.error(e);
             });
