@@ -109,7 +109,7 @@ function getIconPathForExtension(extension: string) {
 function generateIconSrc(
   name: string,
   type: string,
-  extension: string,
+  extension: string | null,
   thumbnailId: number | null,
   id: number,
   modificationDate: number
@@ -128,6 +128,7 @@ function generateIconSrc(
     return `/image/docThumbnail/${id}/${thumbnailId ?? "none"}`;
   if (type === "Chemistry")
     return `/gallery/getChemThumbnail/${id}/${modificationDate}`;
+  if (!extension) return "/images/icons/unknownDocument.png";
   return getIconPathForExtension(extension);
 }
 
@@ -152,7 +153,7 @@ export default function useGalleryListing({
     name: string,
     modificationDate: number,
     type: string,
-    extension: string,
+    extension: string | null,
     thumbnailId: number | null
   ): GalleryFile {
     const ret: GalleryFile = {
@@ -222,8 +223,8 @@ export default function useGalleryListing({
                       Parsers.getValueWithKey("type")(obj).flatMap(
                         Parsers.isString
                       ),
-                      Parsers.getValueWithKey("extension")(obj).flatMap(
-                        Parsers.isString
+                      Parsers.getValueWithKey("extension")(obj).flatMap((e) =>
+                        Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
                       ),
                       Parsers.getValueWithKey("thumbnailId")(obj).flatMap((t) =>
                         Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
