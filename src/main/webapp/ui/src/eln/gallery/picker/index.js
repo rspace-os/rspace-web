@@ -557,17 +557,6 @@ function Picker({
                 }}
               />
               <DrawerTab
-                label={gallerySectionLabel.NetworkFiles}
-                icon={<FaIcon icon="database" />}
-                index={6}
-                drawerOpen={drawerOpen}
-                selected={selectedSection === "NetworkFiles"}
-                onClick={(event) => {
-                  setSelectedSection("NetworkFiles");
-                  setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-                }}
-              />
-              <DrawerTab
                 label={gallerySectionLabel.Snippets}
                 icon={<FaIcon icon="fa-regular fa-note-sticky" />}
                 index={7}
