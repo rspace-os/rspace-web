@@ -150,7 +150,7 @@ export default function useGalleryListing({
   clearPath: () => void,
 |} {
   const { addAlert } = React.useContext(AlertContext);
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);

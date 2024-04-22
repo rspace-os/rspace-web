@@ -93,6 +93,34 @@ const COLOR = {
   },
 };
 
+const PlaceholderLabel = styled(({ children, className }) => (
+  <Grid container className={className}>
+    <Grid
+      item
+      sx={{
+        p: 1,
+        pt: 2,
+        pr: 5,
+      }}
+    >
+      {children}
+    </Grid>
+  </Grid>
+))(() => ({
+  justifyContent: "stretch",
+  alignItems: "stretch",
+  height: "100%",
+  "& > *": {
+    fontSize: "2rem",
+    fontWeight: 700,
+    color: window.matchMedia("(prefers-contrast: more)").matches
+      ? "black"
+      : "hsl(190deg, 20%, 29%, 37%)",
+    flexGrow: 1,
+    textAlign: "center",
+  },
+}));
+
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-container > .MuiPaper-root": {
     width: "1000px",
@@ -638,7 +666,7 @@ function Picker({
               </Grid>
               <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
                 {FetchingData.match(galleryListing, {
-                  loading: () => <>Loading</>,
+                  loading: () => <></>,
                   error: (error) => <>{error}</>,
                   success: (listing) =>
                     listing.tag === "list" ? (
@@ -654,7 +682,24 @@ function Picker({
                         ))}
                       </Grid>
                     ) : (
-                      <>{listing.reason}</>
+                      <div key={listing.reason}>
+                        <Fade
+                          in={true}
+                          timeout={
+                            window.matchMedia(
+                              "(prefers-reduced-motion: reduce)"
+                            ).matches
+                              ? 0
+                              : 300
+                          }
+                        >
+                          <div>
+                            <PlaceholderLabel>
+                              {listing.reason}
+                            </PlaceholderLabel>
+                          </div>
+                        </Fade>
+                      </div>
                     ),
                 })}
               </Grid>
