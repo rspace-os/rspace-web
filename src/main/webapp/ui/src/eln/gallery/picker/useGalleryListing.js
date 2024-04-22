@@ -5,6 +5,8 @@ import axios from "axios";
 import { Result, lift6 } from "../../../util/result";
 import * as Parsers from "../../../util/parsers";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import * as FetchingData from "../../../util/fetchingData";
+import { gallerySectionCollectiveNoun } from "./common";
 
 export type GalleryFile = {|
   id: number,
@@ -140,15 +142,31 @@ export default function useGalleryListing({
   section: string,
   searchTerm: string,
 |}): {|
-  galleryListing: $ReadOnlyArray<GalleryFile>,
+  galleryListing: FetchingData.Fetched<
+    | {| tag: "empty", reason: string |}
+    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
+  >,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
 |} {
   const { addAlert } = React.useContext(AlertContext);
+  const [loading, setLoading] = React.useState(false);
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+
+  function emptyReason(): string {
+    if (path.length > 0) {
+      const folderName = path[path.length - 1].name;
+      if (searchTerm !== "")
+        return `Nothing in the folder "${folderName}" matches the search term "${searchTerm}".`;
+      return `The folder "${folderName}" is empty.`;
+    }
+    if (searchTerm !== "")
+      return `There are no root-level ${gallerySectionCollectiveNoun[section]} that match the search term "${searchTerm}".`;
+    return `There are no root-level ${gallerySectionCollectiveNoun[section]}.`;
+  }
 
   function mkGalleryFile(
     id: number,
@@ -184,6 +202,7 @@ export default function useGalleryListing({
 
   async function getGalleryFiles(): Promise<void> {
     setGalleryListing([]);
+    setLoading(true);
     try {
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
@@ -265,6 +284,8 @@ export default function useGalleryListing({
       );
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -276,8 +297,21 @@ export default function useGalleryListing({
     setPath([]);
   }, [section]);
 
+  if (loading)
+    return {
+      galleryListing: { tag: "loading" },
+      path: [],
+      clearPath: () => {},
+    };
+
   return {
-    galleryListing,
+    galleryListing: {
+      tag: "success",
+      value:
+        galleryListing.length > 0
+          ? { tag: "list", list: galleryListing }
+          : { tag: "empty", reason: emptyReason() },
+    },
     path,
     clearPath: () => setPath([]),
   };

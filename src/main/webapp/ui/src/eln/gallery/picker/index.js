@@ -53,6 +53,8 @@ import Fade from "@mui/material/Fade";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import CloseIcon from "@mui/icons-material/Close";
 import CardActionArea from "@mui/material/CardActionArea";
+import * as FetchingData from "../../../util/fetchingData";
+import { gallerySectionLabel } from "./common";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -89,19 +91,6 @@ const COLOR = {
     saturation: 20,
     lightness: 29,
   },
-};
-
-const gallerySectionLabel = {
-  Images: "Images",
-  Audios: "Audio",
-  Videos: "Videos",
-  Documents: "Documents",
-  Chemistry: "Chemistry",
-  DMPs: "DMPs",
-  NetworkFiles: "Filestores",
-  Snippets: "Snippets",
-  Miscellaneous: "Miscellaneous",
-  PdfDocuments: "Exports",
 };
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
@@ -648,17 +637,26 @@ function Picker({
                 </Breadcrumbs>
               </Grid>
               <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
-                <Grid container spacing={2}>
-                  {galleryListing.map((file, index) => (
-                    <FileCard
-                      selected={file === selectedFile}
-                      file={file}
-                      key={file.id}
-                      index={index}
-                      setSelectedFile={() => setSelectedFile(file)}
-                    />
-                  ))}
-                </Grid>
+                {FetchingData.match(galleryListing, {
+                  loading: () => <>Loading</>,
+                  error: (error) => <>{error}</>,
+                  success: (listing) =>
+                    listing.tag === "list" ? (
+                      <Grid container spacing={2}>
+                        {listing.list.map((file, index) => (
+                          <FileCard
+                            selected={file === selectedFile}
+                            file={file}
+                            key={file.id}
+                            index={index}
+                            setSelectedFile={() => setSelectedFile(file)}
+                          />
+                        ))}
+                      </Grid>
+                    ) : (
+                      <>{listing.reason}</>
+                    ),
+                })}
               </Grid>
             </Grid>
           </DialogContent>
