@@ -117,7 +117,6 @@ function generateIconSrc(
   id: number,
   modificationDate: number
 ) {
-  // TODO: when exactly can id be null?
   if (/Folder/.test(type)) {
     if (/System/.test(type)) {
       if (/snippets/i.test(name)) return "/images/icons/folder-shared.png";
@@ -127,7 +126,7 @@ function generateIconSrc(
   }
   if (type === "Image")
     return `/gallery/getThumbnail/${id}/${modificationDate}`;
-  if ((type === "Documents" || type === "PdfDocuments") && id !== null)
+  if (type === "Documents" || type === "PdfDocuments")
     return `/image/docThumbnail/${id}/${thumbnailId ?? "none"}`;
   if (type === "Chemistry")
     return `/gallery/getChemThumbnail/${id}/${modificationDate}`;
