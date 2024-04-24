@@ -55,6 +55,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import CardActionArea from "@mui/material/CardActionArea";
 import * as FetchingData from "../../../util/fetchingData";
 import { gallerySectionLabel } from "./common";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import { Result } from "../../../util/result";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -707,15 +709,19 @@ function Picker({
           </DialogContent>
           <DialogActions>
             <Button onClick={() => onClose()}>Cancel</Button>
-            <Button
-              disabled={!selectedFile}
-              variant="contained"
+            <ValidatingSubmitButton
+              validationResult={
+                selectedFile
+                  ? Result.Ok(null)
+                  : Result.Error([new Error("No file selected.")])
+              }
+              loading={false}
               onClick={() => {
                 alert("Yet to be implemented!");
               }}
             >
               Add
-            </Button>
+            </ValidatingSubmitButton>
           </DialogActions>
         </Box>
       </Box>
