@@ -132,11 +132,23 @@ export type FileFieldArgs = {|
   loading?: boolean,
   name?: string,
   showSelectedFilename?: boolean,
-  triggerButton?: ({| id: string |}) => Node,
   value?: string,
   warningAlert?: string,
   explanatoryText?: string,
   containerProps?: ElementConfig<typeof Grid>,
+
+  /*
+   * This overrides the default button that triggers the opening of the
+   * operating system's file picker. If it is set, then some of the props
+   * listed above are ignored:
+   *   - InputProps
+   *   - buttonLabel
+   *   - icon
+   *   - warningAlert
+   *   - explanatoryText
+   *   - containerProps
+   */
+  triggerButton?: ({| id: string |}) => Node,
 |};
 
 function FileField({
