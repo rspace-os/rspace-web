@@ -432,6 +432,10 @@ function Picker({
     searchTerm: appliedSearchTerm,
   });
 
+  React.useEffect(() => {
+    setSelectedFile(null);
+  }, [selectedSection, appliedSearchTerm, path]);
+
   return (
     <CustomDialog
       open={open}
