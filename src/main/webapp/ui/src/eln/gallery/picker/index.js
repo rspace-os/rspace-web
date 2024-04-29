@@ -121,6 +121,9 @@ const PlaceholderLabel = styled(({ children, className }) => (
       : "hsl(190deg, 20%, 29%, 37%)",
     flexGrow: 1,
     textAlign: "center",
+
+    overflowWrap: "anywhere",
+    overflow: "hidden",
   },
 }));
 
@@ -692,13 +695,14 @@ const Picker = observer(
                   <Breadcrumbs
                     separator="›"
                     aria-label="breadcrumb"
-                    sx={{ mt: 1 }}
+                    sx={{ mt: 0.5 }}
                   >
                     <Chip
                       size="small"
                       clickable
                       label={gallerySectionLabel[selectedSection]}
                       onClick={() => clearPath()}
+                      sx={{ mt: 0.5 }}
                     />
                     {path.map((folder) => (
                       <Chip
@@ -708,6 +712,7 @@ const Picker = observer(
                         key={folder.id}
                         disabled={!folder.open}
                         onClick={() => folder.open?.()}
+                        sx={{ mt: 0.5 }}
                       />
                     ))}
                   </Breadcrumbs>
