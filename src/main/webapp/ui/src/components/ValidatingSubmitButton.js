@@ -36,11 +36,10 @@ type ValidatingSubmitButtonArgs = {|
   progress?: Progress,
 |};
 
-const StyledPopover = styled(Popover)(({ theme }) => ({
+const StyledPopover = styled(Popover)(() => ({
   "& > .MuiPaper-root": {
     padding: "2px",
-    transform: `translateY(-${theme.spacing(1)}) !important`,
-    transitionDelay: "200ms !important",
+    transitionDelay: "150ms !important",
   },
 }));
 
@@ -116,9 +115,10 @@ export default function ValidatingSubmitButton({
           horizontal: "center",
         }}
         transformOrigin={{
-          vertical: "bottom",
+          vertical: 60,
           horizontal: "center",
         }}
+        transitionDuration={300}
         onClose={() => setAnchorEl(null)}
         PaperProps={{
           role: "dialog",
