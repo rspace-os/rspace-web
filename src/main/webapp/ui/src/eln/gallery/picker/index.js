@@ -455,9 +455,11 @@ function Picker({
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="h2">
-            Gallery
-          </Typography>
+          {(!viewport.isViewportVerySmall || !showTextfield) && (
+            <Typography variant="h6" noWrap component="h2">
+              Gallery
+            </Typography>
+          )}
           <Box flexGrow={1}></Box>
           {viewport.isViewportVerySmall && !showTextfield && (
             <IconButton
@@ -474,6 +476,7 @@ function Picker({
           <Box
             mr={1}
             sx={{
+              flexGrow: viewport.isViewportSmall ? 1 : 0,
               display:
                 !viewport.isViewportVerySmall || showTextfield
                   ? "block"
@@ -494,8 +497,8 @@ function Picker({
                    * This is so that it doesn't obscure the "Gallery" heading on
                    * very small mobile viewports
                    */
-                  maxWidth: viewport.isViewportSmall ? 184 : 300,
-                  width: viewport.isViewportSmall ? 184 : 300,
+                  maxWidth: viewport.isViewportSmall ? "100%" : 300,
+                  width: viewport.isViewportSmall ? "100%" : 300,
                 }}
                 value={searchTerm}
                 onChange={({ currentTarget: { value } }) =>
