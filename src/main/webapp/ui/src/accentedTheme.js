@@ -5,7 +5,7 @@ import baseTheme from "./theme";
 import React, { type ElementConfig, type Ref } from "react";
 import Grow from "@mui/material/Grow";
 import { mergeThemes } from "./util/styles";
-import { darken } from "@mui/system";
+import { darken, alpha } from "@mui/system";
 
 /**
  * This theme is used for pages that use the new styling, wherein the page (or
@@ -196,6 +196,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                     border: prefersMoreContrast ? accentedBorder : "none",
                   },
                 },
+              },
+              "& .MuiDivider-root": {
+                borderRight: accentedBorder,
+                borderColor: prefersMoreContrast
+                  ? "rgb(0,0,0)"
+                  : alpha(contrastTextColor, 0.2),
               },
             },
           },

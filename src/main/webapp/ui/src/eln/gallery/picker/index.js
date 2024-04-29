@@ -417,8 +417,8 @@ function Picker({
   open: boolean,
   onClose: () => void,
 |}): Node {
-  const { isViewportSmall } = useViewportDimensions();
-  const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
+  const viewport = useViewportDimensions();
+  const [drawerOpen, setDrawerOpen] = React.useState(!viewport.isViewportSmall);
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(181);
   const [selectedSection, setSelectedSection] = React.useState("Chemistry");
@@ -431,6 +431,8 @@ function Picker({
     section: selectedSection,
     searchTerm: appliedSearchTerm,
   });
+  const searchTextfield = React.useRef();
+  const [showTextfield, setShowTextfield] = React.useState(false);
 
   React.useEffect(() => {
     setSelectedFile(null);
@@ -441,7 +443,7 @@ function Picker({
       open={open}
       TransitionComponent={CustomGrow}
       onClose={onClose}
-      fullScreen={isViewportSmall}
+      fullScreen={viewport.isViewportSmall}
     >
       <AppBar position="relative" open={true}>
         <Toolbar variant="dense">
@@ -457,45 +459,81 @@ function Picker({
             Gallery
           </Typography>
           <Box flexGrow={1}></Box>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              setAppliedSearchTerm(searchTerm);
+          {viewport.isViewportVerySmall && !showTextfield && (
+            <IconButton
+              onClick={() => {
+                setShowTextfield(true);
+                setTimeout(() => {
+                  searchTextfield.current?.focus();
+                }, 0);
+              }}
+            >
+              <SearchIcon />
+            </IconButton>
+          )}
+          <Box
+            mr={1}
+            sx={{
+              display:
+                !viewport.isViewportVerySmall || showTextfield
+                  ? "block"
+                  : "none",
             }}
           >
-            <TextField
-              placeholder="Search"
-              sx={{
-                /*
-                 * This is so that it doesn't obscure the "Gallery" heading on
-                 * very small mobile viewports
-                 */
-                maxWidth: isViewportSmall ? 184 : 300,
-                width: isViewportSmall ? 184 : 300,
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                setAppliedSearchTerm(searchTerm);
+                setShowTextfield(searchTerm !== "");
               }}
-              value={searchTerm}
-              onChange={({ currentTarget: { value } }) => setSearchTerm(value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-                endAdornment:
-                  searchTerm !== "" ? (
-                    <IconButtonWithTooltip
-                      title="Clear"
-                      icon={<StyledCloseIcon />}
-                      size="small"
-                      onClick={() => {
-                        setSearchTerm("");
-                        setAppliedSearchTerm("");
-                      }}
-                    />
-                  ) : null,
-              }}
-            />
-          </form>
+            >
+              <TextField
+                placeholder="Search"
+                sx={{
+                  /*
+                   * This is so that it doesn't obscure the "Gallery" heading on
+                   * very small mobile viewports
+                   */
+                  maxWidth: viewport.isViewportSmall ? 184 : 300,
+                  width: viewport.isViewportSmall ? 184 : 300,
+                }}
+                value={searchTerm}
+                onChange={({ currentTarget: { value } }) =>
+                  setSearchTerm(value)
+                }
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment:
+                    searchTerm !== "" ? (
+                      <IconButtonWithTooltip
+                        title="Clear"
+                        icon={<StyledCloseIcon />}
+                        size="small"
+                        onClick={() => {
+                          setSearchTerm("");
+                          setAppliedSearchTerm("");
+                          setShowTextfield(false);
+                        }}
+                      />
+                    ) : null,
+                }}
+                inputProps={{
+                  ref: searchTextfield,
+                  onBlur: () => {
+                    setSearchTerm(appliedSearchTerm);
+                    setShowTextfield(appliedSearchTerm !== "");
+                  },
+                }}
+              />
+            </form>
+          </Box>
+          <Box ml={1} sx={{ height: "70%", alignSelf: "center" }}>
+            <Divider orientation="vertical" />
+          </Box>
           <Box ml={1} sx={{ transform: "translateY(2px)" }}>
             <HelpLinkIcon title="Importing from Gallery help" link="#" />
           </Box>
