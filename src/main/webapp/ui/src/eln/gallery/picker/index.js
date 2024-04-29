@@ -553,7 +553,13 @@ const Picker = observer(
             variant="permanent"
             aria-label="gallery sections drawer"
           >
-            <Box sx={{ overflowY: "auto", overflowX: "hidden" }}>
+            <Box
+              sx={{
+                overflowY: "auto",
+                overflowX: "hidden",
+                position: "relative",
+              }}
+            >
               <SelectedDrawerTabIndicator
                 verticalPosition={selectedIndicatorOffset}
               />
