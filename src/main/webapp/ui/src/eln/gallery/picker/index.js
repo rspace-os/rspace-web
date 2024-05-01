@@ -58,6 +58,7 @@ import { gallerySectionLabel } from "./common";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import { Result } from "../../../util/result";
 import { observer } from "mobx-react-lite";
+import AccessibilityTips from "../../../components/AccessibilityTips";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -465,16 +466,17 @@ const Picker = observer(
               flexGrow={viewport.isViewportVerySmall && showTextfield ? 0 : 1}
             ></Box>
             {viewport.isViewportVerySmall && !showTextfield && (
-              <IconButton
+              <IconButtonWithTooltip
+                size="small"
                 onClick={() => {
                   setShowTextfield(true);
                   setTimeout(() => {
                     searchTextfield.current?.focus();
                   }, 0);
                 }}
-              >
-                <SearchIcon />
-              </IconButton>
+                icon={<SearchIcon />}
+                title="Search this folder"
+              />
             )}
             <Box
               mx={1}
@@ -538,8 +540,12 @@ const Picker = observer(
                 />
               </form>
             </Box>
-            <Box ml={1} sx={{ height: "70%", alignSelf: "center" }}>
-              <Divider orientation="vertical" />
+            <Box ml={1}>
+              <AccessibilityTips
+                elementType="dialog"
+                supportsReducedMotion
+                supportsHighContrastMode
+              />
             </Box>
             <Box ml={1} sx={{ transform: "translateY(2px)" }}>
               <HelpLinkIcon title="Importing from Gallery help" link="#" />
