@@ -262,6 +262,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               backgroundColor: secondaryBackground,
               "& .MuiListItemButton-root": {
                 paddingLeft: baseTheme.spacing(3),
+                border: "none",
+                borderRadius: 0,
+                background: "unset",
+                boxShadow: "none",
+                "& .MuiSvgIcon-root": {
+                  color: "unset",
+                  fontSize: "1rem",
+                },
                 "&.Mui-selected": {
                   backgroundColor: accentedBackground,
                   "& .MuiTypography-root": {
