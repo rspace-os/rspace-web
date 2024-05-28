@@ -614,3 +614,8 @@ img[id^="sharedStatusImg_"], .witnessedImg, .favoriteImg {
 #fileBrowsing #fancyTree {
     padding-bottom: 5px;
 }
+
+.mentions-list-wrapper {
+  height: 10rem;
+  overflow-y: auto;
+}

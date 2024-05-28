@@ -172,11 +172,6 @@ public class MessageAndRequestController extends BaseController implements Appli
       if (shouldAddToRecipients(user, subject)) {
         userInfos.add(user.toBasicInfo());
       }
-      /* recipients list displayed in autocomplete shows only 10 users,
-       * so no need to return more from the server (see RSPAC-1252) */
-      if (userInfos.size() > 10) {
-        break;
-      }
     }
     if (userInfos.isEmpty()) {
       ErrorList errors =
