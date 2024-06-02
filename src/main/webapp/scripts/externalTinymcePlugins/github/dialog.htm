@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link href='/scripts/jqueryFileTree/jqueryFileTree.css' rel="stylesheet" />
+	<link href='/scripts/externalTinymcePlugins/internallink/css/links.css' rel="stylesheet" />
+	<script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+	<script src="/scripts/bower_components/jquery-ui/jquery-ui.min.js"></script>
+	<script src="/scripts/jqueryFileTree/jqueryFileTree.js"></script>
+	<script src="/scripts/jqueryFileTree/jqueryFileTreeSorter.js"></script>
+	<script src='/scripts/tinymceDialogUtils.js'></script>
+	<script src="/scripts/bower_components/mustache/mustache.min.js"></script>	
+	<script src="/scripts/global.js"></script>
+	<script src="/scripts/externalTinymcePlugins/github/js/dialog.js"></script>
+</head>
+<body>
+	<div class="sortingSettings" style="padding: 5px;">
+    	Order by:
+			<select class="orderBy" aria-label="Order by">
+				<option value="name">Name</option>
+			</select>
+			<select class="sortOrder" aria-label="Sort order">
+				<option value="ASC">Ascending</option>
+				<option value="DESC">Descending</option>
+			</select>
+    </div>
+	<div id="file_tree_frame">
+		<div id="file_tree" style="height: 320px; width: 100%; background-color: white; overflow: auto;"></div>
+	</div>
+	<div id="linkData">
+		<fieldset id="linksFieldset" class="links">
+			<div>
+				<label id='label' for="link">selected record</label> <input type="text" id='link' disabled="disabled" />
+			</div>
+			<input id="gitHubHash" type="hidden" />
+			<input id="gitHubRepo" type="hidden" />
+			<input id="gitHubPath" type="hidden" />
+		</fieldset>
+	</div>
+</body>
+</html>

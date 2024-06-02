@@ -1,0 +1,234 @@
+<div id="parentFolderTemplate" style="display:none">
+
+  <div id="{{grandparentId}}" class="galleryFile">
+    <div class="imageDivParentFolder">
+      <img id="{{grandparentId}}" class="galleryFolder dropTarget" width=76px height=76px src="/images/icons/folder.png"
+        alt="image" tabindex="0" />
+    </div>
+    <div class="nameGallery gallery">Parent Folder</div>
+  </div>
+
+</div>
+
+<div id="folderTemplate" style="display:none">
+
+  <div id="{{valueId}}" class="selectable galleryFile">
+    <div class="imageDiv">
+      {{#valueShared}}
+      <img id="{{valueId}}" class="galleryFolder dropTarget dragSource" width=76px height=76px
+           src="/images/icons/folder-shared.png" alt="{{valueName}} folder" title="{{valueName}}" tabindex="0" />
+      {{/valueShared}}
+      {{^apiFolder}}
+      {{^valueShared}}
+      <img id="{{valueId}}" class="galleryFolder dropTarget dragSource" width=76px height=76px
+        src="/images/icons/folder.png" alt="{{valueName}} folder" title="{{valueName}}" tabindex="0" />
+      {{/valueShared}}
+      {{/apiFolder}}
+      {{#apiFolder}}
+      <img id="{{valueId}}" class="galleryFolder dropTarget dragSource" width=76px height=76px
+        src="/images/icons/folder-api-inbox.png" alt="{{valueName}} folder" title="{{valueName}}" tabindex="0" />
+      {{/apiFolder}}
+    </div>
+    <div class="gallery">
+      {{^system}}
+      <input class="inputCheckbox folderCheckbox" aria-label="Select record" type="checkbox" data-recordId="{{valueId}}"
+        data-recordName="{{valueName}}" data-recordType="{{valueType}}" data-isMediaFile="{{isMediaFile}}" />
+      {{/system}}
+      <input class="infoImg"
+             type="image"
+             src="/images/info.svg"
+             style="top:5px"
+             data-recordId="{{valueId}}"
+             aria-label="More info"
+             alt="More info" />
+    </div>
+    <div class="nameGallery gallery">{{shortFilename}}</div>
+  </div>
+</div>
+
+<div id="ecatImageTemplate" style="display:none">
+
+  <div id="{{valueId}}" class="selectable galleryFile">
+    <div class="imageDiv">
+      <a id="{{valueId}}" name="{{valueName}}" class="imagePreview" href="#">
+        <img id="{{valueId}}" class="imageThumbnail dragSource" data-src="{{imgSrc}}"
+          data-modificationdate="{{modificationDate}}" data="{{widthResized}}-{{heightResized}}"
+          data-widthresized="{{widthResized}}" data-heightresized="{{heightResized}}" data-rotation="{{rotation}}"
+          alt="image" title="{{valueName}}" />
+      </a>
+    </div>
+    <div class="gallery">
+      <input class="inputCheckbox" aria-label="Select record" type="checkbox" data-recordId="{{valueId}}" data-recordName="{{valueName}}"
+        data-recordType="{{valueType}}" data-isMediaFile="{{isMediaFile}}" />
+      <input class="infoImg"
+             type="image"
+             src="/images/info.svg"
+             style="top:5px"
+             data-recordId="{{valueId}}"
+             aria-label="More info"
+             alt="More info" />
+    </div>
+    <div class="nameGallery gallery">
+      <span class="mediaFileName">{{shortFilename}}</span>
+      {{#fileVersion}}
+      <span class="mediaFileVersionSpan" title="Version {{fileVersion}}">v{{fileVersion}}</span>
+      {{/fileVersion}}
+    </div>
+  </div>
+
+</div>
+
+<div id="ecatAudioOrVideoTemplate" style="display:none">
+
+  <div id="{{valueId}}" class="selectable galleryFile">
+    <div class="imageDiv">
+      <a rel="noreferrer" href=/workspace/getEcatMediaFile/{{valueId}} target="_blank">
+        <img id={{valueId}} class="imageThumbnail dragSource" data-src="{{imgSrc}}"
+          data={{widthResized}}-{{heightResized}} data-video="{{valueId}},{{valueName}},{{valueExtension}}" width=76px
+          height=76px onclick="openMedia({{valueId}}, '{{valueName}}', '{{valueExtension}}')" alt="image"
+          title="{{valueName}}" />
+      </a>
+    </div>
+    <div class="gallery">
+      <input class="inputCheckbox" aria-label="Select record" type="checkbox" data-recordId="{{valueId}}" data-recordName="{{valueName}}"
+        data-recordType="{{valueType}}" data-isMediaFile="{{isMediaFile}}" />
+      <input class="infoImg"
+             type="image"
+             src="/images/info.svg"
+             style="top:5px"
+             data-recordId="{{valueId}}"
+             aria-label="More info"
+             alt="More info" />
+    </div>
+    <div class="nameGallery gallery">
+      <span class="mediaFileName">{{shortFilename}}</span>
+      {{#fileVersion}}
+      <span class="mediaFileVersionSpan" title="Version {{fileVersion}}">v{{fileVersion}}</span>
+      {{/fileVersion}}
+    </div>
+  </div>
+
+</div>
+
+<div id="ecatDocumentOrMiscTemplate" style="display:none">
+  <div id="{{valueId}}" class="selectable galleryFile">
+    <div class="imageDiv">
+      <a href="#" data-id="{{valueId}}" data-name="{{escapedName}}" data-extension="{{extension}}"
+        class="documentOrMisc">
+        <img id={{valueId}} class="imageThumbnail dragSource" data-src="{{imgSrc}}"
+          data-try-replace-with-src="{{tryImgSrc}}" data-name="{{valueName}}" width=76px height=76px alt="image"
+          title="{{valueName}}" />
+      </a>
+    </div>
+    <div class="gallery">
+      <input class="inputCheckbox" aria-label="Select record" type="checkbox" data-recordId="{{valueId}}" data-recordName="{{valueName}}"
+        data-recordType="{{valueType}}" data-isMediaFile="{{isMediaFile}}" />
+      <input class="infoImg"
+             type="image"
+             src="/images/info.svg"
+             style="top:5px"
+             data-recordId="{{valueId}}"
+             aria-label="More info"
+             alt="More info" />
+    </div>
+    <div class="nameGallery gallery">
+      <span class="mediaFileName">{{shortFilename}}</span>
+      {{#fileVersion}}
+      <span class="mediaFileVersionSpan" title="Version {{fileVersion}}">v{{fileVersion}}</span>
+      {{/fileVersion}}
+    </div>
+  </div>
+</div>
+
+<div id="ecatSnippetTemplate" style="display:none">
+
+  <div id="{{valueId}}" class="selectable galleryFile">
+    <div class="imageDiv">
+      <a id="{{valueId}}" name="{{valueName}}" class="snippetPreview" href="#">
+        <img id={{valueId}} class="imageThumbnail dragSource" src="/images/icons/textBig.png" width=76px height=76px
+          alt="image" title="{{valueName}}" />
+      </a>
+    </div>
+    <div class="gallery">
+      <input class="inputCheckbox" aria-label="Select record" type="checkbox" data-recordId="{{valueId}}" data-recordName="{{valueName}}"
+        data-recordType="{{valueType}}" data-isMediaFile="{{isMediaFile}}" />
+      {{#valueShared}}
+      <img id="sharedStatusImg_{{valueId}}"
+           src="/images/shared.svg"
+           alt="Shared"
+           title="Shared"
+      >
+      {{/valueShared}}
+      {{^valueShared}}
+      <img id="sharedStatusImg_{{valueId}}"
+           src="/images/shared.svg"
+           alt="Shared"
+           title="Shared"
+           hidden
+      >
+      {{/valueShared}}
+      <input class="infoImg"
+             type="image"
+             src="/images/info.svg"
+             style="top:5px"
+             data-recordId="{{valueId}}"
+             aria-label="More info"
+             alt="More info" />
+    </div>
+    <div class="nameGallery gallery">{{shortFilename}}</div>
+  </div>
+
+</div>
+
+<div id="ecatPdfTemplate" style="display:none">
+  <div id="{{valueId}}" class="selectable galleryFile">
+    <div class="imageDiv">
+      <a data-id="{{valueId}}" data-name="{{{escapedName}}}" data-extension="{{extension}}" class="pdfPreview" href="#">
+        <img id={{valueId}} class="imageThumbnail dragSource" data-src={{imgSrc}} data-name="{{escapedName}}" width=76px
+          height=76px data-publish-name="{{originalFileName}}" alt="pdf" title="{{escapedName}}" />
+      </a>
+    </div>
+    <div class="gallery">
+      <input class="inputCheckbox" aria-label="Select record" type="checkbox" data-recordId={{valueId}} data-recordName="{{valueName}}"
+        data-recordType="{{valueType}}" data-isMediaFile="{{isMediaFile}}" />
+      <input class="infoImg"
+             type="image"
+             src="/images/info.svg"
+             style="top:5px"
+             data-recordId="{{valueId}}"
+             aria-label="More info"
+             alt="More info" />
+    </div>
+    <div class="nameGallery gallery">{{shortFilename}}</div>
+  </div>
+
+  <div id="ecatChemistryTemplate" style="display:none">
+    <div id="{{valueId}}" class="selectable galleryFile">
+      <div class="imageDiv">
+        <a href="#" data-id="{{valueId}}" data-name="{{escapedName}}" data-extension="{{extension}}"
+          class="documentOrMisc">
+          <img id={{valueId}} class="imageThumbnail chemFile dragSource" data-src="{{imgSrc}}" onError="this.onerror=null;this.src='/images/icons/chemistry-file.png';"
+          data-name="{{valueName}}" data-fullheight=1000 data-fullwidth=1000 width=76px height=76px alt="image"title="{{valueName}}" />
+        </a>
+      </div>
+      <div class="gallery">
+        <input class="inputCheckbox" aria-label="Select record" type="checkbox" data-recordId="{{valueId}}" data-recordName="{{valueName}}"
+          data-recordType="{{valueType}}" data-isMediaFile="{{isMediaFile}}" />
+        <input class="infoImg"
+               type="image"
+               src="/images/info.svg"
+               style="top:5px"
+               data-recordId="{{valueId}}"
+               aria-label="More info"
+               alt="More info" />
+      </div>
+      <div class="nameGallery gallery">
+        <span class="mediaFileName">{{shortFilename}}</span>
+        {{#fileVersion}}
+        <span class="mediaFileVersionSpan" title="Version {{fileVersion}}">v{{fileVersion}}</span>
+        {{/fileVersion}}
+      </div>
+    </div>
+  </div>
+  
+</div>

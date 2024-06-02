@@ -1,0 +1,22 @@
+#*
+This is the template for the listing of complete contents of all exported items in an HTML archive
+Arguments :
+
+indexItems - a collection of IndexItem objects. Ideally these will be sorted.
+*#
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>A-Z listing</title>
+<link href="resources/index.css" rel="stylesheet" />
+<meta charset="UTF-8">
+</head>
+<body>
+<div class="navigationSection">
+<a href="index.html">Top</a></div><br/>
+#foreach ($indexItem in $indexItems)
+	#indexRow($indexItem.url, $indexItem.name,"./resources/document.png")
+#end
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.79 July 2022 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+    <changeSet author="matthias" id="2022-06-10" context="run">
+        <comment>Add InventoryRecord.barcodes field (RSINV-24)</comment>
+
+        <createTable tableName="Barcode">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="barcodeData" type="VARCHAR(255)"/>
+            <column name="createdBy" type="VARCHAR(255)"/>
+            <column name="creationDate" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BIT(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="format" type="VARCHAR(255)"/>
+            <column name="container_id" type="BIGINT"/>
+            <column name="sample_id" type="BIGINT"/>
+            <column name="subSample_id" type="BIGINT"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="Barcode"/>
+    
+        <createTable tableName="Barcode_AUD">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REV" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVTYPE" type="TINYINT"/>
+            <column name="barcodeData" type="VARCHAR(255)"/>
+            <column name="createdBy" type="VARCHAR(255)"/>
+            <column name="creationDate" type="datetime"/>
+            <column name="deleted" type="BIT(1)"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="format" type="VARCHAR(255)"/>
+            <column name="container_id" type="BIGINT"/>
+            <column name="sample_id" type="BIGINT"/>
+            <column name="subSample_id" type="BIGINT"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="Barcode_AUD"/>
+        <addForeignKeyConstraint baseColumnNames="REV" baseTableName="Barcode_AUD"
+                                 constraintName="FK_90by6wcwxmkbkel3hs3lfagjv" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="REV" referencedTableName="REVINFO"/>
+        
+        <addForeignKeyConstraint baseColumnNames="container_id" baseTableName="Barcode"
+                                 constraintName="FK_nmicitoljb0fsgx7540tnvekn" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="Container"/>
+        <addForeignKeyConstraint baseColumnNames="subSample_id" baseTableName="Barcode"
+                                 constraintName="FK_rhmn3wu9elicxkb0nvpbjtgkg" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="SubSample"/>
+        <addForeignKeyConstraint baseColumnNames="sample_id" baseTableName="Barcode"
+                                 constraintName="FK_sdjfs8yqacwgh08c4cd5ldb4n" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="Sample"/>
+    </changeSet>
+</databaseChangeLog>

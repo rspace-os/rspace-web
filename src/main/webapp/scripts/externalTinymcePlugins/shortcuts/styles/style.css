@@ -1,0 +1,19 @@
+body {
+  overflow: hidden;
+}
+.container {
+  height: 450px;
+  overflow-y: auto;
+}
+.form-group {
+  width: 100%;
+}
+.form-group label, .form-group input {
+  display: inline-block !important;
+  width: 50% !important;
+  float: left;
+}
+.form-group label {
+  line-height: 37px;
+  height: 37px;
+}

@@ -1,0 +1,10 @@
+#* 
+ Calculation table HTML template.
+ Arguments needed for mustache are:
+  - id of the calculation table
+  - data model of the table (cell values + display data)
+  - tableHtml html view of the table
+*#
+<div class="rsCalcTableDiv mceNonEditable" data-tabledata="$data">
+    $tableHtml
+</div>

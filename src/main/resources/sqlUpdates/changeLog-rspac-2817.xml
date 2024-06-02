@@ -1,0 +1,31 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2023-10-18a" context="run,dev-test" author="nhanlon">
+        <comment>Create new system properties for RoR</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="ALLOWED"/>
+            <column name="name" type="STRING" value="rspaceinstance.ror"/>
+            <column name="type" type="NUMERIC" value="3"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id"
+                    type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name ='rspaceinstance.ror')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value=""/>
+            <column name="property_id"
+                    type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='rspaceinstance.ror')"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

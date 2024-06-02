@@ -1,0 +1,48 @@
+<div id="archiveImportReportData" style="display:none">
+
+  <div class="archiveImportResultMsg"> 
+      Archive import was {{#successful}}successful{{/successful}}{{^successful}}unsuccessful{{/successful}}.
+  </div>
+  
+  <h2> Validation results</h2>
+  <table class="validationResultsTable">
+    <tr>
+     <th> Rule</th>
+     <th> Result</th>
+     <th> Description</th>
+    </tr>
+    <!-- {{#results}}-->
+    <tr>
+     <td>{{rule}}</td>
+     <td>{{passed}}</td>
+     <td>{{description}}</td>
+    </tr>
+    <!-- {{/results}}-->
+  </table>
+  
+  <h2> Documents imported </h2>
+  <table class="importedDocumentsTable">
+    <tr>
+     <th> Name </th>
+     <th> Global Id</th>
+    </tr>
+    <!-- {{#recordInfo}}-->
+    <tr>
+     <td>{{name}}</td>
+     <td><a href="/globalId/{{oid.idString}}">{{oid.idString}}</a></td>
+    </tr>
+    <!-- {{/recordInfo}}-->
+  </table>
+  
+  <div>
+    <h2>Errors</h2>
+    <!-- {{#errorList.errorMessages}}-->
+    <p>  {{.}} 
+    <!-- {{/errorList.errorMessages}}-->
+    <h2>Info</h2>
+    <!-- {{#infoList.errorMessages}}-->
+    <p>{{.}}
+    <!-- {{/infoList.errorMessages}}-->
+  </div>
+
+</div>

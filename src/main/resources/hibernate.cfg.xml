@@ -1,0 +1,167 @@
+<!DOCTYPE hibernate-configuration PUBLIC "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+    <session-factory>
+         <!-- these properties are internal ones that shouldn't be editable by customers
+          IF we want to make a property externally configurable, add it in sessionFactory bean configuration -->
+        <property name="hibernate.cache.region.factory_class">org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory</property>
+        <property name="hibernate.cache.use_second_level_cache">true</property>
+        <property name="hibernate.cache.use_query_cache">true</property>
+        <!-- RSPAC-22 -->
+        <property name="hibernate.envers.autoRegisterListeners">false</property>
+  
+        <!-- for compatibility with 3/4, see
+          http://docs.jboss.org/hibernate/orm/5.0/userguide/html_single/Hibernate_User_Guide.html#identifiers-->
+        <property name="hibernate.id.new_generator_mappings">false</property>
+        <property name="hibernate.connection.CharSet">utf8</property>
+        <property name="hibernate.connection.characterEncoding">utf8</property>
+        
+        
+        <!-- Echo all executed SQL to stdout - these values are set at build time by maven. -->
+        <property name = "show_sql">${hibernate.showSQL}</property>
+        <property name = "hibernate.format_sql">${hibernate.formatSql}</property>
+    <!--      <property name = "show_sql">true</property>
+        <property name = "hibernate.format_sql">true</property> -->
+        <property name = "hibernate.use_sql_comments">${hibernate.showSqlComments}</property>
+        <property name = "hibernate.generate_statistics">${hibernate.showStats}</property>
+        <!--  <property name="hbm2ddl.auto">validate</property>   -->
+        
+        <mapping class="com.researchspace.model.User"/>
+        <mapping class="com.researchspace.model.Group"/>
+        <mapping class="com.researchspace.model.UserGroup"/>
+        <mapping class="com.researchspace.model.AbstractUserOrGroupImpl"/>
+        <mapping class="com.researchspace.model.RSMetaData"/>
+        <mapping class="com.researchspace.model.Role"/>
+        <mapping class="com.researchspace.model.record.Record"/>
+        <mapping class="com.researchspace.model.record.Folder"/>
+        <mapping class="com.researchspace.model.record.RecordToFolder"/>
+        <mapping class="com.researchspace.model.record.StructuredDocument"/>
+        <mapping class="com.researchspace.model.record.RSForm"/>
+        <mapping class="com.researchspace.model.record.FormUsage"/>
+        <mapping class="com.researchspace.model.record.Notebook"/>
+        <mapping class="com.researchspace.model.record.Snippet"/>
+        <mapping class="com.researchspace.model.field.Field"/>
+        <mapping class="com.researchspace.model.field.NumberField"/>
+        <mapping class="com.researchspace.model.field.TextField"/>
+        <mapping class="com.researchspace.model.field.StringField"/>
+        <mapping class="com.researchspace.model.field.TimeField"/>
+        <mapping class="com.researchspace.model.field.ChoiceField"/>
+        <mapping class="com.researchspace.model.field.RadioField"/>
+        <mapping class="com.researchspace.model.field.DateField"/>
+        <mapping class="com.researchspace.model.field.ReferenceField"/>
+        <mapping class="com.researchspace.model.field.UriField"/>
+        <mapping class="com.researchspace.model.field.AttachmentField"/>
+        <mapping class="com.researchspace.model.field.FieldAsString"/>
+        <mapping class="com.researchspace.model.field.FieldForm"/>
+        <mapping class="com.researchspace.model.field.NumberFieldForm"/>
+        <mapping class="com.researchspace.model.field.TextFieldForm"/>
+        <mapping class="com.researchspace.model.field.StringFieldForm"/>
+        <mapping class="com.researchspace.model.field.TimeFieldForm"/>
+        <mapping class="com.researchspace.model.field.ChoiceFieldForm"/>
+        <mapping class="com.researchspace.model.field.RadioFieldForm"/>
+        <mapping class="com.researchspace.model.field.DateFieldForm"/>
+        <mapping class="com.researchspace.model.field.ReferenceFieldForm"/>
+        <mapping class="com.researchspace.model.field.URIFieldForm"/>
+        <mapping class="com.researchspace.model.field.AttachmentFieldForm"/>
+        <mapping class="com.researchspace.model.EcatMediaFile" /> 
+        <mapping class="com.researchspace.model.EcatImage"/>
+        <mapping class="com.researchspace.model.EcatVideo"/>
+        <mapping class="com.researchspace.model.EcatAudio"/>
+        <mapping class="com.researchspace.model.EcatDocumentFile"/>
+        <mapping class="com.researchspace.model.EcatImageAnnotation"/>
+        <mapping class="com.researchspace.model.EcatComment" />
+        <mapping class="com.researchspace.model.EcatCommentItem" />
+        <mapping class="com.researchspace.model.EcatChemistryFile" />
+        <mapping class="com.researchspace.model.RecordGroupSharing" />
+        <mapping class="com.researchspace.model.comms.Communication" />
+        <mapping class="com.researchspace.model.comms.Notification" />
+        <mapping class="com.researchspace.model.comms.MessageOrRequest" />
+        <mapping class="com.researchspace.model.comms.GroupMessageOrRequest" />
+        <mapping class="com.researchspace.model.comms.CreateGroupMessageOrRequest" />
+        <mapping class="com.researchspace.model.comms.ShareRecordMessageOrRequest" />
+        <mapping class="com.researchspace.model.comms.CommunicationTarget" />
+        <mapping class="com.researchspace.model.CollabGroupCreationTracker"/>
+        <mapping class="com.researchspace.model.UserPreference" />
+        <mapping class="com.researchspace.model.RSChemElement" />
+        <mapping class="com.researchspace.model.FileProperty" />
+        <mapping class="com.researchspace.model.record.IconEntity" />
+        <mapping class="com.researchspace.model.ArchivalCheckSum" />
+        <mapping class="com.researchspace.model.ImageBlob" />
+        <mapping class="com.researchspace.model.Signature" />
+        <mapping class="com.researchspace.model.SignatureHash" />
+        <mapping class="com.researchspace.model.Witness" />
+        <mapping class="com.researchspace.model.TokenBasedVerification"/>
+        <mapping class="com.researchspace.model.UserProfile"/>
+        <mapping class="com.researchspace.model.Community"/>
+        <mapping class="com.researchspace.model.Thumbnail"/>
+        <mapping class="com.researchspace.offline.model.OfflineRecordUser"/>
+        <mapping class="com.researchspace.model.ArchiveVersionToAppVersion"/>
+        <mapping class="com.researchspace.model.record.FormUserMenu"/>
+        <mapping class="com.researchspace.model.UserKeyPair"/>
+        <mapping class="com.researchspace.maintenance.model.ScheduledMaintenance"/>
+        <mapping class="com.researchspace.model.FieldAttachment"/>
+        <mapping class="com.researchspace.model.RecordAttachment"/>
+        <mapping class="com.researchspace.model.Organisation"/>
+        <mapping class="com.researchspace.model.netfiles.NfsFileStore"/>
+        <mapping class="com.researchspace.model.netfiles.NfsFileSystem"/>
+        <mapping class="com.researchspace.maintenance.model.WhiteListedSysAdminIPAddress"/>
+        <mapping class="com.researchspace.model.record.RecordUserFavorites"/>
+        <mapping class="com.researchspace.model.system.SystemProperty"/>
+        <mapping class="com.researchspace.model.system.SystemPropertyValue"/>
+        <mapping class="com.researchspace.model.FileStoreRoot"/>
+        <mapping class="com.researchspace.model.apps.App"/>
+        <mapping class="com.researchspace.model.apps.UserAppConfig"/>
+        <mapping class="com.researchspace.model.apps.AppConfigElementSet"/>
+        <mapping class="com.researchspace.model.apps.AppConfigElement"/>
+        <mapping class="com.researchspace.model.apps.AppConfigElementDescriptor"/>
+        <mapping class="com.researchspace.model.PropertyDescriptor"/>
+        <mapping class="com.researchspace.model.UserApiKey"/>
+        <mapping class="com.researchspace.model.RSMath"/>
+        <mapping class="com.researchspace.model.InternalLink"/>
+        <mapping class="com.researchspace.model.oauth.UserConnection"/>
+        <mapping class="com.researchspace.model.oauth.OAuthToken"/>
+        <mapping class="com.researchspace.model.oauth.OAuthApp"/>
+        <mapping class="com.researchspace.model.events.UserAccountEvent"/>
+        <mapping class="com.researchspace.model.events.GroupMembershipEvent"/>
+
+        <mapping class="com.researchspace.model.inventory.Sample"/>
+        <mapping class="com.researchspace.model.inventory.SubSample"/>
+        <mapping class="com.researchspace.model.inventory.SubSampleNote"/>
+    
+        <mapping class="com.researchspace.model.inventory.Container"/>
+        <mapping class="com.researchspace.model.inventory.ContainerLocation"/>
+        <mapping class="com.researchspace.model.record.AbstractForm"/>
+        <mapping class="com.researchspace.model.inventory.InventoryFile"/>
+        <mapping class="com.researchspace.model.inventory.Barcode"/>
+        <mapping class="com.researchspace.model.inventory.DigitalObjectIdentifier"/>
+
+        <mapping class="com.researchspace.model.inventory.field.InventoryNumberField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryDateField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryTimeField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryStringField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryTextField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryChoiceField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryRadioField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryUriField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryReferenceField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryAttachmentField"/>
+
+        <mapping class="com.researchspace.model.inventory.field.ExtraField"/>
+        <mapping class="com.researchspace.model.inventory.field.ExtraNumberField"/>
+        <mapping class="com.researchspace.model.inventory.field.ExtraTextField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryRadioFieldDef"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryChoiceFieldDef"/>
+
+        <mapping class="com.researchspace.model.elninventory.ListOfMaterials"/>
+        <mapping class="com.researchspace.model.elninventory.MaterialUsage"/>
+        <mapping class="com.researchspace.model.inventory.Basket"/>
+        <mapping class="com.researchspace.model.inventory.BasketItem"/>
+
+        <mapping class="com.researchspace.model.dmps.DMPUser"/>
+
+        <mapping class="com.researchspace.integrations.clustermarket.model.ClustermarketBooking"/>
+        <mapping class="com.researchspace.integrations.clustermarket.model.ClustermarketEquipment"/>
+
+    </session-factory>
+</hibernate-configuration>

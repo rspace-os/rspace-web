@@ -1,0 +1,34 @@
+#*
+ Template for external link to a specific version of Box resource.
+ 
+ It's based on externalDocumentLink.vm template, with extra version information 
+ stored as data attributes in .boxVersion span.
+  
+ Arguments needed for mustache are:
+  - id - an identifier for the resource
+  - name - display name
+  - recordURL - the shared link to Box resource
+  - description - display name
+  - owner - name of the owner 
+  - iconPath - the path to the file-type icon
+  - versionID - version identifier
+  - versionNumber - version number
+  - sha1 - hash code of resource content
+  - size - size of the file 
+  - createdAt - creation date of the file 
+*#
+
+<div class="externalAttachmentDiv boxVersionLink mceNonEditable">
+		<a href="$recordURL" target="_blank">
+			<img class="attachmentIcon" src="$iconPath" height="32" width="32"/>
+		</a>
+		<p class="attachmentP">
+			<img class="externalLinkBadge" src="/images/icons/box_cyan.png" height="20" width="20"/>
+			<a class="attachmentLinked" id="attachOnText_box-$id" data-externalFileStore="box" 
+					data-id="$id" data-name="$name" data-description="$description" data-owner="$owner" 
+					href="$recordURL" target="_blank">$name 
+				<span class="boxVersion" data-versionID="$versionID" data-versionNumber="$versionNumber"
+					data-sha1="$sha1" data-size="$size" data-createdAt="$createdAt">V$versionNumber</span>
+			</a>
+		</p>
+</div>&nbsp;

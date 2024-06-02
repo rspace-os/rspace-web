@@ -1,0 +1,37 @@
+ Notification from RSpace 
+$cmm.originator.fullName
+#if ($cmm.notification)
+generated a notification for you of type [$cmm.notificationType] on #formatDate($dateOb)
+#else 
+generated a notification for you on #formatDate($dateOb)
+#end
+		
+
+#if ($cmm.record && $cmm.record.notebook)
+concerning notebook
+#if (! $cmm.ignoreRecordLinkInMessage) 
+$cmm.record.name ($cmm.record.globalIdentifier)
+#else 
+$cmm.record.name ($cmm.record.globalIdentifier)
+#end
+
+#elseif($cmm.record)
+   #if (! $cmm.ignoreRecordLinkInMessage) 
+     concerning document $cmm.record.name  ($cmm.record.globalIdentifier)
+   #else 
+    concerning $cmm.record.name ($cmm.record.globalIdentifier)
+   #end
+
+#end
+#if ($cmm.message) 
+ More details: 
+$cmm.message
+
+#end
+
+#if ($cmm.notification) 
+$cmm.notificationMessage
+#end
+#notificationPrefInfoSuffix (false)	
+
+#dontReply_Plaintext

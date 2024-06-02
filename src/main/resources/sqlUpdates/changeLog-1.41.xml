@@ -1,0 +1,91 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.41 Jan 2017 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<changeSet id="16-12-19a" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN">
+			<tableExists tableName="CreateGroupMessageOrRequest_AUD" />
+		</preConditions>
+		<comment> Remove audit table that is not needed</comment>
+		<dropTable tableName="CreateGroupMessageOrRequest_AUD" />
+	</changeSet>
+	<changeSet id="16-12-19b" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN">
+			<tableExists tableName="CreateGroupMessageOrRequest_emails_AUD" />
+		</preConditions>
+		<comment> Remove audit table that is not needed</comment>
+		<dropTable tableName="CreateGroupMessageOrRequest_emails_AUD" />
+	</changeSet>
+
+	<include file="changeLog-1.41-RSPAC-1098.xml"
+		relativeToChangelogFile="true" />
+	<changeSet id="16-12-20h" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN">
+			<tableExists tableName="CommunicationTarget_AUD" />
+		</preConditions>
+		<comment> Remove audit table that is not needed</comment>
+		<dropTable tableName="CommunicationTarget_AUD" />
+	</changeSet>
+	<changeSet id="16-12-20h2" author="richard" context="run">
+		<comment> Remove audit table that is not needed</comment>
+		<dropTable tableName="Communication_AUD" />
+	</changeSet>
+	<changeSet id="16-12-20i" author="richard" context="run">
+		<comment> Remove audit table that is not needed</comment>
+		<dropTable tableName="Notification_AUD" />
+	</changeSet>
+	<changeSet id="16-12-20j" author="richard" context="run">
+		<comment> Remove audit table that is not needed</comment>
+		<dropTable tableName="MessageOrRequest_AUD" />
+	</changeSet>
+	<changeSet id="16-12-20l" author="richard" context="run">
+		<comment> Remove audit table that is not needed</comment>
+		<dropTable tableName="GroupMessageOrRequest_AUD" />
+	</changeSet>
+	<changeSet id="16-12-20m" author="richard" context="run">
+		<comment> Remove audit table that is not needed</comment>
+		<dropTable tableName="ShareRecordMessageOrRequest_AUD" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="17-03-15a" context="run">
+	    <preConditions>
+	     <not>
+	      <tableExists tableName="SignatureHash"/>
+	     </not>
+	    </preConditions>
+	    <comment>Create SignatureHash table for RSPAC-1171</comment>
+		<createTable tableName="SignatureHash">
+			<column autoIncrement="true" name="id" type="BIGINT">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="hexValue" type="VARCHAR(64)">
+				<constraints nullable="false" />
+			</column>
+			<column name="type" type="VARCHAR(20)">
+				<constraints nullable="false" />
+			</column>
+			<column name="file_id" type="BIGINT" />
+			<column name="signature_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="17-03-15b" context="run">
+	 <comment> FK relation to Signature for SignatureHash</comment>
+	 <addForeignKeyConstraint baseColumnNames="signature_id" baseTableName="SignatureHash" constraintName="FK9153E1C68E86C986" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Signature"/>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="17-03-15c" context="run">
+	  <comment> FK relation to FileProperty for SignatureHash</comment>
+	  <addForeignKeyConstraint baseColumnNames="file_id" baseTableName="SignatureHash" constraintName="FK9153E1C6A6517FE3" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="FileProperty"/>
+	</changeSet>
+
+</databaseChangeLog>

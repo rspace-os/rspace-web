@@ -1,0 +1,196 @@
+.owncloudLoginField {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+#owncloudLoginDialog {
+  margin:10px;
+}
+
+#owncloudDialogTree {
+    margin: 0;
+    border: none;
+    height: 400px;
+    width: 100%;
+    overflow: auto;
+}
+
+#owncloudDialogTree ul {
+	list-style-type: none;
+}
+
+#owncloudDialogTree .fancytree-container {
+    border: none;
+    padding: 0;
+    background: none;
+}
+
+#owncloudDialogTree .fancytree-container:focus {
+	outline: none; 
+}
+
+#owncloudDialogTree .fancytree-container ul {
+    padding-left: 20px;    
+}
+
+#owncloudDialogTree .fancytree-container ul.inactive-level
+    {
+    padding-left: 0;
+}
+#owncloudDialogTree .fancytree-node {
+    min-height: 25px;
+    line-height: 25px;
+    display: inline-block;
+    max-width: 100%;
+    width: auto;
+    vertical-align: middle;
+    display:flex;
+}
+#owncloudDialogTree .fancytree-node.fancytree-selected .fancytree-title {
+    background: rgba(193, 193, 193, 0.5);
+}
+#owncloudDialogTree .fancytree-active .fancytree-title {
+    background: rgba(0, 174, 239, 0.5);
+}
+#owncloudDialogTree .fancytree-node .fancytree-expander {
+    vertical-align: middle;
+    flex: 0 0 14px;
+}
+
+#owncloudDialogTree .fancytree-has-children>.fancytree-expander {
+    background: url(/images/icons/RightArrow25.png);
+    background-size: contain;
+    background-repeat: no-repeat;    
+}
+#owncloudDialogTree .fancytree-expanded.fancytree-has-children>.fancytree-expander {
+    background: url(/images/icons/DownArrow25.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+#owncloudDialogTree .fancytree-node .fancytree-title {
+    display: inline-block;
+    width: 95%;
+    margin-left: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#owncloudDialogTree .fancytree-node .fancytree-title {
+    width: auto;
+}
+
+#owncloudDialogTree .fancytree-expander {
+	  height: 1em;
+	  margin-top: 7px;
+	  minimum-width: 1em;
+}
+
+#owncloudDialogTree .fancytree-node .fancytree-icon {
+    height: 25px;
+    width: 25px;
+    background-size: contain;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    background-position: 0 0;
+    flex: 0 0 25px;
+}
+#owncloudDialogTree .fancytree-node>.fancytree-icon {
+    background-image: url(/image/getIconImage/-1);
+    background-repeat: no-repeat;
+}
+#owncloudDialogTree .fancytree-folder>.fancytree-icon {
+    background-image: url(/images/icons/folder.png);
+    background-repeat: no-repeat;
+}
+
+#owncloudDialogTree .fancytree-node.file {
+    margin-left: 14px;
+}
+#owncloudDialogTree .fancytree-node.file .fancytree-expander {
+    display: none;
+}
+#owncloudDialogTree .fancytree-node.file.ext_jpg>.fancytree-icon {
+    background-image: url(/images/icons/jpg.png);
+}
+#owncloudDialogTree .fancytree-node.file.ext_png>.fancytree-icon {
+    background-image: url(/images/icons/png.png);
+}
+#owncloudDialogTree .fancytree-node.file.ext_gif>.fancytree-icon {
+    background-image: url(/images/icons/gif.png);
+}
+
+#owncloudDialogTree .checkbox {
+  position: relative;
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+#owncloudDialogTree .checkbox label {
+  min-height: 20px;
+  padding-left: 20px;
+  margin-bottom: 0;
+  font-weight: normal;
+  cursor: pointer;
+}
+#owncloudDialogTree .checkbox + .checkbox {
+  margin-top: -5px;
+}
+#owncloudDialogTree .checkbox-inline {
+  position: relative;
+  display: inline-block;
+  padding-left: 20px;
+  margin-bottom: 0;
+  font-weight: normal;
+  vertical-align: middle;
+  cursor: pointer;
+}
+#owncloudDialogTree .checkbox-inline + .checkbox-inline {
+  margin-top: 0;
+  margin-left: 10px;
+}
+
+#owncloudDialogTree.disable-choose-folders span.fancytree-folder span.fancytree-checkbox {
+  background-image: none !important;
+  width: 0px;
+}
+
+#owncloudDialogTree span.fancytree-checkbox {
+  margin-left: 0.5em;  
+  margin-top: 7px;
+  background-image: url(/images/checkbox_unchecked.png);
+  background-size: 100% 100%;
+}
+
+#owncloudDialogTree .fancytree-unselectable span.fancytree-checkbox {
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+}
+/*------------------------------------------------------------------------------
+ * Node type icon
+ * Note: IE6 doesn't correctly evaluate multiples class names,
+ *     so we create combined class names that can be used in the CSS.
+ *
+ * Prefix: fancytree-ico-
+ * 1st character: 'e': expanded, 'c': collapsed
+ * 2nd character (optional): 'f': folder
+ *----------------------------------------------------------------------------*/
+#owncloudDialogTree span.fancytree-icon {
+  margin-left: 0.5em;
+}
+/* Documents */
+/* Folders */
+#owncloudDialogTree .fancytree-loading span.fancytree-expander,
+#owncloudDialogTree .fancytree-loading span.fancytree-expander:hover,
+#owncloudDialogTree .fancytree-statusnode-loading span.fancytree-icon,
+#owncloudDialogTree .fancytree-statusnode-loading span.fancytree-icon:hover {
+  background-image: none;
+}
+
+#owncloudDialogTree .fancytree-selected span.fancytree-checkbox {
+	background-image: url(/images/checkbox_checked.png);
+	background-size: 100% 100%;
+}

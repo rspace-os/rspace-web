@@ -1,0 +1,37 @@
+{
+  "data": [
+    {
+      "id": 2551,
+      "childCounts": 6,
+      "name": "JL_120731_S6A",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "plate",
+      "parentId": 3,
+      "children": []
+    },
+    {
+      "id": 2552,
+      "childCounts": 6,
+      "name": "JL_120731_S6B",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "plate",
+      "parentId": 3,
+      "children": []
+    },
+    {
+      "id": 2670,
+      "childCounts": 6,
+      "name": "X_110702_MS1404WT_testplate",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "plate",
+      "parentId": 3,
+      "children": []
+    }
+  ]
+}

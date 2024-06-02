@@ -1,0 +1,3 @@
+﻿ID,Genotype (=Label),Genetic Description,Chromosome,Short description,Category,Box,"Position (A,B,C)",Position (1-13),SGF,SGF descriptions,Stock,Stock #,Status,Status Comment,Original User,Current User,Components and genes,Associated genes,Description,Citation (original),Donor,Donor ID,Original donor,Phenotype,tested,Comments,published,Publication,Stock database,Stock ID,Stock comments,Flybase ID,FlyBase web link,Link
+8,FM7a/FM7a (CS),FM7a/FM7a,1,,Balancer,1,A,5,,,FIALA,,in stock,,,,,,"balancer, 1st, cantonized, backrossed by P. Singh",,unknown,,,FALSE,Ja,,FALSE,,,,,,,
+9,Gla/CyO (CS),w[1118];Gla/CyO,2,,Balancer,1,A,6,,,FIALA,,in stock,,,,,,"balancer, 2nd, cantonized",,BDSC,5439,,FALSE,Ja,,FALSE,,BDSC,5439,,,,

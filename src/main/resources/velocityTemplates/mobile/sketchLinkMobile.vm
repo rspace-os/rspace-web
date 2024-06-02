@@ -1,0 +1,8 @@
+#* Template for sketch links used by the mobile application
+
+ Arguments needed for mustache are:
+  - sketchId - database id of the sketch (annotation)
+  - width
+  - height
+*#
+<img data-type="sketch" data-id="$sketchId" width="$width" height="$height" />

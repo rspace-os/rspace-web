@@ -1,0 +1,39 @@
+<html>
+#utf8header
+<body>
+<p>Hello ${userFirstName}, </p>
+
+<p>Welcome to ResearchSpace! We're pleased that you are using our system 
+and we want to make your experience as positive as possible. 
+</p>
+<p>
+You can access the application at ${htmlDomainPrefix}/workspace.
+</p>
+<p>
+#if($groupName)
+You are part of the Lab Group '${groupName}', and can share documents, send messages, and collaborate with other members of the group.
+#else
+You are registered as an individual user.
+#end
+</p>
+<p>
+Here is some guidance for getting started with RSpace.
+</p>
+<h3> Guidance </h3>
+
+RSpace uses modern HTML technology, and to get the best experience we recommend a modern browser:
+#browserAdvice
+
+<p>As background you might like to watch our <a href="https://youtu.be/bhRExXIGxek&ab_channel=ResearchSpace">
+Getting Started for Researchers video</a>. 
+
+<p> Our full <a href="https://researchspace.helpdocs.io/">Guidance Notes</a> are also available, 
+and can be accessed through the in-app <b>Need Help?</b> button on the bottom-right of RSpace.
+ 
+For any help, comments, or questions, please contact us at support@researchspace.com
+
+#notificationPrefInfoNewUser
+<p>
+#signature
+</body>
+</html>

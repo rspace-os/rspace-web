@@ -1,0 +1,54 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.73 December 2021 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+
+	<changeSet author="matthias" id="2021-11-04" context="run">
+		<comment>Refactor columns in sample radio/choice field (RSINV-150)</comment>
+		<renameColumn tableName="InventoryRadioFieldDef" oldColumnName="radioOption" newColumnName="radioOptions" columnDataType="text"/>
+		<modifyDataType tableName="InventoryRadioFieldDef" columnName="radioOptions" newDataType="text" />
+		<modifyDataType tableName="InventoryChoiceFieldDef" columnName="choiceOptions" newDataType="text" />
+		<dropColumn columnName="defaultChoiceOption" tableName="InventoryChoiceFieldDef" />
+		<dropColumn columnName="defaultRadioOption" tableName="InventoryRadioFieldDef" />
+	</changeSet>
+
+	<changeSet author="matthias" id="2021-12-02" context="run">
+		<comment>Allow linking inventory file with sample field</comment>
+		<addColumn tableName="InventoryFile">
+			<column name="sampleField_id" type="BIGINT(19)" />
+		</addColumn>
+		<addColumn tableName="InventoryFile_AUD">
+			<column name="sampleField_id" type="BIGINT(19)" />
+		</addColumn>
+		<addForeignKeyConstraint
+			baseColumnNames="sampleField_id" baseTableName="InventoryFile"
+			constraintName="FK_qy05jb7phinbki3tip3q5okdj" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="SampleField" />
+	</changeSet>
+
+
+    <!-- only customChange changeSets should be placed below here -->
+
+	<changeSet author="matthias" id="2021-11-18" context="run">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">select count(id) from Sample</sqlCheck>
+			</not>
+		</preConditions>
+
+		<comment>Change format of stored sample choice/radio field options (RSINV-150)</comment>
+		<customChange
+			class="com.researchspace.dao.customliquibaseupdates.SampleRadioChoiceFieldOptionsFormatChange_1_73">
+		</customChange>
+	</changeSet> 
+
+</databaseChangeLog>

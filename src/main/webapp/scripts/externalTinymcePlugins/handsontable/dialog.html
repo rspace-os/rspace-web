@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/scripts/bower_components/mustache/mustache.min.js"></script>
+  <script src="/scripts/tinymceDialogUtils.js"></script>
+  <script src="/scripts/externalTinymcePlugins/handsontable/main.js"></script>
+
+  <script src="/scripts/handsontableCE/handsontable.full.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/lodash/lodash.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/underscore.string/underscore.string.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/moment/moment.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/numeral/numeral.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/numericjs/numeric.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/js-md5/md5.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/jstat/jstat.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/formulajs/formula.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/ruleJS/parser.js"></script>
+  <script src="/scripts/handsontable-ruleJS/lib/ruleJS/ruleJS.js"></script>
+  <script src="/scripts/handsontable-ruleJS/handsontable.formula.js"></script>
+
+  <link rel="stylesheet" href='/styles/simplicity/typo.css' />
+  <link rel="stylesheet" href="/scripts/handsontableCE/handsontable.full.css">
+  <link rel="stylesheet" href="/scripts/handsontable-ruleJS/handsontable.formula.css">
+
+  <style>
+    .hotTableWrapper {
+      padding: 15px 10px;
+    }
+    .hotInfoBox {
+      border: 1px solid #B6B6B6;
+      margin: 10px;
+      padding: 5px;
+      line-height: 1.4em;
+      width: fit-content;
+    }
+    .addColumnDiv {
+      padding-bottom: 5px;
+      width: 100%;
+      text-align: right;
+    }
+    #addColumnLink {
+      padding-right: 15px;
+    }
+    .addRowDiv {
+      padding: 5px 0 0 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="hotTableWrapper">
+    <div class="addColumnDiv">
+      <a id="addColumnLink" href="#">Add column</a>
+    </div>
+    <div id="hotTableDiv"></div>
+    <div class="addRowDiv">
+      <a id="addRowLink" href="#">Add row</a>
+    </div>
+  </div>
+  <div class="hotInfoBox">
+    <img src="/images/notice.png" style="height: 15px; vertical-align: text-bottom;" />
+    Calculations Table supports Excel-like formulas for basic mathematical and logical operations. Check the
+    <a target="_blank" rel="noreferrer" href="http://handsontable.github.io/ruleJS/"> list of supported formulas</a>, or our
+    <a target="_blank" rel="noreferrer" href="https://researchspace.helpdocs.io/article/7wh1nm3nnz-calculations-table">documentation
+      page</a>.
+  </div>
+</body>
+</html>

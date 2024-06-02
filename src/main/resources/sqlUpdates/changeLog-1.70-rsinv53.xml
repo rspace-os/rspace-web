@@ -1,0 +1,16 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 inventory containers Sept 2020 -->
+
+	<changeSet author="richard" id="2020-10-2a" context="run">
+		<comment>Add non-null constraints to sample notes</comment>
+		<addNotNullConstraint columnDataType="BIGINT" tableName="SubSampleNote" columnName="creationDateMillis"/>
+		<addNotNullConstraint columnDataType="BIGINT" tableName="SubSampleNote" columnName="subSample_id"/>
+	</changeSet>
+
+
+</databaseChangeLog>

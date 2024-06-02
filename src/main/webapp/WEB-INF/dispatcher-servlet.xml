@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+            http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+       default-lazy-init="true">
+
+    <!--  Include Web Configuration -->
+	<context:component-scan base-package="com.researchspace.webapp.config">
+		<context:include-filter type="assignable"
+			expression="com.researchspace.webapp.config.WebConfig" />
+	</context:component-scan>
+
+
+	<!-- <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="maxUploadSize" value="50000000" />
+	</bean> -->
+
+	<!-- Exception handling is driven by annotations in controller elements -->
+	<bean class="org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver" />
+	<!-- <bean id="exceptionHandler" class="com.researchspace.webapp.controller.ControllerExceptionHandler" /> -->
+
+
+	<context:component-scan base-package="com.axiope.webapp,com.researchspace.webapp,com.researchspace.api" />
+	 <!-- Enable @Transactional support -->
+    <tx:annotation-driven/>
+    <import resource="classpath:applicationContext-resources.xml"/>
+
+      <bean id="contentNegotiationManager" class="org.springframework.web.accept.ContentNegotiationManager">
+        <constructor-arg>
+			<list>
+				<!-- These are evaluated in order -->
+				<!-- Is there a media type based on suffix? -->
+				<bean
+					class="org.springframework.web.accept.PathExtensionContentNegotiationStrategy">
+					<constructor-arg>
+						<map>
+							<entry key="json">
+								<util:constant
+									static-field="org.springframework.http.MediaType.APPLICATION_JSON" />
+							</entry>
+							<entry key="csv">
+								<util:constant
+									static-field="com.researchspace.api.v1.controller.BaseApiController.CSV" />
+							</entry>
+						</map>
+					</constructor-arg>
+				</bean>
+				<bean class ="org.springframework.web.accept.ParameterContentNegotiationStrategy">
+				    <constructor-arg>
+						<map>
+							<entry key="json">
+								<util:constant
+									static-field="org.springframework.http.MediaType.APPLICATION_JSON" />
+							</entry>
+							<entry key="csv">
+								<util:constant
+									static-field="com.researchspace.api.v1.controller.BaseApiController.CSV" />
+							</entry>
+						</map>
+					</constructor-arg>
+				</bean>
+				<!-- Else use request header -->
+				<bean class="org.springframework.web.accept.HeaderContentNegotiationStrategy" />
+			</list>
+		</constructor-arg>
+    </bean>
+
+
+	<!-- Convenient way to map URLs to JSPs w/o having a Controller -->
+	<mvc:view-controller path="/import/archiveImport" view-name="import/archiveImport" />
+	<mvc:view-controller path="/import/archiveImportReport" view-name="import/archiveImportReport" />
+	<mvc:view-controller path="/styleGuide" view-name="styleGuide/styleGuide" />
+    <mvc:view-controller path="/tools" view-name="tools/tools" />
+	<mvc:view-controller path="/admin" view-name="admin/admin" />
+	<mvc:view-controller path="/public/signupConfirmation" view-name="public/signupConfirmation" />
+	<mvc:view-controller path="/public/awaitingAuthorisation" view-name="public/awaitingAuthorisation" />
+	<mvc:view-controller path="/public/accountDisabled" view-name="public/accountDisabled" />
+	<mvc:view-controller path="/public/requestPasswordReset" view-name="public/requestPasswordReset" />
+	<mvc:view-controller path="/public/requestUsernameReminder" view-name="public/requestUsernameReminder" />
+    <mvc:view-controller path="/public/maintenanceInProgress" view-name="public/maintenanceInProgress" />
+	<mvc:view-controller path="/public/terms" view-name="public/terms" />
+    <mvc:view-controller path="/public/ssoinfo" view-name="public/ssoinfo" />
+	<mvc:view-controller path="/public/ssologout" view-name="public/ssologout" />
+	<mvc:view-controller path="/public/ipAddressInvalid" view-name="public/ipAddressInvalid" />
+	<mvc:view-controller path="/public/apiDocs" view-name="public/apiDocs" />
+	<mvc:view-controller path="/test/template" view-name="/test/template" />
+	<mvc:view-controller path="/admin/cloud/createCloudGroupSuccess" view-name="admin/cloud/createCloudGroupSuccess" />
+	<mvc:view-controller path="/cloud/signup/cloudSignupConfirmation" view-name="cloud/signup/cloudSignupConfirmation" />
+	<mvc:view-controller path="/cloud/signup/accountActivationComplete" view-name="cloud/signup/accountActivationComplete" />
+    <mvc:view-controller path="/cloud/verifyEmailChange/emailChangeConfirmed" view-name="cloud/verifyEmailChange/emailChangeConfirmed" />
+	<mvc:view-controller path="/cloud/resendConfirmationEmail/resendFailure" view-name="cloud/resendConfirmationEmail/resendFailure" />
+	<mvc:view-controller path="/cloud/resendConfirmationEmail/resendSuccess" view-name="cloud/resendConfirmationEmail/resendSuccess" />
+
+    <!-- MK: there are mappings in WebConfig.java, but just adding new here seems to work fine  -->
+    <mvc:view-controller path="/system/ajax/batchUserRegistration" view-name="system/batchUserRegistration" />
+
+	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<!-- <property name="contentNegotiationManager" ref="contentNegotiationManager"></property> -->
+		<property name="defaultViews">
+			<list>
+				<bean class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" />
+			</list>
+		</property>
+
+		<property name="viewResolvers">
+			<list>
+				<!-- These are listed in the same order they are evaluated by their 'order' attributes -->
+				<ref bean="xmlViewResolver" />
+				<ref bean="beanNameViewResolver" />
+				<ref bean="viewResolver" />
+			</list>
+		</property>
+	</bean>
+
+	<!-- View Resolver for JSPs -->
+	<bean id="beanNameViewResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver" p:order="1" />
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver" p:order="2">
+		<property name="requestContextAttribute" value="rc" />
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView" />
+		<property name="prefix" value="/WEB-INF/pages/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+	<bean id="xmlViewResolver" class="org.springframework.web.servlet.view.XmlViewResolver">
+		<property name="location">
+			<value>/WEB-INF/pdf-views.xml</value>
+		</property>
+		<property name="order" value="0" />
+	</bean>
+
+	<!-- Add additional controller beans here -->
+</beans>

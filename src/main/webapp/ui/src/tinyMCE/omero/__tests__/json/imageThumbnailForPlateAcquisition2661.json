@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "name": "",
+      "id": 590690,
+      "description": "",
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "column": "0",
+      "row": "3",
+      "type": "well",
+      "parentId": 2551,
+      "children": [
+        {
+          "name": "",
+          "id": 1036819,
+          "description": "",
+          "omeroConnectionKey": "user1a",
+          "annotations": [],
+          "type": "well sample",
+          "parentId": 2551,
+          "children": [
+            {
+              "id": 1230029,
+              "name": "JL_120731_S6A [Well D-1; Field #1]",
+              "description": "",
+              "annotations": [],
+              "plateAcquisitionName": "Meas_01(2012-07-31_10-41-12)",
+              "displayImageData": [],
+              "omeroConnectionKey": "user1a",
+
+              "type": "image",
+              "parentId": 2551,
+              "children": [],
+              "childCounts": 0
+            }
+          ],
+          "childCounts": 1
+        }
+      ],
+      "childCounts": 1
+    }
+  ]
+}

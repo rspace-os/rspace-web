@@ -1,0 +1,2 @@
+<!-- Provides context path for a tomcat application -->
+<Context path="${context.path}"/>

@@ -1,0 +1,100 @@
+<script id="REQUEST_SHARE_RECORD-template" type="text/x-mustache-template">
+<div style="padding-right:10px;">
+	{{originator.fullName}} wants to share with you the following document: {{recordName}}.
+	<br><br>
+	Please accept or decline this invitation:<br><br>
+	<div style="padding-right:10px;"><div style="float:right;">
+	<form class="specialMsgUpdate" data-action='accept' method='POST' action='#'>
+		<input type='hidden' name = 'messageOrRequestId' value ={{id}} />
+		<input type='hidden' name = 'status' value ='COMPLETED'/>
+		<input  type='submit' value = 'Accept'>
+	</form></div>
+	<div style="float:left;">
+	<form class="specialMsgUpdate" data-action='reject' method='POST' action='#'>
+		<input type='hidden' name = 'messageOrRequestId' value={{id}} />
+		<input type='hidden' name = 'status' value ='REJECTED'/>
+		<input  type='submit' value = 'Decline'>
+	</form></div></div>
+</div>
+</script>
+
+<script id="GLOBAL_MESSAGE-template" type="text/x-mustache-template">
+<div style="padding-right:10px;">
+	<strong> This is an important announcement from your RSpace administrator: </strong>
+
+	<form class="specialMsgUpdate" data-action='quiet' method='POST' action='#'>
+		<input type='hidden' name = 'messageOrRequestId' value ={{id}} />
+		<input type='hidden' name = 'status' value ='COMPLETED'/>
+		<input  type='submit' value = 'OK, got it'>
+	</form>
+
+	<div class="msg-content">
+		{{{message}}}
+	</div>
+</div>
+</script>
+
+<script id="REQUEST_JOIN_LAB_GROUP-template" type="text/x-mustache-template">
+<div style="padding-right:10px;">
+	{{originator.fullName}} has invited you to join the group '{{groupName}}'.
+	<br><br>
+	<span class="boxLinkTypeLabel journalPagePadding">
+	If you accept, the group's PI will be permitted to view your documents.
+	</span>
+	<br><br>
+	Please accept or decline this invitation:<br><br>
+	<div style="padding-right:10px;"><div style="float:right;">
+	<form class="specialMsgUpdate" data-action='accept' method='POST' action='#'>
+		<input type='hidden' name = 'messageOrRequestId' value ={{id}} />
+		<input type='hidden' name = 'status' value ='COMPLETED'/>
+		<input  type='submit' value = 'Accept' id="acceptLabGrpRequest">
+	</form></div><div style="float:left;">
+	<form class="specialMsgUpdate" data-action='reject' method='POST' action='#'>
+		<input type='hidden' name = 'messageOrRequestId' value={{id}} />
+		<input type='hidden' name = 'status' value ='REJECTED'/>
+		<input  type='submit' value = 'Decline' id="rejectLabGrpRequest">
+	</form></div></div>
+</div>
+</script>
+
+<script id="REQUEST_JOIN_PROJECT_GROUP-template" type="text/x-mustache-template">
+    <div style="padding-right:10px;">
+        {{originator.fullName}} has invited you to join the Project Group '{{groupName}}'.
+        Project Groups have no PI, your documents won't be visible to other group members until you explicitly share them.
+        <br><br>
+        <span class="boxLinkTypeLabel journalPagePadding">
+	</span>
+        <br><br>
+        Please accept or decline this invitation:<br><br>
+        <div style="padding-right:10px;"><div style="float:right;">
+            <form class="specialMsgUpdate" data-action='accept' method='POST' action='#'>
+                <input type='hidden' name = 'messageOrRequestId' value ={{id}} />
+                <input type='hidden' name = 'status' value ='COMPLETED'/>
+                <input  type='submit' value = 'Accept' id="acceptLabGrpRequest">
+            </form></div><div style="float:left;">
+            <form class="specialMsgUpdate" data-action='reject' method='POST' action='#'>
+                <input type='hidden' name = 'messageOrRequestId' value={{id}} />
+                <input type='hidden' name = 'status' value ='REJECTED'/>
+                <input  type='submit' value = 'Decline' id="rejectLabGrpRequest">
+            </form></div></div>
+    </div>
+</script>
+
+<script id="REQUEST_CREATE_LAB_GROUP-template" type="text/x-mustache-template">
+<div style="padding-right:10px;">
+	{{originator.fullName}} wants to create a group  called '{{groupName}}', with you as PI.
+	<br><br>
+	Please accept or decline this invitation:<br><br>
+	<div style="padding-right:10px;"><div style="float:right;">
+	<form class="specialMsgUpdate" data-action='accept' method='POST' action='#'>
+		<input type='hidden' name = 'messageOrRequestId' value ={{id}} />
+		<input type='hidden' name = 'status' value ='COMPLETED'/>
+		<input  type='submit' value = 'Accept'>
+	</form></div><div style="float:left;">
+	<form class="specialMsgUpdate" data-action='reject' method='POST' action='#'>
+		<input type='hidden' name = 'messageOrRequestId' value={{id}} />
+		<input type='hidden' name = 'status' value ='REJECTED'/>
+		<input  type='submit' value = 'Decline'>
+	</form></div></div>
+</div>
+</script>

@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "https://www.eclipse.org/jetty/configure_10_0.dtd">
+<!-- ============================================================= -->
+<!-- Configure a TLS (SSL) Context Factory                         -->
+<!-- This configuration must be used in conjunction with jetty.xml -->
+<!-- and either jetty-https.xml or jetty-spdy.xml (but not both)   -->
+<!-- ============================================================= -->
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+    <Call name="addBean">
+        <Arg>
+            <New id="sslContextFactory" class="org.eclipse.jetty.util.ssl.SslContextFactory$Server">
+                <Set name="KeyStorePath">
+                    <Call name="resolvePath" class="org.eclipse.jetty.xml.XmlConfiguration">
+                        <Arg><Property name="jetty.base" default="." /></Arg>
+                        <Arg><Property name="jetty.sslContext.keyStorePath" default="jetty/jetty.keystore"/></Arg>
+                    </Call>
+                </Set>
+                <Set name="KeyStorePassword"><Property name="jetty.keystore.password" default="secret"/></Set>
+                <Set name="KeyManagerPassword"><Property name="jetty.keymanager.password" default="secret"/></Set>
+                <Set name="TrustStorePath"><Property name="jetty.base" default="." />/<Property name="jetty.truststore" default="jetty/jetty-keystore.jks"/></Set>
+                <Set name="TrustStorePassword"><Property name="jetty.truststore.password" default="secret"/></Set>
+                <Set name="ExcludeCipherSuites">
+                    <Array type="String">
+                        <Item>SSL_RSA_WITH_DES_CBC_SHA</Item>
+                        <Item>SSL_DHE_RSA_WITH_DES_CBC_SHA</Item>
+                        <Item>SSL_DHE_DSS_WITH_DES_CBC_SHA</Item>
+                        <Item>SSL_RSA_EXPORT_WITH_RC4_40_MD5</Item>
+                        <Item>SSL_RSA_EXPORT_WITH_DES40_CBC_SHA</Item>
+                        <Item>SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA</Item>
+                        <Item>SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA</Item>
+                        <Item>TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA</Item>
+                        <Item>TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA</Item>
+                        <Item>TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA</Item>
+                        <Item>TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA</Item>
+                        <Item>TLS_DHE_RSA_WITH_AES_256_CBC_SHA</Item>
+                        <Item>TLS_DHE_DSS_WITH_AES_256_CBC_SHA</Item>
+                        <Item>TLS_DHE_RSA_WITH_AES_128_CBC_SHA</Item>
+                        <Item>TLS_DHE_DSS_WITH_AES_128_CBC_SHA</Item>
+                        <Item>TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA</Item>
+                        <Item>TLS_ECDH_RSA_WITH_AES_256_CBC_SHA</Item>
+                        <Item>TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA</Item>
+                        <Item>TLS_ECDH_RSA_WITH_AES_128_CBC_SHA</Item>
+                        <Item>TLS_RSA_WITH_AES_256_GCM_SHA384</Item>
+                        <Item>TLS_RSA_WITH_AES_128_GCM_SHA256</Item>
+                        <Item>TLS_RSA_WITH_AES_256_CBC_SHA256</Item>
+                        <Item>TLS_RSA_WITH_AES_128_CBC_SHA256</Item>
+                        <Item>TLS_RSA_WITH_AES_256_CBC_SHA</Item>
+                        <Item>TLS_RSA_WITH_AES_256_CBC_SHA</Item>
+                        <Item>TLS_RSA_WITH_AES_128_CBC_SHA</Item>
+                        <Item>TLS_RSA_WITH_AES_128_CBC_SHA</Item>
+
+                    </Array>
+                </Set>
+                <!-- =========================================================== -->
+                <!-- Create a TLS specific HttpConfiguration based on the        -->
+                <!-- common HttpConfiguration defined in jetty.xml               -->
+                <!-- Add a SecureRequestCustomizer to extract certificate and    -->
+                <!-- session information                                         -->
+                <!-- =========================================================== -->
+                <New id="sslHttpConfig" class="org.eclipse.jetty.server.HttpConfiguration">
+                    <Arg><Ref refid="httpConfig"/></Arg>
+                    <Call name="addCustomizer">
+                        <Arg>
+                            <New class="org.eclipse.jetty.server.SecureRequestCustomizer">
+                                <Arg name="sniHostCheck" type="boolean"><Property name="jetty.ssl.sniHostCheck" default="false"/></Arg>
+                            </New>
+                        </Arg>
+
+                    </Call>
+                </New>
+            </New>
+
+        </Arg>
+
+    </Call>
+
+
+</Configure>
+

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>MathJax demo</title>
+
+      <link rel="stylesheet" href='/styles/simplicity/typo.css' />
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js">
+        MathJax.Hub.Config({
+          extensions: ['tex2jax.js',"TeX/AMSmath.js","TeX/AMSsymbols.js"],
+          tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]},
+          jax: ["input/TeX","output/SVG"],
+          displayAlign: "center",
+          displayIndent: "0.1em",
+          showProcessingMessages: false,
+          showMathMenu: false,
+          SVG: {
+        	  useFontCache: false,
+        	  useGlobalCache: false
+          }
+        });
+      </script>
+
+      <script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+      <script src="/scripts/bower_components/mustache/mustache.min.js"></script>
+      <script src="/scripts/tinymceDialogUtils.js"></script>
+      <script src="/scripts/externalTinymcePlugins/mathjax/main.js"></script>
+      
+  </head>
+
+  <body>
+      <p>
+          Put your Maths LaTeX here. To get started with LateX, please read the
+          <a rel="noreferrer" href="https://researchspace.helpdocs.io/article/fn4zailsuu-equation-editor" target="_blank">Help Pages</a> or the
+          quick-reference <a rel="noreferrer" href="https://users.dickinson.edu/~richesod/latex/latexcheatsheet.pdf" target="_blank"> CheatSheet</a>.
+          <br/>
+          <textarea id="latex" rows="4" cols="60" placeholder="any simple or complex LaTeX equation e.g. \sqrt{x}"></textarea>
+          <br />
+          <button id="previewBtn">Parse Equation</button>
+          <button id="zoomInBtn">Zoom +</button>
+          <button id="zoomOutBtn">Zoom -</button>
+      </p>
+      <div id="preview" style="border: 1px;color: black;font-size: 16px;"></div>
+      
+  </body>
+</html>

@@ -1,0 +1,28 @@
+#*
+Template for messaging a user that they are set up with a PI role.
+Arguments:
+ - newPI - the new PI User
+ - newLabGroup -  the Group that was created for the PI.
+ - htmlPrefix - the base URL of the application
+ - systemUser - the admin User who set up the new account.
+*#
+<p/>
+Hello ${newPI.fullName},
+<p/>
+The RSpace system administrator has set you up with a PI role.
+<p/>
+To view your lab group, please go to:
+<br/>
+${htmlPrefix}/groups/view/${newLabGroup.id}
+
+
+<p> If you would like to change your profile details for your account, please go to:
+<br/>
+${htmlPrefix}/userform?userId=${newPI.id}
+
+<p/>
+Best wishes,
+<p/>
+ ${systemUser.fullName}
+ <p/>
+ #dontReply

@@ -1,0 +1,82 @@
+[ {
+    "repoName" : "app.repo1",
+    "subjects" : [{
+      "id" : null,
+      "name" : "History",
+      "parentSubject" : null
+    }, {
+      "id" : null,
+      "name" : "Mathematics",
+      "parentSubject" : null
+    }, {
+      "id" : null,
+      "name" : "Physics",
+      "parentSubject" : null
+    }, {
+      "id" : null,
+      "name" : "Geology",
+      "parentSubject" : null
+    }, {
+      "id" : null,
+      "name" : "Computer Science",
+      "parentSubject" : null
+    } ],
+    "license" : {
+      "licenseRequired" : true,
+      "otherLicensePermitted" : false,
+      "licenses" : [ {
+        "licenseDefinition" : {
+          "url" : "https://creativecommons.org/publicdomain/zero/1.0/",
+          "name" : "CC-0"
+        },
+        "defaultLicense" : null
+      } ]
+    },
+    "otherProperties" : [ ],
+    "linkedDMPs" : null,
+    "options" : {
+      "ACCESS_TOKEN" : "access_token"
+    },
+    "displayName" : "Repository 1"
+  }, 
+  {
+    "repoName" : "app.dyrad",
+    "subjects" : [{
+      "id" : null,
+      "name" : "History",
+      "parentSubject" : null
+    }, {
+      "id" : null,
+      "name" : "Mathematics",
+      "parentSubject" : null
+    }, {
+      "id" : null,
+      "name" : "Physics",
+      "parentSubject" : null
+    }, {
+      "id" : null,
+      "name" : "Geology",
+      "parentSubject" : null
+    }, {
+      "id" : null,
+      "name" : "Computer Science",
+      "parentSubject" : null
+    } ],
+    "license" : {
+      "licenseRequired" : true,
+      "otherLicensePermitted" : false,
+      "licenses" : [ {
+        "licenseDefinition" : {
+          "url" : "https://creativecommons.org/publicdomain/zero/1.0/",
+          "name" : "CC-0"
+        },
+        "defaultLicense" : null
+      } ]
+    },
+    "otherProperties" : [ ],
+    "linkedDMPs" : null,
+    "options" : {
+      "ACCESS_TOKEN" : "access_token"
+    },
+    "displayName" : "Repository 2"
+  } ]

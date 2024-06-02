@@ -1,0 +1,196 @@
+{
+  "annotations": [
+    {
+      "id": 20516151,
+      "ns": "idr.openmicroscopy.org/study/info",
+      "description": null,
+      "owner": {
+        "id": 2
+      },
+      "date": "2019-06-04T10:43:19+01:00",
+      "permissions": {
+        "canDelete": false,
+        "canAnnotate": false,
+        "canLink": false,
+        "canEdit": false
+      },
+      "link": {
+        "id": 1652,
+        "owner": {
+          "id": 2
+        },
+        "parent": {
+          "id": 102,
+          "class": "ScreenI",
+          "name": "idr0002-heriche-condensation/screenA"
+        },
+        "date": "2019-06-04T10:43:21+01:00",
+        "permissions": {
+          "canDelete": false,
+          "canAnnotate": false,
+          "canLink": false,
+          "canEdit": false
+        }
+      },
+      "class": "MapAnnotationI",
+      "values": [
+        [
+          "Sample Type",
+          "cell"
+        ],
+        [
+          "Organism",
+          "Homo sapiens"
+        ],
+        [
+          "Study Title",
+          "Focused mitotic chromsome condensaton screen using HeLa cells"
+        ],
+        [
+          "Study Type",
+          "high content screen"
+        ],
+        [
+          "Screen Type",
+          "primary screen"
+        ],
+        [
+          "Screen Technology Type",
+          "RNAi screen"
+        ],
+        [
+          "Imaging Method",
+          "fluorescence microscopy"
+        ],
+        [
+          "Publication Title",
+          "Integration of biological data by kernels on graph nodes allows prediction of new genes involved in mitotic chromosome condensation."
+        ],
+        [
+          "Publication Authors",
+          "H\u00e9rich\u00e9 JK, Lees JG, Morilla I, Walter T, Petrova B, Roberti MJ, Hossain MJ, Adler P, Fern\u00e1ndez JM, Krallinger M, Haering CH, Vilo J, Valencia A, Ranea JA, Orengo C, Ellenberg J"
+        ],
+        [
+          "PubMed ID",
+          "24943848 https://www.ncbi.nlm.nih.gov/pubmed/24943848"
+        ],
+        [
+          "PMC ID",
+          "PMC4142622 https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4142622"
+        ],
+        [
+          "Publication DOI",
+          "10.1091/mbc.E13-04-0221 https://doi.org/10.1091/mbc.E13-04-0221"
+        ],
+        [
+          "Release Date",
+          "2016-05-26"
+        ],
+        [
+          "License",
+          "CC BY 4.0 https://creativecommons.org/licenses/by/4.0/"
+        ],
+        [
+          "Copyright",
+          "Heriche et al"
+        ],
+        [
+          "Annotation File",
+          "idr0002-screenA-annotation.csv https://github.com/IDR/idr0002-heriche-condensation/blob/HEAD/screenA/idr0002-screenA-annotation.csv"
+        ]
+      ]
+    },
+    {
+      "id": 6621611,
+      "ns": "openmicroscopy.org/omero/bulk_annotations",
+      "description": "bulk_annotations",
+      "owner": {
+        "id": 2
+      },
+      "date": "2016-12-13T22:59:22+00:00",
+      "permissions": {
+        "canDelete": false,
+        "canAnnotate": false,
+        "canLink": false,
+        "canEdit": false,
+        "canDownload": true
+      },
+      "link": {
+        "id": 1156,
+        "owner": {
+          "id": 2
+        },
+        "parent": {
+          "id": 102,
+          "class": "ScreenI",
+          "name": "idr0002-heriche-condensation/screenA"
+        },
+        "date": "2016-12-13T22:59:22+00:00",
+        "permissions": {
+          "canDelete": false,
+          "canAnnotate": false,
+          "canLink": false,
+          "canEdit": false
+        }
+      },
+      "class": "FileAnnotationI",
+      "file": {
+        "id": 14209155,
+        "name": "bulk_annotations",
+        "size": 795820,
+        "path": "bulk_annotations",
+        "mimetype": "OMERO.tables"
+      }
+    },
+    {
+      "id": 2891866,
+      "ns": null,
+      "description": null,
+      "owner": {
+        "id": 2
+      },
+      "date": "2016-11-09T16:08:06+00:00",
+      "permissions": {
+        "canDelete": false,
+        "canAnnotate": false,
+        "canLink": false,
+        "canEdit": false,
+        "canDownload": true
+      },
+      "link": {
+        "id": 1029,
+        "owner": {
+          "id": 2
+        },
+        "parent": {
+          "id": 102,
+          "class": "ScreenI",
+          "name": "idr0002-heriche-condensation/screenA"
+        },
+        "date": "2016-11-09T16:15:09+00:00",
+        "permissions": {
+          "canDelete": false,
+          "canAnnotate": false,
+          "canLink": false,
+          "canEdit": false
+        }
+      },
+      "class": "FileAnnotationI",
+      "file": {
+        "id": 14208518,
+        "name": "idr0002-heriche-condensation-screenA-plate-all.h5",
+        "size": 1065853300065,
+        "path": "/uod/idr/features/idr0002-heriche-condensation/screenA/tables",
+        "mimetype": "type/unknown"
+      }
+    }
+  ],
+  "experimenters": [
+    {
+      "id": 2,
+      "omeName": "demo",
+      "firstName": "Public",
+      "lastName": "data"
+    }
+  ]
+}

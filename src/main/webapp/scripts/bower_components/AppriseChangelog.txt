@@ -1,0 +1,40 @@
+-------------------------------------------------------------------
+- This documents describes steps after updating Apprise plugin    -
+-------------------------------------------------------------------
+
+Changes to be made after upgrading:
+
+In `apprise-v2.js` (or a similarly named main JS file of the plugin) find the code that handles keypresses. It might look like this:
+
+// Keypress handling
+$(document).keydown(function(e) {
+    if ($('.apprise-overlay').is(':visible')) {
+        if (e.keyCode === 13) {
+            $("#apprise-btn-confirm").click();            	
+            return false;
+        }
+        if (e.keyCode === 27) {
+            $("#apprise-btn-cancel").click();
+            return false;
+        }
+    }
+});
+
+Change the way the Enter key (key code 13) events are handled by making the following modifications:
+
+...
+if (e.keyCode === 13) {
+    /** The following code has been modified */
+    // Custom changes: if Enter key is pressed but the Cancel button
+    // is focused, do not submit the dialog and cancel it instead.
+    if ($(":focus").attr('id') === 'apprise-btn-cancel'){
+    	$("#apprise-btn-cancel").click();            	
+    } else {
+    	$("#apprise-btn-confirm").click();            	
+    }
+    /** End of modified code */
+    return false;
+}
+...
+
+Sam Sucik, 6/10/2017

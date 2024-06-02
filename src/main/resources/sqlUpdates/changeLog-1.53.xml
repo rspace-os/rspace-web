@@ -1,0 +1,127 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.53 September 2018 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- Add changesets here... -->
+
+	<changeSet id="2018-07-18a" author="richard" context="run">
+		<comment> RSPAC-1531 Add FK column to StructuredDocument template_id </comment>
+		<addColumn tableName="StructuredDocument">
+			<column name="template_id" type="BIGINT"></column>
+		</addColumn>
+		<addColumn tableName="StructuredDocument_AUD">
+			<column name="template_id" type="BIGINT"></column>
+		</addColumn>
+		<addForeignKeyConstraint
+			baseColumnNames="template_id" baseTableName="StructuredDocument"
+			constraintName="FK23FEB76EDE6F978E" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="StructuredDocument" />
+
+	</changeSet>
+
+	<changeSet id="2018-07-19" author="matthias" context="run">
+		<comment>RSPAC-178 adding EcatMediaFile.version column which replaces EcatDocumentFile.version and .versioningName</comment>
+		<addColumn tableName="EcatMediaFile">
+			<column name="version" defaultValueNumeric="1"
+				valueNumeric="1" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="EcatMediaFile_AUD">
+			<column name="version" defaultValueNumeric="1"
+				valueNumeric="1" type="BIGINT(19)" />
+		</addColumn>
+		<dropColumn columnName="version"
+			tableName="EcatDocumentFile" />
+		<dropColumn columnName="version"
+			tableName="EcatDocumentFile_AUD" />
+		<dropColumn columnName="versioningName"
+			tableName="EcatDocumentFile" />
+		<dropColumn columnName="versioningName"
+			tableName="EcatDocumentFile_AUD" />
+	</changeSet>
+
+	<changeSet id="2018-08-15" author="richard" context="run">
+		<preConditions onFail="MARK_RAN"
+			onFailMessage="UserConnection already exists" onError="MARK_RAN"
+			onErrorMessage="UserConnection already exists">
+			<not>
+				<tableExists tableName="UserConnection" />
+			</not>
+		</preConditions>
+		<comment>Create a USerConnection table that mimics that created by SpringSocial,
+      if not already present</comment>
+		<createTable tableName="UserConnection">
+			<column name="userId" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="providerId" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="providerUserId" type="varchar(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="rank" type="int" />
+			<column name="displayName" type="varchar(255)" />
+			<column name="profileUrl" type="varchar(512)" />
+			<column name="imageUrl" type="varchar(512)" />
+			<column name="accessToken" type="varchar(512)">
+				<constraints nullable="false" />
+			</column>
+			<column name="refreshToken" type="varchar(512)" />
+			<column name="secret" type="varchar(512)" />
+			<column name="expireTime" type="bigint" />
+		</createTable>
+		<addPrimaryKey tableName="UserConnection"
+			columnNames="userId,providerId,providerUserId"></addPrimaryKey>
+		<createIndex tableName="UserConnection"
+			indexName="UserConnectionRank">
+			<column name="userId"></column>
+			<column name="providerId"></column>
+			<column name="rank"></column>
+		</createIndex>
+		<sql>alter table UserConnection engine=InnoDB;</sql>
+	</changeSet>
+
+	<changeSet id="2018-08-20" context="run" author="richard">
+		<comment>Add boolean flag columns to identify external file properties and external FileStore Root</comment>
+		<addColumn tableName="FileProperty">
+			<column name="external" type="BIT(1)" defaultValue="0">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+
+		<addColumn tableName="FileStoreRoot">
+			<column name="external" type="BIT(1)" defaultValue="0">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+	</changeSet>
+
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+    <changeSet id="18-08-23_revisionedLinksInSignedDocs" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN" onFailMessage="No Documents to update"
+                     onError="MARK_RAN" onErrorMessage="No Documents to update">
+            <sqlCheck expectedResult="1">select if(count(*)>0,1,0) from StructuredDocument;</sqlCheck>
+        </preConditions>
+        <comment>RSPAC-178 update media links in signed document content to contain revision information</comment>
+        <customChange
+            class="com.researchspace.dao.customliquibaseupdates.v53.UpdateMediaLinksInSignedDocument">
+        </customChange>
+    </changeSet>
+
+
+</databaseChangeLog>

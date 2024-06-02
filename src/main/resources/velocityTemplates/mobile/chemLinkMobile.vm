@@ -1,0 +1,9 @@
+#* Template for sketch image links used by the mobile application.
+  
+ Arguments needed for mustache are:
+  - chemId - database id of the sketch (annotation)
+  - width
+  - height
+  - fieldId of parent field
+*#
+<img data-type="chem" data-id="$chemId" data-fieldId="$fieldId" width="$width" height="$height" />

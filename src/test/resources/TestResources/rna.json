@@ -1,0 +1,136 @@
+{
+    "id": 8023,
+    "title": "\\n Ethidiumbromide-free RNA sample preparation for agarose gels\\n",
+    "title_html": "\\n Ethidiumbromide-free RNA sample preparation for agarose gels\\n",
+    "image": {
+      "source": "https: \/\/www.protocols.io\/img\/default_protocol.png",
+      "placeholder": "https: \/\/www.protocols.io\/img\/default_protocol.png"
+    },
+    "doi": "dx.doi.org\/10.17504\/protocols.io.j3xcqpn",
+    "uri": "ethidiumbromide-free-rna-sample-preparation-for-a-j3xcqpn",
+    "published_on": 2017,
+    "version_id": 0,
+    "created_on": 1506503647,
+    "categories": null,
+    "creator": {
+      "name": "Dennis Dienst",
+      "affiliation": "Department of Chemistry - Microbial Chemistry,\u00c5ngstr\u00f6m Laboratory,Uppsala,Sweden",
+      "username": "dennis-dienst",
+      "link": null,
+      "image": {
+        "source": "https: \/\/s3.amazonaws.com\/pr-journal\/nz4g64w.png",
+        "placeholder": "https: \/\/s3.amazonaws.com\/pr-journal\/nz4g64w.png"
+      }
+    },
+    "public": 1,
+    "has_versions": 0,
+    "link": null,
+    "number_of_steps": 3,
+    "authors": [
+      {
+        "name": "Dennis Dienst",
+        "affiliation": "Department of Chemistry -  Microbial Chemistry,\u00c5ngstr\u00f6m and Science for Life Laboratory, Uppsala University, Sweden",
+        "username": "dennis-dienst",
+        "link": null,
+        "image": {
+          "source": "https: \/\/s3.amazonaws.com\/pr-journal\/nz4g64w.png",
+          "placeholder": "https: \/\/s3.amazonaws.com\/pr-journal\/nz4g64w.png"
+        }
+      }
+    ],
+    "versions": [
+      
+    ],
+    "steps": [
+      {
+        "id": 588849,
+        "guid": "DB29FCD9A9124AB5B4FDEBB3A58FF51C",
+        "previous_id": 588857,
+        "previous_guid": "84EC9814A33B431C8B26E3E7FA3157F9",
+        "modified_on": 1506504182,
+        "components": [
+          {
+            "id": 1007918,
+            "guid": "BC111CFC033C4830B4B20BCD2E3F2C98",
+            "order_id": 0,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": ""
+            }
+          },
+          {
+            "id": 1007917,
+            "guid": "65B2329E47224B2F992BE758829351AD",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "Description",
+            "source": {
+              "description": "<p>Mix RNA sample with Midori Green Premix and 2 x loading dye: <\/p>\\n<p>\u00a0<\/p>\\n<ul>\\n<li>add 5 \u00b5l RNA (= x \u00b5g)<\/li>\\n<li>add 2 \u00b5l Midori Green Mix<\/li>\\n<li>add 7 \u00b5l 2 x loading dye<\/li>\\n<\/ul>"
+            }
+          }
+        ]
+      },
+      {
+        "id": 588854,
+        "guid": "6D5012A7C6D14AD1A5509ACEC0D70134",
+        "previous_id": 588849,
+        "previous_guid": "DB29FCD9A9124AB5B4FDEBB3A58FF51C",
+        "modified_on": 1506504322,
+        "components": [
+          {
+            "id": 1007928,
+            "guid": "C90F5579270D4C6EB08BDE419EDDD298",
+            "order_id": 0,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": ""
+            }
+          },
+          {
+            "id": 1007927,
+            "guid": "C3A2E3E01ED948E281F0DBA7BF318984",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "Description",
+            "source": {
+              "description": "<p>Denature RNA: <\/p>\\n<p>\u00a0<\/p>\\n<ul>\\n<li>incubate samples at 95 C for 5 min<\/li>\\n<li>cool samples on ice for 1 min<\/li>\\n<li>spin down samples at ~13,000 g for 15 sec<\/li>\\n<li>load samples to gel<\/li>\\n<\/ul>\\n<p>\u00a0<\/p>"
+            }
+          }
+        ]
+      },
+      {
+        "id": 588857,
+        "guid": "84EC9814A33B431C8B26E3E7FA3157F9",
+        "previous_id": 0,
+        "previous_guid": null,
+        "modified_on": 1506505572,
+        "components": [
+          {
+            "id": 1007934,
+            "guid": "36F58079B8E34B3DB6D356B0BB49C130",
+            "order_id": 0,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": ""
+            }
+          },
+          {
+            "id": 1007933,
+            "guid": "7C208CF45F6D4B3F8F9DE134CC4E5DC9",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "Description",
+            "source": {
+              "description": "<p>2 x RNA loading dye (w\/o fluorescent stain)<\/p>\\n<p>\u00a0<\/p>\\n<ul>\\n<li>95% (v\/v) formamide (deionized)<\/li>\\n<li>0.025% (v\/v) SDS<\/li>\\n<li>0.5 mM EDTA<\/li>\\n<li>0.1 % (w\/v) xylencyanole<\/li>\\n<li>0.1 % (w\/v) bromphenol blue<\/li>\\n<\/ul>"
+            }
+          }
+        ]
+      }
+    ],
+    "materials": [
+      
+    ]
+}

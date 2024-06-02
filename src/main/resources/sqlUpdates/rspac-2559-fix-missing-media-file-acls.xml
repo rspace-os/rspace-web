@@ -1,0 +1,22 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Update media records with empty acls with basic permissions of creator -->
+
+    <changeSet id="2022-06-10a" author="nicholas">
+        <comment>Update Missing acls on media files</comment>
+        <customChange
+                class="com.researchspace.dao.customliquibaseupdates.UpdateEmptyACLsForMediaFiles_RSPAC2559">
+        </customChange>
+    </changeSet>
+
+    <changeSet  id="2022-06-10b" author="nicholas">
+        <preConditions onFail="WARN">
+            <sqlCheck expectedResult="0">select count(*) from BaseRecord where acl = '' and type = 'MEDIA_RECORD';</sqlCheck>
+        </preConditions>
+        <comment>There should be no media records with empty acls</comment>
+    </changeSet>
+
+</databaseChangeLog>

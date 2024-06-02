@@ -1,0 +1,57 @@
+<script type="mustache" id="auditResultsTableTemplate">
+	You found {{totalHits}} hits.
+	<table style="width:100%">
+		<tr>
+			<th style="width:25%"><a  class="getAudit tableSortLink date" href="#">Time</a></th>
+			<th style="width:15%"><a  class="getAudit tableSortLink username" href="#">User</a></th>
+			<th style="width:10%"><a  class="getAudit tableSortLink action" href="#">Action</a></th>
+			 <th style="width:10%"> Type </th>
+			<th style="width:10%">Resource</th>
+			<th style="width:15%">Name</th>
+			<th>Description</th>
+		</tr>
+		<!--  {{#results}}-->
+		<tr>
+			<td>{{timestamp}}</td>
+			<td>{{event.fullName}}</td>
+			<td>{{event.action}}</td>
+			<td>{{event.domain}}</td>
+			<td><a href="/globalId/{{event.data.data.id}}">{{event.data.data.id}}</a></td>
+			<td>{{event.data.data.name}}</td>
+			<td>{{event.description}}</td>
+		</tr>
+		<!--{{/results}}-->
+	</table>
+</script>
+<script type="mustache" id="auditMoreResultsTemplate">
+
+	{{#results}}
+		<tr>
+			<td>{{timestamp}}</td>
+			<td>{{event.fullName}}</td>
+			<td>{{event.action}}</td>
+			<td>{{event.domain}}</td>
+			<td><a href="/globalId/{{event.data.data.id}}">{{event.data.data.id}}</a></td>
+			<td>{{event.data.data.name}}</td>
+			<td>{{event.description}}</td>
+		</tr>
+	{{/results}}
+</script>
+<script type="mustache" id="auditactionTemplate">
+	<fieldset>   
+		<legend>Select which actions to audit:</legend>
+		{{#data}}
+		<input class="actionsInput" aria-label="{{.}}" type="checkbox" name="actions" value="{{.}}"> {{.}} 
+		{{/data}}
+	</fieldset>   
+	<button class="remover" style="height:19px; width:19px;padding:0px !important;" id="remover1" name="x1">X</button>
+</script>
+
+<script type="mustache" id="auditdomainTemplate">
+	<fieldset>   
+		<legend>Select which domains to audit:</legend>	
+		<input class="domainsInput" aria-label="Inventory" checked type="checkbox" name="domains" value="INV">  Inventory	
+		<input class="domainsInput" aria-label="ELN" checked type="checkbox" name="domains" value="ELN"> ELN 		
+	</fieldset>   
+	<button class="remover" style="height:19px; width:19px;padding:0px !important;" id="remover1" name="x1">X</button>
+</script>

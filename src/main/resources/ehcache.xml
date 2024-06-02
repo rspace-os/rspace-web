@@ -1,0 +1,135 @@
+<ehcache name="rs-cache" updateCheck="false">
+
+	<!-- Sets the path to the directory where cache .data files are created.
+		If the path is a Java System Property it is replaced by its value in the
+		running VM. The following properties are translated: user.home - User's home
+		directory user.dir - User's current working directory java.io.tmpdir - Default
+		temp file path -->
+	<!-- <diskStore path="java.io.tmpdir/researchspace-cache"/> -->
+
+
+	<!--Default Cache configuration. These will applied to caches programmatically
+		created through the CacheManager. The following attributes are required:
+		maxElementsInMemory - Sets the maximum number of objects that will be created in memory
+
+		eternal - Sets whether elements are eternal. If eternal, timeouts  are ignored and the element is never expired.
+
+		overflowToDisk - Sets whether elements can overflow to disk when the in-memory cache has reached the maxInMemory
+		limit.
+		 The following attributes are optional:
+      timeToIdleSeconds - Sets the time to idle for an element before it expires. i.e. The maximum amount of
+		time between accesses before an element expires Is only used if the element
+		is not eternal. Optional attribute. A value of 0 means that an Element can
+		idle for infinity. The default value is 0.
+		 timeToLiveSeconds - Sets the time to live for an element before it expires. i.e. The maximum time between creation
+		time and when an element expires. Is only used if the element is not eternal.
+		Optional attribute. A value of 0 means that and Element can live for infinity.
+		The default value is 0.
+
+		 diskPersistent - Whether the disk store persists
+		between restarts of the Virtual Machine. The default value is false.
+		 diskExpiryThreadIntervalSeconds- The number of seconds between runs of the disk expiry thread. The default
+		value is 120 seconds. -->
+
+	<defaultCache maxElementsInMemory="10000" eternal="false"
+		overflowToDisk="false" timeToIdleSeconds="120" timeToLiveSeconds="120"
+		diskPersistent="false" diskExpiryThreadIntervalSeconds="120"
+		statistics="false" />
+
+	<cache name="com.researchspace.model.Role" maxElementsInMemory="100"
+		timeToLiveSeconds="0" overflowToDisk="false">
+		<pinning store="localMemory" />
+	</cache>
+     <!-- collection cache -->
+	<cache name="com.researchspace.model.Role.permissionStrings"
+		maxElementsInMemory="100" timeToLiveSeconds="0" overflowToDisk="false" />
+   <cache name="com.researchspace.model.UserGroup"
+		maxElementsInMemory="1000" timeToLiveSeconds="3600"  timeToIdleSeconds="1200" overflowToDisk="false" />
+
+	<cache name="com.researchspace.model.User" maxElementsInMemory="1000"
+		timeToLiveSeconds="3600" overflowToDisk="false" />
+
+	<cache name="com.researchspace.model.User.roles" maxElementsInMemory="1000"
+		timeToLiveSeconds="3600" overflowToDisk="false" />
+
+	<cache name="com.researchspace.model.User.fullName" maxElementsInMemory="1000"
+		timeToLiveSeconds="3600" />
+
+	<cache name="com.researchspace.model.archive.ArchivalCheckSum"
+		maxElementsInMemory="10000" timeToLiveSeconds="3600" overflowToDisk="false" />
+
+	<cache name="com.researchspace.model.ImageBlob" maxElementsInMemory="1000"
+		timeToLiveSeconds="3600" />
+
+	<cache name="com.researchspace.model.record.IconEntity"
+		maxElementsInMemory="1000" timeToLiveSeconds="3600" />
+
+	<cache name="com.researchspace.model.ArchiveVersionToAppVersion"
+		maxElementsInMemory="100" timeToLiveSeconds="3600"  />
+
+	<cache name="com.researchspace.model.Thumbnail" maxElementsInMemory="100"
+		timeToLiveSeconds="3600" overflowToDisk="false" />
+
+	<cache name="com.researchspace.model.record.BaseRecord"
+		maxElementsInMemory="100" timeToLiveSeconds="600" />
+
+	<cache name="com.researchspace.model.system.SystemProperty"
+		maxElementsInMemory="50" timeToLiveSeconds="0"  />
+
+	<cache name="com.researchspace.model.PropertyDescriptor"
+		maxElementsInMemory="200" timeToLiveSeconds="0" />
+
+	<cache name="com.researchspace.model.apps.AppConfigElementDescriptor"
+		maxElementsInMemory="100" timeToLiveSeconds="0"  />
+
+	<cache name="com.researchspace.model.system.SystemPropertyValue"
+		maxElementsInMemory="50" timeToLiveSeconds="3600"  />
+	<cache name="com.researchspace.model.UserPreference"
+		maxElementsInMemory="1000" timeToLiveSeconds="3600" />
+	<cache name="com.researchspace.model.dto.IntegrationInfo"
+		maxElementsInMemory="1000" timeToLiveSeconds="3600"  />
+	<cache name="com.researchspace.service.audit.files"
+		maxElementsInMemory="10" timeToLiveSeconds="0"   />
+	<cache name="com.researchspace.documentPreview"
+		maxElementsInMemory="2000" timeToLiveSeconds="86400"   />
+
+	<cache name="com.researchspace.model.FileStoreRoot"
+		maxElementsInMemory="50" timeToLiveSeconds="0"   />
+
+    <cache name="com.researchspace.ror" maxElementsInMemory="10"
+           timeToLiveSeconds="2592000" overflowToDisk="false" />
+
+  <!--  for hibernate 2nd level cache for individual objects -->
+	<cache name ="com.researchspace.maintenance.model.ScheduledMaintenance"
+		maxElementsInMemory="10" timeToLiveSeconds="0" ></cache>
+	<cache name="com.researchspace.model.field.FieldForm" maxElementsInMemory="1000" timeToLiveSeconds="3600" />
+	<cache name="com.researchspace.model.record.RSForm" maxElementsInMemory="1000" timeToLiveSeconds="3600" />
+	<cache name="com.researchspace.model.RSMath" maxElementsInMemory="500" timeToLiveSeconds="1200" />
+	<cache name="com.researchspace.model.FileProperty" maxElementsInMemory="2500" timeToLiveSeconds="3600" />
+	<cache name="com.researchspace.model.apps.App" maxElementsInMemory="20" timeToLiveSeconds="3600"/>
+	<cache name="com.researchspace.model.apps.AppConfigElement" maxElementsInMemory="500" timeToLiveSeconds="3600"/>
+	<cache name="com.researchspace.api.v1.file" maxElementsInMemory="10" timeToLiveSeconds="3600"/>
+	<cache name="com.researchspace.model.Community" maxElementsInMemory="100" timeToLiveSeconds="3600"/>
+	<cache name="com.researchspace.model.netfiles.NfsFileSystem" maxElementsInMemory="50" timeToLiveSeconds="0"/>
+    <cache name="com.researchspace.model.netfiles.NfsFileStore" maxElementsInMemory="50" timeToLiveSeconds="0"/>
+
+	<!--  spring cache name for next maintenance. -->
+	<cache name ="com.researchspace.maintenance.service.impl.Maintenance" maxElementsInMemory="10" timeToLiveSeconds="0">
+	</cache>
+	<cache name="com.researchspace.model.Organisation" maxElementsInMemory="5000" timeToLiveSeconds="0">
+	</cache>
+	<cache name="com.researchspace.model.oauth.UserConnection" maxElementsInMemory="1000" timeToLiveSeconds="3600">
+	</cache>
+
+	<!-- query cache related cache regions-->
+	<cache name="org.hibernate.cache.internal.StandardQueryCache"
+	  maxElementsInMemory="500"
+	    timeToLiveSeconds="3600" timeToIdleSeconds="600" eternal="false"></cache>
+
+	 <cache name="org.hibernate.cache.spi.UpdateTimestampsCache"
+	  maxElementsInMemory="500"
+	    eternal="true"></cache>
+
+	<!-- See http://ehcache.sourceforge.net/documentation/#mozTocId258426 for
+		how to configure caching for your objects -->
+</ehcache>

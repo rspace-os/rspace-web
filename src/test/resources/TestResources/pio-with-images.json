@@ -1,0 +1,1637 @@
+ {
+    "id": 25914,
+    "title": "Algal nuclei isolation for Nanopore sequencing of HMW DNA",
+    "title_html": "Algal nuclei isolation for Nanopore sequencing of HMW DNA",
+    "image": {
+      "source": "https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bm42h4hw.png",
+      "placeholder": "https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bm42h4hw.png"
+    },
+    "doi": "dx.doi.org/10.17504/protocols.io.5i2g4ge",
+    "doi_status": 2,
+    "uri": "algal-nuclei-isolation-for-nanopore-sequencing-of-5i2g4ge",
+    "type_id": 1,
+    "published_on": 1563480095,
+    "stats": {
+      "number_of_views": 911,
+      "number_of_steps": 24,
+      "number_of_bookmarks": 2,
+      "number_of_comments": 3,
+      "number_of_exports": 2,
+      "number_of_runs": 0,
+      "number_of_votes": 0,
+      "is_voted": 0
+    },
+    "parent_protocols": [],
+    "parent_collections": [],
+    "version_id": 1,
+    "created_on": 1563283881,
+    "categories": null,
+    "creator": {
+      "name": "Robert Auber",
+      "affiliation": null,
+      "affiliations": [
+        {
+          "affiliation": null,
+          "url": null,
+          "is_default": 1
+        }
+      ],
+      "username": "robert-auber",
+      "link": null,
+      "image": {
+        "source": "/img/avatars/015.png",
+        "placeholder": "/img/avatars/015.png"
+      },
+      "badges": [
+        {
+          "id": 2,
+          "image": {
+            "source": "/img/badges/bronze.svg",
+            "placeholder": "/img/badges/bronze.svg"
+          },
+          "name": "Author"
+        },
+        {
+          "id": 5,
+          "image": {
+            "source": "/img/badges/earlyadopter.svg",
+            "placeholder": "/img/badges/earlyadopter.svg"
+          },
+          "name": "Early adopter"
+        },
+        {
+          "id": 6,
+          "image": {
+            "source": "/img/badges/socialbutterfly.svg",
+            "placeholder": "/img/badges/socialbutterfly.svg"
+          },
+          "name": "Social butterfly"
+        }
+      ],
+      "research_interests": null,
+      "blocked_by_you": false,
+      "blocked_you": false
+    },
+    "journal": null,
+    "journal_name": null,
+    "journal_link": null,
+    "article_citation": null,
+    "public": 1,
+    "has_versions": 1,
+    "link": null,
+    "total_collections": 0,
+    "number_of_steps": 24,
+    "authors": [
+      {
+        "name": "Robert Auber",
+        "affiliation": "Purdue University",
+        "affiliations": [],
+        "username": "robert-auber",
+        "link": null,
+        "image": {
+          "source": "/img/avatars/015.png",
+          "placeholder": "/img/avatars/015.png"
+        },
+        "badges": [],
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false
+      },
+      {
+        "name": "Jennifer Wisecaver",
+        "affiliation": "Purdue University",
+        "affiliations": [],
+        "username": "jennifer-wisecaver",
+        "link": null,
+        "image": {
+          "source": "https://s3.amazonaws.com/pr-journal/ph5dq96.jpg",
+          "placeholder": "https://s3.amazonaws.com/pr-journal/ph5dq96.jpg"
+        },
+        "badges": [],
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false
+      }
+    ],
+    "versions": [
+      {
+        "id": 25477,
+        "title": "Algal DNA extraction for HMW Nanopore sequencing",
+        "title_html": "Algal DNA extraction for HMW Nanopore sequencing",
+        "image": {
+          "source": "https://s3.amazonaws.com/pr-journal/bmdhh4hw.jpg",
+          "placeholder": "https://s3.amazonaws.com/pr-journal/bmdhh4hw.jpg"
+        },
+        "doi": null,
+        "doi_status": 0,
+        "uri": "algal-dna-extraction-for-hmw-nanopore-sequencing-45dgy26",
+        "type_id": 0,
+        "published_on": 1562256556,
+        "stats": {
+          "number_of_views": 0,
+          "number_of_steps": 0,
+          "number_of_bookmarks": 0,
+          "number_of_comments": 1,
+          "number_of_exports": 0,
+          "number_of_runs": 0,
+          "number_of_votes": 0,
+          "is_voted": 0
+        },
+        "parent_protocols": [],
+        "parent_collections": [],
+        "version_id": 0,
+        "created_on": 1562170657,
+        "categories": null,
+        "creator": {
+          "name": "Robert Auber",
+          "affiliation": null,
+          "affiliations": [],
+          "username": "robert-auber",
+          "link": null,
+          "image": {
+            "source": "/img/avatars/015.png",
+            "placeholder": "/img/avatars/015.png"
+          },
+          "badges": [],
+          "research_interests": null,
+          "blocked_by_you": false,
+          "blocked_you": false
+        },
+        "journal": null,
+        "journal_name": null,
+        "journal_link": null,
+        "article_citation": null
+      },
+      {
+        "id": 25914,
+        "title": "Algal nuclei isolation for Nanopore sequencing of HMW DNA",
+        "title_html": "Algal nuclei isolation for Nanopore sequencing of HMW DNA",
+        "image": {
+          "source": "https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bm42h4hw.png",
+          "placeholder": "https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bm42h4hw.png"
+        },
+        "doi": null,
+        "doi_status": 0,
+        "uri": "algal-nuclei-isolation-for-nanopore-sequencing-of-5i2g4ge",
+        "type_id": 0,
+        "published_on": 1563480095,
+        "stats": {
+          "number_of_views": 0,
+          "number_of_steps": 0,
+          "number_of_bookmarks": 0,
+          "number_of_comments": 3,
+          "number_of_exports": 0,
+          "number_of_runs": 0,
+          "number_of_votes": 0,
+          "is_voted": 0
+        },
+        "parent_protocols": [],
+        "parent_collections": [],
+        "version_id": 1,
+        "created_on": 1563283881,
+        "categories": null,
+        "creator": {
+          "name": "Robert Auber",
+          "affiliation": null,
+          "affiliations": [],
+          "username": "robert-auber",
+          "link": null,
+          "image": {
+            "source": "/img/avatars/015.png",
+            "placeholder": "/img/avatars/015.png"
+          },
+          "badges": [],
+          "research_interests": null,
+          "blocked_by_you": false,
+          "blocked_you": false
+        },
+        "journal": null,
+        "journal_name": null,
+        "journal_link": null,
+        "article_citation": null
+      }
+    ],
+    "groups": [
+      {
+        "id": 269,
+        "uri": "awesome-DNA-from-all-kingdoms-of-life",
+        "title": "MinION user group for high molecular weight DNA extraction from all kingdoms",
+        "image": {
+          "source": "https://s3.amazonaws.com/pr-journal/ftfb5nw.jpg",
+          "placeholder": "https://s3.amazonaws.com/pr-journal/ftfb5nw.jpg"
+        },
+        "tech_support": {
+          "email": null,
+          "phone": null,
+          "hide_contact": 0,
+          "use_email": 0
+        },
+        "is_member": 0,
+        "request": {
+          "id": 269,
+          "uri": "awesome-DNA-from-all-kingdoms-of-life",
+          "title": "MinION user group for high molecular weight DNA extraction from all kingdoms",
+          "image": {
+            "source": "https://s3.amazonaws.com/pr-journal/ftfb5nw.jpg",
+            "placeholder": "https://s3.amazonaws.com/pr-journal/ftfb5nw.jpg"
+          },
+          "tech_support": {
+            "email": null,
+            "phone": null,
+            "hide_contact": 0,
+            "use_email": 0
+          },
+          "is_member": 0,
+          "description": null,
+          "research_interests": null,
+          "website": null,
+          "location": null,
+          "affiliation": null,
+          "status": {
+            "is_visible": true,
+            "access_level": 0
+          },
+          "stats": {
+            "files": [],
+            "total_members": 0,
+            "total_followers": 0,
+            "total_child_groups": 0,
+            "total_parent_groups": 0,
+            "has_collaborations": 0
+          },
+          "user_status": {
+            "is_member": false,
+            "is_confirmed": true,
+            "is_invited": false,
+            "is_owner": false,
+            "is_admin": false,
+            "is_following": false
+          },
+          "join_link": null,
+          "token": null,
+          "owner": {
+            "name": " ",
+            "affiliation": null,
+            "affiliations": [],
+            "username": null,
+            "link": null,
+            "image": {
+              "source": null,
+              "placeholder": null
+            },
+            "badges": [],
+            "research_interests": null,
+            "blocked_by_you": false,
+            "blocked_you": false
+          },
+          "is_protocol_requested": 0,
+          "is_group_requested": 0,
+          "is_my": false,
+          "is_request": false,
+          "is_confirmed": 1,
+          "is_declined": 0,
+          "requester": {
+            "name": " ",
+            "affiliation": null,
+            "affiliation_url": null,
+            "username": null,
+            "link": null
+          },
+          "protocol": {
+            "id": 0,
+            "title": "Algal nuclei isolation for Nanopore sequencing of HMW DNA",
+            "title_html": "Algal nuclei isolation for Nanopore sequencing of HMW DNA",
+            "image": {
+              "source": null,
+              "placeholder": null
+            },
+            "doi": null,
+            "doi_status": 0,
+            "uri": "algal-nuclei-isolation-for-nanopore-sequencing-of-5i2g4ge",
+            "type_id": 1,
+            "published_on": null,
+            "stats": {
+              "number_of_views": 0,
+              "number_of_steps": 0,
+              "number_of_bookmarks": 0,
+              "number_of_comments": 0,
+              "number_of_exports": 0,
+              "number_of_runs": 0,
+              "number_of_votes": 0,
+              "is_voted": 0
+            },
+            "parent_protocols": [],
+            "parent_collections": []
+          },
+          "created_on": 1563480094,
+          "resolve_on": 0,
+          "resolved_user": {
+            "name": " ",
+            "affiliation": null,
+            "affiliations": [],
+            "username": null,
+            "link": null,
+            "image": {
+              "source": null,
+              "placeholder": null
+            },
+            "badges": [],
+            "research_interests": null,
+            "blocked_by_you": false,
+            "blocked_you": false
+          },
+          "shared": false
+        }
+      },
+      {
+        "id": 509,
+        "uri": "wisecaver-lab",
+        "title": "Wisecaver Lab",
+        "image": {
+          "source": "https://s3.amazonaws.com/pr-journal/ph9dq96.jpg",
+          "placeholder": "https://s3.amazonaws.com/pr-journal/ph9dq96.jpg"
+        },
+        "tech_support": {
+          "email": null,
+          "phone": null,
+          "hide_contact": 0,
+          "use_email": 0
+        },
+        "is_member": 0,
+        "request": {
+          "id": 509,
+          "uri": "wisecaver-lab",
+          "title": "Wisecaver Lab",
+          "image": {
+            "source": "https://s3.amazonaws.com/pr-journal/ph9dq96.jpg",
+            "placeholder": "https://s3.amazonaws.com/pr-journal/ph9dq96.jpg"
+          },
+          "tech_support": {
+            "email": null,
+            "phone": null,
+            "hide_contact": 0,
+            "use_email": 0
+          },
+          "is_member": 0,
+          "description": null,
+          "research_interests": null,
+          "website": null,
+          "location": null,
+          "affiliation": null,
+          "status": {
+            "is_visible": true,
+            "access_level": 0
+          },
+          "stats": {
+            "files": [],
+            "total_members": 0,
+            "total_followers": 0,
+            "total_child_groups": 0,
+            "total_parent_groups": 0,
+            "has_collaborations": 0
+          },
+          "user_status": {
+            "is_member": false,
+            "is_confirmed": true,
+            "is_invited": false,
+            "is_owner": false,
+            "is_admin": false,
+            "is_following": false
+          },
+          "join_link": null,
+          "token": null,
+          "owner": {
+            "name": " ",
+            "affiliation": null,
+            "affiliations": [],
+            "username": null,
+            "link": null,
+            "image": {
+              "source": null,
+              "placeholder": null
+            },
+            "badges": [],
+            "research_interests": null,
+            "blocked_by_you": false,
+            "blocked_you": false
+          },
+          "is_protocol_requested": 0,
+          "is_group_requested": 0,
+          "is_my": false,
+          "is_request": false,
+          "is_confirmed": 1,
+          "is_declined": 0,
+          "requester": {
+            "name": " ",
+            "affiliation": null,
+            "affiliation_url": null,
+            "username": null,
+            "link": null
+          },
+          "protocol": {
+            "id": 0,
+            "title": "Algal nuclei isolation for Nanopore sequencing of HMW DNA",
+            "title_html": "Algal nuclei isolation for Nanopore sequencing of HMW DNA",
+            "image": {
+              "source": null,
+              "placeholder": null
+            },
+            "doi": null,
+            "doi_status": 0,
+            "uri": "algal-nuclei-isolation-for-nanopore-sequencing-of-5i2g4ge",
+            "type_id": 1,
+            "published_on": null,
+            "stats": {
+              "number_of_views": 0,
+              "number_of_steps": 0,
+              "number_of_bookmarks": 0,
+              "number_of_comments": 0,
+              "number_of_exports": 0,
+              "number_of_runs": 0,
+              "number_of_votes": 0,
+              "is_voted": 0
+            },
+            "parent_protocols": [],
+            "parent_collections": []
+          },
+          "created_on": 1563480094,
+          "resolve_on": 0,
+          "resolved_user": {
+            "name": " ",
+            "affiliation": null,
+            "affiliations": [],
+            "username": null,
+            "link": null,
+            "image": {
+              "source": null,
+              "placeholder": null
+            },
+            "badges": [],
+            "research_interests": null,
+            "blocked_by_you": false,
+            "blocked_you": false
+          },
+          "shared": false
+        }
+      }
+    ],
+    "has_subprotocols": 0,
+    "is_subprotocol": 0,
+    "is_bookmarked": 0,
+    "can_be_copied": 0,
+    "can_remove_fork": 1,
+    "forks_count": {
+      "private": 0,
+      "public": 0
+    },
+    "access": {
+      "can_view": 0,
+      "can_remove": 0,
+      "can_add": 0,
+      "can_edit": 0,
+      "can_publish": 0,
+      "can_get_doi": 0,
+      "can_share": 0,
+      "can_move": 0,
+      "can_move_outside": 0,
+      "can_transfer": 0,
+      "can_download": 1,
+      "is_locked": 0
+    },
+    "steps": [
+      {
+        "id": 783976,
+        "guid": "4B87B110A98111E98EC99D145BC53AAF",
+        "previous_id": null,
+        "previous_guid": null,
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "D8F99C5554A34676BB8BCB6F1D03A792",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Prepare equipment and reagents"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "4DBC008CE2864B24B47DCE35EA140463",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Add BME to premade NIB. Per sample add </div><div class = \"text-block\"> BME into </div><div class = \"text-block\"> premade NIB.</div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "0ED5DC50A98211E98EC99D145BC53AAF",
+            "order_id": 2,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 35,
+              "unit": "µl",
+              "title": ""
+            }
+          },
+          {
+            "id": 1054726,
+            "guid": "12C62950A98211E98EC99D145BC53AAF",
+            "order_id": 3,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 35,
+              "unit": "ml",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 783979,
+        "guid": "79AAE8F0A98111E98EC99D145BC53AAF",
+        "previous_id": 783976,
+        "previous_guid": "4B87B110A98111E98EC99D145BC53AAF",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "3CE4F25A2D3D4181990BC5B7B68FF800",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Prepare equipment and reagents"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "91E6552DC84B49188F6E063081B6817F",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Make 10% Triton X-100 NIB solution. Per sample, aliquot </div><div class = \"text-block\"> NIB prepared in previous step and add </div><div class = \"text-block\"> Triton X-100.</div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "2CBD5900A98211E98EC99D145BC53AAF",
+            "order_id": 2,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 1.8,
+              "unit": "ml",
+              "title": ""
+            }
+          },
+          {
+            "id": 1054726,
+            "guid": "3B15FC50A98211E98EC99D145BC53AAF",
+            "order_id": 3,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 200,
+              "unit": "µl",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 783978,
+        "guid": "78059D60A98111E98EC99D145BC53AAF",
+        "previous_id": 783979,
+        "previous_guid": "79AAE8F0A98111E98EC99D145BC53AAF",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "7C6952DE45D94EEBB6AFCDAABCDDD82B",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Prepare equipment and reagents"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "01A48427BF4B4B4AAD74A7A82144E26C",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Cool solutions to </div><div class = \"text-block\"> on ice. </div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "431038D0A98211E98EC99D145BC53AAF",
+            "order_id": 2,
+            "type_id": 24,
+            "title": "temperature",
+            "source": {
+              "temperature": 0,
+              "unit": "°C",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 783977,
+        "guid": "60434F10A98111E98EC99D145BC53AAF",
+        "previous_id": 783978,
+        "previous_guid": "78059D60A98111E98EC99D145BC53AAF",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "7B5B5302A7DD4E569F653FE1378DDCAC",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Prepare equipment and reagents"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "768887EE8B724DCCA390675FE31F0FE4",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Set thermomixer to </div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "46A6F420A98211E98EC99D145BC53AAF",
+            "order_id": 2,
+            "type_id": 24,
+            "title": "temperature",
+            "source": {
+              "temperature": 55,
+              "unit": "°C",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782701,
+        "guid": "B47BE449C06F46169068A47CE700AC1A",
+        "previous_id": 783977,
+        "previous_guid": "60434F10A98111E98EC99D145BC53AAF",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "09F0EE8BD26241989C8B590497791DF5",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Prepare equipment and reagents"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "0CA08D844A8B42499E424761E25813D6",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Chill centrifuge to </div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "B078ECF0A7F211E9AC3719D2746FECAB",
+            "order_id": 2,
+            "type_id": 24,
+            "title": "temperature",
+            "source": {
+              "temperature": 4,
+              "unit": "°C",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782706,
+        "guid": "B7EA20724B454C118181639D931B576B",
+        "previous_id": 782701,
+        "previous_guid": "B47BE449C06F46169068A47CE700AC1A",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "F260A24B61704E92A3BC7F8A42B34460",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Prepare equipment and reagents"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "BBFD5BD87E7C4D1D8068149598F3CA5B",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Chill 50 ml conical tubes (4 per sample) and NIB buffers on ice.</div></div>"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782708,
+        "guid": "12D2728C765D49B3BD819B8952A26027",
+        "previous_id": 782706,
+        "previous_guid": "B7EA20724B454C118181639D931B576B",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "86C361E87E0F47BC8FBACBF8A26A427E",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Cell Lysis"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "3AEC7FA0A7F311E9AC3719D2746FECAB",
+            "order_id": 2,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 20,
+              "unit": "ml",
+              "title": ""
+            }
+          },
+          {
+            "id": 1054726,
+            "guid": "4C12C1E0A7F311E9AC3719D2746FECAB",
+            "order_id": 3,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 50,
+              "unit": "ml",
+              "title": ""
+            }
+          },
+          {
+            "id": 1054727,
+            "guid": "1E432840A7F311E9AC3719D2746FECAB",
+            "order_id": 4,
+            "type_id": 24,
+            "title": "temperature",
+            "source": {
+              "temperature": 4,
+              "unit": "°C",
+              "title": ""
+            }
+          },
+          {
+            "id": 1054728,
+            "guid": "25718940A7F311E9AC3719D2746FECAB",
+            "order_id": 5,
+            "type_id": 4,
+            "title": "duration",
+            "source": {
+              "duration": 600,
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782709,
+        "guid": "655E6C6A5D4D41B9BE80B082B04D92E7",
+        "previous_id": 782708,
+        "previous_guid": "12D2728C765D49B3BD819B8952A26027",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "31C57C9F434D4EA5AC300FC7AB04840A",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Cell Lysis"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "5C47BE86DA894879B8859A88AC0BD506",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Discard the supernatant and snap freeze the conical tube in liquid nitrogen for at least </div><div class = \"text-block\"> .</div><div class = \"text-block\"><span style = \"font-style:italic;\">Some organisms will require some type of tissue disruption to lyse cells.</span></div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "655E51D0A7FF11E9AC3719D2746FECAB",
+            "order_id": 2,
+            "type_id": 4,
+            "title": "duration",
+            "source": {
+              "duration": 180,
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782710,
+        "guid": "763723E472ED4DA4AAEB4E35003B928E",
+        "previous_id": 782709,
+        "previous_guid": "655E6C6A5D4D41B9BE80B082B04D92E7",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "0598BA72A849446A96B07E4454A75D63",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Cell Lysis"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "DE7D793FC7E54151A7F97AFECB2EEFB3",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Place cell pellet on ice and add </div><div class = \"text-block\">  of ice cold NIB.</div><div class = \"text-block\">If you know your pellet is not very soluble, only add 1mL of NIB at first and mix by pipetting up and down with a 1mL pipette. Add remaining 9mL NIB after clumps are broken up.</div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "F00D5D50A7F311E9AC3719D2746FECAB",
+            "order_id": 2,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 10,
+              "unit": "ml",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782711,
+        "guid": "CB5075BAE4464D619344A4356B346242",
+        "previous_id": 782710,
+        "previous_guid": "763723E472ED4DA4AAEB4E35003B928E",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "B643B7C2B6ED454A9C621BADFCDB702D",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Cell Lysis"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "B20454DD24BF495585843BDE2FCD28ED",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Mix by slowly pipetting up and down with a 10mL serological pipettor until the mixture is smooth and not clumpy.</div><div style = \"text-align :; float : ;\"><img style = \"\" src = \"https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bmzjh4hw.png\" /></div><div style = \"text-align :; float : ;\"><img style = \"\" src = \"https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bmzih4hw.png\" /></div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "D990839FCC9D48429C1054E33A8187F7",
+            "order_id": 2,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div style = \"text-align :; float : ;\"><img style = \"\" src = \"https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bmzjh4hw.png\" /></div>"
+            }
+          },
+          {
+            "id": 1054726,
+            "guid": "2B1605E940BB463690DA40B7F4856727",
+            "order_id": 3,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div style = \"text-align :; float : ;\"><img style = \"\" src = \"https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bmzih4hw.png\" /></div>"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782712,
+        "guid": "BEEC08F807AC492B9608821145A89086",
+        "previous_id": 782711,
+        "previous_guid": "CB5075BAE4464D619344A4356B346242",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "AE90BDF1285449C1ACC532488519296A",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Filter to remove particulate material"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "6E27855988A0475FA0D382839D0A3B59",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Place a 100 μm filter on top of a pre-chilled 50 ml conical tube.</div></div>"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782713,
+        "guid": "3D22A4C7A23841E98E494958B1F1CE34",
+        "previous_id": 782712,
+        "previous_guid": "BEEC08F807AC492B9608821145A89086",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "0358D3B5A7024F40BC2D5CE086FA7021",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Filter to remove particulate material"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782714,
+        "guid": "08D9F3FBAD0A43A49622519949965ABD",
+        "previous_id": 782713,
+        "previous_guid": "3D22A4C7A23841E98E494958B1F1CE34",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "2985E31CBDE5432B98112BAE423CE307",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Filter to remove particulate material"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "94CD23463B474EBD907D167EC74A4BA3",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Use a serological pipettor to wash the filter with </div><div class = \"text-block\"> of ice cold NIB.</div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "F1A91680A7F411E9AC3719D2746FECAB",
+            "order_id": 2,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 10,
+              "unit": "ml",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782715,
+        "guid": "A7DC8879E3934BC5B8BB3EB0D1C2C675",
+        "previous_id": 782714,
+        "previous_guid": "08D9F3FBAD0A43A49622519949965ABD",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "7EC4BDB0FF8F4D4A8D9432506E66D5BB",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Filter to remove particulate material"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "721F4BED78C949D7B08F04A8AE5B0722",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Place a 70 μm filter on top of a second pre-chilled 50 ml conical tube.</div></div>"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782716,
+        "guid": "A79A68212A27464AA4C2F6E5724A66BE",
+        "previous_id": 782715,
+        "previous_guid": "A7DC8879E3934BC5B8BB3EB0D1C2C675",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "7942B121E0A240EDAD42110E944D5122",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Filter to remove particulate material"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "1523912E84644E5DA48F31B8A6E1D34B",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Slowly pour the sample through the filter into the clean tube.</div></div>"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782717,
+        "guid": "A7A67DAA6F904BF4B153B94EF397E7F8",
+        "previous_id": 782716,
+        "previous_guid": "A79A68212A27464AA4C2F6E5724A66BE",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "69FF0F3E1F7E427DBE83166C52C3AA9A",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Filter to remove particulate material"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "25399F9D15634CB29656A51FB98987C8",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Use a serological pipettor to wash the filter with </div><div class = \"text-block\"> of ice cold NIB.</div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "012F1640A7F511E9AC3719D2746FECAB",
+            "order_id": 2,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 10,
+              "unit": "ml",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782718,
+        "guid": "E1D5A8AFA0324EC18224181939DE16C2",
+        "previous_id": 782717,
+        "previous_guid": "A7A67DAA6F904BF4B153B94EF397E7F8",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "222EC85577114D2DAC79B276FE5361F9",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Filter to remove particulate material"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "4A2FC7D5D6294FE7A00718C05EEC8597",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Place a 40 μm filter on top of a third pre-chilled 50 ml conical tube.</div></div>"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 783023,
+        "guid": "2F1E44D0A80011E9AC3719D2746FECAB",
+        "previous_id": 782718,
+        "previous_guid": "E1D5A8AFA0324EC18224181939DE16C2",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "CF555AEE7B5B4E6A89B67D008F0DE681",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Filter to remove particulate material"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "1DE448C9D72D43EF816EFB53E07D99DD",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>Slowly pour the sample through the filter into the clean tube. (Do </span><span style = \"font-weight:bold;\">not</span><span> wash with NIB)</span></div></div>"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782720,
+        "guid": "0F69F572E2554C18B4E1314A9E140A83",
+        "previous_id": 783023,
+        "previous_guid": "2F1E44D0A80011E9AC3719D2746FECAB",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "DD7097C3D41D4A0A8564A0FE1511F89E",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Pellet nuclei"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "433FDEF89BFD4BB0A0407A5ABD28843F",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Add </div><div class = \"text-block\"> of ice cold NIB + TritonX solution to filtrate.</div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "1E2DE0A0A7F511E9AC3719D2746FECAB",
+            "order_id": 2,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 1.5,
+              "unit": "ml",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782721,
+        "guid": "B69CEC5A34F24368B4415149A9D2BE4C",
+        "previous_id": 782720,
+        "previous_guid": "0F69F572E2554C18B4E1314A9E140A83",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "6F392DBEFB83424A9B84515ECAE3A08A",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Pellet nuclei"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "C21074206CFA436DB99A1D63B2D19BE8",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Centrifuge </div><div class = \"text-block\">  at </div><div class = \"text-block\"> for </div><div class = \"text-block\"> to pellet nuclei.</div><div class = \"text-block\"><span style = \"font-style:italic;\">The speed at which the sample is spun down should be reevaluated for different organims based on genome size.</span></div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "3D2E9580A7F511E9AC3719D2746FECAB",
+            "order_id": 2,
+            "type_id": 24,
+            "title": "temperature",
+            "source": {
+              "temperature": 4,
+              "unit": "°C",
+              "title": ""
+            }
+          },
+          {
+            "id": 1054726,
+            "guid": "31F24D60A7F511E9AC3719D2746FECAB",
+            "order_id": 3,
+            "type_id": 4,
+            "title": "duration",
+            "source": {
+              "duration": 600,
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 783025,
+        "guid": "675E2400A80011E9AC3719D2746FECAB",
+        "previous_id": 782721,
+        "previous_guid": "B69CEC5A34F24368B4415149A9D2BE4C",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "0951C74D49834F4E88B6BA135BF7ADC5",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Pellet nuclei"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "776D110AC2444179B003A777D39D92D9",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Discard the supernatant.</div></div>"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782722,
+        "guid": "6234F16FFF2B4C688EDA07D29E72008D",
+        "previous_id": 783025,
+        "previous_guid": "675E2400A80011E9AC3719D2746FECAB",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "36D580B1F40C4FB19B1D4EB4D63CF251",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Confirm isolation via microscopy"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "DC77AED54C8D4ECDB3BB4BF62403F8A6",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Aliquot </div><div class = \"text-block\"> of the pellet into a clean 1.5ml eppendorf tube. Add </div><div class = \"text-block\"> of fresh NIB and </div><div class = \"text-block\">  of propidium iodide to the tube.</div></div>"
+            }
+          },
+          {
+            "id": 1054725,
+            "guid": "92439600A80011E9AC3719D2746FECAB",
+            "order_id": 2,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 1,
+              "unit": "µl",
+              "title": ""
+            }
+          },
+          {
+            "id": 1054726,
+            "guid": "AB172D40A80011E9AC3719D2746FECAB",
+            "order_id": 3,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 18,
+              "unit": "µl",
+              "title": ""
+            }
+          },
+          {
+            "id": 1054727,
+            "guid": "BE37DFF0A80011E9AC3719D2746FECAB",
+            "order_id": 4,
+            "type_id": 3,
+            "title": "amount",
+            "source": {
+              "amount": 1,
+              "unit": "µl",
+              "title": ""
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 783024,
+        "guid": "642EB600A80011E9AC3719D2746FECAB",
+        "previous_id": 782722,
+        "previous_guid": "6234F16FFF2B4C688EDA07D29E72008D",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "5C43CC2AFF274AC2A0486AC193F320F4",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Confirm isolation via microscopy"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      },
+      {
+        "id": 782723,
+        "guid": "CA1FB1EF03F24E2E8C9A94E933B408B4",
+        "previous_id": 783024,
+        "previous_guid": "642EB600A80011E9AC3719D2746FECAB",
+        "modified_on": 0,
+        "protocol_id": 0,
+        "components": [
+          {
+            "id": 1054723,
+            "guid": "488F1AC9CEBB43BA8190A505CA5A87ED",
+            "order_id": 1,
+            "type_id": 6,
+            "title": "Section",
+            "source": {
+              "title": "Extract DNA from Nuclei"
+            }
+          },
+          {
+            "id": 1054724,
+            "guid": "314BD29D05C14BB7A302B8B6DED8D7D6",
+            "order_id": 1,
+            "type_id": 1,
+            "title": "description",
+            "source": {
+              "description": "<div class = \"text-blocks\"><div class = \"text-block\">Extract DNA by referring to Circulomics Plant Nuclei Big DNA Kit protocol.</div><div class = \"text-block\"><a href=\"https://www.circulomics.com/store/Nanobind-Plant-Nuclei-Big-DNA-Kit-Alpha-Version-p99924200\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\">https://www.circulomics.com/store/Nanobind-Plant-Nuclei-Big-DNA-Kit-Alpha-Version-p99924200</span></a></div></div>"
+            }
+          }
+        ],
+        "cases": null,
+        "data": null,
+        "section": null,
+        "section_color": null,
+        "critical": null,
+        "critical_id": null,
+        "duration": 0
+      }
+    ],
+    "materials": [],
+    "description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>This protocol was developed for extraction of high molecular weight (HMW) DNA from </span><span style = \"font-style:italic;\">Prymnesium parvum, </span><span> a unicellular haptophyte alga, for the purpose of whole genome sequencing using Oxford Nanopore Technology (ONT) long reads. </span><span style = \"font-style:italic;\">P. parvum</span><span> is known to produce several specialized metabolic compounds that may compromise isolated DNA, leading to decreased sequencing yield. We found that separating intact nuclei from cellular debris prior to DNA isolation, improved read length and throughput. Isolated nuclei were processed using a Circulomics NanoBind kit to extract HMW DNA. </span></div></div>",
+    "changed_on": 1563480095,
+    "guidelines": "<div class = \"text-blocks\"><div class = \"text-block\"><span>This protocol was adapated from the \"Preparing Arabidopsis Genomic DNA for Size-Selected ~20 kb SMRTbell TM Libraries\" protocol. (</span><a href=\"https://www.pacb.com/wp-content/uploads/2015/09/Shared-Protocol-Preparing-Arabidopsis-DNA-for-20-kb-SMRTbell-Libraries.pdf\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\">https://www.pacb.com/wp-content/uploads/2015/09/Shared-Protocol-Preparing-Arabidopsis-DNA-for-20-kb-SMRTbell-Libraries.pdf</span></a><span style = \":;\">)</span></div><div class = \"text-block\">Take care to minialize pipetting of the sample as much as possible and never vortex to retain HMW DNA.</div></div>",
+    "before_start": "<div class = \"text-blocks\"><div class = \"text-block\">Have sufficient liquid nitrogen on hand to snap freeze your samples. </div></div>",
+    "warning": "<div class = \"text-blocks\"><div class = \"text-block\">All handling of β-mercaptoethanol (BME) and solutions containing BME should be done in a chemical fume hood.</div></div>",
+    "materials_text": "<div class = \"text-blocks\"><div class = \"text-block\"><span style = \"font-weight:bold;\">Prepared Buffers & Reagents</span></div><div class = \"text-block\"><span style = \"font-weight:bold;\">Nucleus Isolation Buffer</span><span> (Must be cooled to 0°C for > 1 hour before use):</span></div><div class = \"text-block\">10 mM Tris pH 9.5</div><div class = \"text-block\">10 mM EDTA 100 mM KCL</div><div class = \"text-block\">500 mM Sucrose </div><div class = \"text-block\">4 mM Spermidine </div><div class = \"text-block\">1 mM Spermine </div><div class = \"text-block\">0.1% BME (add day of extraction)</div><div class = \"text-block\"><span style = \"font-weight:bold;\">Equipment</span></div><div class = \"text-block\">Refridgerated centrifuge with 50mL tube capacity</div><div class = \"text-block\">DynaMag Magnetic rack</div><div class = \"text-block\">ThermoMixer</div><div class = \"text-block\">Hula mixer</div><div class = \"text-block\">Epifluorescent microscope</div><table border><tr style = \"text-align:center;\"><td>  </td><td>A</td><td>B</td><td>C</td></tr><tr><td style = \"text-align:center;\">1</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;font-weight:bold;\">Item</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;font-weight:bold;\">Supplier</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;font-weight:bold;\">LOT/Catalog number</td></tr><tr><td style = \"text-align:center;\">2</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">50 mL conical tubes</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Eppendorf</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">H180965P</td></tr><tr><td style = \"text-align:center;\">3</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">10 mL serological pipette</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Fisher</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">13-676-10J</td></tr><tr><td style = \"text-align:center;\">4</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">LoBind 1.5 mL microcentrifuge tubes</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Eppendorf</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">H177737J</td></tr><tr><td style = \"text-align:center;\">5</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">1000 μl and 100 μl wide bore pipette tips</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Art</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">2069GPK/2079GPK</td></tr><tr><td style = \"text-align:center;\">6</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Nylon mesh filters: 100 μm, 70 μm and 40 μm</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Cell treat/Fisher/Biologix</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">180321-299/22363548/15-1040</td></tr><tr><td style = \"text-align:center;\">7</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Liquid nitrogen</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">n/a</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">n/a</td></tr><tr><td style = \"text-align:center;\">8</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Tris pH 9.5</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Alfa Aesar</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Q08F508</td></tr><tr><td style = \"text-align:center;\">9</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">EDTA</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Milipore</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">3070822</td></tr><tr><td style = \"text-align:center;\">10</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">KCl</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Fisher</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">177592</td></tr><tr><td style = \"text-align:center;\">11</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Sucrose</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Sigma</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">SLBW6518</td></tr><tr><td style = \"text-align:center;\">12</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Spermidine tetrahydrochloride</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Sigma</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">BCBV9936</td></tr><tr><td style = \"text-align:center;\">13</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Spermine tetrahydrochloride</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Sigma</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">BCBW6229</td></tr><tr><td style = \"text-align:center;\">14</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">2-Mercaptoethanol (BME)</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Sigma</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">SHBH5561V</td></tr><tr><td style = \"text-align:center;\">15</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Triton X-100</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Sigma</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">SLBW7103</td></tr><tr><td style = \"text-align:center;\">16</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Isopropanol</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Fisher</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">175275</td></tr><tr><td style = \"text-align:center;\">17</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">100% Ethanol</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Acros organics</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">B0536196</td></tr><tr><td style = \"text-align:center;\">18</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Propidium iodide</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">eBioscience</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">BMS500PI</td></tr><tr><td style = \"text-align:center;\">19</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Microscope slides</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Thermo</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">3050</td></tr><tr><td style = \"text-align:center;\">20</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Microscope slide covers</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">Thermo</td><td rowspan = \"\" colspan = \"\" style =\"display : table-cell;\">3306</td></tr></table></div>"
+  }

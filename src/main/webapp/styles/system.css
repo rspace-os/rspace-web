@@ -1,0 +1,428 @@
+/**
+ * Global variables and mixins are defined here.
+ *
+ * Import in other SASS stylesheets using:
+ * @import 'global_vars';
+ */
+input:focus {
+  outline: none; }
+
+button:focus {
+  outline: none; }
+
+#showAll {
+  background-image: url("/images/icons/showAllIcon.png"); }
+
+#grantPiRoleLink {
+  display: none;
+  background-image: url("/images/icons/promoteUser.png"); }
+
+#archiveAllLink {
+  display: none;
+  background-image: url("/images/icons/archivingIcon.png"); }
+
+#disableUser {
+  display: none;
+  background-image: url("/images/icons/disableIcon.png"); }
+
+#enableUser {
+  display: none;
+  background-image: url("/images/icons/enableIcon.png"); }
+
+#unlockUser {
+  display: none;
+  background-image: url("/images/icons/unlock.png"); }
+
+#deleteUser, #deleteGroup {
+  background-image: url("/images/icons/deleteUserIcon.png"); }
+
+#exportGroupRecord {
+  padding-left: 48px;
+  background-image: url("/images/icons/exportAllGroupIcon.png"); }
+
+#createCommunityButton {
+  padding-left: 50px;
+  background-image: url("/images/icons/createCommIcon.png"); }
+
+#removeCommunity {
+  padding-left: 40px;
+  background-image: url("/images/icons/removeCommIcon.png"); }
+
+.communityViewInnerList {
+  max-height: 400px;
+  border: 1px solid #DDDDDD;
+  padding: 6px;
+  overflow: auto; }
+
+#createGroupButton {
+  padding-left: 45px;
+  background-image: url("/images/icons/createGroupIcon.png"); }
+
+.enabled {
+  font-weight: bold;
+  color: green !important; }
+
+.uname[data-signupsource="SSO_BACKDOOR"] .enabled {
+  font-weight: bold;
+  color: #444 !important;
+}
+
+.uname[data-signupsource="SSO_BACKDOOR"] a {
+  padding-left: 20px;
+  padding-top: 1px;
+  background-image: url("/images/icons/door.png");
+  background-repeat: no-repeat;
+}
+
+.locked {
+  padding-left: 25px;
+  background-image: url("/images/icons/unlock.png");
+  background-repeat: no-repeat;}
+
+.disabled {
+  font-weight: bold;
+  color: red !important; }
+
+.systemList {
+  border-color: #DDDDDD;
+  border-style: solid;
+  border-width: 0 2px 0 2px;
+  padding: 0;
+  margin: 0;
+  width: 100% !important; }
+
+.table_headRow {
+  background-color: #DDDDDD;
+  height: 3em; }
+
+.table_headRow th {
+  background-color: #DDDDDD;
+  height: 3em;
+  margin: 0px;
+  border: 0px;
+  padding: 3px; }
+
+.table_listRow {
+  background-color: #F6F6F6;
+  height: 3em;
+  padding: 3px; }
+
+.table_listCell {
+  background-color: #F6F6F6;
+  height: 3em;
+  padding: 0 0 0 2px;
+  text-align: left;
+  border-color: #DDDDDD;
+  border-style: solid;
+  border-width: 0 0 2px 0; }
+
+.temporary {
+  color: #DDDDDD; }
+
+.temporary a {
+  color: #DDDDDD;
+  text-decoration: none; }
+
+.temporary a:visited {
+  color: #DDDDDD;
+  text-decoration: none; }
+
+.temporary a:hover {
+  color: #DDDDDD;
+  text-decoration: none; }
+
+.temporary a:active {
+  color: #DDDDDD;
+  text-decoration: none; }
+
+.scrollingSelection {
+  height: 200px;
+  border: 1px solid #DDDDDD;
+  padding: 6px;
+  overflow: auto; }
+
+.systemButton {
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  background: transparent;
+  background-repeat: no-repeat;
+  background-position: top left;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer; }
+
+.systemEditButton {
+  padding: 3px 7px 2px 25px;
+  background-image: url("/images/icons/editIcon.png");
+}
+
+.systemCancelButton {
+  padding: 3px 7px 2px 22px;
+  background-image: url("/images/icons/closeIcon.png");
+}
+
+.systemSaveButton {
+  padding: 3px 7px 2px 25px;
+  background-image: url("/images/icons/saveIcon.png");
+}
+
+.systemMoveButton {
+  padding: 3px 7px 2px 25px;
+  background-image: url("/images/icons/moveIcon.png");
+}
+
+.systemRemoveButton {
+  padding: 3px 7px 2px 25px;
+  background-image: url("/images/icons/removeGroupIcon.png");
+}
+
+.systemAddAdminButton {
+  padding: 3px 7px 2px 25px;
+  background-image: url("/images/icons/addAdminIcon.png");
+}
+
+.systemAddLabGroupButton {
+  padding: 3px 7px 2px 37px;
+  background-image: url("/images/icons/addGroupIcon.png");
+}
+
+.systemGoButton {
+  padding: 3px 7px 2px 25px;
+  background-image: url("/images/icons/goIcon.png");
+}
+
+.topGreyBar {
+  background-color: #DDDDDD;
+  margin: 0;
+  padding: 10px 0px 0px 5px;
+  height: 20px;
+  vertical-align: center; }
+
+#searchSystemListButton {
+  cursor: pointer;
+  border: 1px solid #6389A8;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  color: #FFF;
+  background-color: #6389A8;
+  line-height: 1.1em;
+  padding-bottom: 2px;
+}
+
+#userStats {
+  width: auto;
+  padding: 3px 5px;
+  background-color: #F6F6F6;
+  border: 4px solid #F6F6F6;
+  margin: 6px 0 6px 0; }
+
+.statsLabel {
+  padding: 0 10px 0 20px; }
+
+.statsData {
+  height: 20px;
+  padding: 0 10px 0 10px;
+  background-color: white; }
+
+.pageTopButton {
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  margin: 0 9px 0 0 !important;
+  background: transparent;
+  background-repeat: no-repeat;
+  background-position: top left;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer; }
+.pageTopButton:focus {
+  box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+}
+.pageTopButton:last-child {
+  margin-right: 0px !important;
+}
+
+#buttonsIntro {
+  float: left;
+  height: 44px; }
+
+#buttonsOutro {
+  float: right;
+  height: 44px; }
+
+#selectAccountToCreateSection {
+  float: left;
+  height: 44px; }
+
+#createUserAccountForm table td, #createUserAccountForm table th {
+  padding-bottom: 5px;
+  padding-top: 5px;
+  padding-right: 10px;
+}
+
+#groupsList table {
+  width: 100%;
+}
+
+#groupsList td, #groupsList th {
+  padding-left: 10px;
+}
+
+#communitiesList, #groupsList {
+  border-radius: 4px;
+  height: 10em;
+  width: 100%;
+  border: 1px solid #DDDDDD;
+  padding:6px;
+  overflow:auto;
+}
+
+#groupsList {
+  padding: 0px;
+  height: 30em;
+}
+
+#sortGroupsByName:hover, #sortGroupsBySize:hover, #sortGroupsByPI:hover {
+  cursor:pointer;
+}
+
+#pageTopButtons {
+  width: 100%;
+  height: 44px;
+  margin-top: 14px; }
+
+#toAmend {
+  float: right;
+  height: 44px;
+  margin-left: 15px; }
+
+.likeHeaders {
+  text-align: right; }
+
+.accountsInputs {
+  width: 100%;
+}
+
+.warning {
+  border: 1px solid;
+  margin: 10px 0px;
+  padding: 15px 10px 15px 50px;
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  width: 500px;
+  margin-left: auto;
+  margin-right: auto; }
+
+.warning {
+  /* Specific warning color */
+  color: #9F6000;
+  background-color: #FEEFB3;
+  /* At the moment, we don't use a general RSpace warning icon */
+  /* background-image: url('warning.png'); */ }
+
+.buttonsBelowTopBar {
+  margin-top: 10px; }
+
+#allFileSystemsTableBody td {
+  padding-left: 8px; }
+
+#topBar {
+  margin-bottom: 0;
+  height: auto;
+  min-height: 0; }
+  #topBar a {
+    color: #c0e2fc;
+    font-weight: bold;
+    width: auto;
+    padding: 15px 10px;
+    font-size: 14px;
+    line-height: 17px; }
+    #topBar a:hover, #topBar a:focus {
+      color: white; }
+    #topBar a:focus {
+      text-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+  #topBar .divider {
+    padding: 10px 5px; }
+    #topBar .divider:after {
+      display: block;
+      content: '';
+      border-left: 1px solid #c0e2fc;
+      height: 27px; }
+
+.topSectionTextIconBtn {
+  display: inline;
+  float: left;
+  padding: 11px 7px 9px 7px;
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  margin: 0 9px 0 0 !important;
+  background: transparent;
+  background-repeat: no-repeat;
+  background-position: 1px 1px;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer; }
+
+.settingCategoryRow {
+  margin: 20px 5px 20px 5px; }
+
+.settingRow {
+  margin: 10px;
+  line-height: 20px; }
+
+.settingRow div {
+  display: inline-block;
+  color: #444; }
+
+.settingName {
+  min-width: 250px;
+  font-weight: bold;}
+
+.settingName a {
+  cursor: help;
+}
+
+.settingValue {
+  min-width: 200px;
+  cursor: pointer; }
+
+.settingName, .settingValue {
+  font-family: monospace;
+  font-size: medium; }
+
+.settingActions {
+  min-width: 100px; }
+
+.settingCancelLink {
+  padding: 3px 7px 2px 25px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #AFAFAF;
+  background-image: url("/images/icons/closeIcon.png");
+  background-repeat: no-repeat; }
+
+.settingSaveLink {
+  margin-left: 10px;
+  padding: 3px 7px 2px 25px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #AFAFAF;
+  background-image: url("/images/icons/createDocumentIcon.png");
+  background-repeat: no-repeat; }
+
+.ui-tooltip {
+  max-width: 550px; }

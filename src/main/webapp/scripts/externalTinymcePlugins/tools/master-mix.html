@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Dilution Calculator</title>
+
+	<script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+	<script src="/scripts/bower_components/mathjs/dist/math.min.js"></script>
+	<script src="/scripts/bower_components/mustache/mustache.min.js"></script>
+	<script src="/scripts/bower_components/Apprise-v2/apprise-v2.js"></script>
+	<script src="/scripts/externalTinymcePlugins/tools/js/master-mix.js"></script>
+	<script src="/scripts/global.js"></script>
+	<link rel="stylesheet" type="text/css" href="/styles/bootstrap-custom-flat.css" />
+	<link rel="stylesheet" type="text/css" href="/scripts/externalTinymcePlugins/tools/css/master-mix.css">
+</head>
+
+<body>
+	<div id="mastermixCalculatorDiv" class="bootstrap-namespace bootstrap-custom-flat">
+		<p class="description">
+			Please enter reagent volumes for a single reaction, and the number of reactions you are performing.<br />
+			Click 'Calculate' to generate the scaled-up quantities.
+		</p>
+
+		<div class="row">
+			<div class="col-xs-6 col-header">
+				<h2>Composition of PCR reaction</h2>
+			</div>
+			<div class="col-xs-6 col-header">
+				<h2>PCR MasterMix Formulation for <span class="result rtOutput"></span> PCR reactions</h2>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-xs-12">
+				<form id="masterMixForm" class="form-horizontal">
+					
+					<div class="form-group form-horizontal">
+						<label for="dnainput" class="col-xs-4 control-label">Template DNA</label>
+						<div class="col-xs-2">
+							<input class="input single form-control with-units" type="number" min="0" step="any" name="dnainput"
+								value="0" required>
+							<span class="unit">µl</span>
+						</div>
+						<label class="col-xs-4 control-label">Template DNA</label>
+						<div class="col-xs-2">
+							<span class="result masterVol">&nbsp;</span>&nbsp;µl
+						</div>
+					</div>
+
+					<div class="form-group form-horizontal">
+						<label for="bufferinput" class="col-xs-4 control-label">PCR Buffer</label>
+						<div class="col-xs-2">
+							<input class="input single form-control with-units" type="number" min="0" step="any" name="bufferinput"
+								value="0" required>
+							<span class="unit">µl</span>
+						</div>
+						<label class="col-xs-4 control-label">PCR Buffer</label>
+						<div class="col-xs-2">
+							<span class="result masterVol">&nbsp;</span>&nbsp;µl
+						</div>
+					</div>
+
+					<div class="form-group form-horizontal">
+						<label for="fprimerinput" class="col-xs-4 control-label">Forward Primer</label>
+						<div class="col-xs-2">
+							<input class="input single form-control with-units" type="number" min="0" step="any" name="fprimerinput"
+								value="0" required>
+							<span class="unit">µl</span>
+						</div>
+						<label class="col-xs-4 control-label">Forward Primer</label>
+						<div class="col-xs-2">
+							<span class="result masterVol">&nbsp;</span>&nbsp;µl
+						</div>
+					</div>
+
+					<div class="form-group form-horizontal">
+						<label for="rprimerinput" class="col-xs-4 control-label">Reverse Primer</label>
+						<div class="col-xs-2">
+							<input class="input single form-control with-units" type="number" min="0" step="any" name="rprimerinput"
+								value="0" required>
+							<span class="unit">µl</span>
+						</div>
+						<label class="col-xs-4 control-label">Reverse Primer</label>
+						<div class="col-xs-2">
+							<span class="result masterVol">&nbsp;</span>&nbsp;µl
+						</div>
+					</div>
+
+					<div class="form-group form-horizontal">
+						<label for="dntpinput" class="col-xs-4 control-label">dNTP mix</label>
+						<div class="col-xs-2">
+							<input class="input single form-control with-units" type="number" min="0" step="any" name="dntpinput"
+								value="0" required>
+							<span class="unit">µl</span>
+						</div>
+						<label class="col-xs-4 control-label">dNTP mix</label>
+						<div class="col-xs-2">
+							<span class="result masterVol">&nbsp;</span>&nbsp;µl
+						</div>
+					</div>
+
+					<div class="form-group form-horizontal">
+						<label for="enzymeinput" class="col-xs-4 control-label">DNA Polymerase</label>
+						<div class="col-xs-2">
+							<input class="input single form-control with-units" type="number" min="0" step="any" name="enzymeinput"
+								value="0" required>
+							<span class="unit">µl</span>
+						</div>
+						<label class="col-xs-4 control-label">DNA Polymerase</label>
+						<div class="col-xs-2">
+							<span class="result masterVol">&nbsp;</span>&nbsp;µl
+						</div>
+					</div>
+
+					<div class="form-group form-horizontal">
+						<label for="waterinput" class="col-xs-4 control-label">PCR grade Water</label>
+						<div class="col-xs-2">
+							<input class="input single form-control with-units" type="number" min="0" step="any" name="waterinput"
+								value="0" required>
+							<span class="unit">µl</span>
+						</div>
+						<label class="col-xs-4 control-label">PCR grade Water</label>
+						<div class="col-xs-2">
+							<span class="result masterVol">&nbsp;</span>&nbsp;µl
+						</div>
+					</div>
+
+					<div class="form-group form-horizontal">
+						<label for="rtinput" class="col-xs-4 control-label">Total Number of Reactions</label>
+						<div class="col-xs-2">
+							<input class="input  form-control" type="number" min="0" name="rtinput" value="1" required>
+						</div>
+					</div>
+
+					<hr>
+
+					<div class="form-group form-horizontal results">
+						<label class="col-xs-4 control-label">Total PCR Reaction Volume:</label>
+						<div class="col-xs-2">
+							<span class="result PCRVolumeOutput">&nbsp;</span>&nbsp;µl
+						</div>
+						<label class="col-xs-4 control-label">TOTAL VOLUME:</label>
+						<div class="col-xs-2">
+							<span class="result VolumeOutput">&nbsp;</span>&nbsp;µl
+						</div>
+					</div>
+
+					<hr>
+
+					<div class="form-group submit">
+						<button id="masterMixClear" class="btn form-control">Reset</button>
+						<button id="masterMixCalc" class="btn btn-primary form-control" type="submit">Calculate</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- The template to be inserted into a document -->
+	<div style="display: none;">
+		<table id="insertedCalculationTemplate">
+			<tbody>
+				<tr>
+					<td colspan="2" width="50%" style="text-align: center;">
+						<strong>Composition of PCR reaction</strong>
+					</td>
+					<td colspan="2" width="50%" style="text-align: center;">
+						<strong>PCR MasterMix Formulation for <span class="result rtOutput"></span> PCR reactions</strong>
+					</td>
+				</tr>
+				<tr>
+					<td><strong>Template DNA</strong></td>
+					<td><span class="input" data-name="dnainput">0</span> µl</td>
+					<td><strong>Template DNA</strong></td>
+					<td><span class="result masterVol" data-name="dnainput"></span> µl</td>
+				</tr>
+				<tr>
+					<td><strong>PCR Buffer</strong></td>
+					<td><span class="input" data-name="bufferinput">0</span> µl</td>
+					<td><strong>PCR Buffer</strong></td>
+					<td><span class="result masterVol" data-name="bufferinput"></span> µl</td>
+				</tr>
+				<tr>
+					<td><strong>Forward Primer</strong></td>
+					<td><span class="input" data-name="fprimerinput">0</span> µl</td>
+					<td><strong>Forward Primer</strong></td>
+					<td><span class="result masterVol" data-name="fprimerinput"></span> µl</td>
+				</tr>
+				<tr>
+					<td><strong>Reverse Primer</strong></td>
+					<td><span class="input" data-name="rprimerinput">0</span> µl</td>
+					<td><strong>Reverse Primer</strong></td>
+					<td><span class="result masterVol" data-name="rprimerinput"></span> µl</td>
+				</tr>
+				<tr>
+					<td><strong>dNTP mix</strong></td>
+					<td><span class="input" data-name="dntpinput">0</span> µl</td>
+					<td><strong>dNTP mix</strong></td>
+					<td><span class="result masterVol" data-name="dntpinput"></span> µl</td>
+				</tr>
+				<tr>
+					<td><strong>DNA Polymerase</strong></td>
+					<td><span class="input" data-name="enzymeinput">0</span> µl</td>
+					<td><strong>DNA Polymerase</strong></td>
+					<td><span class="result masterVol" data-name="enzymeinput"></span> µl</td>
+				</tr>
+				<tr>
+					<td><strong>PCR grade Water</strong></td>
+					<td><span class="input" data-name="waterinput">0</span> µl</td>
+					<td><strong>PCR grade Water</strong></td>
+					<td><span class="result masterVol" data-name="waterinput"></span> µl</td>
+				</tr>
+				<tr>
+					<td><strong>Total Number of Reactions</strong></td>
+					<td><span class="input" data-name="rtinput">0</span></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td colspan="2">&nbsp;</td>
+					<td>Total PCR Reaction Volume</td>
+					<td><span class="result PCRVolumeOutput"></span> µl</td>
+				</tr>
+				<tr>
+					<td colspan="2">&nbsp;</td>
+					<td>TOTAL VOLUME</td>
+					<td><span class="result VolumeOutput"></span> µl</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</body>
+
+</html>

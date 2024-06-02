@@ -1,0 +1,53 @@
+## To remove DB connection processes in one go.
+mysql >select concat('KILL ',id,';') from information_schema.processlist where db='rs_acceptance' and time > 200 limit 20 into outfile '/tmp/b.txt';
+mysql >source /tmp/b.txt#
+
+# identify shared records with deleted owner:
+select r.id from RecordGroupSharing r  left join User u on u.id=r.sharee_id where u.id is null;
+CREATE TEMPORARY TABLE IF NOT EXISTS table2 AS select r.id from RecordGroupSharing r  left join User u on u.id=r.sharee_id where u.id is null;
+ delete from RecordGroupSharing where id in (select id from table2);
+drop table2;
+
+### fileUsage by group (1.33)
+select g.displayName,  sum(fp.fileSize) as filesfrom rsGroup g inner join UserGroup ug on g.id=ug.group_id inner join User u on u.id=ug.user_id inner join FileProperty fp on fp.fileOwner=u.username group by g.displayName;
+## fileUsage by user (1.33)
+select u.username,  sum(fp.fileSize) as files  from  User u  inner join FileProperty fp on fp.fileOwner=u.username group by u.username  order by files asc;
+## file usage by community (1.33)
+ select c.displayName,  sum(fp.fileSize) as files   from Community c inner join  community_labGroups clg on clg.community_id=c.id inner join  rsGroup g on clg.group_id=g.id  inner join UserGroup ug on g.id=ug.group_id inner join User u on u.id=ug.user_id inner join FileProperty fp on fp.fileOwner=u.username group by c.displayName order by files desc;
+
+## numer of external file links for a  group (1.33):
+select count(f.id), owner_id from Field f inner join StructuredDocument sd on sd.id=f.structuredDocument_id inner join BaseRecord br on sd.id=br.id where f.rtfData like '%class="nfs_file mceNonEditable"%' and br.owner_id in(select u.id from User u inner join UserGroup ug on ug.user_id=u.id where ug.group_id=98346) group by owner_id;
+
+// extract current FS roots
+ insert into xxxroot select distinct NULL, now(),0, substr(fileUri,1,instr(fileUri, substring_index(fileUri,'file_store',-1))) from xxxfp ;
+
+// update FileProperty table
+update  xxxfp inner join xxxroot on FileStoreRoot=substr(fileUri,1,length(FileStoreRoot)) set fileUri=substr(fileUri, length(FileStoreRoot)+1);
+select substr(fileUri, length(FileStoreRoot)+1) from xxxfp inner join xxxroot on FileStoreRoot=substr(fileUri,1,length(FileStoreRoot));
+## total external links per user.
+ select u.username as username, count(f.id) as totalExternalLinks from Field f inner join StructuredDocument sd on sd.id=f.structuredDocument_id inner join BaseRecord br on sd.id=br.id inner join User u on br.owner_id=u.id where f.rtfData like '%class="nfs_file mceNonEditable"%'  group by br.owner_id order by totalExternalLinks desc;
+ 
+ ## list size of notebooks:
+ select br.id as notebook_id, count(br2.id) as children from BaseRecord br inner join RecordToFolder r2f on br.id = r2f.folder_id inner join BaseRecord br2 on br2.id=r2f.record_id where br.type like '%NOTEBOOK%' group by br.id order by children asc;
+ 
+-----
+ 
+## Revert broken text field content to last correct autosaved version
+### find the field for document and confirm it's the problematic one
+SELECT id, tempField_id, substring(rtfData, 1, 100) FROM Field where structuredDocument_id = <doc_id>;
+
+### check the autosave table to see if there is good autosave there (could be already deleted)
+SELECT id, fieldId, substring(fieldData, 1, 100) from FieldAutosaveLog 
+    where fieldId = (SELECT id FROM Field where structuredDocument_id = <doc_id>)
+    
+### update to last good autosave
+UPDATE Field f , FieldAutosaveLog fas set f.rtfData = fas.fieldData where f.id=fas.fieldId and f.id=<field_id> and fas.id=<last_good_autosave_id>;
+
+### also update last revision
+select id, REV, substring(rtfData, 1, 100) from Field_AUD where structuredDocument_id = <doc_id>;
+update Field_AUD faud, Field f set faud.rtfData = f.rtfData where f.id=faud.id and faud.id=<field_id> and faud.REV=<rev_id>
+
+## Alternatively, if FieldAutosaveLog table is empty, just revert broken text field content to last revision
+update Field f , Field_AUD faud set f.rtfData = faud.rtfData where f.id=faud.id and f.id=<field_id> and faud.REV=<rev_id>;
+
+-----

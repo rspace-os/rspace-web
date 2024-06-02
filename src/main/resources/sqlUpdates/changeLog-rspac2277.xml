@@ -1,0 +1,50 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<changeSet id="2021-07-09a" author="nicholas" context="run">
+    <comment> A new table for ecat chemistry files </comment>
+    <createTable tableName="EcatChemistryFile">
+        <column name="id" type="BIGINT(19)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="chemString" type="LONGTEXT"/>
+        <column name="chemElementId" type="BIGINT(19)"/>
+    </createTable>
+    <addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="EcatChemistryFile"/>
+    <addForeignKeyConstraint baseColumnNames="id" baseTableName="EcatChemistryFile" constraintName="FK9FWKCTCEPGPI7PKPP78UYJFT2" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="EcatMediaFile"/>
+</changeSet>
+<changeSet id="2021-07-09b" author="nicholas" context="run">
+    <createTable tableName="EcatChemistryFile_AUD">
+        <column name="id" type="BIGINT(19)">
+            <constraints nullable="false" />
+        </column>
+        <column name="REV" type="INT(10)">
+            <constraints nullable="false" />
+        </column>
+        <column name="chemString" type="LONGTEXT" />
+        <column name="chemElementId" type="BIGINT(19)"/>
+    </createTable>
+    <addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="EcatChemistryFile_AUD" />
+    <addForeignKeyConstraint baseColumnNames="id, REV" baseTableName="EcatChemistryFile_AUD" constraintName="FKI5BE96PM6YW8ESF4TFB3098H4" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id, REV" referencedTableName="EcatMediaFile_AUD" />
+</changeSet>
+<changeSet id="26-08-21a" author="nicholas" context="run">
+    <comment>Remove redundant columns in EcatChemistryFile Table</comment>
+    <dropColumn tableName="EcatChemistryFile" columnName="chemElementId"/>
+    <dropColumn tableName="EcatChemistryFile_AUD" columnName="chemElementId"/>
+</changeSet>
+<changeSet id="26-08-21b" author="nicholas" context="run">
+    <comment>Add new column in RSChemElement which references an EcatChemistryFile</comment>
+    <addColumn tableName="RSChemElement">
+        <column name="ecatChemFileId" type="BIGINT(19)"/>
+    </addColumn>
+    <addColumn tableName="RSChemElement_AUD">
+        <column name="ecatChemFileId" type="BIGINT(19)"/>
+    </addColumn>
+    <addForeignKeyConstraint baseColumnNames="ecatChemFileId"
+                             baseTableName="RSChemElement" constraintName="FKDHG5HFGSH3SDG038"
+                             deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+                             onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="EcatChemistryFile"/>
+</changeSet>
+</databaseChangeLog>

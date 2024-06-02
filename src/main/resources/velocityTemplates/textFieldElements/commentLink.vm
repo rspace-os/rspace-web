@@ -1,0 +1,9 @@
+#* 
+ Comment link HTML template.
+ Arguments needed for mustache are:
+  - id the comment ID
+  - imageURL the comment icon URL
+ Additional arguments needed for use in Velocity are:
+  - cssClass the CSS Class of this template
+*#
+<img alt="Comment link icon" id="$id" class="$cssClass" src="$imageURL"/>

@@ -1,0 +1,25 @@
+
+#*
+ Creates a div in the editor for playing or showing an AV icon:
+ Mustache arguments are 
+ id the media file ID
+ filename - the name of the media file
+ extension the media file extension
+ imgClass - either 'audioDropped' or 'videoDropped'
+ compositeId - fieldId-objectId
+ iconSrc - path to icon for the file type
+ videoHTML - HTML of a jw media player - can be an empty string
+ Additional arguments needed for use in Velocity are:
+    -infoIconSrc location of info icon
+*#
+
+<div class="attachmentDiv mceNonEditable" id="attachmentDiv_$id">
+	<img id="$compositeId" class="$imgClass attachmentIcon" $src="$iconSrc" data-video="$id,$filename,$extension" height="32" width="32" onClick="openMedia('$id','$filename','$extension')"/>
+	$videoHTML
+	<p class="attachmentP">
+		<a  id="attachOnText_$id" data-type="Miscellaneous" href="/Streamfile/$id" target="_blank">$filename</a>
+	</p>
+	<div class="attachmentInfoDiv" id="attachmentInfoDiv_$id">
+		<img class="attachmentInfoIcon" src="$infoIconSrc"/>
+	</div>
+</div>

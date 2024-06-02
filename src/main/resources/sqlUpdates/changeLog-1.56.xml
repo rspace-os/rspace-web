@@ -1,0 +1,32 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.56 January 2019 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+
+	<!-- Add changesets here... -->
+
+    <changeSet id="19-1-9" author="matthias" context="dev-test,run">
+      <comment> Add indexes to speed up annotation lookups (RSPAC-1688)</comment>
+      <createIndex tableName="ecatImageAnnotation" indexName="ecatImageAnnotation_imageId">
+        <column name="imageId"></column>
+      </createIndex>
+      <createIndex tableName="ecatImageAnnotation" indexName="ecatImageAnnotation_parentId">
+        <column name="parentId"></column>
+      </createIndex>
+    </changeSet>
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+
+
+</databaseChangeLog>

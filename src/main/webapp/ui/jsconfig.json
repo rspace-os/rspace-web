@@ -1,0 +1,7 @@
+{
+    "_comment": "VS Code JavaScript Extension configuration for RSpace",
+    "exclude": ["node_modules", "node", "dist"],
+    "compilerOptions": {
+        "experimentalDecorators": true
+    }
+}

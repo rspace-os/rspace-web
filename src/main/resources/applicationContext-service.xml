@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd" default-lazy-init="true" >
+
+    <!-- Activates scanning of @Autowired -->
+    <context:annotation-config/>
+
+    <!-- Activates Component scan for Components and Configuration classes that don't require
+     a WebApplicationContext (all except WebConfig) -->
+    <context:component-scan base-package="com.axiope.webapp,com.axiope,com.researchspace">
+        <context:exclude-filter type="assignable" expression="com.researchspace.webapp.config.WebConfig"/>
+        <context:exclude-filter type="assignable" expression="com.researchspace.webapp.config.WebConfigForMethodValidation"/>
+    </context:component-scan>
+
+  <!-- =================================================================== -->
+    <!-- AOP: Configuration and Aspects                                      -->
+    <!-- =================================================================== -->
+    <aop:config>
+        <aop:advisor id="userManagerTx" advice-ref="userManagerTxAdvice" pointcut="execution(* *..service.UserManager.*(..))" order="0"/>
+        <aop:advisor id="managerTx" advice-ref="txAdvice" pointcut="execution(* *..service.*Manager.*(..))" order="2"/>
+        <aop:advisor id="archiveManagerTx" advice-ref="txAdvice" pointcut="execution(* *..service.archive.*Manager.*(..))" order="2"/>
+        <aop:advisor id="inventoryManagerTx" advice-ref="txAdvice" pointcut="execution(* *..service.inventory.*Manager.*(..))" order="2"/>
+        <aop:advisor id="searchManagerTx" advice-ref="txAdvice" pointcut="execution(* *..search.SearchManager.*(..))" order="2"/>
+        <aop:advisor id="validatorTx" advice-ref="txAdvice" pointcut="execution(* *..service.*Validator.*(..))" order="2"/>
+        <aop:advisor id="recordAdapterTx" advice-ref="txAdvice" pointcut="execution(* *..BaseRecordAdapter.*(..))" order="2"/>
+    </aop:config>
+
+    <!-- Enable @AspectJ support -->
+    <aop:aspectj-autoproxy/>
+
+    <!-- Transaction manager for a single Hibernate SessionFactory (alternative to JTA) -->
+    <bean id="transactionManager"
+        class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+
+    <tx:advice id="txAdvice">
+        <tx:attributes>
+            <!-- Read-only commented out to make things easier for end-users -->
+            <!--tx:method name="get*" read-only="true"/-->
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <tx:advice id="userManagerTxAdvice">
+        <tx:attributes>
+            <tx:method name="save*" rollback-for="UserExistsException"/>
+        </tx:attributes>
+    </tx:advice>
+
+
+    <bean id="dumpOldNotifications" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="communicationManager" />
+        <property name="targetMethod" value="deleteReadNotifications" />
+    </bean>
+     <bean id="dumpOldArchives" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="exportImport" />
+        <property name="targetMethod" value="removeOldArchives" />
+    </bean>
+    <bean id="nightlyFileUsageAnalytics" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="analyticsManager" />
+        <property name="targetMethod" value="uploadUsersDiskUsage" />
+    </bean>
+    <bean id="licenseServerPoll" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="licenseService" />
+        <property name="targetMethod" value="forceRefreshLicense" />
+    </bean>
+
+    <bean id="cronTrigger2" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="dumpOldNotifications" />
+        <!-- should be run every morning at 2.15 AM set more frequently for testing -->
+        <property name="cronExpression" value="0 15 2 * * ?" />
+    </bean>
+    <bean id="cronTrigger3" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="dumpOldArchives" />
+        <!-- should be run every 30 minutes  set more frequently for testing -->
+        <property name="cronExpression" value="0 1/30 * * * ?" />
+    </bean>
+     <bean id="nightlyFileUsageAnalyticsTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="nightlyFileUsageAnalytics" />
+        <!-- should be at 4am every Saturday -->
+        <property name="cronExpression" value="0 0 4 ? * 7" />
+    </bean>
+     <bean id="licensePollTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="licenseServerPoll" />
+        <!-- should be at 4am  -->
+        <property name="cronExpression" value="${licenseserver.poll.cron}" />
+    </bean>
+    <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+            <!--     <ref bean="cronTrigger" /> -->
+                <ref bean="cronTrigger2" />
+                <ref bean="cronTrigger3" />
+                <ref bean="nightlyFileUsageAnalyticsTrigger" />
+                <ref bean="licensePollTrigger" />
+            </list>
+        </property>
+        <property name="quartzProperties">
+            <props>
+                <prop key="org.quartz.threadPool.threadCount">5</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean  id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="${mail.host}"/>
+        <property name="defaultEncoding" value="UTF-8"/>
+        <!-- Uncomment if you need to authenticate with your SMTP Server -->
+        <!--property name="username" value="${mail.username}"/>
+        <property name="password" value="${mail.password}"/>
+        <property name="javaMailProperties">
+            <value>
+                mail.smtp.auth=true
+            </value>
+        </property-->
+    </bean>
+
+    <bean id="mailMessage" class="org.springframework.mail.SimpleMailMessage" scope="prototype">
+        <property name="from" value="${mail.default.from}"/>
+    </bean>
+
+</beans>

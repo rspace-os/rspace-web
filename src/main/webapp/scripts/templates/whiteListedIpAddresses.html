@@ -1,0 +1,36 @@
+<script id="whitelistedIpAddresses-template" type="text/x-mustache-template">
+<span> If the deployment property 'sysadmin.limitedIpAddresses.enabled' is set to true, the sysadmin
+ can only log in from one of the IP addresses listed below.</span>
+<p/>
+<div id="ipAddressList">
+Please add an IP address or a CIDR range:
+<p/>
+<input type="text" id="newIpAddress"  placeholder="Enter an IP address" required="true"/>
+<input type="text" id="newIpDesc"  placeholder="Enter a display name" required="true"/>  <a href="#" id="newIpAddressSubmit">Add</a>
+<p/>
+<h4> Existing white-listed IP addresses </h4>
+<table>
+<tr>
+ <th style="width:200px">IP address </th>
+ <th style="width:200px"> Description </th>
+ <th style="width:200px"> Actions </th>
+</tr>
+{{#data}}
+
+<tr style="height:19px"> 
+	<td style="width:200px" class = "ipAddress"> {{ipAddress}}</td>
+    <td style="width:200px"data-id="{{id}}" class = "ipDesc"> {{description}}</td>
+    <td><a href="#" data-id="{{id}}" class="ipedit" data-href="/system/config/ajax/updateDesc/{{id}}">Edit | </a>
+        <a href="#" class="removeIp removeIt" data-href="/system/config/ajax/removeIpAddress/{{id}}">Remove</a></td>
+
+</tr>
+{{/data}}
+{{^data}}
+No Ip addresses are enabled for sysadmin - if the deployment property 'sysadmin.limitedIpAddresses.enabled' is set to true, then currently the 
+ sysadmin can no longer login!
+{{/data}}
+</table>
+</div>
+
+</script>
+

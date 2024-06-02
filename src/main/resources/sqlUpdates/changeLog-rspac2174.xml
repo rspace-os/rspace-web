@@ -1,0 +1,60 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2020-12-12a" context="run" author="juozas">
+        <comment>
+            Increase groupEventType column length for the new
+            group autoshare status change event types
+        </comment>
+        <sql>
+            ALTER TABLE GroupMembershipEvent
+            MODIFY COLUMN groupEventType VARCHAR(30);
+        </sql>
+    </changeSet>
+    
+    <!--
+     This has been moved to data-changeLog.xml so that earlier Java-based liquibase updates have a Group table
+      that matches Hibernate's table definition. This commented copy is kept for reference in the context of surrounding related
+      updates made for rspac-2174. 
+     <changeSet id="2020-12-12b" context="run" author="juozas">
+        <preConditions onError="MARK_RAN" onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="rsGroup" columnName="autoshareEnabled"/>
+            </not>
+        </preConditions>
+        <comment>
+            Add a new column for tracking group-wide autoshare status
+        </comment>
+        <addColumn tableName="rsGroup">
+            <column name="autoshareEnabled" type="BIT(1)" defaultValueBoolean="0"/>
+        </addColumn>
+    </changeSet> -->
+
+    <changeSet id="2020-12-12c" context="run,dev-test" author="juozas">
+        <comment>Create a new system property and value group_autosharing</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="ALLOWED"/>
+            <column name="name" type="STRING" value="group_autosharing.available"/>
+            <column name="type" type="NUMERIC" value="3"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id"
+                    type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name ='group_autosharing.available')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value="ALLOWED"/>
+            <column name="property_id"
+                    type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='group_autosharing.available')"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

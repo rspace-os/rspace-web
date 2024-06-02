@@ -1,0 +1,312 @@
+# RSpace setup with Nix package manager notes
+
+__This guide is only relevant if you are using the Nix package manager, and is
+completely optional.__
+
+This guide will show you how to create an isolated development environment for
+the RSpace web project.
+
+The result of the setup is that RSpace specific Java/Maven/MySQL and other
+packages will only be available once we `cd` into the project root directory.
+This means that RSpace packages will not interfere with anything else you
+have on your system, and so you can run multiple versions of MySQL, Java, Node
+between your projects.
+
+## Lorri setup
+
+I recommend to use [Lorri](https://github.com/target/lorri) to manage the isolated
+dev environments because it has several improvements over the standard `nix-shell`
+for development.
+- Your environments will never be garbage collected.
+- Lorri integrates with direnv for a fantastic dev experience that most editors
+  support out of the box.
+
+Lorri is the only Nix tool that you will need, you can read more about how to
+set it up and what it does on the GitHub project Page
+[Lorri](https://github.com/target/lorri).
+
+## Steps for RSpace-Web
+
+Make sure that you have the nixpkgs unstable channel. This unstable channel,
+contrary to its name, is actually quite stable and has newer Nix expressions.
+I am on NixOS, so I'm using `nixos-unstable` instead.
+```
+sudo nix-channel --add https://nixos.org/channels/nixos-unstable nixos-unstable
+sudo nix-channel --update
+```
+
+Run `lorri init` in the root directory of the RSpace web project, replace the
+generated shell.nix with the following:
+```nix
+{ pkgs ? import <nixpkgs> {} }:
+
+let
+  # Localise toolchains.xml and settings.xml
+  maven-override = pkgs.writeScriptBin "mvn" ''
+    #!${pkgs.stdenv.shell}
+
+    ${pkgs.maven}/bin/mvn \
+    --toolchains "$PROJECT_ROOT/.nix-mvn-toolchains.xml" \
+    --settings "$PROJECT_ROOT/.nix-mvn-settings.xml" \
+    "$@"
+  '';
+
+  # Make sure that the name <nixos-unstable> corresponds
+  # to the name of the unstable channel that you are using
+  unstable = import <nixos-unstable> { };
+in pkgs.mkShell {
+  buildInputs = with pkgs; [
+    maven-override
+    mysql57
+    liquibase
+    jdk11
+
+    nodejs-10_x
+    unstable.flow
+
+    # For BASH users
+    bashInteractive
+  ];
+}
+```
+
+For RSpace core model, the shell.nix file would look like this
+```nix
+{ pkgs ? import <nixpkgs> {} }:
+
+let
+  # Localise toolchains.xml and settings.xml
+  maven-override = pkgs.writeScriptBin "mvn" ''
+    #!${pkgs.stdenv.shell}
+
+    ${pkgs.maven}/bin/mvn \
+    --toolchains "$(dirname $IN_LORRI_SHELL)/.nix-mvn-toolchains.xml" \
+    --settings "$(dirname $IN_LORRI_SHELL)/.nix-mvn-settings.xml" \
+    "$@"
+  '';
+
+in pkgs.mkShell {
+  buildInputs = with pkgs; [
+    maven-override
+    jdk8
+
+    mysql-client
+
+    # For BASH users
+    bashInteractive
+  ];
+}
+```
+
+RSpace setup requires `toolchains.xml` and `settings.xml` to be setup in the
+`~/.m2` directory, but since we are creating isolated environments, we don't
+want to use global configuration like that. We put the relevant configuration
+into `.nix-mvn-toolchains.xml` and `.nix-mvn-settings.xml` files instead.
+Finally, we create an [overlay](https://nixos.wiki/wiki/Overlays) so that
+we never have to pass in the arguments `--toolchains` and `--settings` on
+the command line ourselves.
+
+#### Creating `.nix-mvn-settings.xml`
+
+Exactly the same as in the getting started guide
+
+Copy and paste this into a new file `.nix-mvn-settings.xml`, no changes needed.
+```xml
+<settings>
+  <profiles>
+    <profile>
+      <id>artifactoryrepos</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <repositories>
+         <repository>
+            <id>com.springsource.repository.bundles.external</id>
+            <name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
+            <url>https://repository.springsource.com/maven/bundles/external</url>
+         </repository>
+         <repository>
+            <id>howler.researchspace.com-libs-release</id>
+            <name>howler.researchspace.com-libs-release</name>
+            <url>https://artifactory.researchspace.com/artifactory/libs-release</url>
+         </repository>
+         <repository>
+            <id>howler.researchspace.com-snapshot</id>
+            <name>howler.researchspace.com-snapshot</name>
+            <url>https://artifactory.researchspace.com/artifactory/libs-snapshot</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+         </repository>
+     </repositories>
+    </profile>
+  </profiles>
+</settings>
+```
+
+#### Creating `.nix-mvn-toolchains.xml`
+
+Copy and paste this into a new file `.nix-mvn-toolchains.xml`, no changes
+needed.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<toolchains>
+  <toolchain>
+    <type>jdk</type>
+    <provides>
+      <version>8</version>
+      <vendor>default</vendor>
+    </provides>
+    <configuration>
+      <jdkHome>${env.JAVA_HOME}</jdkHome>
+    </configuration>
+  </toolchain>
+</toolchains>
+```
+
+`JAVA_HOME` is automatically exported by lorri.
+
+`.nix-mvn-toolchains.xml` and `.nix-mvn-settings.xml` are not on Git because as
+of 2020 September, there's only one person using the Nix package manager.
+
+
+#### `.envrc` setup
+
+Now, we want to setup an isolated MySQL locally. Due to how lorri handles
+`shellHook`, this is done by writing some Bash in the `.envrc` file,
+that is sourced by direnv.
+
+Your automatically generated `.envrc` file (generated by lorri), should only
+have this:
+```bash
+eval "$(lorri direnv)"
+```
+
+Replace it with the following, you don't have to change anything:
+```bash
+eval "$(lorri direnv)"
+
+export PROJECT_ROOT=$(dirname $IN_LORRI_SHELL)
+export RS_FILE_BASE=~/.researchspaceFStore
+
+#
+# MySQL
+#
+
+export MYSQL_ROOT=$PROJECT_ROOT/.mysql
+export MYSQL_DATA=$MYSQL_ROOT/data
+export MYSQL_HOME=$MYSQL_ROOT/home  # Actual MySQL variable
+
+if [ ! -d $MYSQL_ROOT ]; then
+  mkdir -p $MYSQL_DATA
+  mkdir -p $MYSQL_HOME
+
+  echo "
+  [mysqld]
+  # By default, MySQL listens on 0.0.0.0
+  bind-address = 127.0.0.1
+
+  datadir=$MYSQL_DATA
+  socket=$MYSQL_ROOT/mysqld.sock
+  pid-file=$MYSQL_ROOT/mysqld.pid
+
+  [client]
+  socket=$MYSQL_ROOT/mysqld.sock
+  " > $MYSQL_HOME/my.cnf
+
+  log_file=$PROJECT_ROOT/db-init.log
+
+  echo "Initialising MySQL, you can find the log at $log_file"
+  mysqld --initialize > $log_file 2>&1
+  tmp_password=$(grep -oP 'temporary password(.*): \K(\S+)' $log_file)
+
+  echo "Starting MySQL service"
+  nohup mysqld >> $log_file 2>&1 &
+
+  while ! grep -o "ready for connections" db-init.log ; do
+    sleep 1
+  done
+
+  echo "Setting root password to 'password'."
+  mysqladmin --user=root --password="$tmp_password" password "password" >> $log_file 2>&1
+
+  echo "Setting up RSpace tables"
+  mysql -u "root" -p"password" -e "
+    CREATE USER 'rspacedbuser'@'localhost' IDENTIFIED BY 'rspacedbpwd';
+    CREATE DATABASE rspace collate 'utf8mb4_unicode_ci';
+    CREATE DATABASE hibtest collate 'utf8mb4_unicode_ci';
+    GRANT ALL ON rspace.* TO 'rspacedbuser'@'localhost';
+    GRANT ALL ON hibtest.* TO 'rspacedbuser'@'localhost';
+    GRANT ALL ON testLiquibaseUpdate.* TO 'rspacedbuser'@'localhost';
+  " >> $log_file 2>&1
+  cd $PROJECT_ROOT/src/main/resources/sqlUpdates/liquibaseConfig
+  mysql -v -u "root" -p"password" < createTestUpdateDB.sql >> $log_file 2>&1
+  cd $OLDPWD
+
+  echo "Stopping MySQL service"
+  pkill -F $MYSQL_ROOT/mysqld.pid
+fi
+
+#
+# Aliases
+# Direnv do not allow alias="..", so we are using executables instead
+
+alias_dir=$PWD/.direnv-aliases
+rm -rf "$alias_dir"
+
+export_alias() {
+  local name=$1
+  shift
+  local target="$alias_dir/$name"
+  mkdir -p "$alias_dir"
+  PATH_add "$alias_dir"
+  echo "#!/usr/bin/env bash" > "$target"
+  echo "$@" >> "$target"
+  chmod +x "$target"
+}
+
+export_alias mysql-start "nohup mysqld > $MYSQL_ROOT/mysql.log 2>&1 &"
+export_alias mysql-stop "pkill -F $MYSQL_ROOT/mysqld.pid"
+
+export_alias mysql-ecat "mysql -urspacedbuser -prspacedbpwd rspace"
+export_alias mysql-liq "mysql -urspacedbuser -prspacedbpwd testLiquibaseUpdate"
+
+export_alias jetty "
+  mvn clean jetty:run -Denvironment=keepdbintact -DRS.devlogLevel=INFO \
+  -Dspring.profiles.active=run -Dliquibase.context=dev-test \
+  -Dlog4j2.configurationFile=log4j2-dev.xml
+"
+export_alias jetty-drop "
+  mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
+  -Dspring.profiles.active=run -Dliquibase.context=dev-test \
+  -Dlog4j2.configurationFile=log4j2-dev.xml
+"
+```
+
+This script:
+ - Creates a `.mysql` folder in the project root directory, where all MySQL data lives.
+ - Sets the default root password to `password`
+ - Initialises the RSpace database tables and data.
+ - Creates a log file `db-init.log` in the project root, so you can inspect if
+   the setup was successfull. You should delete it as this is only going to be
+   created once on shell init.
+ - Sets up aliases for faster development
+
+__All you have to do now, is run `lorri shell` and your RSpace Web isolated dev
+environment will be set-up.__
+
+## How to work in the isolated dev environment?
+
+### Database service
+
+To use the database, you have to be running the database service. This can be
+done by calling `mysql-start` and `mysql-stop` in the project root directory.
+The log will be located in `.mysql/mysql.log`.
+
+### Editor integration
+
+For most editors you won't have to do anything, everything will just work out of
+the box. For some, you might have to directly specify the absolute path to some
+executable.

@@ -1,0 +1,295 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+<changeSet id="3" author="radams">
+<validCheckSum>7:c2f26c2a35b72e6fdecf6ae720e5c12c</validCheckSum>
+<validCheckSum>7:ab0f3204da5144d9b6148a112d5d4ef3</validCheckSum>
+<validCheckSum>8:b00acdd02cdb5f0deee7ef32f01e37b1</validCheckSum>
+<!-- only add if roles table is empty, implies this is a new, empty DB and a new deployment -->
+ <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">select count(*) from roles</sqlCheck>
+ </preConditions>
+<comment>Core roles, admin users and role permissions for all deployments and test</comment>
+<loadData tableName="roles" file="sqlUpdates/data/roles.csv">
+			 <column name="id" type="NUMERIC"/>
+			 <column name="description" type="STRING"/>
+			 <column name="name" type="STRING"/>
+			  
+</loadData>
+<loadData tableName="Role_permissionStrings" separator="\t" file="sqlUpdates/data/Role_permissionStrings.csv">
+			 <column name="Role_id" type="NUMERIC"/>
+			 <column name="permissionStrings" type="STRING"/>
+</loadData>
+<loadData tableName="User" file="sqlUpdates/data/coreusers.csv">
+			 <column name="id" type="NUMERIC"/>
+			  <column name="username" type="STRING"/>
+			  <column name="password" type="STRING"/>
+        <column name="first_name" type="STRING"/>
+         <column name="last_name" type="STRING"/>
+        <column name="last_name" type="STRING"/>
+        <column name="email" type="STRING"/>
+        <column name="password_hint" type="STRING"/>
+        <column name="version" type="NUMERIC"/>
+        <column name="contentInitialized" type="NUMERIC"/>
+        <column name="account_enabled" type="NUMERIC"/>
+        <column name="account_expired" type="NUMERIC"/>
+        <column name="account_locked" type="NUMERIC"/>
+        <column name="credentials_expired" type="NUMERIC"/>
+        <column name="numConsecutiveLoginFailures" type="NUMERIC"/>
+        <column name="signupSource" type="STRING"/>
+</loadData>
+</changeSet>
+
+<changeSet id="10" author="richard">
+<validCheckSum>7:55c8b8a61683ad998198757ce055e028</validCheckSum>
+<!-- only add if this data does not already exist -->
+<preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+            select count(*)  from user_role where user_id in (select id from User where username in ('admin', 'sysadmin1'))
+            </sqlCheck>
+ </preConditions>
+<comment>Add core user roles to  an empty DB in all contexts ( this was missing from changeset 3)</comment>
+<loadData tableName="user_role" file="sqlUpdates/data/core_user_roles.csv">
+			 <column name="user_id" type="NUMERIC"/>
+			  <column name="role_id" type="NUMERIC"/>
+</loadData>
+</changeSet>
+<changeSet id="4" author="radams" context="dev-test,liquibase-update-test">
+<validCheckSum>7:86de01ed1524537224d0aee871372ec3</validCheckSum>
+<comment> Load data into DB for when running unit/ IT tests</comment>
+<loadData tableName="User"  file="sqlUpdates/data/users.csv">
+			 <column name="id" type="NUMERIC"/>
+			  <column name="username" type="STRING"/>
+			  <column name="password" type="STRING"/>
+        <column name="first_name" type="STRING"/>
+         <column name="last_name" type="STRING"/>
+        <column name="last_name" type="STRING"/>
+        <column name="email" type="STRING"/>
+        <column name="version" type="NUMERIC"/>
+        <column name="contentInitialized" type="NUMERIC"/>
+        <column name="account_enabled" type="NUMERIC"/>
+        <column name="account_expired" type="NUMERIC"/>
+        <column name="account_locked" type="NUMERIC"/>
+        <column name="credentials_expired" type="NUMERIC"/>
+        <column name="numConsecutiveLoginFailures" type="NUMERIC"/>
+        <column name="tempAccount" type="NUMERIC"/>
+        <column name="signupSource" type="STRING"/>
+</loadData>
+<loadData tableName="user_role" file="sqlUpdates/data/user_roles.csv">
+			 <column name="user_id" type="NUMERIC"/>
+			  <column name="role_id" type="NUMERIC"/>
+</loadData>
+</changeSet>
+<changeSet id="8_4-3-2014" author="radams" context="dev-test,liquibase-update-test">
+<validCheckSum>7:342153c696e26acc480a2a88bdfb75da</validCheckSum>
+<validCheckSum>8:6892fc5d3be61363eae670a7196fdb1f</validCheckSum>
+<comment> Load  developer users data into DB for when running unit/ IT tests/ localhost runs</comment>
+<loadData tableName="User"  file="sqlUpdates/data/devs.csv">
+			 <column name="id" type="NUMERIC"/>
+			  <column name="username" type="STRING"/>
+			  <column name="password" type="STRING"/>
+        <column name="first_name" type="STRING"/>
+         <column name="last_name" type="STRING"/>
+        <column name="last_name" type="STRING"/>
+        <column name="email" type="STRING"/>
+        <column name="version" type="NUMERIC"/>
+        <column name="contentInitialized" type="NUMERIC"/>
+        <column name="account_enabled" type="NUMERIC"/>
+        <column name="account_expired" type="NUMERIC"/>
+        <column name="account_locked" type="NUMERIC"/>
+        <column name="credentials_expired" type="NUMERIC"/>
+        <column name="numConsecutiveLoginFailures" type="NUMERIC"/>
+        <column name="tempAccount" type="NUMERIC"/>
+        <column name="signupSource" type="STRING"/>
+</loadData>
+<loadData tableName="user_role" file="sqlUpdates/data/dev_roles.csv">
+			 <column name="user_id" type="NUMERIC"/>
+			  <column name="role_id" type="NUMERIC"/>
+</loadData>
+</changeSet>
+
+
+<!--  needed for tests as well.  -->
+<changeSet id="5" author="radams">
+	<comment>insert role permission for Admin role to invite new user</comment>
+	<sql>
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_ADMIN'),'COMMS:READ:property_name=REQUESTJOINLABGROUP');
+	</sql>
+  <rollback>
+  <sql>
+  	delete from Role_permissionStrings where Role_id in (select id from  roles where name='ROLE_ADMIN') and permissionStrings='COMMS:READ:property_name=REQUESTJOINLABGROUP';
+  	
+  </sql>
+  
+  </rollback>
+
+</changeSet>
+<changeSet author="radams (generated)" id="1390843344549-1" context="run">
+<comment>Add PasswordChange tracker table</comment>
+<createTable tableName="UserPasswordChange">
+<column name="id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="email" type="VARCHAR(255)"/>
+<column name="ipAddressOfRequestor" type="VARCHAR(255)"/>
+<column name="passwordChangeRequestTime" type="datetime"/>
+<column name="resetCompleted" type="BIT(1)">
+<constraints nullable="false"/>
+</column>
+<column name="token" type="VARCHAR(24)">
+<constraints nullable="false"/>
+</column>
+</createTable>
+
+<addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="UserPasswordChange"/>
+
+
+<addUniqueConstraint columnNames="token" constraintName="token" deferrable="false" disabled="false" initiallyDeferred="false" tableName="UserPasswordChange"/>
+</changeSet>
+
+<changeSet author="dave (generated)" id="1391997592515-2" context="run">
+	<comment>Add chemId column to RSChemElement to refer to primary key of chem structure table</comment>
+	<addColumn tableName="RSChemElement">
+		<column name="chemId" type="VARCHAR(255)"/>
+	</addColumn>
+	<addColumn tableName="RSChemElement_AUD">
+		<column name="chemId" type="VARCHAR(255)"/>
+	</addColumn>
+</changeSet>
+<changeSet author="radams (generated)" id="1392656417841-1" context="run">
+<comment> Boolean indicator of a form that should not be edited by users</comment>
+<addColumn tableName="RSForm">
+<column name="systemForm" type="BIT(1)">
+<constraints nullable="false"/>
+</column>
+</addColumn>
+
+<addColumn tableName="RSForm_AUD">
+<column name="systemForm" type="BIT(1)"/>
+</addColumn>
+
+<createIndex indexName="issystem" tableName="RSForm" unique="false">
+<column name="systemForm"/>
+</createIndex>
+</changeSet>
+<changeSet author="radams (generated)" id="1392656417841-2" context="run">
+<comment>Update existing Basic Document forms to be system Forms</comment>
+<update tableName="RSForm" >
+	<column name="systemForm" valueBoolean="true"></column>
+	<where>name = 'Basic Document'</where>
+	
+</update>
+</changeSet>
+<changeSet author="radams (generated)" id="1392809699776-1" context="run">
+<comment>Add 'owner' of Group</comment>
+<addColumn tableName="rsGroup">
+<column name="owner_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+</addColumn>
+
+</changeSet>
+<changeSet id="8" author="radams">
+	<comment>insert edit permission for user to edit own profile</comment>
+	<sql>
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_ADMIN'),'USER:WRITE:property_username=${self}');
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_SYSADMIN'),'USER:WRITE:property_username=${self}');
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_USER'),'USER:WRITE:property_username=${self}');
+	</sql>
+</changeSet>
+
+<changeSet author="radams (generated)" id="1393001725936-2" context="run">
+    <preConditions onFail="MARK_RAN" onError="MARK_RAN" >
+     <customPrecondition className="com.researchspace.dao.customliquibaseupdates.MySQLVersionPrecondition">
+      <param name="version" value="5.7"/>
+      <param name="operator" value="lt"/>
+     </customPrecondition>
+    </preConditions>
+    <comment>extract relevant info for group ownership - pre-5.7 only</comment>
+    <sql dbms="mysql,mariadb">CREATE TEMPORARY TABLE IF NOT EXISTS table2 AS (SELECT distinct group_id, user_id from UserGroup where roleInGroup=1 group by group_id)       
+    </sql>
+     <sql dbms="mysql,mariadb">update rsGroup set owner_id=(select user_id from table2 where id=table2.group_id)
+    </sql>
+     <sql dbms="mysql,mariadb">drop table table2;
+    </sql>    
+    <addForeignKeyConstraint baseColumnNames="owner_id" baseTableName="rsGroup" constraintName="FK56E1B8BE4A5647A6" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User"/>
+</changeSet>
+
+<changeSet author="radams (generated)" id="1393001725936-2b" context="run">
+    <validCheckSum>7:9dd9e6ddd34faf93fcf6ce4217ea3705</validCheckSum>
+    <validCheckSum>7:efa39c2c05925ae854be07cdffdb6f47</validCheckSum>
+    <preConditions onFail="MARK_RAN" onError="MARK_RAN" >
+     <and>
+     <customPrecondition className="com.researchspace.dao.customliquibaseupdates.MySQLVersionPrecondition">
+      <param name="version" value="5.7"/>
+      <param name="operator" value="gte"/>
+     </customPrecondition>
+     <not>
+       <changeSetExecuted changeLogFile="changeLog-0.15.xml" author="radams (generated)" id="1393001725936-2"/>
+     </not>
+     </and>
+    </preConditions>
+    <comment>extract relevant info for group ownership - 5.7 or later only, if has not already run earlier query</comment>
+    <sql dbms="mysql,mariadb">
+       CREATE TEMPORARY TABLE IF NOT EXISTS table2 AS
+        (SELECT distinct group_id, any_value(user_id) as user_id from UserGroup where roleInGroup=1 group by group_id,user_id)       
+    </sql>
+     <sql dbms="mysql,mariadb">update rsGroup set owner_id=(select user_id from table2 where id=table2.group_id)</sql>
+     <sql dbms="mysql,mariadb">drop table table2;</sql>    
+</changeSet>
+<changeSet author="radams (generated)" id="1393001725936-2c" context="run">
+	<preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="FK56E1B8BE4A5647A6 already exists, skipping" onErrorMessage="FK56E1B8BE4A5647A6 already exists, skipping">
+		<not>
+			<foreignKeyConstraintExists foreignKeyName="FK56E1B8BE4A5647A6" />
+		</not>
+	</preConditions>
+	<comment> This fi</comment>
+	<addForeignKeyConstraint baseColumnNames="owner_id"
+		baseTableName="rsGroup" constraintName="FK56E1B8BE4A5647A6"
+		deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+		onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+</changeSet>
+
+<changeSet author="radams (generated)" id="1393256611735-2" context="run">
+<comment>Add user profile table</comment>
+<createTable tableName="UserProfile">
+<column name="id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="externalLinkDisplay" type="VARCHAR(255)"/>
+<column name="externalLinkURL" type="VARCHAR(255)"/>
+<column name="profileText" type="VARCHAR(255)"/>
+<column name="owner_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="profilePicture_id" type="BIGINT(19)"/>
+</createTable>
+
+<addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="UserProfile"/>
+
+<addForeignKeyConstraint baseColumnNames="owner_id" baseTableName="UserProfile" constraintName="FK3EFA133E4A5647A6" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User"/>
+<addForeignKeyConstraint baseColumnNames="profilePicture_id" baseTableName="UserProfile" constraintName="FK3EFA133E974130C9" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ImageBlob"/>
+<addUniqueConstraint columnNames="owner_id" constraintName="owner_id" deferrable="false" disabled="false" initiallyDeferred="false" tableName="UserProfile"/>
+</changeSet>
+
+<changeSet author="radams (generated)" id="1393451326853-4" context="run">
+<comment>Add max length of profile text to 2000 chars</comment>
+<modifyDataType columnName="profileText" newDataType="varchar(2000)" tableName="UserProfile"/>
+</changeSet>
+<changeSet id="update-piadmin-role-permissions1" author="radams" context="run">
+<comment>Add request join lab group read permissions for existing group PIs/admins </comment>
+
+<sql>insert into UserGroup_permissionStrings  select id,'COMMS:READ:property_name=REQUESTJOINLABGROUP' from UserGroup where roleInGroup in (1,2);</sql>
+<rollback>
+ <sql>
+	delete from UserGroup_permissionStrings where permissionStrings ='COMMS:READ:property_name=REQUESTJOINLABGROUP' and UserGroup_id in (select id from UserGroup where roleInGroup in (1,2));
+	</sql>
+</rollback>
+
+</changeSet>
+
+
+
+
+</databaseChangeLog>

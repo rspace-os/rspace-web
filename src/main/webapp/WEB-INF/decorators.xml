@@ -1,0 +1,47 @@
+<decorators defaultdir="/decorators">
+    <excludes>
+        <pattern>/40*.jsp</pattern>
+        <pattern>*/ajax/*</pattern>
+        <pattern>/scripts/**</pattern>
+        <pattern>/*ajax=true*</pattern>
+        <pattern>/resources/*</pattern>
+        <pattern>/image/getImage/**</pattern>
+        <pattern>/image/getImageForEdit/**</pattern>
+        <pattern>/Streamfile/*</pattern>
+        <pattern>/public/status</pattern>
+        <pattern>/public/version</pattern>
+        <pattern>/public/bannerImageName</pattern>
+        <pattern>/public/apiDocs</pattern>
+        <pattern>/slack/callbacks/*</pattern>
+        <pattern>/msteams/rspaceAuth*</pattern>
+        <pattern>/officeOnline/*</pattern>
+        <pattern>/collaboraOnline/*</pattern>
+        <pattern>/wopi/*</pattern>
+        <pattern>/oauth/*</pattern>
+        <pattern>/messaging/get_calendar_event</pattern>
+        <pattern>/tools/*</pattern>
+        <pattern>/externalTinymcePlugins/*</pattern>
+        <pattern>*/public/publishedView/publishedDocuments/*</pattern>
+        <pattern>/molbiol/*</pattern>
+        <pattern>/inventory</pattern>
+        <pattern>/inventory/**</pattern>
+        <pattern>/listOfMaterials/**</pattern>
+        <pattern>*/public/inventory/**</pattern>
+        <pattern>/apps</pattern>
+    </excludes>
+    <decorator name="public" page="externalPages.jsp">
+        <pattern>*/signup*</pattern>
+        <pattern>*/cloud/verifysignup*</pattern>
+        <pattern>*/cloud/verifyEmailChange*</pattern>
+        <pattern>*/cloud/resendConfirmationEmail*</pattern>
+        <pattern>*/login*</pattern>
+        <pattern>*/adminLogin*</pattern>
+        <pattern>*/passwordReset*</pattern>
+        <pattern>*/vfpwd/verificationPasswordResetReply*</pattern>
+        <pattern>*/public/*</pattern>
+        <pattern>/msteams/*</pattern>
+    </decorator>
+    <decorator name="default" page="default.jsp">
+        <pattern>/*</pattern>
+    </decorator>
+</decorators>

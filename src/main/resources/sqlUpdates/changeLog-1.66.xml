@@ -1,0 +1,52 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.66 December 2019 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+    <changeSet author="raitis" id="2019-10-22" context="run">
+        <validCheckSum>8:309a11dda8bf45698fa959e7a6f1453d</validCheckSum>
+        <validCheckSum>8:b2012f6286a7392320b786bc9aa54f71</validCheckSum>
+        <comment>Create table to store OAuth tokens for RSpace client Apps
+            RSPAC-1763
+        </comment>
+        
+        <createTable tableName="OAuthToken">
+            <column name="id" type="BIGINT(20)">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="clientId" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accessToken" type="VARCHAR(64)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="scope" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expiryTime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="refreshToken" type="VARCHAR(64)">
+                <constraints unique="true"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint
+                baseTableName="OAuthToken" baseColumnNames="user_id"
+                constraintName="FK_6rts1nhknixdema78tidkk7ds"
+                referencedTableName="User" referencedColumnNames="id"
+                onUpdate="NO ACTION" onDelete="NO ACTION"/>
+        <addUniqueConstraint tableName="OAuthToken" columnNames="user_id,clientId"/>
+    </changeSet>
+
+
+</databaseChangeLog>

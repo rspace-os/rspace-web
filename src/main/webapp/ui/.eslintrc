@@ -1,0 +1,92 @@
+{
+  "parser": "@babel/eslint-parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "env": {
+    "es2022": true,
+    "browser": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:flowtype/recommended",
+    "plugin:prettier/recommended",
+    "plugin:jsx-a11y/recommended",
+    "prettier"
+  ],
+  "plugins": ["react", "flowtype", "testing-library", "jest-dom", "jsx-a11y"],
+  "settings": {
+    "react": {
+      "version": "detect",
+      "flowVersion": "0.126.1"
+    }
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
+      "extends": ["plugin:testing-library/react", "plugin:jest-dom/recommended"]
+    }
+  ],
+  "rules": {
+    // please keep this list sorted
+    
+    "array-callback-return": "error",
+    "block-scoped-var": "warn",
+    "camelcase": "warn",
+    "class-methods-use-this": "off",
+    "complexity": "warn",
+    "default-param-last": "warn",
+    "dot-notation": "warn",
+    "eqeqeq": "error",
+    "guard-for-in": "error",
+    "max-statements-per-line": ["warn", { "max": 2 }],
+    "no-alert": "error",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-constant-binary-expression": "error",
+    "no-duplicate-imports": "warn",
+    "no-else-return": ["error", { "allowElseIf": false }],
+    "no-eval": "error",
+    "no-implicit-coercion": "error",
+    "no-implied-eval": "error",
+    "no-invalid-this": "warn",
+    "no-lonely-if": "warn",
+    "no-multi-assign": "error",
+    "no-nested-ternary": "warn",
+    "no-octal-escape": "error",
+    "no-prototype-builtins": "off",
+    "no-return-assign": ["error", "always"],
+    "no-return-await": "warn",
+    "no-self-compare": "error",
+    "no-shadow": "warn",
+    "no-throw-literal": "warn",
+    "no-undefined": "warn",
+    "no-unneeded-ternary": "warn",
+    "no-unused-expressions": "warn",
+
+    // Allow parameters who names start with underscore to not throw a lint
+    // warning. This is so that they may be typed even if they are not used,
+    // e.g. on super or subclasses where the arguments are only used
+    // by one class in the inheritence chain or where a react component
+    // explicity states it takes no props. For more info see
+    // https://eslint.org/docs/latest/rules/no-unused-vars#argsignorepattern
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+
+    "no-use-before-define": "warn",
+    "no-useless-concat": "error",
+    "no-useless-return": "warn",
+    "no-var": "error",
+    "no-void": "off",
+    "object-shorthand": ["warn", "always"],
+    "prefer-arrow-callback": "warn",
+    "prefer-const": "warn",
+    "prefer-promise-reject-errors": "warn",
+    "prefer-rest-params": "warn",
+    "radix": ["warn", "always"],
+    "require-await": "warn",
+    "yoda": ["warn", "never"]
+  }
+}

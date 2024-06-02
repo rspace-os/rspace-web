@@ -1,0 +1,85 @@
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.58 April 2019 -->
+    	<changeSet id="19-03-12" author="richard">
+		<comment>RSPAC-1751 owncloud.available system property</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="ALLOWED" />
+			<column name="name" type="STRING" value="owncloud.available" />
+			<column name="type" type="NUMERIC" value="3" />
+		</insert>
+		<insert tableName="SystemProperty">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="dependent_id" type="NUMERIC" value="NULL" />
+			<column name="descriptor_id" type="NUMERIC"
+					valueComputed="(select id from PropertyDescriptor where name ='owncloud.available')" />
+		</insert>
+		<insert tableName="SystemPropertyValue">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="value" type="String" value="ALLOWED" />
+			<column name="property_id" type="NUMERIC"
+					valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='owncloud.available')" />
+		</insert>
+	</changeSet>
+		<changeSet id="19-03-12b" author="richard">
+		<comment>RSPAC-1751 owncloud.app</comment>
+		<insert tableName="App">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="label" type="STRING" value="OwnCloud" />
+			<column name="name" type="STRING" value="app.owncloud" />
+			<column name="defaultEnabled" type="BOOLEAN" valueBoolean="false" />
+		</insert>
+	</changeSet>
+	   	<changeSet id="19-03-12c" author="richard">
+		<comment>RSPAC-1761 evernote.available system property</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="ALLOWED" />
+			<column name="name" type="STRING" value="evernote.available" />
+			<column name="type" type="NUMERIC" value="3" />
+		</insert>
+		<insert tableName="SystemProperty">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="dependent_id" type="NUMERIC" value="NULL" />
+			<column name="descriptor_id" type="NUMERIC"
+					valueComputed="(select id from PropertyDescriptor where name ='evernote.available')" />
+		</insert>
+		<insert tableName="SystemPropertyValue">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="value" type="String" value="ALLOWED" />
+			<column name="property_id" type="NUMERIC"
+					valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='evernote.available')" />
+		</insert>
+	</changeSet>
+		<changeSet id="19-03-12d" author="richard">
+		<comment>RSPAC-1761 evernote.app</comment>
+		<insert tableName="App">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="label" type="STRING" value="Evernote" />
+			<column name="name" type="STRING" value="app.evernote" />
+			<column name="defaultEnabled" type="BOOLEAN" valueBoolean="true" />
+		</insert>
+	</changeSet>
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing 
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+
+
+
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing 
+        new changesets ! -->
+
+    <!-- only customChange changeSets should be placed below here -->
+
+
+
+
+</databaseChangeLog>

@@ -1,0 +1,46 @@
+{
+  "name": "mendeley-javascript-sdk",
+  "version": "1.9.0",
+  "description": "Mendeley API client-side JavaScript SDK",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "lint": "./node_modules/.bin/jshint --config .jshintrc lib/*.js lib/api/*.js test/*.js test/mocks/*.js test/spec/**/*.js",
+    "test": "npm run lint && node_modules/karma/bin/karma start --single-run",
+    "start": "node examples/app.js",
+    "build-jsdoc": "node_modules/.bin/jsdoc -d docs/ lib/api.js",
+    "build-dist": "./node_modules/.bin/webpack && ./node_modules/.bin/webpack --minify",
+    "release-patch": "./node_modules/.bin/mversion patch --no-prefix -m 'Released patch version v%s'",
+    "release-minor": "./node_modules/.bin/mversion minor --no-prefix -m 'Released minor version v%s'",
+    "release-major": "./node_modules/.bin/mversion major --no-prefix -m 'Released major version v%s'"
+  },
+  "repository": {
+    "type": "git",
+    "url": " "
+  },
+  "keywords": [
+    "mendeley",
+    "sdk",
+    "api"
+  ],
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "cookie-parser": "^1.3.3",
+    "express": "^4.9.5",
+    "jsdoc": "^3.3.0-alpha9",
+    "jshint": "^2.8.0",
+    "karma": "^0.12.23",
+    "karma-chrome-launcher": "^0.1.4",
+    "karma-coverage": "^0.2.6",
+    "karma-firefox-launcher": "^0.1.3",
+    "karma-jasmine": "^0.2.2",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "karma-requirejs": "^0.2.2",
+    "karma-safari-launcher": "^0.1.1",
+    "mversion": "^1.3.0",
+    "requirejs": "^2.1.15",
+    "simple-oauth2": "^0.2.0",
+    "webpack": "^1.8.5"
+  }
+}

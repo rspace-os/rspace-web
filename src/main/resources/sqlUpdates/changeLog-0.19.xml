@@ -1,0 +1,202 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+	<!-- Changes for version 0.19 -->
+
+	<changeSet id="25-7-14a" author="matthias" context="run">
+		<preConditions onFail="MARK_RAN">
+			<tableExists tableName="SambaUser" />
+		</preConditions>
+		<comment>Removing SambaUser/SambaUser_AUD tables</comment>
+		<dropTable tableName="SambaUser_AUD" />
+		<dropTable tableName="SambaUser" />
+	</changeSet>
+
+	<changeSet id="30-07-14a" author="matthias" context="run">
+		<preConditions onFail="MARK_RAN">
+			<columnExists tableName="SambaUserFolder" columnName="username" />
+		</preConditions>
+		<comment>Modifying SambaUserFolder/SambaUserFolder_AUD table to support 'deleted' flag and to delete unused columns</comment>
+
+		<addColumn tableName="SambaUserFolder">
+			<column name="deleted" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="SambaUserFolder_AUD">
+			<column name="deleted" type="BIT(1)" />
+		</addColumn>
+
+		<addColumn tableName="SambaUserFolder">
+			<column name="smbFolderPath" type="VARCHAR(255)" />
+		</addColumn>
+		<addColumn tableName="SambaUserFolder_AUD">
+			<column name="smbFolderPath" type="VARCHAR(255)" />
+		</addColumn>
+
+		<dropColumn columnName="smbFolderDesc" tableName="SambaUserFolder" />
+		<dropColumn columnName="userSmbFolder" tableName="SambaUserFolder" />
+		<dropColumn columnName="username" tableName="SambaUserFolder" />
+		<dropColumn columnName="smbFolderDesc" tableName="SambaUserFolder_AUD" />
+		<dropColumn columnName="userSmbFolder" tableName="SambaUserFolder_AUD" />
+		<dropColumn columnName="username" tableName="SambaUserFolder_AUD" />
+	</changeSet>
+
+	<changeSet id="31-07-14a" author="matthias" context="run">
+		<preConditions onFail="MARK_RAN">
+			<columnExists tableName="SambaUserFolder" columnName="userId" />
+		</preConditions>
+		<comment>Modifying SambaUserFolder to have foreign key relation with User table. Also dropping SambaUserFolder_AUD</comment>
+
+		<dropColumn columnName="userId" tableName="SambaUserFolder" />
+		<addColumn tableName="SambaUserFolder">
+			<column name="user_id" type="BIGINT(19)" />
+		</addColumn>
+		<addForeignKeyConstraint baseColumnNames="user_id"
+			baseTableName="SambaUserFolder" constraintName="FK60DF32F7DE6F978E"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+
+		<dropForeignKeyConstraint baseTableName="SambaUserFolder_AUD"
+			constraintName="FKA7BB0D48DF74E053" />
+		<dropTable tableName="SambaUserFolder_AUD" />
+	</changeSet>
+	<changeSet id="25-08-14a" author="radams" failOnError="false" context="run">
+	<preConditions onError="CONTINUE">
+		<columnExists tableName="User" columnName="id"/>	
+	</preConditions>
+		<comment> Updating new media folders 'snippets' and 'network files' to have System type
+	 This should work in all contexts.
+	</comment>
+		<sql>
+			CREATE TEMPORARY TABLE IF NOT EXISTS table25_08_14a AS (select br.id
+			as id from Folder f join BaseRecord br on br.id=f.id join
+			RecordToFolder r2f on br.id=r2f.record_id where systemFolder = 0 and
+			type like '%FOLDER%'
+			and r2f.folder_id in (select id from BaseRecord where name ='Gallery'
+			and
+			type like '%ROOT_MEDIA%'));
+		</sql>
+		<update tableName="BaseRecord">
+			<column name="type" valueComputed="concat(type,':SYSTEM')"></column>
+			<where>
+				id in (select id from table25_08_14a);
+			</where>
+		</update>
+		<update tableName="Folder">
+			<column name="systemFolder" valueBoolean="1"></column>
+			<where>
+				id in (select id from table25_08_14a);
+			</where>
+		</update>
+	</changeSet>
+
+	<changeSet id="01-09-14" author="matthias" context="run">
+		<comment> Adding OfflineRecordUser table that will store records marked by user for offline work</comment>
+		<createTable tableName="OfflineRecordUser">
+			<column autoIncrement="true" name="id" type="BIGINT(19)">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="creationDate" type="datetime" />
+			<column name="workType" type="INT(10)">
+				<constraints nullable="false" />
+			</column>
+			<column name="record_id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+			<column name="user_id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<addForeignKeyConstraint baseColumnNames="record_id"
+			baseTableName="OfflineRecordUser" constraintName="FK5E74A5DFCFF3DF14"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="BaseRecord" />
+		<addForeignKeyConstraint baseColumnNames="user_id"
+			baseTableName="OfflineRecordUser" constraintName="FK5E74A5DFDE6F978E"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	<changeSet author="radams (generated)" id="05-09-14" context="run">
+		<comment>Adding a column to mark expired archives RSPAC118 and FK to user</comment>
+		<addColumn tableName="ArchivalCheckSum">
+			<column name="downloadTimeExpired" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="ArchivalCheckSum">
+			<column name="exporter_id" type="BIGINT(19)" />
+		</addColumn>
+		<addForeignKeyConstraint baseColumnNames="exporter_id"
+			baseTableName="ArchivalCheckSum" constraintName="FKCD2D75D16AAC5038"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	<changeSet author="radams (generated)" id="1410167134003-3">
+		<comment>Increase size of notification message</comment>
+		<modifyDataType columnName="notificationMessage"
+			newDataType="varchar(2000)" tableName="Notification" />
+	</changeSet>
+	<changeSet author="radams (generated)" id="1410167134003-4">
+	    <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+	     <tableExists tableName="Notification_AUD"/>
+	    </preConditions>
+		<comment>Increase size of notification message</comment>
+		<modifyDataType columnName="notificationMessage"
+			newDataType="varchar(2000)" tableName="Notification_AUD" />
+	</changeSet>
+
+	<changeSet author="radams (generated)" id="1410204947070-5" context="run">
+		<comment> Remove obsolete FileProperty columns from FP and FP_AUD tables</comment>
+		<dropColumn columnName="fileState" tableName="FilePropertys" />
+		<dropColumn columnName="fileState" tableName="FilePropertys_AUD" />
+		<dropColumn columnName="fileTag" tableName="FilePropertys" />
+		<dropColumn columnName="fileTag" tableName="FilePropertys_AUD" />
+		<dropColumn columnName="linkId" tableName="FilePropertys" />
+		<dropColumn columnName="linkId" tableName="FilePropertys_AUD" />
+		<dropColumn columnName="linkInfo" tableName="FilePropertys" />
+		<dropColumn columnName="linkInfo" tableName="FilePropertys_AUD" />
+	</changeSet>
+	<changeSet author="radams (generated)" id="1410536601578-1" context="run">
+	<comment>Create table to hold DB-app-archive schema version</comment>
+<createTable tableName="ArchiveVersionToAppVersion">
+<column autoIncrement="true" name="id" type="BIGINT(19)">
+<constraints primaryKey="true"/>
+</column>
+<column name="toMajor" type="INT(10)">
+<constraints nullable="false"/>
+</column>
+<column name="toMinor" type="INT(10)"/>
+<column name="toQualifier" type="INT(10)"/>
+<column name="toSuffix" type="VARCHAR(255)"/>
+<column name="schemaName" type="VARCHAR(255)"/>
+<column name="schemaVersion" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="fromMajor" type="INT(10)"/>
+<column name="fromMinor" type="INT(10)"/>
+<column name="fromQualifier" type="INT(10)"/>
+<column name="fromSuffix" type="VARCHAR(255)"/>
+</createTable>
+</changeSet>
+	<changeSet id="12-09-14b" author="radams">
+	<validCheckSum>7:5bbcdefbcd53b3314f671dcd1e673fa9</validCheckSum>
+	<validCheckSum>7:0f8c7cde224ed34043528f142e477bb1</validCheckSum>
+	<comment>Load initial data, initially the 'to' version constraint is not set.</comment>
+		<loadData tableName="ArchiveVersionToAppVersion" file="sqlUpdates/data/archiveVersions/version1.csv">
+		<column name="id" type="NUMERIC"/>
+		<column name="toMajor" type="NUMERIC"/>
+		<column name="toMinor" type="NUMERIC"/>
+		<column name="toQualifier" type="NUMERIC"/>
+		<column name="toSuffix" type="STRING"/>
+		<column name="schemaName" type="STRING"/>
+		<column name="schemaVersion" type="NUMERIC"/>
+		<column name="fromMajor" type="NUMERIC"/>
+		<column name="fromMinor" type="NUMERIC"/>
+		<column name="fromQualifier" type="NUMERIC"/>
+		<column name="fromSuffix" type="STRING"/>
+		</loadData>
+	</changeSet>
+	
+</databaseChangeLog>

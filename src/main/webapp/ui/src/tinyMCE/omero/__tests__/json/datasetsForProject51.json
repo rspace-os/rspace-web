@@ -1,0 +1,114 @@
+{
+  "data": [
+    {
+      "id": 51,
+      "childCounts": 33,
+      "name": "CDK5RAP2-C",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    },
+    {
+      "id": 52,
+      "childCounts": 22,
+      "name": "CENT2",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    },
+    {
+      "id": 53,
+      "childCounts": 38,
+      "name": "CEP120/20111106",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    },
+    {
+      "id": 54,
+      "childCounts": 10,
+      "name": "CEP120/20111209",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    },
+    {
+      "id": 55,
+      "childCounts": 50,
+      "name": "CEP152",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    },
+    {
+      "id": 56,
+      "childCounts": 33,
+      "name": "CEP192-M",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    },
+    {
+      "id": 57,
+      "childCounts": 38,
+      "name": "CPAP",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    },
+    {
+      "id": 58,
+      "childCounts": 57,
+      "name": "NEDD1-C1",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    },
+    {
+      "id": 59,
+      "childCounts": 53,
+      "name": "PCNT-N1",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    },
+    {
+      "id": 60,
+      "childCounts": 80,
+      "name": "TUBG1-N",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "type": "dataset",
+      "parentId": 51,
+      "children": []
+    }
+  ]
+}

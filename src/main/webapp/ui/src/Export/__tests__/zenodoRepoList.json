@@ -1,0 +1,221 @@
+[ {
+  "repoName" : "app.zenodo",
+  "subjects" : [ {
+    "id" : null,
+    "name" : "Natural sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Mathematics",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Computer and information sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Physical sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Chemical sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Earth and related environmental sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Biological sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Other natural sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Engineering and technology",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Civil engineering",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Electrical engineering, electronic engineering, information engineering",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Mechanical engineering",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Chemical engineering",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Materials engineering",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Medical engineering",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Environmental engineering",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Environmental biotechnology",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Industrial biotechnology",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Nano-technology",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Other engineering and technologies",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Medical and health sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Basic medicine",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Clinical medicine",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Health sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Medical biotechnology",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Other medical sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Agricultural sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Agriculture, forestry, and fisheries",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Animal and dairy science",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Veterinary science",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Agricultural biotechnology",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Other agricultural sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Social sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Psychology",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Economics and business",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Educational sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Sociology",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Law",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Political science",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Social and economic geography",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Media and communications",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Other social sciences",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Humanities",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "History and archaeology",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Languages and literature",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Philosophy, ethics and religion",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Arts (arts, history of arts, performing arts, music)",
+    "parentSubject" : null
+  }, {
+    "id" : null,
+    "name" : "Other humanities",
+    "parentSubject" : null
+  } ],
+  "license" : {
+    "licenseRequired" : true,
+    "otherLicensePermitted" : false,
+    "licenses" : [ {
+      "licenseDefinition" : {
+        "url" : "https://creativecommons.org/publicdomain/zero/1.0/",
+        "name" : "CC-0"
+      },
+      "defaultLicense" : null
+    } ]
+  },
+  "otherProperties" : [ ],
+  "linkedDMPs" : [ {
+    "dmpUserInternalId" : 1,
+    "dmpTitle" : "foo",
+    "dmpId" : "e6c97551-f074-4b88-9779-5bdc4c13c694"
+  }, {
+    "dmpUserInternalId" : 2,
+    "dmpTitle" : "bar",
+    "dmpId" : "e6c97551-f074-4b88-9779-5bdc4c13c695"
+  }],
+  "options" : {
+    "ZENODO" : "vTywKkLIskRQAAQ9aMfyzERIhKxhApJWDdUoVsU0zLFJtLKEXR5U21cKZD6M"
+  },
+  "displayName" : "Zenodo"
+} ]

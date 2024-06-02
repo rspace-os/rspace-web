@@ -1,0 +1,24 @@
+#*
+ External linked document HTML template.
+ 
+ When updating this template please update boxVersionedLink.vm too.
+ 
+ Arguments needed for mustache are:
+  - recordURL - the URL to the external resource
+  - name - display name
+  - iconPath - the path to the file-type icon
+  - badgeIconPath - the path to the external resource provider icon (e.g. Dropbox icon)
+  - id - an identifier for the resource
+  - fileStore - a string identifying the type of file store
+*#
+
+<div class="externalAttachmentDiv mceNonEditable">
+		<a href="$recordURL" target="_blank">
+			<img class="attachmentIcon" src="$iconPath" height="32" width="32"/>
+		</a>
+		<p class="attachmentP">
+			<img class="externalLinkBadge" src="$badgeIconPath" height="20" width="20"/>
+			<a class="attachmentLinked" id="attachOnText_$id" data-externalFileStore="$fileStore" 
+			href="$recordURL" target="_blank">$name</a>
+		</p>
+</div>&nbsp;

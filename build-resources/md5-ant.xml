@@ -1,0 +1,106 @@
+<project name="scriptdef-test-build">
+    <!-- This is for debugging-->
+    <scriptdef name="test-javascript" language="javascript" classpath="${plugin_classpath}">
+        <![CDATA[
+           var System = Java.type('java.lang.System');
+           System.out.println("Working!");
+        ]]>
+    </scriptdef>
+    <!-- a test task to see if Nashorn is working OK-->
+    <target name="ts">
+        <test-javascript/>
+    </target>
+    <target name="all">
+        <!-- See https://issues.apache.org/jira/browse/MANTRUN-200 for this workaround-->
+        <property name="plugin_classpath" refid="maven.plugin.classpath"/>
+
+        <!-- copy files to rename into tmp1 folder, flat the folder structure
+            and encode it into filename -->
+        <copy todir="${project.build.directory}/md5_source_files">
+            <fileset dir="${basedir}/src/main/webapp">
+                <includesfile
+                        name="${basedir}/build-resources/resources_to_MD5_rename.txt"/>
+            </fileset>
+            <chainedmapper>
+                <filtermapper>
+                    <replacestring from="\" to="----"/>
+                </filtermapper>
+                <filtermapper>
+                    <replacestring from="/" to="----"/>
+                </filtermapper>
+            </chainedmapper>
+        </copy>
+        <!-- read files from tmp1 folder, generated checksums, copy with
+            rename into tmp2 folder -->
+        <copy
+                todir="${project.build.directory}/md5_1st_pass_files">
+            <fileset
+                    dir="${project.build.directory}/md5_source_files">
+                <include name="*"/>
+            </fileset>
+            <scriptmapper language="javascript" classpath="${plugin_classpath}">
+                /* 1st pass only
+                generates the 1st pass replace_tokens file*/
+                var fis = new
+                java.io.FileInputStream('./target/md5_source_files/' + source);
+                var md = java.security.MessageDigest.getInstance("MD5");
+                var dis = new java.security.DigestInputStream(fis, md);
+                while(dis.read()!= -1) { ; }
+                dis.close();
+                var hashAsInt = new java.math.BigInteger(1, md.digest());
+                var hash = java.lang.String.format("%1$032x", hashAsInt);
+
+                var unflattenSource = source.replace(/----/g, '/');
+                var extension = source.substr(source.lastIndexOf('.') + 1);
+                var newName = unflattenSource + '.' + hash + '.' + extension;
+                self.addMappedName(source);
+
+                var out = new java.io.PrintWriter(new java.io.FileWriter(
+                "./target/md5_1st_pass_replace_tokens.properties", true));
+                out.println('/' + unflattenSource + '=/' + newName);
+                out.close();
+            </scriptmapper>
+        </copy>
+        <!-- replace links inside copied resources -->
+        <replace
+                dir="${project.build.directory}/md5_1st_pass_files"
+                replacefilterfile="${project.build.directory}/md5_1st_pass_replace_tokens.properties">
+            <include name="**/*.js"/>
+            <include name="**/*.css"/>
+            <include name="**/integration-static-data*.json"/>
+        </replace>
+        <!-- this second pass is to fix links to resources that may contain a collection of resources that
+         may have been changed, e.g. /webapp/styles/simplicity/theme.css, which is a file imported everywhere
+          (e.g. on default.jsp), but links some other files that could be changed,
+         and so theme.css needs to be renamed based on its content containing new checksums of the linked files.
+         -->
+        <copy todir="${project.build.directory}/md5_final_files">
+            <fileset
+                    dir="${project.build.directory}/md5_source_files">
+                <include name="*"/>
+            </fileset>
+            <scriptmapper language="javascript" classpath="${plugin_classpath}">
+                /* 2nd pass generates final replace_tokens file and copies the
+                 *  files to final folderadding MD5 extensions generated from content
+                 *  updated after 1st pass */
+                var fis = new java.io.FileInputStream('./target/md5_1st_pass_files/' + source);
+                var md = java.security.MessageDigest.getInstance("MD5");
+                var dis = new java.security.DigestInputStream(fis, md);
+                while(dis.read()!= -1) { ; }
+                dis.close();
+                var hashAsInt = new java.math.BigInteger(1, md.digest());
+                var hash = java.lang.String.format("%1$032x", hashAsInt);
+
+                var unflattenSource = source.replace(/----/g, '/');
+                var extension = source.substr(source.lastIndexOf('.') + 1);
+                var newName = unflattenSource + '.' + hash + '.' + extension;
+                self.addMappedName(newName);
+
+                var out = new java.io.PrintWriter(new java.io.FileWriter(
+                "./target/md5_final_replace_tokens.properties", true));
+                out.println('/' + unflattenSource + '=/' + newName);
+                out.close();
+            </scriptmapper>
+        </copy>
+    </target>
+</project>

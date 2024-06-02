@@ -1,0 +1,54 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.67 January 2020 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+    <changeSet author="juozas" id="2020-01-19" context="run">
+        <comment>Create table to store OAuth client apps RSPAC-2022</comment>
+        <createTable tableName="OAuthApp">
+            <column autoIncrement="true" name="id" type="BIGINT(20)">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="clientId" type="VARCHAR(100)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="clientSecret" type="VARCHAR(64)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT(20)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint
+                baseTableName="OAuthApp" baseColumnNames="user_id"
+                constraintName="FK_7rts1nhknixdema78tidkk7ds"
+                referencedTableName="User" referencedColumnNames="id"
+                onUpdate="NO ACTION" onDelete="NO ACTION"/>
+    </changeSet>
+
+    <changeSet author="juozas" id="2020-01-20" context="dev-test">
+        <preConditions onError="MARK_RAN"  onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">select count(*) from OAuthApp where user_id &lt; 0</sqlCheck>
+        </preConditions>
+        <comment>Add OAuth apps for test environments</comment>
+        <!-- Unhashed secrets: clientSecret1 for app1, clientSecret2 for app2 and clientSecret3 for app3-->
+        <sql>
+            insert into OAuthApp (id,clientId,clientSecret,name,user_id)
+            values(-1,'testAppClientId1','0e917cc5c0b95cafb3a47ded277dd7cb0da88def594c743af4adfafdc3648798','testApp1',-1);
+            insert into OAuthApp (id,clientId,clientSecret,name,user_id)
+            values(-2,'testAppClientId2','9b836d5b15e90b5994c131022d2015d6f677dd3792a421d489b6177f86f7de26','testApp2',-2);
+            insert into OAuthApp (id,clientId,clientSecret,name,user_id)
+            values(-3,'testAppClientId3','353d2acadf762f4eea56c2668753fc11731b360a20b0b3347d23905337a6bab4','testApp3',-3);
+        </sql>
+    </changeSet>
+</databaseChangeLog>

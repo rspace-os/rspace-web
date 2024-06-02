@@ -1,0 +1,27 @@
+/**
+* CSS for preference config page
+*/
+#notificationPrefs{
+  float:left;
+  width:300px;
+  margin:0 10px;
+  font-size:1.2em
+}
+
+#broadcastPrefs {
+float:right;
+margin:0 10px;
+font-size:1.2em
+}
+
+span.prefsGroupLabel {
+  color:black;
+  font-size:1.1em;
+  font-weight: normal;
+}
+
+#otherPreferences {
+  width: 670px;
+  margin: 10px 10px 0px 10px;
+  font-size: 1.2em;
+}

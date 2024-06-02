@@ -1,0 +1,43 @@
+#*Template for rendering an ArchiveGalleryMetadata to HTML for HTML export.
+ Takes the following arguments:
+ - document - an ArchiveGalleryMetadata
+ - isImage - boolean as to whether this is an image or not
+ - parentRef - link to parent file.
+*#
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>$document.name</title>
+<link href="../resources/document.css" rel="stylesheet" />
+<meta charset="UTF-8">
+</head>
+<body>
+<div class="navigationSection">
+<a href="../index.html">Top</a> | <a href="../${parentRef}">Parent folder</a></div>
+<div id="headerSection">
+<h4>$document.name</h4>
+<p>Gallery file GL$document.id
+#coreData($document)
+</div><br/>
+<div id = "content">
+ #if ($isImage)
+ 	<img src="$document.name"/>
+ #else
+    <a href="$document.name">View attachment</a>
+ #end
+ ## this is caption field
+ #if($document.description)
+  <div style="margin-top:20px">
+     $!document.description
+  </div> 
+#end
+  <div style="margin-top:20px">
+  #if ($tiffs) 
+    #foreach($tiff in $tiffs)
+ 	  Click <a href="$tiff.name">here</a> to access original TIFF image.
+    #end
+  #end
+ </div>
+ </div>
+</body>
+</html>

@@ -1,0 +1,33 @@
+[untyped]
+.*/node_modules/.*
+
+[include]
+
+[libs]
+
+[lints]
+all=warn
+untyped-import=off
+unsafe-getters-setters=off
+sketchy-null=off
+unclear-type=off
+
+[options]
+include_warnings=true
+module.name_mapper='^Styles$' -> '<PROJECT_ROOT>/src/util/styles'
+module.name_mapper='^__mocks__' -> '<PROJECT_ROOT>/__mocks__'
+exact_by_default=false
+
+[strict]
+nonstrict-import
+unclear-type
+untyped-import
+untyped-type-import
+# unsafe-getters-setters is not included despite flow recommendation because we use it extensively for mobx
+ambiguous-object-type
+deprecated-type
+sketchy-null
+sketchy-number
+
+[ignore]
+<PROJECT_ROOT>/node_modules/eslint-plugin-react/node_modules/resolve/test/resolver/malformed_package_json/package.json

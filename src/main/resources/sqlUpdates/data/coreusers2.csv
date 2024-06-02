@@ -1,0 +1,3 @@
+id,username,password,first_name,last_name,email,version,contentInitialized,account_enabled,account_expired,account_locked,credentials_expired,numConsecutiveLoginFailures,tempAccount,signupSource
+-12,sysadmin1,caa6eec0faa20efba3b7af44af7107b05334759954ef3581030cc8e6199a33bf,System,Admin,sysadmin@researchspace.com,1,0,1,0,0,0,0,0,INTERNAL
+-2,admin,4c12e5931a8b5adb50486e6f2764a8887c4ab8fb17b18285f2ee9d20888aec51,admin,one,admin@researchspace.com,1,0,1,0,0,0,0,0,INTERNAL

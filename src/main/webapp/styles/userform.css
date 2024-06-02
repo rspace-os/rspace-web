@@ -1,0 +1,144 @@
+/**
+ * Global variables and mixins are defined here.
+ *
+ * Import in other SASS stylesheets using:
+ * @import 'global_vars';
+ */
+.userInfo {
+  line-height: 1.5em;
+  list-style: url(/images/aquadot.jpg) disc outside; }
+
+#firstName {
+  margin-bottom: 15px;
+}
+
+#profileBlock {
+  width: 100%; }
+
+#profileBlock .col-md-9, #profileBlock .col-xs-5, #profileBlock .col-xs-9 .col-xs-12 {
+  padding: 0px !important;
+  display: inline-block;
+}
+
+#profileBlockMiddle {
+  color: black !important;
+  width: 100%; }
+
+#portraitHolder {
+  width: 140px;
+  background-color: #DDDDDD;
+  text-align: center;
+  padding: 8px 0 8px 0;
+  margin: 0; }
+
+#profileBlockRight {
+  padding: 0;
+  color: #507594;
+}
+
+.profileGreyBlocks {
+  color: black !important;}
+
+.portraitEditBar {
+  padding: 10px 10px 0 10px;
+  text-align: center; }
+
+.profileEditBar {
+  text-align: right;
+  color: black !important; }
+
+#additionalInfo {
+  color: black;
+}
+
+.profileEditButton, .myProfileButton {
+  display: grid;
+  width: 150px;
+  text-align: center;
+  padding: 0px 7px 0px 25px;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  margin-left: 5px;
+  background: white;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer;
+  background-repeat: no-repeat;
+}
+.profileEditButton {
+  background-image: url("/images/icons/editIcon.png");
+}
+
+.profileEditButton.disabled, .profileEditButton.disabled:hover, .profileEditButton.disabled:focus {
+  color: grey;
+}
+
+.groupsListLink:focus, .profileEditButton:focus, .profileUploadButton:focus {
+  box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+
+#setOrcidIdButton {
+  background-image: url('/images/integrations/orcid-small.png');
+  background-position: 2px; }
+
+#deleteOrcidIdButton {
+  background-image: url('/images/icons/closeIcon.png');}
+
+.myProfileButton {
+  background-image: url('/images/icons/editIcon.png');
+}
+
+.profileUploadBar {
+  padding: 10px 0 0 0; }
+
+.profileUploadButton {
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  width: 100%;
+  text-align: center;
+  margin: 13 20px 0 20px;
+  padding: 3px 7px 2px 25px;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  background: transparent;
+  background-image: url("/images/icons/uploadImageIcon.png");
+  background-repeat: no-repeat;
+  background-position: top left;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer; }
+
+.msgArea {
+  border: 1px solid black;
+  height: 25px;
+  display: none;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 25px;
+  /* the same as your div height */
+  font-weight: bold; }
+
+/* API KEY Panel */
+
+div.api-menu__header {
+  font-size: 1.5em;
+  color: #444; }
+
+.api-menu__content {
+  display: flex;
+  justify-content: space-between; }
+
+div.api-menu__key {
+  padding-top: 5px;
+  line-height: 25px;
+  color: black; 
+}
+
+.api-menu__edit {
+  margin: 0px 0px 10px 0px; }
+
+#apiKeyInfo .api-menu__description {
+  color: black;
+}

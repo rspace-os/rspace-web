@@ -1,0 +1,31 @@
+#*
+Template for messaging a user that signed up on cloud without using verification link
+Arguments:
+ 
+ - verifyLink - The  URL to verify signup
+ - ipAddress - The IP address from where the request was generated.
+*#
+<html>
+<body>
+<p>Hello $firstName,</p>
+
+<p> You, or someone else, have signed up for an RSpace account, at:</p>
+<p>
+${htmlDomainPrefix}
+</p>
+
+
+<p> If it was really you that signed up, please click on the link below to verify
+and activate your account.
+  
+<p>
+<a href="${verifyLink}">${verifyLink}</a>
+</p>
+
+#dontReply<p/>
+
+#signature
+<p/>
+#emailSourceIpFooter (${ipAddress})
+</body>
+</html>

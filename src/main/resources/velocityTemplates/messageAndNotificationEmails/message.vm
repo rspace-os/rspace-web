@@ -1,0 +1,18 @@
+## Takes a communication 'cmm', dateobject 'dateOb', and baseURL string 'baseURL'
+<html>
+#utf8header
+<body>
+<h2> RSpace message  from $cmm.originator.fullName </h2>
+<a href="$baseURL/userform?userId=$cmm.originator.id">$cmm.originator.fullName</a> sent you a message on #formatDate($dateOb)
+		
+#if($cmm.record)	
+   concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">
+			$cmm.record.name </a>
+#end
+<p/>
+$cmm.message
+<p/>
+#dontReply
+<br/>
+To reply to the sender of this message, please do so in <a href="$baseURL/workspace">RSpace</a>.
+</body></html>

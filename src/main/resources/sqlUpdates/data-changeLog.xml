@@ -1,0 +1,153 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+	<!-- Changes to apply when we're making changes to tables that have data 
+		loaded into them for running in tests or the application. -->
+	<changeSet author="radams (generated)" id="1416411300949-3"
+		context="run">
+		<preConditions onFail="CONTINUE">
+			<not>
+				<columnExists tableName="User" columnName="tempAccount" />
+			</not>
+		</preConditions>
+		<comment>Add temporary account variable to User</comment>
+		<addColumn tableName="User">
+			<column name="tempAccount" type="BIT(1)" defaultValueNumeric="0">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+	</changeSet>
+	
+	<changeSet author="radams (generated)" id="16-09-15" context="run">
+		<preConditions onFail="CONTINUE" onFailMessage="signupSource exists" onErrorMessage="signupSource exists">
+			<not>
+				<columnExists tableName="User" columnName="signupSource" />
+			</not>
+		</preConditions>
+		<comment>Add signup source</comment>
+		<addColumn tableName="User">
+			<column name="signupSource" defaultValue="MANUAL" type="varchar(25)"></column>
+		</addColumn>
+	</changeSet>
+
+
+	<changeSet id="2-2-15b" author="radams" runAlways="true"
+		context="liquibase-update-test">
+		<comment>Removes checksum for password hint for liquibase test</comment>
+		<update tableName="DATABASECHANGELOG">
+			<column name="MD5SUM" value="NULL"></column>
+			<where>ID="3" and author='radams'</where>
+		</update>
+		<update tableName="DATABASECHANGELOG">
+			<column name="MD5SUM" value="NULL"></column>
+			<where>ID="4" and author='radams'</where>
+		</update>
+		<update tableName="DATABASECHANGELOG">
+			<column name="MD5SUM" value="NULL"></column>
+			<where>ID="8_4-3-2014" and author='radams'</where>
+		</update>
+	</changeSet>
+
+	<changeSet id="3" author="radams" context="dev-test,liquibase-update-test">
+		<validCheckSum>7:0bdaedb4be732e5ad5ce275acf2b5dc1</validCheckSum>
+		<validCheckSum>7:e0ae39271657d50ecda9415eecf80225</validCheckSum>
+		<!-- only add if roles table is empty, implies this is a new, empty DB 
+			and a new deployment -->
+		<preConditions onFail="MARK_RAN">
+			<sqlCheck expectedResult="0">select count(*) from roles
+			</sqlCheck>
+		</preConditions>
+
+		<comment>Core roles, admin users and role permissions for all deployments and test</comment>
+		<loadData tableName="roles" file="sqlUpdates/data/roles.csv">
+			<column name="id" type="NUMERIC" />
+			<column name="description" type="STRING" />
+			<column name="name" type="STRING" />
+
+		</loadData>
+		<loadData tableName="Role_permissionStrings" separator="\t"
+			file="sqlUpdates/data/Role_permissionStrings.csv">
+			<column name="Role_id" type="NUMERIC" />
+			<column name="permissionStrings" type="STRING" />
+		</loadData>
+		<loadData tableName="User" file="sqlUpdates/data/coreusers2.csv">
+			<column name="id" type="NUMERIC" />
+			<column name="username" type="STRING" />
+			<column name="password" type="STRING" />
+			<column name="first_name" type="STRING" />
+			<column name="last_name" type="STRING" />
+			<column name="last_name" type="STRING" />
+			<column name="email" type="STRING" />
+			<column name="version" type="NUMERIC" />
+			<column name="contentInitialized" type="NUMERIC" />
+			<column name="account_enabled" type="NUMERIC" />
+			<column name="account_expired" type="NUMERIC" />
+			<column name="account_locked" type="NUMERIC" />
+			<column name="credentials_expired" type="NUMERIC" />
+			<column name="numConsecutiveLoginFailures" type="NUMERIC" />
+			<column name="tempAccount" type="NUMERIC" />
+			 <column name="signupSource" type="STRING"/>
+		</loadData>
+	</changeSet>
+	<changeSet id="3a" author="radams" runAlways="true">
+	    <validCheckSum>7:da61bcc9aad546d7fb6eaca2d5d19e34</validCheckSum>
+		<comment>Removes checksum for problematic SQL statement</comment>
+		<update tableName="DATABASECHANGELOG">
+			<column name="MD5SUM" value="NULL"></column>
+			<where>ID="25-08-14a" and AUTHOR='radams'</where>
+		</update>
+	</changeSet>
+	<changeSet id="16-09-15d" author="radams" runAlways="true" context="liquibase-update-test">
+		<comment>Removes checksum for problematic SQL statement</comment>
+		<update tableName="DATABASECHANGELOG">
+			<column name="MD5SUM" value="NULL"></column>
+			<where>ID="2016-07-08" and AUTHOR='richard'</where>
+		</update>
+	</changeSet>
+	
+    <!-- this is 1.44 change but is added to this file rather than changeLog-1.44.xml
+         so the liquibase java updates operating on Group entity can pass. -->
+    <changeSet id="17-05-17-rspac-1232" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="rsGroup" columnName="privateProfile" />
+            </not>
+        </preConditions>
+        <comment>Add new column that flags user/group profile as private</comment>
+        <addColumn tableName="rsGroup">
+            <column name="privateProfile" type="BIT(1)" />
+        </addColumn>
+        <addColumn tableName="User">
+            <column name="privateProfile" type="BIT(1)" />
+        </addColumn>
+    </changeSet>
+    
+      <changeSet id="2020-12-12b" context="run" author="juozas">
+        <preConditions onError="MARK_RAN" onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="rsGroup" columnName="autoshareEnabled"/>
+            </not>
+        </preConditions>
+        <comment>
+            Add a new column for tracking group-wide autoshare status rspac-2174
+        </comment>
+        <addColumn tableName="rsGroup">
+            <column name="autoshareEnabled" type="BIT(1)" defaultValueBoolean="0"/>
+        </addColumn>
+    </changeSet>
+	<changeSet id="2022-15-19a" context="run" author="nhanlon">
+		<preConditions onError="MARK_RAN" onFail="MARK_RAN">
+			<not>
+				<columnExists tableName="rsGroup" columnName="publicationAllowed"/>
+			</not>
+		</preConditions>
+		<comment>
+			Add a new column for tracking group-wide publicationAllowed status rspac-2460
+		</comment>
+		<addColumn tableName="rsGroup">
+			<column name="publicationAllowed" type="BIT(1)" defaultValueBoolean="0"/>
+		</addColumn>
+	</changeSet>
+
+</databaseChangeLog>

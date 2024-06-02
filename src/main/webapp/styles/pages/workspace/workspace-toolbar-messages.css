@@ -1,0 +1,140 @@
+.rs-open-dialog-link {	
+  position: absolute !important;	
+  top: 2px;	
+  cursor: pointer;	
+  color: #b2dbfb;	
+}	
+
+.rs-badge {	
+  cursor: default;	
+}	
+
+#openNotificationDlgLink,	
+#openMessageDlgLink,	
+#msgDlgLink {	
+  position: relative;	
+}	
+
+#openMessageDlgLink .rs-icon,	
+#msgDlgLink .rs-icon,	
+#createRequest .rs-icon {	
+  position: absolute;	
+  top: 30px;	
+}	
+
+#openMessageDlgLink .rs-extra-icon,	
+#msgDlgLink .rs-extra-icon,	
+#createRequest .rs-extra-icon {	
+  position: absolute;	
+  top: 15px;	
+  left: 10px;	
+  z-index: 1;	
+}	
+
+#openMessageDlgLink .rs-extra-icon:after,	
+#msgDlgLink .rs-extra-icon:after,	
+#createRequest .rs-extra-icon:after {	
+  content: '';	
+  position: absolute;	
+  display: block;	
+  width: 15px;	
+  height: 15px;	
+  background-color: #2196f3;	
+  border-radius: 50%;	
+  top: 7.3px;	
+  left: 2.4px;	
+  z-index: -1;	
+}	
+
+/*	
+* communication count text formatting	
+*/	
+
+#toolbar .rs-items-count {	
+  position: absolute;	
+  font-weight: bold;	
+  background-color: #f36;	
+  /* RED */	
+  z-index: 4;	
+}	
+
+#openMessageDlgLink .rs-items-count {	
+  left: 32px;	
+  top: 20px;	
+}	
+
+#openNotificationDlgLink .rs-items-count {	
+  left: 25px;	
+  top: 20px;	
+}	
+
+#messageListContents .messageText,	
+#notificationListContents .messageText {	
+  line-height: 120%;	
+}	
+
+.leftInfo {	
+  padding: 10px 6px 10px 6px;	
+  background-color: #e5e5e5;	
+}	
+
+.mainMessage {	
+  padding: 10px 6px 2px 6px;	
+  word-break: break-word;	
+  /*	word-break:break-word;	
+-ms-word-break:break-all;*/	
+}	
+
+.mainMessage a {	
+  text-decoration: none;	
+  word-break: break-word;	
+  -ms-word-break: break-all;	
+  color: #1465b7;	
+}	
+
+.mainMessage a:visited {	
+  text-decoration: none;	
+  word-break: break-word;	
+  -ms-word-break: break-all;	
+  color: #1465b7;	
+}	
+
+.mainMessage a:hover {	
+  text-decoration: none;	
+  word-break: break-word;	
+  -ms-word-break: break-all;	
+  color: #c00;	
+}	
+
+.mainMessage a:active {	
+  text-decoration: none;	
+  word-break: break-word;	
+  -ms-word-break: break-all;	
+  color: #c00;	
+}	
+
+.messageTable {	
+  border-width: 2px 2px 2px 2px;	
+  border-style: solid;	
+  border-color: #e5e5e5;	
+}	
+
+#notification_linkMenu a {	
+  text-decoration: none;	
+  color: #1465b7;	
+}	
+
+#notification_linkMenu a:visited {	
+  text-decoration: none;	
+  color: #1465b7;	
+}	
+
+#notification_linkMenu a:hover {	
+  text-decoration: none;	
+  color: #c00;	
+}	
+
+#notification_linkMenu a:active {	
+  text-decoration: none;	
+  color: #c00;	
+}

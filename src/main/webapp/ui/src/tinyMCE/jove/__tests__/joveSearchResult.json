@@ -1,0 +1,229 @@
+{
+  "joveSearchResult": {
+    "countall": 10000,
+    "pagesize": 20,
+    "pagecount": 500,
+    "articlelist": [
+      {
+          "id": 57782,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/57782_t.png",
+          "title": "Induction and Validation of Cellular Senescence in Primary Human Cells",
+          "url": "https://richard-dev2.jove.com/v/57782/induction-and-validation-of-cellular-senescence-in-primary-human-cells",
+          "section": "Developmental Biology",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 60117,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/60117_t.png",
+          "title": "Human Adipose Tissue Micro-fragmentation for Cell Phenotyping and Secretome Characterization",
+          "url": "https://richard-dev2.jove.com/v/60117/human-adipose-tissue-micro-fragmentation-for-cell-phenotyping",
+          "section": "Biology",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 2168,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/2168_t.png",
+          "title": "Transnuclear Mice with Pre-defined T Cell Receptor Specificities Against <em>Toxoplasma gondii</em> Obtained Via SCNT",
+          "url": "https://richard-dev2.jove.com/v/2168/transnuclear-mice-with-pre-defined-t-cell-receptor-specificities",
+          "section": "Immunology and Infection",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 59907,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/59907_t.png",
+          "title": "In Vitro Assay to Study Tumor-macrophage Interaction",
+          "url": "https://richard-dev2.jove.com/v/59907/in-vitro-assay-to-study-tumor-macrophage-interaction",
+          "section": "Cancer Research",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 62271,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/62271_t.png",
+          "title": "Cryo-Electron Microscopic Grid Preparation for Time-Resolved Studies using a Novel Robotic System, Spotiton",
+          "url": "https://richard-dev2.jove.com/v/62271/cryo-electron-microscopic-grid-preparation-for-time-resolved-studies",
+          "section": "Biology",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 62370,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/62370_t.png",
+          "title": "Preparation and Characterization of Targeted Microbubbles",
+          "url": "https://richard-dev2.jove.com/v/62370/preparation-and-characterization-of-targeted-microbubbles",
+          "section": "Bioengineering",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": false
+      },
+      {
+          "id": 60873,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/60873_t.png",
+          "title": "Opsono-Adherence Assay to Evaluate Functional Antibodies in Vaccine Development Against <em>Bacillus anthracis</em> and Other Encapsulated Pathogens",
+          "url": "https://richard-dev2.jove.com/v/60873/opsono-adherence-assay-to-evaluate-functional-antibodies-vaccine",
+          "section": "Immunology and Infection",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 63655,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/63655_t.png",
+          "title": "Genome-wide Profiling of Transcription Factor-DNA Binding Interactions in <em>Candida albicans</em>: A Comprehensive CUT&amp;RUN Method and Data Analysis Workflow",
+          "url": "https://richard-dev2.jove.com/v/63655/genome-wide-profiling-transcription-factor-dna-binding-interactions",
+          "section": "Biology",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": false
+      },
+      {
+          "id": 51495,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/51495_t.png",
+          "title": "Non-invasive Imaging and Analysis of Cerebral Ischemia in Living Rats Using Positron Emission Tomography with <sup>18</sup>F-FDG",
+          "url": "https://richard-dev2.jove.com/v/51495/non-invasive-imaging-analysis-cerebral-ischemia-living-rats-using",
+          "section": "Medicine",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 60908,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/60908_t.png",
+          "title": "Using an Automated Hirschberg Test App to Evaluate Ocular Alignment",
+          "url": "https://richard-dev2.jove.com/v/60908/using-an-automated-hirschberg-test-app-to-evaluate-ocular-alignment",
+          "section": "Medicine",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 50250,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/50250_t.png",
+          "title": "3D Printing of Preclinical X-ray Computed Tomographic Data Sets",
+          "url": "https://richard-dev2.jove.com/v/50250/3d-printing-of-preclinical-x-ray-computed-tomographic-data-sets",
+          "section": "Biology",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 53879,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/53879_t.png",
+          "title": "TRUE Gene Silencing: Screening of a Heptamer-type Small Guide RNA Library for Potential Cancer Therapeutic Agents",
+          "url": "https://richard-dev2.jove.com/v/53879/true-gene-silencing-screening-heptamer-type-small-guide-rna-library",
+          "section": "Medicine",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 56260,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/56260_t.png",
+          "title": "Efficient Generation and Editing of Feeder-free IPSCs from Human Pancreatic Cells Using the CRISPR-Cas9 System",
+          "url": "https://richard-dev2.jove.com/v/56260/efficient-generation-editing-feeder-free-ipscs-from-human-pancreatic",
+          "section": "Bioengineering",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 62129,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/62129_t.png",
+          "title": "Sarcomere Shortening of Pluripotent Stem Cell-Derived Cardiomyocytes using Fluorescent-Tagged Sarcomere Proteins.",
+          "url": "https://richard-dev2.jove.com/v/62129/sarcomere-shortening-pluripotent-stem-cell-derived-cardiomyocytes",
+          "section": "Medicine",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 56496,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/56496_t.png",
+          "title": "Subcellular Fractionation for ERK Activation Upon Mitochondrial-derived Peptide Treatment",
+          "url": "https://richard-dev2.jove.com/v/56496/subcellular-fractionation-for-erk-activation-upon-mitochondrial",
+          "section": "Biology",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 833,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/833_t.png",
+          "title": "Generation of Stable Transgenic C. elegans Using Microinjection",
+          "url": "https://richard-dev2.jove.com/v/833/generation-of-stable-transgenic-c-elegans-using-microinjection",
+          "section": "Biology",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 62478,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/62478_t.png",
+          "title": "Modeling the Effects of Hemodynamic Stress on Circulating Tumor Cells using a Syringe and Needle",
+          "url": "https://richard-dev2.jove.com/v/62478/modeling-effects-hemodynamic-stress-on-circulating-tumor-cells-using",
+          "section": "Cancer Research",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 2639,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/2639_t.png",
+          "title": "Neural-Colony Forming Cell Assay: An Assay To Discriminate Bona Fide Neural Stem Cells from Neural Progenitor Cells",
+          "url": "https://richard-dev2.jove.com/v/2639/neural-colony-forming-cell-assay-an-assay-to-discriminate-bona-fide",
+          "section": "Neuroscience",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 59867,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/59867_t.png",
+          "title": "Detergent-assisted Reconstitution of Recombinant <em>Drosophila</em> Atlastin into Liposomes for Lipid-mixing Assays",
+          "url": "https://richard-dev2.jove.com/v/59867/detergent-assisted-reconstitution-recombinant-drosophila-atlastin",
+          "section": "Biochemistry",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      },
+      {
+          "id": 56743,
+          "thumbnail": "https://cloudfront.jove.com/files/thumbs/56743_t.png",
+          "title": "Visualization of Biofilm Formation in <em>Candida albicans</em> Using an Automated Microfluidic Device",
+          "url": "https://richard-dev2.jove.com/v/56743/visualization-biofilm-formation-candida-albicans-using-an-automated",
+          "section": "Immunology and Infection",
+          "text": null,
+          "accesstype": null,
+          "embed_url": null,
+          "hasvideo": true
+      }
+  ]
+  }
+}

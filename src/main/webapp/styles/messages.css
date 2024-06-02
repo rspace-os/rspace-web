@@ -1,0 +1,143 @@
+#noMessages {
+    margin: 0!important;
+    padding: 0;
+    text-align: center;
+}
+
+.messages p {
+    margin: 0;
+    padding: 2px;
+    text-align: center;
+}
+.warning {
+	font-size: 1.3em;
+}
+
+.boldtext {
+    font-weight: bold;
+}
+
+#reateRequestDlgContent .field {
+    margin-bottom: 4px;
+}
+
+.updateDetails {
+    display: inline-block;
+}
+
+.replyMessageArea {
+    width: 228px;
+    height: 20px;
+}
+
+.optionalMessageTooLong {
+    background-color: #ffcece;
+}
+
+#comsContainer {
+	/* So can place message icons absolutely
+	*/
+	position:relative; 
+	z-index:100;
+	height:31px;
+}
+
+.commCountContainer {
+	position: relative;
+	top: -20px;
+	left:35px;
+	width:20px;
+}
+
+.commAndCountContainer {
+	height:31px;
+	width:53px;
+	display:inline-block;
+}
+
+.messageButtonClass {
+  padding: 0 1px 0 1px;
+  height: 31px;
+  background-color:transparent;
+}
+
+
+/*
+*communication count text formatting
+*/
+.commCount{
+	font-weight: bold; 
+	font-size: 1.2em;
+	color: #c21c1c; /* RED */
+}
+
+#createRequestDlgContent label {
+	float:left;
+	padding-right: 10px;
+	clear:left;
+}
+#messageListContents .messageText, #notificationListContents .messageText {
+	line-height:120%;
+}
+#messageListContents .messageText .messageRecordLink {
+	white-space: normal;
+}
+
+.leftInfo {
+	background-color:#E5E5E5;
+	padding:10px 6px 10px 6px;
+}
+.mainMessage {
+	padding:10px 6px 2px 6px;
+	word-break:break-word;
+	/*	word-break:break-word;
+	-ms-word-break:break-all;*/
+}
+
+.mainMessage a {
+	color:#1465b7;
+	text-decoration:none;
+    word-break:break-word;
+	-ms-word-break:break-all;
+}
+.mainMessage a:visited {
+	color:#1465b7;
+	text-decoration:none;
+	word-break:break-word;
+	-ms-word-break:break-all;
+}
+.mainMessage a:hover {
+	color:#cc0000;
+	text-decoration:none;
+	word-break:break-word;
+	-ms-word-break:break-all;
+}
+.mainMessage a:active {
+	color:#cc0000;
+	text-decoration:none;
+	word-break:break-word;
+	-ms-word-break:break-all;
+}
+
+.messageTable {
+	border-style:solid;
+	border-width:2px 2px 2px 2px;
+	border-color:#E5E5E5;
+}
+
+#notification_linkMenu a {
+	color:#1465b7;
+	text-decoration:none;
+}
+#notification_linkMenu a:visited {
+	color:#1465b7;
+	text-decoration:none;
+}
+#notification_linkMenu a:hover {
+	color:#cc0000;
+	text-decoration:none;
+}
+#notification_linkMenu a:active {
+	color:#cc0000;
+	text-decoration:none;
+}

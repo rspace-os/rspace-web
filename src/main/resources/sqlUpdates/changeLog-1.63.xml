@@ -1,0 +1,76 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.63 October 2019 -->
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+
+	<!-- Add changesets here... -->
+
+	<changeSet id="2019-09-26a" author="richard" context="run">
+		<preConditions
+			onFailMessage="Cannot delete obsolete form field tables - there are no forms in the new FieldForm table">
+            <or>
+              <!-- either there are no documents - i.e this is a new deployment; proceed safely -->
+			   <sqlCheck expectedResult="0">
+					select count(*) from BaseRecord;
+			   </sqlCheck>
+               <!--  or other conditions for existing deployment are met -->
+			   <and>
+			    
+				<tableExists tableName="FieldForm" />
+				<sqlCheck expectedResult="1">
+					select if (count(*) = 0, 0, 1) from FieldForm;
+				</sqlCheck>
+				<tableExists tableName="FieldForm_AUD" />
+				<sqlCheck expectedResult="1">
+					select if (count(*) = 0, 0, 1)
+					from FieldForm_AUD;
+				</sqlCheck>
+				<!-- we also need to check that the old-tables-to-be-deleted exist, newer versions of RSpace
+					might not have the old tables -->
+				<tableExists tableName="NumberFieldForm" />
+				<tableExists tableName="NumberFieldForm_AUD" />
+				<tableExists tableName="TextFieldForm" />
+				<tableExists tableName="TextFieldForm_AUD" />
+				<tableExists tableName="RadioFieldForm" />
+				<tableExists tableName="RadioFieldForm_AUD" />
+				<tableExists tableName="ChoiceFieldForm" />
+				<tableExists tableName="ChoiceFieldForm_AUD" />
+				<tableExists tableName="DateFieldForm" />
+				<tableExists tableName="DateFieldForm_AUD" />
+				<tableExists tableName="StringFieldForm" />
+				<tableExists tableName="StringFieldForm_AUD" />
+				<tableExists tableName="TimeFieldForm" />
+				<tableExists tableName="TimeFieldForm_AUD" />
+			</and>
+		  </or>
+
+		</preConditions>
+		<comment>Delete obsolete field form tables RSPAC-1881</comment>
+		<dropTable tableName="NumberFieldForm" />
+		<dropTable tableName="NumberFieldForm_AUD" />
+		<dropTable tableName="TextFieldForm" />
+		<dropTable tableName="TextFieldForm_AUD" />
+		<dropTable tableName="RadioFieldForm" />
+		<dropTable tableName="RadioFieldForm_AUD" />
+		<dropTable tableName="ChoiceFieldForm" />
+		<dropTable tableName="ChoiceFieldForm_AUD" />
+		<dropTable tableName="DateFieldForm" />
+		<dropTable tableName="DateFieldForm_AUD" />
+		<dropTable tableName="StringFieldForm" />
+		<dropTable tableName="StringFieldForm_AUD" />
+		<dropTable tableName="TimeFieldForm" />
+		<dropTable tableName="TimeFieldForm_AUD" />
+
+	</changeSet>
+
+
+    <!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

@@ -1,0 +1,20 @@
+#*
+ Generates a top-level summary file of all NfsExternal links
+*#
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>External file system links</title>
+<link href="resources/document.css" rel="stylesheet" />
+<meta charset="UTF-8">
+</head>
+<body>
+  <div class="navigationSection">
+     <a href="index.html">Top</a></div>
+  </div>
+  <h3> All external file links in export </h3>
+  <div id="nfsList">
+    #nfsElements($nfsList ".")
+  </d1iv>
+</body>
+</html>

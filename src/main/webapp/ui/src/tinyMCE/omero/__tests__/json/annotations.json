@@ -1,0 +1,17 @@
+{
+  "data": [
+    "Sample Type = cell",
+    "Organism = Homo sapiens",
+    "Study Type = protein localization",
+    "Imaging Method = structured illumination microscopy (SIM)",
+    "Publication Title = Subdiffraction imaging of centrosomes reveals higher-order organizational features of pericentriolar material.",
+    "Publication Authors = Lawo S, Hasegan M, Gupta GD, Pelletier L",
+    "PubMed ID = 23086237 https://www.ncbi.nlm.nih.gov/pubmed/23086237",
+    "Publication DOI = 10.1038/ncb2591 https://doi.org/10.1038/ncb2591",
+    "Release Date = 2016-05-26",
+    "License = CC BY 4.0 https://creativecommons.org/licenses/by/4.0/",
+    "Copyright = Lawo et al",
+    "Annotation File = idr0021-experimentA-annotation.csv https://github.com/IDR/idr0021-lawo-pericentriolarmaterial/blob/HEAD/experimentA/idr0021-experimentA-annotation.csv",
+    "File = \"bulk_annotations\""
+  ]
+}

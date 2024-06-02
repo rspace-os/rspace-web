@@ -1,0 +1,558 @@
+
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		 http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 Core inventory tables May 2020 -->
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<changeSet author="rspace (generated)" id="1588762049831-4"
+		context="run">
+		<comment>Create Sample table</comment>
+		<createTable tableName="Sample">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="barcode" type="VARCHAR(255)" />
+			<column name="createdBy" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationDate" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="description" type="VARCHAR(250)" />
+			<column name="modificationDate" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="modificationDateMillis" type="BIGINT" />
+			<column name="modifiedBy" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="deleted" type="BIT(1)" defaultValueBoolean="0">
+				<constraints nullable="false"/>
+			</column>
+			<column name="name" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="iconId" type="BIGINT" />
+			<column name="quantityNumericValue" type="DECIMAL(19, 2)" />
+			<column name="quantityUnitId" type="INT" />
+			<column name="tags" type="VARCHAR(255)" />
+			<column name="storageTempMinNumericValue" type="DECIMAL(19, 2)" />
+			<column name="storageTempMinUnitId" type="INT" />
+			<column name="storageTempMaxNumericValue" type="DECIMAL(19, 2)" />
+			<column name="storageTempMaxUnitId" type="INT" />
+			<column name="form_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="owner_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-5"
+		context="run">
+		<comment>Create SampleField table</comment>
+		<createTable tableName="SampleField">
+			<column name="DTYPE" type="VARCHAR(31)">
+				<constraints nullable="false" />
+			</column>
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="columnIndex" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="modificationDate" type="BIGINT" />
+			<column name="name" type="VARCHAR(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="data" type="LONGTEXT" />
+			<column name="fieldForm_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="sample_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-6"
+		context="run">
+		<comment>Create SampleField_AUD table</comment>
+		<createTable tableName="SampleField_AUD">
+			<column name="DTYPE" type="VARCHAR(31)">
+				<constraints nullable="false" />
+			</column>
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="columnIndex" type="INT" />
+			<column name="modificationDate" type="BIGINT" />
+			<column name="name" type="VARCHAR(50)" />
+			<column name="data" type="LONGTEXT" />
+			<column name="fieldForm_id" type="BIGINT" />
+			<column name="sample_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-7"
+		context="run">
+		<comment>Create Sample_AUD table</comment>
+		<createTable tableName="Sample_AUD">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="barcode" type="VARCHAR(255)" />
+			<column name="createdBy" type="VARCHAR(255)" />
+			<column name="creationDate" type="datetime" />
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="description" type="VARCHAR(250)" />
+			<column name="modificationDate" type="datetime" />
+			<column name="modificationDateMillis" type="BIGINT" />
+			<column name="modifiedBy" type="VARCHAR(255)" />
+			<column name="deleted" type="BIT(1)" />
+			<column name="name" type="VARCHAR(255)" />
+			<column name="iconId" type="BIGINT" />
+			<column name="quantityNumericValue" type="DECIMAL(19, 2)" />
+			<column name="quantityUnitId" type="INT" />
+			<column name="tags" type="VARCHAR(255)" />
+			<column name="storageTempMinNumericValue" type="DECIMAL(19, 2)" />
+			<column name="storageTempMinUnitId" type="INT" />
+			<column name="storageTempMaxNumericValue" type="DECIMAL(19, 2)" />
+			<column name="storageTempMaxUnitId" type="INT" />
+			<column name="form_id" type="BIGINT" />
+			<column name="owner_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-9"
+		context="run">
+		<comment>Create SubSample table</comment>
+		<createTable tableName="SubSample">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="barcode" type="VARCHAR(255)" />
+			<column name="createdBy" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationDate" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="description" type="VARCHAR(250)" />
+			<column name="modificationDate" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="modificationDateMillis" type="BIGINT" />
+			<column name="modifiedBy" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="deleted" type="BIT(1)" defaultValueBoolean="0">
+				<constraints nullable="false"/>
+			</column>
+			<column name="name" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="iconId" type="BIGINT" />
+			<column name="quantityNumericValue" type="DECIMAL(19, 2)" />
+			<column name="quantityUnitId" type="INT" />
+			<column name="tags" type="VARCHAR(255)" />
+			<column name="sample_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-10"
+		context="run">
+		<comment>Create SubSample_AUD table</comment>
+		<createTable tableName="SubSample_AUD">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="barcode" type="VARCHAR(255)" />
+			<column name="createdBy" type="VARCHAR(255)" />
+			<column name="creationDate" type="datetime" />
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="description" type="VARCHAR(250)" />
+			<column name="modificationDate" type="datetime" />
+			<column name="modificationDateMillis" type="BIGINT" />
+			<column name="modifiedBy" type="VARCHAR(255)" />
+			<column name="deleted" type="BIT(1)" />
+			<column name="name" type="VARCHAR(255)" />
+			<column name="iconId" type="BIGINT" />
+			<column name="quantityNumericValue" type="DECIMAL(19, 2)" />
+			<column name="quantityUnitId" type="INT" />
+			<column name="tags" type="VARCHAR(255)" />
+			<column name="sample_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-11"
+		context="run">
+		<comment>Discriminator field to support SampleTemplate</comment>
+		<addColumn tableName="RSForm">
+			<column name="DTYPE" type="VARCHAR(31)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-12"
+		context="run">
+		<comment>Discriminator field to support SampleTemplate</comment>
+		<addColumn tableName="RSForm_AUD">
+			<column name="DTYPE" type="VARCHAR(31)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-13"
+		context="run">
+		<comment>default UnitId</comment>
+		<addColumn tableName="RSForm">
+			<column name="defaultUnitId" type="INT(10)" />
+		</addColumn>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-14"
+		context="run">
+		<comment>default UnitId</comment>
+		<addColumn tableName="RSForm_AUD">
+			<column name="defaultUnitId" type="INT(10)" />
+		</addColumn>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-15"
+		context="run">
+		<comment>label for subSample</comment>
+		<addColumn tableName="RSForm">
+			<column name="subSampleName" type="VARCHAR(255)" />
+		</addColumn>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-16"
+		context="run">
+		<comment>label for subSample</comment>
+		<addColumn tableName="RSForm_AUD">
+			<column name="subSampleName" type="VARCHAR(255)" />
+		</addColumn>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-17"
+		context="run">
+		<comment>1ary key for sample</comment>
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="Sample" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-18"
+		context="run">
+		<comment>1ary key for SampleField</comment>
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="SampleField" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-19"
+		context="run">
+		<comment>1ary key for SampleField_AUD</comment>
+		<addPrimaryKey columnNames="id, REV"
+			constraintName="PRIMARY" tableName="SampleField_AUD" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-20"
+		context="run">
+		<comment>1ary key for Sample_AUD</comment>
+		<addPrimaryKey columnNames="id, REV"
+			constraintName="PRIMARY" tableName="Sample_AUD" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-21"
+		context="run">
+		<comment>1ary key for SubSample</comment>
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="SubSample" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-22"
+		context="run">
+		<comment>1ary key for SubSample_AUD</comment>
+		<addPrimaryKey columnNames="id, REV"
+			constraintName="PRIMARY" tableName="SubSample_AUD" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-29"
+		context="run">
+		<comment>FK for Sample_AUD to REV</comment>
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="Sample_AUD"
+			constraintName="FK_54n3aqp8aacp5ppt4jviu9pud" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="REV" referencedTableName="REVINFO" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-30"
+		context="run">
+		<comment>FK for SampleField to FieldForm</comment>
+		<addForeignKeyConstraint
+			baseColumnNames="fieldForm_id" baseTableName="SampleField"
+			constraintName="FK_anoy8vsjyf8wa4s84lt3etmpr" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FieldForm" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-31"
+		context="run">
+		<comment>FK for subsample to sample</comment>
+		<addForeignKeyConstraint
+			baseColumnNames="sample_id" baseTableName="SubSample"
+			constraintName="FK_e4hsm7ilmshfbsuypo2w42mpg" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Sample" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-33"
+		context="run">
+		<comment>FK for SampleField to Sample</comment>
+		<addForeignKeyConstraint
+			baseColumnNames="sample_id" baseTableName="SampleField"
+			constraintName="FK_gev2mq2ffgr887lpofc0clsle" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Sample" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-34"
+		context="run">
+		<comment>FK for SubSample_AUD to REV</comment>
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="SubSample_AUD"
+			constraintName="FK_hhi3kb4ejcmq9ivuua5iacjyx" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="REV" referencedTableName="REVINFO" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-37"
+		context="run">
+		<comment>FK for Sample to RSForm</comment>
+		<addForeignKeyConstraint
+			baseColumnNames="form_id" baseTableName="Sample"
+			constraintName="FK_phbc9cwo8j9hdrhwuuiaamh6i" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="RSForm" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-38"
+		context="run">
+		<comment>FK for Sample to User (owner)</comment>
+		<addForeignKeyConstraint
+			baseColumnNames="owner_id" baseTableName="Sample"
+			constraintName="FK_pysrs6dsf4fd920t4o34u4t4p" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1588762049831-39"
+		context="run">
+		<comment>FK for SampleField_AUD to REV</comment>
+	</changeSet>
+
+	<changeSet author="matthias" id="2020-05-12a" context="run">
+		<comment>Create ExtraField tables (RSINV-3)</comment>
+		<createTable tableName="ExtraField">
+			<column name="DTYPE" type="VARCHAR(31)">
+				<constraints nullable="false" />
+			</column>
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="createdBy" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationDate" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="description" type="VARCHAR(250)" />
+			<column name="modificationDate" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="modificationDateMillis" type="BIGINT" />
+			<column name="modifiedBy" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="deleted" type="BIT(1)" defaultValueBoolean="0">
+				<constraints nullable="false"/>
+			</column>
+			<column name="name" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="sample_id" type="BIGINT" />
+			<column name="subSample_id" type="BIGINT" />
+		</createTable>
+
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY" 
+			tableName="ExtraField" />
+		<addForeignKeyConstraint
+			baseColumnNames="sample_id" baseTableName="ExtraField"
+			constraintName="FK_abc2mq2ffgr887lpofc0clsle" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Sample" />
+		<addForeignKeyConstraint
+			baseColumnNames="subSample_id" baseTableName="ExtraField"
+			constraintName="FK_def2mq2ffgr887lpofc0clsle" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="SubSample" />
+
+		<createTable tableName="ExtraField_AUD">
+			<column name="DTYPE" type="VARCHAR(31)">
+				<constraints nullable="false" />
+			</column>
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="createdBy" type="VARCHAR(255)" />
+			<column name="creationDate" type="datetime" />
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="description" type="VARCHAR(250)" />
+			<column name="modificationDate" type="datetime" />
+			<column name="modificationDateMillis" type="BIGINT" />
+			<column name="modifiedBy" type="VARCHAR(255)" />
+			<column name="deleted" type="BIT(1)" />
+			<column name="name" type="VARCHAR(255)" />
+			<column name="sample_id" type="BIGINT" />
+			<column name="subSample_id" type="BIGINT" />
+		</createTable>
+
+		<addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" 
+			tableName="ExtraField_AUD" />
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="ExtraField_AUD"
+			constraintName="FK_abca2d0hx85t1yfhqip6v3ne2" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="REV" referencedTableName="REVINFO" />
+	</changeSet>
+
+	<changeSet author="matthias" id="2020-05-28" context="run">
+		<comment>Create SubSampleNote tables</comment>
+
+		<createTable tableName="SubSampleNote">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="content" type="VARCHAR(255)" />
+			<column name="createdBy" type="VARCHAR(255)" />
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="subSample_id" type="BIGINT" />
+		</createTable>
+		<addPrimaryKey columnNames="id"
+			constraintName="PRIMARY" tableName="SubSampleNote" />
+		<addForeignKeyConstraint
+			baseColumnNames="subSample_id" baseTableName="SubSampleNote"
+			constraintName="FK_8t3xc4kyxfg32jesaql72bgvb" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id"
+			referencedTableName="SubSample" />
+	
+		<createTable tableName="SubSampleNote_AUD">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="content" type="VARCHAR(255)" />
+			<column name="createdBy" type="VARCHAR(255)" />
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="subSample_id" type="BIGINT" />
+		</createTable>
+		<addPrimaryKey columnNames="id, REV"
+			constraintName="PRIMARY" tableName="SubSampleNote_AUD" />
+		<addForeignKeyConstraint
+			baseColumnNames="REV" baseTableName="SubSampleNote_AUD"
+			constraintName="FK_mennfe30g96wkivb3108yd0be" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="REV"
+			referencedTableName="REVINFO" />
+	</changeSet>
+	
+	<changeSet author="matthias" id="1588762049831-11b" context="run">
+		<comment>RSINV-2: update DTYPE of pre-existing RSForms to new default</comment>
+		<sql>update RSForm set DTYPE='RSF' where DTYPE=''</sql>
+		<sql>update RSForm_AUD set DTYPE='RSF' where DTYPE=''</sql>
+	</changeSet>
+	
+	<changeSet author="richard" id="2020-06-10a"
+		context="run">
+		<comment>RSINV-20 enum field for vendor/sample created</comment>
+		<addColumn tableName="Sample">
+			<column name="sampleSource" type="VARCHAR(20)" defaultValue="LAB_CREATED">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="Sample_AUD">
+			<column name="sampleSource" type="VARCHAR(20)" defaultValue="LAB_CREATED"></column>
+		</addColumn>
+		
+	</changeSet>
+	
+	<changeSet author="matthias" id="2020-07-15" context="run">
+		<comment>SubSampleNote.createdBy pointing to User table</comment>
+		<addColumn tableName="SubSampleNote">
+			<column name="createdBy_id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="SubSampleNote_AUD">
+			<column name="createdBy_id" type="BIGINT(19)" />
+		</addColumn>
+		<addForeignKeyConstraint baseColumnNames="createdBy_id"
+			baseTableName="SubSampleNote" constraintName="FK_jbgv2cc1pl4wtntce829vdo2c"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	
+		<dropColumn columnName="createdBy" tableName="SubSampleNote" />
+		<dropColumn columnName="createdBy" tableName="SubSampleNote_AUD" />
+	</changeSet>
+	
+	<changeSet author="richard" id="2020-10-21a" context="run">
+		<comment>set larger note content length</comment> 
+		<modifyDataType tableName="SubSampleNote" columnName="content" newDataType="VARCHAR(2000)"/>
+		<modifyDataType tableName="SubSampleNote_AUD" columnName="content" newDataType="VARCHAR(2000)"/>
+	</changeSet>
+
+	<changeSet id="2020-12-03a" author="matthias" context="run">
+		<comment>Record the deletion date of an inventory item</comment>
+		<addColumn tableName="Sample">
+			<column name="deletedDate" type="datetime" />
+		</addColumn>
+		<addColumn tableName="Sample_AUD">
+			<column name="deletedDate" type="datetime" />
+		</addColumn>
+		<addColumn tableName="SubSample">
+			<column name="deletedDate" type="datetime" />
+		</addColumn>
+		<addColumn tableName="SubSample_AUD">
+			<column name="deletedDate" type="datetime" />
+		</addColumn>
+	</changeSet>
+
+	<changeSet id="2020-12-03c" author="matthias" context="run">
+		<comment>Record activeSubSamplesCount for the Sample</comment>
+		<addColumn tableName="Sample">
+			<column name="activeSubSamplesCount" type="INT">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="Sample_AUD">
+			<column name="activeSubSamplesCount" type="INT" />
+		</addColumn>
+	</changeSet>
+
+	<changeSet id="2020-12-03d" author="matthias" context="run">
+		<comment>Set initial value of activeSubSamplesCount for the pre-existing Samples</comment>
+		<sql>
+			update Sample s set s.activeSubSamplesCount = (select count(*) from SubSample ss WHERE ss.sample_id = s.id and ss.deleted = false);
+		</sql>
+	</changeSet>
+
+</databaseChangeLog>

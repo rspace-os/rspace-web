@@ -1,0 +1,18 @@
+ RSpace Request from $cmm.originator.fullName 
+$cmm.originator.fullName sent you a request on #formatDate($dateOb)
+
+#if ($cmm.record && $cmm.record.notebook)
+concerning notebook $cmm.record.name ($baseURL/workspace/editor/structuredDocument/$cmm.record.id)
+
+#elseif($cmm.record)
+concerning document $cmm.record.name ($baseURL/workspace/editor/structuredDocument/$cmm.record.id)
+
+#end
+
+#if ($cmm.message) 
+More details: 
+ 
+$cmm.message
+#end
+
+#dontReply_Plaintext

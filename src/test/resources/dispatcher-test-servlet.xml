@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+       default-lazy-init="true">
+
+
+   <!--  <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" value="51000000"/>
+    </bean> -->
+
+    <!--  Exception handling is driven by annotations in controller elements -->
+   <bean class="org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver" />
+   
+    
+   <context:component-scan base-package="com.researchspace.webapp.config">
+     <context:include-filter type="assignable" expression="com.researchspace.webapp.config.WebConfig"/>
+    </context:component-scan> 
+
+    <!-- Configures the @Controller programming model -->
+      <bean id="contentNegotiationManager" class="org.springframework.web.accept.ContentNegotiationManager">
+        <constructor-arg>
+			<list>
+				<!-- These are evaluated in order -->
+				<!-- Is there a media type based on suffix? -->
+				<bean
+					class="org.springframework.web.accept.PathExtensionContentNegotiationStrategy">
+					<constructor-arg>
+						<map>
+							<entry key="json">
+								<util:constant
+									static-field="org.springframework.http.MediaType.APPLICATION_JSON" />
+							</entry>
+							<entry key="csv">
+								<util:constant
+									static-field="com.researchspace.api.v1.controller.BaseApiController.CSV" />
+							</entry>
+						</map>
+					</constructor-arg>
+				</bean>
+				<bean class ="org.springframework.web.accept.ParameterContentNegotiationStrategy">
+				    <constructor-arg>
+						<map>
+							<entry key="json">
+								<util:constant
+									static-field="org.springframework.http.MediaType.APPLICATION_JSON" />
+							</entry>
+							<entry key="csv">
+								<util:constant
+									static-field="com.researchspace.api.v1.controller.BaseApiController.CSV" />
+							</entry>
+						</map>
+					</constructor-arg>
+				</bean>
+				<!-- Else use request header -->
+				<bean class="org.springframework.web.accept.HeaderContentNegotiationStrategy" />
+			</list>
+		</constructor-arg>
+    </bean>
+
+
+    <!-- Convenient way to map URLs to JSPs w/o having a Controller -->
+    <mvc:view-controller path="/admin/activeUsers" view-name="admin/activeUsers"/>
+    <mvc:view-controller path="/gallery" view-name="gallery"/>
+    <mvc:view-controller path="/admin" view-name="admin/admin"/>
+
+ 	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+
+		<property name="defaultViews">
+			<list>
+				<bean class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" />
+			</list>
+		</property>
+
+		<property name="viewResolvers">
+			<list>
+				<!-- These are listed in the same order they are evaluated by their 'order' attributes -->
+				<ref bean="xmlViewResolver" />
+				<ref bean="beanNameViewResolver" />
+				<ref bean="viewResolver" />
+			</list>
+		</property>
+	</bean>
+    
+    <!-- View Resolver for JSPs -->
+    <bean id="beanNameViewResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver" p:order="1"/>
+    <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver" p:order="2">
+        <property name="requestContextAttribute" value="rc"/>
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+        <property name="prefix" value="/WEB-INF/pages/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+    
+    <bean id="xmlViewResolver" class="org.springframework.web.servlet.view.XmlViewResolver">
+	   <property name="location">
+	       <value>/WEB-INF/pdf-views.xml</value>
+	   </property>
+	   <property name="order" value="0" />
+	</bean>
+    
+    <!-- Add additional controller beans here -->
+</beans>

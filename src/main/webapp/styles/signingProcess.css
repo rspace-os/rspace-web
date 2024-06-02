@@ -1,0 +1,100 @@
+#statementSection label{
+	color: #2D2D2D;
+    font-size: 15px;
+}
+
+#optionSection label{
+	color: #2D2D2D;
+    font-size: 15px;
+}
+
+#witnessesSection label { 
+	display:block; 
+	color: #2D2D2D;
+    font-size: 15px;
+}
+
+#witnessesInfo{ 
+	font-size: 12px;
+	display: inline-block;
+}
+
+#witnessesList { 
+	height: 100px; 
+	overflow: auto; 
+	border: 5px solid #eee; 
+	background: #eee; 
+	color: #000; 
+	margin-bottom: 1.5em;
+}
+
+.confirmation input{
+	display: inline-block;
+    vertical-align: baseline;
+    width: 150px;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.confirmation label {
+    display: inline-block;
+    vertical-align: baseline;
+    width: 125px;
+    color: #2D2D2D;
+    font-size: 15px;
+}
+
+.confirmation div:first-child {
+	margin:5% 5% 5% 5%; 
+	border:1px solid #000;
+}
+
+.confirmation span:first-child {
+	float: left; 
+	margin-right: .3em;
+}
+
+.signatureContainer{
+	float: right;
+}
+
+.signature {
+	font-size: 12px;
+	font-weight: bold;
+	display:block;
+}
+
+.witnessLabel{
+	font-size: 12px;
+	font-weight: bold;
+	display:block;
+}
+
+#verifyContentHashBtn {
+  border: 1px solid #bbb5b5;
+  background-color: #ececec;
+  padding: 2px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.signatureHashesToggle {
+    margin: 3px;
+    cursor: pointer;
+}
+
+#signatureHashesContainer {
+    display:none;
+    float: right;
+    border: 1px solid;
+    padding: 5px;
+    margin-top: 5px;
+}
+
+.hashExportDownloadImg {
+    width: 16px;
+    vertical-align: text-bottom;
+    margin-top: 3px;
+    margin-left: 2px;
+}

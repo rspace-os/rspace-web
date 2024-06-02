@@ -1,0 +1,21 @@
+body {
+    font-family: "Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+    padding: 0px;
+    display: none; /* shown by js code after theme selection */
+}
+#msTeamsDomainConfigDiv {
+    width: 500px;
+    padding-top: 5px;
+    margin: auto;
+}
+.footerVersionRow {
+    margin-top: 0px;
+}
+#footerHr {
+    margin-top: 2px;
+    margin-bottom: 10px;
+}
+#serverUrlInput {
+    width: 360px;
+    margin-right: 5px;
+}

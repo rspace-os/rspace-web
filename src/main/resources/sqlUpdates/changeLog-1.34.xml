@@ -1,0 +1,370 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.34 March 2016 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+	<changeSet author="richard (generated)" id="1456332771676-28"
+		context="run">
+		<validCheckSum>8:e2eb2becf16aed56c4ddc3f648fd2ca7</validCheckSum>
+		<comment>RSPAC-861 system property  table</comment>
+		<createTable tableName="SystemProperty">
+			<column name="id" type="BIGINT" autoIncrement="true">
+				<constraints nullable="false" primaryKey="true" />
+			</column>
+			<column name="defaultValue" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="name" type="VARCHAR(50)">
+				<constraints nullable="false" />
+			</column>
+			<column name="type" type="INT" />
+			<column name="dependent_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet author="richard (generated)" id="1456332771676-29"
+		context="run">
+		<validCheckSum>8:b3eda55e20a5d09eb0b9daecccf69b39</validCheckSum>
+		<comment>RSPAC-861 system property value table</comment>
+		<createTable tableName="SystemPropertyValue">
+			<column name="id" type="BIGINT" autoIncrement="true">
+				<constraints nullable="false" primaryKey="true" />
+			</column>
+			<column name="value" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="property_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet id="16-2-25a" author="richard" context="run">
+		<comment>Make new tables InnoDB</comment>
+		<sql>alter table SystemProperty engine=InnoDB;</sql>
+		<sql>alter table SystemPropertyValue engine=InnoDB;</sql>
+	</changeSet>
+	<changeSet author="richard (generated)" id="1456332771676-81"
+		context="run">
+		<comment>Add FKs and PKs to new SystemProperty tables</comment>
+		<addUniqueConstraint columnNames="name"
+			constraintName="name" deferrable="false" disabled="false"
+			initiallyDeferred="false" tableName="SystemProperty"/>
+		<addForeignKeyConstraint baseColumnNames="dependent_id"
+			baseTableName="SystemProperty" constraintName="FK2E09E144471C3CE9"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="SystemProperty" />
+		<addForeignKeyConstraint baseColumnNames="property_id"
+			baseTableName="SystemPropertyValue" constraintName="FK9AEDEA8D79F8F253"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="SystemProperty" />
+	</changeSet>
+
+
+	<changeSet id="16-2-25b" author="richard" context="run">
+		<comment>Load system property reference data to be moved from deployment property files RSPAC-861</comment>
+		<loadData tableName="SystemProperty"
+			file="sqlUpdates/data/SystemProperty-RSPAC861.csv">
+			<column name="id" type="NUMERIC" />
+			<column name="defaultValue" type="STRING" />
+			<column name="name" type="STRING" />
+			<column name="type" type="NUMERIC" />
+			<column name="dependent_id" type="NUMERIC" />
+		</loadData>
+	</changeSet>
+	<changeSet id="16-2-25g" author="richard"
+		context="run">
+		<!-- required for liquibase update to 3.5 -->
+		<validCheckSum>7:8a08001a0c777d74b1e70bc0316314a1</validCheckSum>
+		<comment>Load test system property reference data</comment>
+		<loadData tableName="SystemProperty"
+			file="sqlUpdates/data/SystemProperty-RSPAC862-testProperties.csv">
+			<column name="id" type="NUMERIC" />
+			<column name="defaultValue" type="STRING" />
+			<column name="name" type="STRING" />
+			<column name="type" type="NUMERIC" />
+			<column name="dependent_id" type="NUMERIC" />
+		</loadData>
+	</changeSet>
+	<changeSet id="16-2-26a" author="richard" context="run">
+		<comment>Load system property reference data for external filestore linking RSPAC-851</comment>
+		<loadData tableName="SystemProperty"
+			file="sqlUpdates/data/SystemProperty-RSPAC851.csv">
+			<column name="id" type="NUMERIC" />
+			<column name="defaultValue" type="STRING" />
+			<column name="name" type="STRING" />
+			<column name="type" type="NUMERIC" />
+			<column name="dependent_id" type="NUMERIC" />
+		</loadData>
+	</changeSet>
+
+	<changeSet id="16-2-26b" author="richard" context="run">
+		<comment>Set system property values  for external filestore linking RSPAC-851</comment>
+		<loadData tableName="SystemPropertyValue"
+			file="sqlUpdates/data/SystemPropertyValue-RSPAC851.csv">
+			<column name="id" type="NUMERIC" />
+			<column name="value" type="STRING" />
+			<column name="property_id" type="NUMERIC" />
+		</loadData>
+	</changeSet>
+	<changeSet id="16-2-29a" author="richard" context="run">
+		<comment>alter property names to 'available' for SystemProperties</comment>
+		<update tableName="SystemProperty">
+			<column name="name" valueComputed="replace(name,'enabled','available')">
+			</column>
+			<where> id &gt; 0 and id &lt; 8</where>
+		</update>
+	</changeSet>
+	<changeSet id="16-3-13a" author="richard" context="run">
+		<comment>Remove fileURI primary key</comment>
+		<dropPrimaryKey tableName="FilePropertys" />
+	</changeSet>
+	<changeSet id="16-3-13b" author="richard" context="run">
+		<validCheckSum>8:e42b694f41aea20495c88330570b2653</validCheckSum>
+		<comment>Add new ID column</comment>
+		<addColumn tableName="FilePropertys">
+			<column name="id" type="BIGINT" autoIncrement="true">
+				<constraints nullable="false" primaryKey="true" />
+			</column>
+		</addColumn>
+	</changeSet>
+	<changeSet id="16-3-13d" author="richard" context="run">
+		<preConditions onFail="MARK_RAN">
+		<and>
+			<sqlCheck expectedResult="0">select count(*) from
+				FilePropertys
+				where fileUri is null
+			</sqlCheck>
+			<!-- 1.53: will always fail, we must inactivate this changeset for utf8, 400 is too long -->
+			<sqlCheck expectedResult="1">select 1=0;</sqlCheck>
+		</and>
+		</preConditions>
+		<comment> set not-null file URI()</comment>
+		<modifyDataType tableName="FilePropertys" columnName="fileUri"
+			newDataType="varchar(400) not null" />
+	</changeSet>
+	<changeSet id="16-3-13f" author="richard" context="run">
+		<comment>Remove fileURI primary key</comment>
+		<dropPrimaryKey tableName="FilePropertys_AUD" />
+	</changeSet>
+	<changeSet id="16-3-13g" author="richard" context="run">
+		<comment>Add new ID column</comment>
+		<addColumn tableName="FilePropertys_AUD">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+	</changeSet>
+	<changeSet id="16-3-13h" author="richard" context="run">
+		<preConditions onFail="MARK_RAN">
+		   <and>
+			<sqlCheck expectedResult="0">select count(*) from
+				FilePropertys_AUD where fileUri is null
+			</sqlCheck>
+			<!-- 1.53: will always fail, we must inactivate this changeset for utf8, 400 is too long -->
+			<sqlCheck expectedResult="1">select 1=0;</sqlCheck>
+			</and>
+		</preConditions>
+		<comment> set not-null file URI()</comment>
+		<modifyDataType tableName="FilePropertys_AUD"
+			columnName="fileUri" newDataType="varchar(400) not null" />
+	</changeSet>
+	<changeSet id="16-3-13i" author="richard" context="run">
+		<comment>Populate AUD table ids with those autogenerated  for FilePropertys from 16-3-13b</comment>
+		<sql dbms="mysql,mariadb">update FilePropertys_AUD fa, FilePropertys f set
+			fa.id=f.id where fa.fileUri=f.fileUri
+		</sql>
+	</changeSet>
+	<changeSet id="16-3-13j" author="richard" context="run">
+		<comment>Need fileURI in 1ary key as not all rows in AUD table will have a id in main table e.g. if original was deleted.</comment>
+		<addPrimaryKey tableName="FilePropertys_AUD"
+			columnNames="id,REV,fileUri" />
+	</changeSet>
+	<changeSet id="16-3-15a" author="richard" context="run">
+		<comment> Change string to date type for FilePropertys create date</comment>
+		<modifyDataType tableName="FilePropertys" columnName="createDate"
+			newDataType="DATE" />
+		<modifyDataType tableName="FilePropertys_AUD"
+			columnName="createDate" newDataType="DATE" />
+	</changeSet>
+	<changeSet id="16-3-15b" author="richard" context="run">
+		<comment> Change string to date type for FilePropertys update date</comment>
+		<modifyDataType tableName="FilePropertys" columnName="updateDate"
+			newDataType="DATE" />
+		<modifyDataType tableName="FilePropertys_AUD"
+			columnName="updateDate" newDataType="DATE" />
+	</changeSet>
+	<changeSet id="16-3-15c" author="richard" context="run">
+		<comment>Rename FileProperty tables for consistentcy</comment>
+		<renameTable newTableName="FileProperty" oldTableName="FilePropertys" />
+		<renameTable newTableName="FileProperty_AUD" oldTableName="FilePropertys_AUD" />
+	</changeSet>
+
+
+	<changeSet author="richard (generated)" id="1458723836327-3"
+		context="run">
+		<comment>Create filestore root table</comment>
+		<createTable tableName="FileStoreRoot">
+			<column autoIncrement="true" name="id" type="BIGINT">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="creationDate" type="datetime" />
+			<column name="current" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="fileStoreRoot" type="VARCHAR(500)">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<sql>alter table FileStoreRoot engine=InnoDB;</sql>
+	</changeSet>
+	<changeSet id="2022-03-31a" author="richard" context="run">
+		<comment>Force u</comment>
+		<sql>
+			ALTER TABLE FileStoreRoot
+			CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+		</sql>
+	</changeSet>
+
+	<changeSet id="16-3-22f" author="richard" context="run">
+	<comment>add new column to hold relative path</comment>
+	<addColumn tableName="FileProperty">
+	<column name="relPath" type="VARCHAR(500)">
+				<constraints nullable="false" />
+			</column>
+	</addColumn>
+	</changeSet>
+	<changeSet id="16-3-22f-aud" author="richard" context="run">
+	<comment>add new column to hold relative path</comment>
+	<addColumn tableName="FileProperty_AUD">
+	<column name="relPath" type="VARCHAR(500)">
+			</column>
+	</addColumn>
+	</changeSet>
+	
+	<changeSet author="richard (generated)" id="1458723836327-4"
+		context="run">
+		<comment>Add FK column from FileProperty to FilePropertyroot</comment>
+		<addColumn tableName="FileProperty">
+			<column name="root_id" type="BIGINT(19)" />
+		</addColumn>
+	</changeSet>
+	<changeSet author="richard (generated)" id="1458723836327-5"
+		context="run">
+		<comment>Add FK column from FileProperty_AUD to FilePropertyroot</comment>
+		<addColumn tableName="FileProperty_AUD">
+			<column name="root_id" type="BIGINT(19)" />
+		</addColumn>
+	</changeSet>
+	
+	<changeSet author="richard (generated)" id="1458723836327-9" context="run">
+	     <comment>Add FK relation from FileProperty to FilePropertyroot</comment>
+		<addForeignKeyConstraint referencedTableName="FileStoreRoot"
+			baseColumnNames="root_id" baseTableName="FileProperty"
+			constraintName="FK83044F9131DE45AB" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" />
+	</changeSet>
+
+	<!-- RSPAC870/82 -->
+	<changeSet id="16-3-22a1" author="richard">
+    <validCheckSum>ANY</validCheckSum>
+	<preConditions onFailMessage="No RS_FILE_BASE system property defined (not Windows)" onFail="MARK_RAN"> 
+	<and>
+	<customPrecondition className="com.researchspace.dao.customliquibaseupdates.IsNotWindowsPrecondition"></customPrecondition>
+	 <changeLogPropertyDefined property="RS_FILE_BASE"/>
+	 </and>
+	</preConditions>
+	<comment>insert filestore property if set as system property...</comment>
+	<sql>insert  into FileStoreRoot (id, creationDate, current, fileStoreRoot) values( NULL, now(),1, concat('file:','${RS_FILE_BASE}','/file_store/'))</sql>
+	</changeSet>
+	
+	<changeSet id="16-3-22a1b" author="richard" context="!dev-test">
+	<validCheckSum>7:2c2f1dad8ac120fa3e34567abda762ac</validCheckSum>	
+	<validCheckSum>ANY</validCheckSum>
+	<preConditions onFailMessage="No RS_FILE_BASE system property defined (Windows)" onFail="MARK_RAN"> 
+	<and>
+	<customPrecondition className="com.researchspace.dao.customliquibaseupdates.IsWindowsPrecondition"></customPrecondition>
+	 <changeLogPropertyDefined property="RS_FILE_BASE"/>
+	 </and>
+	</preConditions>
+	<comment>insert filestoreproperty if set as system property...</comment>
+	<sql>insert into FileStoreRoot (id, creationDate, current, fileStoreRoot) values( NULL, now(),1, concat('${RS_FILE_BASE}','\\file_store\\'))</sql>
+	</changeSet>
+	
+	<changeSet id="16-3-22a2" author="richard">	
+	<validCheckSum>ANY</validCheckSum>
+	<preConditions onFailMessage="FileStore root already populated (not windows)" onFail="MARK_RAN"> 
+	<and>
+	 <changeLogPropertyDefined property="user.home"/>
+	 <sqlCheck expectedResult="0">select count(*) from FileStoreRoot</sqlCheck>
+	 <customPrecondition className="com.researchspace.dao.customliquibaseupdates.IsNotWindowsPrecondition"></customPrecondition>
+	</and>
+	</preConditions>
+	<comment>insert user home as file store root if no system property set ( this is what application does)</comment>
+	<sql>insert  into FileStoreRoot (id, creationDate, current, fileStoreRoot) values( NULL, now(),1, concat('file:', '${user.home}','/file_store/'))</sql>
+	</changeSet>
+	
+	<changeSet id="16-3-22a2b" author="richard">	
+	<validCheckSum>ANY</validCheckSum>
+	<preConditions onFailMessage="FileStore root already populated (Windows)" onFail="MARK_RAN"> 
+	<and>
+	 <changeLogPropertyDefined property="user.home"/>
+	 <sqlCheck  expectedResult="0">select count(*) from FileStoreRoot</sqlCheck>
+	 <customPrecondition className="com.researchspace.dao.customliquibaseupdates.IsWindowsPrecondition"></customPrecondition>
+	</and>
+	</preConditions>
+	<comment>insert user home as file store root if no system property set ( this is what application does)</comment>
+	<sql>insert  into FileStoreRoot (id, creationDate, current, fileStoreRoot) values( NULL, now(),1, concat('${user.home}','\\file_store\\'))</sql>
+	</changeSet>
+	
+	<changeSet id="16-3-22b" author="richard" context="run">
+	<preConditions onFailMessage="No fileUri column">
+	 <and>
+	 <tableExists tableName="FileStoreRoot" />
+	 <columnExists tableName="FileProperty" columnName="fileUri"/>
+	 </and>
+	</preConditions>
+	<comment>Find distinct file store prefixes in FileProperty and populate FileStoreRoot table.
+	This finds the last occurrence of 'file_store' substring in the uri and gets the lhs of the uri upto
+	and including this last occurrence</comment>
+	<sql>
+	insert  into FileStoreRoot select distinct NULL, now(),0, substr(fileUri,1,instr(fileUri, substring_index(fileUri,'file_store',-1)))
+	 from FileProperty 
+	 where instr(fileUri, 'file_store') !=0 and  substr(fileUri,1,instr(fileUri, substring_index(fileUri,'file_store',-1))) 
+	 not in (select fileStoreRoot from FileStoreRoot);
+	</sql>
+	</changeSet>
+	<changeSet id="16-3-22c" author="richard" context="run">
+	<comment>Populate the FK reln in FileProperty using matching of the root prefix</comment>
+	<sql>
+	update  FileStoreRoot root inner join FileProperty fp on root.fileStoreRoot=substr(fp.fileUri,1,length(root.fileStoreRoot)) set fp.root_id=root.id;
+	</sql>
+	</changeSet>
+	
+	<changeSet id="16-3-22d" author="richard" context="run">
+	<preConditions>
+	 <sqlCheck expectedResult="0">select count(*) from FileProperty where root_id is NULL</sqlCheck>
+	</preConditions>
+	<comment>update FileProperty to set rel path only if we have all rows linked to root table</comment>
+	<sql>
+	update  FileProperty inner join FileStoreRoot on fileStoreRoot=substr(fileUri,1,length(fileStoreRoot)) set relPath=substr(fileUri, length(fileStoreRoot)+1);
+	</sql>
+	</changeSet>
+	
+	<changeSet id="16-3-23-check" author="richard" context="run">
+	<preConditions onFail="WARN" onFailMessage="There are some fileURIs that cannot be created by concatenating fileStoreRoot with relPath">
+	<sqlCheck expectedResult="0">
+	select count(fp.id) from FileProperty fp inner join FileStoreRoot root on root.id=fp.root_id
+	 where concat(fileStoreRoot, relPath)!= fileUri
+	</sqlCheck>
+	</preConditions>
+	<comment>A diagnostic; the current abs path should be able to be reconstituted via prefix + relPath now</comment>
+	</changeSet>	
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

@@ -1,0 +1,10 @@
+﻿Name, MyNumber, MyDate, MyString, MyText, MyURL, MyRef, MyAtt, MyRadio, MyChoice
+TestSample1,3.14,,,,,,,,
+TestSample2,2,2021-11-23,,,,,,,
+TestSample3,3,,dummyString,,,,,,
+TestSample4,4,,,dummyText,,,,,
+TestSample5,5,,,,http://dummy.url,,,,
+TestSample6,6,,,,,,,,
+TestSample7,7,,,,,,,,
+TestSample8,8,,,,,,,option1,
+TestSample9,9,,,,,,,,optionB

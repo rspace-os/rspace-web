@@ -1,0 +1,5 @@
+id,username,password,first_name,last_name,email,version,contentInitialized,account_enabled,account_expired,account_locked,credentials_expired,numConsecutiveLoginFailures,tempAccount,signupSource
+-13,dev1,831C237928E6212BEDAA4451A514ACE3174562F6761F6A157A2FE5082B36E2FB,Dev,One,dev1@researchspace.com,1,0,1,0,0,0,0,0,INTERNAL
+-14,dev2,831C237928E6212BEDAA4451A514ACE3174562F6761F6A157A2FE5082B36E2FB,Dev,Two,dev2@researchspace.com,1,0,1,0,0,0,0,0,INTERNAL
+-15,dev3,831C237928E6212BEDAA4451A514ACE3174562F6761F6A157A2FE5082B36E2FB,Dev,Three,dev3@researchspace.com,1,0,1,0,0,0,0,0,INTERNAL
+-16,dev4,831C237928E6212BEDAA4451A514ACE3174562F6761F6A157A2FE5082B36E2FB,Dev,Four,dev4@researchspace.com,1,0,1,0,0,0,0,0,INTERNAL

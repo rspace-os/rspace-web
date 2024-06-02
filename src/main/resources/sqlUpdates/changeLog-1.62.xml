@@ -1,0 +1,45 @@
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.62 October 2019 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing 
+        new changesets ! -->
+   
+
+    <!-- Add changesets here... -->
+
+    <changeSet id="2019-09-12a" author="matthias">
+        <comment>RSPAC-1908: Remove obsolete SEEN_TOOLTIPS option of ONBOARDING app</comment>
+        <sql>
+          delete from AppConfigElement where appConfigElementDescriptor_id = (select id from AppConfigElementDescriptor where descriptor_id = (select id from PropertyDescriptor where name ='SEEN_TOOLTIPS'));
+          delete from AppConfigElementDescriptor where descriptor_id = (select id from PropertyDescriptor where name ='SEEN_TOOLTIPS');
+          delete from PropertyDescriptor where name ='SEEN_TOOLTIPS';
+
+          delete from AppConfigElementSet where userAppConfig_id in (select id from UserAppConfig where app_id = (select id from App where name = 'app.onboarding'));
+        </sql>
+    </changeSet>
+    <changeSet id="2019-09-12b" author="matthias">
+        <comment>RSPAC-1908: reset onboarding status for users who disabled it in the past</comment>
+        <sql>
+          update UserAppConfig set enabled = 1 where app_id = (select id from App where name = 'app.onboarding')
+        </sql>
+    </changeSet>
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing 
+        new changesets ! -->
+
+    <!-- only customChange changeSets should be placed below here -->
+    
+    <changeSet id="2019-09-18" author="matthias" >
+        <comment>RSPAC-1908: remove values of unused CHAMELEON_TOURS_ENABLED_FOR_USER preference</comment>
+        <customChange
+            class="com.researchspace.dao.customliquibaseupdates.v62.DeleteUserPreferenceForChameleonTours">
+        </customChange>
+    </changeSet> 
+
+
+</databaseChangeLog>

@@ -1,0 +1,29 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2022-01-20" context="run" author="matthias">
+        <comment>Mandatory ELN fields changes (RSPAC-2665)</comment>
+
+        <addColumn tableName="FieldForm">
+            <column name="mandatory" type="BIT(1)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="FieldForm_AUD">
+            <column name="mandatory" type="BIT(1)"/>
+        </addColumn>
+
+        <addColumn tableName="StructuredDocument">
+            <column name="allFieldsValid" type="BIT(1)" defaultValueNumeric="1" valueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="StructuredDocument_AUD">
+            <column name="allFieldsValid" type="BIT(1)" defaultValueNumeric="1" valueNumeric="1" />
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

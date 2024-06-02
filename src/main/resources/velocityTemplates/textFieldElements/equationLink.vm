@@ -1,0 +1,12 @@
+#* 
+ Equation link HTML template.
+ Arguments needed for mustache are:
+  - id of the equation
+  - equation
+  - svgWidth, svgHeight from the svg node
+*#
+<div class="rsEquation mceNonEditable" data-mathid="$id" data-equation="$equation">
+    <a class="rsEquationClickableWrapper">
+        <object data="/svg/$id" type="image/svg+xml" data-svgwidth="$svgWidth" data-svgheight="$svgHeight"></object>
+    </a>
+</div>

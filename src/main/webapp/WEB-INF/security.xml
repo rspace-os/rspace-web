@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+             http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+       default-lazy-init="true">
+
+    <bean id="authc" name="authc" class="org.apache.shiro.web.filter.authc.PassThruAuthenticationFilter" />
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+
+        <property name="securityManager" ref="securityManager" />
+        <!-- override these for application-specific URLs if you like: -->
+
+        <property name="loginUrl" value="/login" />
+        <property name="successUrl" value="/workspace" />
+        <property name="unauthorizedUrl" value="login?error=true" />
+
+        <!-- The 'filters' property is not necessary since any declared javax.servlet.Filter bean -->
+        <!-- defined will be automatically acquired and available via its beanName in chain -->
+        <!-- definitions, but you can perform instance overrides or name aliases here if you like: -->
+        <property name="filters">
+            <util:map>
+                <!-- Overrides defaul sslFilter to better handle enablement/disablement -->
+                <entry key="ssl" value-ref="ssl2" />
+                <entry key="authc" value-ref="persistLoginTimeauthc" />
+                <entry key="anyRole" value-ref="anyRoleFilter" />
+            </util:map>
+        </property>
+        <property name="filterChainDefinitions">
+            <value>
+                # all pages require authorization under ssl except for static resources:
+                /images/** = anon
+                /styles/** = anon
+                /scripts/** = anon
+                /resources/** = anon
+                /public/** = anon
+                /ui/dist/** = anon
+                /slack/callbacks/** = anon, ssl[8443]
+                /msteams/domainConfig = anon
+                /msteams/rspaceAuthentication = anon
+                # monitoring has its own login outwith RSpace account defined in web.xml.
+                /monitoring/** = anon
+                /admin/** = authc, ssl[8443]
+                /signup/** = anon, ssl[8443]
+                /adminLogin/** = anon
+                /externalAuth/** = anon, ssl[8443]
+                /cloud/verifysignup/** = anon, ssl[8443]
+                /cloud/signup/** = anon, ssl[8443]
+                /cloud/resendConfirmationEmail/** = anon, ssl[8443]
+                /favicon.ico = anon
+                /officeOnline/supportedExts = anon
+                /collaboraOnline/supportedExts = anon
+
+                /selfServiceLabGroup/** anyRole[ROLE_PI]
+                /system/maintenance/ajax/nextMaintenance = authc, ssl[8443]
+                /system/maintenance/** = anyRole[ROLE_SYSADMIN]
+                /system/support/** = anyRole[ROLE_SYSADMIN]
+                /system/config/** = anyRole[ROLE_SYSADMIN]
+                /system/netfilesystem/** = anyRole[ROLE_SYSADMIN]
+                /system/userRegistration/** = anyRole[ROLE_SYSADMIN]
+                /system/** = anyRole[ROLE_SYSADMIN,ROLE_ADMIN]
+
+                /community/admin/** = anyRole[ROLE_SYSADMIN,ROLE_ADMIN]
+                /offline/mobile/status = anon
+                /offline/** = authcBasic, ssl[8443]
+                /organisation/** = anon
+
+                /api/** = noSessionCreation, ssl[8443]
+                /oauth/** = anon, noSessionCreation, ssl[8443]
+                /wopi/** = noSessionCreation, anon
+                /** = authc, ssl[8443]
+                # more URL-to-FilterChain definitions here
+            </value>
+        </property>
+    </bean>
+
+    <bean id="ssl2" class="com.researchspace.webapp.filter.ShiroSslFilterMavenAgnostic">
+        <property name="enabledOverride" value="${ssl.enabled}" />
+    </bean>
+
+    <bean id="anyRoleFilter" class="com.researchspace.webapp.filter.AnyOfRolesAuthorizationFilter" />
+
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
+
+
+    <!-- Enable Shiro Annotations for Spring-configured beans. Only run after -->
+    <!-- the lifecycleBeanProcessor has run: -->
+    <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+          depends-on="lifecycleBeanPostProcessor" />
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager" />
+    </bean>
+
+</beans>

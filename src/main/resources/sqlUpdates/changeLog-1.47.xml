@@ -1,0 +1,120 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.47 October 2017 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+	<changeSet id="17-09-10z" author="richard">
+		<preConditions
+			onErrorMessage="Tables exist or is not mysql" onError="CONTINUE"
+			onFail="CONTINUE" onFailMessage="Tables exist or is not mysql">
+			<and>
+				<dbms type="mysql,mariadb" />
+				<not>
+					<tableExists tableName="BATCH_JOB_EXECUTION" />
+				</not>
+			</and>
+
+		</preConditions>
+		<comment> Create Spring Batch DB tables for monitoring job progress from Spring batch jar if tables not exist</comment>
+		<sqlFile
+			path="/org/springframework/batch/core/schema-mysql.sql" />
+		<rollback>
+			<sqlFile
+				path="/org/springframework/batch/core/schema-drop-mysql.sql" />
+		</rollback>
+	</changeSet>
+	<changeSet id="17-09-13a" author="richard"
+		context="dev-test,run" runAlways="true">
+		<comment> Initialises Batch ID generation system if batch tables are empty following some test clean-up.
+       These statements from Spring batch core jar o.s.batch.core package</comment>
+		<sql>
+			INSERT INTO BATCH_STEP_EXECUTION_SEQ (ID, UNIQUE_KEY) select * from (select
+			0 as ID, '0' as UNIQUE_KEY) as tmp where not exists(select * from
+			BATCH_STEP_EXECUTION_SEQ);
+			INSERT INTO BATCH_JOB_SEQ (ID, UNIQUE_KEY) select * from (select 0 as ID,
+			'0' as UNIQUE_KEY) as tmp where not exists(select * from
+			BATCH_JOB_SEQ);
+			INSERT INTO BATCH_JOB_EXECUTION_SEQ (ID, UNIQUE_KEY) select * from (select
+			0 as ID, '0' as UNIQUE_KEY) as tmp where not exists(select * from
+			BATCH_JOB_EXECUTION_SEQ);
+		</sql>
+	</changeSet>
+
+	<changeSet author="matthias" id="17-10-05" context="run">
+		<comment>Add table to store internal links between RSpace records</comment>
+		<createTable tableName="InternalLink">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="source_id" type="BIGINT" />
+			<column name="target_id" type="BIGINT" />
+		</createTable>
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="InternalLink" />
+		<addForeignKeyConstraint
+			baseColumnNames="source_id" baseTableName="InternalLink"
+			constraintName="FK_lq40ralcejodtraeiyu79tphf" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Record" />
+		<addForeignKeyConstraint
+			baseColumnNames="target_id" baseTableName="InternalLink"
+			constraintName="FK_rwgehvaqps4ocx97lvjcwesu1" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="BaseRecord" />
+		<sql>alter table InternalLink engine=InnoDB;</sql>
+	</changeSet>
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+
+	<!-- only customChange changeSets should be placed below here -->
+
+	<changeSet id="17-10-06_internalLinks" author="matthias"
+		context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN"
+			onErrorMessage="No Fields, this is a new deployment; no Fields to update"
+			onFailMessage="No Fields, this is a new deployment; no Fields to update">
+			<sqlCheck expectedResult="1">select if(count(*)>0,1,0) from
+				Field;</sqlCheck>
+		</preConditions>
+		<comment>RSPAC-1343 populate InternalLink table with pre-existing links and update link format in text fields</comment>
+		<customChange
+			class="com.researchspace.dao.customliquibaseupdates.v47.UpdateInternalLinksInFieldContent">
+		</customChange>
+	</changeSet>
+
+	<changeSet id="17-10-26_filestoreLinks" author="matthias"
+		context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN"
+			onErrorMessage="No Fields, this is a new deployment; no Fields to update"
+			onFailMessage="No Fields, this is a new deployment; no Fields to update">
+			<sqlCheck expectedResult="1">select if(count(*)>0,1,0) from
+				Field;</sqlCheck>
+		</preConditions>
+		<comment>RSPAC-1053 mark filestore links inside text fields with mceNonEditable class</comment>
+		<customChange
+			class="com.researchspace.dao.customliquibaseupdates.v47.UpdateFilestoreLinksInFieldContent">
+		</customChange>
+	</changeSet>
+	<changeSet id="17-10-30_filestoreLinkTypes" author="matthias"
+		context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN"
+			onErrorMessage="No Fields, this is a new deployment; no Fields to update"
+			onFailMessage="No Fields, this is a new deployment; no Fields to update">
+			<sqlCheck expectedResult="1">select if(count(*)>0,1,0) from
+				Field;</sqlCheck>
+		</preConditions>
+		<comment>RSPAC-1354 add data-linktype attribute to filestore links inside text fields</comment>
+		<customChange
+			class="com.researchspace.dao.customliquibaseupdates.v47.UpdateFilestoreLinkTypesInFieldContent">
+		</customChange>
+	</changeSet>
+
+</databaseChangeLog>

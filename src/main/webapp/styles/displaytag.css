@@ -1,0 +1,179 @@
+div.exportlinks {
+    margin: -5px 0 10px 10px;
+    padding: 2px 4px 2px 0;
+    width: 100%;
+}
+
+.breadcrumb  {
+	margin:0;
+	padding:0 0 0 10px;
+	line-height:2em;
+}
+
+.breadcrumbTag {
+    display: inline;
+}
+
+.breadcrumbTag .breadcrumbLink {
+    color: #1465b7;
+}
+
+.breadcrumbElems {
+    display: inline;
+}
+
+.breadcrumbElems #inlineRenameRecordForm {
+	display: inline;
+}
+
+.breadcrumbElems #inlineRenameRecordForm input {
+	background: transparent;
+	border: 1px solid transparent;
+	min-width: 70px;
+	max-width: 250px;
+	font-size: 16px;
+	line-height: 16px;
+	padding: 2px 5px;
+	/* displays Save button immediately when the Name input becomes focused */
+}
+
+.breadcrumbElems #inlineRenameRecordForm input:hover, .breadcrumbElems #inlineRenameRecordForm input:focus,
+	.breadcrumbElems #inlineRenameRecordForm input:active {
+	border-color: rgba(150, 150, 150, 0.5);
+	background: rgba(240, 240, 240, 0.5);
+}
+
+.breadcrumbElems #inlineRenameRecordForm input:focus+button {
+	opacity: 1.0 !important;
+	visibility: visible !important;
+}
+
+.breadcrumbElems #inlineRenameRecordForm button[type="submit"] {
+	width: auto;
+	height: 25px;
+	background: transparent;
+	border: none;
+	border-radius: 3px;
+	padding: 1px 3px;
+	vertical-align: middle;
+}
+
+.breadcrumbElems #inlineRenameRecordForm button[type="submit"]:hover {
+	background: rgba(255, 255, 255, 0.6);
+}
+
+.breadcrumbElems #inlineRenameRecordForm button[type="submit"] .glyphicon {
+	line-height: 23px;
+	height: 23px;
+	top: 0;
+}
+
+.recordName {
+	cursor: pointer;
+	font-size: 1.2em;
+}
+
+div.exportlinks a {
+    text-decoration: none;
+}
+
+div.exportlinks span {
+    background-repeat: no-repeat;
+}
+
+span.csv {
+    background-image: url(../images/ico_file_csv.png);
+}
+
+span.excel {
+    background-image: url(../images/ico_file_excel.png);
+}
+
+span.pdf {
+    background-image: url(../images/ico_file_pdf.png);
+}
+
+span.xml {
+    background-image: url(../images/ico_file_xml.png);
+}
+
+span.export {
+    cursor: pointer;
+    display: inline-block;
+    padding: 0 4px 1px 20px;
+}
+
+span.pagebanner {
+    display: block;
+    margin: 10px 0 10px 0;
+    padding: 2px 4px 2px 0;
+}
+
+span.pagelinks {
+    display: block;
+    font-size: .95em;
+    margin-bottom: 5px;
+    margin-top: -18px;
+    padding: 2px 0 2px 0;
+    text-align: right;
+    width: 80%;
+}
+
+th.sorted a, th.sortable a {
+    background-position: right;
+    display: block;
+}
+
+/* .table th.order1 a { */
+/*     background-image: url(../images/arrow_down.png) !important; */
+/* } */
+
+/* .table th.order2 a { */
+/*     background-image: url(../images/arrow_up.png) !important; */
+/* } */
+
+div#main .tableHeaderImage { /* Tapestry */
+    position: absolute;
+    margin: 2px 0 0 -5px;
+    background: transparent;
+    border: 0;
+}
+
+/*.table th.sortable a {
+    background-image: url(../images/arrow_off.png);
+}*/
+
+.table th.sorted {
+    background-color: #ffd;
+    color: #000000;
+}
+
+.table th.sorted a, .table th.sortable a {
+    background-position: right;
+    background-repeat: no-repeat;
+    display: block;
+}
+
+.table tr.even {
+    background: #eee;
+    border-top: 1px solid #c0c0c0;
+    color: #000000;
+}
+
+.table tr.odd {
+    background: #fff;
+    border-top: 1px solid #c0c0c0;
+    color: #000000;
+}
+
+/* highlight .table row onmouseover */
+.table tr.over {
+    border-bottom: 1px solid #C0C0C0;
+    border-top: 1px solid #C0C0C0;
+    color: #000000;
+    cursor: pointer;
+}
+
+.detail th {
+    text-align: right;
+}

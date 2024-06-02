@@ -1,0 +1,171 @@
+[ {
+  "id" : 4757960,
+  "add_ons" : null,
+  "requester_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requester" : {
+    "id" : 91471,
+    "email" : "rspace@clustermarket.com",
+    "sector" : "industry",
+    "name" : "RSpace Admin"
+  },
+  "status" : "Booked",
+  "duration" : 60,
+  "equipment" : {
+    "id" : 92515,
+    "name" : "PCR machine"
+  },
+  "cost" : "0.0",
+  "requester_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requested_at" : "2022-03-03T10:22:39.629Z",
+  "booking_type" : "internal"
+}, {
+  "id" : 4980109,
+  "add_ons" : null,
+  "requester_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requester" : {
+    "id" : 91471,
+    "email" : "rspace@clustermarket.com",
+    "sector" : "industry",
+    "name" : "RSpace Admin"
+  },
+  "status" : "Booked",
+  "duration" : 195,
+  "equipment" : {
+    "id" : 92515,
+    "name" : "PCR machine"
+  },
+  "cost" : "0.0",
+  "requester_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requested_at" : "2022-03-28T13:01:14.445Z",
+  "booking_type" : "internal"
+}, {
+  "id" : 4757957,
+  "add_ons" : null,
+  "requester_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requester" : {
+    "id" : 91471,
+    "email" : "rspace@clustermarket.com",
+    "sector" : "industry",
+    "name" : "RSpace Admin"
+  },
+  "status" : "Completed",
+  "duration" : 60,
+  "equipment" : {
+    "id" : 92515,
+    "name" : "PCR machine"
+  },
+  "cost" : "0.0",
+  "requester_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requested_at" : "2022-03-03T10:22:39.386Z",
+  "booking_type" : "internal"
+}, {
+  "id" : 4757958,
+  "add_ons" : null,
+  "requester_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requester" : {
+    "id" : 91471,
+    "email" : "rspace@clustermarket.com",
+    "sector" : "industry",
+    "name" : "RSpace Admin"
+  },
+  "status" : "Completed",
+  "duration" : 60,
+  "equipment" : {
+    "id" : 92515,
+    "name" : "PCR machine"
+  },
+  "cost" : "0.0",
+  "requester_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requested_at" : "2022-03-03T10:22:39.459Z",
+  "booking_type" : "internal"
+}, {
+  "id" : 4757959,
+  "add_ons" : null,
+  "requester_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_organisation" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requester" : {
+    "id" : 91471,
+    "email" : "rspace@clustermarket.com",
+    "sector" : "industry",
+    "name" : "RSpace Admin"
+  },
+  "status" : "Booked",
+  "duration" : 60,
+  "equipment" : {
+    "id" : 92515,
+    "name" : "PCR machine"
+  },
+  "cost" : "0.0",
+  "requester_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "provider_lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "requested_at" : "2022-03-03T10:22:39.546Z",
+  "booking_type" : "internal"
+} ]

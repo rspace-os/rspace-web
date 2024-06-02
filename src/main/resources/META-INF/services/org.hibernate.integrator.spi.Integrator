@@ -1,0 +1,2 @@
+com.axiope.dao.hibernate.audit.RSEnversIntegrator
+com.researchspace.dao.hibernate.RSpaceEventListenerIntegrator

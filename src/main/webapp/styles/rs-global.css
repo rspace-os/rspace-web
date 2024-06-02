@@ -1,0 +1,1265 @@
+/*
+* Stylesheet for global styles
+*/
+/**
+ * Global variables and mixins are defined here.
+ *
+ * Import in other SASS stylesheets using:
+ * @import 'global_vars';
+ */
+
+/* Beginning of experimental Bootstrap dialogs */
+.modal-backdrop {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  top: 0;
+  z-index: 1040;
+  background-color: #000; }
+  .modal-backdrop.fade {
+    opacity: 0;
+    filter: alpha(opacity=0); }
+  .modal-backdrop.in {
+    opacity: .5;
+    filter: alpha(opacity=50); }
+
+@media screen and (min-width: 768px) {
+  .experimental-bootstrap-modal .modal:before {
+    display: inline-block;
+    vertical-align: middle;
+    content: " ";
+    height: 100%; } }
+.experimental-bootstrap-modal .modal-dialog {
+  display: inline-block;
+  text-align: left;
+  vertical-align: middle; }
+.experimental-bootstrap-modal .modal {
+  text-align: center; }
+  .experimental-bootstrap-modal .modal button.close {
+    width: auto;
+    padding: 0; }
+  .experimental-bootstrap-modal .modal .modal-header {
+    border-bottom: 1px solid #afafaf;
+    padding: 15px 15px 10px; }
+    .experimental-bootstrap-modal .modal .modal-header .modal-title {
+      font-size: 18px;
+      line-height: 1em; }
+  .experimental-bootstrap-modal .modal .modal-body {
+    color: #444 !important;
+    font-size: 15px;
+    padding: 10px 15px; }
+  .experimental-bootstrap-modal .modal .modal-footer {
+    padding: 10px 15px 10px;
+    border-top: 1px solid #afafaf; }
+    .experimental-bootstrap-modal .modal .modal-footer button {
+      width: auto; }
+  .experimental-bootstrap-modal .modal.simple .modal-body {
+    padding-top: 15px; }
+  .experimental-bootstrap-modal .modal.simple .modal-footer {
+    border-top: none; }
+
+/* End of experimental Bootstrap dialogs */
+/*
+
+/*
+ * Keyboard behaviour-related global settings
+ */
+button:focus,
+input[type="button"]:focus,
+input[type="submit"]:focus,
+input[type="file"]:focus,
+select:focus {
+  box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+
+.ui-tabs-nav li[role="tab"]:focus {
+  box-shadow: -1px -2px 5px -1px rgba(50, 50, 50, 0.8) !important; }
+
+.rs-navbar__tab:focus {
+  background-color: #eee; }
+
+.tagit-choice:focus .tagit-close .text-icon {
+  width: 12px;
+  height: 12px;
+  display: inline-block !important;
+  text-align: center;
+  line-height: 13px !important;
+  background-color: #cc0000;
+  border-radius: 6px;
+  padding-left: 1px;
+  color: white !important;
+  font-weight: bold; }
+
+/* standard bootstrap button */
+.specialMsgUpdate > input[type="submit"] {
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px; }
+
+/*
+* Formatting for field names in templates and records.
+*/
+.field-name {
+  color: #0073EA;
+  font-size: 1.2em;
+  font-weight: bold; }
+
+.field-type-enum {
+  font-size: 1em;
+  color: black;
+  line-height: 1.5em; }
+
+/*
+Handles the positioning if ui datepickers above jquery ui dialogs which
+ themselves need to have high z-index
+*/
+.datepickerz-index {
+  position: relative;
+  z-index: 20100; }
+
+/*
+Handles the positioning if ui datepickers above jquery ui dialogs which
+ themselves need to have high z-index
+ see simplicity-layout.css
+*/
+#ui-datepicker-div {
+  z-index: 20100 !important; }
+
+/* overrides usual form font size for Create New Form menu
+*/
+#createDocForm {
+  font-size: 1em; }
+
+/*
+* For search boxes in listings
+*/
+.search_bar_cell {
+  background-color: #DDD;
+  height: 40px;
+  padding: 0 0 0 8px; }
+
+tr.spaceUnder > td {
+  padding-bottom: 1em; }
+
+.spaceOver {
+  display: none; }
+
+/*
+ * My RSpace navigation carousel
+ */
+#menuScrollContainer {
+  width: 960px;
+  overflow: hidden; }
+  #menuScrollContainer #menuFixer {
+    width: 100%;
+    overflow: hidden;
+    float: left;
+    background-color: #2196f3;
+    border-style: solid;
+    border-color: #DDDDDD;
+    border-width: 0;
+    height: 137px; }
+    #menuScrollContainer #menuFixer #menuMover {
+      display: inline-block;
+      background: #2196f3;
+      padding-left: 0px;
+      padding-right: 0px;
+      max-width: 100%;
+      width: 97.5%;
+      margin: 0 1.5% 0 1%; }
+      #menuScrollContainer #menuFixer #menuMover .menuInnerPanel {
+        width: 110px;
+        height: 110px;
+        border: 1px solid white;
+        padding: 5px 3px 5px 4px;
+        margin: 8px 5px;
+        text-align: center;
+        background: white; }
+        #menuScrollContainer #menuFixer #menuMover .menuInnerPanel:hover, #menuScrollContainer #menuFixer #menuMover .menuInnerPanel:focus {
+          box-shadow: 1px 1px 4px 4px rgba(0,0,0,0.2); }
+        #menuScrollContainer #menuFixer #menuMover .menuInnerPanel.currentPanel {
+          position: relative;
+          margin-bottom: 0;
+          height: 118px;
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+          border-bottom-width: 0; }
+          #menuScrollContainer #menuFixer #menuMover .menuInnerPanel.currentPanel:after {
+            content: '';
+            display: block;
+            margin: 0px -6px 0 -6px;
+            height: 6px;
+            width: auto;
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: -moz-radial-gradient(0 0, circle, rgba(255, 255, 255, 0) 5px, white 6px), -moz-radial-gradient(100% 0, circle, rgba(255, 255, 255, 0) 5px, white 6px);
+            background-image: -o-radial-gradient(0 0, circle, rgba(255, 255, 255, 0) 5px, white 6px), -o-radial-gradient(100% 0, circle, rgba(255, 255, 255, 0) 5px, white 6px);
+            background-image: -webkit-radial-gradient(0 0, circle, rgba(255, 255, 255, 0) 5px, white 6px), -webkit-radial-gradient(100% 0, circle, rgba(255, 255, 255, 0) 5px, white 6px);
+            background-position: top left, top right;
+            -moz-background-size: 50% 100%;
+            -webkit-background-size: 50% 100%;
+            background-size: 50% 100%;
+            background-repeat: no-repeat; }
+        #menuScrollContainer #menuFixer #menuMover .menuInnerPanel a {
+          color: #666;
+          font-weight: bold;
+          line-height: 1.1em;
+          outline: none !important; }
+          #menuScrollContainer #menuFixer #menuMover .menuInnerPanel a:hover {
+            color: #282828; }
+          #menuScrollContainer #menuFixer #menuMover .menuInnerPanel a:focus {
+            box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+  #menuScrollContainer .menuScrollButton {
+    z-index: 100;
+    height: 137px;
+    width: 38px;
+    text-decoration: none;
+    color: white;
+    background: rgba(33, 150, 243, 0.7);
+    border: 0;
+    text-align: bottom;
+    text-shadow: 0 1px 0 #fff;
+    line-height: 1.5em;
+    cursor: pointer;
+    display: inline-block;
+    position: absolute;
+    text-align: center;
+    line-height: 137px;
+    font-size: 20px;
+    text-shadow: 1px 1px 3px black; }
+    #menuScrollContainer .menuScrollButton:hover {
+      background: rgba(33, 150, 243, 0.95); }
+    #menuScrollContainer .menuScrollButton.leftScroller {
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+      left: 0;
+      box-shadow: 4px 0px 5px -2px rgba(70, 70, 70, 0.7); }
+      #menuScrollContainer .menuScrollButton.leftScroller:hover {
+        box-shadow: 4px 0px 5px -2px rgba(70, 70, 70, 0.9); }
+    #menuScrollContainer .menuScrollButton.rightScroller {
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+      right: 0;
+      box-shadow: -4px 0px 5px -2px rgba(70, 70, 70, 0.7); }
+      #menuScrollContainer .menuScrollButton.rightScroller:hover {
+        box-shadow: -4px 0px 5px -2px rgba(70, 70, 70, 0.9); }
+    #menuScrollContainer .menuScrollButton img {
+      margin-top: 63px; }
+
+/*ul.groupsListBlocks {
+  list-style: none;
+ margin-left: 0;
+}*/
+/*.groupsListBlockItem {
+  border:0;
+  display:inline-block;
+  padding:0 15px 25px 15px;
+  position:relative;
+}*/
+/*.groupsListHeader {
+  padding:4px;
+  color:#FFFFFF;
+  background-color:#507594;
+  width:177px;
+  margin-top:8px;
+}*/
+/*.groupsListHeader a {
+  color:#FFFFFF;
+  text-decoration:none;
+}*/
+/*.groupsListHeader a:visited {
+  color:#FFFFFF;
+  text-decoration:none;
+}*/
+/*.groupsListHeader a:hover {
+  color:#46A6FF;
+  text-decoration:none;
+}*/
+/*.groupsListHeader a:active {
+  color:#46A6FF;
+  text-decoration:none;
+}*/
+/*.groupsListFooter {
+  padding:4px;
+  color:#FFFFFF;
+  width:175px;
+  border:1px solid #DDDDDD;
+  border-top:0px;
+}*/
+/*.membersDropClass {
+  padding:4px;
+  color:#000000;
+  width:175px;
+  border:1px solid #DDDDDD;
+  border-top:0px;
+  background-color:#FFFFFF;
+  display:none;
+  z-index:101;
+}*/
+/*.groupEditDropClass {
+  padding:4px 0 4px 0;
+  width:50px;
+  text-align:center;
+  background-color:#507594;
+  display:none;
+  z-index:102;
+}*/
+/*.groupEditDropClass a {
+  color:#FFFFFF;
+  text-decoration:none;
+}*/
+/*.groupEditDropClass a:visited {
+  color:#FFFFFF;
+  text-decoration:none;
+}*/
+/*.groupEditDropClass a:hover {
+  color:#46A6FF;
+  text-decoration:none;
+}*/
+/*.groupEditDropClass a:active {
+  color:#46A6FF;
+  text-decoration:none;
+}*/
+.groupsListLink {
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  padding: 4px 5px 3px 38px;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #afafaf;
+  background: white;
+  background-image: url("/images/icons/groupLinkIcon.png");
+  background-repeat: no-repeat;
+  background-position: center left;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer;
+  width: 200px;
+  display: inline; }
+
+.searchMechanismContainer {
+  float: right;
+  height: 26px;
+  line-height: 22px;
+  white-space: normal; }
+  .searchMechanismContainer * {
+    font-size: 14px; }
+
+div .searchInputHolder {
+  height: 26px;
+  border: 0px;
+  border-right: 0px;
+  float: right;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.searchInput {
+  line-height: 24px;
+  border: 0;
+  width: 186px;
+  overflow: hidden;
+}
+
+div .searchButton {
+  cursor: pointer;
+  border: 1px solid #6389A8;
+  /*  -webkit-border-radius: 10px;*/
+  /*    -moz-border-radius: 10px;*/
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  color: #FFF;
+  background-color: #2196f3;
+  line-height: 1.1em;
+  padding-bottom: 2px;
+  float: right;
+  height: 26px;
+  width: 36px;
+  /*    -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.2) inset;
+    -moz-box-shadow: , 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.2) inset;
+    -o-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.2) inset;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.2) inset;  */
+  /*
+    -webkit-background-clip: padding-box;
+    -webkit-transition: all 0.7s ease-out 0s;   Saf3.2+, Chrome
+    -moz-transition: all 0.7s ease-out 0s;   FF4+
+    -ms-transition: all 0.7s ease-out 0s;   IE10?
+    -o-transition: all 0.7s ease-out 0s;  Opera 10.5+
+    transition: all 0.7s ease-out 0s; */ }
+  div .searchButton:hover {
+    background-color: #6389a8; }
+
+.toolbar a.ui-button#close {
+  margin-right: 0 !important; }
+.toolbar .inline-message {
+  line-height: 33px;
+  display: inline-block;
+  margin: 0 5px; }
+
+#toolbar {
+  min-height: 0;
+  margin-bottom: 0; }
+  #toolbar:before, #toolbar:after {
+    display: block; }
+  #toolbar .nav:before, #toolbar .nav:after {
+    display: block; }
+  #toolbar .toolbar-small {
+    margin-bottom: 0;
+    height: auto;
+    min-height: 0;
+    line-height: 47px; }
+    #toolbar .toolbar-small:before, #toolbar .toolbar-small:after {
+      display: block; }
+    #toolbar .toolbar-small a, #toolbar .toolbar-small button {
+      background: none;
+      box-shadow: none !important;
+      border: none; }
+    #toolbar .toolbar-small > .nav > li > a, #toolbar .toolbar-small > .nav > li > button {
+      color: #ffffff;
+      width: auto;
+      padding: 13px 8px;
+      font-size: 14px;
+      line-height: 17px; }
+      #toolbar .toolbar-small > .nav > li > a:hover, #toolbar .toolbar-small > .nav > li > a:focus, #toolbar .toolbar-small > .nav > li > button:hover, #toolbar .toolbar-small > .nav > li > button:focus {
+        color: #575c70 !important; }
+    #toolbar .toolbar-small li.dropdown .dropdown-menu {
+      background-color: #2196f3;
+      min-width: 130px; }
+      #toolbar .toolbar-small li.dropdown .dropdown-menu li {
+        line-height: 30px; }
+        #toolbar .toolbar-small li.dropdown .dropdown-menu li button {
+          line-height: 1em;
+          font-size: 13px;
+          font-weight: normal !important;
+          padding: 8px 20px;
+          color: white;
+          width: 100%;
+          text-align: left; }
+          #toolbar .toolbar-small li.dropdown .dropdown-menu li button:focus, #toolbar .toolbar-small li.dropdown .dropdown-menu li button:hover {
+            background-color: #eee;
+            color: #444; }
+    #toolbar .toolbar-small li.dropdown .glyphicon-chevron-down {
+      top: 3px;
+      -webkit-transition: -webkit-transform .2s ease-in-out;
+      -moz-transition: -moz-transform .2s ease-in-out;
+      -o-transition: -o-transform .2s ease-in-out;
+      transition: transform .2s ease-in-out; }
+    #toolbar .toolbar-small li.dropdown.open .glyphicon-chevron-down {
+      -webkit-transform: rotate(180deg);
+      -moz-transform: rotate(180deg);
+      -ms-transform: rotate(180deg);
+      transform: rotate(180deg); }
+    #toolbar .toolbar-small li.dropdown.open .dropdown-menu {
+      background: #575c70; }
+    #toolbar .toolbar-small .divider {
+      padding: 10px 5px; }
+      #toolbar .toolbar-small .divider:after {
+        display: block;
+        content: '';
+        border-left: 1px solid #c0e2fc;
+        height: 27px; }
+
+#error #content li {
+  padding-top: 5px; }
+#error #content pre.message {
+  border: 1px solid #e6aaaa;
+  border-radius: 5px;
+  padding: 10px;
+  line-height: 8px;
+  background: #ffd2d2;
+  box-shadow: 1px 0px 2px rgba(0, 0, 0, 0.5) inset; }
+
+/* MJJA removed as it doesn't work anyway @media (max-width: 768px) {
+  .mce-window .mce-container-body {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0; }
+
+  .mce-window.mce-in {
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 100% !important; } }*/
+#status {
+  padding: 3px 15px;
+  margin-right: 0;
+  text-align: right; }
+
+#status * {
+  color: #444;
+  display: inline-block;
+  vertical-align: middle; }
+
+/* New pagination across all tabular views */
+.pagination.new {
+  overflow: hidden;
+  width: auto;
+  display: inline-block;
+  margin: 0 !important;
+  margin-right: 30px !important; }
+  .pagination.new li {
+    display: inline-block;
+    cursor: pointer;
+    float: left; }
+    .pagination.new li a {
+      padding: 8px 11px !important;
+      line-height: 15px !important;
+      font-size: 15px;
+      color: #666 !important; }
+      .pagination.new li a:not(.blank_space):hover {
+        border-color: #666 !important;
+        background-color: #00aeef !important;
+        color: white !important; }
+      .pagination.new li a.blank_space {
+        cursor: default;
+        background: white !important; }
+      .pagination.new li a:focus {
+        text-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+    .pagination.new li.active {
+      cursor: default; }
+      .pagination.new li.active a {
+        background:#00aeef !important;
+        color: white !important; }
+    .pagination.new li:hover {
+      color: white !important;
+      border-color: #666; }
+
+.numRecordsForm {
+  display: inline-block;
+  margin: 0; }
+  .numRecordsForm * {
+    font-size: 14px; }
+  .numRecordsForm .form-group {
+    line-height: 33px; }
+    .numRecordsForm .form-group .control-label {
+      padding-top: 0 !important;
+      float: left;
+      color: #666; }
+    .numRecordsForm .form-group select#numberRecordsId {
+      float: left;
+      line-height: 15px;
+      height: 33px;
+      padding: 0px 8px;
+      margin-left: 10px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      width: auto;
+      min-width: 50px;
+      border-color: #afafaf; }
+      .numRecordsForm .form-group select#numberRecordsId:hover {
+        border-color: #666; }
+      .numRecordsForm .form-group select#numberRecordsId.submittable {
+        border-bottom-right-radius: 0;
+        border-top-right-radius: 0;
+        border-right: none; }
+    .numRecordsForm .form-group #applyNumberRecords {
+      float: left;
+      height: 33px;
+      padding: 0 7px;
+      width: auto;
+      border-bottom-left-radius: 0;
+      border-top-left-radius: 0;
+      color: #c0e2fc; }
+      .numRecordsForm .form-group #applyNumberRecords:hover, .numRecordsForm .form-group #applyNumberRecords:focus {
+        color: white; }
+
+.crudopsTopPanel {
+  padding: 8px 10px;
+  border: 1px solid rgb(230,230,230);
+  border-top: 0px;
+}
+.crudopsTopPanel ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+.crudopsTopPanel ul li, .crudopsTopPanel ul a.link, .crudopsTopPanel a, #newFolderMediaGallery {
+  display: inline-block;
+  border: 1px solid #2196f3;
+  border-radius: 3px;
+  background-color: transparent;
+  line-height: 20px;
+  background-position: left center;
+  background-repeat: no-repeat;
+  color: #666;
+  cursor: pointer;
+  padding-top: 3px;
+  padding-right: 7px;
+  padding-bottom: 2px;
+  padding-left: 23px;
+}
+.crudopsTopPanel ul li:hover, .crudopsTopPanel ul a.link:hover, .crudopsTopPanel a:hover, #newFolderMediaGallery:hover {
+  background-color: #2196f3;
+  color: white;
+}
+.crudopsTopPanel ul li:focus-within, .crudopsTopPanel ul a.link:focus-within {
+  box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+}
+.crudopsTopPanel ul li a, .crudopsTopPanel ul a.link a {
+  background-repeat: no-repeat;
+  padding: 0 0 0 5px;
+  background-position: center left;
+  font-size: 12.5px;
+  color: inherit !important;
+  border: none;
+  outline: none !important;
+}
+.crudopsTopPanel ul li a:focus, .crudopsTopPanel ul a.link a:focus {
+  box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+}
+
+.searchWithoutCross::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0; }
+.searchWithoutCross::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0; }
+.searchWithoutCross::-webkit-search-decoration, .searchWithoutCross::-webkit-search-cancel-button, .searchWithoutCross::-webkit-search-results-button, .searchWithoutCross::-webkit-search-results-decoration {
+  display: none; }
+
+.tabularViewTop {
+  display: flex;
+  overflow: hidden;
+  line-height: 26px;
+  margin: 10px 0 10px 0; }
+.tabularViewTop .title {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  margin: 0 10px 0 0;
+  vertical-align: bottom;
+  line-height: 26px;
+  font-size: 24px;
+}
+
+#searchModePanel {
+  margin: 2px 0px;
+  font-size: 15px;
+  display: block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: white; }
+
+  #searchModePanel #message {
+    margin: 6px 0;
+    display: inline-block; }
+
+#searchModePanel button,
+#searchModePanel #resetSearch {
+    background-color: white;
+    padding: 4px 5px;
+    width: auto;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    color: black;
+    cursor: pointer; }
+
+    #searchModePanel button,
+    #searchModePanel #resetSearch:hover {
+      background-color: #6389a8;
+      color: white; }
+
+#searchModePanel .search-highlight-toggle{
+  float: right;
+}
+#searchModePanel.searchError .search-highlight-toggle{
+  display: none;
+}
+
+.panel .directoryMsg {
+  margin-top: 5px;
+  font-size: 15px;
+  display: block;
+  padding: 3px 6px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: white; }
+
+.searchError {
+  background-color: #2196f3; }
+  .searchError:hover {
+    background-color: #2196f3; }
+
+.searchSuccess {
+  background-color: #81ca64; }
+  .searchSuccess:hover {
+    background-color: #77c658; }
+
+.emptyFolder {
+  background-color: #ffbb33; }
+  .emptyFolder:hover {
+    background-color: #ff8800; }
+
+.searchMessage {
+  background-color: #2196f3; }
+  .searchMessage:hover {
+    background-color: #6389a8; }
+
+.tabularViewBottom {
+  margin-top: 5px;
+  padding: 10px 20px; }
+
+.panel {
+  position: relative;
+  color: #444 !important; }
+
+.panel.panel-default {
+  border-radius: 0px;
+  box-shadow: none;
+  border: 1px solid rgb(230,230,230);
+  border-top: 0px;
+}
+
+.newTabularView {
+  position: relative;
+  min-height: 550px;
+}
+  .newTabularView .mainTable {
+    border-width: 0;
+    background-color: white;
+    /*
+        padding only for textual columns - tailor this to
+        every individual tabular view as needed
+        td:nth-child(n + 3) {
+          padding-top: 12px;
+      }
+      */ }
+    .newTabularView .mainTable a {
+      cursor: pointer; }
+    .newTabularView .mainTable .checkbox {
+      margin-top: 0;
+      margin-bottom: 0; }
+    .newTabularView .mainTable thead .checkbox input[type=checkbox] {
+      left: 10px; }
+    .newTabularView .mainTable td:nth-child(1) input[type='checkbox'],
+    .newTabularView .mainTable th:nth-child(1) input[type='checkbox'] {
+      position: relative;
+      left: 10px;
+      top: 5px;
+      width: 18px;
+      height: 18px;
+      margin-bottom: 0; }
+      .newTabularView .mainTable td:nth-child(1) input[type='checkbox']:after,
+      .newTabularView .mainTable th:nth-child(1) input[type='checkbox']:after {
+        margin-top: 0; }
+    .newTabularView .mainTable th,
+    .newTabularView .mainTable td {
+      vertical-align: middle; }
+    .newTabularView .mainTable td {
+      line-height: 30px !important; }
+    .newTabularView .mainTable td,
+    .newTabularView .mainTable th,
+    .newTabularView .mainTable th div {
+      font-size: 14px; }
+    .newTabularView .mainTable th {
+      color: #666;
+      background-color: #d7e9f5; }
+    .newTabularView .mainTable img.workspaceRecordInfo,
+    .newTabularView .mainTable img.infoIcon {
+      margin-top: -2px;
+      cursor: pointer; }
+    .newTabularView .mainTable {
+      cursor: pointer; }
+    .newTabularView .mainTable.noCheckboxes th:first-child,
+    .newTabularView .mainTable.noCheckboxes td:first-child {
+      padding-left: 20px; }
+
+.linkedRecordInfoAction {
+  position: relative;
+  left: 4px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+}
+.infoImg {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+.infoImg_small {
+    position: relative;
+    width: 15px;
+    height: 15px;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+.linkedRecordInfoAction:hover, .infoImg:hover {
+  box-shadow: 0px 0px 2px 1px rgba(0,0,0,0.2);
+  border-radius: 10px;
+}
+
+.recordNameCell {
+  margin-left: 5px;
+  margin-right: 2px;
+}
+
+.spinningWheelWrapper {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  z-index: 10002;
+  display: none;
+  position: absolute;
+  background: rgba(255, 255, 255, 0.9); }
+  .spinningWheelWrapper img {
+    top: 40%;
+    display: inline-block;
+    position: absolute; }
+
+.smallBtn,
+.crudopsTopPanel li,
+.crudopsTopPanel a.link {
+  display: inline-block;
+  border: 1px solid #2196f3;
+  border-radius: 3px;
+  background-color: transparent;
+  line-height: 20px;
+  background-position: left center;
+  background-repeat: no-repeat;
+  color: #666;
+  cursor: pointer;
+  padding-top: 3px;
+  padding-right: 7px;
+  padding-bottom: 2px;
+  padding-left: 23px; }
+  .smallBtn:hover,
+  .crudopsTopPanel li:hover,
+  .crudopsTopPanel a.link:hover {
+    background-color: #2196f3;
+    color: white; }
+  .smallBtn:focus,
+  .crudopsTopPanel li:focus,
+  .crudopsTopPanel a.link:focus {
+    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+  .smallBtn a,
+  .crudopsTopPanel li a,
+  .crudopsTopPanel a.link a {
+    background-repeat: no-repeat;
+    padding: 0 0 0 5px;
+    background-position: center left;
+    font-size: 12.5px;
+    color: inherit !important;
+    border: none;
+    outline: none !important; }
+  .smallBtn.closeIcon,
+  .crudopsTopPanel li.closeIcon,
+  .crudopsTopPanel a.link.closeIcon {
+    background-image: url(/images/icons/closeIcon.png); }
+  .smallBtn.createIcon,
+  .crudopsTopPanel li.createIcon,
+  .crudopsTopPanel a.link.createIcon {
+    background-image: url(/images/icons/createDocumentIcon.png);
+    padding-left: 28px; }
+  .linkShare {
+    cursor: pointer;
+  }
+  .linkShare.copyIcon,
+  .largeBtn.copyIcon,
+  .smallBtn.copyIcon,
+  .crudopsTopPanel li.copyIcon,
+  .crudopsTopPanel a.link.copyIcon {
+    background-image: url("/images/icons/copyIcon.png"); }
+  .crudopsTopPanel li.tagIcon,
+  .crudopsTopPanel a.link.tagIcon {
+    background-image: url("/images/icons/tagIcon.png");
+  }
+  .smallBtn.moveIcon,
+  .crudopsTopPanel li.moveIcon,
+  .crudopsTopPanel a.link.moveIcon {
+    background-image: url("/images/icons/moveIcon.png"); }
+  .smallBtn.renameIcon,
+  .crudopsTopPanel li.renameIcon,
+  .crudopsTopPanel a.link.renameIcon {
+    background-image: url("/images/icons/renameIcon.png"); }
+  .smallBtn.deleteIcon,
+  .crudopsTopPanel li.deleteIcon,
+  .crudopsTopPanel a.link.deleteIcon {
+    background-image: url("/images/icons/deleteIcon.png"); }
+  .smallBtn.exportIcon,
+  .crudopsTopPanel li.exportIcon,
+  .crudopsTopPanel a.link.exportIcon {
+    background-image: url("/images/icons/zipExportIcon.png"); }
+  .smallBtn.revisionsIcon,
+  .crudopsTopPanel li.revisionsIcon,
+  .crudopsTopPanel a.link.revisionsIcon {
+    background-image: url("/images/icons/revisionsIcon.png"); }
+  .smallBtn.favoritesIcon,
+  .crudopsTopPanel li.favoritesIcon,
+  .crudopsTopPanel a.link.favoritesIcon {
+    background-image: url("/images/icons/addToFavouritesIcon.png"); }
+  .smallBtn.removeFavoritesIcon,
+  .crudopsTopPanel li.removeFavoritesIcon,
+  .crudopsTopPanel a.link.removeFavoritesIcon {
+    background-image: url("/images/icons/removeFromFavouritesIcon.png"); }
+  .publishButton {
+    background-image: url("/images/icons/html.png");
+    background-size: 20px 20px;}
+  .smallBtn.shareIcon,
+  .crudopsTopPanel li.shareIcon,
+  .crudopsTopPanel a.link.shareIcon {
+    background-image: url("/images/icons/shareIcon.png"); }
+  .smallBtn.sendToIcon,
+  .crudopsTopPanel li.sendToIcon,
+  .crudopsTopPanel a.link.sendToIcon {
+    background-image: url(/images/icons/publishIcon.png); }
+  .smallBtn.publishIcon,
+  .crudopsTopPanel li.publishIcon,
+  .crudopsTopPanel a.link.publishIcon {
+    background-image: url(/images/icons/publishForm.png); }
+  .smallBtn.unpublishIcon,
+  .crudopsTopPanel li.unpublishIcon,
+  .crudopsTopPanel a.link.unpublishIcon {
+    background-image: url(/images/icons/unpublishForm.png); }
+  .smallBtn.permissionsIcon,
+  .crudopsTopPanel li.permissionsIcon,
+  .crudopsTopPanel a.link.permissionsIcon {
+    background-image: url(/images/icons/formPermissions.png); }
+  .smallBtn.copyFormIcon,
+  .crudopsTopPanel li.copyFormIcon,
+  .crudopsTopPanel a.link.copyFormIcon {
+    background-image: url(/images/icons/copyForm.png); }
+  .smallBtn.deleteFormIcon,
+  .crudopsTopPanel li.deleteFormIcon,
+  .crudopsTopPanel a.link.deleteFormIcon {
+    background-image: url(/images/icons/deleteForm.png); }
+  .smallBtn.removeFromMenuIcon,
+  .crudopsTopPanel li.removeFromMenuIcon,
+  .crudopsTopPanel a.link.removeFromMenuIcon {
+    background-image: url(/images/icons/removeFromMenu.png);
+    padding-left: 40px !important; }
+  .smallBtn.addToMenuIcon,
+  .crudopsTopPanel li.addToMenuIcon,
+  .crudopsTopPanel a.link.addToMenuIcon {
+    background-image: url(/images/icons/addToMenu.png);
+    padding-left: 40px !important; }
+
+
+#journalFrame .rs-record-info-panel {
+  padding: 0px 20px;
+}
+
+.linkShare.copyIcon {
+  width: 15px;
+  height: 20px;
+}
+.largeBtn.copyIcon {
+  width: 25px;
+  height: 25px;
+}
+/* Tooltip container */
+.public-tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+}
+
+/* Tooltip text */
+.public-tooltip .tooltiptext {
+  visibility: hidden;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+
+  /* Position the tooltip text - see examples below! */
+  z-index: 1;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.public-tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+
+.rs-record-info-panel {
+  padding: 0 15px;
+  border: 1px solid rgb(230,230,230);
+  border-top: 0px;
+}
+
+.displayRevisionsContainer {
+  text-align: right;
+  display: block;
+  width: 100%;
+}
+
+.lastModified {
+  display: none;
+  margin-bottom: 0;
+  font-size: 10px;
+}
+
+.lastModified span {
+  font-style: italic;
+}
+
+.textFieldLastModified {
+  left: 22px;
+  position: relative;
+  top: -20px;
+}
+
+.displayRevisions:focus {
+  box-shadow: none;
+}
+
+#notebook {
+  border: 1px solid rgb(230,230,230);
+}
+
+
+.formTitles {
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+/* Update to shared documents display */
+#sharedRecordsListContainer {
+  min-height: auto;
+}
+
+/* Update to acordions */
+.ui-accordion-header, .accordion .ui-state-active{
+  outline: none;
+  color: #ffffff;
+  background: -webkit-linear-gradient(top, #00aeef 0%, #04bbff 100%);
+}
+
+.ui-accordion-header-icon {
+  height: 12px;
+  width: 12px;
+}
+
+.ui-accordion-header, .ui-accordion-content {
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 2px;
+}
+
+.ui-accordion-header {
+  border: 1px solid #575c70;
+}
+
+.ui-accordion-header:hover {
+  color: #575c70;
+}
+
+/* main menu update */
+.bootstrap-custom-flat .navbar-inverse {
+  background-color: #00aeef;
+}
+
+.bootstrap-custom-flat .navbar-inverse .navbar-nav > li > a {
+  color: #ffffff;
+}
+
+.bootstrap-custom-flat .navbar-inverse .navbar-nav > li > a:hover {
+  color: #575c70;
+}
+
+.bootstrap-custom-flat .navbar-inverse .navbar-nav > .open > a {
+  background-color: #575c70;
+}
+
+bootstrap-custom-flat .navbar-inverse .navbar-nav > .open > a, .bootstrap-custom-flat .navbar-inverse .navbar-nav > .open > a:focus, .bootstrap-custom-flat .navbar-inverse .navbar-nav > .open > a:hover {
+  background-color: #575c70;
+}
+
+#fileBrowsing .fancytree-plain.fancytree-container span.fancytree-node.fancytree-active span.fancytree-title {
+  background-color: #00aeef;
+}
+
+/* Sharing checkbox */
+.folderShare .groupSelectContainer {
+  display: flex;
+  margin-bottom: 10px;
+  background-color: #00aeef;
+  border-top-left-radius: 25px;
+  border-bottom-left-radius: 25px;
+  transition: background-color 0.5s ease;
+}
+
+.folderShare .groupSelectContainer.active {
+  background-color: #575c70;
+}
+
+.folderShare .groupSelectContainer:hover {
+  background-color: #575c70;
+}
+
+.folderShare .radioContainer {
+  background-color: #575c70;
+  padding: 10px;
+  border-top-left-radius: 25px;
+  border-bottom-left-radius: 25px;
+}
+
+.folderShare .labelContainer {
+  flex: 1;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+}
+
+.folderShare .labelContainer select {
+  position: absolute;
+  right: 10px;
+}
+
+.labelContainer label {
+  display: inline-block;
+  width: 100%;
+  padding: 11px;
+  text-align: left;
+}
+
+.folderShare .labelContainer label:hover, .folderShare .radioContainer input:hover {
+  cursor: pointer;
+}
+
+.resetContainer {
+  margin-top: 20px;
+  display: none;
+}
+
+.accordion .resetContainer button {
+  width: auto;
+  background-color: #00aeef;
+  padding: 0px 10px 0 10px;
+}
+
+.accordion .resetContainer button:hover {
+  background-color: #575c70;;
+}
+
+.accordion p {
+  margin-bottom: 5px;
+}
+
+#folderChooserInfo-shareIntoFolder {
+  margin-top: 10px;
+}
+
+/* Modal button changes */
+.ui-dialog-buttonset button[type='button'] {
+  background-color: #00aeef;
+  color: #ffffff !important;
+}
+
+.ui-dialog-buttonset button.override-button-text-color {
+  color: grey !important;
+}
+
+.ui-dialog-buttonset button[type='button']:hover {
+  background-color: #575c70;
+  box-shadow: none;
+}
+
+#radioSubstructure, #radioExactMatch, #radioFull, #radioSuperstructure {
+  box-shadow: none !important;
+}
+
+.searchType {
+  margin-right: 10px;
+}
+
+label:hover {
+  cursor: pointer;
+}
+
+/* Treeview drop down styling */
+.treeViewToolbar .orderBy {
+  width: 125px;
+  padding-left: 6px;
+}
+
+.treeViewToolbar .sortOrder {
+  width: 110px;
+  margin-left: 2px;
+  padding-left: 6px;
+}
+
+.treeViewToolbar button {
+  width: 30px;
+  height: 27px;
+  position: relative;
+  top: -1px;
+}
+
+.treeViewToolbar button .glyphicon-ok {
+  top: -1px;
+}
+
+/* Out of date browser warning */
+#browser-warning {
+  border: #ec1165 3px solid;
+  padding: 10px;
+  color: #000000;
+  text-align: left;
+  margin-top: 10px;
+  display: none;
+}
+
+#browser-warning .browser-container {
+  text-align: center;
+  color: #000000;
+}
+
+#browser-warning a {
+  color: #ec1165;
+}
+
+.mobileTakePicture {
+  display: none;
+  text-align: center;
+  position: relative;
+  height: 50px;
+}
+
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  #browser-warning {
+    display: block;
+  }
+}
+
+@supports (-ms-ime-align: auto) {
+  #browser-warning {
+    display: block;
+  }
+}
+
+/* Create Group Profile page */
+.createGroup-Modal div div {
+  overflow: visible;
+}
+
+.createGroup-Modal div div[role="progressbar"] {
+  overflow: hidden;
+}

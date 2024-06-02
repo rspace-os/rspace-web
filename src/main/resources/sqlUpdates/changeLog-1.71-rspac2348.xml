@@ -1,0 +1,94 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.71 Sept 2021 -->
+
+    <changeSet author="richard" id="2021-09-20b"
+               context="run">
+        <comment>Create DMPUser table</comment>
+        <createTable tableName="DMPUser">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="timestamp" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dmpId" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="rspace " id="2021-09-20d"
+               context="run">
+        <comment>1ary key for DMPUser</comment>
+        <addPrimaryKey columnNames="id" constraintName="PRIMARY"
+                       tableName="DMPUser"/>
+    </changeSet>
+    <changeSet author="rspace (generated)" id="2021-09-20e"
+               context="run">
+        <comment>FK for DMPUser to User (owner)</comment>
+        <addForeignKeyConstraint
+                baseColumnNames="user_id" baseTableName="DMPUser"
+                constraintName="FKdp2ga3hjercu3v53tccaxhny9" deferrable="false"
+                initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                referencedColumnNames="id" referencedTableName="User"/>
+    </changeSet>
+
+    <changeSet author="richard" id="2021-09-21a"
+               context="run">
+        <comment>Link to EcatDocument DMP download</comment>
+        <addColumn tableName="DMPUser">
+            <column name="dmpDownloadPdf_id" type="BIGINT"></column>
+        </addColumn>
+
+    </changeSet>
+    <changeSet author="richard" id="2021-09-21b"
+               context="run">
+        <comment>FK for DMPUser to EcatDocument</comment>
+        <addForeignKeyConstraint
+                baseColumnNames="dmpDownloadPdf_id" baseTableName="DMPUser"
+                constraintName="FKm61v8xbfrc3bdswkvq5sck0qs" deferrable="false"
+                initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                referencedColumnNames="id" referencedTableName="EcatDocumentFile"/>
+    </changeSet>
+
+    <changeSet author="richard" id="2021-10-07-testdata2"
+               context="dev-test">
+        <preConditions onFail="MARK_RAN" onFailMessage="No user7g with id = -4">
+            <sqlCheck expectedResult="1"> select count(*) from User where id = -4</sqlCheck>
+        </preConditions>
+        <insert tableName="DMPUser">
+            <column name="id" value="-1"/>
+            <column name="user_id" value="-4"/>
+            <column name="timestamp" value="2021-09-20"/>
+            <column name="dmpId" value="-22"/>
+            <column name="title" value="My DMP number 1"/>
+        </insert>
+        <insert tableName="DMPUser">
+            <column name="id" value="-2"/>
+            <column name="user_id" value="-4"/>
+            <column name="timestamp" value="2021-08-20"/>
+            <column name="dmpId" value="-12"/>
+            <column name="title" value="My DMP number 2"/>
+        </insert>
+    </changeSet>
+    <changeSet id="2021-09-21c" context="dev-test" author="richard">
+        <comment>"Enable DMP in testing setup"</comment>
+        <update tableName="SystemPropertyValue">
+            <column name="value" value="ALLOWED"/>
+            <where>
+                property_id = (select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='dmptool.available')
+            </where>
+        </update>
+    </changeSet>
+
+
+</databaseChangeLog>

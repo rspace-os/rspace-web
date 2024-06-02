@@ -1,0 +1,75 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+     <!--  All changes here depend on the same precondition
+     To avoid repreating precondition 8 times have put all changes in the same file. -->
+    <preConditions onError="WARN" onErrorMessage="Restoring Revision History dry-run failed, skipping for now" 
+	   onFail="WARN" onFailMessage="Restoring Revision History dry-run failed, skipping for now">
+	 <tableExists tableName="RSPAC1009_OK"/>
+	</preConditions>
+	<changeSet id="16-10-12b" author="richard" context="run">
+	<comment>RSPAC-1009 Add missing revisions based on BaseRecord revisions of Documents or Templates</comment>
+		<sql>
+			insert into StructuredDocument_AUD select br.id, br.REV,'FIELD_CHG',NULL,0,NULL,NULL
+			from BaseRecord_AUD br left join StructuredDocument_AUD sd
+			on br.REV=sd.REV
+			where sd.REV is NULL and (br.type='NORMAL' or br.type='NORMAL:TEMPLATE')
+			order by br.id, REV;
+		</sql>
+	</changeSet>
+	<changeSet id="16-10-12c" author="richard" context="run">
+		<comment>RSPAC-1009 Add Form id based on latest form version</comment>
+		<sql>
+			update StructuredDocument_AUD sd inner join
+			(select id, max(form_id) as latestForm from StructuredDocument_AUD group by id)t1
+			on t1.id=sd.id
+			set sd.form_id=t1.latestForm
+			where sd.form_id is null;
+		</sql>
+	</changeSet>
+
+	<changeSet id="16-10-12d" author="richard" context="run">
+		<comment>RSPAC-1009 Add versions descending from current min version, with minimum version  = 1</comment>
+		<sql> select @prevId := 0</sql>
+		<sql>update StructuredDocument_AUD toUpdate inner join
+			(select sd.id as qid, sd.REV as qrev,
+			if (@prevId != sd.id,
+			(select @version := min(version) -1 from StructuredDocument_AUD sd2 where sd2.id = sd.id),
+			(select if (@version != 1, @version := @version -1, 1))) as x,
+			@prevId := sd.id as currId
+			from StructuredDocument_AUD sd
+			where version is null
+			order by sd.id desc, sd.REV desc)q
+			on toUpdate.REV=q.qrev
+			set toUpdate.version = q.x;
+		</sql>
+	</changeSet>
+	<changeSet id="16-10-12e1" author="richard" context="run">	
+		<comment>RSPAC-1009 Restore NULL tags in revision history if possible</comment>
+		<sql>
+			create table RSPAC_1009e1 select id, REV, docTag
+			from StructuredDocument_AUD sd1
+			where REV in
+			(select min(REV) as m from StructuredDocument_AUD
+			where length(docTag) > 0
+			group by id)
+			and length(docTag) > 0;
+		</sql>
+	</changeSet>
+	<changeSet id="16-10-12e2" author="richard" context="run">
+		<comment>RSPAC-1009 Restore NULL tags in revision history if possible</comment>
+		<sql>update StructuredDocument_AUD sd inner join RSPAC_1009e1 q
+			on sd.id=q.id
+			set sd.docTag = q.docTag where sd.docTag is null;
+		</sql>
+	</changeSet>
+	<changeSet id="16-10-12e3" author="richard" context="run">
+		<comment>Remove temp table</comment>
+		<dropTable tableName="RSPAC_1009e1" />
+	</changeSet>
+	<changeSet id="16-10-12f" author="richard" context="run">
+	<comment> Tidy up dry-run-success table</comment>
+	<dropTable tableName="RSPAC1009_OK"/>
+	</changeSet>
+</databaseChangeLog>

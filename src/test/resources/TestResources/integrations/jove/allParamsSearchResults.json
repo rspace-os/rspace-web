@@ -1,0 +1,54 @@
+{
+  "countall": 7,
+  "articlelist": [
+    {
+      "id": "53840",
+      "thumbnail": "https://cloudfront.jove.com/files/thumbs/53840_t.png",
+      "title": "Amplification, Next-generation Sequencing, and Genomic DNA Mapping of Retroviral Integration Sites",
+      "url": "https://richard-dev2.jove.com/v/53840/amplification-next-generation-sequencing-genomic-dna-mapping",
+      "section": "Biology"
+    },
+    {
+      "id": "57881",
+      "thumbnail": "https://cloudfront.jove.com/files/thumbs/57881_t.png",
+      "title": "<em>In Situ</em> Measurement and Correlation of Cell Density and Light Emission of Bioluminescent Bacteria",
+      "url": "https://richard-dev2.jove.com/v/57881/in-situ-measurement-correlation-cell-density-light-emission",
+      "section": "Biochemistry"
+    },
+    {
+      "id": "3631",
+      "thumbnail": "https://cloudfront.jove.com/files/thumbs/3631_t.png",
+      "title": "<em>Ex Vivo</em> Organotypic Corneal Model of Acute Epithelial Herpes Simplex Virus Type I Infection",
+      "url": "https://richard-dev2.jove.com/v/3631/ex-vivo-organotypic-corneal-model-acute-epithelial-herpes-simplex",
+      "section": "Neuroscience"
+    },
+    {
+      "id": "53288",
+      "thumbnail": "https://cloudfront.jove.com/files/thumbs/53288_t.png",
+      "title": "An Endothelial Planar Cell Model for Imaging Immunological Synapse Dynamics",
+      "url": "https://richard-dev2.jove.com/v/53288/an-endothelial-planar-cell-model-for-imaging-immunological-synapse",
+      "section": "Immunology and Infection"
+    },
+    {
+      "id": "60726",
+      "thumbnail": "https://cloudfront.jove.com/files/thumbs/60726_t.png",
+      "title": "Fluorescent Calcium Imaging and Subsequent In Situ Hybridization for Neuronal Precursor Characterization in <em>Xenopus laevis</em>",
+      "url": "https://richard-dev2.jove.com/v/60726/fluorescent-calcium-imaging-subsequent-situ-hybridization-for",
+      "section": "Developmental Biology"
+    },
+    {
+      "id": "53162",
+      "thumbnail": "https://cloudfront.jove.com/files/thumbs/53162_t.png",
+      "title": "Using Confocal Analysis of <em>Xenopus laevis</em> to Investigate Modulators of Wnt and Shh Morphogen Gradients",
+      "url": "https://richard-dev2.jove.com/v/53162/using-confocal-analysis-xenopus-laevis-to-investigate-modulators-wnt",
+      "section": "Developmental Biology"
+    },
+    {
+      "id": "54219",
+      "thumbnail": "https://cloudfront.jove.com/files/thumbs/54219_t.png",
+      "title": "Rearing the Fruit Fly <em>Drosophila melanogaster</em> Under Axenic and Gnotobiotic Conditions",
+      "url": "https://richard-dev2.jove.com/v/54219/rearing-fruit-fly-drosophila-melanogaster-under-axenic-gnotobiotic",
+      "section": "Developmental Biology"
+    }
+  ]
+}

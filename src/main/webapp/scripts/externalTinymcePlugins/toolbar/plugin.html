@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Configure Toolbar</title>
+    <link rel="stylesheet" type="text/css" href="/styles/bootstrap-custom-flat.css" />
+    <link rel="stylesheet" type="text/css" href="/scripts/externalTinymcePlugins/toolbar/styles/main.css" />
+    <script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/scripts/global.js"></script>
+    <script src="/scripts/externalTinymcePlugins/toolbar/scripts/index.js"></script>
+  </head>
+
+  <body class="bootstrap-custom-flat bootstrap-namespace">
+    <div class="container" id="current_toolbar">
+      <h5>Instructions</h5>
+      <p>
+        Drag and drop an icon inside any of the toolbar group cells. You can add new rows and append new groups at the end of each row. When ready, press 'Save'. If you would like to revert to the default toolbar configuration, press 'Reset to default'.
+      </p>
+      <div>Toolbar</div>
+      <table class='table'>
+        <tbody></tbody>
+      </table>
+
+      <div>Unused actions</div>
+      <div id="available_tools" ondrop="toolbar_plugin.drop(event, this)" ondragover="toolbar_plugin.allowDrop(event)"></div>
+    </div>
+  </body>
+</html>

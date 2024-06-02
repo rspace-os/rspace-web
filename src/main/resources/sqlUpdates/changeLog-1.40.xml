@@ -1,0 +1,67 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.40 Dec 2016 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+	<changeSet author="richard" id="16-11-21a" context="run">
+	    <comment> Add table to store user's api keys</comment>
+		<createTable tableName="UserApiKey">
+			<column autoIncrement="true" name="id" type="BIGINT">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="apiKey" type="VARCHAR(32)">
+				<constraints nullable="false" />
+			</column>
+			<column name="created" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="user_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<sql>alter table UserApiKey engine=InnoDB;</sql>
+	</changeSet>
+	<changeSet author="rspace (generated)" id="16-11-21b" context="run">
+	    <comment> Add FK constraint to user</comment>
+		<addForeignKeyConstraint baseColumnNames="user_id"
+			baseTableName="UserApiKey" constraintName="FKB6C3ADB0DE6F978E"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	<changeSet id="16-11-22" author="richard" context="dev-test" >
+	<preConditions onError="MARK_RAN"  onFail="MARK_RAN">
+	  <sqlCheck expectedResult="0">select count(*) from UserApiKey where user_id &lt; 0 </sqlCheck>
+	</preConditions>
+	<comment> Add test api keys for standard test users with -ve ids for test environments</comment>
+	<sql>
+	 insert into UserApiKey select NULL, concat('abcdefghijklmnop', abs(id)), now(), id from User where id &lt;  0;
+	</sql>
+	</changeSet>
+	<include file="changeLog-1.40-apiAvailable-sysprop.xml" relativeToChangelogFile="true"/>
+	<changeSet id="16-12-06" author="richard" context="run">
+		<comment>Add deleted flag to FieldAttachment table</comment>
+		<addColumn tableName="FieldAttachment">
+			<column name="deleted" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="FieldAttachment_AUD">
+			<column name="deleted" type="BIT(1)" />
+		</addColumn>
+	</changeSet>
+	<changeSet id="16-12-13" author="richard" context="run">
+	  <comment>Create correct primary key for FieldAttachment_AUD to include REV</comment>
+	  <sql>ALTER TABLE FieldAttachment_AUD MODIFY id int, DROP PRIMARY KEY</sql>
+	  <addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="FieldAttachment_AUD" />
+	</changeSet>
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

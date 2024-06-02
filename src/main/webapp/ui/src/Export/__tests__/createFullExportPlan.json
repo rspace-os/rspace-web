@@ -1,0 +1,58 @@
+{
+  "planId" : "1683296226798",
+  "foundFileSystems" : [ {
+    "id" : 1,
+    "name" : "samba-folder",
+    "url" : "smb://10.0.2.29",
+    "clientType" : "SMBJ",
+    "authType" : "PASSWORD",
+    "options" : {
+      "SAMBA_SHARE_NAME" : "samba-folder"
+    },
+    "loggedAs" : "sambatest",
+    "foundNfsLinks" : [ {
+      "fileStoreId" : 2,
+      "nfsId" : null,
+      "path" : "/test.txt",
+      "linkType" : "file"
+    } ],
+    "checkedNfsLinks" : [ {
+      "type" : "file",
+      "name" : "test.txt",
+      "fileSystemId" : 1,
+      "fileSystemFullPath" : "/RSpace-Test NAS/test.txt",
+      "fileSystemParentPath" : "/RSpace-Test NAS",
+      "nfsId" : null,
+      "localFile" : null,
+      "size" : 8,
+      "type" : "file",
+      "remoteInputStream" : null
+    } ],
+    "checkedNfsLinkMessages" : { }
+  } ],
+  "foundNfsLinks" : {
+    "1_/RSpace-Test NAS/test.txt" : {
+      "fileStoreId" : 2,
+      "nfsId" : null,
+      "path" : "/test.txt",
+      "linkType" : "file"
+    }
+  },
+  "checkedNfsLinks" : {
+    "1_/RSpace-Test NAS/test.txt" : {
+      "type" : "file",
+      "name" : "test.txt",
+      "fileSystemId" : 1,
+      "fileSystemFullPath" : "/RSpace-Test NAS/test.txt",
+      "fileSystemParentPath" : "/RSpace-Test NAS",
+      "nfsId" : null,
+      "localFile" : null,
+      "size" : 8,
+      "type" : "file",
+      "remoteInputStream" : null
+    }
+  },
+  "checkedNfsLinkMessages" : { },
+  "maxArchiveSizeMBProp" : 10000,
+  "currentlyAllowedArchiveSizeMB" : 10000
+}

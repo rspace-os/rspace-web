@@ -1,0 +1,15 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 inventory deletion October 2020 -->
+
+	<changeSet author="matthias" id="2020-10-19-undelete-stored-content" context="run">
+		<comment>Undelete subSamples/containers stored in containers so they can be properly deleted</comment>
+		<sql>update SubSample set deleted = false where parentLocation_id is not null;</sql>
+		<sql>update Container set deleted = false where parentLocation_id is not null;</sql>
+	</changeSet>
+
+</databaseChangeLog>

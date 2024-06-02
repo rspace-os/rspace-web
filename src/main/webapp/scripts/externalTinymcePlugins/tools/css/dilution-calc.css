@@ -1,0 +1,21 @@
+#dilutionCalculatorDiv {
+  margin: 20px;
+  width: 600px; }
+  #dilutionCalculatorDiv * {
+    color: #666 !important;
+    font-size: 14px; }
+  #dilutionCalculatorDiv button.btn-primary {
+    color: white !important; }
+  #dilutionCalculatorDiv label {
+    text-align: left; }
+  #dilutionCalculatorDiv input.form-control, #dilutionCalculatorDiv select.form-control {
+    padding: 2px !important;
+    height: 25px !important; }
+  #dilutionCalculatorDiv .form-control {
+    max-width: 100% !important; }
+  #dilutionCalculatorDiv .form-group {
+    margin-bottom: 10px !important; }
+    #dilutionCalculatorDiv .form-group.submit {
+      text-align: center; }
+  #dilutionCalculatorDiv label {
+    font-weight: normal; }

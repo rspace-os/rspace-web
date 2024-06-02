@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "name": "",
+      "id": 67070,
+      "description": "",
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "column": "0",
+      "row": "0",
+      "type": "well",
+      "parentId": 422,
+      "children": [
+        {
+          "name": "",
+          "id": 165988,
+          "description": "",
+          "omeroConnectionKey": "user1a",
+          "annotations": [],
+          "type": "well sample",
+          "parentId": 422,
+          "children": [
+            {
+              "id": 179693,
+              "name": "plate1_1_013 [Well 1, Field 1 (Spot 1)]",
+              "description": "",
+              "annotations": [],
+              "plateAcquisitionName": "",
+              "displayImageData": [],
+              "omeroConnectionKey": "user1a",
+
+              "type": "image",
+              "parentId": 422,
+              "children": [],
+              "childCounts": 0
+            }
+          ],
+          "childCounts": 1
+        }
+      ],
+      "childCounts": 1
+    }
+  ]
+}

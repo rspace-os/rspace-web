@@ -1,0 +1,15 @@
+<project name="rspace">
+<target name="jdepend">
+
+<jdepend format="xml" outputfile="target/jdepend2.xml">
+    <exclude name="com.researchspace.core*"/>
+	<exclude name="com.researchspace.model.core"/>
+    <exclude name="javax.*"/>
+	<exclude name="java.*"/>
+	<classpath path="${compile_classpath}"></classpath>
+    <classespath>
+    	<pathelement location="target/classes"/>
+    </classespath>
+</jdepend>
+</target>
+</project>

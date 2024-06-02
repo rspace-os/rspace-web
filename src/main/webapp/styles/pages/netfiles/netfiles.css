@@ -1,0 +1,69 @@
+
+#nfsMainPage {
+    margin: -10px 0px 0px 5px;
+}
+
+#nfsLoggedUserPanel {
+    margin: 10px;
+    color: #333;
+}
+#nfsLogout { 
+    margin-top: 5px; 
+    margin-left:8px; 
+}
+
+#fileSystemSelectPanel th {
+    background-color: #2196f3;
+    color: white;
+    padding: 2px 5px;
+}
+#otherFileSystemsBtn {
+    margin-top: 10px; 
+    display:inline-block; 
+    vertical-align:top
+}
+
+#fileStoreList th {
+    background-color: #2196f3;
+    color: white;
+    padding: 4px 10px;
+}
+#addUserFileStoreBtn {
+    margin:8px 0px 6px 34px;
+}
+#deleteUserFileStoreBtn { 
+    margin:8px 0px 6px 50px;
+}
+.userFileStoreRowSelected {
+    background-color:#DAEBF1;
+}
+
+#nfsGenerateKey { 
+    margin-left:10px; 
+}
+#nfsPubKeyLogin { 
+    margin-left:18px; 
+}
+#copyToClipboardButton { 
+    margin-left: 10px; 
+    margin-bottom: 10px; 
+} 
+#publicKeyStringDiv {
+    background-color: #00aeef;
+    width: 600px;
+    word-wrap: break-word;
+    margin-bottom: 10px;
+    padding: 2px 5px 1px 5px;
+}
+
+#fileLoadError {
+    font-size: 15px;
+    padding: 3px 6px;
+    color: white;
+    background-color: red;
+    width: 50%;
+}
+
+div.nfsTopLevelOperationsRowCurrDir {
+    color: #333;
+}

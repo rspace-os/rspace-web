@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RSpace Tools</title>
+      
+    <link rel="stylesheet" href="/scripts/bower_components/Apprise-v2/apprise-v2.css" />
+
+    <script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/scripts/bower_components/jquery-ui/jquery-ui.min.js"></script>
+    <script src='/scripts/tinymceDialogUtils.js'></script>
+    <script src="/scripts/bower_components/mustache/mustache.min.js"></script>
+    <script src="/scripts/bower_components/Apprise-v2/apprise-v2.js"></script>
+    <script src="/scripts/global.js"></script>
+    <script src="/scripts/externalTinymcePlugins/tools/js/dialog.js"></script>
+
+    <!-- <link rel="stylesheet" href="/scripts/bootstrap-namespace/bootstrap-namespace.min.css" /> -->
+
+    <link rel="stylesheet" type="text/css" href="/styles/bootstrap-custom-flat.css" />
+    <link rel="stylesheet" type="text/css" href="/styles/glyphicons-new.css" />    
+    <link rel="stylesheet" type="text/css" href="/scripts/bower_components/font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="/styles/labtools.css">
+
+    <script type="text/x-mustache-template" id="rs-labtools-categories-template">
+      <h3>Categories</h3>
+      <div class="row">
+      {{#data}}
+        <button class="categoryLink btn btn-primary col-xs-6 col-xs-4 col-xs-3" href="{{labtoolsServerUrl}}/tools/category/{{name}}">
+          <span class="glyphicons {{icon}}" aria-hidden="true"></span>
+          {{name}}
+        </button>
+      {{/data}}
+      </div>
+    </script>
+
+    <script type="text/x-mustache-template" id="rs-labtools-list-template">
+      <h3>Tools</h3>
+      <div class="row">
+      {{#data}}
+        <button class="toolLink btn btn-secondary" href="{{labtoolsServerUrl}}/{{uiUrl}}">
+          <span class="title">{{name}}</span>
+          <span class="description">{{description}}</span>
+        </button>
+      {{/data}}
+      </div>
+    </script>
+  </head>
+
+  <body>
+    <div class="wrapper bootstrap-namespace bootstrap-custom-flat">
+      <div id="rs-tools-categories">
+      </div>
+      <div id="rs-tools-list">
+      </div>
+      <div id="rs-selectedtool-impl">
+      </div>
+    </div>
+  </body>
+
+</html>

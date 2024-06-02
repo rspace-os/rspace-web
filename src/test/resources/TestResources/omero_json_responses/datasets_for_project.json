@@ -1,0 +1,74 @@
+{
+  "datasets": [
+    {
+      "id": 51,
+      "name": "CDK5RAP2-C",
+      "ownerId": 2,
+      "childCount": 33,
+      "permsCss": ""
+    },
+    {
+      "id": 52,
+      "name": "CENT2",
+      "ownerId": 2,
+      "childCount": 22,
+      "permsCss": ""
+    },
+    {
+      "id": 53,
+      "name": "CEP120/20111106",
+      "ownerId": 2,
+      "childCount": 38,
+      "permsCss": ""
+    },
+    {
+      "id": 54,
+      "name": "CEP120/20111209",
+      "ownerId": 2,
+      "childCount": 10,
+      "permsCss": ""
+    },
+    {
+      "id": 55,
+      "name": "CEP152",
+      "ownerId": 2,
+      "childCount": 50,
+      "permsCss": ""
+    },
+    {
+      "id": 56,
+      "name": "CEP192-M",
+      "ownerId": 2,
+      "childCount": 33,
+      "permsCss": ""
+    },
+    {
+      "id": 57,
+      "name": "CPAP",
+      "ownerId": 2,
+      "childCount": 38,
+      "permsCss": ""
+    },
+    {
+      "id": 58,
+      "name": "NEDD1-C1",
+      "ownerId": 2,
+      "childCount": 57,
+      "permsCss": ""
+    },
+    {
+      "id": 59,
+      "name": "PCNT-N1",
+      "ownerId": 2,
+      "childCount": 53,
+      "permsCss": ""
+    },
+    {
+      "id": 60,
+      "name": "TUBG1-N",
+      "ownerId": 2,
+      "childCount": 80,
+      "permsCss": ""
+    }
+  ]
+}

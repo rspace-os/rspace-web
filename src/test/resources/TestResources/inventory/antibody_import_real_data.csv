@@ -1,0 +1,8 @@
+﻿
+Name,Alternative name,Clonality,Raised in,Antigen / Immunogen,Reacts with,Clone,Isotype,Concentration,Application,Dilution,WB band,Demaskierung,Company,Catalog no.,Lagerung,Comment
+
+PP1,Protein phosphatase 1 ,monoclonal,mouse,raised against full length phosphatase PP1α origin,"mouse, rat, human ",,IgG2b,200 µg/ml,WB,1:200; 1:500,36 kDa,,Santa Cruz,sc-7482,4°C,good
+Anti-AKAP149,Purified mouse anti AKAP 149,monoclonal,mouse,66-212 aa of human AKAP149,"human, rat",6/AKAP149,IgG1,250µg/ml,WB IF,1:500,"149-human,121-rat",,BD Transduction Laboratories,610720,-20°C,good
+
+A cyclase I,-,polyclonal,rabbit,raised against amino acids 770-839 of A cyclase I of human origin,mouse,H-70,IgG,200 µg/ml,IF,1:100,-,-,santa cruz,sc-25743,"4°C, Sören","nicht gut; fraglich, ob Protein exprimiert"
+A cyclase V/VI,-,polyclonal,rabbit,peptide mapping at the C-terminus of A cyclase V of human origin,mouse,C-17,IgG,200 µg/ml,"IF, WB","1:100, 1:250",132 kDa,-,santa cruz,sc-590,"4°C, Sören","passabel, Spezifität ausstehend"

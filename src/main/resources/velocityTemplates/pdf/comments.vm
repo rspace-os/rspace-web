@@ -1,0 +1,10 @@
+<div id='comments'>
+  <h4 id='comments-header'>Comments</h4>
+  <br>
+  #foreach ($comment in $commentNumberToComments.entrySet())
+      <p id="comment-number">Comment $comment.key</p>
+      #foreach ($commentLine in $comment.value)
+          <p>&nbsp; &nbsp; --$commentLine</p>
+      #end
+  #end
+</div>

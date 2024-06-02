@@ -1,0 +1,138 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+	<!-- Changes for version 0.21-->
+<changeSet author="radams (generated)" id="1416612879084-1" context="run">
+<comment>Forms to be listed in Create Other menu</comment>
+<createTable tableName="FormUserMenu">
+<column name="id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="formStableId" type="VARCHAR(255)">
+<constraints nullable="false"/>
+</column>
+<column name="user_id" type="BIGINT(19)"/>
+</createTable>
+<addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="FormUserMenu"/>
+<addForeignKeyConstraint baseColumnNames="user_id" baseTableName="FormUserMenu" constraintName="FK878958CEDE6F978E" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User"/>
+</changeSet>
+<changeSet id="22-11-14a" author="radams" context="run">
+<comment> make id autoincrement </comment>
+<modifyDataType tableName="FormUserMenu" columnName="id" newDataType="INT NOT NULL AUTO_INCREMENT"/>
+</changeSet>
+<changeSet id="22-11-14b" author="radams" context="run">
+<comment> add hidden system forms to the user's create menu</comment>
+<sql>insert into FormUserMenu select NULL,  RSForm.stableId, User.id from RSForm,User where systemForm = 1;</sql>
+</changeSet>
+<changeSet id="28-11-2014-1" author="radams">
+    <comment>Add a 'Delete user' permission to admins/sysadmins, for all contexts</comment>
+    <sql>
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_ADMIN'),'USER:DELETE:property_role=ROLEUSER,ROLEPI,ROLEADMIN');
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_SYSADMIN'),'USER:DELETE:');
+	</sql>  
+</changeSet>
+
+	<changeSet author="fjlopez (generated)" id="1417447767897-1" context="run">
+		<createTable tableName="CreateGroupMessageOrRequest">
+			<column name="id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationTime" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="message" type="VARCHAR(255)" />
+			<column name="priority" type="INT(10)" />
+			<column name="subject" type="VARCHAR(255)" />
+			<column name="typeCode" type="INT(10)">
+				<constraints nullable="false" />
+			</column>
+			<column name="originator_id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+			<column name="record_id" type="BIGINT(19)" />
+			<column name="latest" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="messageType" type="INT(10)">
+				<constraints nullable="false" />
+			</column>
+			<column name="requestedCompletionDate" type="datetime" />
+			<column name="status" type="INT(10)" />
+			<column name="terminationTime" type="datetime" />
+			<column name="next_id" type="BIGINT(19)" />
+			<column name="previous_id" type="BIGINT(19)" />
+			<column name="groupName" type="VARCHAR(255)" />
+			<column name="creator_id" type="BIGINT(19)" />
+			<column name="target_id" type="BIGINT(19)" />
+		</createTable>
+	</changeSet>
+	
+	<changeSet author="fjlopez (generated)" id="1417447767897-5" context="run">
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="CreateGroupMessageOrRequest" />
+	</changeSet>
+
+	<changeSet author="fjlopez (generated)" id="1417447767897-9" context="run">
+		<addForeignKeyConstraint baseColumnNames="creator_id"
+			baseTableName="CreateGroupMessageOrRequest" constraintName="FKDD6287C8396B9B8D"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	<changeSet author="fjlopez (generated)" id="1417447767897-10" context="run">
+		<addForeignKeyConstraint baseColumnNames="target_id"
+			baseTableName="CreateGroupMessageOrRequest" constraintName="FKDD6287C8B697F408"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	
+	<changeSet author="fjlopez (generated)" id="1417447767897-12" context="run">
+		<addForeignKeyConstraint baseColumnNames="originator_id"
+			baseTableName="CreateGroupMessageOrRequest" constraintName="FKF1E9FFB664CCD43Dc3272305dd6287c8"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	<changeSet author="fjlopez (generated)" id="1417447767897-13" context="run">
+		<addForeignKeyConstraint baseColumnNames="record_id"
+			baseTableName="CreateGroupMessageOrRequest" constraintName="FKF1E9FFB6CFF3DF14c3272305dd6287c8"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="BaseRecord" />
+	</changeSet>
+	<changeSet id="03-12-2014" author="fjlopez">
+		<comment>Add a 'Request Create lab group' permission to users, for all contexts</comment>
+		<sql>
+			insert into Role_permissionStrings select id,'COMMS:READ:property_name=REQUESTCREATELABGROUP' from roles;
+		</sql>
+	</changeSet> 
+	<changeSet author="fjlopez (generated)" id="1417684603759-1" context="run">
+		<createTable tableName="CreateGroupMessageOrRequest_emails">
+			<column name="CreateGroupMessageOrRequest_id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+			<column name="emails" type="VARCHAR(255)" />
+		</createTable>
+	</changeSet>	
+	
+	<changeSet author="fjlopez (generated)" id="1417684603759-5" context="run">
+		<addForeignKeyConstraint baseColumnNames="CreateGroupMessageOrRequest_id"
+			baseTableName="CreateGroupMessageOrRequest_emails" constraintName="FKEAE9CCAE569798BF"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id"
+			referencedTableName="CreateGroupMessageOrRequest" />
+	</changeSet>
+
+	<changeSet id="07-04-14b" author="radams" context="run">
+		<validCheckSum>7:30fd655efcc85bbbe8cadd114eac2dd9</validCheckSum>
+		<comment>Alter engines to InnoDB for created tables</comment>
+		<sql>alter table Snippet engine=InnoDB;</sql>
+		<sql>alter table Snippet_AUD engine=InnoDB;</sql>
+		<sql>alter table SambaUserFolder engine=InnoDB;</sql>
+		<sql>alter table OfflineRecordUser engine=InnoDB;</sql>
+		<sql>alter table ArchiveVersionToAppVersion engine=InnoDB;</sql>
+		<sql>alter table FormUserMenu engine=InnoDB;</sql>
+		<sql>alter table CreateGroupMessageOrRequest_emails engine=InnoDB;
+		</sql>
+		<sql>alter table CreateGroupMessageOrRequest engine=InnoDB;</sql>
+	</changeSet>
+	
+</databaseChangeLog>

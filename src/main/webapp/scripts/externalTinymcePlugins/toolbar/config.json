@@ -1,0 +1,47 @@
+{
+  "_instructions for developers": {
+    "Include new action" : "Let's say the action is newAction. Add 'newAction': 'Action description' to the 'actions' data element in this file. Include an icon newAction.png for this action in the /img folder. That's it."
+  },
+
+  "default": ["btnSave | undo redo | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | styleselect fontselect fontsizeselect lineheightselect","btnMediaGallery btnFromComputer | table | link internallink comments sketch btnMathjax codesample | snip | fullscreen"],
+  "actions": {
+    "btnSave":          "Save",
+    "undo":             "Undo",
+    "redo":             "Redo",
+    "bold":             "Bold",
+    "italic":           "Italic",
+    "forecolor":        "Text color",
+    "backcolor":        "Background color",
+    "alignleft":        "Align left",
+    "aligncenter":      "Align center",
+    "alignright":       "Align right",
+    "alignjustify":     "Justify",
+    "bullist":          "Bullet list",
+    "numlist":          "Numbered list",
+    "styleselect":      "Select style",
+    "fontselect":       "Font familiy",
+    "fontsizeselect":   "Font size",
+    "lineheightselect": "Line height",
+    "btnMediaGallery":  "Insert from RSpace Gallery",
+    "btnFromComputer":  "Insert file from computer",
+    "table":            "Table",
+    "link":             "Insert external link",
+    "internallink":     "Insert internal link",
+    "comments":         "Insert comment",
+    "sketch":           "Insert sketch",
+    "btnMathjax":       "Insert equation",
+    "codesample":       "Insert code sample",
+    "snip":             "Create a snippet",
+    "fullscreen":       "Fullscreen editing",
+    "charmap":          "Insert special character",
+    "nonbreaking":      "Insert nonbreaking space",
+    "underline":        "Underline",
+    "strikethrough":    "Strikethrough",
+    "superscript":      "Superscript",
+    "subscript":        "Subscript",
+    "indent":           "Increase indent",
+    "outdent":          "Decrease indent",
+    "removeformat":     "Clear formatting",
+    "code":             "View source code"
+  }
+}

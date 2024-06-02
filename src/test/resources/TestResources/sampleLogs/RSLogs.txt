@@ -1,0 +1,23 @@
+12 May 2017 15:36:24,264 - [/app/workspace] from 127.0.0.1 with args: [] made by: [user1a]
+12 May 2017 15:36:40,294 - [/app/workspace/create/6993] from 127.0.0.1 with args: [flderNameField=xxxx,] made by: [user1a]
+12 May 2017 15:36:41,500 - [FOLDER CREATE id=7208&name=xxxx] user1a(Bob Smith)
+12 May 2017 16:02:23,781 - [/app/workspace] from 127.0.0.1 with args: [] made by: [user2b]
+12 May 2017 16:02:38,786 - [/app/workspace/create_notebook/7141] from 127.0.0.1 with args: [notebookNameField=vv,] made by: [user2b]
+12 May 2017 16:02:39,678 - [FOLDER CREATE id=7209&name=vv] user2b(Bob Smith)
+12 May 2017 16:02:39,725 - [/app/workspaceEditor/7209] from 127.0.0.1 with args: [] made by: [user2b]
+12 May 2017 16:02:41,573 - [/app/journal/ajax/retrieveEntry/7209/-1/0/true] from 127.0.0.1 with args: [] made by: [user2b]
+12 May 2017 16:02:44,649 - [/app/workspace/7209] from 127.0.0.1 with args: [] made by: [user2b]
+12 May 2017 16:02:52,688 - [/app/workspace/ajax/view/7141] from 127.0.0.1 with args: [] made by: [user2b]
+12 May 2017 16:03:04,961 - [/app/workspace/create/7141] from 127.0.0.1 with args: [flderNameField=newfolder,] made by: [user2b]
+12 May 2017 16:03:05,334 - [FOLDER CREATE id=7210&name=newfolder] user2b(Bob Smith)
+12 May 2017 16:04:52,223 - [/app/workspace/create/7141] from 127.0.0.1 with args: [flderNameField=fff,] made by: [user2b]
+12 May 2017 16:04:52,736 - [FOLDER CREATE id=7211&name=fff] user2b(Bob Smith)
+12 May 2017 16:08:57,482 - [/app/workspace/create/7211] from 127.0.0.1 with args: [flderNameField=ttt,] made by: [user2b]
+12 May 2017 16:08:58,433 - [FOLDER CREATE id=7212&name=ttt] user2b(Bob Smith)
+12 May 2017 16:09:03,656 - [/app/workspace/create/7212] from 127.0.0.1 with args: [flderNameField=uuu,] made by: [user2b]
+12 May 2017 16:09:03,857 - [FOLDER CREATE id=7213&name=uuu] user2b(Bob Smith)
+12 May 2017 16:10:04,096 - [/app/workspace/create_notebook/7213] from 127.0.0.1 with args: [notebookNameField=ttt,] made by: [user2b]
+12 May 2017 16:10:04,407 - [FOLDER CREATE id=7214&name=ttt] user2b(Bob Smith)
+12 May 2017 16:10:04,442 - [/app/workspaceEditor/7214] from 127.0.0.1 with args: [] made by: [user2b]
+12 May 2017 16:10:05,418 - [/app/journal/ajax/retrieveEntry/7214/-1/0/true] from 127.0.0.1 with args: [] made by: [user2b]
+12 May 2017 16:10:06,627 - [/app/workspace/7141] from 127.0.0.1 with args: [] made by: [user2b]

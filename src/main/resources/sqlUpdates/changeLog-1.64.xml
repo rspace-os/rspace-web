@@ -1,0 +1,107 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.64 November 2019 -->
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- Add changesets here... -->
+	<changeSet id="2019-10-21a" author="richard" context="run">
+	<preConditions>
+	<not>
+	 <tableExists tableName="UserAccountEvent"></tableExists>
+	 </not>
+	</preConditions>
+	<comment>RSPAC-683 create log of user enablement/disablement events</comment>
+	<createTable tableName="UserAccountEvent">
+		<column name="id" type="BIGINT">
+			<constraints nullable="false" />
+		</column>
+		<column name="user_id" type="BIGINT" />
+		<column name="accountEventType" type="varchar(20)" >
+			 <constraints nullable="false"/>
+		</column>
+		<column name="timestamp" type="datetime" >
+			 <constraints nullable="false"/>
+		</column>
+		</createTable>
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="UserAccountEvent" />
+		<addForeignKeyConstraint
+			baseColumnNames="user_id" baseTableName="UserAccountEvent"
+			constraintName="FK_o4k690deu8830sfbf5j8gpws5" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="User" />
+		<sql>alter table UserAccountEvent engine=InnoDB;</sql>
+	
+	</changeSet>
+
+
+<changeSet id="2019-10-23a" author="richard" context="run">
+	<preConditions>
+	<not>
+	 <tableExists tableName="GroupMembershipEvent"></tableExists>
+	 </not>
+	</preConditions>
+	<comment>RSPAC-683 create log of group join/leave events</comment>
+	<createTable tableName="GroupMembershipEvent">
+		<column name="id" type="BIGINT">
+			<constraints nullable="false" />
+		</column>
+		<column name="user_id" type="BIGINT" />
+		<column name="group_id" type="BIGINT" />
+		<column name="groupEventType" type="varchar(20)" >
+			 <constraints nullable="false"/>
+		</column>
+		<column name="timestamp" type="datetime" >
+			 <constraints nullable="false"/>
+		</column>
+		</createTable>
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="GroupMembershipEvent" />
+		<addForeignKeyConstraint
+			baseColumnNames="user_id" baseTableName="GroupMembershipEvent"
+			constraintName="FK_roowcxdv9gq4rhhvh5jlewrcu" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="User" />
+		<addForeignKeyConstraint
+			baseColumnNames="group_id" baseTableName="GroupMembershipEvent"
+			constraintName="FK_akedqhy4imflue8kdtvfg5ova" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="rsGroup" />
+		<sql>alter table GroupMembershipEvent engine=InnoDB;</sql>
+	
+	</changeSet>
+
+    <changeSet id="2019-10-30" author="matthias" context="run">
+        <comment>RSPAC-1953: adding security identifier (SID) column to User table</comment>
+        <addColumn tableName="User">
+            <column name="sid" type="VARCHAR(255)" />
+        </addColumn>
+    </changeSet>
+    
+    <changeSet id="2019-10-28a" author="richard" failOnError="false">
+    <comment> RSPAC-1949 Fix group ownership  where the owner is not the pi. This is a tidyup rather than
+     critical to functionality so we can proceed on error.</comment>
+    <!-- temp table to store groups where owner is not pi -->
+    <sql>
+      create table groupUpdate select g.id as group_id, u.id as owner_id,  u2.id pi_id 
+         from rsGroup g inner join UserGroup ug on ug.group_id = g.id
+            inner join User u on u.id = g.owner_id
+             inner join User u2 on u2.id = ug.user_id
+          where ug.roleInGroup = 1 and u.id != u2.id and g.groupType = 0;
+    </sql>
+    <!-- make the owner = pi -->
+    <sql>
+       update rsGroup g inner join  groupUpdate up on g.id = up.group_id set g.owner_id = up.pi_id;
+    </sql>
+    <!-- tidy up temp table -->
+    <dropTable tableName="groupUpdate"/>
+	</changeSet>
+
+
+</databaseChangeLog>

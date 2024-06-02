@@ -1,0 +1,105 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.55 December 2018 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+
+	<!-- Add changesets here... -->
+
+    <changeSet id="2018-11-01" author="richard">
+    <comment>RSPAC-1615 Remove obsolete protocolsIO OAuth access key, now stored to UserConnection</comment>
+    <sql>
+      delete from AppConfigElement where id = (select id from AppConfigElementDescriptor where descriptor_id = (select id from PropertyDescriptor where name ='PROTOCOLS_IO_OAUTH_ACCESS_TOKEN'));
+      delete from AppConfigElementDescriptor where descriptor_id = (select id from PropertyDescriptor where name ='PROTOCOLS_IO_OAUTH_ACCESS_TOKEN');
+      delete from PropertyDescriptor where name ='PROTOCOLS_IO_OAUTH_ACCESS_TOKEN';
+   </sql>
+    </changeSet>
+    
+    <changeSet id="2018-11-02" author="richard">
+        <preConditions onFail="CONTINUE">
+          <not>
+            <columnExists tableName="UserConnection" columnName="encrypted"/>
+          </not>
+        </preConditions>
+        <comment> Store whether UserConnection tokens are encrypted ()</comment>
+      	<addColumn tableName="UserConnection">
+			<column name="encrypted" type="BIT(1)" defaultValue="0">
+	
+			</column>
+		</addColumn>
+    </changeSet>
+    <changeSet id="2018-11-23a" author="richard" context="run">
+      <validCheckSum>7:59bc4be6a5a4e10e5e6b94fc87be1023</validCheckSum>
+      
+      <comment> RSPAC-1661 add column to store chemical format, set current
+       value to 'mol' then make non-null for future additions</comment>
+       
+       	<addColumn tableName="RSChemElement">
+			<column name="chemElementsFormat" type="varchar(32)"/>
+		</addColumn>
+		<update tableName="RSChemElement">
+		    <column name="chemElementsFormat" value="MOL"/>
+		 </update>
+		 <addNotNullConstraint 
+            columnName="chemElementsFormat"
+            defaultNullValue="MOL"
+            tableName="RSChemElement"
+            columnDataType="varchar(32)"/>
+    </changeSet>
+    <changeSet id="2018-11-28b" author="richard" context="run">
+      <comment> RSPAC-1661 add column to store chemical format, set current
+       value to 'mol' then make non-null for future additions</comment>
+       	<addColumn tableName="RSChemElement_AUD">
+			<column name="chemElementsFormat" type="varchar(32)"/>
+		</addColumn>
+		<update tableName="RSChemElement_AUD">
+		    <column name="chemElementsFormat" value="MOL"/>
+		 </update>
+		 <addNotNullConstraint 
+            columnName="chemElementsFormat"
+            defaultNullValue="MOL"
+            tableName="RSChemElement_AUD"
+            columnDataType="varchar(32)"/>
+    </changeSet>
+    
+    <changeSet id="2018-11-26a" author="richard" context="run">
+     <comment>RSPAC-1661. Alter chemID from String to integer, as cd_id is always an integer</comment>
+     <modifyDataType tableName="RSChemElement" columnName="chemId" newDataType="integer"/>
+    </changeSet>
+    
+    <changeSet id="2018-11-28c" author="richard" context="run">
+     <comment>RSPAC-1661. Alter chemID from String to integer, as cd_id is always an integer</comment>
+     <modifyDataType tableName="RSChemElement_AUD" columnName="chemId" newDataType="integer"/>
+    </changeSet>
+
+    <changeSet id="2018-11-27a" author="richard" context="run">
+     <comment>RSPAC-1661. Add optional reactionId for linking to cd_id column in reaction table</comment>
+     <addColumn  tableName="RSChemElement">
+       <column name="reactionId" type="integer"/>
+     </addColumn>
+    </changeSet>
+    
+     <changeSet id="2018-11-28d" author="richard" context="run">
+     <comment>RSPAC-1661. Add optional reactionId for linking to cd_id column in reaction table</comment>
+     <addColumn  tableName="RSChemElement_AUD">
+       <column name="reactionId" type="integer"/>
+     </addColumn>
+    </changeSet>
+    
+    <changeSet id="18-12-17a" author="richard">
+     <comment>RSPAC-1615. Alter encryption method, all encrypted tokens are now obsolete</comment>
+     <sql>delete from UserConnection</sql>
+    </changeSet>
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

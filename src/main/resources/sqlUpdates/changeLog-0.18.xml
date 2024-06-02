@@ -1,0 +1,228 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+<!-- Changes for version 0.18 -->
+<changeSet author="guangyang (generated)" id="1402061079550-4" context="run">
+<comment>Creation of Remote File Store location table</comment>
+<createTable tableName="SambaUserFolder">
+<column autoIncrement="true" name="id" type="BIGINT(19)">
+<constraints primaryKey="true"/>
+</column>
+<column name="userFolder" type="VARCHAR(255)"/>
+<column name="userId" type="BIGINT(19)"/>
+<column name="username" type="VARCHAR(255)"/>
+</createTable>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1402061079550-5" context="run">
+<comment>Creation of Remote File Store AUD location table</comment>
+<createTable tableName="SambaUserFolder_AUD">
+<column name="id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="REV" type="INT(10)">
+<constraints nullable="false"/>
+</column>
+<column name="REVTYPE" type="TINYINT(3)"/>
+<column name="userFolder" type="VARCHAR(255)"/>
+<column name="userId" type="BIGINT(19)"/>
+<column name="username" type="VARCHAR(255)"/>
+</createTable>
+</changeSet>
+<changeSet id="11-06-14A" author="radams" context="run">
+<preConditions onFail="WARN">
+<sqlCheck expectedResult="0">select count(id)  from OriginalFormat;</sqlCheck>
+</preConditions>
+<comment>Drop obsolete OriginalFormat table if empty</comment>
+<dropTable tableName="OriginalFormat"/>
+</changeSet>
+
+<changeSet id="11-06-14B" author="radams" context="run">
+<preConditions onFail="WARN">
+<sqlCheck expectedResult="0">select count(id)  from SystemFolder;</sqlCheck>
+</preConditions>
+<comment>Drop obsolete SystemFolder table if empty</comment>
+<dropTable tableName="SystemFolder"/>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-1" context="run">
+<preConditions  onFail="MARK_RAN">
+<not>
+ <tableExists tableName="DirectoryAccess"/>
+</not>
+</preConditions>
+<comment>Aberrant table creation</comment>
+<createTable tableName="DirectoryAccess">
+<column autoIncrement="true" name="id" type="BIGINT(19)">
+<constraints primaryKey="true"/>
+</column>
+<column name="name" type="VARCHAR(50)">
+<constraints nullable="false"/>
+</column>
+<column name="visibility" type="VARCHAR(255)">
+<constraints nullable="false"/>
+</column>
+</createTable>
+</changeSet>
+
+<changeSet author="guangyang (generated)" id="1403177188011-2" context="run">
+<preConditions  onFail="MARK_RAN">
+
+<not>
+ <tableExists tableName="ecat_annotate"/>
+</not>
+</preConditions>
+<comment>Aberrant table creation</comment>
+<createTable tableName="ecat_annotate">
+<column autoIncrement="true" name="ann_id" type="BIGINT(19)">
+<constraints primaryKey="true"/>
+</column>
+<column name="ann_author" type="VARCHAR(255)"/>
+<column name="ann_img_date" type="VARCHAR(255)"/>
+<column name="ann_img_height" type="FLOAT(12)"/>
+<column name="ann_img_url" type="VARCHAR(255)"/>
+<column name="ann_img_left" type="FLOAT(12)"/>
+<column name="ann_img_link" type="VARCHAR(255)"/>
+<column name="ann_img_note" type="VARCHAR(1000)"/>
+<column name="parent_id" type="BIGINT(19)"/>
+<column name="ann_img_top" type="FLOAT(12)"/>
+<column name="ann_img_width" type="FLOAT(12)"/>
+</createTable>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-3" context="run">
+<addColumn tableName="SambaUserFolder">
+<column name="smbFolderDesc" type="VARCHAR(255)"/>
+</addColumn>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-4" context="run">
+<addColumn tableName="SambaUserFolder_AUD">
+<column name="smbFolderDesc" type="VARCHAR(255)"/>
+</addColumn>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-5" context="run">
+<addColumn tableName="SambaUserFolder">
+<column name="smbFolderName" type="VARCHAR(255)"/>
+</addColumn>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-6" context="run">
+<addColumn tableName="SambaUserFolder_AUD">
+<column name="smbFolderName" type="VARCHAR(255)"/>
+</addColumn>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-7" context="run">
+<addColumn tableName="SambaUserFolder">
+<column name="userSmbFolder" type="VARCHAR(255)"/>
+</addColumn>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-8" context="run">
+<addColumn tableName="SambaUserFolder_AUD">
+<column name="userSmbFolder" type="VARCHAR(255)"/>
+</addColumn>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-9" context="run">
+<addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="SambaUserFolder_AUD"/>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-10" context="run">
+<addForeignKeyConstraint baseColumnNames="REV" baseTableName="SambaUserFolder_AUD" constraintName="FKA7BB0D48DF74E053" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="REV" referencedTableName="REVINFO"/>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-11" context="run">
+<preConditions  onFail="MARK_RAN">
+<not>
+ <tableExists tableName="DirectoryAccess"/>
+</not>
+</preConditions>
+<comment> We never want this to run, it is a  mistake</comment>
+<addUniqueConstraint columnNames="name" constraintName="name" deferrable="false" disabled="false" initiallyDeferred="false" tableName="DirectoryAccess"/>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-12" context="run">
+<createIndex indexName="fk12144379e9e1afe6" tableName="community_admin" unique="false">
+<column name="community_id"/>
+</createIndex>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-13" context="run">
+<createIndex indexName="fk46b464ebe9e1afe6" tableName="community_labGroups" unique="false">
+<column name="community_id"/>
+</createIndex>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-14" context="run">
+<dropForeignKeyConstraint baseTableName="Record" constraintName="FK91AB58717C8BA40F"/>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-15" context="run">
+<dropForeignKeyConstraint baseTableName="Record" constraintName="FK91AB587194BB9466"/>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-16" context="run">
+<dropForeignKeyConstraint baseTableName="Record_AUD" constraintName="FKA2A3E5C231EEDD5A"/>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-17" context="run">
+<dropColumn columnName="userFolder" tableName="SambaUserFolder"/>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-18" context="run">
+<dropColumn columnName="userFolder" tableName="SambaUserFolder_AUD"/>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1403177188011-19" context="run">
+<dropNotNullConstraint columnDataType="bigint(19)" columnName="owner_id" tableName="rsGroup"/>
+</changeSet>
+<changeSet id="18-6-14a" author="radams" context="run">
+<preConditions onFail="MARK_RAN">
+<tableExists tableName="ecat_annotate"/>
+</preConditions>
+<comment> remove obsolete table</comment>
+<dropTable  tableName="ecat_annotate"/>
+</changeSet>
+<changeSet id="18-6-14b" author="radams" context="run">
+<preConditions onFail="MARK_RAN">
+<tableExists tableName="DirectoryAccess"/>
+<sqlCheck expectedResult="0">select count(id)  from DirectoryAccess;</sqlCheck>
+</preConditions>
+<comment> remove obsolete table</comment>
+<dropTable tableName="DirectoryAccess"/>
+</changeSet>
+<changeSet id="22-6-14a" author="radams" context="run">
+ <comment>Add back the accidentally deleted FK constraints from earlier in 0.18</comment>
+  <addForeignKeyConstraint baseColumnNames="id" baseTableName="Record" constraintName="FK91AB587194BB9466" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="BaseRecord" />
+  <addForeignKeyConstraint baseColumnNames="tempRecord_id" baseTableName="Record" constraintName="FK91AB58717C8BA40F" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Record" />
+	<addForeignKeyConstraint baseColumnNames="id, REV" baseTableName="Record_AUD" constraintName="FKA2A3E5C231EEDD5A" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id, REV" referencedTableName="BaseRecord_AUD" />
+</changeSet>
+
+<changeSet author="guangyang (generated)" id="1404214943532-2" context="run">
+<comment>Creation of Remote File Store User table</comment>
+<createTable tableName="SambaUser">
+<column autoIncrement="true" name="id" type="BIGINT(19)">
+<constraints primaryKey="true"/>
+</column>
+<column name="createDate" type="datetime"/>
+<column name="expiredDate" type="datetime"/>
+<column name="lastFileStore" type="VARCHAR(255)"/>
+<column name="numFileStore" type="INT(10)">
+<constraints nullable="false"/>
+</column>
+<column name="removed" type="BIT(1)">
+<constraints nullable="false"/>
+</column>
+<column name="rspaceUserId" type="BIGINT(19)"/>
+<column name="rspaceUsername" type="VARCHAR(255)"/>
+<column name="sambaPassword" type="VARCHAR(255)"/>
+<column name="sambaUsername" type="VARCHAR(255)"/>
+</createTable>
+</changeSet>
+<changeSet author="guangyang (generated)" id="1404214943532-3" context="run">
+<comment>Creation of Remote File Store User AUD  table</comment>
+<createTable tableName="SambaUser_AUD">
+<column name="id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="REV" type="INT(10)">
+<constraints nullable="false"/>
+</column>
+<column name="REVTYPE" type="TINYINT(3)"/>
+<column name="createDate" type="datetime"/>
+<column name="expiredDate" type="datetime"/>
+<column name="lastFileStore" type="VARCHAR(255)"/>
+<column name="numFileStore" type="INT(10)"/>
+<column name="removed" type="BIT(1)"/>
+<column name="rspaceUserId" type="BIGINT(19)"/>
+<column name="rspaceUsername" type="VARCHAR(255)"/>
+<column name="sambaPassword" type="VARCHAR(255)"/>
+<column name="sambaUsername" type="VARCHAR(255)"/>
+</createTable>
+</changeSet>
+</databaseChangeLog>

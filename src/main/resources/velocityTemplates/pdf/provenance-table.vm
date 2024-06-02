@@ -1,0 +1,24 @@
+<div id='provenance'>
+  <br>
+  <h4>Provenance Information</h4>
+  <table id='provenance-table' class='docExtrasTable'>
+    <thead>
+    <tr>
+      <th>Version</th>
+      <th>Date</th>
+      <th>Name</th>
+      <th>Modification Type</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach($modification in $modifications)
+        <tr>
+          <td>$modification.getVersion()</td>
+          <td>$modification.getDate()</td>
+          <td>$modification.getName()</td>
+          <td>$modification.getModificationType()</td>
+        </tr>
+        #end
+    </tbody>
+  </table>
+</div>

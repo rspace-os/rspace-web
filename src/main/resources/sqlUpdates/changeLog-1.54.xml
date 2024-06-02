@@ -1,0 +1,99 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.54 November 2018 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- Add changesets here... -->
+	<changeSet id="2018-10-04" author="richard" context="run">
+	 <comment>RSPAC-1604 record the creation date of a sharing event</comment>
+	 <addColumn tableName="RecordGroupSharing">
+	    <column name="creationDate" type="datetime"/>
+	 </addColumn>
+	 
+	</changeSet>
+	
+	<changeSet id="2018-10-26a" author="richard" context="run">
+	 <comment>RSPAC-1634 record the deletion date  of a record</comment>
+	 <addColumn tableName="BaseRecord">
+	    <column name="deletedDate" type="datetime"/>
+	 </addColumn>
+	 
+	</changeSet>
+	
+	<changeSet id="2018-10-26b" author="richard" context="run">
+	 <comment>RSPAC-1634 record the creation date of a record</comment>
+	 <addColumn tableName="RecordToFolder">
+	    <column name="deletedDate" type="datetime"/>
+	 </addColumn>
+	 </changeSet>
+	 
+	 <changeSet id="2018-10-26c" author="richard" context="run">
+	  <comment>RSPAC-1634 record the deletion date  of a record</comment>
+	  <addColumn tableName="BaseRecord_AUD">
+	    <column name="deletedDate" type="datetime"/>
+	 </addColumn>
+	 
+	</changeSet >
+	
+	<changeSet id="2018-11-06a" author="richard">
+		<validCheckSum>8:589560f2217a5a27568d425c51f6f16f</validCheckSum>
+	 <comment>Create logging table for autosaves, RSPAC-1647</comment>
+	 <createTable tableName = "FieldAutosaveLog">
+	  <column name ="id" type="BIGINT" autoIncrement="true">
+	    <constraints nullable="false" primaryKey="true"/>/>
+	  </column>
+	  <column name ="tempField_id" type="BIGINT">
+	    <constraints nullable="false"/>
+	  </column>
+	  <column name ="creationDate" type="datetime">
+	    <constraints nullable="false"/>
+	  </column>
+	  <column name ="fieldData" type="longtext">
+	    <constraints nullable="false"/>
+	  </column>
+	 
+	 </createTable>
+	</changeSet>
+	
+	<changeSet id="2018-11-06b" author="richard">
+	 <comment>We must link to main Field ID so we can refer to the field after tempField is deleted RSPAC-1647</comment>
+	 <addColumn tableName="FieldAutosaveLog">
+		<column name="fieldID" type="BIGINT">
+		  <constraints nullable="false"/>
+		 </column>
+	 </addColumn>
+	 <sql>alter table FieldAutosaveLog engine=InnoDB;</sql>
+	
+	</changeSet>
+	
+	<changeSet id="2018-11-06c" author="richard">
+	 <addForeignKeyConstraint baseColumnNames="fieldID"
+			baseTableName="FieldAutosaveLog" constraintName="FK_Field_AutosaveLog_EE"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Field" />
+	
+	</changeSet>
+	<changeSet id="2018-11-14a" author="richard">
+	 <comment>Expand permissions strings length for UserGroup</comment>
+	 <modifyDataType tableName ="UserGroup_permissionStrings" columnName="permissionStrings" newDataType="varchar(2500)"/>
+	</changeSet>
+	<changeSet id="2018-11-14b" author="richard">
+	 <comment>Expand permissions strings length for AbstractUserGroup_permString</comment>
+	 <modifyDataType tableName ="AbstractUserOrGroupImpl_permissionStrings" columnName="permissionStrings" newDataType="varchar(2500)"/>
+	</changeSet>
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+
+
+
+
+
+</databaseChangeLog>

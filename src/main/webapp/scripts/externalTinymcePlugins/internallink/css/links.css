@@ -1,0 +1,11 @@
+.links label, .links input {
+  display:inline-block;
+}
+
+.links input {
+  width:300px; /* or whatever size you want them */
+}
+
+.links label {
+  width:100px; /* or whatever size you want them */
+}

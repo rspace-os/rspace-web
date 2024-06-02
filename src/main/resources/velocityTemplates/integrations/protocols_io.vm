@@ -1,0 +1,138 @@
+<div>
+<h1>${protocol.title}</h1>
+Imported from #if($protocol.link) <a target="_blank" href="$protocol.link">Protocols.io</a>
+              #else Protocols.io
+              #end
+<h2>Metadata</h2>
+<b>Original creator:</b> #if($protocol.creator.link)<a target="_blank" href="$protocol.creator.link">$protocol.creator.name</a>
+                         #else $protocol.creator.name 
+                         #end
+<br>
+<b>Published on:</b>  $protocol.creationDate
+<br>
+<b>Original authors:</b> 
+   #foreach ($author in $protocol.authors)
+      $author.name #if( $foreach.hasNext ),#end
+   #end
+<br>
+ #if($protocol.versionId != "0")
+  <b>Version:</b>  $protocol.versionId
+ #end
+
+ #if($protocol.description != $null)
+    Abstract <br>
+    $protocol.description
+ #end
+
+ #if($protocol.beforeStart != $null)
+  Before start <br>
+  $protocol.beforeStart
+ #end
+
+ #if($protocol.materials.size() > 0)
+ <h2>Materials</h2>
+   <table>
+     <tr><th> Reagent </th><th>Source</th></tr>
+   #foreach ($reagent in $protocol.materials)
+     #reagent($reagent)
+   #end
+ </table>
+ #end
+ <h2>Steps</h2>
+     #foreach ($step in $protocol.steps)
+       <h3 data-step-id="$step.id"><a id="step-$step.id">Step $foreach.count</a> </h3>
+         #foreach ($component in $step.components)
+           ## Description Type **
+           #if($component.typeId==1)
+              $component.source.description
+           ## Amount Type **
+           #elseif($component.typeId==3)
+             ${component.source.getAmountString()}
+           ## Duration Type **
+           #elseif($component.typeId==4)
+             $component.source.title ${component.source.getDurationString()}
+           ## Title Type **
+           #elseif($component.typeId==6)
+            <h4> $!component.source.title </h4>
+           ## Link Type **
+           #elseif($component.typeId==7)
+             <a href="$component.source.link">Link out</a>
+           ## Software Package Type **
+           #elseif($component.typeId==8)
+             Software package: <a target="_blank" href="$component.source.link">$component.source.name</a>  <br>
+             Operating system:$component.source.osName ($component.source.osVersion)<br>
+             Repository: $!component.source.repository
+           ## Dataset Type **
+           #elseif($component.typeId==9)
+             Dataset: <a target="_blank" href="$component.source.link">$component.source.name</a>
+          ## Comment Type **
+           #elseif($component.typeId==13)
+             Comment: $component.source.body
+           ## Command Type **
+           #elseif($component.typeId==15)
+             Software package: $component.source.name. Command: $component.source.command <br>
+             Operating system:$component.source.osName ($component.source.osVersion)
+           ## Expected Result Type **
+           #elseif($component.typeId==17)
+             $component.source.body
+           ## Embedded Protocol Type **
+           #elseif($component.typeId==18)
+             Nested protocol: <a target="_blank" href="https://$component.source.doi">$component.source.title</a>
+           ## Safety Information Type **
+           #elseif($component.typeId==19)
+            <a href="$component.source.link">Safety information</a> <br>
+            $component.source.body
+           ## Reagent Type **
+           #elseif($component.typeId==20)
+            <table> #reagent($component.source) </table>
+           ## Step Cases Type **
+           #elseif($component.typeId==21)
+            #foreach($case in $component.source.cases)
+                <b>$case.title</b>: <a href="#step-$case.stepId">$case.label</a>
+            #end
+           ## GoTo Previous Type **
+           #elseif($component.typeId==22)
+            See <a href="#$component.source.stepGuid"> previous step </a> <br>
+            $component.source.title
+           ## File Type **
+           #elseif($component.typeId==23)
+            <a target="_blank" href="#$component.source.source">$component.source.originalName</a>
+           ## Temperature Type **
+           #elseif($component.typeId==24)
+            ${component.source.getTemperatureString()}
+           ## Concentration Type **
+           #elseif($component.typeId==25)
+            ${component.source.getConcentrationString()}
+           ## Note Type **
+           #elseif($component.typeId==26)
+             Note: $component.source.body
+           ## Documents Type **
+           #elseif($component.typeId==27)
+             Attached Document: <a target="_blank" href="https://$component.source.doi">$component.source.title</a>
+           ## Equipment Type **
+           #elseif($component.typeId==28)
+             Equipment <br>
+             Name: $component.source.name <br>
+             Type: $component.source.type <br>
+             Brand: $component.source.brand  $component.source.sku <a target="_blank" href="#$component.source.link"></a> <br>
+           ## Centrifuge Type **
+           #elseif($component.typeId==30)
+              Centrifuge: ${component.source.getCentrifugeString()}
+           ## Shaker Type **
+           #elseif($component.typeId==33)
+              Shaker: ${component.source.getShakerString()}
+           #end
+           <br>
+        #end
+        <p>
+     #end
+ 
+</div>
+
+#macro (reagent $reagent)
+  <tr>
+      <td>$reagent.name</td>
+        <td>#if($reagent.vendor.link)<a target="_blank" href="$reagent.vendor.link">$reagent.vendor.name</a>
+            #else$!reagent.vendor.name#end</td>
+    </tr>
+#end

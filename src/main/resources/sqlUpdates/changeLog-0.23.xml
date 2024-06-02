@@ -1,0 +1,90 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+<!-- Changes for version 0.23-->
+
+ <changeSet id="02-02-2015" author="radams" context="run">
+ <comment> Remove obsolete password hint field see RSPAC-361</comment>
+ <dropColumn tableName="User" columnName="password_hint"/>
+ </changeSet>
+ 
+ <changeSet id="09-02-15-ukp" author="matthias" context="run">
+    <comment>Add UserKeyPair table for storing user's ssh keys</comment>
+    <createTable tableName="UserKeyPair">
+        <column autoIncrement="true" name="id" type="BIGINT(19)">
+            <constraints primaryKey="true"/>
+        </column>
+        <column name="privateKey" type="LONGTEXT"/>
+        <column name="publicKey" type="VARCHAR(255)"/>
+        <column name="user_id" type="BIGINT(19)"/>
+    </createTable>
+    <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="UserKeyPair" constraintName="FK20CEB76EDE6F978E" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User"/>
+    <sql>alter table UserKeyPair engine=InnoDB;</sql>
+ </changeSet>
+
+	<changeSet id="11-2-2015b" author="radams" context="run">
+	  <preConditions  onFail="MARK_RAN">
+	  <!-- 1.53: will always fail, we must inactivate this changeset for utf8, 400 is too long -->
+	  <sqlCheck expectedResult="1">select 1=0;</sqlCheck>
+	</preConditions>
+ <comment>fielURI field length increase to 750 for long paths</comment>
+ <modifyDataType tableName="FilePropertys" columnName="fileUri" newDataType="varchar(750)"/>
+ <modifyDataType tableName="FilePropertys_AUD" columnName="fileUri" newDataType="varchar(750)"/>
+ </changeSet>
+ 
+ <changeSet id="11-2-2015c" author="radams">
+	<comment>insert role permission for Sysadminrole to invite new user - RSPAC-374</comment>
+	<sql>
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_SYSADMIN'),'COMMS:READ:property_name=REQUESTJOINLABGROUP');
+	</sql>
+  <rollback>
+  <sql>
+  	delete from Role_permissionStrings where Role_id in (select id from  roles where name='ROLE_SYSADMIN') and permissionStrings='COMMS:READ:property_name=REQUESTJOINLABGROUP';	
+  </sql> 
+  </rollback>
+</changeSet>
+
+<changeSet id="13-2-2015a" author="radams">
+<comment>Removing 'Shared folder' type from shared notebooks - RSPAC-363</comment>
+<update tableName="BaseRecord">
+ <column name="type" value="NOTEBOOK"></column>
+  <where>type='NOTEBOOK:SHARED_FOLDER'</where>
+</update>
+<update tableName="BaseRecord_AUD">
+ <column name="type" value="NOTEBOOK"></column>
+  <where>type='NOTEBOOK:SHARED_FOLDER'</where>
+</update>
+</changeSet>
+
+<changeSet id="25-02-15" author="matthias" context="run">
+    <comment>Fix BaseRecord rows with missing owner</comment>
+    <sql>
+        update BaseRecord br left join User u on br.createdBy = u.username
+         set br.owner_id = u.id where br.owner_id is null
+    </sql>
+</changeSet>
+
+<changeSet id="26-02-15" author="matthias" context="run">
+    <comment>Not null constraint for BaseRecord owner</comment>
+    <addNotNullConstraint columnDataType="BIGINT(19)" columnName="owner_id" tableName="BaseRecord"/>
+</changeSet>
+
+ <changeSet id="03-03-2015a" author="radams">
+	<comment>insert role permission for Sysadmin role to  view all user's records: RSPAC-425</comment>
+	<sql>
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_SYSADMIN'),'RECORD:READ:');
+	</sql>
+  <rollback>
+  <sql>
+  	delete from Role_permissionStrings where Role_id in (select id from  roles where name='ROLE_SYSADMIN') and permissionStrings='RECORD:READ:';	
+  </sql> 
+  </rollback>
+</changeSet>
+
+<changeSet id="03-03-2015b" author="matthias" context="run">
+    <comment>removing unused column in UserProfile</comment>
+    <dropColumn columnName="shortProfileText" tableName="UserProfile"/>
+</changeSet> 
+ 
+</databaseChangeLog>

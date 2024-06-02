@@ -1,0 +1,26 @@
+<html>
+<body>
+Hello,
+<p>
+Welcome to RSpace! ${creator.fullName} (${creator.email}) has invited you to join their RSpace group '${group.displayName}'.
+ 
+<p> 
+If you'd like to accept this invitation, please click <a href = "${acceptanceLink}">here</a>, where you can sign up for an account.
+ 
+<p>
+Please use this email address when you fill out the signup form - you can change it afterwards if you want, once your account is set up.
+
+<p>
+Once you've signed up, there will be an invitation message waiting for you  - accept this invitation and you will be added to ${creator.fullName}'s group.
+
+<p> There is lots of written and video help material <a href="https://researchspace.helpdocs.io/">on our help website</a>, or you can use the in-app <b>Need Help?</b>button on the bottom-right of RSpace.
+Or, please feel free to ask for help at support@researchspace.com.
+<p>
+#signature
+         
+#aboutRSpaceCloud(true)
+
+<p/>
+#dontReply
+</body>
+</html>

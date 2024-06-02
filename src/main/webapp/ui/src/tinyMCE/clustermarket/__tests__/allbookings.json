@@ -1,0 +1,39 @@
+{
+  "data": [
+    {
+      "id": "COMPLETED_1",
+      "start_time": "2022-01-28T07:30:00.000",
+      "end_time": "2022-01-28T08:30:00.000",
+      "status": "Completed",
+      "equipment_id": 1
+    },
+    {
+      "id": "CURRENT_2",
+      "equipment_id": 2,
+      "start_time": "2022-02-28T07:30:00.000",
+      "end_time": "2022-02-28T08:30:00.000",
+      "status": "Booked"
+    },
+    {
+      "id": "COMPLETED_3",
+      "equipment_id": 3,
+      "start_time": "2022-02-28T06:30:00.000",
+      "end_time": "2022-02-28T08:30:00.000",
+      "status": "Completed"
+    },
+    {
+      "id": "COMPLETED_4",
+      "equipment_id": 3,
+      "start_time": "2022-02-28T06:31:00.000",
+      "end_time": "2022-02-28T08:30:00.000",
+      "status": "Completed"
+    },
+    {
+      "id": "CURRENT_5",
+      "equipment_id": 3,
+      "start_time": "2022-02-28T07:31:00.000",
+      "end_time": "2022-02-28T08:30:00.000",
+      "status": "Booked"
+    }
+  ]
+}

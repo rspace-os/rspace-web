@@ -1,0 +1,41 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2024-01-18a" context="run,dev-test" author="matthias">
+        <comment>Create a new app - DMPonline</comment>
+        <insert tableName="App">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="label" type="STRING" value="DMPonline" />
+            <column name="name" type="STRING" value="app.dmponline" />
+            <column name="defaultEnabled" type="BOOLEAN" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+    <changeSet id="2024-01-18b" context="run,dev-test" author="matthias">
+        <comment>Create new system properties for DMPonline</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="ALLOWED"/>
+            <column name="name" type="STRING" value="dmponline.available"/>
+            <column name="type" type="NUMERIC" value="3"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id"
+                    type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name ='dmponline.available')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value="DENIED"/>
+            <column name="property_id"
+                    type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='dmponline.available')"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,140 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.46 September 2017 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+
+    <changeSet id="17-08-10a" author="matthias" context="dev-test">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="RecordToFolder_AUD" />
+        </preConditions>
+        <comment>RSPAC-1136 remove audit table that is no longer used (test servers only)</comment>
+        <dropTable tableName="RecordToFolder_AUD" />
+    </changeSet>
+    <changeSet id="17-08-10b" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="RecordToFolder_AUD" />
+        </preConditions>
+        <comment>RSPAC-1136 remove audit table that is no longer used (all servers)</comment>
+        <dropTable tableName="RecordToFolder_AUD" />
+    </changeSet>
+
+    <changeSet id="17-08-11a" author="matthias">
+        <comment>RSPAC-1314 egnyte.available system property</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="DENIED_BY_DEFAULT" />
+            <column name="name" type="STRING" value="egnyte.available" />
+            <column name="type" type="NUMERIC" value="3" />
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="dependent_id" type="NUMERIC" value="NULL" />
+            <column name="descriptor_id" type="NUMERIC"
+                valueComputed="(select id from PropertyDescriptor where name ='egnyte.available')" />
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="value" type="String" value="DENIED" />
+            <column name="property_id" type="NUMERIC"
+                valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='egnyte.available')" />
+        </insert>
+    </changeSet>
+    <changeSet id="17-08-11b" author="matthias">
+        <comment>RSPAC-1314 Egnyte App</comment>
+        <insert tableName="App">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="label" type="STRING" value="Egnyte" />
+            <column name="name" type="STRING" value="app.egnyte" />
+            <column name="defaultEnabled" type="BOOLEAN" valueBoolean="false" />
+        </insert>
+    </changeSet>
+    <changeSet id="17-08-11c" author="matthias">
+        <comment>RSPAC-1314 EGNYTE_DOMAIN option for Egnyte App</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="EGNYTE_DOMAIN" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+            select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.egnyte" and pd.name='EGNYTE_DOMAIN';</sql>
+    </changeSet>
+    
+    <changeSet id="17-08-18a" author="richard">
+        <comment>RSPAC-1325 msteams.available system property</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="DENIED_BY_DEFAULT" />
+            <column name="name" type="STRING" value="msteams.available" />
+            <column name="type" type="NUMERIC" value="3" />
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="dependent_id" type="NUMERIC" value="NULL" />
+            <column name="descriptor_id" type="NUMERIC"
+                valueComputed="(select id from PropertyDescriptor where name ='msteams.available')" />
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="value" type="String" value="DENIED" />
+            <column name="property_id" type="NUMERIC"
+                valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='msteams.available')" />
+        </insert>
+    </changeSet>
+     <changeSet id="17-08-18b" author="richard">
+        <comment>RSPAC-1325 MsTeams App</comment>
+        <insert tableName="App">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="label" type="STRING" value="MSTEAMS" />
+            <column name="name" type="STRING" value="app.msteams" />
+            <column name="defaultEnabled" type="BOOLEAN" valueBoolean="false" />
+        </insert>
+    </changeSet>
+    <changeSet id="17-08-18c" author="richard">
+        <comment>RSPAC-1325 Properties MsTeams App</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="MSTEAMS_CHANNEL_LABEL" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+            select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.msteams" and pd.name='MSTEAMS_CHANNEL_LABEL';</sql>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="MSTEAMS_WEBHOOKURL" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+            select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.msteams" and pd.name='MSTEAMS_WEBHOOKURL';</sql>
+       
+    </changeSet>
+    <changeSet id="17-08-21a" author="richard">
+       <comment> Make naming style of MSTeams consistent with Slack</comment>
+       <update tableName="PropertyDescriptor">
+         <column name="name" value="MSTEAMS_WEBHOOK_URL"></column>
+         <where>name = "MSTEAMS_WEBHOOKURL"</where>
+       </update>  
+    </changeSet>
+    <changeSet id="17-08-21b" author="richard">
+       <comment> Set readable display label</comment>
+       <update tableName="App">
+         <column name="label" value="Microsoft Teams"></column>
+         <where>name = "app.msteams"</where>
+       </update>  
+    </changeSet>
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

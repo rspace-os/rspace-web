@@ -1,0 +1,92 @@
+/**
+ * Global variables and mixins are defined here.
+ *
+ * Import in other SASS stylesheets using:
+ * @import 'global_vars';
+ */
+.wrapper {
+  padding: 0 15px 15px; }
+  .wrapper .row {
+    margin: 0; }
+  .wrapper div[class^=col-] {
+    padding-left: 0;
+    padding-right: 0; }
+  .wrapper h3 {
+    font-size: 20px; }
+  .wrapper .categoryLink, .wrapper .toolLink {
+    border-radius: 0;
+    margin: 0 2px 2px 0; }
+  .wrapper .categoryLink {
+    line-height: 30px;
+    font-size: 14px;
+    width: 200px; }
+    .wrapper .categoryLink .glyphicons {
+      font-size: 20px;
+      vertical-align: middle; }
+    .wrapper .categoryLink.selected {
+      background: #0c7cd5; }
+  .wrapper .toolLink {
+    text-transform: none;
+    text-align: left;
+    width: 250px;
+    background: transparent;
+    color: #666;
+    padding: 5px 10px; }
+    .wrapper .toolLink .title, .wrapper .toolLink .description {
+      display: block;
+      height: auto;
+      white-space: normal; }
+    .wrapper .toolLink .title {
+      font-size: 14px;
+      line-height: 19px; }
+    .wrapper .toolLink .description {
+      clear: both;
+      font-size: 11px;
+      line-height: 13px; }
+    .wrapper .toolLink.selected {
+      background: rgba(200, 200, 200, 0.3); }
+  .wrapper #rs-selectedtool-impl {
+    margin-top: 20px; }
+    .wrapper #rs-selectedtool-impl .description {
+      line-height: 17px;
+      display: inline-block; }
+    .wrapper #rs-selectedtool-impl .form-group {
+      margin-left: 0;
+      margin-right: 0; }
+      .wrapper #rs-selectedtool-impl .form-group.submit {
+        text-align: center; }
+    .wrapper #rs-selectedtool-impl *:not(a) {
+      color: #666;
+      font-size: 14px; }
+    .wrapper #rs-selectedtool-impl .tool-result {
+      border: 1px solid #666;
+      padding: 2px 5px;
+      box-shadow: inset 0 0 5px #666;
+      font-size: 14px; }
+      .wrapper #rs-selectedtool-impl .tool-result:empty {
+        display: none; }
+    .wrapper #rs-selectedtool-impl .form-control {
+      display: inline-block;
+      margin-right: 5px;
+      width: auto;
+      height: 25px;
+      padding-top: 2px;
+      padding-bottom: 2px; }
+    .wrapper #rs-selectedtool-impl input.form-control, .wrapper #rs-selectedtool-impl select.form-control {
+      padding-left: 5px; }
+    .wrapper #rs-selectedtool-impl button.btn-primary {
+      color: white; }
+    .wrapper #rs-selectedtool-impl label {
+      box-shadow: none;
+      padding: 2px 5px; }
+      .wrapper #rs-selectedtool-impl label input[type="radio"] {
+        margin-left: 0; }
+    .wrapper #rs-selectedtool-impl .errorMessage {
+      font-weight: bold;
+      color: #cc0000;
+      line-height: 15px;
+      font-size: 13px; }
+      .wrapper #rs-selectedtool-impl .errorMessage[id$='ErrorMessage']:not([id='generalErrorMessage']) {
+        position: relative;
+        display: block;
+        clear: both; }

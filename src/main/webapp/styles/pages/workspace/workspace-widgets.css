@@ -1,0 +1,11 @@
+.newTabularView .mainTable {
+  /* third column - name column: this margin/offset is needed to 
+     align name titile and content due to images in the content 
+  */
+  /* type of the record */ }
+  .newTabularView .mainTable th:nth-child(3) .orderByTableHeader {
+    margin-left: 23px; }
+  .newTabularView .mainTable td:nth-child(2) img {
+    width: auto;
+    max-width: 32px;
+    height: 32px; }

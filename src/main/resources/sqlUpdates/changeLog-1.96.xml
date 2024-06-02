@@ -1,0 +1,36 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.96 February 2024 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+
+    <changeSet id="2024-01-11" author="matthias" context="run">
+        <comment>
+            RSDEV-76: extra flag on inventory identifier entity, deciding if public view should include custom fields
+        </comment>
+        <addColumn tableName="DigitalObjectIdentifier">
+            <column name="customFieldsOnPublicPage" type="BIT(1)" defaultValueBoolean="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="DigitalObjectIdentifier_AUD">
+            <column name="customFieldsOnPublicPage" type="BIT(1)" />
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2024-03-12" author="matthias" context="run">
+        <comment>
+            RSDEV-156: Remove tables left as a precaution during 1.94 upgrade.
+        </comment>
+        <dropTable tableName="AbstractUserOrGroupImpl_permissionStrings_BK" />
+        <dropTable tableName="UserGroup_permissionStrings_BK" />
+    </changeSet>
+
+</databaseChangeLog>

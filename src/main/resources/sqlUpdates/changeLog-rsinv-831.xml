@@ -1,0 +1,74 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet author="matthias" id="2023-05-19" context="run">
+        <comment>Add InventoryRecord.identifiers field (RSINV-831)</comment>
+
+        <createTable tableName="DigitalObjectIdentifier">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BIT(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="state" type="VARCHAR(20)" />
+            <column name="identifier" type="VARCHAR(255)"/>
+            <column name="otherDataJsonString" type="CLOB"/>
+            <column name="title" type="VARCHAR(255)"/>
+            <column name="publicLink" type="VARCHAR(100)"/>
+            <column name="type" type="INT"/>
+            <column name="container_id" type="BIGINT"/>
+            <column name="sample_id" type="BIGINT"/>
+            <column name="subSample_id" type="BIGINT"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="DigitalObjectIdentifier"/>
+        <createIndex indexName="isPublicLink" tableName="DigitalObjectIdentifier" unique="true">
+            <column name="publicLink"/>
+        </createIndex>
+
+        <createTable tableName="DigitalObjectIdentifier_AUD">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REV" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVTYPE" type="TINYINT"/>
+            <column name="deleted" type="BIT(1)"/>
+            <column name="state" type="VARCHAR(20)" />
+            <column name="identifier" type="VARCHAR(255)"/>
+            <column name="otherDataJsonString" type="CLOB"/>
+            <column name="title" type="VARCHAR(255)"/>
+            <column name="publicLink" type="VARCHAR(100)"/>
+            <column name="type" type="INT"/>
+            <column name="container_id" type="BIGINT"/>
+            <column name="sample_id" type="BIGINT"/>
+            <column name="subSample_id" type="BIGINT"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="DigitalObjectIdentifier_AUD"/>
+
+        <addForeignKeyConstraint baseColumnNames="subSample_id" baseTableName="DigitalObjectIdentifier"
+                                 constraintName="FK_3pv8g14ux6qm0qfuvelky5npq" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="SubSample"/>
+        <addForeignKeyConstraint baseColumnNames="sample_id" baseTableName="DigitalObjectIdentifier"
+                                 constraintName="FK_gf4nr5rw2jkltcup0r4qej667" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="Sample"/>
+        <addForeignKeyConstraint baseColumnNames="container_id" baseTableName="DigitalObjectIdentifier"
+                                 constraintName="FK_gvu9ehdl7rd5mi84o28n3q17k" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="Container"/>
+
+        <addForeignKeyConstraint baseColumnNames="REV" baseTableName="DigitalObjectIdentifier_AUD"
+                                 constraintName="FK_k3v8dw4wd7xr8trjoqfxwfwio" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="REV" referencedTableName="REVINFO"/>
+    </changeSet>
+
+</databaseChangeLog>

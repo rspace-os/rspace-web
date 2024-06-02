@@ -1,0 +1,64 @@
+{
+  "name": "tableexport",
+  "version": "4.0.11",
+  "authors": [
+    "clarketm <travis.m.clarke@gmail.com>"
+  ],
+  "description": "The simple, easy-to-implement library to export HTML tables to xlsx, xls, csv, and txt files",
+  "main": "dist/js/tableexport.js",
+  "typings": "dist/tableexport.d.ts",
+  "style": [
+    "dist/css/tableexport.css"
+  ],
+  "keywords": [
+    "tableexport",
+    "table",
+    "export",
+    "Excel",
+    "xlsx",
+    "xls",
+    "csv",
+    "txt",
+    "jquery-plugin",
+    "ecosystem:jquery"
+  ],
+  "scripts": {
+    "test": "gulp",
+    "build": "gulp"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clarketm/TableExport"
+  },
+  "bugs": {
+    "url": "https://github.com/clarketm/TableExport/issues"
+  },
+  "peerDependencies": {
+    "jquery": ">= 1.1.2",
+    "bootstrap": ">= 3 < 4"
+  },
+  "dependencies": {
+    "blobjs": "^1.1.1",
+    "file-saverjs": "^1.3.6",
+    "xlsx": "^0.9.13"
+  },
+  "devDependencies": {
+    "del": "^2.2.0",
+    "gulp": "^3.9.1",
+    "gulp-bump": "^2.4.0",
+    "gulp-clean-css": "^2.0.7",
+    "gulp-rename": "^1.2.2",
+    "gulp-replace": "^0.5.4",
+    "gulp-uglify": "^1.5.3",
+    "jasmine": "^2.4.1"
+  },
+  "license": "Apache-2.0",
+  "homepage": "https://tableexport.v4.travismclarke.com/",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

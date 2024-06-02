@@ -1,0 +1,212 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.38 Sept 2016 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+	<!-- RSPAC-980 Dataverse integration -->
+	<changeSet id="1-38-16-8-29a" author="richard">
+		<comment> RSPAC-980 Dataverse integration</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="false" />
+			<column name="name" type="STRING" value="dataverse.available" />
+			<column name="type" type="NUMERIC" value="0" />
+		</insert>
+	</changeSet>
+	<changeSet id="1-38-16-8-29b" author="richard">
+	<comment>Dataverse - system property</comment>
+		<insert tableName="SystemProperty">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="dependent_id" type="NUMERIC" value="NULL" />
+			<column name="descriptor_id" type="NUMERIC"
+				valueComputed="(select id from PropertyDescriptor where name ='dataverse.available')" />
+		</insert>
+	</changeSet>
+	<changeSet id="1-38-16-8-29c" author="richard">
+	    <comment>Dataverse - enabled by default</comment>
+		<insert tableName="SystemPropertyValue">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="value" type="String" value="true" />
+			<column name="property_id" type="NUMERIC"
+				valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='dataverse.available')" />
+		</insert>
+	</changeSet>
+	<!-- App setup for Dataverse -->
+	<changeSet id="1-38-16-8-29d" author="richard">
+		<comment>Dataverse App RSPAC-980</comment>
+	  <insert tableName="App">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="label" type="STRING" value="Dataverse" />
+			<column name="name" type="STRING" value="app.dataverse" />
+			<column name="defaultEnabled" type="BOOLEAN" valueBoolean="true"/>
+		</insert>
+	</changeSet>
+	<changeSet id="16-7-20e" author="richard">
+	<comment>Property Descriptors for Dataverse App</comment>
+	<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="DATAVERSE_URL" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="DATAVERSE_APIKEY" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="DATAVERSE_ALIAS" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+	</changeSet>
+	<changeSet id="16-7-20f" author="richard">
+		<comment>AppConfigElementDescriptor for Dataverse App: id, descriptor_id, app_id</comment>
+		<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.dataverse" and pd.name='DATAVERSE_URL';</sql>
+			<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.dataverse" and pd.name='DATAVERSE_APIKEY';</sql>
+			<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.dataverse" and pd.name='DATAVERSE_ALIAS';</sql>	
+	</changeSet>
+	
+	<!-- RSPAC-980 move Datashare from properties to App  -->
+	<changeSet id="1-38-16-9-01a" author="richard">
+		<comment> RSPAC-980 Dataverse integration</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="false" />
+			<column name="name" type="STRING" value="dspace.available" />
+			<column name="type" type="NUMERIC" value="0" />
+		</insert>
+	</changeSet>
+	<changeSet id="1-38-16-9-01b" author="richard">
+	<comment>DSpace - system property</comment>
+		<insert tableName="SystemProperty">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="dependent_id" type="NUMERIC" value="NULL" />
+			<column name="descriptor_id" type="NUMERIC"
+				valueComputed="(select id from PropertyDescriptor where name ='dspace.available')" />
+		</insert>
+	</changeSet>
+	<changeSet id="1-38-16-9-01c" author="richard">
+	    <comment>DSpace - disabled by default</comment>
+		<insert tableName="SystemPropertyValue">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="value" type="String" value="false" />
+			<column name="property_id" type="NUMERIC"
+				valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='dspace.available')" />
+		</insert>
+	</changeSet>
+	<!-- App setup for DSpace -->
+	<changeSet id="1-38-16-9-01d" author="richard">
+		<comment>DSpace App </comment>
+	  <insert tableName="App">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="label" type="STRING" value="DSpace" />
+			<column name="name" type="STRING" value="app.dspace" />
+			<column name="defaultEnabled" type="BOOLEAN" valueBoolean="false"/>
+		</insert>
+	</changeSet>
+	<changeSet id="16-09-01e" author="richard">
+	<comment>Property Descriptors for DSpace App</comment>
+	<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="DSPACE_SERVICE_URL" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="DSPACE_PWD" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="DSPACE_COLLECTION" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+	</changeSet>
+	<changeSet id="16-09-01f" author="richard">
+		<comment>AppConfigElementDescriptor for DSpace App: id, descriptor_id, app_id</comment>
+		<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.dspace" and pd.name='DSPACE_SERVICE_URL';</sql>
+			<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.dspace" and pd.name='DSPACE_PWD';</sql>
+			<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.dspace" and pd.name='DSPACE_COLLECTION';</sql>	
+	</changeSet>
+	
+    <changeSet id="16-09-08" author="matthias" context="run">
+        <comment>Add targetFolder relation to RecordGroupSharing</comment>    
+        <addColumn tableName="RecordGroupSharing">
+            <column name="targetFolder_id" type="BIGINT(19)"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="targetFolder_id" baseTableName="RecordGroupSharing" 
+            constraintName="FK2AA5A06EF5ADC9D2" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" 
+            onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Folder"/>
+    </changeSet>
+
+    <changeSet id="16-09-21" author="matthias" context="run">
+        <comment>Add User relation to TokenBasedVerification entity</comment>
+        <addColumn tableName="TokenBasedVerification">
+            <column name="user_id" type="BIGINT(19)"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="TokenBasedVerification" constraintName="FKA0614C95DE6F978E" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User"/>
+    </changeSet>
+    <!--  changesets for RSPAC-1002 -->
+    <!-- 1st of all drop FK contraints, we'll recreate these at the end -->
+    <changeSet id="16-09-27a-1" author="richard" context="run">
+    <comment>drop FK contraints, we'll recreate these in 16-7-15-app-122 and 16-7-15-app-121 </comment>
+      <dropForeignKeyConstraint baseTableName="UserAppConfig" constraintName="FKE27F8518C68E22F3"/>
+    </changeSet>
+     <changeSet id="16-09-27a-2" author="richard" context="run">
+      <comment>drop FK contraints, we'll recreate these in 16-7-15-app-122 and 16-7-15-app-121 </comment>
+      <dropForeignKeyConstraint baseTableName="UserAppConfig" constraintName="FKE27F8518DE6F978E"/>
+    </changeSet>
+    <changeSet id="16-09-27a" author="richard" context="run">   
+     <comment>Non-null app id</comment>
+     <addNotNullConstraint tableName="UserAppConfig" columnName="app_id" columnDataType="BIGINT"/>
+    </changeSet>
+    <changeSet id="16-09-27b" author="richard" context="run">
+      <comment>Non-null user id</comment>
+     <addNotNullConstraint tableName="UserAppConfig" columnName="user_id" columnDataType="BIGINT"/>
+    </changeSet>
+    <changeSet id="16-09-27c" author="richard" context="run">
+     <preConditions onFail="WARN" onError="WARN" onFailMessage="There are some duplicated UserAppConfig Sets" 
+       onErrorMessage="There are some duplicated UserAppConfig rows">
+      <sqlCheck expectedResult="0">select count(*) from (select app_id,user_id, count(*) as c  from UserAppConfig group by app_id, user_id having c > 1)nonUniqueUserAppQuery</sqlCheck>
+     </preConditions>
+     <comment>Add unique constraint if possible</comment>
+     <addUniqueConstraint columnNames="user_id, app_id" tableName="UserAppConfig"/>
+    </changeSet>
+    <changeSet author="richard" id="16-7-15-app-122" context="run">
+		<comment>adding back FK app_id in UserAppConfig</comment>
+		<addForeignKeyConstraint baseColumnNames="app_id"
+			baseTableName="UserAppConfig" constraintName="FKE27F8518C68E22F4"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="App" />
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-132" context="run">
+		<comment>adding back FK app_id in UserAppConfig</comment>
+		<addForeignKeyConstraint baseColumnNames="user_id"
+			baseTableName="UserAppConfig" constraintName="FKE27F8518DE6F9784"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

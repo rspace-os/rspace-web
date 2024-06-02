@@ -1,0 +1,55 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.95 January 2024 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+
+    <changeSet id="2023-11-20" author="fraser">
+        <comment>
+            RSDEV-55: remove ECAT from system properties.
+        </comment>
+        <sql>
+            DELETE spv FROM SystemPropertyValue spv
+            JOIN SystemProperty sp ON spv.property_id = sp.id
+            JOIN PropertyDescriptor pd ON sp.descriptor_id = pd.id
+            WHERE pd.name IN ('ecat.available', 'ecat.defaultServer');
+
+            -- first remove ecat.defaultServer, which is dependent on ecat.available
+            DELETE sp FROM SystemProperty sp
+            JOIN PropertyDescriptor pd ON sp.descriptor_id = pd.id
+            WHERE pd.name = 'ecat.defaultServer';
+
+            -- then ecat.available
+            DELETE sp FROM SystemProperty sp
+            JOIN PropertyDescriptor pd ON sp.descriptor_id = pd.id
+            WHERE pd.name = 'ecat.available';
+
+            DELETE pd FROM PropertyDescriptor pd
+            WHERE pd.name IN ('ecat.available', 'ecat.defaultServer');
+        </sql>
+    </changeSet>
+
+    <changeSet id="2023-12-13" author="fraser" context="run,dev-test">
+        <comment>rsdev-70: add an index the BaseRecord name column, as multiple queries search by name</comment>
+        <sql>
+            CREATE INDEX record_name_idx on BaseRecord(name);
+        </sql>
+    </changeSet>
+
+    <changeSet id="2023-12-20" author="fraser" context="run">
+        <comment>rsdev-79: remove parentId from Group and primaryGroup from UserGroup as parent/sub-groups are unused.</comment>
+        <sql>
+            ALTER TABLE rsGroup DROP FOREIGN KEY FK56E1B8BE7A01A01B;
+            ALTER TABLE rsGroup DROP COLUMN parent_id;
+            ALTER TABLE UserGroup DROP COLUMN primaryGroup;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

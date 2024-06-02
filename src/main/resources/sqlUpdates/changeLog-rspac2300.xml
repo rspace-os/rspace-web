@@ -1,0 +1,35 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<changeSet id="2021-07-08a" context="run" author="richard">
+		<comment>RSPAC-2300 add columns if BaseREcord was imported from an export</comment>
+		<addColumn tableName="BaseRecord">
+			<column type="BIT(1)" name="fromImport"
+				defaultValueBoolean="0">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="BaseRecord">
+			<column type="VARCHAR(50)" name="originalCreatorUsername" />
+		</addColumn>
+
+	</changeSet>
+	
+	<changeSet id="2021-07-08b" context="run" author="richard">
+		<comment>RSPAC-2300 add columns if BaseREcord was imported from an export</comment>
+		<addColumn tableName="BaseRecord_AUD">
+			<column type="BIT(1)" name="fromImport"
+				defaultValueBoolean="0">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="BaseRecord_AUD">
+			<column type="VARCHAR(50)" name="originalCreatorUsername" />
+		</addColumn>
+
+	</changeSet>
+
+</databaseChangeLog>

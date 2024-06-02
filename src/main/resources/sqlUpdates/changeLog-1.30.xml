@@ -1,0 +1,50 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<!-- Changes for version 1.30 October 2015-->
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets !  -->
+<!-- Add changesets here... -->
+
+<changeSet author="matthias" id="2015-10-05" context="run">
+    <comment>Status update message length increased to 2000 chars</comment>
+    <modifyDataType columnName="lastStatusUpdateMessage"
+        newDataType="clob" tableName="CommunicationTarget" />
+    <modifyDataType columnName="lastStatusUpdateMessage"
+        newDataType="clob" tableName="CommunicationTarget_AUD" />
+</changeSet>
+
+<changeSet id="2015-10-09" author="richard">
+<comment>Set record ids into chem elements for permissions checking</comment>
+<sql>create temporary table chem as (select d.id as d, el.id as el  
+  from Field f inner join StructuredDocument d on f.structuredDocument_id=d.id  
+  inner join RSChemElement el on  f.id=el.parentId where el.record_id is null);</sql>
+<sql> update RSChemElement el join chem c on el.id=c.el set record_id=d;</sql>
+<dropTable tableName="chem"/>
+</changeSet>
+
+<changeSet id="2015-10-09b" author="matthias">
+    <comment>Set record ids into annotations, for permissions checking</comment>
+    <sql>create temporary table tempAnno as (select d.id as d, el.id as el
+      from Field f inner join StructuredDocument d on f.structuredDocument_id=d.id  
+      inner join ecatImageAnnotation el on f.id=el.parentId where el.record_id is null);</sql>
+    <sql> update ecatImageAnnotation el join tempAnno on el.id=tempAnno.el set record_id=d;</sql>
+    <dropTable tableName="tempAnno"/>
+</changeSet>
+
+<changeSet id="2015-10-09c" author="matthias">
+    <comment>Set record ids into comments, for permissions checking</comment>
+    <sql>create temporary table tempComm as (select d.id as d, el.com_id as el
+      from Field f inner join StructuredDocument d on f.structuredDocument_id=d.id  
+      inner join ecat_comm el on f.id=el.parent_id where el.record_id is null);</sql>
+    <sql> update ecat_comm el join tempComm on el.com_id=tempComm.el set record_id=d;</sql>
+    <dropTable tableName="tempComm"/>
+</changeSet>
+
+
+<!--  only customChange changeSets should be placed below here -->
+
+
+</databaseChangeLog>

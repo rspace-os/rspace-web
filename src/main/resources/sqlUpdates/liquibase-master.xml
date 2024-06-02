@@ -1,0 +1,134 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+    <!-- add files of changes here, one per release. These are executed in order, and
+     assume a base schema is already in place, either generated from Hibernate mappings
+     (in dev environment) or via the baseline sql schema ( deployment environment).
+     file is set by variable at build-time for 0.14-0.15 transition where we have an existing DB that
+      has already core user data in it but has not yet been managed by Liquibase. -->
+    <!--  the order of these files is important and should not be changed! -->
+    <include relativeToChangelogFile="true" file="data-changeLog.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.15.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.16.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.17.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.18.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.19.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.20.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.21.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.22.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.23.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.24.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.25.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.26.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.27.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-0.28.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.29.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.30.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.31.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.32.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.33.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.34.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.35.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.36.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.37.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.38.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.39.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.40.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.41.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.42.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.43.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.44.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.45.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.46.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.47.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.48.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.49.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.50.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.51.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.52.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.53.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.54.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.55.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.56.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.57.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.58.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.59.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.60.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.61.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.62.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.63.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.64.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.66.xml"/>
+    <include relativeToChangelogFile="true" file="changelog-rspac2022.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.67-snapgeneAvailable-sysprop.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.69.xml"/>
+
+    <include relativeToChangelogFile="true" file="changelog-1.70-rsinv3.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv1.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv29.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv44.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv53.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv14.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv41-templates.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv64.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv105.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv203.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv113.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv30.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv408.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.70-rsinv146.xml"/>
+
+    <include relativeToChangelogFile="true" file="changeLog-rspac2174.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2235.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2168.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2268.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2300.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2277.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsinv365.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.71-rspac2348.xml"/>
+
+    <include relativeToChangelogFile="true" file="changeLog-1.72.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.73.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.74.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2157.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.76.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.77.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2480.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2482.xml"/>
+    <include relativeToChangelogFile="true" file="rspac-2515-1-77.xml"/>
+    <include relativeToChangelogFile="true" file="rspac-2521-obsolete-db-tables.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.78.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.79.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2460.xml"/>
+    <include relativeToChangelogFile="true" file="rspac-2578-nextcloud.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2594.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2546.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.81.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2603.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.82.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2667.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2660.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2665.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2588.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2674.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2675.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2649.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac2627.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2767.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.91.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsinv-831.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsinv-873.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsinv-856.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.94.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.95.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2817.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-98.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-61.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.96.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-102.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-1.98.xml"/>
+
+    <!--  ensure that customUpdates-changeLog.xml always runs LAST! -->
+    <include relativeToChangelogFile="true" file="customUpdates-changeLog.xml"/>
+</databaseChangeLog>

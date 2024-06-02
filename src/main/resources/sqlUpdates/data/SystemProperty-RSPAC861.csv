@@ -1,0 +1,9 @@
+id,defaultValue,name,type,dependent_id
+1,false,ecat.enabled,0,NULL
+2,false,box.enabled,0,NULL
+3,false,dropbox.enabled,0,NULL
+4,false,googledrive.enabled,0,NULL
+5,false,onedrive.enabled,0,NULL
+6,false,mendeley.enabled,0,NULL
+7,true,chemistry.enabled,0,NULL
+8,n/a,ecat.defaultServer,2,1

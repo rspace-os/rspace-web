@@ -1,0 +1,13 @@
+body {
+    margin: 0px;
+}
+
+#office_frame {
+    width: 100%;
+    height: 100%;
+    border-width: 0px;
+}
+
+.ui-dialog { 
+    z-index: 1000; 
+}

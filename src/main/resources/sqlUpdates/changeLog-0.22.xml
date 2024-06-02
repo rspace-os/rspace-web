@@ -1,0 +1,204 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+<!-- Changes for version 0.22-->
+
+ <changeSet id="15-12-2014a" author="radams">
+ <comment> Setting new record type for individual shared folders, updating existing folders in place.</comment>
+ <sql>
+CREATE TEMPORARY TABLE IF NOT EXISTS t15_12_2014a AS (select distinct br.id from BaseRecord br inner join RecordToFolder r2f on br.id=r2f.record_id where r2f.folder_id in (select id from BaseRecord where type='FOLDER:SYSTEM' and name ='IndividualShareItems'));
+ </sql>
+ <sql>
+  update BaseRecord set type='FOLDER:INDIVIDUAL_SHARED_FOLDER_ROOT' where id in (select id from t15_12_2014a);
+ </sql>
+ </changeSet>
+ 
+ 	<changeSet id="19-12-2014a" author="radams">
+		<comment>Add a 'Global message' permission to admin users, for all contexts</comment>
+		<sql>
+			insert into Role_permissionStrings select id,'COMMS:READ:property_name=GLOBALMESSAGE' from roles where id in (select id from roles where name like '%ADMIN%');
+		</sql>
+	</changeSet> 
+	<changeSet id="08-01-15a" author="radams" context="run">
+	<comment>Add affiliation field to User table</comment>
+	<addColumn tableName="User">
+			<column name="affiliation" type="VARCHAR(255)" defaultValue="n/a"/>
+	</addColumn>
+	</changeSet>
+	<changeSet id="08-01-15b" author="radams">
+	<update tableName="User">
+	<column name="affiliation" value="n/a"></column>
+	<where>affiliation is NULL</where>
+	</update>
+	</changeSet>
+	<!-- 
+ Please read DatabaseChangeGuidelines.txt before committing any changes
+  and leave this comment at the end of the file.
+ -->
+
+	<changeSet id="14-01-2015" author="fjlopez" context="cloud">
+		<comment>Add a 'SHARE' permission to users in the cloud environment. </comment>
+		<sql>
+			insert into Role_permissionStrings select id,'RECORD:SHARE:property_owner=${self}' from roles;
+		</sql>
+	</changeSet>
+ 
+ 	<changeSet id="16-12-2015" author="fjlopez">
+		<comment>Add a 'Request Share Record' permission to users, for all contexts</comment>
+		<sql>
+			insert into Role_permissionStrings select id,'COMMS:READ:property_name=REQUESTSHARERECORD' from roles;
+		</sql>
+	</changeSet> 
+	
+	<changeSet author="fjlopez (generated)" id="1421424243497-1" context="run">
+		<createTable tableName="ShareRecordMessageOrRequest">
+			<column name="id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationTime" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="message" type="VARCHAR(255)" />
+			<column name="priority" type="INT(10)" />
+			<column name="subject" type="VARCHAR(255)" />
+			<column name="typeCode" type="INT(10)">
+				<constraints nullable="false" />
+			</column>
+			<column name="originator_id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+			<column name="record_id" type="BIGINT(19)" />
+			<column name="latest" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="messageType" type="INT(10)">
+				<constraints nullable="false" />
+			</column>
+			<column name="requestedCompletionDate" type="datetime" />
+			<column name="status" type="INT(10)" />
+			<column name="terminationTime" type="datetime" />
+			<column name="next_id" type="BIGINT(19)" />
+			<column name="previous_id" type="BIGINT(19)" />
+			<column name="permission" type="VARCHAR(255)" />
+			<column name="target_id" type="BIGINT(19)" />
+		</createTable>
+	</changeSet>
+
+	<changeSet author="fjlopez (generated)" id="1421424243497-2" context="run">
+		<createTable tableName="ShareRecordMessageOrRequest_AUD">
+			<column name="id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT(10)">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT(3)" />
+			<column name="creationTime" type="datetime" />
+			<column name="message" type="VARCHAR(255)" />
+			<column name="priority" type="INT(10)" />
+			<column name="subject" type="VARCHAR(255)" />
+			<column name="typeCode" type="INT(10)" />
+			<column name="originator_id" type="BIGINT(19)" />
+			<column name="record_id" type="BIGINT(19)" />
+			<column name="latest" type="BIT(1)" />
+			<column name="messageType" type="INT(10)" />
+			<column name="requestedCompletionDate" type="datetime" />
+			<column name="status" type="INT(10)" />
+			<column name="terminationTime" type="datetime" />
+			<column name="next_id" type="BIGINT(19)" />
+			<column name="previous_id" type="BIGINT(19)" />
+			<column name="permission" type="VARCHAR(255)" />
+			<column name="target_id" type="BIGINT(19)" />
+		</createTable>
+	</changeSet>
+
+	<changeSet author="fjlopez (generated)" id="1421424243497-4" context="run">
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="ShareRecordMessageOrRequest" />
+	</changeSet>
+	
+	<changeSet author="fjlopez (generated)" id="1421424243497-5" context="run">
+		<addPrimaryKey columnNames="id, REV" constraintName="PRIMARY"
+			tableName="ShareRecordMessageOrRequest_AUD" />
+	</changeSet>
+	
+	<changeSet author="fjlopez (generated)" id="1421424243497-6" context="run">
+		<addForeignKeyConstraint baseColumnNames="target_id"
+			baseTableName="ShareRecordMessageOrRequest" constraintName="FK883FEFF5B697F408"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	
+	<changeSet author="fjlopez (generated)" id="1421424243497-7" context="run">
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="ShareRecordMessageOrRequest_AUD" constraintName="FKE9036287DF74E053c550465686591b46"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="REV" referencedTableName="REVINFO" />
+	</changeSet>
+	
+	<changeSet author="fjlopez (generated)" id="1421424243497-8" context="run">
+		<addForeignKeyConstraint baseColumnNames="originator_id"
+			baseTableName="ShareRecordMessageOrRequest" constraintName="FKF1E9FFB664CCD43Dc3272305883feff5"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	
+	<changeSet author="fjlopez (generated)" id="1421424243497-9" context="run">
+		<addForeignKeyConstraint baseColumnNames="record_id"
+			baseTableName="ShareRecordMessageOrRequest" constraintName="FKF1E9FFB6CFF3DF14c3272305883feff5"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="BaseRecord" />
+	</changeSet>
+
+	<changeSet id="19-01-15" author="fjlopez" context="run">
+		<comment>Alter engines to InnoDB for created tables</comment>
+		<sql>alter table ShareRecordMessageOrRequest engine=InnoDB;</sql>
+		<sql>alter table ShareRecordMessageOrRequest_AUD engine=InnoDB;</sql>
+	</changeSet>
+	
+	 <changeSet id="19-1-2015a" author="radams" context="run">
+ <comment> Add 'type' column to UserPasswordChange</comment>
+ <addColumn tableName="UserPasswordChange">
+ <column name="verificationType" type="TINYINT"></column>
+ </addColumn>
+ </changeSet>
+ <changeSet id="19-1-2015b" author="radams" context="run">
+ <comment> Set all existing types to Password - enum value 0</comment>
+ <update tableName="UserPasswordChange">
+ <column name="verificationType" valueNumeric="0"></column>
+ </update>
+ </changeSet>
+ <changeSet id="19-1-2015c" author="radams" context="run">
+ <comment> Rename UserPasswordChange table to more generic name</comment>
+ <renameTable newTableName="TokenBasedVerification" oldTableName="UserPasswordChange"/>
+ </changeSet>
+ <changeSet id="19-1-2015d" author="radams" context="run">
+ <comment>Rename column to more generic name</comment>
+ <renameColumn tableName="TokenBasedVerification" oldColumnName="passwordChangeRequestTime" newColumnName="requestTime" columnDataType="TIMESTAMP"/>
+ </changeSet>
+ 
+ <changeSet id="23-01-2015a" author="radams" context="run">
+ <comment>Give permission for existing non-group members to access shared folders</comment>
+ <sql>update BaseRecord br, User u set acl= concat(acl,  username, '=RECORD:READ')  where  u.id=br.owner_id and type like '%SYSTEM%' and name ='Shared' and length(acl) = 0;</sql>
+ </changeSet>
+  <changeSet id="23-01-2015b" author="radams" context="run">
+ <comment>Give permission for existing non-group members to access shared folders</comment>
+ <sql>update BaseRecord br, User u set acl= concat(acl,  username, '=RECORD:READ')  where  u.id=br.owner_id and type like '%SYSTEM%' and name ='LabGroups' and length(acl) = 0;</sql>
+ </changeSet>
+   <changeSet id="23-01-2015c" author="radams" context="run">
+ <comment>Give permission for existing non-group members to access shared folders</comment>
+ <sql>update BaseRecord br, User u set acl= concat(acl,  username, '=RECORD:READ')  where  u.id=br.owner_id and type like '%SYSTEM%' and name ='CollaborationGroups' and length(acl) = 0;</sql>
+ </changeSet>
+ <changeSet id="23-01-2015d" author="radams" context="run">
+ <comment>Give permission for existing non-group members to access shared folders</comment>
+ <sql>update BaseRecord br, User u set acl= concat(acl,  username, '=RECORD:READ')  where  u.id=br.owner_id and type like '%SYSTEM%' and name ='IndividualShareItems' and length(acl) = 0;</sql>
+ </changeSet>
+ 
+ <changeSet id="11-2-2015a" author="radams">
+ <comment>RSPAC-380 deltaString field length increase to 2000</comment>
+ <modifyDataType tableName="StructuredDocument" columnName="deltaString" newDataType="varchar(2000)"/>
+ <modifyDataType tableName="StructuredDocument_AUD" columnName="deltaString" newDataType="varchar(2000)"/>
+ </changeSet>
+	
+</databaseChangeLog>

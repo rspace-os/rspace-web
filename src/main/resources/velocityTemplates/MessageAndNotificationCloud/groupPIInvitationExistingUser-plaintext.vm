@@ -1,0 +1,9 @@
+Hello $!{invited.fullName},
+
+${creator.fullName} (${creator.email}) has invited you to create an RSpace group '${groupName}', with you as its Principal Investigator. 
+
+If you'd like to accept this invitation, please login to RSpace at ${acceptanceLink}
+
+Once you've logged in,  there will be an invitation message waiting for you - accept this invitation and your group will be created, with ${creator.fullName} as your Lab Admin.
+ 
+#signature_Plaintext

@@ -1,0 +1,363 @@
+ {
+	"id": 8163,
+	"title": "Western blot",
+	"image": {
+		"source": "https:\/\/s3.amazonaws.com\/pr-journal\/n9jhxvw.jpg",
+		"placeholder": "https:\/\/s3.amazonaws.com\/pr-journal\/n9jhxvw.jpg"
+	},
+	"doi": "dx.doi.org\/10.17504\/protocols.io.j8bcrsn",
+	"uri": "western-blot-j8bcrsn",
+	"published_on": 1507386557,
+	"version_id": 0,
+	"created_on": 1507385111,
+	"categories": null,
+	"creator": {
+		"name": "Laura Ruiz Remolina",
+		"affiliation": null,
+		"username": "laura-ruiz-remolina",
+		"link": "https:\/\/doi.org\/10.1371\/journal.pone.0188204",
+		"image": {
+			"source": "\/img\/avatars\/016.png",
+			"placeholder": "\/img\/avatars\/016.png"
+		}
+	},
+	"public": 1,
+	"has_versions": 1,
+	"link": "https:\/\/doi.org\/10.1371\/journal.pone.0188204",
+	"number_of_steps": 11,
+	"authors": [
+		{
+			"name": "Laura Ruiz Remolina",
+			"affiliation": "Salamanca University (USAL), Spain",
+			"username": "laura-ruiz-remolina",
+			"link": null,
+			"image": {
+				"source": "\/img\/avatars\/016.png",
+				"placeholder": "\/img\/avatars\/016.png"
+			}
+		}
+	],
+	"versions": [],
+	 "materials": [],
+	"steps": [
+	    {
+			"id": 589928,
+			"guid": "614CB4BACAD0415BB9D94258D78D2ED5",
+			"previous_id": 0,
+			"previous_guid": null,
+			"modified_on": 1507386535,
+			"components": []
+		},
+		{
+			"id": 589929,
+			"guid": "614CB4BACAD0415BB9D94258D78D2ED5",
+			"previous_id": 0,
+			"previous_guid": null,
+			"modified_on": 1507386535,
+			"components": [
+				{
+					"id": 1010432,
+					"guid": "92D7C1EB119640B088C797594FCD3E20",
+					"order_id": 0,
+					"type_id": 1,
+					"title": "Description",
+					"source": {
+						"description": "<p>step to make smth</p>"
+					}
+				},
+				{
+					"id": 1010433,
+					"guid": "6C1CC3F13F5B4409A811A9D943297505",
+					"order_id": 1,
+					"type_id": 3,
+					"title": "Section",
+					"source": {
+						"amount": 11,
+						"unit": "µl",
+						"title": "of MGH"
+					}
+				},
+				{
+					"id": 1010434,
+					"guid": "6C1CC3F13F5B4409A811A9D943297506",
+					"order_id": 2,
+					"type_id": 4,
+					"title": "Section",
+					"source": {
+						"duration": 11,
+						"title": "boil"
+					}
+				},
+				{
+					"id": 1010435,
+					"guid": "6C1CC3F13F5B4409A811A9D943297507",
+					"order_id": 3,
+					"type_id": 6,
+					"title": "Section",
+					"source": {
+						"title": "Acquire image using normal image scanning methods for colorimetric detection.\uff09"
+					}
+				},
+				{
+					"id": 1010436,
+					"guid": "6C1CC3F13F5B4409A811A9D943297508",
+					"order_id": 4,
+					"type_id": 7,
+					"title": "Section",
+					"source": {
+						"link": "https://www.protocols.io"
+					}
+				},
+				{
+					"id": 1010437,
+					"guid": "6C1CC3F13F5B4409A811A9D943297509",
+					"order_id": 5,
+					"type_id": 8,
+					"title": "Section",
+					"source": {
+						"name": "what",
+						"developer": "me",
+						"repository": "https://google.com",
+						"link": "https://google.com",
+						"os_name": "win",
+						"os_version": "10"
+					}
+				},
+				{
+					"id": 1010438,
+					"guid": "6C1CC3F13F5B4409A811A9D943297510",
+					"order_id": 6,
+					"type_id": 9,
+					"title": "Section",
+					"source": {
+						"name": "DataTable",
+						"link": "https://protocols.io"
+					}
+				},
+				{
+					"id": 1010439,
+					"guid": "6C1CC3F13F5B4409A811A9D943297510",
+					"order_id": 7,
+					"type_id": 13,
+					"title": "Section",
+					"source": {
+					   "id": 16620,
+					   "parent_id": 0,
+					   "uri": "comment-on-step-1-of-untitled-protocol1",
+					   "title": "Comment on step 1 of untitled protocol",
+					   "body": "<p>Make if cool!</p>",
+					   "created_on": 1517933093,
+					   "changed_on": 0,
+					    "creator": {
+						  "name": "Lenny Teytelman",
+						  "affiliation": "protocols.io",
+						  "username": "lenny-teytelman",
+						  "link": null,
+						  "image": {
+							"source": "/img/avatars/005.png",
+							"placeholder": "/img/avatars/005.png"
+						     }
+					     },
+					   "comments": []
+					 }
+				},
+				{
+					"id": 1010440,
+					"guid": "6C1CC3F13F5B4409A811A9D943297511",
+					"order_id": 8,
+					"type_id": 15,
+					"title": "Command",
+					"source": {
+						"name": "Code",
+                        "command": "echo 'hello world!'",
+                        "os_name": "windows",
+                        "os_version": "10"
+					}
+				},
+				{
+					"id": 1010441,
+					"guid": "6C1CC3F13F5B4409A811A9D943297512",
+					"order_id": 9,
+					"type_id": 17,
+					"title": "Expected Result",
+					"source": {
+						"body": "<p>should be something</p>"
+					}
+				},
+				{
+					"id": 1010442,
+					"guid": "6C1CC3F13F5B4409A811A9D9432975123",
+					"order_id": 10,
+					"type_id": 18,
+					"title": "Protocol",
+					"source": {
+                       "id": 872,
+                       "title": "Lysis Buffer (20 mL)",
+                       "image": {
+                          "source": "https://www.protocols.io/img/default_protocol.png",
+                          "placeholder": "https://www.protocols.io/img/default_protocol.png"
+                        },
+                        "doi": "dx.doi.org/10.17504/protocols.io.c4gytv",
+                        "uri": "lysis-buffer-20-ml-c4gytv",
+                        "published_on": 1487372466,
+                        "created_on": 1434670606,
+                        "creator": {
+                             "name": "Celina Gomez",
+                             "affiliation": null,
+                             "username": "celina-gomez",
+                            "link": "",
+                             "image": {
+                                "source": null,
+                                "placeholder": null
+                               }
+                          },
+                         "public": 1,
+                         "versions": [],
+                         "version_id": 0,
+                         "link": "",
+                          "number_of_steps": 0,
+                          "authors": [
+                               {
+                                "name": "Matt Sullivan Lab",
+                               "affiliation": "Matt Sullivan Lab",
+                               "username": null,
+                               "link": null,
+                             "image": {
+                                 "source": null,
+                                 "placeholder": null
+                                 }
+                              }
+                          ],
+                       "steps": [],
+                       "materials": []
+                }
+		    },
+				
+			{
+			  "id": 1010442,
+			  "guid": "6C1CC3F13F5B4409A811A9D943297513",
+			  "order_id": 11,
+			  "type_id": 19,
+			  "title": "Safety",
+			   "source": {
+                   "body": "<p>dont' do something</p>",
+                    "link": "https://protocols.io"
+                   }
+             },
+             {
+			  "id": 1010443,
+			  "guid": "6C1CC3F13F5B4409A811A9D943297514",
+			  "order_id": 12,
+			  "type_id": 20,
+			  "title": "Reagent",
+			   "source": {
+                     "id": 19751,
+                      "mol_weight": 0,
+                      "name": "2 mg Gastrin I, human",
+                      "linfor": "C130H204N38O31S",
+                      "url": "https://www.biorbyt.com/gastrin-i-human-orb321073",
+                       "sku": "orb321073",
+                        "vendor": {
+                         "name": "biorbyt",
+                           "affiliation": null,
+                           "username": null,
+                           "link": "https://www.biorbyt.com/",
+                            "image": {
+                                "source": "http://je-protocols/img/vendors/208.png",
+                                 "placeholder": "http://je-protocols/img/vendors/208.png"
+                              }
+                          }
+                    } 
+             },
+             {
+			  "id": 1010444,
+			  "guid": "6C1CC3F13F5B4409A811A9D943297515",
+			  "order_id": 13,
+			  "type_id": 21,
+			  "title": "Step",
+			   "source": {
+                    "cases": [
+                      {
+                        "title": "Measurement A",
+                        "label": "Case 1",
+                        "step_id": 589928,
+                        "step_guid": "6C1CC3F13F5B4409A811A9D943297511"
+                       },
+                      {
+                        "title": "Measurement B",
+                        "label": "Case 2",
+                        "step_id": 589928,
+                        "step_guid": "6C1CC3F13F5B4409A811A9D943297512"
+                     }
+                   ]
+                 }
+             },
+             {
+			  "id": 1010445,
+			  "guid": "6C1CC3F13F5B4409A811A9D943297516",
+			  "order_id": 14,
+			  "type_id": 22,
+			  "title": "Previous step",
+			   "source": {
+                  "title": "Reason for repeating the step",
+                  "step_guid": "E70FDFE632504ADFB0ED519ABB5449B1"
+                 }
+             },
+                 {
+			  "id": 1010446,
+			  "guid": "6C1CC3F13F5B4409A811A9D943297517",
+			  "order_id": 15,
+			  "type_id": 24,
+			  "title": "Temperature",
+			   "source": {
+                  "temperature": 12,
+                  "unit": "°C",
+                  "title": "boil"
+                 }
+             },
+             {
+			  "id": 1010447,
+			  "guid": "6C1CC3F13F5B4409A811A9D943297518",
+			  "order_id": 16,
+			  "type_id": 25,
+			  "title": "Concentration",
+			   "source": {
+                    "concentration": 12,
+                    "unit": "mM",
+                    "title": "NaCl"
+                 }
+             },
+             {
+			  "id": 1010448,
+			  "guid": "6C1CC3F13F5B4409A811A9D943297519",
+			  "order_id": 17,
+			  "type_id": 26,
+			  "title": "Note",
+			   "source": {
+					"id": 16621,
+					"parent_id": 0,
+					"uri": "comment-on-step-1-of-untitled-protocol1",
+					"title": "Comment on step 1 of untitled protocol",
+					"body": "<p>Make if hot!</p>",
+					"created_on": 1517933093,
+					"changed_on": 0,
+					"creator": {
+						"name": "Lenny Teytelman",
+						"affiliation": "protocols.io",
+						"username": "lenny-teytelman",
+						"link": null,
+						"image": {
+							"source": "/img/avatars/005.png",
+							"placeholder": "/img/avatars/005.png"
+						}
+					},
+					"comments": []
+	
+                 }
+             }
+             
+				
+		   ]
+		}
+	]
+}

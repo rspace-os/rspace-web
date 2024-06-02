@@ -1,0 +1,98 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.94 November 2023 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+    <changeSet id="2023-10-24" author="matthias" context="run">
+        <comment>RSDEV-11: drop varchar 'barcode' column from inventory record tables</comment>
+        <dropColumn columnName="barcode" tableName="Container" />
+        <dropColumn columnName="barcode" tableName="Container_AUD" />
+        <dropColumn columnName="barcode" tableName="Sample" />
+        <dropColumn columnName="barcode" tableName="Sample_AUD" />
+        <dropColumn columnName="barcode" tableName="SubSample" />
+        <dropColumn columnName="barcode" tableName="SubSample_AUD" />
+    </changeSet>
+
+    <changeSet id="2023-10-25a" author="fraser" context="run">
+        <comment>RSDEV-22: refactor storage of permissions strings. create new columns in owning entity to hold permission strings</comment>
+        <addColumn tableName="rsGroup">
+            <column name="permissionStrings" type="VARCHAR(8000)"/>
+        </addColumn>
+        <addColumn tableName="User">
+            <column name="permissionStrings" type="VARCHAR(8000)"/>
+        </addColumn>
+        <addColumn tableName="UserGroup">
+            <column name="permissionStrings" type="VARCHAR(8000)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2023-12-01" author="fraser" context="run">
+        <comment>RSDEV-65: fix issue where large number of permission strings were being concatenated and creating a string larger than 8000 set in previous changeset. </comment>
+        <modifyDataType tableName="rsGroup" columnName="permissionStrings" newDataType="MEDIUMTEXT"/>
+        <modifyDataType tableName="User" columnName="permissionStrings" newDataType="MEDIUMTEXT"/>
+        <modifyDataType tableName="UserGroup" columnName="permissionStrings" newDataType="MEDIUMTEXT"/>
+    </changeSet>
+
+    <changeSet id="2023-10-25b" author="fraser" context="run">
+        <comment>RSDEV-22: refactor storage of permissions strings. migrate and concatenate permission strings from original joining tables to newly created columns</comment>
+        <!--Group-->
+        <sql>
+            UPDATE rsGroup INNER JOIN
+                (
+                    SELECT AbstractUserOrGroupImpl_id,
+                    GROUP_CONCAT(permissionStrings SEPARATOR ';;') joinedPermissions
+                    FROM AbstractUserOrGroupImpl_permissionStrings
+                    GROUP BY AbstractUserOrGroupImpl_id
+                ) joiningTable
+            ON joiningTable.AbstractUserOrGroupImpl_id = rsGroup.id
+            SET permissionStrings = joiningTable.joinedPermissions;
+        </sql>
+        <!--User-->
+        <sql>
+            UPDATE User INNER JOIN
+                (
+                    SELECT AbstractUserOrGroupImpl_id,
+                    GROUP_CONCAT(permissionStrings SEPARATOR ';;') joinedPermissions
+                    FROM AbstractUserOrGroupImpl_permissionStrings
+                    GROUP BY AbstractUserOrGroupImpl_id
+                ) joiningTable
+            ON joiningTable.AbstractUserOrGroupImpl_id = User.id
+            SET permissionStrings = joiningTable.joinedPermissions;
+        </sql>
+        <!--UserGroup-->
+        <sql>
+            UPDATE UserGroup INNER JOIN
+                (
+                    SELECT UserGroup_id,
+                    GROUP_CONCAT(permissionStrings SEPARATOR ';;') joinedPermissions
+                    FROM UserGroup_permissionStrings
+                    GROUP BY UserGroup_id
+                ) joiningTable
+            ON joiningTable.UserGroup_id = UserGroup.id
+            SET permissionStrings = joiningTable.joinedPermissions;
+        </sql>
+    </changeSet>
+
+    <changeSet id="2023-10-31" author="fraser" context="run">
+        <comment>
+            RSDEV-22: AbstractUserOrGroupImpl_permissionStrings and UserGroup_permissionStrings are no longer used and the data has been migrated in the above 2 change sets.
+            We don't want to remove those tables yet until a future release (incase there are any issue with the data migration), but renaming them to ensure they are not used and there is no code still reliant on those tables.
+        </comment>
+        <sql>
+            ALTER TABLE AbstractUserOrGroupImpl_permissionStrings
+            RENAME TO AbstractUserOrGroupImpl_permissionStrings_BK;
+        </sql>
+        <sql>
+            ALTER TABLE UserGroup_permissionStrings
+            RENAME TO UserGroup_permissionStrings_BK;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

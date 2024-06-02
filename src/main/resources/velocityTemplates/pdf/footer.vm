@@ -1,0 +1,7 @@
+<div id='footer'>
+  <br>
+  <br>
+  <p>
+    $dateLabel &nbsp; &nbsp; Exported by: $name
+  </p>
+</div>

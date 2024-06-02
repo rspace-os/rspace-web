@@ -1,0 +1,29 @@
+#*
+Template for reminding a user their username
+Arguments:
+ - username
+ - loginLink - The login URL to the RSpace instance
+ - ipAddress - The IP address from where the username reminder request was generated.
+*#
+
+<p>Hello,</p>
+
+<p>
+    You, or someone else, requested a username reminder for RSpace at this email
+    address.
+</p>
+
+<p>
+    Your username is ${username}
+    <br>
+     <a href="${loginLink}">Login to RSpace</a>
+</p>
+
+<p>
+    If you did not request a username reminder, please get in touch with your RSpace
+    support team.
+</p>
+
+<p>#dontReply</p>
+
+<p>#emailSourceIpFooter (${ipAddress})</p>

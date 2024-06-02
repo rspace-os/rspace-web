@@ -1,0 +1,55 @@
+#*Template for rendering an ArchiveDocument to HTML for HTML export.
+ Takes the following arguments:
+ - document - an ArchivalDocument
+ - parentRef - a String link to the document's folder
+*#
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>${document.name}</title>
+<link href="../resources/document.css" rel="stylesheet" />
+<meta charset="UTF-8">
+</head>
+<body>
+<div class="navigationSection">
+<a href="../index.html">Top</a> | <a href="../${parentRef}">Parent folder</a>
+</div>
+<div id="headerSection">
+<h4>${document.name}</h4>
+<p>Document SD$document.docId (version $document.version)
+#coreData($document)
+</div>
+#foreach ($field in $document.listFields)
+<H3> ${field.fieldName}</H3>
+    <div style="width:960px" >
+    $field.fieldDataPrintable
+    </div>
+    <div>
+     ## Here we're listing comments
+      #if(! $field.comments.isEmpty())
+      <h2>Comments</h2>
+      	#foreach($comment in $field.comments)
+      	  <p> Comment $foreach.count </p>
+      		#foreach($item in $comment.items)
+      		   $item.lastUpdater : $item.updateDate : $item.itemContent <br/>
+      		#end
+      	#end ## end of comment
+      #end ## end of comment conditional
+    </div>
+    ## Here we list links to original Files( e.g. Tiffs)
+    <div>
+    #foreach($linkedImage in $field.imgMeta)
+
+     #if($linkedImage.linkToOriginalFile)
+      Original image:  <a href="$linkedImage.linkToOriginalFile">$linkedImage.linkToOriginalFile</a><br/>
+     #end
+    #end ## end of linked image loop
+    </div>
+
+    #lomsHtml($field.listsOfMaterials)
+
+    <hr>
+#end ## end of field loop
+#nfsElements($nfsFiles "..")
+</body>
+</html>

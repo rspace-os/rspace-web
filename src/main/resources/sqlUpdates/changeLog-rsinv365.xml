@@ -1,0 +1,42 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+ 
+
+    <changeSet id="2021-08-31a"  author="richard">
+        <comment>Create a new system property to toggle Inventory On Off</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="DENIED"/>
+            <column name="name" type="STRING" value="inventory.available"/>
+            <column name="type" type="NUMERIC" value="3"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id"
+                    type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name ='inventory.available')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value="DENIED"/>
+            <column name="property_id"
+                    type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='inventory.available')"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2021-09-01a"  author="richard">
+        <comment>"Enable Inventory in all setups - prod and dev"</comment>
+        <update tableName="SystemPropertyValue">
+            <column name="value" value="ALLOWED"/>
+            <where>
+                property_id = (select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='inventory.available')
+            </where>
+        </update>
+    </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,15 @@
+{
+  "url:experimenters": "http://localhost:1080/api/v0/m/experimenters/",
+  "url:experimentergroups": "http://localhost:1080/api/v0/m/experimentergroups/",
+  "url:projects": "http://localhost:1080/api/v0/m/projects/",
+  "url:datasets": "http://localhost:1080/api/v0/m/datasets/",
+  "url:images": "http://localhost:1080/api/v0/m/images/",
+  "url:screens": "http://localhost:1080/api/v0/m/screens/",
+  "url:plates": "http://localhost:1080/api/v0/m/plates/",
+  "url:rois": "http://localhost:1080/api/v0/m/rois/",
+  "url:token": "http://localhost:1080/api/v0/token/",
+  "url:servers": "http://localhost:1080/api/v0/servers/",
+  "url:login": "http://localhost:1080/api/v0/login/",
+  "url:save": "http://localhost:1080/api/v0/m/save/",
+  "url:schema": "http://www.openmicroscopy.org/Schemas/OME/2016-06"
+}

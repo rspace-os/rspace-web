@@ -1,0 +1,291 @@
+.error {
+  color: red;
+}
+
+#displayAreaBlock {
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+#displayAreaBlock #inviteBlock {
+  width: 100%;
+  display: flex;
+}
+
+#displayAreaBlock .title {
+  display: flex;
+  align-items: center;
+}
+
+#displayAreaBlock .title h3 {
+  align-self: flex-start;
+}
+
+#displayAreaBlock .title input {
+  margin-left: 10px;
+  align-self: flex-start;
+}
+
+#membersBlock {
+  display: flex;
+}
+
+#membersBlock .group-members {
+  flex-grow: 1;
+}
+
+#membersBlock .pending-invitations {
+  padding-left: 10px;
+  border: 0px;
+}
+
+#membersBlock .pending-invitations h3 {
+  text-align: center;
+}
+
+#membersBlock .pending-invitations table {
+  border-collapse: collapse;
+  border: 0px;
+}
+
+#membersBlock .pending-invitations td {
+  padding: 5px 10px 5px 8px;
+  border-color: #DDDDDD;
+}
+
+#membersBlock .pending-invitations td.action {
+  text-align: center;
+}
+
+#memberGroups {
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+}
+
+#memberGroupsTable.table td a {
+  font-size: 14px;
+  line-height: 30px
+}
+
+#memberGroupsTable.table {
+  border-collapse: collapse;
+}
+
+#grpDetails.table,
+#disabledAccounts.table {
+  border: 0;
+}
+
+#grpDetails.table th,
+#memberGroupsTable.table th,
+#membersBlock .pending-invitations th,
+#disabledAccounts.table th {
+  background-color: #DDDDDD;
+}
+
+#memberGroupsTable.table td,
+#grpDetails.table td,
+#disabledAccounts.table td {
+  padding: 5px 5px 2px 10px;
+}
+
+#grpInvite.table {
+  border: 0;
+}
+
+#grpInvite.table th {
+  background-color: #DDDDDD;
+}
+
+#grpInvited.table {
+  border: 0;
+}
+
+#grpInvited.table th {
+  background-color: #DDDDDD;
+}
+
+#invitedMembers {
+  margin-bottom: 20px;
+}
+
+#add_user_Select {
+  border: 0;
+  width: 100%;
+  height: 240px;
+}
+
+.groupEditButton {
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  padding: 3px 7px 2px 25px;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  background: white;
+  background-image: url('/images/icons/editIcon.png');
+  background-repeat: no-repeat;
+  background-position: top left;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer;
+}
+
+#groupDrop {
+  z-index: 100;
+  position: relative;
+  display: inline;
+  font-size: 11px;
+  float: left;
+}
+
+#groupDrop dd {
+  position: relative;
+}
+
+#groupDrop dt {
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  padding: 4px 7px 4px 20px;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  background: white;
+  background-image: url('/images/blueDropDownArrow.png');
+  background-repeat: no-repeat;
+  background-position: 5px 4px;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer;
+  margin-top: 1px;
+}
+
+#groupDrop dd ul {
+  background: #FFFFFF !important;
+  display: none;
+  list-style: none;
+  padding: 5px;
+  position: absolute;
+  line-height: normal;
+  left: -30px;
+  top: 3px;
+  width: auto;
+  min-width: 110px;
+  z-index: 101;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.3);
+  margin: 0;
+}
+
+#groupDrop dd ul li {
+  background: transparent !important;
+  background-image: none;
+  line-height: normal;
+  box-shadow: none;
+  border: 0;
+  text-align: left;
+}
+
+.groupInviteButton {
+  height: 20px;
+  color: #FFF;
+  background-color: #6389A8;
+  border: 1px solid #6389A8;
+  font-weight: normal;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-left: 15px;
+}
+
+.groupGreyBlocks {
+  display: flex;
+  background-color: #F6F6F6;
+  padding: 10px 0px 10px 10px;
+}
+
+.groupEditBar {
+  display: flex;
+  align-items: center;
+}
+
+.groupEditBar a,
+.groupEditBar #groupDrop {
+  margin-right: 2px;
+}
+
+#groupBlockLeft {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+
+#groupBlockRight {
+  padding: 8px 0 0 0;
+  color: #507594;
+  float: left;
+  margin-left: 20px;
+  text-align: right;
+  width: 240px;
+}
+
+#invitedBlock {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  overflow: auto;
+  height: 270px;
+}
+
+.changeRoleButton {
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  padding: 3px 7px 2px 32px;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  background: white;
+  background-position: top left;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer;
+}
+
+.removeLink {
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  padding: 3px 7px 2px 25px;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  background: white;
+  background-position: top left;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer;
+}
+
+#grpDetails.table td a {
+  font-weight: normal !important;
+  text-decoration: none;
+}
+
+.groupProfileCboxSetting {
+  margin: 3px 5px;
+}
+
+.setNewPiRadioDiv {
+  margin: 10px;
+}
+
+.setNewPiRadioInput {
+  vertical-align: bottom;
+}

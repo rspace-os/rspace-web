@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>	
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0" /> 
+	<link href='/scripts/externalTinymcePlugins/mendeley/css/mendeley.css' rel="stylesheet" />
+	<script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+	<script src="/scripts/bower_components/jquery-ui/jquery-ui.min.js"></script>
+    <script src='/scripts/tinymceDialogUtils.js'></script>
+	<script src="/scripts/bower_components/mustache/mustache.min.js"></script>	
+	<script src="/scripts/global.js"></script>	
+	<script src="/scripts/bower_components/mendeley-javascript-sdk/dist/standalone.js"></script>
+	<script src="/scripts/externalTinymcePlugins/mendeley/js/mendeley-dialog.js"></script>
+	<script src="/scripts/bower_components/Apprise-v2/apprise-v2.js"></script>
+	
+<script type="mustache/template" id="docTableTemplate" >
+    {{#docs}}
+		<div class="document">
+		<div class="label"><a href='#' class='mendeleyDoc' data-id='{{id}}'>{{title}}</a>
+ 		<br/><span class="mendeley-att-name">Last modified</span> : <span class="mendeley-att-value"> {{last_modified}}</span>
+		<span class="mendeley-att-name">Created</span> : <span class="mendeley-att-value">{{created}}</span>
+        </div>
+		</div>    
+	{{/docs}} 
+</script>
+<script type="mustache/template" id="filesTemplate">
+{{#files}}
+ <div class="file"><input type='checkbox' class='mendeleyChoice' data-id='{{id}}'
+    				data-docId='{{document_id}}'
+					data-fileName='{{file_name}}'
+    				/> {{file_name}} 
+ </div>
+{{/files}}
+</script>
+	
+</head>
+<body >
+     <div id="listings" style="display:none">
+     This a preliminary integration with Mendeley. We'd love to hear any requests for workflows you'd like supported.
+     <br/>   
+     To insert links to files, click on documents to show their associated files, choose  files to insert, then click 'Insert'.
+      <br/>
+     Please <a href="#" id="listMendeley">list</a> or  search by document title word: <input placeholder="title word" id="mendeleySearchTerm"/> <button id="searchMendeley">Go</button>
+     <div id="docList-controls">
+    Order by <span><a href="#" class="mendeleySort" data-sortorder="asc" data-orderby="title">Title | </a></span>
+            <span><a href="#" class="mendeleySort" data-sortorder="desc" data-orderby="last_modified">Last Modified | </a></span>
+			<span><a href="#" class="mendeleySort" data-sortorder="desc" data-orderby="created">Created</a></span>
+      </div>
+      <div id="docList"></div>    
+    </div> 
+	<div id="mendeley-dialog" style="display:none">
+		<div id="mendeleyAuth">
+			<p>Please click <a href="/connect/mendeley" target="_blank">here</a> to authenticate to Mendeley
+			 in a new window.
+			 Your access will be valid for 1 hour.
+			 On successful authentication, please <a href='#' id='postAuthRefresh'>refresh</a> this dialog.</p>
+			<!-- <iframe id="mendeleyAuthIframe" scrolling="yes"></iframe> -->
+		</div>
+		<div id="mendeleyAuth-error">
+		</div>
+	</div>
+</body>
+</html>

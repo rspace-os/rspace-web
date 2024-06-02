@@ -1,0 +1,181 @@
+/* A CSS Framework by Mike Stenhouse of Content with Style */
+
+/* SITE SPECIFIC LAYOUT */
+    body {
+        margin: 0;
+        padding: 0;
+        /*background: white url(images/background.gif) top left repeat-x;*/
+    }
+    div#page {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0;
+        text-align: center;
+    }
+    
+    /* HEADER */
+        header#header {
+            text-align: left;
+            height: 100px; /* needed by IE 7 */
+            position: relative;
+        }
+        
+        div#header.impersonating {
+            margin: 0 0 0 0;
+            padding: 6px 0 2px 10px;
+            text-align: left;
+            height: 79px; /* needed by IE 7 */
+            background: #FFFFFF url("/images/greyedbgz.jpg")  repeat-x;
+        }
+            div#switchLocale {
+                position: absolute;
+                right: 10px;
+            }
+        div#branding {
+            float: left;
+            width: 127px;
+            margin: 0;
+            padding: 0 0 10px 0;
+            text-align: left;
+        }
+        /* this rule is not used */
+        div#search {
+            float: right;
+            width: 49%;
+            margin: 0;
+            padding: 40px 40px 0 0;
+
+            text-align: right;
+        }
+    /* END HEADER */
+    
+    /* CONTENT */
+        div#content {
+        }
+            body#error #content {
+                margin-top: 50px;
+            }
+        /* MAIN */
+            div#main {
+                margin-top:0px;
+                width:960px;
+            }
+                div#main form ul li {
+                    list-style-type: none;
+                    margin-left: 0;
+                }
+        /* END MAIN */
+        
+        /* SUB */
+            div#sub h2 {
+                margin-bottom: 5px;
+            }
+            
+            div#sub ul li {
+                list-style-type: none;
+                padding-bottom: 10px;
+            }
+                div#sub p.line {
+                    border-top: 1px dotted #ccc;
+                    margin: 15px 0;
+                }
+            
+        /* END SUB */
+        
+    /* END CONTENT */
+    
+    /* FOOTER */
+        div#footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #444;
+            font-size: 1.1em;
+            width: 960px;
+            margin: 0 auto;
+            padding: 20px 0px;
+        }
+        div#footer .version {
+            font-size: 0.8em;
+        }
+        div#footer::after {
+            display: none;
+        }
+
+
+    /* END FOOTER */
+/* END LAYOUT */
+
+
+/* 
+    This is not toolbar in the workspace view
+    anymore but it is toolbar in all other views
+*/
+.toolbar{
+	padding:3px;
+	text-align:left;
+	margin-right: 0px!important;
+	padding-right: 3px!important;
+	height: 33px;
+	position:relative;
+}
+
+.toolbar img {
+	padding: 0px 8px 0px 0px;
+	float: left;
+}
+
+ul.nav {
+	list-style-type:none;
+	padding-left:0;
+	
+}
+ul.nav a {
+	display:block;
+	width: 12em;
+}
+ul.nav li {
+	padding: 0;
+	margin:0;
+}
+
+div.actionMenu {
+  position: absolute;
+  top: 32px;
+  background-color:none;
+  display: none;
+  z-index: 10001;
+}
+
+.ui-widget-overlay{
+	z-index: 1000;
+}
+
+.ui-dialog{
+	z-index: 2000 !important;
+}
+
+pre {
+ white-space: pre-wrap;       /* css-3 */
+ white-space: -moz-pre-wrap;  /* Mozilla */
+ white-space: -pre-wrap;      /* Opera 4-6 */
+ white-space: -o-pre-wrap;    /* Opera 7 */
+ word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
+.ui-autocomplete-category {
+		font-weight: bold;
+		padding: .2em .4em;
+		margin: .8em 0 .2em;
+		line-height: 1.5;
+	}
+
+#file_tree_frame{
+	margin :10px;
+}
+
+#file_tree{
+	margin :10px;
+	padding-left:20px;
+
+}

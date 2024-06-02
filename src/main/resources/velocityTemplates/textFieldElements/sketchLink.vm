@@ -1,0 +1,13 @@
+#* Template for sketch links.
+
+  Template for sketch links.
+ Arguments needed for mustache are:
+  - id - the sketch id
+  - unused
+  - height
+  - width
+  
+ Additional arguments needed for use in Velocity are:
+    -cssClass the CSS Class of this template
+*#
+<p><img id="$id" class="$cssClass" src="/image/getImageSketch/$id/$unused" height="$height" width="$width" alt="user sketch" /></p>&nbsp;

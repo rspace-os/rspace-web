@@ -1,0 +1,54 @@
+.bootstrap-custom-flat .breadcrumbElems, 
+.breadcrumb #status div,
+.rs-record-header-line span,
+div#footer  {
+    font-family: "Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+#loggedUserSimpleDocPanel {
+    margin-top: 5px;
+    text-align: right;
+    line-height: 30px;
+    color: #666;
+}
+#simpleDocLogoutBtn {
+    padding: 0px 9px; 
+    margin-left: 10px;
+}
+
+#page .breadcrumb {
+	-webkit-box-shadow: none;
+    box-shadow: none;
+    padding: 0px;
+}
+
+.breadcrumb .breadcrumbTag {
+    padding-left: 7px !important;
+}
+
+#status {
+    padding-right: 3px;
+}
+
+ 
+#showFileTreeSmall, #toolbar2 a[data-test-id='structured-document-back'],
+button.createExtMessage[data-test-id="toolbar-send-message-slack"] {
+    display: none !important;
+}
+
+
+td.field-value {
+	border: none
+}
+.isResizable, .singleLineFieldInDocViewMode {
+    background: #fff;
+}
+
+.rs-record-info-panel {
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+
+.rs-record-info-panel .rs-record-header-line {
+    border-bottom: none;
+}

@@ -1,0 +1,175 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.35 May 2016 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+
+	<changeSet author="richard (generated)" id="1-35-16-4-4a"
+		context="1-35,run">
+		<comment>Add FK column between EcatMediaFile and FileProperty</comment>
+		<addColumn tableName="EcatMediaFile">
+			<column name="fileProperty_id" type="BIGINT(19)" />
+		</addColumn>
+	</changeSet>
+	<changeSet author="richard (generated)" id="1-35-16-4-4b"
+		context="1-35,run">
+		<comment>Add FK column between EcatMediaFile_AUD and FileProperty</comment>
+		<addColumn tableName="EcatMediaFile_AUD">
+			<column name="fileProperty_id" type="BIGINT(19)" />
+		</addColumn>
+	</changeSet>
+	<changeSet author="richard (generated)" id="1-35-16-4-4c"
+		context="1-35,run">
+		<comment>Add FK relation for EcatMediaFile to FileProperty</comment>
+		<addForeignKeyConstraint baseColumnNames="fileProperty_id"
+			baseTableName="EcatMediaFile" constraintName="FK55F3190F43F411EE"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="FileProperty" />
+	</changeSet>
+
+	<changeSet id="1-35-16-4-4d" author="richard" context="1-35,run">
+		<preConditions
+			onFailMessage="Some assertions about redundancy of EcatMediaFile fileUri and FileProperty fileUri were not met">
+			<and>
+				<columnExists tableName="EcatMediaFile" columnName="fileUri" />
+				<sqlCheck expectedResult="0">
+					select count(*) from EcatMediaFile where fileUri not in (select fileUri from FileProperty);
+				</sqlCheck>
+				<sqlCheck expectedResult="0">
+					select count(distinct fileUri) - count(*) as delta from EcatMediaFile where fileUri is not null;
+				</sqlCheck>
+			</and>
+		</preConditions>
+		<comment>Add FK links for existing EcatMediaFile rows</comment>
+		<sql>
+			update EcatMediaFile emf, FileProperty as fp set emf.fileProperty_id=fp.id
+			where emf.fileUri=fp.fileUri
+		</sql>
+	</changeSet>
+	<changeSet id="1-35-16-4-4e" author="richard" context="1-35,run">
+		<preConditions
+			onFailMessage="Some assertions about redundancy of EcatMediaFile_AUD fileUri and FileProperty fileUri were not met">
+			<and>
+				<columnExists tableName="EcatMediaFile_AUD" columnName="fileUri" />
+				<sqlCheck expectedResult="0">
+					select count(*) from EcatMediaFile_AUD where fileUri not in (select fileUri from FileProperty);
+				</sqlCheck>
+			</and>
+		</preConditions>
+		<comment>Add FK links for existing EcatMediaFile_AUD rows</comment>
+		<sql>
+			update EcatMediaFile_AUD emf, FileProperty as fp set
+			emf.fileProperty_id=fp.id where emf.fileUri=fp.fileUri
+		</sql>
+	</changeSet>
+	<changeSet id="1-35-16-4-4f" context="1-35,run" author="richard">
+		<comment>Create old table for EcatMedia data to be deleted jic</comment>
+		<sql>create table EcatMediaFile_OBSOLETE select id, fileUri from
+			EcatMediaFile</sql>
+	</changeSet>
+	<changeSet id="1-35-16-4-4g" context="1-35,run" author="richard">
+		<comment>Create old table for EcatMedia data to be deleted jic needs restoring</comment>
+		<sql>create table EcatMediaFileAUD_OBSOLETE select id, fileUri from
+			EcatMediaFile_AUD</sql>
+	</changeSet>
+	<changeSet id="1-35-16-4-4h" context="1-35,run" author="richard">
+		<comment>drop fileUri column from EcatMedia file</comment>
+		<dropColumn tableName="EcatMediaFile" columnName="fileUri" />
+		<dropColumn tableName="EcatMediaFile_AUD" columnName="fileUri" />
+	</changeSet>
+	
+	<changeSet id="1-35-16-4-7a" author="richard" runAlways="true" >
+	<preConditions onFail="WARN" onError="WARN"  onFailMessage="There are some FileProperty rows that are not associated with a FileStoreRoot!">
+	 <sqlCheck expectedResult="0">select count(*) from FileProperty where root_id is null;</sqlCheck>
+	</preConditions>
+	<comment>This is a diagnostic to ensure that there are no FileProperty rows being added which don't have a root.</comment>
+	</changeSet>
+	
+	<changeSet id="1-35-16-4-7aFIX" author="richard">
+	<preConditions onFail="WARN" onError="WARN" onFailMessage="Updating null file store root to current diddn't work!">
+	 <sqlCheck expectedResult="1">select 1 from (select  count(*) as nullFPCount  from FileProperty where root_id is null)  q  where q.nullFPCount > 0;</sqlCheck>
+	</preConditions>
+	<comment>Set fileproperty root to be non-null if there are nulls</comment>
+	<sql>update FileProperty, FileStoreRoot root set root_id = (select id  from FileStoreRoot where bin(current)=1) where root_id is null;</sql>
+	</changeSet>
+	
+	<changeSet id="1-35-16-4-7b" author="richard" runAlways="true" >
+	<preConditions onFailMessage="There should be 1 current filestoreroot row if a root has been set.">
+	 <or>
+	 <sqlCheck expectedResult="0">select count(*) from FileStoreRoot</sqlCheck>
+	 <sqlCheck expectedResult="1">select count(*) from FileStoreRoot where current=1</sqlCheck>
+	 <!--  if external FS is set too -->
+	 <sqlCheck expectedResult="2">select count(*) from FileStoreRoot where current=1</sqlCheck>
+	 </or>
+	</preConditions>
+	<comment>This is a diagnostic to ensure that there is only one current root, if there is a root set at all</comment>
+	</changeSet>
+	
+	<changeSet id="1-35-16-4-7c" context="1-35,run" author="richard">
+		<comment>Create old table for FileProperty fileUri to be deleted jic</comment>
+		<sql>create table FileProperty_OBSOLETE select id, fileUri from
+			FileProperty</sql>
+	</changeSet>
+
+	<changeSet id="1-35-16-4-7g" context="1-35,run" author="richard">
+	    <preConditions onFail="MARK_RAN">
+	      <columnExists tableName="FileProperty" columnName="fileUri"/>
+	    </preConditions>
+		<comment>drop obsoletefileUri column from FileProperty file</comment>
+		<dropColumn tableName="FileProperty" columnName="fileUri" />	
+	</changeSet>
+	
+	<changeSet id="1-35-16-4-7h" context="1-35,run" author="richard">
+	<preConditions onFail="MARK_RAN">
+	 <and>
+	  <tableExists tableName="FileProperty_AUD"/>
+	  <not>
+	  	<tableExists tableName="FilePropertyAUD_OBSOLETE"/>
+	  </not>
+	 </and>
+	</preConditions>
+	<comment>Rename FileProperty_AUD so it's no longer actively audited.</comment>
+	<renameTable newTableName="FilePropertyAUD_OBSOLETE" oldTableName="FileProperty_AUD"/>
+	</changeSet>
+	
+	<changeSet id="1-35-16-4-7i" author="richard" context="dev-test">
+	 <preConditions onFail="MARK_RAN" onFailMessage="FilePropertys already deleted, skipping">
+	  <tableExists tableName="FilePropertys"/>
+	 </preConditions >
+	  <comment>Remove obsolete tables</comment>
+	 <dropTable tableName="FilePropertys"/>
+	</changeSet>
+	
+	<changeSet id="1-35-16-4-7j" author="richard" context="dev-test">
+	 <preConditions onFail="MARK_RAN" onFailMessage="FilePropertys_AUD already deleted, skipping">
+	  <tableExists tableName="FilePropertys_AUD"/>
+	 </preConditions>
+	  <comment>Remove obsolete tables</comment>
+	 <dropTable tableName="FilePropertys_AUD"/>
+	</changeSet>
+	
+    <changeSet id="1-35-16-5-18" author="matthias" context="run">
+        <comment>Create new system property and value (box.api.enabled) - RSPAC-909</comment>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="13" />
+            <column name="defaultValue" type="STRING" value="false" />
+            <column name="name" type="STRING" value="box.api.enabled" />
+            <column name="type" type="NUMERIC" value="0" />
+            <column name="dependent_id" type="NUMERIC" value="2" />
+        </insert>
+        <insert tableName="SystemPropertyValue" >
+            <column name="value" type="STRING" value="false" />
+            <column name="property_id" type="NUMERIC" value="13" />
+        </insert>
+    </changeSet>
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

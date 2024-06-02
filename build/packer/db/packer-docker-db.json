@@ -1,0 +1,43 @@
+{
+	"builders": [	
+		    {
+			"type": "docker",
+			"image": "mysql/mysql-server:5.7",
+			"commit": true,
+			"pull": true,
+			"changes": [
+               "ENTRYPOINT [\"/entrypoint.sh\"]",
+               "CMD [ \"mysqld\"]"
+			]
+		}
+	],
+	"provisioners": [
+		{
+			"type": "file",
+			"source": "../../../src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql",
+			"destination": "/rs-dbbaseline-utf8.sql"
+		},
+		{
+			"type": "file",
+			"source": "./resources/db-docker-mysql.cnf",
+			"destination": "/etc/my.cnf"
+		},
+		
+		{
+			"type": "shell",
+			"script": "provision-db-docker.sh"
+		}
+	],
+	"post-processors": [
+		{
+	        "type": "manifest",
+		    "output": "manifest-db.json",
+			"strip_path": true
+		},
+        {
+          "type": "docker-tag",
+          "repository": "rspaceops/rspace-services",
+          "tag": "rspace-db-5.7"
+        }
+	]
+}

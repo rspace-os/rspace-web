@@ -1,0 +1,117 @@
+
+body {
+    font-family: "Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+    padding: 0px;
+}
+
+.footerVersionRow {
+    margin-top: 0px;
+}
+
+#insertInternalLink-button button:disabled, #insertInternalLink-button button[disabled]{
+	color: rgba(0, 0, 0, 0.26);
+	box-shadow: none;
+	background-color: rgba(0, 0, 0, 0.12);
+}
+
+input {
+    color: #444;
+    background-color: #fff;
+}
+
+.nav-pills > li.active > a,
+.btn-primary,
+.btn-primary:active,
+.btn-primary:focus,
+.btn-primary:hover,
+.btn-primary:active:hover,
+.rs-sign-in-form__head,
+.searchResultDiv.selectedSearchResult,
+.fancytree-plain.fancytree-container span.fancytree-node.fancytree-active span.fancytree-title {
+    background-color: #00AEEF;
+    border-color: #00AEEF;
+    background-image: none;
+    color: #fff;
+}
+
+
+#recordPickerTabConfigDiv {
+    width: 500px;
+    padding-top: 5px;
+    margin: auto;
+}
+
+#recordPickerTopNavBar {
+    width: 380px;
+    margin: auto;
+    text-align: center;
+}
+
+#recordPickerTopNavBar > li > a {
+    padding: 8px;
+}
+
+#navbarHr {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#recordPickerTabConfigDiv #fileBrowsing {
+    position: relative;
+    top: 0px;
+    text-align: left;
+}
+
+#recordPickerTabConfigDiv #fancyTree {
+    padding-top: 0px;
+    border: none;
+}
+
+.fileTreeBrowserPanel .fancytree-container {
+   font-family: "Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+#recordPickerTabConfigDiv .fileTreeButtons.navbar,
+#recordPickerTabConfigDiv #showFileTreeSmall {
+    display:none;
+}
+
+#searchDocDiv {
+    padding: 20px 5px;
+}
+
+#searchQueryInput {
+    width: 360px;
+    margin-right: 5px;
+}
+
+#resultsDiv {
+    margin: 5px;
+    font-size: 18px;
+}
+
+.searchResultDiv {
+    display: flex;
+    padding: 5px 10px;
+    margin: 2px 0px;
+    line-height: 22px;
+    cursor: pointer;
+}
+
+span.resultDocName {
+    font-weight: bold;
+}
+
+.searchResultIconDiv {
+    padding: 5px 10px 5px 0px;
+}
+
+#footerHr {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#showServerUrl {
+    text-align: center;
+}
+

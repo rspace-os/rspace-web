@@ -1,0 +1,47 @@
+{
+  "COMPLETED_1": {
+    "id" : "COMPLETED_1",
+    "requester": {"name":"DBD"},
+    "requester_lab": {"id":11111},
+    "equipment": {"name": "Mullis Lab Centrifuge","id": 1},
+    "duration": 12,
+    "last_public_note" : {"message":"COMPLETED_1 maintenance Note"},
+    "booking_type":"maintenance"
+  },
+  "CURRENT_2": {
+    "id" : "CURRENT_2",
+    "requester": {"name":"MN"},
+    "requester_lab": {"id":11111},
+    "equipment": { "name": "Mullis Lab -70 Freezer", "id": 2},
+    "duration": 8,
+    "last_public_note" : {"message":"CURRENT_2 Note"},
+    "booking_type":"use"
+  },
+  "COMPLETED_3": {
+    "id" : "COMPLETED_3",
+    "requester": {"name":"ET"},
+    "requester_lab": {"id":11111},
+    "equipment": {"name": "Biochemistry Department Mass Spectrometer","id": 3},
+    "duration": 1,
+    "last_public_note" : {"message":"COMPLETED_3 Note"},
+    "booking_type":"use"
+  },
+  "COMPLETED_4": {
+    "id" : "COMPLETED_4",
+    "requester": {"name":"ET"},
+    "requester_lab": {"id":11111},
+    "equipment": {"name": "Biochemistry Department Mass Spectrometer","id": 3},
+    "duration": 1,
+    "last_public_note" : {"message":"COMPLETED_4 Note"},
+    "booking_type":"use"
+  },
+  "CURRENT_5": {
+    "id" : "CURRENT_5",
+    "requester": {"name":"ET"},
+    "requester_lab": {"id":11111},
+    "equipment": {"name": "Biochemistry Department Mass Spectrometer","id": 3},
+    "duration": 1,
+    "last_public_note" : {"message":"CURRENT_5 Note"},
+    "booking_type":"use"
+  }
+}

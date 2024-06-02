@@ -1,0 +1,89 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 inventory containers Sept 2020 -->
+
+	<changeSet author="richard" id="2020-09-21a" context="run">
+		<comment>store sample images</comment>
+		<addColumn tableName="Sample">
+			<column name="imageFileProperty_id" type="BIGINT" />
+			<column name="thumbnailFileProperty_id" type="BIGINT" />
+		</addColumn>
+		<addForeignKeyConstraint
+			baseColumnNames="imageFileProperty_id" baseTableName="Sample"
+			constraintName="FK_e1gbE89odqh5aj0x65vj8c8en" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FileProperty" />
+		<addForeignKeyConstraint
+			baseColumnNames="thumbnailFileProperty_id" baseTableName="Sample"
+			constraintName="FK_kc5u6Gx28vg4lqxrpk1buksrt" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FileProperty" />
+	</changeSet>
+	<changeSet author="richard" id="2020-09-21b" context="run">
+		<addColumn tableName="Sample_AUD">
+			<column name="imageFileProperty_id" type="BIGINT" />
+			<column name="thumbnailFileProperty_id" type="BIGINT" />
+		</addColumn>
+	</changeSet>
+	
+	<changeSet author="richard" id="2020-09-22a" context="run">
+		<comment>store subsample images</comment>
+		<addColumn tableName="SubSample">
+			<column name="imageFileProperty_id" type="BIGINT" />
+			<column name="thumbnailFileProperty_id" type="BIGINT" />
+		</addColumn>
+		<addForeignKeyConstraint
+			baseColumnNames="imageFileProperty_id" baseTableName="SubSample"
+			constraintName="FK_e1gbE89odqh5aj0x65vj8c8em" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FileProperty" />
+		<addForeignKeyConstraint
+			baseColumnNames="thumbnailFileProperty_id" baseTableName="SubSample"
+			constraintName="FK_kc5u6Gx28vg4lqxrpk1buksru" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FileProperty" />
+	</changeSet>
+	<changeSet author="richard" id="2020-09-22b" context="run">
+		<addColumn tableName="SubSample_AUD">
+			<column name="imageFileProperty_id" type="BIGINT" />
+			<column name="thumbnailFileProperty_id" type="BIGINT" />
+		</addColumn>
+	</changeSet>
+	
+	<changeSet author="richard" id="2020-10-06a" context="run">
+	    <comment>Optimistic locking column</comment>
+		<addColumn tableName="Sample">
+			<column name="optLock" type="BIGINT" />
+		</addColumn>
+	</changeSet>
+	
+	<changeSet author="richard" id="2020-10-06b" context="run">
+	 <comment>Optimistic locking column</comment>
+		<addColumn tableName="Sample_AUD">
+			<column name="optLock" type="BIGINT" />
+		</addColumn>
+	</changeSet>
+	
+	<changeSet author="richard" id="2020-20-a" context="run">
+	 <comment>Set version to be 0 by default so is not null</comment>
+		<update tableName="Sample">
+		  <column name="optLock" value="0"/>
+		  <where>optLock is NULL</where>
+		</update>
+	</changeSet>
+	
+		<changeSet author="richard" id="2020-10-20b" context="run">
+	 <comment>Set Sample version to be 0 by default so is not null</comment>
+		<update tableName="Sample_AUD">
+		  <column name="optLock" value="0"/>
+		  <where>optLock is NULL</where>
+		</update>
+	</changeSet>
+	
+	
+
+</databaseChangeLog>

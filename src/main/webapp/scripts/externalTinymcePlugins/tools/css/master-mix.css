@@ -1,0 +1,38 @@
+#mastermixCalculatorDiv {
+  margin: 20px; }
+  #mastermixCalculatorDiv * {
+    color: #666 !important;
+    font-size: 14px; }
+  #mastermixCalculatorDiv button.btn-primary {
+    color: white !important; }
+  #mastermixCalculatorDiv label {
+    text-align: left; }
+  #mastermixCalculatorDiv .col-header h2 {
+    text-align: center;
+    font-weight: bold;
+    font-size: 15px; }
+    #mastermixCalculatorDiv .col-header h2 span {
+      font-size: inherit !important; }
+  #mastermixCalculatorDiv .form-horizontal .form-control {
+    max-width: 100%; }
+  #mastermixCalculatorDiv .form-horizontal .unit {
+    position: absolute;
+    top: 3px;
+    right: 2px; }
+  #mastermixCalculatorDiv .form-horizontal label {
+    font-weight: normal; }
+  #mastermixCalculatorDiv .form-horizontal input.form-control {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    height: 25px; }
+  #mastermixCalculatorDiv .form-horizontal .form-group {
+    margin-bottom: 10px; }
+    #mastermixCalculatorDiv .form-horizontal .form-group div {
+      min-height: 25px; }
+    #mastermixCalculatorDiv .form-horizontal .form-group.submit {
+      text-align: center; }
+  #mastermixCalculatorDiv .form-horizontal button {
+    width: auto !important; }
+  #mastermixCalculatorDiv .form-horizontal .result {
+    padding-top: 7px;
+    display: inline-block; }

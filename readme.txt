@@ -1,0 +1,1 @@
+Main RSpace web project. See DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md for setup.

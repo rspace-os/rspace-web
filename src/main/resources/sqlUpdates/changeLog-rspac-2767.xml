@@ -1,0 +1,42 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2023-07-18a" context="run" author="nhanlon2">
+        <comment>Add a tag-metadata column to structureddoc</comment>
+        <addColumn tableName="StructuredDocument">
+            <column name="tagMetaData" type="longtext"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2023-07-18b" context="run" author="nhanlon2">
+        <comment>Add a tag-metadata column to structureddoc AUD</comment>
+        <addColumn tableName="StructuredDocument_AUD">
+            <column name="tagMetaData" type="longtext"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2023-07-18c" context="run, dev-test" author="nhanlon2">
+        <comment>Alter docTag to larger varchar - keep as varchar because searches are more efficient</comment>
+        <modifyDataType columnName="docTag" newDataType="varchar(8000)"
+                        tableName="StructuredDocument" />
+    </changeSet>
+    <changeSet id="2023-07-18d" context="run, dev-test" author="nhanlon2">
+        <comment>Alter docTag to text type in audit</comment>
+        <modifyDataType columnName="docTag" newDataType="varchar(8000)"
+                        tableName="StructuredDocument_AUD" />
+    </changeSet>
+    <changeSet id="2023-07-18e" context="run, dev-test" author="nhanlon2">
+        <comment>Tag values are now populated from tagMeta and the docTag column is only used for searching.
+            We migrate existing tag values to tagMeta.</comment>
+        <sql> update StructuredDocument sd set sd.tagMetaData = sd.docTag;</sql>
+    </changeSet>
+    <changeSet author="nhanlon" id="2023-07-18f" context="run">
+        <addColumn tableName="rsGroup">
+            <column name="allowBioOntologies" type="BIT(1)" defaultValueBoolean="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

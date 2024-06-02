@@ -1,0 +1,18 @@
+#*
+ Chemistry link HTML template.
+ Arguments needed for mustache are:
+  - id the chemElement ID
+  - sourceParentId - the fieldId that the chem element belongs to
+  - width the width of generated thumbnail
+  - height the height of generated thumbnail 
+  - fullwidth the width of originally generated image (since 1.61)
+  - fullheight the height of originally generated image (since 1.61)
+  - tstamp a timestamp to trigger browser refreshes
+  - ecatChemFileId - the id of the ecat chemistry file linked to this chem element
+ Additional arguments needed for use in Velocity are:
+    -cssClass the CSS Class of this template
+*#
+<p>
+<img id="$id" class="$cssClass" src="/thumbnail/data?sourceType=CHEM&sourceId=$id&sourceParentId=$sourceParentId&width=${width}&height=${height}&time=${tstamp}" 
+    alt="$fileName" width="$width" height="$height" data-fullwidth="$fullwidth" data-fullheight="$fullheight" data-chemfileid="$ecatChemFileId" />
+</p>&nbsp;

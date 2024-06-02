@@ -1,0 +1,122 @@
+{
+  "data":[ {
+  "id" : 422,
+  "childCounts" : 1,
+  "name" : "plate1_1_013",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 492,
+  "childCounts" : 1,
+  "name" : "plate1_2_006",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 559,
+  "childCounts" : 1,
+  "name" : "plate1_3_003",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 620,
+  "childCounts" : 1,
+  "name" : "plate1_7_015",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 680,
+  "childCounts" : 1,
+  "name" : "plate2_2_007",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 728,
+  "childCounts" : 1,
+  "name" : "plate2_3_018",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 800,
+  "childCounts" : 1,
+  "name" : "plate2_5_015",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 869,
+  "childCounts" : 1,
+  "name" : "plate2_7_028",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 944,
+  "childCounts" : 1,
+  "name" : "plate3_11_007",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 1015,
+  "childCounts" : 1,
+  "name" : "plate3_4_034",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 1072,
+  "childCounts" : 1,
+  "name" : "plate3_5_002",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+}, {
+  "id" : 4554,
+  "childCounts" : 1,
+  "name" : "plate3_8_010",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "type" : "plate",
+  "parentId" : 102,
+  "children" : [ ]
+} ]}

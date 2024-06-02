@@ -1,0 +1,92 @@
+{
+  "data": [
+    {
+      "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#PlateAcquisition",
+      "@id": 422,
+      "omero:details": {
+        "@type": "TBD#Details",
+        "owner": {
+          "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#Experimenter",
+          "@id": 2,
+          "omero:details": {
+            "@type": "TBD#Details",
+            "permissions": {
+              "@type": "TBD#Permissions",
+              "perm": "rw----",
+              "canAnnotate": false,
+              "canDelete": false,
+              "canEdit": false,
+              "canLink": false,
+              "isWorldWrite": false,
+              "isWorldRead": false,
+              "isGroupWrite": false,
+              "isGroupRead": false,
+              "isGroupAnnotate": false,
+              "isUserWrite": true,
+              "isUserRead": true
+            }
+          },
+          "FirstName": "Public",
+          "MiddleName": "",
+          "LastName": "data",
+          "Email": "idr-project@lists.openmicroscopy.org.uk",
+          "Institution": "IDR Project",
+          "UserName": "demo"
+        },
+        "group": {
+          "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#ExperimenterGroup",
+          "@id": 3,
+          "omero:details": {
+            "@type": "TBD#Details",
+            "permissions": {
+              "@type": "TBD#Permissions",
+              "perm": "rwr---",
+              "canAnnotate": false,
+              "canDelete": false,
+              "canEdit": false,
+              "canLink": false,
+              "isWorldWrite": false,
+              "isWorldRead": false,
+              "isGroupWrite": false,
+              "isGroupRead": true,
+              "isGroupAnnotate": false,
+              "isUserWrite": true,
+              "isUserRead": true
+            }
+          },
+          "Name": "Public"
+        },
+        "permissions": {
+          "@type": "TBD#Permissions",
+          "perm": "rwr---",
+          "canAnnotate": false,
+          "canDelete": false,
+          "canEdit": false,
+          "canLink": false,
+          "isWorldWrite": false,
+          "isWorldRead": false,
+          "isGroupWrite": false,
+          "isGroupRead": true,
+          "isGroupAnnotate": false,
+          "isUserWrite": true,
+          "isUserRead": true
+        }
+      },
+      "MaximumFieldCount": 1,
+      "url:plateacquisition": "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/422/",
+      "omero:wellsampleIndex": [
+        0,
+        0
+      ],
+      "url:wellsampleindex_wells": [
+        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/422/wellsampleindex/0/wells/"
+      ]
+    }
+  ],
+  "meta": {
+    "offset": 0,
+    "limit": 200,
+    "maxLimit": 1000,
+    "totalCount": 1
+  }
+}

@@ -1,0 +1,279 @@
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+    http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" 
+    id="WebApp_ID" version="3.0" metadata-complete="true">
+
+    <absolute-ordering /> 
+    <display-name>RSpace</display-name>
+    <distributable/>
+
+    <context-param>
+        <!-- will use the "RUN" profile configuration for running test web 
+            app or set to 'prod' for deployment. -->
+        <param-name>spring.profiles.default</param-name>
+        <param-value>run</param-value>
+    </context-param>
+  
+    <!-- Define the basename for a resource bundle for I18N -->
+    <context-param>
+        <param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
+        <param-value>bundles.ApplicationResources</param-value>
+    </context-param>
+    
+    <!-- Fallback locale if no bundles found for browser's preferred locale -->
+    <!-- Force a single locale using param-name 'javax.servlet.jsp.jstl.fmt.locale' -->
+    <context-param>
+        <param-name>javax.servlet.jsp.jstl.fmt.fallbackLocale</param-name>
+        <param-value>en</param-value>
+    </context-param>
+    <!-- Context Configuration locations for Spring XML files -->
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>
+            classpath:/applicationContext-resources.xml
+            classpath:/applicationContext-dao.xml
+            classpath:/applicationContext-service.xml
+            /WEB-INF/security.xml
+        </param-value>
+    </context-param>
+
+    <filter>
+        <filter-name>encodingFilter</filter-name>
+        <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+        <init-param>
+            <param-name>forceEncoding</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+    <!-- GZipFilter has issues with XFire's service-listing servlet. -->
+    <!-- We recommend you configure gzipping in your servlet container.
+         web server, or load balancer. -->
+    <!--filter>
+        <filter-name>gzipFilter</filter-name>
+        <filter-class>net.sf.ehcache.constructs.web.filter.GzipFilter</filter-class>
+    </filter-->
+    <!--<filter>
+        <filter-name>lazyLoadingFilter</filter-name>
+        <filter-class>org.springframework.orm.hibernate3.support.OpenSessionInViewFilter</filter-class>
+    </filter>-->
+    <!-- Use "org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter" if you're using JPA -->
+    <filter>
+        <filter-name>localeFilter</filter-name>
+        <filter-class>com.researchspace.webapp.filter.LocaleFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>anonymousUserFilter</filter-name>
+        <filter-class>com.researchspace.webapp.filter.AnonymousUserFilter</filter-class>
+        <init-param>
+            <param-name>urlsAllowedForAnonymousAccess</param-name>
+            <param-value>/login,/public,/styles,/ssoinfo,/scripts,/resources,/wopi,/api,/oauth</param-value>
+        </init-param>
+    </filter>
+    <filter>
+        <filter-name>rewriteFilter</filter-name>
+        <filter-class>org.tuckey.web.filters.urlrewrite.UrlRewriteFilter</filter-class>
+        <!-- sets up log level (will be logged to context log)
+            can be: TRACE, DEBUG, INFO (default), WARN, ERROR, FATAL, log4j, commons, sysout:{level} (ie, sysout:DEBUG)
+            if you are having trouble using normal levels use sysout:DEBUG -->
+        <init-param>
+            <param-name>logLevel</param-name>
+            <param-value>WARN</param-value>
+        </init-param>
+        <!-- set the amount of seconds the conf file will be checked for reload
+            can be a valid integer (0 denotes check every time,
+            -1 denotes no reload check, default -1) -->
+        <init-param>
+            <param-name>confReloadCheckInterval</param-name>
+            <param-value>-1</param-value>
+        </init-param>
+    </filter>
+
+    <filter>
+        <filter-name>shiroFilter</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <init-param>
+            <param-name>targetFilterLifecycle</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+
+    <filter>
+        <filter-name>sitemesh</filter-name>
+        <filter-class>com.opensymphony.module.sitemesh.filter.PageFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>customResourceFilter</filter-name>
+        <filter-class>net.bull.javamelody.CustomResourceFilter</filter-class>
+        <init-param>
+            <param-name>customizableMonitoring.css</param-name>
+            <param-value>/styles/customMonitoring.css</param-value>
+        </init-param>
+    </filter>
+    <filter>
+        <filter-name>javamelody</filter-name>
+        <filter-class>net.bull.javamelody.MonitoringFilter</filter-class>
+        <async-supported>true</async-supported>
+           <init-param>
+            <param-name>storage-directory</param-name>
+            <param-value>${jmelody.dir}</param-value>
+        </init-param>
+        <init-param>
+         <param-name>http-transform-pattern</param-name>
+         <param-value>\d+</param-value>
+        </init-param>
+        <init-param>
+         <param-name>monitoring-path</param-name>
+         <param-value>/monitoring</param-value>
+        </init-param>
+         <init-param>
+		  <param-name>authorized-users</param-name>
+		  <param-value>rs_monitoring:Np4kqEXuGXPKxkcGLR70dTPZcaZ</param-value>
+	     </init-param>
+        
+         <init-param>
+         <param-name>displayed-counters</param-name>
+         <param-value>http,error,log</param-value>
+        </init-param>
+    </filter>
+    <filter>
+        <filter-name>hiddenHttpMethodFilter</filter-name>
+        <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
+    </filter>
+
+    <!--  this has to go first to secure subsequent URLs in filters -->
+    <filter-mapping>
+        <filter-name>shiroFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+     <filter-mapping>
+        <filter-name>encodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>customResourceFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>javamelody</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>ASYNC</dispatcher>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>hiddenHttpMethodFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>sitemesh</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>localeFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>anonymousUserFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>rewriteFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    
+     <jsp-config>
+        <jsp-property-group>
+            <url-pattern>*.jsp</url-pattern>
+            <page-encoding>UTF-8</page-encoding>
+        </jsp-property-group>
+    </jsp-config>
+ 
+    <listener>
+        <listener-class>net.bull.javamelody.SessionListener</listener-class>
+    </listener>
+    <listener>
+        <listener-class>com.axiope.webapp.listener.IIOProviderContextListener</listener-class>
+    </listener>
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+    <!--  any listeners after this will have spring initialised. -->
+    <listener>
+        <listener-class>org.springframework.web.util.IntrospectorCleanupListener</listener-class>
+    </listener>
+    <listener>
+        <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+    </listener>
+    <listener>
+        <listener-class>com.axiope.webapp.listener.StartupListener</listener-class>
+    </listener>
+
+    <listener>
+        <listener-class>com.axiope.webapp.listener.UserCounterListener</listener-class>
+    </listener>
+    <listener>
+        <listener-class>com.axiope.webapp.listener.RecordTrackerSessionListener</listener-class>
+    </listener>
+    <listener>
+        <listener-class>com.axiope.webapp.listener.AnalyticsSessionListener</listener-class>
+    </listener>
+    <!-- Handles escaping of <>'"& characters to prevent reflected XSS attacks - don't remove!! -->
+    <listener>
+        <listener-class>com.axiope.webapp.jsp.EscapeXmlELResolverListener</listener-class>
+    </listener>
+
+    <servlet>
+        <servlet-name>dispatcher</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>   
+
+    <servlet-mapping>
+        <servlet-name>dispatcher</servlet-name>
+        <url-pattern>/app/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>dispatcher</servlet-name>
+        <url-pattern>/offline/*</url-pattern>
+    </servlet-mapping>
+    
+    <session-config>
+        <session-timeout>30</session-timeout>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+    <error-page>
+        <error-code>400</error-code>
+        <location>/index.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>403</error-code>
+        <location>/403.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>404</error-code>
+        <location>/404.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>405</error-code>
+        <location>/error.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/error.jsp</location>
+    </error-page>
+
+</web-app>

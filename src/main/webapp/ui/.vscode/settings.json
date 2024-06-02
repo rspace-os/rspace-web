@@ -1,0 +1,6 @@
+{
+  "javascript.validate.enable": false,
+  "editor.formatOnPaste": true,
+  "editor.formatOnType": true,
+  "editor.formatOnSave": true,
+}

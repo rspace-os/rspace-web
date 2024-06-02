@@ -1,0 +1,35 @@
+---
+## you can add comments
+name: Drosophila stock
+tags: fly, drosophila
+# ul volume
+defaultUnitId: 1
+subSampleAlias: UNIT
+storageTempMax:
+  numericValue: 25
+  unitId: 8
+storageTempMin:
+  numericValue: 18
+  unitId: 8
+fields:
+- name:  Flybase ID
+  type: String
+- name:  Collection Name
+  type: Radio
+  definition:
+    options: a=Bloomington&a=Kyoto&a=Indiana&a=Vienna&a=FlyORF&a=Other
+    defaultOption: Bloomington
+- name: Stock Type CV 
+  type: String
+  content: living stock ; FBsv:0000002
+- name: Species 
+  type: String
+  content: Dmel
+- name: FB Genotype
+  type: String
+- name: Description
+  type: String
+- name: Stock Number
+  type: Number
+- name: Notes
+  type: Text

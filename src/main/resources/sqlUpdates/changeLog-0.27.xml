@@ -1,0 +1,64 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<!-- Changes for version 0.27 July 2015-->
+<!-- Please read DatabaseChangeGuidelines in this folder before committing
+   new changesets !  -->
+<!-- Add changesets here... -->
+
+    <changeSet id="2023-10-30" author="fraser">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="AbstractUserOrGroupImpl_permissionStrings"/>
+            </not>
+        </preConditions>
+        <comment>
+            RSDEV-22 changed the way permission strings are stored. To align development(db schema generated from hibernate mappings) and prod(schema generated from liquibase),
+            create the now obsolete tables if they don't exist (i.e. in dev-test context) so that liquibase updates are applied correctly and don't fail due to the hibernate mappings
+            no longer matching what liquibase expects.
+        </comment>
+        <sql>
+            CREATE TABLE `AbstractUserOrGroupImpl_permissionStrings` (
+                `AbstractUserOrGroupImpl_id` bigint(20) NOT NULL,
+                `permissionStrings` varchar(255) DEFAULT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            CREATE TABLE `UserGroup_permissionStrings` (
+               `UserGroup_id` bigint(20) NOT NULL,
+               `permissionStrings` varchar(255) DEFAULT NULL,
+               KEY `FKAC75BB88A5B0DBE6` (`UserGroup_id`),
+               CONSTRAINT `FKAC75BB88A5B0DBE6` FOREIGN KEY (`UserGroup_id`) REFERENCES `UserGroup` (`id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+        </sql>
+    </changeSet>
+
+<changeSet id="022-6-2015a" author="radams">
+<comment>RSPAC-73 Restrict existing admins to have group edit permission by community. Remove global permission to edit.</comment>
+<sql>
+delete from Role_permissionStrings where permissionStrings ='GROUP:CREATE,WRITE' and Role_id in ( select id from roles where name='ROLE_ADMIN');
+</sql>
+<sql>
+insert into AbstractUserOrGroupImpl_permissionStrings select user_id,  concat("GROUP:WRITE:community=", community_id) from  community_admin;
+</sql>
+</changeSet>
+
+
+<!-- Please read DatabaseChangeGuidelines in this folder before committing
+   new changesets and leave this reminder in place !
+
+     Please only put below liquibase changeSets containing customChange command.
+   Other updates should go above. That's because customChange code should be the
+   last changeSet in a given changeLog file.  -->
+
+    <changeSet id="nfsFileStores_linking" author="matthias" context="run">
+        <comment>Links any orphaned filestores to default NfsFileSystem</comment>
+        <customChange
+            class="com.researchspace.dao.customliquibaseupdates.v27.NfsFileStoreToFileSystemLinker">
+        </customChange>
+    </changeSet>
+
+<!--  only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

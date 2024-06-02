@@ -1,0 +1,505 @@
+/**
+ * Global variables and mixins are defined here.
+ *
+ * Import in other SASS stylesheets using:
+ * @import 'global_vars';
+ */
+.dropareaDialog {
+  position: relative;
+  text-align: center; }
+
+.dropareaDialog div,
+.dropareaDialog input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%; }
+
+.dropareaDialog input {
+  cursor: pointer;
+  opacity: 0; }
+
+.dropareaDialog .instructions {
+  border: 2px dashed #ddd;
+  opacity: .8; }
+
+.dropareaDialog .instructions.over {
+  border: 2px dashed #000;
+  background: #ffa; }
+
+.dropareaDialog .progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 0;
+  color: #fff;
+  background: #6b0; }
+
+div.spotDialog {
+  float: left;
+  margin: 0 20px 0 0;
+  width: 730px;
+  min-height: 135px; }
+
+#areasDialog {
+  float: left;
+  width: 730px;
+  height: 135px; }
+
+#draggingContainer {
+  width: 48%; }
+
+#draggingContainer input {
+  visibility: hidden; }
+
+.galleryFile {
+  width: 120px;
+  height: 160px;
+  float: left;
+  margin: 1px 3px;
+}
+
+.galleryFolder:hover {
+  cursor: pointer; }
+
+.selectable {
+  background-color: white; }
+
+.selectable:hover, .selectable .inputCheckbox:hover {
+  background-color: #DDECFB;
+  cursor: pointer; }
+
+
+div#urlTermSearchModeInfoBar {
+    display: none;
+    background-color: #2196f3;;
+    color: white;
+    margin: 10px 0px;
+    line-height: 18px;
+    font-size: large;
+    padding: 20px;
+}
+
+div.nameGallery {
+  padding: 2px 5px;
+  color: #333;
+  line-height: 18px;
+  height: 40px;
+  word-wrap: break-word;
+  white-space: normal;
+  cursor: default;
+}
+
+.imageDiv, .imageDivParentFolder {
+  width: 96px;
+  margin: 0px auto;
+  padding: 10px;
+  text-align: center;
+  min-height: 96px; }
+
+.imageDiv a {
+  overflow: auto;}
+
+.imageDivParentFolder {
+  text-align: center;
+  min-height: 105px; }
+
+.gallery {
+  text-align: center; }
+
+.gallerySubBarRow {
+  min-height: 24px;
+}
+
+#topCrudopsHint {
+  margin-left: 5px;
+}
+
+.galleryTopBarCrudopsBtn {
+  border: solid 1px #2196f3;
+  border-radius: 3px;
+  height: 22px;
+  color: #6a6f75;
+  cursor: pointer;
+}
+
+#topCrudopsLeftButtonsDiv {
+  overflow: auto;
+  padding-top: 2px;
+  line-height: 20px;
+}
+
+select#galleryOrderBy {
+  width: 86px;
+  overflow: hidden;
+  background: transparent url("/images/blueDropDownArrowInternal.png") no-repeat right center;
+  color: #6a6f75;
+  padding-left: 5px;
+  cursor: pointer;
+  border: solid 1px #2196f3;
+  border-radius: 3px;
+  font-size: inherit;
+  line-height: inherit;
+
+}
+select#galleryOrderBy:focus {
+  outline: none;
+  box-shadow: none !important;
+}
+
+#orderMediaGallery {
+  font-size: 1em;
+  padding: 0px 66px 0px 25px !important;
+  width: 86px;
+  color: #6a6f75;
+}
+
+#orderMediaGallery:disabled{
+  display: none !important;
+}
+
+#orderMediaGallery:hover {
+  background-color: rgba(158,158,158, 0.2) !important;
+}
+
+.orderGalleryDesc {
+  background: transparent url("/images/icons/descendingIcon.png") no-repeat top left; }
+
+.orderGalleryAsc {
+  background: transparent url("/images/icons/ascendingIcon.png") no-repeat top left; }
+
+#gallerySelectAll, #gallerySelectAll.active {
+  font-size: 1em;
+  padding: 0px;
+  width: 98px;
+  color: #6a6f75;
+}
+
+#filesPagination {
+  height: 25px;
+  margin: -35px 10px 0px 0px;
+  text-align: right;
+  font-size: 14px;
+  color: #333;
+}
+
+.searchInputHolder {
+  height: 22px;
+  border-right: 0px;
+  float: left !important;
+  background-color: #FFFFFF; }
+
+.mediaButtons {
+  display: inline-block; }
+  .mediaButtons:focus {
+    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+
+.galleryBreadcrumb {
+  overflow: auto;
+  border: 1px solid rgb(230,230,230);
+  border-top: 0px;
+}
+
+#breadcrumbTag_galleryBcrumb {
+  padding: 6px 15px;
+}
+
+#breadcrumbTag_galleryBcrumb .breadcrumbElems{
+  font-size: 16px;
+  color: #666;
+}
+
+.currentPagespan {
+  padding: 0px 2px;
+  text-decoration: underline;
+  cursor: default; 
+}
+
+.pagesSpan {
+  padding: 0px 2px; 
+  color: blue;
+  cursor: pointer;
+}
+
+#light {
+  position: relative;
+  text-align: center; }
+
+.zoomClassPercent {
+  zoom: 150%; }
+
+.mediaPlayer {
+  border: 2px solid; }
+
+.imageThumbnail {
+  max-height: 76px;
+  padding: 0; 
+}
+
+.imageThumbnail:hover {
+  cursor: zoom-in !important;
+}
+
+#galleriesMenuCrud a:link a:active {
+  color: #1465b7 !important;
+  text-decoration: none; }
+
+#galleriesMenuCrud .ui-button-text {
+  padding: 0 !important; }
+
+.galleriesCrudAction {
+  padding: 5px 7px 3px 25px;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  background-repeat: no-repeat; }
+
+.galleriesCrudAction:hover {
+  background-color: rgba(158,158,158, 0.2);
+}
+
+#galleriesCrudInsert {
+  margin-left: 10px;
+  border-width: 2px;
+  border-color: #23C363; }
+
+#typeMedia {
+  position: absolute;
+  top: 30px;
+  left: 10px;
+  background-color: none;
+  list-style-type: none;
+  display: none;
+  z-index: 10; }
+
+#sourceOptions {
+  position: absolute;
+  top: 30px;
+  left: 120px;
+  width: 120px;
+  background-color: none;
+  list-style-type: none;
+  display: none;
+  z-index: 11; }
+
+.ui-tabs .ui-tabs-nav {
+  background: -moz-linear-gradient(center top, #ededed 0%, #c4c4c4 100%) repeat scroll 0% 0% transparent;
+  background-image: -webkit-gradient linear, left top, left bottom, from(#EDEDED), to(100%, #C4C4C4);
+  background-image: -webkit-linear-gradient(top, #EDEDED, #C4C4C4);
+  height: 33px;
+  padding: 3px 3px 3px 3px;
+  border-width: 1px 1px 1px 1px; }
+
+#galleryContentDiv table tbody {
+  padding: 0 !important;
+  margin: 0 !important; }
+
+#galleryContentDiv {
+  width: 958px ;
+}
+
+#mainGalleryPanel {
+  width: 100%; 
+}
+
+#galleryBlock {
+  flex-grow: 1;
+  width: 100%;
+}
+
+#galleryBlock fieldset {
+  height: 500px;
+  border: 0px;
+  border: 1px solid rgb(230,230,230);
+}
+
+#galleryBlock legend {
+  font-size: 13px;
+  padding: 1px 10px 1px 10px;
+  border: 1px solid rgb(230,230,230);
+  border-top: 0px;
+  background: white;
+  margin-left: 10px;
+  width: auto;
+}
+
+.galleryContent {
+  height: 459px;
+  width: 100%;
+  padding-left: 5px;
+  overflow: auto; 
+}
+
+#topBar {
+  position: relative;
+  border-radius: 3px;
+  padding: 3px;
+  width: 928px;
+  background: -moz-linear-gradient(center top, #ededed 0%, #c4c4c4 100%) repeat scroll 0% 0% transparent;
+  background-image: -webkit-gradient linear, left top, left bottom, from(#EDEDED), to(100%, #C4C4C4);
+  background-image: -webkit-linear-gradient(top, #EDEDED, #C4C4C4);
+  height: 33px;
+  padding: 3px 3px 3px 3px;
+  border-width: 1px 1px 1px 1px; }
+
+.clear {
+  clear: both; }
+
+#topBar button {
+  cursor: pointer;
+  width: auto; }
+  #topBar button .ui-button-text {
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: bold; }
+
+.ui-dialog .ui-dialog-content {
+  padding: 2px 6px 0 6px; }
+
+#infoPanel {
+  width: 249px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgb(230,230,230);
+  border-left: 0px;
+}
+
+#infoBlock {
+  padding:13px 0 0 0;
+}
+
+#infoBar {
+  color: white;
+  padding: 6px;
+  background-color: #2196f3; }
+
+.galleryInfoPanel {
+  max-height: 100%;
+}
+
+.galleryInfoPanel .infoPanelTable {
+  width: 100%;
+  table-layout: fixed;
+  color: black; }
+
+.galleryInfoPanel .infoPanelInternalLinksDiv {
+  color: black; }
+
+.galleryInfoPanel .infoLabelCell {
+  width: 80px; }
+
+.galleryInfoPanel .infoPanel-name {
+  word-wrap: break-word;
+  white-space: normal; }
+
+.galleryInfoPanel .infoPanelTable textarea.infoPanel-captionTextArea {
+  width: 120px;
+  height: 70px;
+  border: 1px solid #eee;
+  font-size: inherit;
+}
+
+.galleryInfoPanel .infoPanelTable div.infoPanelCaptionButtons {
+  padding: 0px;
+}
+
+.recordInfoPanel {
+  height: 450px;
+  overflow: auto;
+  min-width: 240px; 
+  padding-top: 10px;
+}
+
+.recordInfoPanel a {
+  color: #1465B7; }
+
+#folderNameField {
+  margin-left: 20px; }
+
+#notebookNameField {
+  margin-left: 20px; }
+
+#menuPanel {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  border: 1px solid rgb(230,230,230);
+  border-right: 0px;
+  padding: 5px 10px 0px 10px; }
+
+#menuBlock {
+  width: 49px; 
+  padding-top: 13px;
+}
+
+#newFolderMediaGallery {
+  background-image: url("/images/icons/newFolderIcon.png");
+}
+
+#galleriesCrudDelete,
+#galleriesCrudMove,
+#galleriesCrudRename,
+#galleriesCrudCopy {
+  display: none; }
+
+.ui-progressbar-value {
+  height: 3px !important; }
+
+.gallery input.inputCheckbox:focus,
+input.inputCheckbox.nfsCheckbox {
+  box-shadow: none !important;
+}
+
+/*
+ *  GALLERY IMAGE VIEWER.
+ */
+#viewerContainer {
+  display: none;
+  position: relative; }
+
+#viewer {
+  background-color: white;
+  position: absolute;
+  width: 645px;
+  height: 458px;
+  overflow: auto; 
+}
+
+#viewerNav {
+  height: 36px;
+  width: 100%;
+  text-align: center;
+  background-color: #2196f3; }
+
+#nameViewerImage {
+  color: white;
+  position: relative;
+  top: 25%;
+  font-weight: bold; }
+
+#closeViewer {
+  float: right;
+  cursor: pointer;
+  margin: 3px 10px 0px 0px;
+  background-color: white;
+  color: #333;
+}
+
+#viewerContent {
+  height: 90%;
+  text-align: center;
+}
+
+.bootstrap-custom-flat #viewerContent div {
+  color: #333;
+}
+    
+#viewerContent > img {
+  margin: auto;
+  background-color: #DDDDDD;
+  padding: 8px;
+  margin-top: 2%;
+  margin-bottom: 2%; }

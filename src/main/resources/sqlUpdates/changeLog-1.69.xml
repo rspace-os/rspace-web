@@ -1,0 +1,158 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<changeSet id="2020-03-27" author="matthias" context="run">
+        <comment>RSPAC-733: add self-referencing 'originalImage' column to EcatImage</comment>
+		<addColumn tableName="EcatImage">
+		<column name="originalImage_id" type="BIGINT(19)"/>
+		</addColumn>        
+		<addColumn tableName="EcatImage_AUD">
+			<column name="originalImage_id" type="BIGINT(19)" />
+		</addColumn>
+		<addForeignKeyConstraint baseColumnNames="originalImage_id" baseTableName="EcatImage" 
+			constraintName="FK_99l9v2esj1nigeas36flmg35u" deferrable="false" 
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" 
+			referencedColumnNames="id" referencedTableName="EcatImage"/>
+	</changeSet>
+
+	<changeSet id="2020-04-01" author="matthias" context="run">
+		<comment>RSPAC-733: add 'originalImageVersion' column to EcatImage</comment>
+		<addColumn tableName="EcatImage">
+			<column name="originalImageVersion" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="EcatImage_AUD">
+			<column name="originalImageVersion" type="BIGINT(19)" />
+		</addColumn>
+	</changeSet>
+
+	<changeSet id="2020-04-02" author="matthias" context="run">
+		<comment>RSPAC-733: EcatImage.originalImage won't be audited, drop the columns</comment>
+		<dropColumn columnName="originalImageVersion" tableName="EcatImage_AUD"/>
+		<dropColumn columnName="originalImage_id" tableName="EcatImage_AUD"/>
+	</changeSet>
+	
+	<changeSet id="2020-06-18" author="richard" context="run">
+		<comment>RSPAC-2126: Autosharing enabled</comment>
+		<addColumn  tableName="UserGroup">
+		  <column name="autoshareEnabled" type="BIT(1)" defaultValueBoolean="0"></column>
+		</addColumn>
+		<addColumn  tableName="UserGroup">
+		  <column name="autoShareFolder_id" type="BIGINT(19)"></column>
+		</addColumn>
+	</changeSet>
+	
+	<changeSet author="richard" id="20-06-18b" context="run">
+	 <comment> RSPAC-2126: FK relation to Folder for autoShareFolder_id</comment>
+	 <addForeignKeyConstraint baseColumnNames="autoShareFolder_id" baseTableName="UserGroup" 
+	     constraintName="FK_n9s3bs7e3g2qq8lj772fwc4y1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Folder"/>
+	</changeSet>
+
+	<changeSet author="matthias" id="20-08-24" context="run">
+		<comment> RSPAC-2153: delete RecordGroupSharing rows created for temporary records</comment>
+		<sql>
+			delete rgs from RecordGroupSharing rgs join Record r on r.tempRecord_id = rgs.shared_id;
+		</sql>
+	</changeSet>
+	
+	<changeSet id="2020-12-02a" author="richard" context="run">
+	 <comment>RSPAC-2176 store new document thumbnails in FileStore</comment>
+	   <addColumn tableName="EcatDocumentFile">
+	    <column name="docThumbnailFP_id" type="BIGINT(19)"></column>
+	   </addColumn>
+	   <addForeignKeyConstraint baseColumnNames="docThumbnailFP_id" baseTableName="EcatDocumentFile" 
+			constraintName="FK_nfva120vkiceqt406h2o9ie60" deferrable="false" 
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" 
+			referencedColumnNames="id" referencedTableName="FileProperty"/>
+	 </changeSet>
+	 
+	 <changeSet id="2020-12-02b" author="richard" context="run">
+	 <comment>RSPAC-2176 store new document thumbnails in FileStore_AUD</comment>
+	   <addColumn tableName="EcatDocumentFile_AUD">
+	    <column name="docThumbnailFP_id" type="BIGINT(19)"></column>
+	   </addColumn>
+	 </changeSet>
+	 
+	  <changeSet id="2020-12-03a" author="richard" context="run">
+	 <comment>RSPAC-2176 store num conversion attempts</comment>
+	   <addColumn tableName="EcatDocumentFile">
+	    <column name="numThumbnailConversionAttemptsMade" type="TINYINT" defaultValueNumeric="0"></column>
+	   </addColumn>
+	   <addColumn tableName="EcatDocumentFile_AUD">
+	    <column name="numThumbnailConversionAttemptsMade" type="TINYINT" defaultValueNumeric="0">
+	    </column>
+	   </addColumn>
+	 </changeSet>
+
+
+	 <!-- this needs to be applied in dev as well to reverse earlier statement in changeLog-1.42 -->
+	 <changeSet id="2020-12-09a1" author="richard">
+	   <dropNotNullConstraint tableName="EcatImage" columnName="imageThumbnailed_id"  columnDataType="BIGINT(19)"/>
+	 </changeSet>
+	 
+	 <changeSet id="2020-12-09a" author="richard" context="run">
+	 <comment>RSPAC-2191 store new image thumbnails in FileStore</comment>
+	   <addColumn tableName="EcatImage">
+	    <column name="thumbnailImageFP_id" type="BIGINT(19)"></column>
+	   </addColumn>
+	   <addForeignKeyConstraint baseColumnNames="thumbnailImageFP_id" baseTableName="EcatImage" 
+			constraintName="FK_cnpq4e37k84gu9tu4jqw3kh8r" deferrable="false" 
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" 
+			referencedColumnNames="id" referencedTableName="FileProperty"/>
+	 </changeSet>
+	 
+	 <changeSet id="2020-12-09b" author="richard" context="run">
+	 <comment>RSPAC-2191 store new image thumbnails in FileStore_AUD</comment>
+	   <addColumn tableName="EcatImage_AUD">
+	    <column name="thumbnailImageFP_id" type="BIGINT(19)"></column>
+	   </addColumn>
+	 </changeSet>
+	 
+	 <changeSet id="2020-12-09c" author="richard" context="run">
+	 <comment>RSPAC-2191 store new working images in FileStore</comment>
+	   <addColumn tableName="EcatImage">
+	    <column name="workingImageFP_id" type="BIGINT(19)"></column>
+	   </addColumn>
+	   <addForeignKeyConstraint baseColumnNames="workingImageFP_id" baseTableName="EcatImage" 
+			constraintName="FK_a7ohoy3e5xqulim2euam84ihi" deferrable="false" 
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" 
+			referencedColumnNames="id" referencedTableName="FileProperty"/>
+	 </changeSet>
+	 
+	 <changeSet id="2020-12-09d" author="richard" context="run">
+	 <comment>RSPAC-2191 store new working image  in FileStore_AUD</comment>
+	   <addColumn tableName="EcatImage_AUD">
+	    <column name="workingImageFP_id" type="BIGINT(19)"></column>
+	   </addColumn>
+	 </changeSet>
+
+
+	<changeSet id="2020-12-11a" author="richard" context="run">
+		<comment>RSPAC-2194 store new Thumbnail thumbnails in FileStore</comment>
+		<addColumn tableName="Thumbnail">
+			<column name="thumbnailFP_id" type="BIGINT(19)"></column>
+		</addColumn>
+		<addForeignKeyConstraint
+			baseColumnNames="thumbnailFP_id" baseTableName="Thumbnail"
+			constraintName="FK_hcmgu0neplficdj2d8mas7xw9" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FileProperty" />
+	</changeSet>
+
+	
+	<changeSet id="2020-12-11b" author="richard" context="run">
+	  <comment>RSPAC-2194 remove non-null constraint for Thumbnail ImageBlobs</comment>
+	  <dropNotNullConstraint tableName="Thumbnail" columnName="imageBlob_id" columnDataType="BIGINT(20)"/>
+	</changeSet>
+	
+	<changeSet id="2021-06-03a" author="richard">
+	  <comment>rspac-2291 make tags larger</comment>
+	  <modifyDataType columnName="docTag" tableName="StructuredDocument" newDataType="VARCHAR(500)"/>
+	  <modifyDataType columnName="docTag" tableName="StructuredDocument_AUD" newDataType="VARCHAR(500)"/>
+	</changeSet>
+	
+
+</databaseChangeLog>

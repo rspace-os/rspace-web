@@ -1,0 +1,104 @@
+<Configuration xmlns="http://logging.apache.org/log4j/2.0/config">
+  <!-- pattern for fileNames is system property loggingDirectory (set via deployment property logging.dir) or . (current directory) if property not set,
+ OS specific path separator, then log file e.g. my/log/directory/{fileName}-->
+  <Appenders>
+    <Console name="CONSOLE">
+      <PatternLayout>
+        <Pattern>%p [-%t] %d{DATE} - %C{1}.%M(%L) | %m%n</Pattern>
+      </PatternLayout>
+    </Console>
+
+    <RollingFile name="HttpRequestLogger" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${RSRequest.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${RSRequest.log.file}.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
+    <RollingFile name="SecurityEventLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${RSSecurityEvent.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${RSSecurityEvent.log.file}.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
+    <RollingFile name="FailedEmailLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${RSfailedEmails.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${RSfailedEmails.log.file}.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+  </Appenders>
+
+  <Loggers>
+    <Logger name="net.sf.ehcache" level="ERROR"/>
+
+    <Logger name="org.apache" level="WARN"/>
+
+    <Logger name="org.hibernate" level="${hibernate.logLevel}"/>
+
+    <Logger name="org.apache.shiro" level="WARN"/>
+
+    <Logger name="com.researchspace.auth" level="WARN"/>
+
+    <Logger name="org.hibernate.SQL" level="${hibernate.sqlLogLevel}"/>
+
+    <Logger name="org.hibernate.stat" level="${hibernate.statsLogLevel}"/>
+
+    <Logger name="org.springframework" level="INFO"/>
+
+    <Logger name="liquibase" level="INFO"/>
+
+    <Logger name="com.axiope" level="${RS.devlogLevel}"/>
+
+    <Logger name="com.researchspace" level="${RS.devlogLevel}"/>
+
+    <Logger name="com.researchspace.webapp.controller.LoggingInterceptor" level="INFO">
+      <AppenderRef ref="HttpRequestLogger"/>
+    </Logger>
+
+    <Logger name="com.researchspace.webapp.controller.PerformanceLoggingInterceptor" level="INFO">
+      <AppenderRef ref="SlowRequestsLogAppender"/>
+    </Logger>
+
+    <Logger name="com.researchspace.service.impl.FailedEmailLogger" level="INFO">
+      <AppenderRef ref="FailedEmailLogAppender"/>
+    </Logger>
+
+    <!--  Always give info messages on application start up -->
+    <Logger name="com.researchspace.service.impl.AbstractAppInitializor" level="INFO"/>
+
+    <!-- This does not get logged to console as well but just using the secure
+      event appender -->
+    <Logger additivity="false"
+      name="com.researchspace.model.permissions.SecurityLogger" level="INFO">
+      <AppenderRef ref="SecurityEventLogAppender"/>
+    </Logger>
+
+    <Logger name="com.researchspace.model.audittrail.AuditTrailService" level="INFO">
+      <AppenderRef ref="HttpRequestLogger"/>
+    </Logger>
+    <Logger name="com.researchspace.service.impl.LoggingInitializer" level="INFO">
+      <AppenderRef ref="HttpRequestLogger"/>
+      <AppenderRef ref="SecurityEventLogAppender"/>
+      <AppenderRef ref="SlowRequestsLogAppender"/>
+    </Logger>
+
+    <!-- helping debug SSO issues -->
+    <Logger name="com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt" level="INFO"/>
+
+    <Root level="INFO">
+      <AppenderRef ref="CONSOLE"/>
+    </Root>
+  </Loggers>
+
+</Configuration>

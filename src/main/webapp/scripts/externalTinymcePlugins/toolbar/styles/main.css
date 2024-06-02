@@ -1,0 +1,38 @@
+body {
+  padding-bottom: 100px;
+  overflow: hidden;
+}
+
+#current_toolbar.container {
+  padding: 10px 20px;
+  height: 540px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+#current_toolbar table td {
+  border: 1px solid rgb(230,230,230);
+}
+
+#current_toolbar tr td:last-child {
+  border: 1px solid transparent;
+}
+
+#current_toolbar button{
+  background-color: transparent;
+  border: 1px solid transparent;
+  text-decoration: underline;
+  color: #2276d2;
+}
+
+#available_tools {
+  min-height: 100px;
+  width: 100%;
+  margin: 0px 0px 10px 0px;
+  border: 1px solid rgb(230,230,230);
+}
+
+#available_tools img, #current_toolbar img {
+  height: 20px;
+  padding: 0px 5px;
+}

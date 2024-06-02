@@ -1,0 +1,3843 @@
+id,approved,title
+NULL,1,Aalborg University
+NULL,1,Aalto University
+NULL,1,Aarhus University
+NULL,1,Abant Izzet Baysal University
+NULL,1,Abdelmalek Essaadi University
+NULL,1,Aberystwyth University
+NULL,1,Abilene Christian University
+NULL,1,Abo Akademi University
+NULL,1,Academic Center for Dentistry Amsterdam
+NULL,1,Academy of Art College
+NULL,1,Acadia University
+NULL,1,Acibadem University
+NULL,1,Adam Mickiewicz University
+NULL,1,Adams State College
+NULL,1,Addis Ababa University
+NULL,1,Adelphi University
+NULL,1,Adiyaman University
+NULL,1,Adler School of Professional Psychology
+NULL,1,Adnan Menderes University
+NULL,1,Adrian College
+NULL,1,Afyon Kocatepe University
+NULL,1,Aga Khan University
+NULL,1,AGH University of Science & Technology
+NULL,1,Agnes Scott College
+NULL,1,Agricultural University Krakow
+NULL,1,Agricultural University Lublin
+NULL,1,Agricultural University of Athens
+NULL,1,Ahi Evran University
+NULL,1,Ahmadu Bello University
+NULL,1,Aichi Gakuin University
+NULL,1,Aichi Medical University
+NULL,1,Ain Shams University
+NULL,1,Air Force Institute of Technology
+NULL,1,Ajou University
+NULL,1,Akdeniz University
+NULL,1,Akita Prefectural University
+NULL,1,Akita University
+NULL,1,Aksaray University
+NULL,1,Alabama Agricultural and Mechanical University
+NULL,1,Alabama State University
+NULL,1,Alagappa University
+NULL,1,Alaska Bible College
+NULL,1,Alaska Pacific University
+NULL,1,Al Azhar University
+NULL,1,Al-Balqa Applied University
+NULL,1,Albany College of Pharmacy
+NULL,1,Albany Law School
+NULL,1,Albany Medical Center
+NULL,1,Albany State University
+NULL,1,Albertus Magnus College
+NULL,1,Albion College
+NULL,1,Albright College
+NULL,1,Alcorn State University
+NULL,1,Alderson Broaddus College
+NULL,1,Alexandria University
+NULL,1,Alexandru Ioan Cuza University
+NULL,1,Alfaisal University
+NULL,1,Al-Farabi Kazakh National University
+NULL,1,Alfred Adler Graduate School
+NULL,1,Alfred University
+NULL,1,Alice Lloyd College
+NULL,1,Aligarh Muslim University
+NULL,1,Allegheny College
+NULL,1,Allen University
+NULL,1,Alma College
+NULL,1,Alvernia College
+NULL,1,Alverno College
+NULL,1,Ambassador University
+NULL,1,Amber University
+NULL,1,American Academy of Nutrition
+NULL,1,American Business & Technology University
+NULL,1,American Conservatory of Music
+NULL,1,American Conservatory Theater
+NULL,1,American-European School of Management
+NULL,1,American Film Institute Center for Advanced Film and Television Studies
+NULL,1,American Graduate School of International Management
+NULL,1,American Indian College of the Assemblies of God
+NULL,1,American InterContinental University - Atlanta
+NULL,1,American InterContinental University - Ft. Lauderdale
+NULL,1,American InterContinental University - Georgia
+NULL,1,American InterContinental University Online
+NULL,1,American International College
+NULL,1,American Jewish University
+NULL,1,American Military University
+NULL,1,American Public University
+NULL,1,American University
+NULL,1,American University Cairo
+NULL,1,American University of Beirut
+NULL,1,American University Sharjah
+NULL,1,American World University
+NULL,1,Amherst College
+NULL,1,Amirkabir University of Technology
+NULL,1,Amity University
+NULL,1,Anadolu University
+NULL,1,Anderson College
+NULL,1,Anderson University
+NULL,1,Andhra University
+NULL,1,Andon College - Modesto
+NULL,1,Andon College - Stockton
+NULL,1,Andong National University
+NULL,1,Andrew Jackson University
+NULL,1,Andrews University
+NULL,1,Angelo State University
+NULL,1,Anglia Ruskin University
+NULL,1,Anhui Agricultural University
+NULL,1,Anhui Medical University
+NULL,1,Anhui Normal University
+NULL,1,Anhui University
+NULL,1,Anhui University of Technology
+NULL,1,Ankara University
+NULL,1,Annamalai University
+NULL,1,Anna Maria College
+NULL,1,Anna University
+NULL,1,Anna University Chennai
+NULL,1,Antioch New England Graduate School
+NULL,1,Antioch University
+NULL,1,Antioch University Los Angeles
+NULL,1,Antioch University Santa Barbara
+NULL,1,Antioch University Seattle
+NULL,1,Aoyama Gakuin University
+NULL,1,Appalachian Bible College
+NULL,1,Appalachian State University
+NULL,1,Aquinas College
+NULL,1,Arcadia University
+NULL,1,Argosy University
+NULL,1,Argosy University - Hawaii
+NULL,1,Arid Agriculture University
+NULL,1,Aristotle University of Thessaloniki
+NULL,1,Arizona State University
+NULL,1,Arizona State University Polytechnic Campus
+NULL,1,Arizona State University West Campus
+NULL,1,Arkansas State University
+NULL,1,Arkansas State University Beebe
+NULL,1,Arkansas State University Mountain Home
+NULL,1,Arkansas State University Newport
+NULL,1,Arkansas Tech University
+NULL,1,Arlington Baptist College
+NULL,1,Armstrong Atlantic State University
+NULL,1,Armstrong University
+NULL,1,Art Academy of Cincinnati
+NULL,1,Art Center College of Design
+NULL,1,Arthur D. Little Management Education Institute
+NULL,1,Art Institute of Charlotte
+NULL,1,Art Institute of Southern California
+NULL,1,Asahikawa Medical College
+NULL,1,Asbury College
+NULL,1,Ashland University
+NULL,1,Asian Institute of Technology
+NULL,1,Asia University Taiwan
+NULL,1,Assiut University
+NULL,1,Assumption College
+NULL,1,Aston University
+NULL,1,Ataturk University
+NULL,1,Athabasca University
+NULL,1,Athenaeum of Ohio
+NULL,1,Athens State College
+NULL,1,Athens University of Economics & Business
+NULL,1,Atilim University
+NULL,1,Atlanta Christian College
+NULL,1,Atlanta College of Art
+NULL,1,Atlantic International University
+NULL,1,Atlantic Union College
+NULL,1,Atlantic University
+NULL,1,Auburn University
+NULL,1,Auburn University at Montgomery
+NULL,1,Auckland University of Technology
+NULL,1,Audrey Cohen College
+NULL,1,Augsburg College
+NULL,1,Augustana College
+NULL,1,Augusta State University
+NULL,1,Aurora University
+NULL,1,Austin College
+NULL,1,Austin Community College
+NULL,1,Austin Peay State University
+NULL,1,Australian Catholic University
+NULL,1,Australian National University
+NULL,1,Autonomous University of Baja California
+NULL,1,Autonomous University of Barcelona
+NULL,1,Autonomous University of Madrid
+NULL,1,Autonomous University of Nuevo Leon
+NULL,1,Autonomous University of Queretaro
+NULL,1,Autonomous University of San Luis Potosi
+NULL,1,Autonomous University of Sinaloa
+NULL,1,Autonomous University of the State of Hidalgo
+NULL,1,Autonomous University of the State of Mexico
+NULL,1,Autonomous University of the State of Morelos
+NULL,1,Autonomous University of Yucatan
+NULL,1,Ave Maria University
+NULL,1,Averett College
+NULL,1,Avila College
+NULL,1,Azabu University
+NULL,1,Azusa Pacific University
+NULL,1,Babson College
+NULL,1,Bahauddin Zakariya University
+NULL,1,Bahcesehir University
+NULL,1,Baker College of Auburn Hills
+NULL,1,Baker College of Cadillac
+NULL,1,Baker College of Flint
+NULL,1,Baker College of Mount Clemens
+NULL,1,Baker College of Muskegon
+NULL,1,Baker College of Owosso
+NULL,1,Baker College of Port Huron
+NULL,1,Baker University
+NULL,1,Baku State University
+NULL,1,Baldwin-Wallace College
+NULL,1,Balikesir University
+NULL,1,Ball State University
+NULL,1,Baltimore Hebrew University
+NULL,1,Baltimore International College
+NULL,1,Banaras Hindu University
+NULL,1,Bangalore University
+NULL,1,Bangor University
+NULL,1,Bank Street College of Education
+NULL,1,Baptist Bible College of Missouri
+NULL,1,Baptist Bible College of Pennsylvania
+NULL,1,Barat College
+NULL,1,Barber-Scotia College
+NULL,1,Barclay College
+NULL,1,Bard College
+NULL,1,Bard Graduate Center for Studies in the Decorative Arts
+NULL,1,Bar Ilan University
+NULL,1,Barnard College - Columbia University
+NULL,1,Barry University
+NULL,1,Bartlesville Wesleyan College
+NULL,1,Barton College
+NULL,1,Baruch College (CUNY)
+NULL,1,Baskent University
+NULL,1,Bastyr University
+NULL,1,Bates College
+NULL,1,Bauder College
+NULL,1,Baylor College of Dentistry
+NULL,1,Baylor College of Medicine
+NULL,1,Baylor University
+NULL,1,Beihang University
+NULL,1,Beijing Forestry University
+NULL,1,Beijing Institute of Technology
+NULL,1,Beijing Jiaotong University
+NULL,1,Beijing Normal University
+NULL,1,Beijing University of Chemical Technology
+NULL,1,Beijing University of Chinese Medicine
+NULL,1,Beijing University of Technology
+NULL,1,Beijing University Posts & Telecommunications
+NULL,1,Belarusian State University
+NULL,1,Belhaven College
+NULL,1,Bellarmine College
+NULL,1,Bellevue University
+NULL,1,Bellin College of Nursing
+NULL,1,Belmont Abbey College
+NULL,1,Belmont University
+NULL,1,Beloit College
+NULL,1,Bemidji State Univeristy
+NULL,1,Benedict College
+NULL,1,Benedictine College
+NULL,1,Benedictine University
+NULL,1,Benedictine University Springfield College in Illinois
+NULL,1,Benemerita Universidad Autonoma de Puebla
+NULL,1,Bengal Engineering Science University
+NULL,1,Ben Gurion University
+NULL,1,Bennett College
+NULL,1,Bennington College
+NULL,1,Bentley College
+NULL,1,Berea College
+NULL,1,Berean University of the Assemblies of God
+NULL,1,Berklee College of Music
+NULL,1,Berne University
+NULL,1,Berry College
+NULL,1,Bethany College California
+NULL,1,Bethany College Kansas
+NULL,1,Bethany College West Virginia
+NULL,1,Bethel College McKenzie
+NULL,1,Bethel College Mishawaka
+NULL,1,Bethel College Newton
+NULL,1,Beth-El College of Nursing and Health Sciences
+NULL,1,Bethel College St. Paul
+NULL,1,Bethune-Cookman College
+NULL,1,Bharathiar University
+NULL,1,Bharathidasan University
+NULL,1,Bilkent University
+NULL,1,Biola University
+NULL,1,Birkbeck University London
+NULL,1,Birla Institute of Technology & Science
+NULL,1,Birmingham City University
+NULL,1,Birmingham-Southern College
+NULL,1,Blackburn College
+NULL,1,Black Hawk College
+NULL,1,Black Hills State University
+NULL,1,Blaise Pascal University
+NULL,1,Blessing-Rieman College of Nursing
+NULL,1,Bloomfield College
+NULL,1,Bloomsburg University of Pennsylvania
+NULL,1,Bluefield College
+NULL,1,Bluefield State College
+NULL,1,Blue Mountain College
+NULL,1,Bluffton College
+NULL,1,Bob Jones University
+NULL,1,Bocconi University
+NULL,1,Bogazici University
+NULL,1,Bogor Agricultural University
+NULL,1,Bohai University
+NULL,1,Boise Bible College
+NULL,1,Boise State University
+NULL,1,Bond University
+NULL,1,Boricua College
+NULL,1,Boston Architectural Center
+NULL,1,Boston College
+NULL,1,Boston University
+NULL,1,Bournemouth University
+NULL,1,Bowdoin College
+NULL,1,Bowie State University
+NULL,1,Bowling Green State University
+NULL,1,Bowling Green State University Firelands
+NULL,1,Bozok University
+NULL,1,Bradley University
+NULL,1,Brandeis University
+NULL,1,Brandman University
+NULL,1,Braunschweig University of Technology
+NULL,1,Brenau University
+NULL,1,Brescia University
+NULL,1,Brevard College
+NULL,1,Brewton-Parker College
+NULL,1,Breyer State University (Virtual University)
+NULL,1,Briar Cliff College
+NULL,1,Bridgewater College
+NULL,1,Bridgewater State College
+NULL,1,Brigham Young University
+NULL,1,Brigham Young University Hawaii
+NULL,1,Brno University of Technology
+NULL,1,Brock University
+NULL,1,Brooklyn College (CUNY)
+NULL,1,Brooklyn Law School
+NULL,1,Brooks Institute of Photography
+NULL,1,Brown University
+NULL,1,Brunel University
+NULL,1,Brunswick Community College
+NULL,1,Bryan College
+NULL,1,Bryant and Stratton College
+NULL,1,Bryant University
+NULL,1,Bryn Athyn College of the New Church
+NULL,1,Bryn Mawr College
+NULL,1,Bucharest Academy of Economic Studies
+NULL,1,Bucknell University
+NULL,1,Budapest University of Technology & Economics
+NULL,1,Buena Vista University
+NULL,1,Buffalo State College
+NULL,1,Bulent Ecevit University
+NULL,1,Burlington College
+NULL,1,Butler University
+NULL,1,Cabrini College
+NULL,1,Cairo University
+NULL,1,Caldwell College
+NULL,1,California Baptist College
+NULL,1,California Coast University
+NULL,1,California College for Health Sciences
+NULL,1,California College of Arts and Crafts
+NULL,1,California College of Podiatric Medicine
+NULL,1,California College San Diego
+NULL,1,California Institute of Integral Studies
+NULL,1,California Institute of Technology
+NULL,1,California Institute of the Arts
+NULL,1,California Lutheran University
+NULL,1,California Maritime Academy
+NULL,1,California Polytechnic State University - San Luis Obispo
+NULL,1,California Polytechnic State University San Luis Obispo
+NULL,1,California School of Professional Psychology - Berkley/Alameda
+NULL,1,California School of Professional Psychology - Fresno
+NULL,1,California School of Professional Psychology - Los Angels
+NULL,1,California School of Professional Psychology - San Diego
+NULL,1,California State Polytechnic University Pomona
+NULL,1,California State Polytechnic University - Pomona
+NULL,1,California State University Bakersfield
+NULL,1,California State University Channel Islands
+NULL,1,California State University Chico
+NULL,1,California State University Dominguez Hills
+NULL,1,California State University Fresno
+NULL,1,California State University Fullerton
+NULL,1,California State University Hayward
+NULL,1,California State University Long Beach
+NULL,1,California State University Los Angeles
+NULL,1,California State University Monterey Bay
+NULL,1,California State University Northridge
+NULL,1,California State University Sacramento
+NULL,1,California State University San Bernardino
+NULL,1,California State University San Marcos
+NULL,1,California State University Stanislaus
+NULL,1,California University of Management and Sciences
+NULL,1,California University of Pennsylvania
+NULL,1,California Western School of Law
+NULL,1,Calumet College of St. Joseph
+NULL,1,Calvary Bible College
+NULL,1,Calvin College
+NULL,1,Cambridge College
+NULL,1,Cameron University
+NULL,1,Campbellsville College
+NULL,1,Campbell University
+NULL,1,Canakkale Onsekiz Mart University
+NULL,1,Canisius College
+NULL,1,Cankaya University
+NULL,1,Can Tho University
+NULL,1,Capella University
+NULL,1,Cape Peninsula University of Technology
+NULL,1,Capital Medical University
+NULL,1,Capital Normal University
+NULL,1,Capital University
+NULL,1,Capital University Law School
+NULL,1,Capitol College
+NULL,1,Cardiff University
+NULL,1,Cardinal Stritch University
+NULL,1,Carleton College
+NULL,1,Carleton University
+NULL,1,Carlos Albizu University
+NULL,1,Carlow College
+NULL,1,Carnegie Mellon University
+NULL,1,Carol Davila University of Medicine & Pharmacy
+NULL,1,Carroll College Helena
+NULL,1,Carroll College Waukesha
+NULL,1,Carson-Newman College
+NULL,1,Carthage College
+NULL,1,Case Western Reserve University
+NULL,1,Castleton State College
+NULL,1,Catawba College
+NULL,1,Catholic Theological Union
+NULL,1,Catholic University of America
+NULL,1,Catholic University of Korea
+NULL,1,Catholic University of the Sacred Heart
+NULL,1,Cedar Crest College
+NULL,1,Cedarville College
+NULL,1,Celal Bayar University
+NULL,1,Centenary College
+NULL,1,Centenary College of Louisiana
+NULL,1,Center for Humanistic Studies
+NULL,1,Central Baptist College
+NULL,1,Central Bible College
+NULL,1,Central China Normal University
+NULL,1,Central Christian College of the Bible
+NULL,1,Central College
+NULL,1,Central Connecticut State University
+NULL,1,Central European University
+NULL,1,Central Methodist College
+NULL,1,Central Michigan University
+NULL,1,Central Queensland University
+NULL,1,Central South University
+NULL,1,Central State University
+NULL,1,Central University Finance & Economics
+NULL,1,Central Washington University
+NULL,1,Centre College
+NULL,1,Chadron State College
+NULL,1,Chalmers University of Technology
+NULL,1,Chaminade University of Honolulu
+NULL,1,Champlain College
+NULL,1,Changan University
+NULL,1,Changchun University of Technology
+NULL,1,Changchun University Science & Technology
+NULL,1,Chang Gung University
+NULL,1,Chang Jung Christian University
+NULL,1,Changwon National University
+NULL,1,Chapman University
+NULL,1,Charite Medical University of Berlin
+NULL,1,Charles Darwin University
+NULL,1,Charles R. Drew University of Medicine and Science
+NULL,1,Charles Sturt University
+NULL,1,Charleston Southern University
+NULL,1,Charles University Prague
+NULL,1,Charter Oak State College
+NULL,1,Chatham College
+NULL,1,Chengdu University of Technology
+NULL,1,Chestnut Hill College
+NULL,1,Cheyney University of Pennsylvania
+NULL,1,Chiang Mai University
+NULL,1,Chiba Institute of Technology
+NULL,1,Chiba University
+NULL,1,Chicago State University
+NULL,1,China Agricultural University
+NULL,1,China Jiliang University
+NULL,1,China Medical University
+NULL,1,China Medical University Taiwan
+NULL,1,China Pharmaceutical University
+NULL,1,China Three Gorges University
+NULL,1,China University of Geosciences
+NULL,1,China University of Mining & Technology
+NULL,1,China University of Petroleum
+NULL,1,Chinese Academy of Engineering Physics
+NULL,1,Chinese Culture University
+NULL,1,Chinese University of Hong Kong
+NULL,1,Chonbuk National University
+NULL,1,Chongqing Medical University
+NULL,1,Chongqing University
+NULL,1,Chongqing University Posts & Telecommunications
+NULL,1,Chonnam National University
+NULL,1,Chosun University
+NULL,1,Chowan College
+NULL,1,Christendom College
+NULL,1,Christian Brothers University
+NULL,1,Christian Heritage College
+NULL,1,Christian Medical College & Hospital (CMCH) Vellore
+NULL,1,Christopher Newport University
+NULL,1,Chubu University
+NULL,1,Chulalongkorn University
+NULL,1,Chung Ang University
+NULL,1,Chungbuk National University
+NULL,1,Chung Hua University
+NULL,1,Chungnam National University
+NULL,1,Chung Shan Medical University
+NULL,1,Chung Yuan Christian University
+NULL,1,Chuo University
+NULL,1,Circleville Bible College
+NULL,1,City College of New York (CUNY)
+NULL,1,City University
+NULL,1,City University London
+NULL,1,City University of Hong Kong
+NULL,1,City University of New York Bernard M. Baruch College
+NULL,1,City University of New York Brooklyn College
+NULL,1,City University of New York City College
+NULL,1,City University of New York College of Staten Island
+NULL,1,City University of New York (CUNY) System
+NULL,1,City University of New York Graduate School and University Center
+NULL,1,City University of New York Hunter College
+NULL,1,City University of New York John Jay College of Criminal Justice
+NULL,1,City University of New York Lehman College
+NULL,1,City University of New York Medgar Evers College
+NULL,1,City University of New York Medical School / Sophie Davis School of Biomedical Education
+NULL,1,City University of New York New York City Technical College
+NULL,1,City University of New York Queens College
+NULL,1,City University of New York School of Law at Queens College
+NULL,1,City University of New York York College
+NULL,1,Civil Aviation University of China
+NULL,1,Claflin College
+NULL,1,Claremont Graduate School
+NULL,1,Claremont Graduate University
+NULL,1,Claremont Lincoln University
+NULL,1,Claremont McKenna College
+NULL,1,Clarion University
+NULL,1,Clark Atlanta University
+NULL,1,Clarke College
+NULL,1,Clarkson College
+NULL,1,Clarkson University
+NULL,1,Clark University
+NULL,1,Clayton College & State University
+NULL,1,Clearwater Christian College
+NULL,1,Cleary College
+NULL,1,Clemson University
+NULL,1,Cleveland Chiropractic College Kansas City
+NULL,1,Cleveland Chiropractic College Los Angeles
+NULL,1,Cleveland Institute of Art
+NULL,1,Cleveland Institute of Music
+NULL,1,Cleveland State University
+NULL,1,Coastal Carolina University
+NULL,1,Cochin University Science & Technology
+NULL,1,Coe College
+NULL,1,Cogswell Polytechnical College
+NULL,1,Coker College
+NULL,1,Colby College
+NULL,1,Colby-Sawyer College
+NULL,1,Coleman College
+NULL,1,Colgate University
+NULL,1,CollegeAmerica Denver
+NULL,1,CollegeAmerica Phoenix
+NULL,1,College for Creative Studies
+NULL,1,College for Financial Planning
+NULL,1,College for Lifelong Learning
+NULL,1,College Misericordia
+NULL,1,College of Aeronautics
+NULL,1,College of Charleston
+NULL,1,College of DuPage
+NULL,1,College of Idaho
+NULL,1,College of Mount St. Joseph
+NULL,1,College of Mount St. Vincent
+NULL,1,College of New Jersey
+NULL,1,College of New Rochelle
+NULL,1,College of Notre Dame
+NULL,1,College of Notre Dame of Maryland
+NULL,1,College of Osteopathic Medicine of the Pacific (Western University of Health Sciences)
+NULL,1,College of Staten Island (CUNY)
+NULL,1,College of St. Benedict and St. John's University
+NULL,1,College of St. Catherine
+NULL,1,College of St. Elizabeth
+NULL,1,College of St. Joseph
+NULL,1,College of St. Mary
+NULL,1,College of St. Rose
+NULL,1,College of St. Scholastica
+NULL,1,College of the Atlantic
+NULL,1,College of the Holy Cross
+NULL,1,College of the Ozarks
+NULL,1,College of Visual Arts
+NULL,1,College of William and Mary
+NULL,1,College William & Mary
+NULL,1,Colorado Christian University
+NULL,1,Colorado College
+NULL,1,Colorado School of Mines
+NULL,1,Colorado State University
+NULL,1,Colorado State University-Pueblo
+NULL,1,Colorado Technical University
+NULL,1,Columbia College Chicago
+NULL,1,Columbia College Hollywood
+NULL,1,Columbia College of Missouri
+NULL,1,Columbia College South Carolina
+NULL,1,Columbia Commonwealth University
+NULL,1,Columbia International University
+NULL,1,Columbia Southern University
+NULL,1,Columbia Union College
+NULL,1,Columbia University
+NULL,1,Columbia University Teachers College
+NULL,1,Columbus College of Art and Design
+NULL,1,Columbus State University
+NULL,1,Columbus University
+NULL,1,Comenius University Bratislava
+NULL,1,Community College of Denver
+NULL,1,Complutense University of Madrid
+NULL,1,COMSATS Institute of Information Technology (CIIT)
+NULL,1,Concord College
+NULL,1,Concordia College Ann Arbor
+NULL,1,Concordia College Bronxville
+NULL,1,Concordia College Moorhead
+NULL,1,Concordia College Selma
+NULL,1,Concordia College Seward
+NULL,1,Concordia College St. Paul
+NULL,1,Concordia University Austin
+NULL,1,Concordia University - Canada
+NULL,1,Concordia University Irvine
+NULL,1,Concordia University Mequon
+NULL,1,Concordia University Portland
+NULL,1,Concordia University River Forest
+NULL,1,Connecticut College
+NULL,1,Constantine Philosopher University Nitra
+NULL,1,Converse College
+NULL,1,Conway School of Landscape Design
+NULL,1,Copenhagen Business School
+NULL,1,Coppin State College
+NULL,1,Cornell College
+NULL,1,Cornell University
+NULL,1,Cornish College of the Arts
+NULL,1,Corvinus University Budapest
+NULL,1,Cosmopolitan University
+NULL,1,Covenant College
+NULL,1,Coventry University
+NULL,1,Cracow University of Technology
+NULL,1,Cranbrook Academy of Art
+NULL,1,Cranfield University
+NULL,1,Creighton University
+NULL,1,Crichton College
+NULL,1,Crown College
+NULL,1,Cukurova University
+NULL,1,Culver-Stockton College
+NULL,1,Cumberland College
+NULL,1,Cumberland University
+NULL,1,Cumhuriyet University
+NULL,1,Curry College
+NULL,1,Curtin University of Technology
+NULL,1,Czech Technical University Prague
+NULL,1,Czech University of Life Sciences Prague
+NULL,1,Daegu University
+NULL,1,Daemen College
+NULL,1,Dakota State University
+NULL,1,Dakota Wesleyan University
+NULL,1,Dalarna University
+NULL,1,Dalhousie University
+NULL,1,Dalian Jiaotong University
+NULL,1,Dalian Maritime University
+NULL,1,Dalian Medical University
+NULL,1,Dalian University
+NULL,1,Dalian University of Technology
+NULL,1,Dallas Baptist University
+NULL,1,Dallas Christian College
+NULL,1,Dana College
+NULL,1,Daniel Webster College
+NULL,1,Dankook University
+NULL,1,Danville Area Community College
+NULL,1,Darmstadt University of Technology
+NULL,1,Dartmouth College
+NULL,1,Darton College
+NULL,1,Davenport College of Business Grand Rapids
+NULL,1,Davenport College of Business Kalamazoo
+NULL,1,Davenport College of Business Lansing
+NULL,1,Davidson College
+NULL,1,Davis and Elkins College
+NULL,1,Da Yeh University
+NULL,1,Deaconess College of Nursing
+NULL,1,Deakin University
+NULL,1,De La Salle University
+NULL,1,Delaware State University
+NULL,1,Delaware Valley College
+NULL,1,Delft University of Technology
+NULL,1,Delta International University
+NULL,1,Delta State University
+NULL,1,Democritus University of Thrace
+NULL,1,De Montfort University
+NULL,1,Denison University
+NULL,1,Denver Paralegal Institute
+NULL,1,Denver Technical College
+NULL,1,DePaul University
+NULL,1,DePauw University
+NULL,1,DeSales University
+NULL,1,Design Institute of San Diego
+NULL,1,Detroit College of Business
+NULL,1,Detroit College of Business - Flint
+NULL,1,Detroit College of Business - Warren
+NULL,1,Detroit College of Law
+NULL,1,Devi Ahilya University
+NULL,1,DeVry Institute of Technology Chicago
+NULL,1,DeVry Institute of Technology Columbus
+NULL,1,DeVry Institute of Technology Decatur
+NULL,1,DeVry Institute of Technology DuPage
+NULL,1,DeVry Institute of Technology Irving
+NULL,1,DeVry Institute of Technology Kansas City
+NULL,1,DeVry Institute of Technology Phoenix
+NULL,1,DeVry Institute of Technology Pomona
+NULL,1,Dickinson College
+NULL,1,Dickinson State University
+NULL,1,Dicle University
+NULL,1,Dillard University
+NULL,1,Divine Word College
+NULL,1,Dixie College
+NULL,1,Doane College
+NULL,1,Dogu Akdeniz University
+NULL,1,Dogus University
+NULL,1,Dokkyo University
+NULL,1,Dokuz Eylul University
+NULL,1,Dominican College
+NULL,1,Dominican College of San Rafael
+NULL,1,Dominican School of Philosophy and Theology
+NULL,1,Dominican University
+NULL,1,Dominion College
+NULL,1,Dong A University
+NULL,1,Dong Eui University
+NULL,1,Dongguk University
+NULL,1,Donghua University
+NULL,1,Dordt College
+NULL,1,Dortmund University of Technology
+NULL,1,Doshisha University
+NULL,1,Dowling College
+NULL,1,Dow University of Health Sciences
+NULL,1,Drake University
+NULL,1,Dr. Babasaheb Ambedkar Marathwada University (BAMU)
+NULL,1,Drew University
+NULL,1,Drexel University
+NULL,1,Drury College
+NULL,1,Dublin City University
+NULL,1,Dublin Institute of Technology
+NULL,1,Duke University
+NULL,1,Duluth Business University
+NULL,1,Dumlupinar University
+NULL,1,Dunarea De Jos University Galati
+NULL,1,Duquesne University
+NULL,1,Durban University of Technology
+NULL,1,Durham University
+NULL,1,Duzce University
+NULL,1,D'Youville College
+NULL,1,Earlham College
+NULL,1,EarthNet Institute
+NULL,1,East Carolina University
+NULL,1,East Central University
+NULL,1,East China Institute of Technology
+NULL,1,East China Normal University
+NULL,1,East China University of Science & Technology
+NULL,1,Eastern College
+NULL,1,Eastern Connecticut State University
+NULL,1,Eastern Conservatory of Music
+NULL,1,Eastern Illinois University
+NULL,1,Eastern Kentucky University
+NULL,1,Eastern Mennonite University
+NULL,1,Eastern Michigan University
+NULL,1,Eastern Nazarene College
+NULL,1,Eastern New Mexico University
+NULL,1,Eastern Oregon University
+NULL,1,Eastern Virginia Medical School
+NULL,1,Eastern Washington University
+NULL,1,East Stroudsburg State University
+NULL,1,East Tennessee State University
+NULL,1,East Texas Baptist University
+NULL,1,East-West University
+NULL,1,Eberhard Karls University of Tubingen
+NULL,1,Eckerd College
+NULL,1,Ecole de Technologie Superieure - Canada
+NULL,1,Ecole Nationale des Ponts et Chaussees
+NULL,1,Ecole Normale Superieure (ENS) Lyon
+NULL,1,Ecole Normale Superieure (ENS) Paris
+NULL,1,Ecole Polytechnique
+NULL,1,Edgewood College
+NULL,1,Edinboro University of Pennsylvania
+NULL,1,Edison Community College
+NULL,1,Edith Cowan University
+NULL,1,Edward Waters College
+NULL,1,Ege University
+NULL,1,Ehime University
+NULL,1,Eindhoven University of Technology
+NULL,1,Elizabeth City State University
+NULL,1,Elizabethtown College
+NULL,1,Elmhurst College
+NULL,1,Elmira College
+NULL,1,Elms College
+NULL,1,Elon College
+NULL,1,Embry-Riddle Aeronautical University
+NULL,1,Embry Riddle Aeronautical University Prescott
+NULL,1,Emerson College
+NULL,1,Emmanuel College
+NULL,1,Emmanuel College Georgia
+NULL,1,Emmaus Bible College
+NULL,1,Emory & Henry College
+NULL,1,Emory University
+NULL,1,Emporia State University
+NULL,1,Eotvos Lorand University
+NULL,1,Erasmus University Rotterdam
+NULL,1,Erciyes University
+NULL,1,Ernst Moritz Arndt Universitat Greifswald
+NULL,1,Erskine College
+NULL,1,Erzincan University
+NULL,1,Eskisehir Osmangazi University
+NULL,1,Eugene Bible College
+NULL,1,Eureka College
+NULL,1,European University Institute
+NULL,1,Evangel University
+NULL,1,Evergreen State College
+NULL,1,Ewha Womans University
+NULL,1,Excel College
+NULL,1,Excelsior College
+NULL,1,Fairfield University
+NULL,1,Fairleigh Dickinson University Florham-Madison Campus
+NULL,1,Fairleigh Dickinson University Teaneck-Hackensack Campus
+NULL,1,Fairmont State College
+NULL,1,Far Eastern Federal University
+NULL,1,Fashion Institute of New York
+NULL,1,Fatih University
+NULL,1,Faulkner University
+NULL,1,Fayetteville State University
+NULL,1,Federation University Australia
+NULL,1,Felician College
+NULL,1,Feng Chia University
+NULL,1,Ferdowsi University Mashhad
+NULL,1,Ferris State University
+NULL,1,Ferrum College
+NULL,1,Fielding Institute
+NULL,1,Finch University of Health Sciences - The Chicago Medical School
+NULL,1,Finlandia University
+NULL,1,Firat University
+NULL,1,Fisher College
+NULL,1,Fisk University
+NULL,1,Fitchburg State College
+NULL,1,Flagler College
+NULL,1,Flinders University South Australia
+NULL,1,Florida Agricultural and Mechanical University
+NULL,1,Florida A&M University
+NULL,1,Florida Atlantic University
+NULL,1,Florida Christian College
+NULL,1,Florida Community College at Jacksonville
+NULL,1,Florida Gulf Coast University
+NULL,1,Florida Institute of Technology
+NULL,1,Florida International University
+NULL,1,Florida Memorial College
+NULL,1,Florida Metropolitan University Fort Lauderdale College
+NULL,1,Florida Metropolitan University Tampa College
+NULL,1,Florida Metropolitan University Tampa College Brandon
+NULL,1,Florida Metropolitan University Tampa College Lakeland
+NULL,1,Florida Southern College
+NULL,1,Florida State University
+NULL,1,Florida University of Medicine
+NULL,1,Fontbonne College
+NULL,1,Foothill-De Anza Community College District
+NULL,1,Fordham University
+NULL,1,Forest Institute of Professional Psychology
+NULL,1,Fort Hays State University
+NULL,1,Fort Lewis College
+NULL,1,Fort Valley State College
+NULL,1,Fourth Military Medical University
+NULL,1,Framingham State College
+NULL,1,Franciscan School of Theology
+NULL,1,Franciscan University of Steubenville
+NULL,1,Francis Marion University
+NULL,1,Franklin and Marshall College
+NULL,1,Franklin College
+NULL,1,Franklin Pierce College
+NULL,1,Franklin Pierce Law Center
+NULL,1,Franklin University
+NULL,1,Franklin W. Olin College of Engineering
+NULL,1,Frank Lloyd Wright School of Architecture
+NULL,1,Fred Hutchinson Cancer Research Center
+NULL,1,Freed-Hardeman University
+NULL,1,Free University of Berlin
+NULL,1,Free University (Virginia Theological University)
+NULL,1,Free Will Baptist Bible College
+NULL,1,Fresno City College
+NULL,1,Fresno Pacific University
+NULL,1,Friedrich Schiller University of Jena
+NULL,1,Friends University
+NULL,1,Frostburg State University
+NULL,1,Fudan University
+NULL,1,Fu Jen Catholic University
+NULL,1,Fujian Medical University
+NULL,1,Fujian Normal University
+NULL,1,Fujita Health University
+NULL,1,Fukuoka University
+NULL,1,Fukushima Medical University
+NULL,1,Full Sail University
+NULL,1,Furman University
+NULL,1,Fuzhou University
+NULL,1,Gadjah Mada University
+NULL,1,Gakushuin University
+NULL,1,Gallaudet University
+NULL,1,Gannon University
+NULL,1,Gardner Webb University
+NULL,1,Gaziantep University
+NULL,1,Gaziosmanpasa University
+NULL,1,Gazi University
+NULL,1,G dAnnunzio University of Chieti-Pescara
+NULL,1,Gdansk University of Technology
+NULL,1,Gebze Yuksek Teknoloji Enstitusu
+NULL,1,Gemological Institute of America
+NULL,1,Geneva College
+NULL,1,George Fox University
+NULL,1,George Mason University
+NULL,1,Georgetown College
+NULL,1,Georgetown University
+NULL,1,George Washington University
+NULL,1,George Wythe College
+NULL,1,Georgia Baptist College of Nursing
+NULL,1,Georgia College & State University
+NULL,1,Georgia Health Sciences University
+NULL,1,Georgia Institute of Technology
+NULL,1,Georgian Court College
+NULL,1,Georgia Regents University
+NULL,1,Georgia School of Professional Psychology
+NULL,1,Georgia Southern University
+NULL,1,Georgia Southwestern University
+NULL,1,Georgia State University
+NULL,1,Gettysburg College
+NULL,1,GH Asachi Technical University
+NULL,1,Ghent University
+NULL,1,Gifu Pharmaceutical University
+NULL,1,Gifu University
+NULL,1,Glasgow Caledonian University
+NULL,1,Glendale University College of Law
+NULL,1,Glenville State College
+NULL,1,Glyndwr University
+NULL,1,Goddard College
+NULL,1,God's Bible School and College
+NULL,1,Goethe University Frankfurt
+NULL,1,Golden Gate University
+NULL,1,Goldey-Beacom College
+NULL,1,Goldsmiths University London
+NULL,1,Gonzaga University
+NULL,1,Gordon College
+NULL,1,Gordon Conwell Theological Seminary
+NULL,1,Goshen College
+NULL,1,Goucher College
+NULL,1,Government College University Faisalabad
+NULL,1,Government College University Lahore
+NULL,1,Governors State University
+NULL,1,Govind Ballabh Pant University of Agriculture & Technology
+NULL,1,Grace Bible College
+NULL,1,Grace College
+NULL,1,Graceland College
+NULL,1,Grace University
+NULL,1,Graduate Theological Union
+NULL,1,Graduate University for Advanced Studies - Japan
+NULL,1,Grambling State University
+NULL,1,Grand Canyon University
+NULL,1,Grand Valley State University
+NULL,1,Grand View College
+NULL,1,Grantham University
+NULL,1,Gratz College
+NULL,1,Graz University of Technology
+NULL,1,Great Lakes Christian College
+NULL,1,Green Mountain College
+NULL,1,Greensboro College
+NULL,1,Greenville College
+NULL,1,Griffith University
+NULL,1,Grigore T Popa University of Medicine & Pharmacy
+NULL,1,Grinnell College
+NULL,1,Grove City College
+NULL,1,Guangdong University of Technology
+NULL,1,Guangxi Medical University
+NULL,1,Guangxi Normal University
+NULL,1,Guangxi University
+NULL,1,Guangzhou Medical University
+NULL,1,Guangzhou University
+NULL,1,Guilford College
+NULL,1,Guizhou University
+NULL,1,Gulhane Askeri Tip Akademisi (GATA)
+NULL,1,Gumushane University
+NULL,1,Gunma University
+NULL,1,Gustavus Adolphus College
+NULL,1,Gwangju Institute of Science & Technology
+NULL,1,Gwynedd-Mercy College
+NULL,1,Gyeongsang National University
+NULL,1,Hacettepe University
+NULL,1,Hagerstown Community College
+NULL,1,Hainan University
+NULL,1,Hallym University
+NULL,1,Halmstad University
+NULL,1,Hamamatsu University School of Medicine
+NULL,1,Hamburg University of Technology
+NULL,1,Hamilton College
+NULL,1,Hamilton Technical College
+NULL,1,Hamline University
+NULL,1,Hampden-Sydney College
+NULL,1,Hampshire College
+NULL,1,Hampton College
+NULL,1,Hampton University
+NULL,1,Hangzhou Dianzi University
+NULL,1,Hangzhou Normal University
+NULL,1,Hannibal-Lagrange College
+NULL,1,Hanoi Medical University
+NULL,1,Hanoi University of Science & Technology
+NULL,1,Hanover College
+NULL,1,Hanyang University
+NULL,1,Harbin Engineering University
+NULL,1,Harbin Institute of Technology
+NULL,1,Harbin Medical University
+NULL,1,Harbin Normal University
+NULL,1,Harbin University of Science & Technology
+NULL,1,Harding University
+NULL,1,Harding University Graduate School of Religion
+NULL,1,Hardin-Simmons University
+NULL,1,Harokopio University Athens
+NULL,1,Harran University
+NULL,1,Harrington Institute of Interior Design
+NULL,1,Harris-Stowe State University
+NULL,1,Hartford College for Women
+NULL,1,Hartford Graduate Center (Rensselaer at Hartford)
+NULL,1,Hartwick College
+NULL,1,Harvard University
+NULL,1,Harvey Mudd College
+NULL,1,Hashemite University
+NULL,1,Hasselt University
+NULL,1,Hastings College
+NULL,1,Haverford College
+NULL,1,Hawaii Pacific University
+NULL,1,Hazara University
+NULL,1,Health Sciences University of Hokkaido
+NULL,1,Heartland Baptist Bible College
+NULL,1,Hebei Medical University
+NULL,1,Hebei Normal University
+NULL,1,Hebei University
+NULL,1,Hebei University of Science & Technology
+NULL,1,Hebei University of Technology
+NULL,1,Hebrew College
+NULL,1,Hebrew University of Jerusalem
+NULL,1,Hefei University of Technology
+NULL,1,Heidelberg College
+NULL,1,Heilongjiang University
+NULL,1,Heinrich Heine University Dusseldorf
+NULL,1,Helwan University
+NULL,1,Henan Normal University
+NULL,1,Henan Polytech University
+NULL,1,Henan University
+NULL,1,Henan University of Science & Technology
+NULL,1,Henderson State Univerisity
+NULL,1,Hendrix College
+NULL,1,Heriot Watt University
+NULL,1,Heritage College
+NULL,1,Hesser College
+NULL,1,High Point University
+NULL,1,Hilbert College
+NULL,1,Hillsdale College
+NULL,1,Hiram College
+NULL,1,Hirosaki University
+NULL,1,Hiroshima University
+NULL,1,Hobart and William Smith Colleges
+NULL,1,Hobe Sound Bible College
+NULL,1,Hodges University
+NULL,1,Hofstra University
+NULL,1,Hohai University
+NULL,1,Hokkaido University
+NULL,1,Hollins University
+NULL,1,Holy Apostles College
+NULL,1,Holy Cross College
+NULL,1,Holy Family College
+NULL,1,Holy Names College
+NULL,1,Hongik University
+NULL,1,Hong Kong Baptist University
+NULL,1,Hong Kong Institute of Education
+NULL,1,Hong Kong Polytechnic University
+NULL,1,Hong Kong University of Science & Technology
+NULL,1,Hood College
+NULL,1,Hope College
+NULL,1,Hope International University
+NULL,1,Hosei University
+NULL,1,Hoshi University
+NULL,1,Houghton College
+NULL,1,Houston Baptist University
+NULL,1,Howard Payne University
+NULL,1,Howard University
+NULL,1,Huaqiao University
+NULL,1,Huazhong Agricultural University
+NULL,1,Huazhong University of Science & Technology
+NULL,1,Hubei Normal University
+NULL,1,Hubei University
+NULL,1,Humboldt State University
+NULL,1,Humboldt University of Berlin
+NULL,1,Humphreys College
+NULL,1,Hunan Normal University
+NULL,1,Hunan University
+NULL,1,Hunan University of Technology
+NULL,1,Hunter College (CUNY)
+NULL,1,Huntington College
+NULL,1,Huron University
+NULL,1,Husson College
+NULL,1,Huston-Tillotson College
+NULL,1,Hyogo College of Medicine
+NULL,1,Ibaraki University
+NULL,1,ICI University
+NULL,1,ICT College
+NULL,1,Idaho State University
+NULL,1,Iglobal University
+NULL,1,Illinois Benedictine University
+NULL,1,Illinois College
+NULL,1,Illinois College of Optometry
+NULL,1,Illinois Institute of Technology
+NULL,1,Illinois School of Professional Psychology - Chicago Campus
+NULL,1,Illinois School of Professional Psychology - Meadows Campus
+NULL,1,Illinois State University
+NULL,1,Illinois Valley Community College
+NULL,1,Illinois Wesleyan University
+NULL,1,Immaculata University
+NULL,1,IMPAC University
+NULL,1,Imperial College London
+NULL,1,Indiana Institute of Technologyy
+NULL,1,Indian Association for the Cultivation of Science (IACS) - Jadavpur
+NULL,1,Indiana State University
+NULL,1,Indiana University
+NULL,1,Indiana University at Bloomington
+NULL,1,Indiana University at Kokomo
+NULL,1,Indiana University at South Bend
+NULL,1,Indiana University Bloomington
+NULL,1,Indiana University - East
+NULL,1,Indiana University - Northwest
+NULL,1,Indiana University of Pennsylvania
+NULL,1,Indiana University-Purdue University at Columbus
+NULL,1,Indiana University-Purdue University at Fort Wayne
+NULL,1,Indiana University-Purdue University at Indianapolis
+NULL,1,Indiana University-Purdue University Indianapolis
+NULL,1,Indiana University - Southeast
+NULL,1,Indiana University (System)
+NULL,1,Indiana Wesleyan University
+NULL,1,Indian Institute of Science Education and Research (IISER) - Mohali
+NULL,1,Indian Institute of Science Education & Research (IISER) - Bhopal
+NULL,1,Indian Institute of Science Education & Research (IISER) - Pune
+NULL,1,Indian Institute of Science Education & Research (IISER) - Thiruvananthapuram
+NULL,1,Indian Institute of Science (IISC) - Banglore
+NULL,1,Indian Institute of Technology (IIT) - Bombay
+NULL,1,Indian Institute of Technology (IIT) - Delhi
+NULL,1,Indian Institute of Technology (IIT) - Guwahati
+NULL,1,Indian Institute of Technology (IIT) - Hyderabad
+NULL,1,Indian Institute of Technology (IIT) - Indore
+NULL,1,Indian Institute of Technology (IIT) - Kanpur
+NULL,1,Indian Institute of Technology (IIT) - Kharagpur
+NULL,1,Indian Institute of Technology (IIT) - Madras
+NULL,1,Indian Institute of Technology (IIT) - Roorkee
+NULL,1,Indian Institute of Technology (IIT) - Ropar
+NULL,1,Indian School of Mines
+NULL,1,Inha University
+NULL,1,Inje University
+NULL,1,Inner Mongolia Agricultural University
+NULL,1,Inner Mongolia University
+NULL,1,Inner Mongolia University of Technology
+NULL,1,Inonu University
+NULL,1,INSEAD Business School
+NULL,1,Institute of Chemical Technology Prague
+NULL,1,Institute of Clinical Social Work
+NULL,1,Institute of Mathematical Sciences (IMSc) India
+NULL,1,Institute of Paper Science and Technology
+NULL,1,Institute of Textile Technology
+NULL,1,Institute of Transpersonal Psychology
+NULL,1,Institute Technology of Bandung
+NULL,1,Institut Etudes Politiques Paris
+NULL,1,Institut National Polytechnique de Grenoble
+NULL,1,Institut National Polytechnique de Lorraine
+NULL,1,Institut National Polytechnique de Toulouse
+NULL,1,Instituto Superior Psicologia Aplicada (ISPA)
+NULL,1,Instituto Universitario de Lisboa
+NULL,1,IntelliTec College - Grand Junction
+NULL,1,Interdisciplinary Center (IDC) Herzliya
+NULL,1,International Academy of  Merchandising and Design Chicago
+NULL,1,International Academy of  Merchandising and Design Tampa
+NULL,1,International Bible College
+NULL,1,International College
+NULL,1,International Islamic University Malaysia
+NULL,1,Inter-University Accelerator Centre
+NULL,1,Interuniversity Cardiology Institute of the Netherlands
+NULL,1,Inter-University Centre for Astronomy & Astrophysics
+NULL,1,Iona College
+NULL,1,Iowa State University
+NULL,1,Iowa State University of Science and Technology
+NULL,1,Iowa Wesleyan College
+NULL,1,Iran University Science & Technology
+NULL,1,Irkutsk State University
+NULL,1,Isfahan University of Technology
+NULL,1,I Shou University
+NULL,1,Istanbul Teknik University
+NULL,1,Istanbul University
+NULL,1,Ithaca College
+NULL,1,ITT Technical Institute Fort Wayne
+NULL,1,ITT Technical Institute Indianapolis
+NULL,1,ITT Technical Institute Maitland
+NULL,1,ITT Technical Institute Portland
+NULL,1,ITT Technical Institute West Covina
+NULL,1,Iuliu Hatieganu University of Medicine & Pharmacy
+NULL,1,Ivane Javakhishvili Tbilisi State University
+NULL,1,Iwate Medical University
+NULL,1,Iwate University
+NULL,1,Izmir Yuksek Teknoloji Enstitusu
+NULL,1,Jackson State University
+NULL,1,Jacksonville State University
+NULL,1,Jacksonville University
+NULL,1,Jacobs University
+NULL,1,Jadavpur University
+NULL,1,Jagiellonian University
+NULL,1,James Cook University
+NULL,1,James Madison University
+NULL,1,Jamestown College
+NULL,1,Jamia Hamdard University
+NULL,1,Jamia Millia Islamia
+NULL,1,Jan Kochanowski University
+NULL,1,Jarvis Christian College
+NULL,1,Jawaharlal Nehru University
+NULL,1,Jean Monnet University
+NULL,1,Jeju National University
+NULL,1,Jiangnan University
+NULL,1,Jiangsu Normal University
+NULL,1,Jiangsu University
+NULL,1,Jiangxi Normal University
+NULL,1,Jichi Medical University
+NULL,1,Jikei University
+NULL,1,Jilin Normal University
+NULL,1,Jilin University
+NULL,1,Jinan University
+NULL,1,Jishou University
+NULL,1,Jiwaji University
+NULL,1,Jodrell Bank Centre for Astrophysics
+NULL,1,Johannes Gutenberg University of Mainz
+NULL,1,Johannes Kepler University of Linz
+NULL,1,John Brown University
+NULL,1,John Carroll University
+NULL,1,John F. Kennedy University
+NULL,1,John Jay College of Criminal Justice (CUNY)
+NULL,1,John Marshall Law School
+NULL,1,John Paul the Great Catholic University
+NULL,1,Johns Hopkins University
+NULL,1,Johnson & Wales University
+NULL,1,Johnson & Wales University Charleston
+NULL,1,Johnson Bible College
+NULL,1,Johnson County Community College
+NULL,1,Johnson C. Smith University
+NULL,1,Johnson State College
+NULL,1,John Wesley College
+NULL,1,Jones College
+NULL,1,Jones International University
+NULL,1,Jonkoping University
+NULL,1,Jordan University of Science & Technology
+NULL,1,Joseph Fourier University
+NULL,1,Judson College Elgin
+NULL,1,Judson College Marion
+NULL,1,Juniata College
+NULL,1,Juntendo University
+NULL,1,Justus Liebig University Giessen
+NULL,1,Kafkas University
+NULL,1,Kafrelsheikh University
+NULL,1,Kagawa University
+NULL,1,Kagoshima University
+NULL,1,Kahramanmaras Sutcu Imam University
+NULL,1,Kalamazoo College
+NULL,1,Kanagawa University
+NULL,1,Kanazawa Medical University
+NULL,1,Kanazawa University
+NULL,1,Kangnung Wonju National University
+NULL,1,Kangwon National University
+NULL,1,Kankakee Community College
+NULL,1,Kansai Medical University
+NULL,1,Kansai University
+NULL,1,Kansas City Art Institute
+NULL,1,Kansas State University
+NULL,1,Kansas Wesleyan University
+NULL,1,Kaohsiung Medical University
+NULL,1,Kaplan University
+NULL,1,Karabuk University
+NULL,1,Karadeniz Teknik University
+NULL,1,Karlsruhe Institute of Technology
+NULL,1,Karlstad University
+NULL,1,Karolinska Institute
+NULL,1,Kasetsart University
+NULL,1,Katharine Gibbs School
+NULL,1,Kaunas University of Medicine
+NULL,1,Kaunas University of Technology
+NULL,1,Kawasaki Medical School
+NULL,1,Kazan Federal University
+NULL,1,Kean University of New Jersey
+NULL,1,Keck Graduate Institute of Applied Life Sciences
+NULL,1,Keele University
+NULL,1,Keene State College
+NULL,1,Keimyung University
+NULL,1,Keio University
+NULL,1,Keller Graduate School of Management
+NULL,1,Kendall College
+NULL,1,Kendall College of Art and Design
+NULL,1,Kennesaw State University
+NULL,1,Kent State University
+NULL,1,Kent State University - Ashtabula
+NULL,1,Kent State University - East Liverpool
+NULL,1,Kent State University - Salem
+NULL,1,Kent State University - Stark
+NULL,1,Kent State University - Trumbull
+NULL,1,Kent State University - Tuscarawas
+NULL,1,Kentucky Christian College
+NULL,1,Kentucky State University
+NULL,1,Kentucky Wesleyan College
+NULL,1,Kenyon College
+NULL,1,Kettering University (GMI)
+NULL,1,Keuka College
+NULL,1,Khalifa University of Science & Technology Research
+NULL,1,Khon Kaen University
+NULL,1,King Abdulaziz University
+NULL,1,King Abdullah University of Science & Technology
+NULL,1,King College
+NULL,1,King Fahd University of Petroleum & Minerals
+NULL,1,King Faisal University
+NULL,1,King Khalid University
+NULL,1,King Mongkuts Institute of Technology Ladkrabang
+NULL,1,King Mongkuts University of Technology Thonburi
+NULL,1,King Saud Bin Abdulaziz University for Health Sciences
+NULL,1,King Saud University
+NULL,1,King's College
+NULL,1,Kings College London
+NULL,1,Kingston University
+NULL,1,Kinki University
+NULL,1,Kirikkale University
+NULL,1,Kirksville College of Osteopathic Medicine
+NULL,1,Kirkwood Community College
+NULL,1,Kitasato University
+NULL,1,Knox College
+NULL,1,Knoxville College
+NULL,1,Kobe Gakuin University
+NULL,1,Kobe Pharmaceutical University
+NULL,1,Kobe University
+NULL,1,Kocaeli University
+NULL,1,Kochi University
+NULL,1,Koc University - Turkey
+NULL,1,Kogakuin University
+NULL,1,Kohat University of Science & Technology
+NULL,1,Konan University
+NULL,1,Kongju National University
+NULL,1,Konkuk University
+NULL,1,Kookmin University
+NULL,1,Korea National University of Transportation
+NULL,1,Korea University
+NULL,1,KU Leuven
+NULL,1,Kumamoto University
+NULL,1,Kunming Medical University
+NULL,1,Kunming University of Science & Technology
+NULL,1,Kurume University
+NULL,1,Kutztown University of Pennsylvania
+NULL,1,Kuvempu University
+NULL,1,Kuwait University
+NULL,1,Kwame Nkrumah University Science & Technology
+NULL,1,Kwangwoon University
+NULL,1,Kwansei Gakuin University
+NULL,1,Kyorin University
+NULL,1,Kyoto Institute of Technology
+NULL,1,Kyoto Pharmaceutical University
+NULL,1,Kyoto Prefectural University
+NULL,1,Kyoto Prefectural University of Medicine
+NULL,1,Kyoto Sangyo University
+NULL,1,Kyoto University
+NULL,1,Kyung Hee University
+NULL,1,Kyungpook National University
+NULL,1,Kyushu Institute of Technology
+NULL,1,Kyushu University
+NULL,1,Laboratory Institute of Merchandising
+NULL,1,Lafayette College
+NULL,1,Lagrange College
+NULL,1,Lahore University of Management Sciences
+NULL,1,Lake Erie College
+NULL,1,Lake Forest College
+NULL,1,Lake Forest Graduate School of Management
+NULL,1,Lakehead University
+NULL,1,Lakeland College
+NULL,1,Lake Superior State University
+NULL,1,Lakeview College of Nursing
+NULL,1,Lamar University
+NULL,1,Lamar University - Port Arthur
+NULL,1,Lambuth University
+NULL,1,Lancaster Bible College
+NULL,1,Lancaster University
+NULL,1,Lander University
+NULL,1,Lane College
+NULL,1,Langston University
+NULL,1,Lanzhou Jiaotong University
+NULL,1,Lanzhou University
+NULL,1,Lanzhou University of Technology
+NULL,1,Lappeenranta University of Technology
+NULL,1,La Roche College
+NULL,1,La Salle University
+NULL,1,Lasell College
+NULL,1,La Sierra University
+NULL,1,La Trobe University
+NULL,1,Laurentian University
+NULL,1,Laurus Technical Institute
+NULL,1,Lawrence Technological University
+NULL,1,Lawrence University
+NULL,1,Lebanese American University
+NULL,1,Lebanese University
+NULL,1,Lebanon Valley College
+NULL,1,Leeds Metropolitan University
+NULL,1,Lees-McRae College
+NULL,1,Lee University
+NULL,1,Lehigh University
+NULL,1,Lehigh Univervsity
+NULL,1,Lehman College (CUNY)
+NULL,1,Leiden University
+NULL,1,Le Moyne College
+NULL,1,Le Moyne-Owen College
+NULL,1,Lenoir-Rhyne College
+NULL,1,Lesley University
+NULL,1,Letourneau University
+NULL,1,Leuphana University Luneburg
+NULL,1,Lewis & Clark Community College
+NULL,1,Lewis and Clark College
+NULL,1,Lewis-Clark State College
+NULL,1,Lewis University
+NULL,1,Liaocheng University
+NULL,1,Liaoning Normal University
+NULL,1,Liaoning Shihua University
+NULL,1,Liaoning University
+NULL,1,Liaoning University of Technology
+NULL,1,Liberty University
+NULL,1,Life Chiropractic College West
+NULL,1,Life University
+NULL,1,Limestone College
+NULL,1,Lincoln Memorial University
+NULL,1,Lincoln University
+NULL,1,Lincoln University Missouri
+NULL,1,Lincoln University Pennsylvania
+NULL,1,Lincoln University San Francisco
+NULL,1,Lindenwood University
+NULL,1,Lindsey Wilson College
+NULL,1,Linfield College
+NULL,1,Lingnan University
+NULL,1,Linkoping University
+NULL,1,Linnaeus University
+NULL,1,Lipscomb University
+NULL,1,Liverpool John Moores University
+NULL,1,Livingstone College
+NULL,1,LN Gumilyov Eurasian National University
+NULL,1,Lobachevsky State University Nizhni Novgorod
+NULL,1,Lock Haven University of Pennsylvania
+NULL,1,Logan College of Chiropractic
+NULL,1,Loma Linda University
+NULL,1,Lomonosov Moscow State University
+NULL,1,London Business School
+NULL,1,London Metropolitan University
+NULL,1,London School Economics & Political Science
+NULL,1,London South Bank University
+NULL,1,Long Island University
+NULL,1,Long Island University C.W. Post Campus
+NULL,1,Long Island University Southampton College
+NULL,1,Longwood College
+NULL,1,Loras College
+NULL,1,Los Angeles College of Chiropractic
+NULL,1,Loughborough University
+NULL,1,Louisiana Baptist University
+NULL,1,Louisiana College
+NULL,1,Louisiana State University
+NULL,1,Louisiana State University and Agricultural and Mechanical College
+NULL,1,Louisiana State University at Alexandria
+NULL,1,Louisiana State University at Eunice
+NULL,1,Louisiana State University Health Sciences Center New Orleans
+NULL,1,Louisiana State University in Shreveport
+NULL,1,Louisiana Tech University
+NULL,1,Lourdes College
+NULL,1,Loyola College - India
+NULL,1,Loyola College in Maryland
+NULL,1,Loyola Marymount University
+NULL,1,Loyola University Chicago
+NULL,1,Loyola University New Orleans
+NULL,1,Loyola University of Chicago
+NULL,1,Lubbock Christian University
+NULL,1,Lublin University of Technology
+NULL,1,Lucknow University
+NULL,1,Ludong University
+NULL,1,Lulea University of Technology
+NULL,1,Lund University
+NULL,1,Lutheran Bible Institute of Seattle
+NULL,1,Luther College
+NULL,1,Lycoming College
+NULL,1,Lynchburg College
+NULL,1,Lyndon State College
+NULL,1,Lynn University
+NULL,1,Lyon College
+NULL,1,Maastricht University
+NULL,1,Macalester College
+NULL,1,Macau University of Science & Technology
+NULL,1,MacMurray College
+NULL,1,Macon State College
+NULL,1,Macquarie University
+NULL,1,Madison University (Distance Education)
+NULL,1,Madonna University
+NULL,1,Madurai Kamaraj University
+NULL,1,Mae Fah Luang University
+NULL,1,Magna Graecia University of Catanzaro
+NULL,1,Maharaja Sayajirao University Baroda
+NULL,1,Maharishi University of Management
+NULL,1,Mahasarakham University
+NULL,1,Mahatma Gandhi University
+NULL,1,Mahidol University
+NULL,1,Maine College of Art
+NULL,1,Maine Maritime Academy
+NULL,1,Makerere University
+NULL,1,Malardalen University
+NULL,1,Malmo University
+NULL,1,Malone College
+NULL,1,Manchester College
+NULL,1,Manchester Metropolitan University
+NULL,1,Mangalore University
+NULL,1,Manhattan Christian College
+NULL,1,Manhattan College
+NULL,1,Manhattan School of Music
+NULL,1,Manhattanville College
+NULL,1,Manipal University
+NULL,1,Mankato State University
+NULL,1,Mansfield University of Pennsylvania
+NULL,1,Mansoura University
+NULL,1,Maranatha Baptist Bible College
+NULL,1,Marche Polytechnic University
+NULL,1,Maria Curie Skodowska University
+NULL,1,Marian College
+NULL,1,Marian College of Fond Du Lac
+NULL,1,Marietta College
+NULL,1,Marist College
+NULL,1,Marlboro College
+NULL,1,Marmara University
+NULL,1,Marquette University
+NULL,1,Marshall University
+NULL,1,Mars Hill College
+NULL,1,Martin Luther College
+NULL,1,Martin Luther University Halle Wittenberg
+NULL,1,Martin Methodist College
+NULL,1,Martin University
+NULL,1,Mary Baldwin College
+NULL,1,Marycrest International University
+NULL,1,Marygrove College
+NULL,1,Marylhurst University
+NULL,1,Marymount College New York
+NULL,1,Marymount Manhattan College
+NULL,1,Marymount University
+NULL,1,Maryville College
+NULL,1,Maryville University of St. Louis
+NULL,1,Mary Washington College
+NULL,1,Marywood University
+NULL,1,Masaryk University Brno
+NULL,1,Massachusetts College of Art
+NULL,1,Massachusetts College of Liberal Arts
+NULL,1,Massachusetts College of Pharmacy and Allied Health Sciences
+NULL,1,Massachusetts Institute of Technology
+NULL,1,Massachusetts Institute of Technology (MIT)
+NULL,1,Massachusetts Maritime Academy
+NULL,1,Massachusetts School of Professional Psychology
+NULL,1,Massey University
+NULL,1,Maulana Azad Medical College
+NULL,1,Mayo Graduate School
+NULL,1,Mayo Medical School
+NULL,1,Mayville State University
+NULL,1,Mbarara University of Science & Technology
+NULL,1,McGill University
+NULL,1,McKendree College
+NULL,1,McMaster University
+NULL,1,McMurry University
+NULL,1,McNeese State University
+NULL,1,McPherson College
+NULL,1,Medaille College
+NULL,1,Medcenter One College of Nursing
+NULL,1,Medical College of Georgia
+NULL,1,Medical College of Ohio
+NULL,1,Medical College of Pennsylvania and Hahnemann University
+NULL,1,Medical College of Wisconsin
+NULL,1,Medical University Gdansk
+NULL,1,Medical University Lodz
+NULL,1,Medical University of Graz
+NULL,1,Medical University of Innsbruck
+NULL,1,Medical University of Lublin
+NULL,1,Medical University of South Carolina
+NULL,1,Medical University of Vienna
+NULL,1,Medical University Silesia
+NULL,1,Medical University Sofia
+NULL,1,Medical University Warsaw
+NULL,1,Meharry Medical College
+NULL,1,Meiji University
+NULL,1,Meijo University
+NULL,1,Memorial University Newfoundland
+NULL,1,Memphis College of Art
+NULL,1,Mendeleyev University of Chemical Technology
+NULL,1,Mendel University Brno
+NULL,1,Menlo College
+NULL,1,Mennonite College of Nursing
+NULL,1,Menofia University
+NULL,1,Mercer University
+NULL,1,Mercer University Cecil B. Day Campus
+NULL,1,Mercy College
+NULL,1,Mercyhurst College
+NULL,1,Meredith College
+NULL,1,Merrimack College
+NULL,1,Mersin University
+NULL,1,Mesa State College
+NULL,1,Messiah College
+NULL,1,Methodist College
+NULL,1,Metropolitan Autonomous University - Mexico
+NULL,1,Metropolitan State College of Denver
+NULL,1,Metropolitan State University
+NULL,1,MGH Institute of Health Professions
+NULL,1,Miami Dade College
+NULL,1,Miami University
+NULL,1,Miami University of Ohio
+NULL,1,Miami University of Ohio - Hamilton
+NULL,1,Miami University of Ohio - Middletown
+NULL,1,Michigan School of Professional Psychology
+NULL,1,Michigan State University
+NULL,1,Michigan Technological University
+NULL,1,Mid-America Nazarene University
+NULL,1,Mid-American Bible College
+NULL,1,Mid-Continent Baptist Bible College
+NULL,1,Middlebury College
+NULL,1,Middlesex University
+NULL,1,Middle Tennessee State University
+NULL,1,Midland Lutheran College
+NULL,1,Mid-Sweden University
+NULL,1,Midway College
+NULL,1,Midwestern State University
+NULL,1,Midwestern University
+NULL,1,Mie University
+NULL,1,Miles College
+NULL,1,Millennia Atlantic University
+NULL,1,Millersville University of Pennsylvania
+NULL,1,Milligan College
+NULL,1,Millikin University
+NULL,1,Millsaps College
+NULL,1,Mills College
+NULL,1,Mills Grae University
+NULL,1,Milwaukee Institute of Art and Design
+NULL,1,Milwaukee School of Engineering
+NULL,1,Mimar Sinan Guzel Sanatlar University
+NULL,1,MINES ParisTech
+NULL,1,Ming Chuan University
+NULL,1,Mingdao University
+NULL,1,MinNan Normal University
+NULL,1,Minneapolis College of Art and Design
+NULL,1,Minnesota Bible College
+NULL,1,Minnesota School of Professional Psychology
+NULL,1,Minot State University
+NULL,1,Minzu University China
+NULL,1,Mississippi College
+NULL,1,Mississippi State University
+NULL,1,Mississippi University for Women
+NULL,1,Mississippi Valley State University
+NULL,1,Missouri Baptist College
+NULL,1,Missouri Southern State College
+NULL,1,Missouri Tech
+NULL,1,Missouri University of Science and Technology
+NULL,1,Missouri University Science & Technology
+NULL,1,Missouri Valley College
+NULL,1,Missouri Western State College
+NULL,1,Moi University
+NULL,1,Molloy College
+NULL,1,Monash University
+NULL,1,Monash University Sunway
+NULL,1,Monmouth University
+NULL,1,Montana State University
+NULL,1,Montana State University - Billings
+NULL,1,Montana State University Bozeman
+NULL,1,Montana State University - Northern
+NULL,1,Montana Tech
+NULL,1,Montclair State University
+NULL,1,Monterey Institute of International Studies
+NULL,1,Monterrey Institute for Technology & Higher Education
+NULL,1,Montreat College
+NULL,1,Montserrat College of Art
+NULL,1,Moody Bible Institute
+NULL,1,Moore College of Art and Design
+NULL,1,Moorhead State University
+NULL,1,Moraine Valley Community College
+NULL,1,Moravian College
+NULL,1,Morehead State University
+NULL,1,Morehouse College
+NULL,1,Morehouse School of Medicine
+NULL,1,Morgan State University
+NULL,1,Morningside College
+NULL,1,Morris Brown College
+NULL,1,Morris College
+NULL,1,Morrison College
+NULL,1,Moscow Engineering Physics Institute
+NULL,1,Moscow Institute of Physics & Technology
+NULL,1,Moscow Institute of Steel & Alloys
+NULL,1,Motilal Nehru Institute of Technology
+NULL,1,Mountain State University
+NULL,1,Mount Allison University
+NULL,1,Mount Aloysius College
+NULL,1,Mount Carmel College of Nursing
+NULL,1,Mount Holyoke College
+NULL,1,Mount Ida College
+NULL,1,Mount Marty College
+NULL,1,Mount Mary College
+NULL,1,Mount Mercy College
+NULL,1,Mount Olive College
+NULL,1,Mount Senario College
+NULL,1,Mount Sinai School of Medicine
+NULL,1,Mount St. Clare College
+NULL,1,Mount St. Mary College
+NULL,1,Mount St. Mary's College California
+NULL,1,Mount St. Mary's College Maryland
+NULL,1,Mount Union College
+NULL,1,Mount Vernon College
+NULL,1,Mount Vernon Nazarene College
+NULL,1,Mugla University
+NULL,1,Muhlenberg College
+NULL,1,Multimedia University
+NULL,1,Multnomah Bible College
+NULL,1,Murdoch University
+NULL,1,Muroran Institute of Technology
+NULL,1,Murray State University
+NULL,1,Muskingum College
+NULL,1,Mustafa Kemal University
+NULL,1,Myongji University
+NULL,1,NAES College
+NULL,1,Nagaoka University of Technology
+NULL,1,Nagasaki University
+NULL,1,Nagoya City University
+NULL,1,Nagoya Institute of Technology
+NULL,1,Nagoya University
+NULL,1,Nagpur University
+NULL,1,Namik Kemal University
+NULL,1,Nanchang University
+NULL,1,Nanjing Agricultural University
+NULL,1,Nanjing Forestry University
+NULL,1,Nanjing Medical University
+NULL,1,Nanjing Normal University
+NULL,1,Nanjing University
+NULL,1,Nanjing University of Aeronautics & Astronautics
+NULL,1,Nanjing University of Information Science & Technology
+NULL,1,Nanjing University of Posts & Telecommunications
+NULL,1,Nanjing University of Science & Technology
+NULL,1,Nanjing University of Technology
+NULL,1,Nankai University
+NULL,1,Nan Kai University Technology
+NULL,1,Nantong University
+NULL,1,Nanyang Technological University
+NULL,1,Napier University
+NULL,1,Nara Institute of Science & Technology
+NULL,1,Nara Medical University
+NULL,1,Nara Womens University
+NULL,1,Naresuan University
+NULL,1,National American University
+NULL,1,National American University Albuquerque
+NULL,1,National American University Colorado Springs
+NULL,1,National American University Denver
+NULL,1,National American University Kansas City
+NULL,1,National American University Roseville
+NULL,1,National American University Sioux Falls
+NULL,1,National Autonomous University of Mexico
+NULL,1,National Central University
+NULL,1,National Chengchi University
+NULL,1,National Cheng Kung University
+NULL,1,National Chiao Tung University
+NULL,1,National Chiayi University
+NULL,1,National Chi Nan University
+NULL,1,National Chung Cheng University
+NULL,1,National Chung Hsing University
+NULL,1,National College of Chiropractic
+NULL,1,National College of Naturopathic Medicine
+NULL,1,National Defence Academy - Japan
+NULL,1,National Defense Medical College - Japan
+NULL,1,National Defense University
+NULL,1,National Dong Hwa University
+NULL,1,National Hispanic University
+NULL,1,National Institute of Education (NIE) Singapore
+NULL,1,National Institute of Technology Karnataka
+NULL,1,National Institute Technology Tiruchirappalli
+NULL,1,National Kaohsiung University of Applied Sciences
+NULL,1,National-Louis University
+NULL,1,National Polytechnic Institute - Mexico
+NULL,1,National Research University - Higher School of Economics
+NULL,1,National Sun Yat Sen University
+NULL,1,National Taipei University
+NULL,1,National Taipei University of Technology
+NULL,1,National Taiwan Normal University
+NULL,1,National Taiwan Ocean University
+NULL,1,National Taiwan University
+NULL,1,National Taiwan University of Science & Technology
+NULL,1,National Technical University of Athens
+NULL,1,National Technical University Ukraine Kiev Polytechnic Institute
+NULL,1,National Technological University
+NULL,1,National Theatre Conservatory
+NULL,1,National Tsing Hua University
+NULL,1,National University
+NULL,1,National University Kaohsiung
+NULL,1,National University of Cordoba
+NULL,1,National University of Defence Technology - China
+NULL,1,National University of Ireland (NUI) Galway
+NULL,1,National University of Ireland (NUI) Maynooth
+NULL,1,National University of La Plata
+NULL,1,National University of Mar del Plata
+NULL,1,National University of Rosario
+NULL,1,National University of San Luis
+NULL,1,National University of San Marcos
+NULL,1,National University of Sciences & Technology - Pakistan
+NULL,1,National University of Singapore
+NULL,1,National University of the Littoral
+NULL,1,National University of the South
+NULL,1,National University Tainan
+NULL,1,National Yang Ming University
+NULL,1,Naval Postgraduate School
+NULL,1,Nazarene Bible College
+NULL,1,Nazareth College
+NULL,1,Nebraska Christian College
+NULL,1,Nebraska Methodist College of Nursing and Allied Health
+NULL,1,Nebraska Wesleyan University
+NULL,1,Nelson Mandela Metropolitan University
+NULL,1,Neumann College
+NULL,1,Nevsehir University
+NULL,1,Newberry College
+NULL,1,Newcastle University
+NULL,1,New College of California
+NULL,1,New College of Florida
+NULL,1,New England College
+NULL,1,New England College of Optometry
+NULL,1,New England Conservatory of Music
+NULL,1,New England Institute of Technology
+NULL,1,New England School of Art and Design
+NULL,1,New England School of Communications
+NULL,1,New England School of Law
+NULL,1,New Hampshire College
+NULL,1,New Jersey City University
+NULL,1,New Jersey Institute of Technology
+NULL,1,Newman University
+NULL,1,New Mexico Highlands University
+NULL,1,New Mexico Institute of Mining and Technology
+NULL,1,New Mexico Institute of Mining Technology
+NULL,1,New Mexico State University
+NULL,1,Newschool of Architecture and Design
+NULL,1,New York Academy of Art Graduate School of Figurative Art
+NULL,1,New York Chiropractic College
+NULL,1,New York College of Podiatric Medicine
+NULL,1,New York Film Academy
+NULL,1,New York Institute of Technology
+NULL,1,New York Law School
+NULL,1,New York Medical College
+NULL,1,New York School of Interior Design
+NULL,1,New York University
+NULL,1,Niagara University
+NULL,1,Nicholls State University
+NULL,1,Nichols College
+NULL,1,Nicolaus Copernicus University
+NULL,1,Nigde University
+NULL,1,Nihon University
+NULL,1,Niigata University
+NULL,1,Ningbo University
+NULL,1,Ningxia University
+NULL,1,Nippon Dental University
+NULL,1,Nippon Medical School
+NULL,1,Norfolk State University
+NULL,1,North Carolina Agricultural and Technical State University
+NULL,1,North Carolina A&T State University
+NULL,1,North Carolina Central University
+NULL,1,North Carolina School of the Arts
+NULL,1,North Carolina State University
+NULL,1,North Carolina Wesleyan College
+NULL,1,North Central Bible College
+NULL,1,North Central College
+NULL,1,Northcentral University
+NULL,1,North China Electric Power University
+NULL,1,North Dakota State University
+NULL,1,North Dakota State University Fargo
+NULL,1,North Eastern Hill University
+NULL,1,Northeastern Illinois University
+NULL,1,Northeastern Ohio University College of Medicine
+NULL,1,Northeastern State University
+NULL,1,Northeastern University
+NULL,1,Northeastern University - China
+NULL,1,Northeast Forestry University - China
+NULL,1,Northeast Normal University - China
+NULL,1,Northern Arizona University
+NULL,1,Northern Illinois University
+NULL,1,Northern Kentucky University
+NULL,1,Northern Michigan University
+NULL,1,Northern State University
+NULL,1,Northern Virginia Community College
+NULL,1,Northface University
+NULL,1,North Georgia College
+NULL,1,North Greenville College
+NULL,1,Northland College
+NULL,1,North Maharashtra University
+NULL,1,North Park University
+NULL,1,Northumbria University
+NULL,1,North University of China
+NULL,1,Northwest A&F University - China
+NULL,1,Northwest Christian College
+NULL,1,Northwest College of Art
+NULL,1,Northwestern College Iowa
+NULL,1,Northwestern College of Chiropractic
+NULL,1,Northwestern College St. Paul
+NULL,1,Northwestern Oklahoma State University
+NULL,1,Northwestern Polytechnic University - China
+NULL,1,Northwestern State University of Louisiana
+NULL,1,Northwestern University
+NULL,1,Northwest Missouri State University
+NULL,1,Northwest Nazarene University
+NULL,1,Northwest Normal University - China
+NULL,1,Northwest University
+NULL,1,North West University - South Africa
+NULL,1,Northwest University Xian
+NULL,1,Northwood University
+NULL,1,Northwood University Florida Campus
+NULL,1,Northwood University Texas Campus
+NULL,1,Norwegian School of Sport Sciences
+NULL,1,Norwegian University of Life Sciences
+NULL,1,Norwegian University of Science & Technology
+NULL,1,Norwich University
+NULL,1,Notre Dame College
+NULL,1,Notre Dame College of Ohio
+NULL,1,Notre Dame de Namur University
+NULL,1,Nottingham Trent University
+NULL,1,Nova Southeastern University
+NULL,1,Novosibirsk State University
+NULL,1,Nyack College
+NULL,1,Oakland City University
+NULL,1,Oakland University
+NULL,1,Oakton Community College
+NULL,1,Oakwood College
+NULL,1,Obafemi Awolowo University
+NULL,1,Oberlin College
+NULL,1,Obihiro University of Agriculture & Veterinary Medicine
+NULL,1,Occidental College
+NULL,1,Ocean University of China
+NULL,1,Ochanomizu University
+NULL,1,Oglala Lakota College
+NULL,1,Oglethorpe University
+NULL,1,Ohio College of Podiatric Medicine
+NULL,1,Ohio Dominican College
+NULL,1,Ohio Northern University
+NULL,1,Ohio State University
+NULL,1,Ohio State University - Lima
+NULL,1,Ohio State University - Mansfield
+NULL,1,Ohio State University - Marion
+NULL,1,Ohio State University - Newark
+NULL,1,Ohio University
+NULL,1,Ohio University - Chillicothe
+NULL,1,Ohio University - Eastern
+NULL,1,Ohio University - Lancaster
+NULL,1,Ohio University - Southern
+NULL,1,Ohio University - Zanesville
+NULL,1,Ohio Valley College
+NULL,1,Ohio Wesleyan University
+NULL,1,Oita University
+NULL,1,Okayama University
+NULL,1,Okayama University of Science
+NULL,1,Oklahoma Baptist University
+NULL,1,Oklahoma Christian University
+NULL,1,Oklahoma City University
+NULL,1,Oklahoma Panhandle State University
+NULL,1,Oklahoma State University
+NULL,1,Oklahoma State University Center for Health Sciences
+NULL,1,Oklahoma State University - Institute of Technology
+NULL,1,Oklahoma State University - Oklahoma City
+NULL,1,Oklahoma State University - Stillwater
+NULL,1,Oklahoma State University - Tulsa
+NULL,1,Old Dominion University
+NULL,1,Olive-Harvey College
+NULL,1,Olivet College
+NULL,1,Olivet Nazarene University
+NULL,1,O'More College of Design
+NULL,1,Ondokuz Mayis University
+NULL,1,Open University Netherlands
+NULL,1,Open University - UK
+NULL,1,Oral Roberts University
+NULL,1,Orebro University
+NULL,1,Oregon College of Arts and Crafts
+NULL,1,Oregon Graduate Institute of Science and Technology
+NULL,1,Oregon Health Sciences University
+NULL,1,Oregon Institute of Technology
+NULL,1,Oregon State University
+NULL,1,Orta Dogu Teknik University
+NULL,1,Osaka City University
+NULL,1,Osaka Institute of Technology
+NULL,1,Osaka Medical Center for Cancer & Cardiovascular Diseases
+NULL,1,Osaka Prefecture University
+NULL,1,Osaka University
+NULL,1,Osmania University
+NULL,1,Otis College of Art & Design
+NULL,1,Ottawa University
+NULL,1,Otterbein College
+NULL,1,Otto von Guericke University
+NULL,1,Ouachita Baptist University
+NULL,1,Our Lady of Holy Cross College
+NULL,1,Our Lady of the Lake University
+NULL,1,Ovidius University
+NULL,1,Oxford Brookes University
+NULL,1,Ozark Christian College
+NULL,1,Ozyegin University
+NULL,1,Pace University
+NULL,1,Pace University  Pleasantville/Briarcliff
+NULL,1,Pacifica Graduate Institute
+NULL,1,Pacific College of Oriental Medicine
+NULL,1,Pacific Graduate School of Psychology
+NULL,1,Pacific Lutheran University
+NULL,1,Pacific Northwest College of Art
+NULL,1,Pacific Oaks College
+NULL,1,Pacific Union College
+NULL,1,Pacific University
+NULL,1,Paier College of Art
+NULL,1,Paine College
+NULL,1,Pakistan Institute of Engineering & Applied Science
+NULL,1,Palacky University Olomouc
+NULL,1,Palm Beach Atlantic University
+NULL,1,Palm Beach State College
+NULL,1,Palmer College of Chiropractic
+NULL,1,Palmer College of Chiropractic West
+NULL,1,Pamukkale University
+NULL,1,Panjab University
+NULL,1,Paracelsus Private Medical University
+NULL,1,Park College
+NULL,1,Parsons School of Design
+NULL,1,Paul Quinn College
+NULL,1,Peace College
+NULL,1,Pebble Hills University
+NULL,1,Peking University
+NULL,1,Penn State University
+NULL,1,Pennsylvania Academy of the Fine Arts
+NULL,1,Pennsylvania College of Optometry
+NULL,1,Pennsylvania Institute of Technology
+NULL,1,Pennsylvania State University
+NULL,1,Pennsylvania State University - Abington
+NULL,1,Pennsylvania State University - Altoona
+NULL,1,Pennsylvania State University at Erie - Behrend College
+NULL,1,Pennsylvania State University at Harrisburg - The Capital College
+NULL,1,Pennsylvania State University - Berks-Lehigh Valley College
+NULL,1,Pennsylvania State University Delaware County
+NULL,1,Pennsylvania State University Great Valley
+NULL,1,Pennsylvania State University - Lehigh Valley
+NULL,1,Pennsylvania State University - Milton S.Hershey Medical Center
+NULL,1,Pennsylvania State University - Schuylkill
+NULL,1,Peoples Friendship University of Russia
+NULL,1,Pepperdine University
+NULL,1,Peru State College
+NULL,1,Pfeiffer University
+NULL,1,Philadelphia College of Bible
+NULL,1,Philadelphia College of Osteopathic Medicine
+NULL,1,Philadelphia University
+NULL,1,Philander Smith College
+NULL,1,Philipps University Marburg
+NULL,1,Phillips Graduate Institute
+NULL,1,Phillips University
+NULL,1,Phramongkutklao College of Medicine
+NULL,1,Piedmont Baptist College
+NULL,1,Piedmont College
+NULL,1,Pierre & Marie Curie University - Paris 6
+NULL,1,Pierre Mendes-France University - Grenoble II
+NULL,1,Pikeville College
+NULL,1,Pillsbury Baptist Bible College
+NULL,1,Pittsburg State University
+NULL,1,Pitzer College
+NULL,1,Plovdiv University
+NULL,1,Plymouth State College
+NULL,1,Pochon Cha University
+NULL,1,Point Loma Nazarene College
+NULL,1,Point Park College
+NULL,1,Polytechnic Institute of Lisbon
+NULL,1,Polytechnic Institute of Porto
+NULL,1,Polytechnic University
+NULL,1,Polytechnic University Long Island Campus
+NULL,1,Polytechnic University of Bucharest
+NULL,1,Polytechnic University of Catalonia
+NULL,1,Polytechnic University of Madrid
+NULL,1,Polytechnic University of Milan
+NULL,1,Polytechnic University of Timisoara
+NULL,1,Polytechnic University of Turin
+NULL,1,Polytechnic University of Valencia
+NULL,1,Polytechnic University Westchester Graduate Center
+NULL,1,Polytechnique Montreal
+NULL,1,Pomona College
+NULL,1,Pompeu Fabra University
+NULL,1,Pondicherry University
+NULL,1,Pontifical Catholic University of Peru
+NULL,1,Pontifical University of Javeriana
+NULL,1,Pontificia Universidad Catolica de Chile
+NULL,1,Pontificia Universidad Catolica de Valparaiso
+NULL,1,Pontificia Universidade Catolica do Parana
+NULL,1,Pontificia Universidade Catolica do Rio de Janeiro
+NULL,1,Pontificia Universidade Catolica Do Rio Grande Do Sul
+NULL,1,Portland Community College
+NULL,1,Portland State University
+NULL,1,Post University of Waterbury
+NULL,1,Poznan University of Life Sciences
+NULL,1,Poznan University of Medical Sciences
+NULL,1,Poznan University of Technology
+NULL,1,Prairie View Agricultural and Mechanical University
+NULL,1,Pratt Institute
+NULL,1,Presbyterian College
+NULL,1,Prescott College
+NULL,1,Prescott College Center for Indian Bilingual Teacher Education
+NULL,1,Preston University
+NULL,1,Prince Songkla University
+NULL,1,Princeton University
+NULL,1,Principia College
+NULL,1,Providence College
+NULL,1,Providence University - Taiwan
+NULL,1,Puget Sound Christian College
+NULL,1,Pukyong National University
+NULL,1,Punjabi University
+NULL,1,Purdue University
+NULL,1,Purdue University Calumet
+NULL,1,Purdue University North Central
+NULL,1,Pusan National University
+NULL,1,Putra University Malaysia
+NULL,1,Qassim University
+NULL,1,Qingdao Technology University
+NULL,1,Qingdao University
+NULL,1,Qingdao University of Science & Technology
+NULL,1,Quaid I Azam University
+NULL,1,Quantum-Veritas International University
+NULL,1,Queen Mary University London
+NULL,1,Queens College
+NULL,1,Queens College NY (CUNY)
+NULL,1,Queensland University of Technology
+NULL,1,Queens University Belfast
+NULL,1,Queens University - Canada
+NULL,1,Qufu Normal University
+NULL,1,Quincy University
+NULL,1,Quinnipiac College
+NULL,1,Radboud University Nijmegen
+NULL,1,Radford University
+NULL,1,Ramapo College of New Jersey
+NULL,1,Rand Graduate School of Policy Studies
+NULL,1,Randolph-Macon College
+NULL,1,Randolph-Macon Woman's College
+NULL,1,Rasmussen College
+NULL,1,Rasmussen College Florida Campuses
+NULL,1,Rasmussen College Illinois Campuses
+NULL,1,Rasmussen College Minnesota Campuses
+NULL,1,Rasmussen College North Dakota Campuses
+NULL,1,Rasmussen College Wisconsin Campuses
+NULL,1,Reed College
+NULL,1,Reformed Bible College
+NULL,1,Regent International University
+NULL,1,Regent University
+NULL,1,Regis College
+NULL,1,Regis University
+NULL,1,Reinhardt College
+NULL,1,Renmin University of China
+NULL,1,Rensselaer Polytechnic Institute
+NULL,1,Research College of Nursing - Rockhurst University
+NULL,1,Reykjavik University
+NULL,1,Rhode Island College
+NULL,1,Rhode Island School of Design
+NULL,1,Rhodes College
+NULL,1,Rhodes University
+NULL,1,Rice University
+NULL,1,Richard Stockton College of New Jersey
+NULL,1,Rider University
+NULL,1,Riga Stradins University
+NULL,1,Riga Technical University
+NULL,1,Rikkyo University
+NULL,1,Ringling College of Art and Design
+NULL,1,Ripon College
+NULL,1,Ritsumeikan University
+NULL,1,Rivier College
+NULL,1,Roanoke Bible College
+NULL,1,Roanoke College
+NULL,1,Robert Gordon University
+NULL,1,Robert Morris College
+NULL,1,Robert Morris College of Chicago
+NULL,1,Roberts Wesleyan College
+NULL,1,Rochester College
+NULL,1,Rochester Institute of Technology
+NULL,1,Rockefeller University
+NULL,1,Rockford College
+NULL,1,Rockhurst College
+NULL,1,Rock Valley College
+NULL,1,Rocky Mountain College
+NULL,1,Rocky Mountain College of Art and Design
+NULL,1,Roehampton University
+NULL,1,Rogers State University
+NULL,1,Roger Williams University
+NULL,1,Rollins College
+NULL,1,Roma Tre University
+NULL,1,Roosevelt University
+NULL,1,Rose-Hulman Institute of Technology
+NULL,1,Rosemont College
+NULL,1,Roskilde University
+NULL,1,Ross University School of Medicine
+NULL,1,Rowan University
+NULL,1,Royal College of Surgeons - Ireland
+NULL,1,Royal Holloway University London
+NULL,1,Royal Institute of Technology
+NULL,1,Royal Melbourne Institute of Technology (RMIT)
+NULL,1,Royal Military College - Canada
+NULL,1,Ruhr University Bochum
+NULL,1,Ruprecht Karl University Heidelberg
+NULL,1,Rush University
+NULL,1,Russel Sage College
+NULL,1,Rust College
+NULL,1,Rutgers State University
+NULL,1,Rutgers State University Camden
+NULL,1,Rutgers State University Medical Center
+NULL,1,Rutgers State University Newark
+NULL,1,RWTH Aachen University
+NULL,1,Ryerson University
+NULL,1,Rzeszow University of Technology
+NULL,1,Saarland University
+NULL,1,Sabanci University
+NULL,1,Sacred Heart University
+NULL,1,Saga University
+NULL,1,Sage Graduate School
+NULL,1,Saginaw Valley State University
+NULL,1,Saint Francis Xavier University - Canada
+NULL,1,Saint Johns University
+NULL,1,Saint Louis University
+NULL,1,Saint Marianna University
+NULL,1,Saint Marys University - Canada
+NULL,1,Saint Petersburg State Polytechnic University
+NULL,1,Saint Petersburg State University
+NULL,1,Saint Petersburg State University of Information Technologies Mechanics and Optics
+NULL,1,Saitama Medical University
+NULL,1,Saitama University
+NULL,1,Sakarya University
+NULL,1,Salem College
+NULL,1,Salem International University
+NULL,1,Salem State College
+NULL,1,Salem Teikyo University
+NULL,1,Salisbury State University
+NULL,1,Salve Regina University
+NULL,1,Salzburg University
+NULL,1,Samford University
+NULL,1,Sam Houston State University
+NULL,1,Samuel Merritt College
+NULL,1,Sanaa University
+NULL,1,San Diego State University
+NULL,1,San Diego University for Integrative Studies
+NULL,1,Sanford-Brown Institute
+NULL,1,San Francisco Art Institute
+NULL,1,San Francisco Conservatory of Music
+NULL,1,San Francisco State University
+NULL,1,Sang Myung University
+NULL,1,San Joaquin College of Law
+NULL,1,San Jose Christian College
+NULL,1,San Jose State University
+NULL,1,San Pablo CEU University
+NULL,1,Santa Clara University
+NULL,1,Sapienza University Rome
+NULL,1,Sapporo Medical University
+NULL,1,Sarah Lawrence College
+NULL,1,Saratov State University
+NULL,1,Sardar Patel University
+NULL,1,Savannah College of Art and Design
+NULL,1,Savannah State University
+NULL,1,Saybrook Institute
+NULL,1,Schiller International University
+NULL,1,Scholl College of Podiatric Medicine
+NULL,1,School for International Training
+NULL,1,School of the Museum of Fine Arts
+NULL,1,School of the Visual Arts
+NULL,1,Schreiner College
+NULL,1,Scripps College
+NULL,1,Scuola Normale Superiore di Pisa
+NULL,1,Seattle Pacific University
+NULL,1,Seattle University
+NULL,1,Sechenov Moscow Medical Academy
+NULL,1,Seconda Universita degli Studi di Napoli
+NULL,1,Second Military Medical University
+NULL,1,Sejong University
+NULL,1,Selcuk University
+NULL,1,Semmelweis University
+NULL,1,Seoul National University
+NULL,1,Seton Hall University
+NULL,1,Seton Hill College
+NULL,1,Shaanxi Normal University
+NULL,1,Shaanxi University of Science & Technology
+NULL,1,Shahid Beheshti University Medical Sciences
+NULL,1,Shandong Agricultural University
+NULL,1,Shandong Normal University
+NULL,1,Shandong Polytechnic University
+NULL,1,Shandong University
+NULL,1,Shandong University of Science & Technology
+NULL,1,Shanghai Jiao Tong University
+NULL,1,Shanghai Normal University
+NULL,1,Shanghai University
+NULL,1,Shanghai University of Science & Technology
+NULL,1,Shanghai University of Traditional Chinese Medicine & Pharmacology
+NULL,1,Shantou University
+NULL,1,Shanxi Medical University
+NULL,1,Shanxi Normal University
+NULL,1,Shanxi University
+NULL,1,Sharif University of Technology
+NULL,1,Shawnee Community College
+NULL,1,Shawnee State University
+NULL,1,Shaw University
+NULL,1,Sheffield Hallam University
+NULL,1,Sheldon Jackson College
+NULL,1,Shenandoah University
+NULL,1,Shenyang Pharmaceutical University
+NULL,1,Shenyang University of Technology
+NULL,1,Shenzhen University
+NULL,1,Shepherd College
+NULL,1,Sherman College of Straight Chiropractic
+NULL,1,Shibaura Institute of Technology
+NULL,1,Shiga University of Medical Science
+NULL,1,Shihezi University
+NULL,1,Shimane University
+NULL,1,Shimer College
+NULL,1,Shinshu University
+NULL,1,Shippensburg University of Pennsylvania
+NULL,1,Shivaji University
+NULL,1,Shizuoka University
+NULL,1,Shoreline Community College
+NULL,1,Shorter College
+NULL,1,Showa Pharmaceutical University
+NULL,1,Showa University
+NULL,1,Siberian Federal University
+NULL,1,Sichuan Agricultural University
+NULL,1,Sichuan Normal University
+NULL,1,Sichuan University
+NULL,1,Siena College
+NULL,1,Siena Heights University
+NULL,1,Sierra Nevada College
+NULL,1,Silesian University of Technology
+NULL,1,Silpakorn University
+NULL,1,Silver Lake College
+NULL,1,Simmons College
+NULL,1,Simon Bolivar University
+NULL,1,Simon Fraser University
+NULL,1,Simon's Rock College
+NULL,1,Simpson College
+NULL,1,Simpson College Iowa
+NULL,1,Singapore Management University
+NULL,1,Sinte Gleska University
+NULL,1,Skadron College
+NULL,1,Skidmore College
+NULL,1,Slippery Rock University
+NULL,1,Slovak University of Agriculture Nitra
+NULL,1,Slovak University of Technology Bratislava
+NULL,1,Smith College
+NULL,1,Sodertorn University College
+NULL,1,Sogang University
+NULL,1,Sojo University
+NULL,1,Sojourner-Douglass College
+NULL,1,Soka University of America
+NULL,1,Sokoine University of Agriculture
+NULL,1,Sonoma State University
+NULL,1,Soochow University
+NULL,1,Sookmyung Womens University
+NULL,1,Soonchunhyang University
+NULL,1,Soongsil University
+NULL,1,Sophia University
+NULL,1,South Carolina State University
+NULL,1,South China Agricultural University
+NULL,1,South China Normal University
+NULL,1,South China University of Technology
+NULL,1,South Dakota School of Mines and Technology
+NULL,1,South Dakota State University
+NULL,1,Southeastern Baptist College
+NULL,1,Southeastern Bible College
+NULL,1,Southeastern College of the Assemblies of God
+NULL,1,Southeastern Louisiana University
+NULL,1,Southeastern Oklahoma State University
+NULL,1,Southeastern University
+NULL,1,Southeast Missouri State University
+NULL,1,Southeast University - China
+NULL,1,Southern Adventist University
+NULL,1,Southern Arkansas University
+NULL,1,Southern California College
+NULL,1,Southern California College of Optometry
+NULL,1,Southern California Institute of Architecture
+NULL,1,Southern College of Optometry
+NULL,1,Southern Connecticut State University
+NULL,1,Southern Cross University
+NULL,1,Southern Federal University
+NULL,1,Southern Illinois University
+NULL,1,Southern Illinois University at Carbondale
+NULL,1,Southern Illinois University at Edwardsville
+NULL,1,Southern Illinois University Edwardsville
+NULL,1,Southern Medical University - China
+NULL,1,Southern Methodist University
+NULL,1,Southern Nazarene University
+NULL,1,Southern Oregon University
+NULL,1,Southern Polytechnic State Univerisity
+NULL,1,Southern University - Baton Rouge
+NULL,1,Southern University Baton Rouge
+NULL,1,Southern University - New Orleans
+NULL,1,Southern University - Shreveport
+NULL,1,Southern Utah University
+NULL,1,Southern Valley University
+NULL,1,Southern Vermont College
+NULL,1,Southern Wesleyan University
+NULL,1,South Florida Bible College & Theological Seminary
+NULL,1,South Texas College of Law
+NULL,1,Southwest Baptist University
+NULL,1,Southwestern Adventist University
+NULL,1,Southwestern Assemblies of God University
+NULL,1,Southwestern Baptist Theological Seminary
+NULL,1,Southwestern Christian College
+NULL,1,Southwestern Christian University
+NULL,1,Southwestern College
+NULL,1,Southwestern College Kansas
+NULL,1,Southwestern College Santa Fe
+NULL,1,Southwestern Oklahoma State University
+NULL,1,Southwestern University
+NULL,1,South Western University of Finance & Economics - China
+NULL,1,Southwestern University School of Law
+NULL,1,Southwest Jiaotong University
+NULL,1,Southwest Missouri State University
+NULL,1,Southwest Missouri State University - West Plains
+NULL,1,Southwest State University
+NULL,1,Southwest Texas State University
+NULL,1,Southwest University
+NULL,1,Southwest University - China
+NULL,1,Southwest University of Science & Technology - China
+NULL,1,Spalding University
+NULL,1,Spelman College
+NULL,1,Spertus Institute of Jewish Studies
+NULL,1,Spring Arbor College
+NULL,1,Springfield College
+NULL,1,Spring Hill College
+NULL,1,Srinakharinwirot University
+NULL,1,Sri Venkateswara University
+NULL,1,Staffordshire University
+NULL,1,St. Ambrose University
+NULL,1,Standford Online University
+NULL,1,Standford University
+NULL,1,St. Andrews Presbyterian College
+NULL,1,Stanford University
+NULL,1,St. Anselm College
+NULL,1,St. Anthony College of Nursing
+NULL,1,State University of New York at Albany
+NULL,1,State University of New York at Binghamton
+NULL,1,State University of New York at Buffalo
+NULL,1,State University of New York at New Paltz
+NULL,1,State University of New York at Oswego
+NULL,1,State University of New York at Stony Brook
+NULL,1,State University of New York College at Brockport
+NULL,1,State University of New York College at Cortland
+NULL,1,State University of New York College at Fredonia
+NULL,1,State University of New York College at Geneseo
+NULL,1,State University of New York College at Old Westbury
+NULL,1,State University of New York College at Oneonta
+NULL,1,State University of New York College at Plattsburgh
+NULL,1,State University of New York College at Potsdam
+NULL,1,State University of New York College at Purchase
+NULL,1,State University of New York College of Agriculture and Technology at Cobleskill
+NULL,1,State University of New York College of Environmental Science and Forestry
+NULL,1,State University of New York College of Optometry
+NULL,1,State University of New York College of Technology at Alfred
+NULL,1,State University of New York College of Technology at Farmingdale
+NULL,1,State University of New York Downstate Medical Center
+NULL,1,State University of New York Empire State College
+NULL,1,State University of New York Health Sience Centre Syracuse
+NULL,1,State University of New York Institute of Technology at Utica/Rome
+NULL,1,State University of New York Maritime College
+NULL,1,State University of New York School of Engineering and Applied Sciences
+NULL,1,State University of New York (SUNY)
+NULL,1,State University of New York (SUNY) Albany
+NULL,1,State University of New York (SUNY) Binghamton
+NULL,1,State University of New York (SUNY) Buffalo
+NULL,1,State University of New York (SUNY) College of Environmental Science & Forestry
+NULL,1,State University of New York (SUNY) Stony Brook
+NULL,1,State University of New York Upstate Medical University
+NULL,1,State University of West Georgia
+NULL,1,St. Augustine's College North Carolina
+NULL,1,St. Bernard's Institute
+NULL,1,St. Bonaventure University
+NULL,1,St. Cloud State University
+NULL,1,St. Edwards University
+NULL,1,Stefan University
+NULL,1,Stellenbosch University
+NULL,1,Stephen F. Austin State University
+NULL,1,Stephens College
+NULL,1,Sterling College
+NULL,1,Stetson University
+NULL,1,Stevens Institute of Technology
+NULL,1,St. Francis College Brooklyn Heights
+NULL,1,St. Francis College Fort Wayne
+NULL,1,St. Francis College Loretto
+NULL,1,St. Francis Medical Center College of Nursing
+NULL,1,St. George's University
+NULL,1,St Georges University London
+NULL,1,Stillman College
+NULL,1,St. John Fisher College
+NULL,1,St. John's College Maryland
+NULL,1,St. John's College New Mexico
+NULL,1,St. John's Seminary
+NULL,1,St. John's University
+NULL,1,St. Joseph College
+NULL,1,St. Joseph College of Nursing
+NULL,1,St. Joseph's College
+NULL,1,St. Joseph's College New York
+NULL,1,St. Joseph's College New York Suffolk Campus
+NULL,1,St. Joseph's College of Maine
+NULL,1,St. Joseph's University
+NULL,1,St. Lawrence University
+NULL,1,St. Leo College
+NULL,1,St. Louis Christian College
+NULL,1,St. Louis College of Pharmacy
+NULL,1,St. Louis University
+NULL,1,St. Luke's College
+NULL,1,St. Martin's College
+NULL,1,St. Mary College
+NULL,1,St. Mary-of-the-Woods College
+NULL,1,St. Mary's College Indiana
+NULL,1,St. Mary's College of California
+NULL,1,St. Mary's College of Maryland
+NULL,1,St. Mary's University of Minnesota
+NULL,1,St. Mary's University of San Antonio
+NULL,1,St. Meinrad College
+NULL,1,St. Michael's College
+NULL,1,St. Norbert College
+NULL,1,Stockholm School of Economics
+NULL,1,Stockholm University
+NULL,1,St. Olaf College
+NULL,1,Stonehill College
+NULL,1,St. Paul's College
+NULL,1,St Petersburg Academic University
+NULL,1,St. Peter's College
+NULL,1,Strayer University
+NULL,1,St. Thomas Aquinas College
+NULL,1,St. Thomas University
+NULL,1,St. Vincent College
+NULL,1,St. Xavier University
+NULL,1,Suffolk University
+NULL,1,Suleyman Demirel University
+NULL,1,Sullivan College
+NULL,1,Sul Ross State University
+NULL,1,Sultan Qaboos University
+NULL,1,Sunchon National University
+NULL,1,Sungkyunkwan University
+NULL,1,Sunshine Coast University
+NULL,1,Sun Yat Sen University
+NULL,1,Suranaree University of Technology
+NULL,1,Susquehanna University
+NULL,1,Suzhou University
+NULL,1,Swansea University
+NULL,1,Swarthmore College
+NULL,1,Swedish University of Agricultural Sciences
+NULL,1,Sweet Briar College
+NULL,1,Swinburne University of Technology
+NULL,1,Swiss Federal Institute of Technology Zurich
+NULL,1,Syracuse University
+NULL,1,Szeged University
+NULL,1,Szent Istvan University
+NULL,1,Tabor College
+NULL,1,Taipei Medical University
+NULL,1,Taiyuan University of Technology
+NULL,1,Talladega College
+NULL,1,Tallinn University of Technology
+NULL,1,Tamkang University
+NULL,1,Tampere University of Technology
+NULL,1,Taras Shevchenko National University Kiev
+NULL,1,Tarleton State University
+NULL,1,Tatung University
+NULL,1,Taylor University
+NULL,1,Taylor University Fort Wayne Campus
+NULL,1,Teachers College Columbia University
+NULL,1,Technical University Czestochowa
+NULL,1,Technical University Freiberg
+NULL,1,Technical University Kosice
+NULL,1,Technical University Liberec
+NULL,1,Technical University Lodz
+NULL,1,Technical University of Berlin
+NULL,1,Technical University of Cluj Napoca
+NULL,1,Technical University of Crete
+NULL,1,Technical University of Denmark
+NULL,1,Technical University of Dresden
+NULL,1,Technical University of Munich
+NULL,1,Technical University Ostrava
+NULL,1,Technion Israel Institute of Technology
+NULL,1,Technology Education Institute Crete
+NULL,1,Tehran University of Medical Sciences
+NULL,1,Teikyo University
+NULL,1,Tel Aviv University
+NULL,1,Temple University
+NULL,1,Temple University School of Podiatric Medicine
+NULL,1,Tennessee State University
+NULL,1,Tennessee Technological University
+NULL,1,Tennessee Temple University
+NULL,1,Tennessee Wesleyan College
+NULL,1,Texas A&M International University
+NULL,1,Texas A&M University
+NULL,1,Texas A&M University - Commerce
+NULL,1,Texas A&M University - Corpus Christi
+NULL,1,Texas A&M University - Galveston
+NULL,1,Texas A&M University - Kingsville
+NULL,1,Texas A&M University - Texarkana
+NULL,1,Texas A&M University College Station
+NULL,1,Texas A&M University Kingsville
+NULL,1,Texas A&M University Qatar
+NULL,1,Texas Chiropractic College
+NULL,1,Texas Christian University
+NULL,1,Texas College
+NULL,1,Texas College of Osteopathic Medicine
+NULL,1,Texas Lutheran University
+NULL,1,Texas Southern University
+NULL,1,Texas State University San Marcos
+NULL,1,Texas Tech University
+NULL,1,Texas Tech University Health Science Center
+NULL,1,Texas Wesleyan University
+NULL,1,Texas Woman's University
+NULL,1,Tezpur University
+NULL,1,Thammasat University
+NULL,1,Thapar University
+NULL,1,The American College
+NULL,1,The Art Institute of Boston
+NULL,1,The Art Institutes International Portland
+NULL,1,The Art Institutes International San Francisco
+NULL,1,The Boston Conservatory
+NULL,1,The Catholic University of America
+NULL,1,The Chicago School of Professional Psychology
+NULL,1,The College of Insurance
+NULL,1,The College of New Jersey
+NULL,1,The College of Santa Fe
+NULL,1,The College of St. Scholastica
+NULL,1,The College of Westchester
+NULL,1,The College of Wooster
+NULL,1,The Cooper Union for the Advancement of Science and Art
+NULL,1,The Corcoran College of Art
+NULL,1,The Curtis Institute of Music
+NULL,1,The Defiance College
+NULL,1,The Dickinson School of Law
+NULL,1,The Illinois Institute of Art-Chicago
+NULL,1,The Johns Hopkins University
+NULL,1,The Juilliard School
+NULL,1,The Leadership Institute of Seattle
+NULL,1,The Maryland Institute College of Art
+NULL,1,The Master's College
+NULL,1,The McGregor School of Antioch University
+NULL,1,The Naropa Institute
+NULL,1,The New School
+NULL,1,The Rockefeller University
+NULL,1,The School of the Art Institute of Chicago
+NULL,1,The Scripps Research Institute
+NULL,1,The Southern Christian University
+NULL,1,The Tulane University of New Orleans
+NULL,1,The Union Institute
+NULL,1,Thiel College
+NULL,1,Third Military Medical University
+NULL,1,Thomas A. Edison State College
+NULL,1,Thomas Aquinas College
+NULL,1,Thomas College Maine
+NULL,1,Thomas Jefferson University
+NULL,1,Thomas More College
+NULL,1,Thomas More College of Liberal Arts
+NULL,1,Thomas University
+NULL,1,Tianjin Medical University
+NULL,1,Tianjin Normal University
+NULL,1,Tianjin Polytechnic University
+NULL,1,Tianjin University
+NULL,1,Tianjin University of Technology
+NULL,1,Tiffin University
+NULL,1,Tilburg University
+NULL,1,TOBB Ekonomi ve Teknoloji University
+NULL,1,Toccoa Falls College
+NULL,1,Tohoku Pharmaceutical University
+NULL,1,Tohoku University
+NULL,1,Toho University
+NULL,1,Tokai University
+NULL,1,Tokushima Bunri University
+NULL,1,Tokyo City University
+NULL,1,Tokyo Denki University
+NULL,1,Tokyo Dental College
+NULL,1,Tokyo Gakugei University
+NULL,1,Tokyo Institute of Technology
+NULL,1,Tokyo Medical & Dental University
+NULL,1,Tokyo Medical University
+NULL,1,Tokyo Metropolitan University
+NULL,1,Tokyo University of Agriculture
+NULL,1,Tokyo University of Agriculture & Technology
+NULL,1,Tokyo University of Marine Science & Technology
+NULL,1,Tokyo University of Pharmacy & Life Sciences
+NULL,1,Tokyo University of Science
+NULL,1,Tokyo Womens Medical University
+NULL,1,Tomas Bata University Zlin
+NULL,1,Tomball College
+NULL,1,Tomsk Polytechnic University
+NULL,1,Tomsk State University
+NULL,1,Tongji University
+NULL,1,Tottori University
+NULL,1,Tougaloo College
+NULL,1,Toulouse School of Economics
+NULL,1,Touro College
+NULL,1,Touro University
+NULL,1,Towson University
+NULL,1,Toyama University
+NULL,1,Toyohashi University of Technology
+NULL,1,Toyota Technology Institute
+NULL,1,Trakya University
+NULL,1,Transylvania University
+NULL,1,Transylvania University of Brasov
+NULL,1,Trent University
+NULL,1,Trevecca Nazarene University
+NULL,1,Tri-College University
+NULL,1,Trident University
+NULL,1,Trinity Bible College
+NULL,1,Trinity Christian College
+NULL,1,Trinity College Connecticut
+NULL,1,Trinity College Dublin
+NULL,1,Trinity College of Florida
+NULL,1,Trinity College of Vermont
+NULL,1,Trinity International University
+NULL,1,Trinity International University (Excel) Miami
+NULL,1,Trinity University
+NULL,1,Tri-State University
+NULL,1,Triton College
+NULL,1,Troy University
+NULL,1,Troy University Dothan
+NULL,1,Troy University Montgomery
+NULL,1,Troy University Phenix City
+NULL,1,Troy University Troy
+NULL,1,Truman College
+NULL,1,Truman State University
+NULL,1,Tshwane University of Technology
+NULL,1,Tsing Hua University
+NULL,1,TU Clausthal
+NULL,1,Tufts University
+NULL,1,Tui Online University
+NULL,1,Tulane University
+NULL,1,Tunghai University
+NULL,1,Tuscia University
+NULL,1,Tusculum College
+NULL,1,Tuskegee University
+NULL,1,Tzu Chi University
+NULL,1,UHI Millennium Institute
+NULL,1,UiT The Arctic University of Tromso
+NULL,1,Ulsan National University of Science & Technology
+NULL,1,Uludag University
+NULL,1,Umea University
+NULL,1,Uniformed Services Universty of the Health Sciences
+NULL,1,Union College
+NULL,1,Union College Kentucky
+NULL,1,Union College Nebraska
+NULL,1,Union Theological Seminary (UTS)
+NULL,1,Union University
+NULL,1,United Arab Emirates University
+NULL,1,United States Air Force Academy
+NULL,1,United States Coast Guard Academy
+NULL,1,United States International University
+NULL,1,United States Merchant Marine Academy
+NULL,1,United States Military Academy
+NULL,1,United States Naval Academy
+NULL,1,United States Sports Academy
+NULL,1,Unity College
+NULL,1,Universidad Andres Bello
+NULL,1,Universidad Austral de Chile
+NULL,1,Universidad Catolica del Norte
+NULL,1,Universidad de Alcala
+NULL,1,Universidad de Almeria
+NULL,1,Universidad de Antofagasta
+NULL,1,Universidad de Burgos
+NULL,1,Universidad de Cadiz
+NULL,1,Universidad de Cantabria
+NULL,1,Universidad de Castilla-La Mancha
+NULL,1,Universidad de Chile
+NULL,1,Universidad de Concepcion
+NULL,1,Universidad de Cordoba
+NULL,1,Universidad de Extremadura
+NULL,1,Universidad de Huelva
+NULL,1,Universidad de Jaen
+NULL,1,Universidad de La Frontera
+NULL,1,Universidad de la Laguna
+NULL,1,Universidad de La Rioja
+NULL,1,Universidad de La Serena
+NULL,1,Universidad de Las Palmas de Gran Canaria
+NULL,1,Universidad del Bio-Bio
+NULL,1,Universidad de Leon
+NULL,1,Universidad de Malaga
+NULL,1,Universidad de Santiago de Chile
+NULL,1,Universidad de Talca
+NULL,1,Universidad de Tarapaca
+NULL,1,Universidad de Valladolid
+NULL,1,Universidad de Valparaiso
+NULL,1,Universidade Catolica de Brasilia
+NULL,1,Universidade Catolica Portuguesa
+NULL,1,Universidade da Coruna
+NULL,1,Universidade de Aveiro
+NULL,1,Universidade de Brasilia
+NULL,1,Universidade de Coimbra
+NULL,1,Universidade de Lisboa
+NULL,1,Universidade de Sao Paulo
+NULL,1,Universidade do Algarve
+NULL,1,Universidade do Estado do Rio de Janeiro
+NULL,1,Universidade do Minho
+NULL,1,Universidade do Porto
+NULL,1,Universidade Estadual de Campinas
+NULL,1,Universidade Estadual de Maringa
+NULL,1,Universidade Estadual Paulista
+NULL,1,Universidade Federal da Bahia
+NULL,1,Universidade Federal da Paraiba
+NULL,1,Universidade Federal de Alagoas
+NULL,1,Universidade Federal de Campina Grande
+NULL,1,Universidade Federal de Goias
+NULL,1,Universidade Federal de Lavras
+NULL,1,Universidade Federal de Minas Gerais
+NULL,1,Universidade Federal de Ouro Preto
+NULL,1,Universidade Federal de Pelotas
+NULL,1,Universidade Federal de Pernambuco
+NULL,1,Universidade Federal de Santa Catarina (UFSC)
+NULL,1,Universidade Federal de Santa Maria (UFSM)
+NULL,1,Universidade Federal de Sao Carlos
+NULL,1,Universidade Federal de Sao Paulo (UNIFESP)
+NULL,1,Universidade Federal de Uberlandia
+NULL,1,Universidade Federal de Vicosa
+NULL,1,Universidade Federal do ABC (UFABC)
+NULL,1,Universidade Federal do Ceara
+NULL,1,Universidade Federal do Parana
+NULL,1,Universidade Federal do Rio de Janeiro
+NULL,1,Universidade Federal do Rio Grande do Norte
+NULL,1,Universidade Federal do Rio Grande do Sul
+NULL,1,Universidade Federal Fluminense
+NULL,1,Universidade Federal Rural do Rio de Janeiro (UFRRJ)
+NULL,1,Universidade Nova de Lisboa
+NULL,1,Universidade Presbiteriana Mackenzie
+NULL,1,Universidad Miguel Hernandez de Elche
+NULL,1,Universidad Nacional de Colombia
+NULL,1,Universidad Nacional Educacion a Distancia
+NULL,1,Universidad Pablo de Olavide
+NULL,1,Universidad Politecnica de Cartagena
+NULL,1,Universidad Publica de Navarra
+NULL,1,Universidad Rey Juan Carlos
+NULL,1,Universidad Tecnica Federico Santa Maria
+NULL,1,Universita degli studi di Roma Foro Italico
+NULL,1,Universita Mediterranea di Reggio Calabria
+NULL,1,Universitat d'Alacant
+NULL,1,Universitat de Girona
+NULL,1,Universitat de les Illes Balears
+NULL,1,Universitat de Lleida
+NULL,1,Universitat Jaume I
+NULL,1,Universitat Ramon Llull
+NULL,1,Universitat Rovira i Virgili
+NULL,1,Universite Bordeaux 1
+NULL,1,Universite Bordeaux Segalen - Bordeaux II
+NULL,1,Universite Catholique Louvain
+NULL,1,Universite d'Avignon et des Pays de Vaucluse
+NULL,1,Universite de la Mediterranee - Aix-Marseille II
+NULL,1,Universite de Provence - Aix-Marseille I
+NULL,1,Universite de Tunis
+NULL,1,Universite de Valenciennes et du Hainaut-Cambresis
+NULL,1,Universite d'Evry-Val-d'Essonne
+NULL,1,Universite Michel de Montaigne - Bordeaux 3
+NULL,1,Universite Montesquieu - Bordeaux IV
+NULL,1,Universite Nice Sophia Antipolis
+NULL,1,Universite Paris-Est Marne-la-Vallee
+NULL,1,Universite Paul Cezanne - Aix-Marseille III
+NULL,1,Universite Paul-Valery Montpellier 3
+NULL,1,Universiti Kebangsaan Malaysia
+NULL,1,Universiti Malaya
+NULL,1,Universiti Malaysia Sabah
+NULL,1,Universiti Sains Malaysia
+NULL,1,Universiti Teknologi Malaysia
+NULL,1,Universiti Teknologi MARA
+NULL,1,Universiti Teknologi Petronas
+NULL,1,University Campus Bio-Medico - Rome Italy
+NULL,1,University Cheikh Anta Diop Dakar
+NULL,1,University College Cork
+NULL,1,University College Dublin
+NULL,1,University College London
+NULL,1,University Desarrollo
+NULL,1,University Djillali Liabes Sidi Bel Abbes
+NULL,1,University Habana
+NULL,1,University Hawaii Hilo
+NULL,1,University Hohenheim
+NULL,1,University Incheon
+NULL,1,University Libre Brussels
+NULL,1,University Malaysia Pahang
+NULL,1,University Massachusetts Dartmouth
+NULL,1,University Michoacana
+NULL,1,University of Aberdeen
+NULL,1,University of Abertay Dundee
+NULL,1,University of Adelaide
+NULL,1,University of Advancing Technology (UAT)
+NULL,1,University of Aegean
+NULL,1,University of Agricltural Sciences & Veterinary Medicine Cluj Napoca
+NULL,1,University of Agriculture Faisalabad
+NULL,1,University of Aix-Marseille
+NULL,1,University of Akron
+NULL,1,University of Alabama Birmingham
+NULL,1,University of Alabama - Birmingham
+NULL,1,University of Alabama Huntsville
+NULL,1,University of Alabama - Huntsville
+NULL,1,University of Alabama Tuscaloosa
+NULL,1,University of Alabama - Tuscaloosa
+NULL,1,University of Alanta
+NULL,1,University of Alaska Anchorage
+NULL,1,University of Alaska - Anchorage
+NULL,1,University of Alaska Fairbanks
+NULL,1,University of Alaska - Fairbanks
+NULL,1,University of Alaska - Southeast
+NULL,1,University of Alaska (System)
+NULL,1,University of Alberta
+NULL,1,University of Allahabad
+NULL,1,University of Amsterdam
+NULL,1,University of Angers
+NULL,1,University of Antwerp
+NULL,1,University of Applied Sciences & Arts Western Switzerland
+NULL,1,University of Aquila
+NULL,1,University of Arizona
+NULL,1,University of Arkansas at Fayetteville
+NULL,1,University of Arkansas at Little Rock
+NULL,1,University of Arkansas at Monticello
+NULL,1,University of Arkansas at Pine Bluff
+NULL,1,University of Arkansas Fayetteville
+NULL,1,University of Arkansas for Medical Sciences
+NULL,1,University of Arkansas Little Rock
+NULL,1,University of Arkansas Medical Sciences
+NULL,1,University of Arkansas (System)
+NULL,1,University of Artois
+NULL,1,University of Athens
+NULL,1,University of Auckland
+NULL,1,University of Augsburg
+NULL,1,University of Auvergne
+NULL,1,University of Babes Bolyai
+NULL,1,University of Bahrain
+NULL,1,University of Baltimore
+NULL,1,University of Barcelona
+NULL,1,University of Bari
+NULL,1,University of Basel
+NULL,1,University of Basilicata
+NULL,1,University of Basque Country
+NULL,1,University of Bath
+NULL,1,University of Bayreuth
+NULL,1,University of Bedfordshire
+NULL,1,University of Beira Interior
+NULL,1,University of Belgrade
+NULL,1,University of Bergamo
+NULL,1,University of Bergen
+NULL,1,University of Bern
+NULL,1,University of Bialystok
+NULL,1,University of Bielefeld
+NULL,1,University of Birmingham
+NULL,1,University of Bodenkultur Wien
+NULL,1,University of Bologna
+NULL,1,University of Bolton
+NULL,1,University of Bonn
+NULL,1,University of Botswana
+NULL,1,University of Bourgogne - Dijon
+NULL,1,University of Bradford
+NULL,1,University of Bremen
+NULL,1,University of Brescia
+NULL,1,University of Bridgeport
+NULL,1,University of Brighton
+NULL,1,University of Bristol
+NULL,1,University of British Columbia
+NULL,1,University of Bucharest
+NULL,1,University of Buenos Aires
+NULL,1,University of Burdwan
+NULL,1,University of Caen
+NULL,1,University of Ca Foscari Venezia
+NULL,1,University of Cagliari
+NULL,1,University of Calabria
+NULL,1,University of Calcutta
+NULL,1,University of Calgary
+NULL,1,University of California Berkeley
+NULL,1,University of California Davis
+NULL,1,University of California Hastings College of Law
+NULL,1,University of California Irvine
+NULL,1,University of California Los Angeles
+NULL,1,University of California Merced
+NULL,1,University of California Oakland
+NULL,1,University of California Riverside
+NULL,1,University of California San Diego
+NULL,1,University of California San Francisco
+NULL,1,University of California Santa Barbara
+NULL,1,University of California Santa Cruz
+NULL,1,University of California System
+NULL,1,University of Cambridge
+NULL,1,University of Camerino
+NULL,1,University of Canberra
+NULL,1,University of Canterbury
+NULL,1,University of Cape Town
+NULL,1,University of Carlos III Madrid
+NULL,1,University of Carthage
+NULL,1,University of Cassino
+NULL,1,University of Catania
+NULL,1,University of Central Arkansas
+NULL,1,University of Central Florida
+NULL,1,University of Central Lancashire
+NULL,1,University of Central Missouri
+NULL,1,University of Central Oklahoma
+NULL,1,University of Central Texas
+NULL,1,University of Central Venezuela
+NULL,1,University of Cergy - Pontoise
+NULL,1,University of Charleston
+NULL,1,University of Charleston South Carolina
+NULL,1,University of Chemical Technology & Metallurgy - Bulgaria
+NULL,1,University of Chester
+NULL,1,University of Chicago
+NULL,1,University of Cincinnati
+NULL,1,University of Claude Bernard - Lyon 1
+NULL,1,University of Colima
+NULL,1,University of Cologne
+NULL,1,University of Colombo
+NULL,1,University of Colorado at Boulder
+NULL,1,University of Colorado at Colorado Springs
+NULL,1,University of Colorado at Denver
+NULL,1,University of Colorado Boulder
+NULL,1,University of Colorado Denver
+NULL,1,University of Colorado Health Sciences Center
+NULL,1,University of Connecticut
+NULL,1,University of Connecticut at Avery Point
+NULL,1,University of Connecticut at Hartford
+NULL,1,University of Connecticut at Stamford
+NULL,1,University of Connecticut at Waterbury
+NULL,1,University of Connecticut Health Center
+NULL,1,University of Copenhagen
+NULL,1,University of Costa Rica
+NULL,1,University of Craiova
+NULL,1,University of Crete
+NULL,1,University of Cyprus
+NULL,1,University of Dallas
+NULL,1,University of Dar es Salaam
+NULL,1,University of Dayton
+NULL,1,University of Debrecen
+NULL,1,University of Delaware
+NULL,1,University of Delhi
+NULL,1,University of Del Norte
+NULL,1,University of Denver
+NULL,1,University of Derby
+NULL,1,University of Detroit Mercy
+NULL,1,University of Deusto
+NULL,1,University of Dubuque
+NULL,1,University of Duisburg Essen
+NULL,1,University of Dundee
+NULL,1,University of East Anglia
+NULL,1,University of Eastern Finland
+NULL,1,University of Eastern Piedmont Amedeo Avogadro
+NULL,1,University of East London
+NULL,1,University of Economics - Prague
+NULL,1,University of Edinburgh
+NULL,1,University of Electro-Communications - Japan
+NULL,1,University of Electronic Science & Technology - China
+NULL,1,University of Engineering & Technology Lahore
+NULL,1,University of Erlangen Nuremberg
+NULL,1,University of Essex
+NULL,1,University of Evansville
+NULL,1,University of Evora
+NULL,1,University of Exeter
+NULL,1,University of Ferrara
+NULL,1,University of Findlay
+NULL,1,University of Florence
+NULL,1,University of Florida
+NULL,1,University of Foggia
+NULL,1,University of Fort Hare
+NULL,1,University of Francois Rabelais - Tours
+NULL,1,University of Freiburg
+NULL,1,University of Fribourg
+NULL,1,University of Fukui
+NULL,1,University of Gdansk
+NULL,1,University of Geneva
+NULL,1,University of Genoa
+NULL,1,University of Georgia
+NULL,1,University of Ghana
+NULL,1,University of Glamorgan
+NULL,1,University of Glasgow
+NULL,1,University of Gloucestershire
+NULL,1,University of Gothenburg
+NULL,1,University of Gottingen
+NULL,1,University of Granada
+NULL,1,University of Graz
+NULL,1,University of Great Falls
+NULL,1,University of Greenwich
+NULL,1,University of Groningen
+NULL,1,University of Guadalajara
+NULL,1,University of Guelph
+NULL,1,University of Haifa
+NULL,1,University of Hamburg
+NULL,1,University of Hannover
+NULL,1,University of Hartford
+NULL,1,University of Haute Bretagne - Rennes 2
+NULL,1,University of Hawaii - Hilo
+NULL,1,University of Hawaii Manoa
+NULL,1,University of Hawaii - Manoa
+NULL,1,University Of Hawaii - System
+NULL,1,University of Hawaii - West Oahu
+NULL,1,University of Health Sciences
+NULL,1,University of Helsinki
+NULL,1,University of Henri Poincare - Nancy I
+NULL,1,University of Hertfordshire
+NULL,1,University of Hong Kong
+NULL,1,University of Houston
+NULL,1,University of Houston Clear Lake
+NULL,1,University of Houston Downtown
+NULL,1,University of Houston Victoria
+NULL,1,University of Huddersfield
+NULL,1,University of Hull
+NULL,1,University of Hyderabad
+NULL,1,University of Hyogo
+NULL,1,University of Ibadan
+NULL,1,University of Iceland
+NULL,1,University of Idaho
+NULL,1,University of Illinois
+NULL,1,University of Illinois at Chicago
+NULL,1,University of Illinois at Springfield
+NULL,1,University of Illinois at Urbana-Champaign
+NULL,1,University of Illinois Chicago
+NULL,1,University of Illinois Peoria
+NULL,1,University of Illinois Urbana-Champaign
+NULL,1,University of Ilorin
+NULL,1,University of Indianapolis
+NULL,1,University of Indonesia
+NULL,1,University of Innsbruck
+NULL,1,University of Insubria
+NULL,1,University of International Business & Economics
+NULL,1,University of Ioannina
+NULL,1,University of Iowa
+NULL,1,University of Jammu
+NULL,1,University of Jan Evangelista Purkyne
+NULL,1,University of Jinan
+NULL,1,University of JJ Strossmayer Osijek
+NULL,1,University of Johannesburg
+NULL,1,University of Jordan
+NULL,1,University of Jyvaskyla
+NULL,1,University of Kaiserslautern
+NULL,1,University of Kansas
+NULL,1,University of Kansas Medical Center
+NULL,1,University of Karachi
+NULL,1,University of Kashmir
+NULL,1,University of Kent
+NULL,1,University of Kentucky
+NULL,1,University of Kerala
+NULL,1,University of Khartoum
+NULL,1,University of Kiel
+NULL,1,University of Klagenfurt
+NULL,1,University of Konstanz
+NULL,1,University of Kwazulu Natal
+NULL,1,University of Lagos
+NULL,1,University of La Reunion
+NULL,1,University of La Rochelle
+NULL,1,University of Latvia
+NULL,1,University of Lausanne
+NULL,1,University of Laval
+NULL,1,University of La Verne
+NULL,1,University of Leeds
+NULL,1,University of Le Havre
+NULL,1,University of Leicester
+NULL,1,University of Leipzig
+NULL,1,University of Le Mirail - Toulouse II
+NULL,1,University of Leoben
+NULL,1,University of Lethbridge
+NULL,1,University of Liege
+NULL,1,University of Lille I
+NULL,1,University of Lille II
+NULL,1,University of Limerick
+NULL,1,University of Limoges
+NULL,1,University of Limpopo
+NULL,1,University of Lincoln
+NULL,1,University of Littoral
+NULL,1,University of Liverpool
+NULL,1,University of Ljubljana
+NULL,1,University of Lodz
+NULL,1,University of London Institute of Education
+NULL,1,University of London Royal Veterinary College
+NULL,1,University of London School Oriental & African Studies (SOAS)
+NULL,1,University of Lorraine
+NULL,1,University of Los Andes Venezuela
+NULL,1,University of Louisiana at Lafayette
+NULL,1,University of Louisiana at Monroe
+NULL,1,University of Louisiana Lafayette
+NULL,1,University of Louisiana Monroe
+NULL,1,University of Louisville
+NULL,1,University of Lubeck
+NULL,1,University of Lugano
+NULL,1,University of Lumiere - Lyon II
+NULL,1,University of Luxembourg
+NULL,1,University of Macau
+NULL,1,University of Madras
+NULL,1,University of Maine
+NULL,1,University of Maine Augusta
+NULL,1,University of Maine Farmington
+NULL,1,University of Maine Fort Kent
+NULL,1,University of Maine - Le Mans
+NULL,1,University of Maine Machias
+NULL,1,University of Maine Orono
+NULL,1,University of Maine Presque Isle
+NULL,1,University of Maine (System)
+NULL,1,University of Malawi
+NULL,1,University of Malaysia Perlis
+NULL,1,University of Malaysia Sarawak
+NULL,1,University of Malaysia Terengganu
+NULL,1,University of Management & Technology
+NULL,1,University of Manchester
+NULL,1,University of Manitoba
+NULL,1,University of Mannheim
+NULL,1,University of Manouba
+NULL,1,University of Maribor
+NULL,1,University of Marrakech Cadi Ayyad
+NULL,1,University of Mary
+NULL,1,University of Mary Hardin-Baylor
+NULL,1,University of Maryland at Baltimore
+NULL,1,University of Maryland at College Park
+NULL,1,University of Maryland Baltimore
+NULL,1,University of Maryland Baltimore County
+NULL,1,University of Maryland College Park
+NULL,1,University of Maryland Eastern Shore
+NULL,1,University of Maryland Medicine
+NULL,1,University of Maryland (System)
+NULL,1,University of Maryland University College
+NULL,1,University of Massachusetts Amherst
+NULL,1,University of Massachusetts at Amherst
+NULL,1,University of Massachusetts at Boston
+NULL,1,University of Massachusetts at Dartmouth
+NULL,1,University of Massachusetts at Lowell
+NULL,1,University of Massachusetts Boston
+NULL,1,University of Massachusetts Lowell
+NULL,1,University of Massachusetts Medical Center at Worcester
+NULL,1,University of Massachusetts (System)
+NULL,1,University of Massachusetts Worcester
+NULL,1,University of Medicine and Dentistry of New Jersey
+NULL,1,University of Medicine & Dentistry New Jersey
+NULL,1,University of Melbourne
+NULL,1,University of Memphis
+NULL,1,University of Messina
+NULL,1,University of Metz
+NULL,1,University of Miami
+NULL,1,University of Michigan
+NULL,1,University of Michigan - Ann Arbor
+NULL,1,University of Michigan - Dearborn
+NULL,1,University of Michigan - Flint
+NULL,1,University of Milan
+NULL,1,University of Milano-Bicocca
+NULL,1,University of Minnesota - Crookston
+NULL,1,University of Minnesota Duluth
+NULL,1,University of Minnesota - Duluth
+NULL,1,University of Minnesota - Morris
+NULL,1,University of Minnesota Twin Cities
+NULL,1,University of Minnesota - Twin Cities Campus
+NULL,1,University of Miskolc
+NULL,1,University of Mississippi
+NULL,1,University of Mississippi Medical Center
+NULL,1,University of Missouri Columbia
+NULL,1,University of Missouri - Columbia
+NULL,1,University of Missouri - Kansas City
+NULL,1,University of Missouri Kansas City
+NULL,1,University of Missouri - Saint Louis
+NULL,1,University of Missouri Saint Louis
+NULL,1,University of Miyazaki
+NULL,1,University of Mobile
+NULL,1,University of Modena & Reggio Emilia
+NULL,1,University of Molise
+NULL,1,University of Monastir
+NULL,1,University of Moncton
+NULL,1,University of Mons
+NULL,1,University of Montana
+NULL,1,University of Montana Western
+NULL,1,University of Montevallo
+NULL,1,University of Montpellier I
+NULL,1,University of Montpellier II
+NULL,1,University of Montreal
+NULL,1,University of Mumbai
+NULL,1,University of Munich
+NULL,1,University of Munster
+NULL,1,University of Murcia
+NULL,1,University of Mysore
+NULL,1,University of Nairobi
+NULL,1,University of Namur
+NULL,1,University of Nanterre - Paris X
+NULL,1,University of Nantes
+NULL,1,University of Naples Federico II
+NULL,1,University of Navarra
+NULL,1,University of Nebraska - Kearney
+NULL,1,University of Nebraska Lincoln
+NULL,1,University of Nebraska - Lincoln
+NULL,1,University of Nebraska Medical Center
+NULL,1,University of Nebraska Omaha
+NULL,1,University of Nebraska - Omaha
+NULL,1,University of Nebraska (System)
+NULL,1,University of Neuchatel
+NULL,1,University of Nevada - Las Vegas
+NULL,1,University of Nevada Las Vegas
+NULL,1,University of Nevada Reno
+NULL,1,University of Nevada - Reno
+NULL,1,University of New Brunswick
+NULL,1,University of Newcastle
+NULL,1,University of New England
+NULL,1,University of New England Westbrook College Campus
+NULL,1,University of New Hampshire
+NULL,1,University of New Hampshire - Manchester
+NULL,1,University of New Haven
+NULL,1,University of New Mexico
+NULL,1,University of New Orleans
+NULL,1,University of New South Wales
+NULL,1,University of Nigeria
+NULL,1,University of North Alabama
+NULL,1,University of North America
+NULL,1,University of Northampton
+NULL,1,University of North British Columbia
+NULL,1,University of North Carolina at Asheville
+NULL,1,University of North Carolina at Chapel Hill
+NULL,1,University of North Carolina at Charlotte
+NULL,1,University of North Carolina at Greensboro
+NULL,1,University of North Carolina at Pembroke
+NULL,1,University of North Carolina at Wilmington
+NULL,1,University of North Carolina Chapel Hill
+NULL,1,University of North Carolina Charlotte
+NULL,1,University of North Carolina Greensboro
+NULL,1,University of North Carolina Wilmington
+NULL,1,University of North Dakota
+NULL,1,University of North Dakota Grand Forks
+NULL,1,University of Northern Colorado
+NULL,1,University of Northern Iowa
+NULL,1,University of Northern Virginia
+NULL,1,University of Northern Washington
+NULL,1,University of North Florida
+NULL,1,University of North Texas
+NULL,1,University of North Texas Denton
+NULL,1,University of North Texas Health Science Center at Fort Worth
+NULL,1,University of NorthWest
+NULL,1,University of Notre Dame
+NULL,1,University of Notre Dame Australia
+NULL,1,University of Nottingham
+NULL,1,University of Nottingham Malaysia
+NULL,1,University of Nova Gorica
+NULL,1,University of Occupational & Environmental Health - Japan
+NULL,1,University of Oklahoma
+NULL,1,University of Oklahoma Health Sciences Center
+NULL,1,University of Ontario Institute Technology
+NULL,1,University of Opole
+NULL,1,University of Oradea
+NULL,1,University of Oregon
+NULL,1,University of Orleans
+NULL,1,University of Oslo
+NULL,1,University of Osteopathic Medicine and Health Science
+NULL,1,University of Ostrava
+NULL,1,University of Otago
+NULL,1,University of Ottawa
+NULL,1,University of Oulu
+NULL,1,University of Oviedo
+NULL,1,University of Oxford
+NULL,1,University of Padua
+NULL,1,University of Palermo - Italy
+NULL,1,University of Pannonia
+NULL,1,University of Pantheon Sorbonne - Paris I
+NULL,1,University of Pardubice
+NULL,1,University of Paris 8 Vincennes-Saint-Denis
+NULL,1,University of Paris Dauphine - Paris IX
+NULL,1,University of Paris Descartes - Paris V
+NULL,1,University of Paris Diderot - Paris VII
+NULL,1,University of Paris-Est Creteil
+NULL,1,University of Paris Nord - Paris XIII
+NULL,1,University of Paris Sorbonne - Paris IV
+NULL,1,University of Paris Sud - Paris XI
+NULL,1,University of Parma
+NULL,1,University of Patras
+NULL,1,University of Paul Sabatier - Toulouse III
+NULL,1,University of Pau & Pays Adour
+NULL,1,University of Pavia
+NULL,1,University of Pavol Jozef Safarik Kosice
+NULL,1,University of Pecs
+NULL,1,University of Peloponnese
+NULL,1,University of Pennsylvania
+NULL,1,University of Peradeniya
+NULL,1,University of Perpignan Via Domitia
+NULL,1,University of Perubatan Antarabangsa
+NULL,1,University of Perugia
+NULL,1,University of Peshawar
+NULL,1,University of Phoenix
+NULL,1,University of Picardie-Jules-Verne
+NULL,1,University of Piraeus
+NULL,1,University of Pisa
+NULL,1,University of Pittsburgh
+NULL,1,University of Pittsburgh at Bradford
+NULL,1,University of Pittsburgh at Greensburg
+NULL,1,University of Pittsburgh at Johnstown
+NULL,1,University of Plymouth
+NULL,1,University of Poitiers
+NULL,1,University of Portland
+NULL,1,University of Portsmouth
+NULL,1,University of Potsdam
+NULL,1,University of Pretoria
+NULL,1,University of Primorska
+NULL,1,University of Prince Edward Island
+NULL,1,University of Puerto Rico Mayaguez
+NULL,1,University of Puerto Rico Rio Piedras
+NULL,1,University of Puget Sound
+NULL,1,University of Pune
+NULL,1,University of Punjab
+NULL,1,University of Qatar
+NULL,1,University of Quebec
+NULL,1,University of Quebec Chicoutimi
+NULL,1,University of Quebec Montreal
+NULL,1,University of Quebec Trois Rivieres
+NULL,1,University of Queensland
+NULL,1,University of Reading
+NULL,1,University of Redlands
+NULL,1,University of Regensburg
+NULL,1,University of Regina
+NULL,1,University of Reims Champagne-Ardenne
+NULL,1,University of Rennes 1
+NULL,1,University of Rhode Island
+NULL,1,University of Richmond
+NULL,1,University of Rijeka
+NULL,1,University of Rio Grande
+NULL,1,University of Rochester
+NULL,1,University of Rome Tor Vergata
+NULL,1,University of Rostock
+NULL,1,University of Rouen
+NULL,1,University of Ryukyus
+NULL,1,University of Rzeszow
+NULL,1,University of Salamanca
+NULL,1,University of Salento
+NULL,1,University of Salerno
+NULL,1,University of Salford
+NULL,1,University of San Diego
+NULL,1,University of San Francisco
+NULL,1,University of Sannio
+NULL,1,University of Santiago De Compostela
+NULL,1,University of Sargodha
+NULL,1,University of Saskatchewan
+NULL,1,University of Sassari
+NULL,1,University of Savoie
+NULL,1,University of Science and Arts of Oklahoma
+NULL,1,University of Sciences Sociales - Toulouse I
+NULL,1,University of Science & Technology - Beijing
+NULL,1,University of Science & Technology - China
+NULL,1,University of Scranton
+NULL,1,University of Seoul
+NULL,1,University of Sevilla
+NULL,1,University of Sfax
+NULL,1,University of Sharjah
+NULL,1,University of Sheffield
+NULL,1,University of Sherbrooke
+NULL,1,University of Shizuoka
+NULL,1,University of Siena
+NULL,1,University of Silesia
+NULL,1,University of Sindh
+NULL,1,University of Sioux Falls
+NULL,1,University of Skovde
+NULL,1,University of Sofia
+NULL,1,University of Sonora
+NULL,1,University of Sousse
+NULL,1,University of South Africa
+NULL,1,University of South Alabama
+NULL,1,University of Southampton
+NULL,1,University of South Australia
+NULL,1,University of South Bohemia Ceske Budejovice
+NULL,1,University of South Carolina
+NULL,1,University of South Carolina - Aiken
+NULL,1,University of South Carolina - Beaufort
+NULL,1,University of South Carolina Columbia
+NULL,1,University of South Carolina - Lancaster
+NULL,1,University of South Carolina - Salkehatchie
+NULL,1,University of South Carolina - Spartanburg
+NULL,1,University of South Carolina - Sumter
+NULL,1,University of South Carolina - Union
+NULL,1,University of South Dakota
+NULL,1,University of Southern Bretagne
+NULL,1,University of Southern California
+NULL,1,University of Southern Denmark
+NULL,1,University of Southern Indiana
+NULL,1,University of Southern Maine
+NULL,1,University of Southern Mississippi
+NULL,1,University of Southern Queensland
+NULL,1,University of South Florida
+NULL,1,University of Split
+NULL,1,University of St Andrews
+NULL,1,University of Stendhal - Grenoble III
+NULL,1,University of St. Francis
+NULL,1,University of St Gallen
+NULL,1,University of Stirling
+NULL,1,University of Strasbourg
+NULL,1,University of Strathclyde
+NULL,1,University of St. Thomas Houston
+NULL,1,University of St Thomas Minnesota
+NULL,1,University of St. Thomas St. Paul
+NULL,1,University of Stuttgart
+NULL,1,University of Sud Toulon-Var
+NULL,1,University of Surrey
+NULL,1,University of Sussex
+NULL,1,University of Sydney
+NULL,1,University of Szczecin
+NULL,1,University of Tabriz
+NULL,1,University of Tampa
+NULL,1,University of Tampere
+NULL,1,University of Tartu
+NULL,1,University of Tasmania
+NULL,1,University of Technology of Compiegne
+NULL,1,University of Technology of Troyes
+NULL,1,University of Technology Sydney
+NULL,1,University of Teesside
+NULL,1,University of Tehran
+NULL,1,University of Tenaga Nasional
+NULL,1,University of Tennessee - Chattanooga
+NULL,1,University of Tennessee Knoxville
+NULL,1,University of Tennessee - Knoxville
+NULL,1,University of Tennessee - Martin
+NULL,1,University of Tennessee - Memphis
+NULL,1,University of Tennessee Space Institute
+NULL,1,University of Teramo
+NULL,1,University of Texas
+NULL,1,University of Texas Arlington
+NULL,1,University of Texas at Arlington
+NULL,1,University of Texas at Austin
+NULL,1,University of Texas at Brownsville
+NULL,1,University of Texas at Dallas
+NULL,1,University of Texas at El Paso
+NULL,1,University of Texas at San Antonio
+NULL,1,University of Texas at Tyler
+NULL,1,University of Texas Austin
+NULL,1,University of Texas Dallas
+NULL,1,University of Texas El Paso
+NULL,1,University of Texas Health Center at Houston
+NULL,1,University of Texas Health Center at Tyler
+NULL,1,University of Texas Health Science Center at San Antonio
+NULL,1,University of Texas M.D. Anderson Cancer Center
+NULL,1,University of Texas Medical Branch Galveston
+NULL,1,University of Texas of the Permian Basin
+NULL,1,University of Texas Pan American
+NULL,1,University of Texas San Antonio
+NULL,1,University of Texas School Public Health
+NULL,1,University of Texas Southwestern Medical Center at Dallas
+NULL,1,University of the Andes Colombia
+NULL,1,University of the Arts
+NULL,1,University of the District of Columbia
+NULL,1,University of the Free State
+NULL,1,University of the Incarnate World
+NULL,1,University of the Ozarks
+NULL,1,University of the Pacific
+NULL,1,University of the Philippines Diliman
+NULL,1,University of the Philippines Los Banos
+NULL,1,University of the Philippines Manila
+NULL,1,University of the Republic - Uruguay
+NULL,1,University of the Sciences in Philadelphia
+NULL,1,University of the South
+NULL,1,University of the South Pacific
+NULL,1,University of the Southwest
+NULL,1,University of Thessaly
+NULL,1,University of the Western Cape
+NULL,1,University of the West Indies
+NULL,1,University of Tokushima
+NULL,1,University of Tokyo
+NULL,1,University of Toledo
+NULL,1,University of Toronto
+NULL,1,University of Tras-os-Montes & Alto Douro
+NULL,1,University of Trento
+NULL,1,University of Trieste
+NULL,1,University of Tromso
+NULL,1,University of Tsukuba
+NULL,1,University of Tulsa
+NULL,1,University of Tun Hussein Onn Malaysia
+NULL,1,University of Tunis El Manar
+NULL,1,University of Tunku Abdul Rahman
+NULL,1,University of Turin
+NULL,1,University of Turku
+NULL,1,University of Twente
+NULL,1,University of Udine
+NULL,1,University of Ulm
+NULL,1,University of Ulsan
+NULL,1,University of Ulster
+NULL,1,University of Urbino
+NULL,1,University of Utah
+NULL,1,University of Utrecht
+NULL,1,University of Valencia
+NULL,1,University of Vermont
+NULL,1,University of Verona
+NULL,1,University of Versailles Saint-Quentin-En-Yvelines
+NULL,1,University of Veterinary & Animal Science - Pakistan
+NULL,1,University of Veterinary Medicine Vienna
+NULL,1,University of Veterinary & Pharmaceutical Sciences - Brno
+NULL,1,University of Victoria
+NULL,1,University of Vienna
+NULL,1,University of Vigo
+NULL,1,University of Virginia
+NULL,1,University of Virginia College at Wise
+NULL,1,University of Waikato
+NULL,1,University of Warmia & Mazury
+NULL,1,University of Warsaw
+NULL,1,University of Warwick
+NULL,1,University of Washington
+NULL,1,University of Washington Seattle
+NULL,1,University of Washington Tacoma
+NULL,1,University of Waterloo
+NULL,1,University of West Alabama
+NULL,1,University of West Bohemia Pilsen
+NULL,1,University of West England
+NULL,1,University of Western Australia
+NULL,1,University of Western Brittany
+NULL,1,University of Western Macedonia
+NULL,1,University of Western Sydney
+NULL,1,University of West Florida
+NULL,1,University of West Los Angeles
+NULL,1,University of Westminster
+NULL,1,University of West Scotland
+NULL,1,University of Windsor
+NULL,1,University of Winnipeg
+NULL,1,University of Wisconsin - Eau Claire
+NULL,1,University of Wisconsin - Green Bay
+NULL,1,University of Wisconsin - La Crosse
+NULL,1,University of Wisconsin Madison
+NULL,1,University of Wisconsin - Madison
+NULL,1,University of Wisconsin Milwaukee
+NULL,1,University of Wisconsin - Milwaukee
+NULL,1,University of Wisconsin - Oshkosh
+NULL,1,University of Wisconsin - Parkside
+NULL,1,University of Wisconsin - Platteville
+NULL,1,University of Wisconsin - River Falls
+NULL,1,University of Wisconsin - Stevens Point
+NULL,1,University of Wisconsin - Stout
+NULL,1,University of Wisconsin - Superior
+NULL,1,University of Wisconsin - Whitewater
+NULL,1,University of Witwatersrand
+NULL,1,University of Wollongong
+NULL,1,University of Wolverhampton
+NULL,1,University of Wroclaw
+NULL,1,University of Wurzburg
+NULL,1,University of Wyoming
+NULL,1,University of Yamanashi
+NULL,1,University of Yaounde I
+NULL,1,University of York - UK
+NULL,1,University of Zagreb
+NULL,1,University of Zaragoza
+NULL,1,University of Zielona Gora
+NULL,1,University of Zimbabwe
+NULL,1,University of Zurich
+NULL,1,University Peruana Cayetano Heredia
+NULL,1,University Quebec Outaouais
+NULL,1,University Science & Technology Houari Boumediene
+NULL,1,University Shiga Prefecture
+NULL,1,Upper Iowa University
+NULL,1,Uppsala University
+NULL,1,Ural Federal University
+NULL,1,Urbana University
+NULL,1,Ursinus College
+NULL,1,Ursuline College
+NULL,1,Utah State University
+NULL,1,Utah Valley State College
+NULL,1,Utah Valley University
+NULL,1,Utica College
+NULL,1,Utsunomiya University
+NULL,1,Valdosta State University
+NULL,1,Valley City State University
+NULL,1,Valley Forge Christian College
+NULL,1,Valparaiso University
+NULL,1,Vanderbilt University
+NULL,1,VanderCook College of Music
+NULL,1,Vanguard University of Southern California
+NULL,1,Vassar College
+NULL,1,Vellore Institute of Technology
+NULL,1,Vennard College
+NULL,1,Vermont Law School
+NULL,1,Vermont Technical College
+NULL,1,Victoria University
+NULL,1,Victoria University Wellington
+NULL,1,Vienna University of Economics & Business
+NULL,1,Vienna University of Technology
+NULL,1,Vietnam National University
+NULL,1,Vietnam National University Hanoi
+NULL,1,Vietnam National University Hochiminh City
+NULL,1,Villa Julie College
+NULL,1,Villanova University
+NULL,1,Vilnius Gediminas Technical University
+NULL,1,Vilnius University
+NULL,1,Virginia College
+NULL,1,Virginia Commonwealth University
+NULL,1,Virginia Intermont College
+NULL,1,Virginia International University
+NULL,1,Virginia Military Institute
+NULL,1,Virginia Polytechnic Institute
+NULL,1,Virginia Polytechnic Institute and State University (Virginia Tech)
+NULL,1,Virginia State University
+NULL,1,Virginia Union University
+NULL,1,Virginia Wesleyan College
+NULL,1,Vita-Salute San Raffaele University
+NULL,1,Viterbo College
+NULL,1,VN Karazin Kharkiv National University
+NULL,1,Voorhees College
+NULL,1,Voronezh State University
+NULL,1,Vrije University of Brussels
+NULL,1,VU University Amsterdam
+NULL,1,Wabash College
+NULL,1,Wageningen University & Research Center
+NULL,1,Wagner College
+NULL,1,Wakayama Medical University
+NULL,1,Wake Forest University
+NULL,1,Wake Forest University School of Medicine
+NULL,1,Walden University
+NULL,1,Walla Walla College
+NULL,1,Walsh College of Accountancy and Business Administration
+NULL,1,Walsh University
+NULL,1,Warner Pacific College
+NULL,1,Warner Southern College
+NULL,1,Warren Wilson College
+NULL,1,Warsaw University Observatory
+NULL,1,Warsaw University of Life Sciences
+NULL,1,Warsaw University of Technology
+NULL,1,Wartburg College
+NULL,1,Waseda University
+NULL,1,Washburn University
+NULL,1,Washington and Lee University
+NULL,1,Washington Bible College
+NULL,1,Washington College
+NULL,1,Washington State University
+NULL,1,Washington State University Spokane
+NULL,1,Washington State University Tri-Cities
+NULL,1,Washington State University Vancouver
+NULL,1,Washington University
+NULL,1,Washington University in St. Louis
+NULL,1,Wayland Baptist University
+NULL,1,Waynesburg College
+NULL,1,Wayne State College
+NULL,1,Wayne State University
+NULL,1,Webber College
+NULL,1,Webb Institute
+NULL,1,Weber State University
+NULL,1,Webster University
+NULL,1,Webster University North Florida
+NULL,1,Weill Medical College of Cornell University
+NULL,1,Wellesley College
+NULL,1,Wells College
+NULL,1,Wentworth Institute of Technology
+NULL,1,Wenzhou Medical University
+NULL,1,Wenzhou University
+NULL,1,Wesleyan College
+NULL,1,Wesleyan University
+NULL,1,Wesley College
+NULL,1,Wesley College Mississippi
+NULL,1,Westbrook University
+NULL,1,West Chester University of Pennsylvania
+NULL,1,West Coast University
+NULL,1,Western Baptist College
+NULL,1,Western Bible College
+NULL,1,Western Carolina University
+NULL,1,Western Connecticut State University
+NULL,1,Western Governors University
+NULL,1,Western Illinois University
+NULL,1,Western International University
+NULL,1,Western Kentucky University
+NULL,1,Western Maryland College
+NULL,1,Western Michigan University
+NULL,1,Western New England College
+NULL,1,Western New Mexico University
+NULL,1,Western Oregon University
+NULL,1,Western State College
+NULL,1,Western States Chiropractic College
+NULL,1,Western State University College of Law
+NULL,1,Western State University College of Law - Orange County
+NULL,1,Western University - Canada
+NULL,1,Western Washington University
+NULL,1,Westfield State College
+NULL,1,West Liberty State College
+NULL,1,Westminster College Fulton
+NULL,1,Westminster College New Wilmington
+NULL,1,Westminster College of Salt Lake City
+NULL,1,Westmont College
+NULL,1,West Pomeranian University of Technology
+NULL,1,West Suburban College of Nursing
+NULL,1,West Texas A&M University
+NULL,1,West University of Timisoara
+NULL,1,West Virginia School of Osteopathic Medicine
+NULL,1,West Virginia State College
+NULL,1,West Virginia University
+NULL,1,West Virginia University Institute of Technology
+NULL,1,West Virginia Wesleyan College
+NULL,1,Westwood College
+NULL,1,Wheaton College Massachusetts
+NULL,1,Wheeling Jesuit University
+NULL,1,Wheelock College
+NULL,1,Whitman College
+NULL,1,Whittier College
+NULL,1,Whitworth College
+NULL,1,Wichita State University
+NULL,1,Widener University
+NULL,1,Wilberforce University
+NULL,1,Wilbur Wright College
+NULL,1,Wiley College
+NULL,1,Wilfrid Laurier University
+NULL,1,Wilkes University
+NULL,1,Willamette University
+NULL,1,William Carey College
+NULL,1,William Jewell College
+NULL,1,William Mitchell College of Law
+NULL,1,William Paterson University
+NULL,1,William Penn College
+NULL,1,Williams Baptist College
+NULL,1,Williams College
+NULL,1,William Tyndale College
+NULL,1,William Woods University
+NULL,1,Wilmington College
+NULL,1,Wilson College
+NULL,1,Wingate University
+NULL,1,Winona State University
+NULL,1,Winston-Salem State University
+NULL,1,Winthrop University
+NULL,1,Wisconsin Lutheran College
+NULL,1,Wisconsin School of Professional Psychology
+NULL,1,Wittenberg University
+NULL,1,Witten Herdecke University
+NULL,1,Wofford College
+NULL,1,Wonkwang University
+NULL,1,Woodbury University
+NULL,1,Worcester Polytechnic Institute
+NULL,1,Worcester State College
+NULL,1,Wright Institute
+NULL,1,Wright State University
+NULL,1,Wright State University Dayton
+NULL,1,Wroclaw University of Environmental & Life Sciences
+NULL,1,Wroclaw University of Technology
+NULL,1,Wuhan Institute of Technology
+NULL,1,Wuhan University
+NULL,1,Wuhan University of Science & Technology
+NULL,1,Wuhan University of Technology
+NULL,1,Xavier University
+NULL,1,Xavier University of Louisiana
+NULL,1,Xiamen University
+NULL,1,Xiangtan University
+NULL,1,Xian Jiaotong University
+NULL,1,Xian Technological University
+NULL,1,XiAn University of Architecture & Techology
+NULL,1,XiAn University of Science & Technology
+NULL,1,XiAn University of Technology
+NULL,1,Xidian University
+NULL,1,Xinjiang University
+NULL,1,Xuzhou Medical College
+NULL,1,Yakin Dogu University
+NULL,1,Yale University
+NULL,1,Yamagata University
+NULL,1,Yamaguchi University
+NULL,1,Yanbian University
+NULL,1,Yangzhou University
+NULL,1,Yanshan University
+NULL,1,Yantai University
+NULL,1,Yarmouk University
+NULL,1,Yeditepe University
+NULL,1,Yeshiva University
+NULL,1,Yeungnam University
+NULL,1,Yildiz Teknik University
+NULL,1,Yokohama City University
+NULL,1,Yokohama National University
+NULL,1,Yonsei University
+NULL,1,York College Nebraska
+NULL,1,York College of Pennsylvania
+NULL,1,Yorker International University
+NULL,1,York University
+NULL,1,York University - Canada
+NULL,1,Youngstown State University
+NULL,1,Yuan Ze University
+NULL,1,Yunnan Normal University
+NULL,1,Yunnan University
+NULL,1,Yuzuncu Yil University
+NULL,1,Zhejiang Gongshang University
+NULL,1,Zhejiang Normal University
+NULL,1,Zhejiang University
+NULL,1,Zhejiang University of Science & Technology
+NULL,1,Zhejiang University of Technology
+NULL,1,Zhengzhou University
+NULL,1,Zurich University of Applied Sciences

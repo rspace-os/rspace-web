@@ -1,0 +1,139 @@
+// @flow
+
+import React, { useContext, type Node, type ComponentType } from "react";
+import { observer } from "mobx-react-lite";
+import { makeStyles } from "tss-react/mui";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TableCell from "@mui/material/TableCell";
+import ContextMenu from "../../components/ContextMenu/ContextMenu";
+import SearchContext from "../../../stores/contexts/Search";
+import SelectAllIcon from "@mui/icons-material/SelectAll";
+import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import { menuIDs } from "../../../util/menuIDs";
+import AdjustableHeadCell from "../../../components/Tables/AdjustableHeadCell";
+import SortableProperty, {
+  type SortProperty,
+} from "../../../components/Tables/SortableProperty";
+import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import { sortProperties, isSortable } from "../../../stores/models/Result";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import useStores from "../../../stores/use-stores";
+
+const useStyles = makeStyles()((theme) => ({
+  iconCell: {
+    padding: theme.spacing(0, 0, 0, 0.75),
+  },
+  iconButton: {
+    padding: theme.spacing(0.75),
+  },
+  contextMenuCell: {
+    padding: "6px !important",
+    paddingTop: "0px !important",
+  },
+}));
+
+type TableHeadArgs = {|
+  selectedCount: number,
+  onSelectOptions: Array<SplitButtonOption>,
+  toggleAll: () => void,
+  contextMenuId: $Values<typeof menuIDs>,
+|};
+
+function CustomTableHead({
+  selectedCount,
+  onSelectOptions,
+  toggleAll,
+  contextMenuId,
+}: TableHeadArgs): Node {
+  const { uiStore } = useStores();
+  const { search } = useContext(SearchContext);
+  const multiselect = search.uiConfig.selectionMode === "MULTIPLE";
+  const { order } = search.fetcher;
+
+  /* this could be made adjustable too (e.g. name or global ID) */
+  const mainProperty: SortProperty = ArrayUtils.find(
+    (p) => p.label === search.uiConfig.mainColumn,
+    sortProperties
+  ).orElseGet(() => {
+    throw new Error("mainColumn is not a sortable property");
+  });
+
+  const handleAdjustableColumnChange =
+    (index: number) => (newColumn: AdjustableTableRowLabel) => {
+      search.setAdjustableColumn(newColumn, index);
+    };
+
+  const { classes } = useStyles();
+  return (
+    <TableHead>
+      <TableRow>
+        {selectedCount === 0 ? (
+          <>
+            {multiselect && (
+              <TableCell variant="head" className={classes.iconCell}>
+                <IconButtonWithTooltip
+                  title="Select all"
+                  icon={<SelectAllIcon />}
+                  onClick={toggleAll}
+                  className={classes.iconButton}
+                />
+              </TableCell>
+            )}
+            <TableCell variant="head" padding="normal" sortDirection={order}>
+              {isSortable(mainProperty.key) ? (
+                <SortableProperty property={mainProperty} />
+              ) : (
+                <span>{search.uiConfig.mainColumn}</span>
+              )}
+            </TableCell>
+            <AdjustableHeadCell
+              options={search.adjustableColumnOptions}
+              onChange={handleAdjustableColumnChange(0)}
+              current={search.uiConfig.adjustableColumns[0]}
+              sortableProperties={sortProperties}
+            />
+            {uiStore.numberOfColumnsInListView > 3 && (
+              <AdjustableHeadCell
+                options={search.adjustableColumnOptions}
+                onChange={handleAdjustableColumnChange(1)}
+                current={search.uiConfig.adjustableColumns[1]}
+                sortableProperties={sortProperties}
+              />
+            )}
+            {uiStore.numberOfColumnsInListView > 4 && (
+              <AdjustableHeadCell
+                options={search.adjustableColumnOptions}
+                onChange={handleAdjustableColumnChange(2)}
+                current={search.uiConfig.adjustableColumns[2]}
+                sortableProperties={sortProperties}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <TableCell
+              variant="head"
+              colSpan={uiStore.numberOfColumnsInListView}
+              className={classes.contextMenuCell}
+            >
+              <ContextMenu
+                menuID={contextMenuId}
+                selectedResults={search.selectedResults}
+                onSelectOptions={onSelectOptions}
+                forceDisabled={
+                  search.processingContextActions ? "Action In Progress" : ""
+                }
+                paddingTop
+                basketSearch={search.fetcher.basketSearch}
+              />
+            </TableCell>
+          </>
+        )}
+      </TableRow>
+    </TableHead>
+  );
+}
+
+export default (observer(CustomTableHead): ComponentType<TableHeadArgs>);

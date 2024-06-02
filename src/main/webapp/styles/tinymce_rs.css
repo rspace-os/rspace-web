@@ -1,0 +1,43 @@
+.tox-editor-container {
+  height: calc(100% - 15px) !important;
+}
+
+.mce-txt, .mce-text {
+  color: #333 !important;
+}
+
+.mce-window .mce-txt {
+  color: inherit !important;
+}
+
+.mce-ico, .mce-icon {
+  color: #444 !important;
+}
+
+.mce-btn .mce-caret {
+  border-top-color: #444;
+}
+
+.mce-btn.mce-active {
+  background-color: #dbdbdb !important;
+}
+
+.mce-menu-item.mce-active.mce-menu-item-normal {
+  background-color: #3498db;
+}
+
+.mce-menu-item.mce-active.mce-menu-item-normal .mce-text {
+  color: white !important;
+}
+
+.mce-i-attachmentpreview:before {
+  content: "\e019";
+}
+
+.tox-editor-container .tox-sidebar__slider.tox-sidebar--sliding-closed iframe {
+  width: 0px !important;
+}
+
+.hidden {
+  display: none;
+}

@@ -1,0 +1,10 @@
+#*
+Used to generate image thumbnail img tag src attribute only.
+  - fieldId - the field into which the data is inserted.
+  - itemId  - the image ID
+  - width the image width
+  - height the image height
+  - rotation 0-3
+  - milliseconds - modification date of the image
+*#
+#imgThumbnailSrc ($fieldId $itemId $width $height  $rotation $milliseconds)

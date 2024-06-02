@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Dilution Calculator</title>
+  <link rel="stylesheet" type="text/css" href="/styles/bootstrap-custom-flat.css" />
+  <link rel="stylesheet" type="text/css" href="/scripts/externalTinymcePlugins/tools/css/dilution-calc.css">
+
+  <script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="/scripts/bower_components/jquery-ui/jquery-ui.min.js"></script>
+  <script src="/scripts/bower_components/mathjs/dist/math.min.js"></script>
+  <script src="/scripts/bower_components/mustache/mustache.min.js"></script>
+  <script src="/scripts/global.js"></script>
+  <script src="/scripts/externalTinymcePlugins/tools/js/dilutionCalc.js"></script>
+  <script id="insertedCalculationTemplate" type="text/mustache">
+    <p>
+      Desired concentration: {{finalConcentration}} {{finalConcentrationUnit}} <br>
+      Desired volume: {{finalVolume}} {{finalVolumeUnit}} <br>
+      Stock concentration: {{stockConcentration}} {{stockConcentrationUnit}} <br>
+      Required stock volume: <b>{{stockVolume}} {{stockVolumeUnit}}</b> <br>
+    </p>
+  </script>
+</head>
+
+<body>
+  <div id="dilutionCalculatorDiv" class="bootstrap-custom-flat bootstrap-namespace">
+    <div class="row">
+      <div class="col-xs-12">
+        <form class="form-horizontal">
+          <p style="line-height: 17px">
+            Solution dilution calculator - dilute the solution of known molarity.<br />
+            The calculator uses the formula RSV = (DC * DV) / SC .
+          </p>
+
+          <div class="form-group">
+            <label for="finalConcentrationInput" class="col-xs-4 control-label">Desired concentration:</label>
+            <div class="col-xs-4">
+              <input id="finalConcentrationInput" type="number" value="0" class="form-control" step="any" min="0" required>
+            </div>
+            <div class="col-xs-4">
+              <select id="finalConcentrationUnitInput" class="form-control" required>
+                <!-- concentration unit values are set to meters not Molars because math.js 
+                      supports former, but not latter. that shouldn't affect the results. -->
+                <option value="meter">M (molar)</option>
+                <option value="millimeter">mM (millimolar)</option>
+                <option value="micrometer">μM (micromolar)</option>
+                <option value="nanometer">nM (nanomolar)</option>
+                <option value="picometer">pM (picomolar)</option>
+                <option value="femtometer">fM (femtomolar)</option>
+                <option value="attometer">aM (attomolar)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="finalVolumeInput" class="col-xs-4 control-label">Desired volume:</label>
+            <div class="col-xs-4">
+              <input id="finalVolumeInput" type="number" value="0" class="form-control" step="any" min="0" required>
+            </div>
+            <div class="col-xs-4">
+              <select id="finalVolumeUnitInput" class="form-control" required>
+                <option value="liter">L (liters)</option>
+                <option value="milliliter">mL (milliliters)</option>
+                <option value="microliter">μl (microliters)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="stockConcentrationInput" class="col-xs-4 control-label">Stock concentration:</label>
+            <div class="col-xs-4">
+              <input id="stockConcentrationInput" type="number" value="0" class="form-control" step="any" min="0" required>
+            </div>
+            <div class="col-xs-4">
+              <select id="stockConcentrationUnitInput" class="form-control" required>
+                <option value="meter">M (molar)</option>
+                <option value="millimeter">mM (millimolar)</option>
+                <option value="micrometer">μM (micromolar)</option>
+                <option value="nanometer">nM (nanomolar)</option>
+                <option value="picometer">pM (picomolar)</option>
+                <option value="femtometer">fM (femtomolar)</option>
+                <option value="attometer">aM (attomolar)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group submit">
+            <button id="calculateReqVolumeBtn" type="submit" class="btn btn-primary">
+              Calculate required stock volume
+            </button>
+          </div>
+
+          <div class="form-group">
+              <label for="stockVolumeInput" class="col-xs-4 control-label">Required stock volume:</label>
+              <div class="col-xs-4">
+                <input id="stockVolumeInput" type="number" class="form-control" step="any" min="0" disabled>
+              </div>
+              <div class="col-xs-4">
+                <select id="stockVolumeUnitInput" class="form-control" disabled>
+                  <option value="liter">L (liters)</option>
+                  <option value="milliliter">mL (milliliters)</option>
+                  <option value="microliter">μl (microliters)</option>
+                </select>
+              </div>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

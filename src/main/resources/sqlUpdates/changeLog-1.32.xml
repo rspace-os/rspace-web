@@ -1,0 +1,14 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<!-- Changes for version 1.32 Dec 2015-->
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets !  -->
+<!-- Add changesets here... -->
+
+<!--  only customChange changeSets should be placed below here -->
+
+
+</databaseChangeLog>

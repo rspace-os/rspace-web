@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+          http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+          http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd" 
+       default-lazy-init="true">
+
+    <bean id="messageSource"
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="basenames">
+		    <list>
+		        <value>classpath:bundles/dashboard/dashboard</value>
+		        <value>classpath:bundles/ApplicationResources</value>
+		        <value>classpath:bundles/workspace/editor</value>
+		        <value>classpath:bundles/gallery/gallery</value>
+		        <value>classpath:bundles/gallery/netfiles</value>
+		        <value>classpath:bundles/groups/groups</value>
+		        <value>classpath:bundles/public/public</value>
+		        <value>classpath:bundles/system/system</value>
+		        <value>classpath:bundles/system/community</value>
+		        <value>classpath:bundles/workspace/workspace</value>
+		        <value>classpath:bundles/admin/admin</value>
+		        <value>classpath:bundles/admin/community</value>
+		        <value>classpath:bundles/apps/apps</value>
+		        <value>classpath:bundles/inventory/inventory</value>
+		    </list>
+		</property>
+		<property name="useCodeAsDefaultMessage" value="true" />
+	</bean>
+   <!-- this is loaded first, and these properties override defaults 
+   ${propertyFileDirPlaceholder} is replaced  by Maven (build/test) 
+   , either with a literal  value, or another property reference, which will itself be resolved in as system property at
+   runtime startup -->
+    <context:property-placeholder
+       order="-1"
+       ignore-unresolvable="true"
+       location="${propertyFileDirPlaceholder}/deployment.properties,classpath:rs.properties"
+    />
+   <!--   default properties, loaded after deployment specific  properties -->
+   <context:property-placeholder
+       order="0"
+       ignore-unresolvable="true"
+       location="classpath:deployments/defaultDeployment.properties"
+        /> 
+	
+
+	<!-- The properties here are obtained from the above property files and are repalced at
+	 runtime by Spring -->
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driverClassName}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="maxTotal" value="200" />
+		<property name="maxIdle" value="30" />
+		<property name="timeBetweenEvictionRunsMillis" value="60000"></property> <!-- 10 minutes -->
+		<property name="minEvictableIdleTimeMillis" value ="60000"/><!-- 10 minutes -->
+		<property name="initialSize" value ="5"/>
+		<property name="maxWaitMillis" value="3000" />
+		<!-- if using utf8mb4 on DB we shouldn't set this -->
+		<property name="connectionProperties" value="${jdbc.connectionProperties}"/>
+		<property name="poolPreparedStatements" value="true" />
+		<property name="defaultAutoCommit" value="true" />
+	</bean>
+	
+
+</beans>

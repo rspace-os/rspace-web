@@ -1,0 +1,44 @@
+{
+  "name": "mendeley-javascript-sdk",
+  "version": "1.9.0",
+  "description": "Mendeley API client-side JavaScript SDK",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Mendeley/mendeley-javascript-sdk"
+  },
+  "moduleType": [
+    "amd",
+    "globals"
+  ],
+  "keywords": [
+    "mendeley",
+    "api",
+    "sdk"
+  ],
+  "dependencies": {
+    "jquery": "~1.11.0"
+  },
+  "license": "Apache-2.0",
+  "homepage": "http://dev.mendeley.com",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "bin",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "es5-shim": "~4.0.3"
+  },
+  "_release": "1.9.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "1.9.0",
+    "commit": "6b5b0c1a5f7bd98160e8b319f3c9a24af642dbdc"
+  },
+  "_source": "git://github.com/Mendeley/mendeley-javascript-sdk.git",
+  "_target": "~1.9.0",
+  "_originalSource": "mendeley-javascript-sdk",
+  "_direct": true
+}

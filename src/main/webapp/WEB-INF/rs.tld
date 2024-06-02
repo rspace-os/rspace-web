@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE taglib PUBLIC "-//Sun Microsystems, Inc.//DTD JSP Tag Library 1.2//EN"
+    "http://java.sun.com/dtd/web-jsptaglibrary_1_2.dtd">
+
+<taglib>
+    <tlib-version>1.0</tlib-version>
+    <jsp-version>1.2</jsp-version>
+    <short-name>ResearchSpace</short-name>
+    <uri>http://researchspace.com/tags</uri>
+    <tag>
+        <name>relDate</name>
+        <tag-class>com.axiope.webapp.taglib.RelativeDateTag</tag-class>
+        <attribute>
+            <name>input</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.util.Date</type>
+        </attribute>
+        <attribute>
+            <name>relativeForNDays</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Integer</type>
+        </attribute>
+
+    </tag>
+    <tag>
+        <name>pluralize</name>
+        <tag-class>com.axiope.webapp.taglib.PluralizeNounTag</tag-class>
+        <attribute>
+            <name>input</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.util.String</type>
+        </attribute>
+        <attribute>
+            <name>count</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Integer</type>
+        </attribute>
+        </tag>
+   <tag>
+        <name>hasCollaborationGroup</name>
+        <tag-class>com.axiope.webapp.taglib.UserHasCollaborationGroup</tag-class>
+        <attribute>
+            <name>user</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>com.researchspace.model.User</type>
+        </attribute>
+    </tag>
+    <tag>
+        <name>hasProjectGroup</name>
+        <tag-class>com.axiope.webapp.taglib.UserHasProjectGroup</tag-class>
+        <attribute>
+            <name>user</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>com.researchspace.model.User</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>joinProperties</name>
+
+        <tag-class>com.axiope.webapp.taglib.JoinPropertyStringFromCollection</tag-class>
+        <attribute>
+            <name>collection</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.util.Collection</type>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>maxSize</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Integer</type>
+        </attribute>
+    </tag>
+
+     <tag>
+        <name>roleInGroup</name>
+        <tag-class>com.axiope.webapp.taglib.UserRoleInGroup</tag-class>
+        <attribute>
+            <name>user</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>com.researchspace.model.User</type>
+        </attribute>
+        <attribute>
+            <name>group</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>com.researchspace.model.Group</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>hasDeploymentProperty</name>
+        <tag-class>com.axiope.webapp.taglib.DeploymentPropertyTag</tag-class>
+        <attribute>
+            <name>name</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+
+        <attribute>
+            <name>value</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>match</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
+        </attribute>
+         <attribute>
+            <name>testNonBlankOnly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
+        </attribute>
+    </tag>
+
+</taglib>

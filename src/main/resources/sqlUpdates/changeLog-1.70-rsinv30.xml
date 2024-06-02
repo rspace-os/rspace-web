@@ -1,0 +1,83 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70-rc10 workbench July 2021 -->
+
+	<changeSet author="matthias" id="2021-07-02a" context="run">
+		<comment>RSINV-30: extend Container/SubSample tables with workbench-related columns</comment>
+
+		<addColumn tableName="Container">
+			<column name="lastNonWorkbenchParent_id" type="BIGINT(19)" />
+		</addColumn>
+		<addColumn tableName="Container_AUD">
+			<column name="lastNonWorkbenchParent_id" type="BIGINT(19)" />
+		</addColumn>
+		<addColumn tableName="SubSample">
+			<column name="lastNonWorkbenchParent_id" type="BIGINT(19)" />
+		</addColumn>
+		<addColumn tableName="SubSample_AUD">
+			<column name="lastNonWorkbenchParent_id" type="BIGINT(19)" />
+		</addColumn>
+	
+		<addColumn tableName="Container">
+			<column name="lastMoveDate" type="DATETIME(19)" />
+		</addColumn>
+		<addColumn tableName="Container_AUD">
+			<column name="lastMoveDate" type="DATETIME(19)" />
+		</addColumn>
+		<addColumn tableName="SubSample">
+			<column name="lastMoveDate" type="DATETIME(19)" />
+		</addColumn>
+		<addColumn tableName="SubSample_AUD">
+			<column name="lastMoveDate" type="DATETIME(19)" />
+		</addColumn>
+
+		<addForeignKeyConstraint
+			baseColumnNames="lastNonWorkbenchParent_id" baseTableName="SubSample"
+			constraintName="FK_6jx466ansycaun811xewjlrww" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Container" />
+		<addForeignKeyConstraint
+			baseColumnNames="lastNonWorkbenchParent_id" baseTableName="Container"
+			constraintName="FK_6rcxehrv1uqvfrpghibckb9yb" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Container" />
+	
+	</changeSet>
+
+
+	<!-- only customChange changeSets should be placed below here -->
+
+	<changeSet id="2021-07-12" author="matthias">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">select count(s.id) from SubSample ss join Sample s 
+						on ss.sample_id = s.id where s.template = false and ss.parentLocation_id is null </sqlCheck>
+			</not>
+		</preConditions>
+		
+		<comment>INV-30: move pre-existing subsamples into workbenches</comment>
+		<customChange
+			class="com.researchspace.dao.customliquibaseupdates.CreateWorkbenchAndMoveSubSamples_1_70">
+		</customChange>
+	</changeSet>
+
+	<changeSet id="2021-07-21" author="matthias">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">select count(ss.id) from SubSample ss  
+						where ss.deleted = true and ss.parentLocation_id is not null </sqlCheck>
+			</not>
+		</preConditions>
+		
+		<comment>INV-30: move pre-existing subsamples into workbenches</comment>
+		<customChange
+			class="com.researchspace.dao.customliquibaseupdates.CreateWorkbenchAndMoveSubSamples_DeletedFix_1_70">
+		</customChange>
+	</changeSet>
+
+
+</databaseChangeLog>

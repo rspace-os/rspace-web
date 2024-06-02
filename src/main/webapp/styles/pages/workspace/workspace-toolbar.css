@@ -1,0 +1,29 @@
+@import url("../../../styles/pages/workspace/workspace-toolbar-messages.css");
+/**
+ * Global variables and mixins are defined here.
+ *
+ * Import in other SASS stylesheets using:
+ * @import 'global_vars';
+ */
+/*
+main colors:
+steel-blue: #576091
+community-pink: #FF0094
+dark-steel-blue: #303551
+dark-blue: #0c7cd5
+enterprise-green: #33FF00
+white-bg: #FCFCFF
+light-blue: #b2dbfb
+blue: #2196f3
+text dark: #666
+
+shadow: box-shadow: 0 2px 2px rgba(0, 0, 0, 0.5);
+*/
+/* 
+  Styles for element with toolbar id on workspace page
+  Mostly taken from http://codepen.io/kuddai/pen/pbJKvj
+
+  To override default bootstrap styles priorities
+  usually adding prefix #toolbar.bootstrap-custom-flat is enough
+*/
+

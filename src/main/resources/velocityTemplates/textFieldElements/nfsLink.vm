@@ -1,0 +1,10 @@
+#* 
+ Nfs file store link  template.
+ Arguments needed for mustache are:
+  - name the name of the resource to be displayed in field content
+  - linktype either 'file' or 'directory'
+  - fileStoreId the fileStore ID (not the file system id)
+  - relFilePath the relative path of the file within the file store, starting with a /
+*#
+<a href="#" class="nfs_file mceNonEditable" data-linktype="$linktype" data-nfsid="$nfsId"
+   data-nfstype="$nfsType" rel="$fileStoreId:$relFilePath">$name</a>

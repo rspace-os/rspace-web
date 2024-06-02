@@ -1,0 +1,67 @@
+-------------------------------------------------------------------
+- This documents describes RSpace custom changes to tinyMCE files -
+-------------------------------------------------------------------
+
+1. 'table' plugin 
+   (info updated for tinymce 5)
+
+    /plugins/table/plugin.js is edited so it allows for creating tables by either 
+	clicking on Grid ('Table' option) or by specifying explicit row and column 
+	numbers ('Insert Table' option), or creating calculations table ('Insert Calculations Table').
+	
+	a) As the top level 'Table' dropdown is now constructed inside tinymceRS_configuration,
+	a change required to plugin code is to 'Table' toolbar button construction.
+	In line 9099 there is a following function creating the button: 
+
+	var addButtons = function (editor, selectionTargets) {
+      editor.ui.registry.addMenuButton('table', {
+        tooltip: 'Table',
+        icon: 'table',
+        fetch: function (callback) {
+          return callback('inserttable | cell row column | advtablesort | tableprops deletetable');
+        }
+      });
+	
+	It's enought to change fetch return method to include inserttabledialog and optHandsontable elements, so it should look like:
+	
+	return callback('inserttable inserttabledialog optHandsontable | cell row column | advtablesort | tableprops deletetable');
+
+  b) Change the label of the "Insert table" in the context menu to "Insert Advanced Table". 
+  c) Change the label "Table" to "Insert Table" 
+2. 'codesample' plugin. 
+
+ a) Replaced part of codesample plugin.js with /scripts/prism/prism.js library. That's because 
+    tinyMCE version supports only default subset of languages, while we've added some more 
+    (see RSPAC-1231).
+    
+    That seems quite safe, because tinyMCE plugin itselfs just wraps a prism.js file.
+    The replaced part starts after line 116:
+    // ------------------ Start wrap
+    
+    And ends at line 1402:
+    // ------------------ End wrap
+    
+    FIXME: that was skipped during 4.7.9 upgrade, as the format of the plugin changed and it's 
+    not obvious how to make a replacement. That means for additional languages the code 
+    highlighting doesn't work inside tinyMCE (but seems to work in document view mode).
+    
+ b) re-title codesample plugin toolbar button so it says 'Insert code sample'.
+    
+3. 'link' plugin has menu/button texts changed to 'External Link'/'Insert external link'.
+
+4. 'fontselect' and 'fontsizeselect' buttons were changed: 'fixedWidth: true' attribute was removed,
+  so the buttons don't take more than necessary space on the toolbar. These buttons are created inside
+  theme.js file, so search and replace that file (and theme.min.js) on update. (for modern theme, not mobile or inlite)
+  
+5. 'fullscreen' toolbar button has the label changed to 'Fullscreen editing' within Fullscreen pluggin
+
+6. Include the codesample prism files (Google for the generator)
+
+7. Take the latest symbols from charmap (an object) and replace the existing one in ui/src/tinyMCE/shortcutsPlugin/config.js
+
+8. Make the max-height of tinyMCE dialog be 100vh so that their header and footer is always visible (on smaller devices)
+============
+
+When editing the plugins don't forget to replace content in plugin.min.js, as that's the file which is actually used.
+Either the changed plugin.min.js need to be regenerated, with added comment pointing to plugin.js file location 
+(as it's modified LGPL code), or alternatively plugin.min.js may be replaced with non-minified version.

@@ -1,0 +1,107 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.44 May 2017 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+	<changeSet id="17-05-09-rspac-1216" author="richard">
+		<comment> Give existing active community admins, except sysadmin,
+			'create group' permission</comment>
+		<sql>insert into AbstractUserOrGroupImpl_permissionStrings select
+			distinct user_id,'GROUP:CREATE:' from community_admin where
+			community_id > 0;
+		</sql>
+	</changeSet>
+
+	<changeSet id="17-05-12-rspac-1157" author="richard">
+		<comment>Add new DSpace property for dspace username</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="DSPACE_USERNAME" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+	</changeSet>
+	<changeSet id="17-05-12b-rspac-1157" author="richard">
+		<comment>Add new DSpace app config element for username property</comment>
+		<sql>insert into AppConfigElementDescriptor (id, descriptor_id, app_id)
+			select null, pd.id, app.id from PropertyDescriptor pd, App app where
+			app.name="app.dspace" and pd.name='DSPACE_USERNAME';
+		</sql>
+	</changeSet>
+	<changeSet id="17-05-09-1" author="karolis">
+		<comment>RSPAC-1215 permissions for PIs to be able to edit all work in their lab group</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="DENIED_BY_DEFAULT" />
+			<column name="name" type="STRING" value="pi_can_edit_all_work_in_labgroup" />
+			<column name="type" type="NUMERIC" value="3" />
+		</insert>
+	</changeSet>
+	<changeSet id="17-05-09-2" author="karolis">
+		<comment>RSPAC-1215 system property</comment>
+		<insert tableName="SystemProperty">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="dependent_id" type="NUMERIC" value="NULL" />
+			<column name="descriptor_id" type="NUMERIC"
+					valueComputed="(select id from PropertyDescriptor where name ='pi_can_edit_all_work_in_labgroup')" />
+		</insert>
+	</changeSet>
+	<changeSet id="17-05-09-3" author="karolis">
+		<comment>RSPAC-1215 disabled by default</comment>
+		<insert tableName="SystemPropertyValue">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="value" type="String" value="DENIED_BY_DEFAULT" />
+			<column name="community_id" type="NUMERIC" value="NULL" />
+			<column name="property_id" type="NUMERIC"
+					valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pi_can_edit_all_work_in_labgroup')" />
+		</insert>
+	</changeSet>
+	<changeSet id="17-05-09-4" author="karolis" context="run">
+		<comment>RSPAC-1215 add PI can edit all work column</comment>
+		<addColumn tableName="UserGroup">
+			<column name="piCanEditWork" type="BOOLEAN" defaultValueBoolean="false" valueBoolean="false"/>
+		</addColumn>
+	</changeSet>
+	<changeSet id="17-05-09-5" author="karolis" context="run">
+		<comment>RSPAC-1215 add PI can edit all work column - not null</comment>
+		<addNotNullConstraint columnName="piCanEditWork" defaultNullValue="false" columnDataType="BOOLEAN" tableName="UserGroup"/>
+	</changeSet>
+	<changeSet id="17-05-18a-rspac-1244" author="richard">
+	<preConditions onError="CONTINUE"
+		onFailMessage="Can't delete table AbstractUserOrGroupImpl_permissionStrings_AUD; either doesn't exist or is not empty"
+		onFail="CONTINUE" onErrorMessage="Can't delete table AbstractUserOrGroupImpl_permissionStrings_AUD; either doesn't exist or is not empty">
+		<and>
+			<tableExists tableName="AbstractUserOrGroupImpl_permissionStrings_AUD" />
+			<sqlCheck expectedResult="0">select count(*) from AbstractUserOrGroupImpl_permissionStrings_AUD</sqlCheck>
+		</and>
+	</preConditions>
+	<comment>Remove obsolete table</comment>
+	<dropTable tableName="AbstractUserOrGroupImpl_permissionStrings_AUD" />
+   </changeSet>
+   
+   	<changeSet id="17-05-18b-rspac-1244" author="richard">
+	<preConditions onError="CONTINUE"
+		onFailMessage="Can't delete table AbstractUserOrGroupImpl_AUD; either doesn't exist or is not empty"
+		onFail="CONTINUE" onErrorMessage="Can't delete table AbstractUserOrGroupImpl_AUD; either doesn't exist or is not empty">
+		<and>
+			<tableExists tableName="AbstractUserOrGroupImpl_AUD" />
+			<sqlCheck expectedResult="0">select count(*) from AbstractUserOrGroupImpl_AUD</sqlCheck>
+		</and>
+	</preConditions>
+	<comment>Remove obsolete table</comment>
+	<dropTable tableName="AbstractUserOrGroupImpl_AUD" />
+   </changeSet>
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

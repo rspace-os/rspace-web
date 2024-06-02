@@ -1,0 +1,144 @@
+<Configuration xmlns="http://logging.apache.org/log4j/2.0/config">
+<!-- pattern for fileNames is system property loggingDirectory (set via deployment property logging.dir) or . (current directory) if property not set,
+ OS specific path separator, then log file e.g. my/log/directory/{fileName}-->
+  <Appenders>
+    <RollingFile name="HttpRequestLogger" fileName="${sys:loggingDirectory:-.}${sys:file.separator}httpRequests.log" filePattern="$${sys:loggingDirectory:-.}${sys:file.separator}httpRequests.log.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <!--      keep 100_000 files so that logs aren't removed by default-->
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
+    <RollingFile name="auditTrailLogger" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${RSRequest.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${RSRequest.log.file}.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <!--      keep 100_000 files so that logs aren't removed by default-->
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
+    <RollingFile name="ROOT_LOGGER" fileName="${sys:loggingDirectory:-.}${sys:file.separator}error.log" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}error.log.%i">
+      <PatternLayout>
+        <Pattern>%p %d{DATE} - %C{1}.%M | %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <!--      keep 100_000 files so that logs aren't removed by default-->
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
+    <RollingFile name="SecurityEventLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${RSSecurityEvent.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${RSSecurityEvent.log.file}.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <!--      keep 100_000 files so that logs aren't removed by default-->
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
+    <RollingFile name="SlowRequestsLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}SlowRequests.txt" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}SlowRequests.txt.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <!--      keep 100_000 files so that logs aren't removed by default-->
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
+    <RollingFile name="FailedEmailLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${RSfailedEmails.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${RSfailedEmails.log.file}.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <!--      keep 100_000 files so that logs aren't removed by default-->
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+  </Appenders>
+
+  <Loggers>
+
+    <Logger name="net.sf.ehcache" level="ERROR"/>
+
+    <Logger name="org.apache" level="WARN"/>
+
+    <Logger name="org.hibernate" level="${hibernate.logLevel}"/>
+
+    <Logger name="org.springframework" level="${spring.logLevel}"/>
+
+    <Logger name="com.axiope" level="${RS.logLevel}"/>
+
+    <Logger name="com.researchspace" level="${RS.logLevel}"/>
+
+    <Logger name="com.researchspace.dao.customliquibaseupdates" level="INFO"/>
+
+    <Logger name="com.researchspace.ldap.impl" level="INFO"/>
+
+    <Logger name="com.researchspace.webapp.controller.LoggingInterceptor" level="INFO">
+      <AppenderRef ref="HttpRequestLogger"/>
+    </Logger>
+
+    <Logger name="com.researchspace.auth" level="INFO"/>
+
+    <Logger name="com.researchspace.admin.service.impl.SysAdminGroupsManagerImpl" level="INFO"/>
+
+    <!--  Always give info messages on application start up -->
+    <Logger name="com.researchspace.service.impl.AbstractAppInitializor" level="INFO"/>
+
+    <!-- log configuration setup -->
+    <Logger name="com.axiope.service.cfg" level="INFO"/>
+
+    <!-- helping debug SSO issues -->
+    <Logger name="com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt" level="INFO"/>
+
+    <!-- This does not get logged to console as well but just using the secure
+      event appender -->
+    <Logger additivity="false" name="com.researchspace.model.permissions.SecurityLogger"
+      level="INFO">
+      <AppenderRef ref="SecurityEventLogAppender"/>
+    </Logger>
+
+    <Logger name="com.researchspace.model.audittrail.AuditTrailService" level="INFO">
+      <AppenderRef ref="auditTrailLogger"/>
+    </Logger>
+
+    <Logger name="com.researchspace.service.impl.FailedEmailLogger" level="INFO">
+      <AppenderRef ref="FailedEmailLogAppender"/>
+    </Logger>
+
+    <Logger name="com.researchspace.webapp.controller.PerformanceLoggingInterceptor" level="INFO">
+      <AppenderRef ref="SlowRequestsLogAppender"/>
+    </Logger>
+
+    <!-- all appenders need to be registered here so that they can get the root logging
+     folder set in at application startup -->
+    <Logger name="com.researchspace.service.impl.LoggingInitializer" level="INFO">
+      <AppenderRef ref="HttpRequestLogger"/>
+      <AppenderRef ref="SecurityEventLogAppender"/>
+      <AppenderRef ref="auditTrailLogger"/>
+      <AppenderRef ref="FailedEmailLogAppender"/>
+      <AppenderRef ref="SlowRequestsLogAppender"/>
+      <AppenderRef ref="ROOT_LOGGER"/>
+    </Logger>
+
+    <Logger name="liquibase" level="INFO"/>
+
+    <Root level="INFO">
+      <AppenderRef ref="ROOT_LOGGER"/>
+    </Root>
+
+  </Loggers>
+</Configuration>

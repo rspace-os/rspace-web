@@ -1,0 +1,79 @@
+
+<script id="journalEntryOnRibbonTemplate" type="text/mustache">
+  <div id={{id}} class="journalEntry {{selectedEntryClass}}" tabindex="0">
+    <div class="journalName" title="Name: '{{name}}'">{{name}}</div>
+    <div><img src="{{imgPrefix}}/image/getIconImage/{{formIconId}}" title="Form: '{{formName}}'" style="height: 32px;"/></div>
+    <div class="journalEntryDate" title="Creation date: '{{dateString}}'">{{dateString}}</div>
+  </div>
+</script>
+
+<script id="journalPageTemplate" type="text/mustache">
+  <div id="journalPage">
+    <button id="prevEntryButton_mobile" class="bootstrap-custom-flat" title="Previous entry" style="display: none;">
+      <span class="glyphicon glyphicon-arrow-left"></span>
+    </button>
+
+    <div id="journalPagePaddingId" class="journalPagePadding">
+      <div class="journalPageTopScrollbarDiv">
+        <div class="journalPageTopScrollbarExpander"></div>
+      </div>
+      <div class="journalPageContent">
+        <div id="journalPageLoading"><img src="{{imgsPrefix}}/images/ajax-loading.gif"/></div>
+      </div>
+    </div>
+
+    <button id="nextEntryButton_mobile" class="bootstrap-custom-flat" title="Next entry" style="display: none;">
+      <span class="glyphicon glyphicon-arrow-right"></span>
+    </button>
+  </div>
+</script>
+
+<script id="toolbarTemplate" type="text/mustache">
+  <div id="journalFrame">
+    <div class="rs-record-info-panel">
+        <div class="rs-entry-navigation">
+            <div id="entriesButton" class="rs-show-all-entries" tabindex="0">
+              <span id="showAllEntriesSpan">Show All Entries</span>
+              <span id="hideAllEntriesSpan" style="display:none">Hide All Entries</span>
+            </div>
+            <div class="rs-entry-prev-next">
+                <div id="prevEntryButton" class="bootstrap-custom-flat" title="Previous entry" tabindex="0">
+                  <span class="glyphicon glyphicon-arrow-left"></span>
+                </div>
+                <div id="notebookNameAndEntryNumber"></div>
+                <div id="nextEntryButton" class="bootstrap-custom-flat" title="Next entry" tabindex="0">
+                  <span class="glyphicon glyphicon-arrow-right"></span>
+                </div>
+            </div>
+            <div class="rs-entry-search">
+              <div
+                class="base-search"
+                data-elId="journalSearch"
+                data-variant="outlined"
+                data-placeholder="Search Notebook..."
+              ></div>
+            </div>
+        </div>
+        <div id="journalEntriesRibbon">
+          <div id="journalEntriesRibbonContent">
+            <img id="ajaxLoadingImg" src="{{imgsPrefix}}/images/ajax-loading.gif "/>
+          </div>
+        </div>
+        <div class="rs-record-header-line">
+            <span class="rs-header-msg">Loading entry...</span>
+        </div>
+        <div class="bootstrap-custom-flat" style="text-align: right;">
+          <a id="editEntry" title="Edit Entry" href="#" class="rs-actionbar__item rs-actionbar__item--icon backgroundTile" style="display:none;">
+            <button title="Edit" class="btn btn-primary btn-sm editButton" style="width: 40px; margin-bottom: 5px;">
+              <span class="glyphicon glyphicon-pencil"></span>
+            </button>
+          </a>
+        </div>
+    </div>
+
+    <div id="journal">
+      <div id="cachedData"></div>
+    </div>
+  </div>
+  <script id="baseSearchScript" src="<c:url value='{{scriptsPrefix}}/ui/dist/baseSearch.js'/>" />
+</script>

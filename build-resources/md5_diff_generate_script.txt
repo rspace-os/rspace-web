@@ -1,0 +1,4 @@
+# update the 'since' date accordingly
+# fixme: script currently lists resources that were modified, but subsequently deleted. so the output list may include files that are no longer in git
+  
+git log --name-status --since="2020-01-01" --diff-filter=M | grep src/main/webapp | grep '.js$\|.css$\|.json$' | grep -vFf skip_list_for_MD5_rename.txt | sed 's/^M\s*//' | sed 's/src\/main\/webapp\///' | sort  | uniq

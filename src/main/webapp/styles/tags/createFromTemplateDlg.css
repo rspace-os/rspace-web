@@ -1,0 +1,91 @@
+#templateDlgTabs { 
+    padding: 5px; 
+    background: none; 
+    border-width: 0px; 
+} 
+
+#templateDlgTabs .ui-tabs-nav { 
+    padding-left: 0px; 
+    background: transparent; 
+    border-width: 0px 0px 1px 0px; 
+    -moz-border-radius: 0px; 
+    -webkit-border-radius: 0px; 
+    border-radius: 0px;
+    padding: 0px;
+    height: 29px; 
+}
+
+.bootstrap-namespace .templatesTable.table {
+    margin-bottom: 0px;
+}
+
+.bootstrap-namespace .templatesTable.table tr.active td {
+    background-color: #dbdbdb;
+}
+
+.templatesTableBody tr {
+    cursor: pointer;
+}
+
+#createFromTemplateDlg {
+    overflow: hidden;
+}
+
+#createFromTemplateDlg #templateDlgTabs {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#createFromTemplateDlg #templateDlgTabs #myTemplatesTab, #createFromTemplateDlg #templateDlgTabs #sharedTemplatesTab {
+    flex-grow: 1;
+    max-height: 350px;
+    overflow-y: auto;
+    padding: 0px;
+}
+
+#createFromTemplateDlg #templateDlgTabs .templatesTable {
+    border: 0px;
+}
+
+#createFromTemplateDlg .templatesTable .templateNameCell {
+    max-width: 350px;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: inherit;
+}
+
+#templateFilterForm {
+    margin: 5px 0px 15px 0px;
+    display: flex;
+}
+
+#templateFilterForm .form-group {
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+#templateFilterForm #templateFilterInput {
+    flex-grow: 1;
+    margin-right: 5px;
+}
+
+#createFromTemplateNameForm {
+    margin: 10px 0px 0px 0px;
+}
+
+#createFromTemplateNameForm .form-group {
+    display: flex;
+    align-items: center;
+}
+#createFromTemplateNameForm .form-group input {
+    flex-grow: 1;
+}
+
+#templateFilterInputLabel, #createFromTemplateNameLabel {
+    margin-right: 5px;
+}
+
+#createFromTemplateNameInput { 
+    width: 250px;
+}

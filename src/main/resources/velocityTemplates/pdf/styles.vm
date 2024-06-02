@@ -1,0 +1,95 @@
+<style>
+  @page {
+    size: $pageSize;
+
+    @top-left {
+      content: '$docOwner';
+      border-bottom: solid black;
+      font-family: 'Arial', 'Helvetica', 'sans-serif';
+    }
+
+    @top-center {
+      content: '$docTitle';
+      border-bottom: solid black;
+      font-family: 'Arial', 'noto sans', 'Helvetica', 'sans-serif';
+    }
+
+    @top-right {
+      content: 'Page: ' counter(page);
+      border-bottom: solid black;
+      font-family: 'Arial', 'Helvetica', 'sans-serif';
+    }
+
+    #if ($footerEachPage == true)
+      @bottom-left {
+        content: $footerDate;
+        border-top: solid black;
+        font-family: 'Arial', 'Helvetica', 'sans-serif';
+      }
+
+      @bottom-right {
+        content: 'Exported by: $exporterFullName';
+        border-bottom: solid black;
+        font-family: 'Arial', 'Helvetica', 'sans-serif';
+      }
+    #end
+
+  }
+
+  #footer {
+    text-align: center;
+  }
+
+  #provenance {
+    text-align: center;
+  }
+
+  .docExtrasTable {
+    border-collapse: collapse;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .docExtrasTable td, .docExtrasTable th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+  }
+
+  .docContentTable {
+    max-width: 100%;
+    table-layout: fixed;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  .docContentTable td, .docContentTable th {
+    border: 1px solid #dddddd;
+    border-collapse: collapse;
+    text-align: left;
+    padding: 2px;
+    font-size: 80%;
+    word-break: break-word;
+  }
+
+  #comments { }
+
+  #comments-header {
+    text-align: center;
+  }
+
+  #comment-number {
+    text-align: left;
+    text-decoration: underline;
+  }
+
+  #nfs {
+    text-align: center;
+  }
+
+  * {
+    font-family: 'Arial', 'Helvetica', 'sans-serif';
+  }
+
+</style>

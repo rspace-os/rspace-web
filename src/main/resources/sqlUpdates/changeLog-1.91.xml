@@ -1,0 +1,27 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.91 August 2023 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+    <changeSet id="2023-08-04" author="matthias" context="run">
+        <comment>RSOPS-506: make sure that pre-defined 'admin' account, if present on the server, is disabled</comment>
+        <sql>
+            update User set account_enabled = false where username = 'admin'
+        </sql>
+    </changeSet>
+
+    <changeSet id="2023-08-07" author="matthias" context="dev-test,liquibase-update-test">
+        <comment>RSOPS-506: keep 'admin' account enabled on test servers and in liquibase test run</comment>
+        <sql>
+            update User set account_enabled = true where username = 'admin'
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

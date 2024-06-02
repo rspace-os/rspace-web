@@ -1,0 +1,14 @@
+#egnyteWrapper .eg-theme.eg-picker.eg-widget {
+  display: flex;
+  flex-direction: column;
+}
+
+#egnyteWrapper .eg-theme.eg-picker.eg-widget .eg-in {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#egnyteWrapper .eg-theme.eg-picker.eg-widget .eg-in ul {
+  flex-grow: 1;
+}

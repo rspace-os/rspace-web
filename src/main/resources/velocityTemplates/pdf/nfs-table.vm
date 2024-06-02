@@ -1,0 +1,22 @@
+<div id='nfs'>
+  <br>
+  <h4>Network Files</h4>
+  <table id='nfs-table' class='docExtrasTable'>
+    <thead>
+    <tr>
+      <th>File System ID</th>
+      <th>File System URL</th>
+      <th>Path</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach($file in $files)
+          <tr>
+            <td>$file.getFileSystemId()</td>
+            <td>$file.getFileSystemUrl()</td>
+            <td>$file.getFileStorePath()</td>
+          </tr>
+        #end
+    </tbody>
+  </table>
+</div>

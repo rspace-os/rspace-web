@@ -1,0 +1,180 @@
+div.spot {
+  float: none;
+  margin: 0 20px 0 0;
+  width: 220px;
+  min-height: 100px; }
+
+.areas {
+  float: none;
+  width: 242px;
+  height: 105px; }
+
+.field-value {
+  width: 100%;
+  margin: 0; }
+
+.structuredDocumentTable {
+  border: 1px solid #DDD;
+  width: 960px; }
+
+.structuredDocumentTable tr table {
+  width: 100%;
+}
+
+.table_cell {
+  border: 1px solid #DDD; }
+
+.icon-field {
+  float: right; }
+
+.ui-timepicker-div .ui-widget-header {
+  margin-bottom: 8px; }
+
+.ui-timepicker-div dl {
+  text-align: left; }
+
+.ui-timepicker-div dl dt {
+  height: 25px;
+  margin-bottom: -25px; }
+
+.ui-timepicker-div dl dd {
+  margin: 0 10px 10px 65px; }
+
+.ui-timepicker-div td {
+  font-size: 90%; }
+
+.ui-tpicker-grid-label {
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0; }
+
+#structuredDocument {
+  border-collapse: collapse; }
+
+  /* scrollbar hiding contents */
+#structuredDocument .mce-tinymce.mce-panel iframe #tinymce {
+  padding-right: 5px;
+}
+
+.isResizable {
+  overflow: auto;
+  resize: both;
+  max-width: 935px;
+  min-width: 120px;
+  min-height: 90px;
+  background-color: rgb(245,245,245);
+  padding: 8px;
+  word-wrap: break-word; }
+
+.fieldHeaderName, .fieldNotification, .fieldHint {
+  float: left;
+  position: relative;
+  line-height: 25px;
+}
+
+.fieldHeaderEditButton {
+  float: right;
+  position: relative;
+  margin-right: 1px;
+}
+.fieldHeaderEditButton button {
+  width: 40px;
+}
+
+.fieldHeaderName, .fieldNotification, .fieldHint {
+  padding-top: 2px; }
+
+.fieldNotification {
+  font-weight: normal;
+  margin-left: 20px;
+  width: 100px; }
+
+.fieldHint {
+  float: right;
+  font-weight: normal;
+  background-image: url("/images/notice.png");
+  background-size: 14px;
+  background-repeat: no-repeat;
+  background-position: 0px 7px;
+  padding-left: 17px;
+  margin-right: 40px; 
+}
+
+#tagFldDiv {
+  position: relative;
+  /* 	width:40%; */
+  float: right;
+  background-color: #DDDDDD;
+  white-space: nowrap; }
+
+.singleLineFieldInDocViewMode {
+  padding-left: 5px; 
+  line-height: 2.5em; 
+  height: 2.5em; 
+  cursor: text; 
+  margin: 0; 
+  background-color: rgb(245,245,245);
+}
+
+.hideBulletPoint {
+  margin: 0;
+  height: 100%;
+  padding: 0;
+  list-style-type: none; }
+
+.field-name {
+  color: #000000; }
+
+.field-value-inner {
+  width: 100%;
+  height: 100%; }
+  
+#tmp_tag {
+  background-color: #DDDDDD;
+  border: 0px none;
+  margin-left: 5px;
+  margin-right: 5px; }
+
+.fieldLabel {
+  width: 300px;
+  background-color: rgb(245,245,245);
+  border: 1px solid #000;
+  padding: 2px 2px 6px 2px; }
+
+.fieldMover {
+  width: 25px;
+  padding: 2px 0 2px 0; }
+
+.orderButtons {
+  padding-left: 6px; }
+
+@media print {
+    .btn.attachmentButton { 
+        display: none;
+    }
+}
+
+#insertInternalLink-button:disabled, #insertInternalLink-button[disabled] {
+        	color: rgba(0, 0, 0, 0.26);
+        	box-shadow: none;
+        	background-color: rgba(0, 0, 0, 0.12);
+}
+
+.textFieldViewModeDiv {
+  padding-right: 26px; /* this is to give inventory floating action button space */
+}
+
+.attachmentsListing > .container {
+  max-width: 960px; /* same width as .documentPanel */
+}
+
+.attachmentsListing .row {
+  margin-bottom: 8px;
+}
+
+@media print {
+  .attachmentsListing {
+    display: none;
+  }
+}

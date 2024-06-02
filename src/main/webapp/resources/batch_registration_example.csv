@@ -1,0 +1,82 @@
+## This is an example CSV file defining list of users, groups and communities for RSpace batch registration.
+## 
+## Notes on syntax:
+## 1. A line stating with double hash character (##) is a comment, and is skipped by CSV parser
+## 2. A line starting with single hash character (#) is a command, and changes the way CSV parser treats following lines
+## 3. Any other non-blank line is interpreted as a comma separated data line. Its interpretation depends on last seen command
+## 4. Blank lines are ignored.
+## 
+## Users part should start with #Users command.
+##
+##  Each data line should contain 6 comma separated fields:  
+##  First Name, Last Name, Email, Role, Username, Password
+## 
+##  If 'Role' field is empty then ROLE_USER will be assigned. You can choose from 4 roles:
+##  ROLE_USER, ROLE_PI, ROLE_ADMIN (this is a Community admin), and ROLE_SYSADMIN.
+
+##  if 'Username' field is empty RSpace will generate username based on First Name and Last Name
+##  There are certain restrictions on the syntax of individual field:
+##     - If supplied, usernames should be at least 6 alphanumeric characters
+##     - If supplied, passwords must be at least 8 characters.
+
+#Users
+Bob,Smith,bob@somewhere.edu,ROLE_PI,bsmith,testpass
+Sarah,Pickering,sarah@somewhere.edu,ROLE_USER,spickering,testpass
+John,Jones,jjones@somewhere.edu,ROLE_PI,jjones,testpass
+Juan,Menendez,jmenendez@somewhere.edu,ROLE_USER,jmenendez,testpass
+Annette,Reid,areid2@somewhere.edu,ROLE_PI,areid2,testpass
+James,Student,james@gmail.com,ROLE_USER,jstudent,testpass
+Sue,Queensman,sue@somewhere.edu,ROLE_PI,squeens,testpass
+Peter,Donovan,donno@somewhere.edu,ROLE_USER,pdonovan,testpass
+## here are Community admins
+Peter,Admin1,admin1@somewhere.edu,ROLE_ADMIN,admin1a,testpass
+Sarah,Admin2,admin2@somewhere.edu,ROLE_ADMIN,admin2a,testpass
+Maria,Admin3,admin3@somewhere.edu,ROLE_ADMIN,admin3a,testpass
+## and a Sysadmin user
+Colin,Sysadmin,testSysadmin1@omewhere.edu,ROLE_SYSADMIN,colinadmin,testpass
+
+## Group part should start with #Groups command.
+##
+## Each data line should contain: 
+## 1. Group display name - alphanumeric + spaces permitted.
+## 2. Username of the group PI 
+##	   2.1 this has to be one of usernames defined in Users part of this CSV file
+##     2.2 this user must have ROLE_PI role
+## 3. List of group members
+##
+## List of group members - may be empty, in such case a PI will be only member.
+
+#Groups
+## note that the second column must be the username of a PI defined in the 'Users' list above.
+Test Lab 1,bsmith,spickering
+Test Lab 2,jjones,jmenendez
+Test Lab 3,areid2,jstudent
+Test Lab 4,squeens,pdonovan
+## you can create a group with just the PI if group members aren't known yet.
+Test Lab 5,squeens
+## People can be in more than 1 group.
+Test Lab 6,bsmith, spickering, jjones, pdonovan
+
+
+## Communities part should start with #Communities command.
+## 
+## Each data line should contain: 
+## 1. Display name of the community. 
+## 2. List of names of groups belonging to the community 
+##     2.1 These have to be names defined in Groups part of this CSV file
+
+#Communities
+Test Community 1, Test Lab 1, Test Lab 2
+Test Community 2, Test Lab 3, Test Lab 4, Test Lab 5
+
+## Community Admins part should start with #Community Admins command.
+## 
+## Each data line should contain: 
+## 1. Display name of the community. 
+## 2. One or more  username(s) of the RSpace Admin(s) that will manage this community
+##	   2.1 this has to be one of usernames defined in Users part of this CSV file
+##     2.2 this user must have ROLE_ADMIN role
+
+#Community Admins
+Test Community 1, admin1a
+Test Community 2, admin2a, admin3a

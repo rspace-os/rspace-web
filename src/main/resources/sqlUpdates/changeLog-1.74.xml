@@ -1,0 +1,90 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.74 January 2022 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+
+	<changeSet author="matthias" id="2022-01-11" context="run">
+		<preConditions onFail="MARK_RAN">
+			<columnExists tableName="Sample" columnName="subSampleAlias" />
+		</preConditions>
+
+		<comment>Use two columns for storing subsample alias singular and plural (RSINV-448)</comment>
+		<addColumn tableName="Sample">
+			<column name="subSampleName" type="VARCHAR(30)">
+				<constraints nullable="false"/>
+			</column>
+		</addColumn>
+		<addColumn tableName="Sample">
+			<column name="subSampleNamePlural" type="VARCHAR(30)">
+				<constraints nullable="false"/>
+			</column>
+		</addColumn>
+		<addColumn tableName="Sample_AUD">
+			<column name="subSampleName" type="VARCHAR(30)"/>
+		</addColumn>
+		<addColumn tableName="Sample_AUD">
+			<column name="subSampleNamePlural" type="VARCHAR(30)"/>
+		</addColumn>
+
+		<sql>update Sample set subSampleName = LOWER(subSampleAlias), subSampleNamePlural = LOWER(CONCAT(subSampleAlias, 's'));</sql>
+		<sql>update Sample_AUD set subSampleName = LOWER(subSampleAlias), subSampleNamePlural = LOWER(CONCAT(subSampleAlias, 's'));</sql>
+
+		<dropColumn columnName="subSampleAlias" tableName="Sample"/>
+		<dropColumn columnName="subSampleAlias" tableName="Sample_AUD"/>
+	</changeSet>
+
+	<changeSet author="richard" id="2022-01-13a" >
+		<comment>Remove system properties for obsolete DSPACE integration RSPAC-2366</comment>
+		<sql>
+			delete from SystemPropertyValue where property_id in (select id from SystemProperty where descriptor_id = (select id from PropertyDescriptor where name='dspace.available'));
+			delete from SystemProperty where descriptor_id = (select id from PropertyDescriptor where name='dspace.available');
+			delete from PropertyDescriptor where name='dspace.available';
+		</sql>
+	</changeSet>
+
+	<changeSet author="richard" id="2022-01-13b" >
+		<comment>Remove App properties for obsolete DSPACE integration RSPAC-2366</comment>
+		<sql>
+			delete from AppConfigElement where appConfigElementDescriptor_id in (select id from AppConfigElementDescriptor where app_id = (select id from App where name='app.dspace'));
+			delete from AppConfigElementSet where  userAppConfig_id in (select id from UserAppConfig where app_id = (select id from App where name='app.dspace'));
+			delete from AppConfigElementDescriptor where app_id = (select id from App where name='app.dspace');
+			delete from UserAppConfig where app_id=(select id from App where name='app.dspace');
+			delete from App where name='app.dspace';
+			delete from PropertyDescriptor where name like 'DSPACE_%';
+		</sql>
+	</changeSet>
+
+	<changeSet author="richard" id="2022-01-14a" >
+		<comment>Remove system properties for obsolete GoogleHangoutsChat integration RSPAC-2366</comment>
+		<sql>
+			delete from SystemPropertyValue where property_id in (select id from SystemProperty where descriptor_id = (select id from PropertyDescriptor where name='ghangoutschat.available'));
+			delete from SystemProperty where descriptor_id = (select id from PropertyDescriptor where name='ghangoutschat.available');
+			delete from PropertyDescriptor where name='ghangoutschat.available';
+		</sql>
+	</changeSet>
+
+	<changeSet author="richard" id="2022-01-14b" >
+		<comment>Remove App properties for obsolete GoogleHangoutsChat integration RSPAC-2366</comment>
+		<sql>
+			delete from AppConfigElement where appConfigElementDescriptor_id in (select id from AppConfigElementDescriptor where app_id = (select id from App where name='app.ghangoutschat'));
+			delete from AppConfigElementSet where  userAppConfig_id in (select id from UserAppConfig where app_id = (select id from App where name='app.ghangoutschat'));
+			delete from AppConfigElementDescriptor where app_id = (select id from App where name='app.ghangoutschat');
+			delete from UserAppConfig where app_id=(select id from App where name='app.ghangoutschat');
+			delete from App where name='app.ghangoutschat';
+			delete from PropertyDescriptor where name like 'ghangoutschat_%';
+		</sql>
+	</changeSet>
+
+    <!-- only customChange changeSets should be placed below here -->
+
+
+
+</databaseChangeLog>

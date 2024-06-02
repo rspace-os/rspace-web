@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE urlrewrite PUBLIC "-//tuckey.org//DTD UrlRewrite 3.0//EN"
+        "http://tuckey.org/res/dtds/urlrewrite3.0.dtd">
+
+<urlrewrite default-match-type="wildcard">
+    <rule match-type="regex">
+        <from>^/admin/user/(.*)\$</from>
+        <to type="forward">/app/admin/userform?id=$1&amp;from=list</to>
+    </rule>
+    <!-- The following fixes a CSS bug in CXF. -->
+    <rule match-type="regex">
+        <from>^/services//(.*)$</from>
+        <to type="forward">/services/$1</to>
+    </rule>
+
+
+    <!-- Add rules here for anything that shouldn't be served up by Spring MVC. -->
+    <!--   <rule>
+          <from>/</from>
+          <to type="redirect" last="true">dashboard</to>
+      </rule> -->
+    <rule>
+        <from>/app/**</from>
+        <to  last="true" type="redirect">%{context-path}/$1?%{query-string}</to>
+    </rule>
+    <rule>
+        <from>/j_security_check</from>
+        <to>/j_security_check</to>
+    </rule>
+
+    <rule>
+        <from>/monitoring/**</from>
+        <to>/monitoring/$1</to>
+    </rule>
+    <rule>
+        <from>/common/**</from>
+        <to>/common/$1</to>
+    </rule>
+    <rule>
+        <from>/resources/**</from>
+        <to>/resources/$1</to>
+    </rule>
+
+    <rule> <!-- RSPAC-1231  -->
+        <from>/images/icons/unknownDocument.png.d0834f40bb92622d1f814dff980e9885.png</from>
+        <to>/images/icons/unknownDocument.png</to>
+    </rule>
+    <rule>
+        <from>/public/images/**</from>
+        <to>/images/$1</to>
+    </rule>
+    <rule>
+        <from>/images/**</from>
+        <to>/images/$1</to>
+    </rule>
+    <rule> <!-- RSPAC-1388 -->
+        <from>/favicon.ico</from>
+        <to>/images/faviconEnterprise.ico</to>
+    </rule>
+
+    <!-- Backward compatibility: previous location of box/dropbox icons -->
+    <rule>
+        <from>/scripts/tinymce/plugins/box/img/box_cyan.png</from>
+        <to>/images/icons/box_cyan.png</to>
+    </rule>
+    <rule>
+        <from>/scripts/bower_components/tinymce/plugins/box/img/box_cyan.png</from>
+        <to>/images/icons/box_cyan.png</to>
+    </rule>
+
+    <rule>
+        <from>/scripts/tinymce/plugins/dropbox/img/dropbox.png</from>
+        <to>/images/icons/dropbox.png</to>
+    </rule>
+    <rule>
+        <from>/scripts/bower_components/tinymce/plugins/dropbox/img/dropbox.png</from>
+        <to>/images/icons/dropbox.png</to>
+    </rule>
+
+    <rule>
+        <from>/scripts/tinymce/plugins/ecat/img/ecat.png</from>
+        <to>/images/icons/ecat.png</to>
+    </rule>
+    <rule>
+        <from>/scripts/bower_components/tinymce/plugins/ecat/img/ecat.png</from>
+        <to>/images/icons/ecat.png</to>
+    </rule>
+    <rule>
+        <from>/scripts/tinymce/plugins/googledrive/img/drive_icon.png</from>
+        <to>/images/icons/drive_icon.png</to>
+    </rule>
+    <rule>
+        <from>/scripts/bower_components/tinymce/plugins/googledrive/img/drive_icon.png</from>
+        <to>/images/icons/drive_icon.png</to>
+    </rule>
+
+    <rule>
+        <from>/scripts/tinymce/plugins/onedrive/img/onedrive_icon.png</from>
+        <to>/images/icons/onedrive_icon.png</to>
+    </rule>
+    <rule>
+        <from>/scripts/bower_components/tinymce/plugins/onedrive/img/onedrive_icon.png</from>
+        <to>/images/icons/onedrive_icon.png</to>
+    </rule>
+
+    <rule>
+        <from>/scripts/**</from>
+        <to>/scripts/$1</to>
+    </rule>
+    <rule>
+        <from>/public/ui/**</from>
+        <to>/ui/$1</to>
+    </rule>
+    <rule>
+        <from>/ui/**</from>
+        <to>/ui/$1</to>
+    </rule>
+
+    <rule>
+        <from>/inventory</from>
+        <to>/inventory/start.html</to>
+    </rule>
+    <rule>
+        <from>/inventory/**</from>
+        <to>/inventory/start.html</to>
+    </rule>
+    <rule>
+        <from>/listOfMaterials/**</from>
+        <to>/inventory/start.html</to>
+    </rule>
+    <rule>
+        <from>/public/inventory/**</from>
+        <to>/inventory/identifierPublicPage.html</to>
+    </rule>
+    <rule>
+        <from>/apps</from>
+        <to>/eln/apps.html</to>
+    </rule>
+
+    <!-- Backward compatibility: nextcloud/owncloud were not using /apps prefix until RSDEV-105 -->
+    <rule>
+        <from>/owncloud/redirect_uri</from>
+        <to>/app/apps/owncloud/redirect_uri</to>
+    </rule>
+    <rule>
+        <from>/owncloud/redirectLink</from>
+        <to>/app/apps/owncloud/redirectLink</to>
+    </rule>
+    <rule>
+        <from>/nextcloud/redirect_uri</from>
+        <to>/app/apps/nextcloud/redirect_uri</to>
+    </rule>
+    <rule>
+        <from>/nextcloud/redirectLink</from>
+        <to>/app/apps/nextcloud/redirectLink</to>
+    </rule>
+
+    <rule>
+        <from>/styles/**</from>
+        <to>/styles/$1</to>
+    </rule>
+    <rule>
+        <from>/crossdomain.xml</from>
+        <to>/crossdomain.xml</to>
+    </rule>
+    <rule>
+        <from>/login*</from>
+        <to>/login.jsp</to>
+    </rule>
+
+    <!-- Spring MVC -->
+
+    <!-- don't translate offline traffic -->
+    <rule>
+        <from>/offline/**</from>
+        <to>/offline/$1</to>
+    </rule>
+
+    <!--  Backwards compatibility: Previous chemical thumbnail urls -->
+    <rule>
+        <from>/notebook/editor/structuredDocument/getImageChem/**</from>
+        <to>/app/chemical/getImageChem/$1</to>
+    </rule>
+    <rule>
+        <from>/workspace/editor/structuredDocument/getImageChem/**</from>
+        <to>/app/chemical/getImageChem/$1</to>
+    </rule>
+
+    <!-- 'workspace' was called 'notebook' before, next two rules should handle old urls
+        that might be still present in old emails, internal messages, or bookmarks -->
+    <rule>
+        <from>/notebook</from>
+        <to>/app/workspace</to>
+    </rule>
+    <rule>
+        <from>/notebook/**</from>
+        <to>/app/workspace/$1</to>
+    </rule>
+
+    <!-- general rule  -->
+    <rule>
+        <from>/**</from>
+        <to>/app/$1</to>
+    </rule>
+
+    <outbound-rule>
+        <from>/app/**</from>
+        <to>/$1</to>
+    </outbound-rule>
+    <!-- Remove JSESSIONID from URLs when cookies disabled -->
+    <!-- http://stackoverflow.com/questions/962729/is-it-possible-to-disable-jsessionid-in-tomcat-servlet -->
+    <outbound-rule encodefirst="true" match-type="regex">
+        <name>Strip URL Session ID's</name>
+        <from>^(.*?)(?:\;jsessionid=[^\?#]*)?(\?[^#]*)?(#.*)?$</from>
+        <to>$1$2$3</to>
+    </outbound-rule>
+</urlrewrite>

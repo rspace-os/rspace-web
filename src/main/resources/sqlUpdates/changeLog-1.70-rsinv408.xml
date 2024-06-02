@@ -1,0 +1,21 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 Sept 2020 -->
+
+	<changeSet author="matthias" id="2021-08-12" context="run">
+		<addColumn tableName="SubSample">
+			<column name="deletedOnSampleDeletion" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="SubSample_AUD">
+			<column name="deletedOnSampleDeletion" type="BIT(1)" />
+		</addColumn>
+	</changeSet>
+
+
+</databaseChangeLog>

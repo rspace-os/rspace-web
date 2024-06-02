@@ -1,0 +1,32 @@
+<p>We have performed a biochemical and double-stranded RNA-mediated interference (RNAi) analysis of the role
+ of two chromosomal passenger proteins, inner centromere protein (INCENP) <img id="1" class="commentIcon" onclick="showComments(1,6)" src="/images/commentIcon.gif" alt="image" />&nbsp;
+ and aurora B kinase, in cultured cells of Drosophila melanogaster. INCENP and aurora B function is tightly
+  interlinked. The two proteins bind to each other in vitro, and DmINCENP is required for 
+  DmAurora B to localize properly in mitosis and function as a histone H3 kinase. 
+  HEre is a math equation:
+  
+  <div class="rsEquation mceNonEditable" data-mathid="233" data-equation="x^2">
+    <a class="rsEquationClickableWrapper">
+        <object data="/svg/233" type="image/svg+xml"></object>
+    </a>
+</div>
+  
+  DmAurora B 
+  is required for DmINCENP accumulation at centromeres and transfer to the spindle at anaphase. 
+  RNAi for either protein dramatically inhibited the ability of cells to achieve a normal metaphase 
+  chromosome alignment
+  .&nbsp;<img id="1" class="sketch" src="/image/getImageSketch/1/1369937389989" alt="image" /></p><p>&nbsp;</p><p>
+  Cells were not blocked in mitosis, however, and entered an aberrant anaphase characterized by defects in
+   sister kinetochore disjunction and the
+    presence of</p><p><img id="1" class="chem" src="/chemical/getImageChem/1/1369937389989" alt="image" /></p><p>large amounts
+of amorphous lagging chromatin.</p><p>&nbsp;</p><p>
+<a id="61" class="linkedRecord" href="/workspace/editor/structuredDocument/61" data-name="Editable2">Editable2</a></p><p>Anaphase 
+A chromosome movement appeared to be normal, however cytokinesis often failed. DmINCENP and DmAurora B
+ are not required for the correct localization of the kinesin-like protein
+ </p><p><img id="6-1" class="imageDropped inlineImageThumbnail" src="/image/getImage/6-1/1369937407950" alt="image" data-size="627-326" /></p>
+ <p><img id="6-1" class="imageDropped inlineImageThumbnail" data-id="12" data-type="annotation" src="/image/getAnnotation/12/1369937407950" alt="annotation" data-size="627-326" /></p><p>
+ Pavarotti (ZEN-4/CHO1/MKLP1) to the midbody at telophase.</p><p>&nbsp;</p>
+ <div id="attachmentDiv_14799" class="attachmentDiv mceNonEditable"><img id="10977280-14799" class="audioDropped attachmentIcon" src="/images/icons/mov.png" alt="" width="32" height="32" data-video="14799,,mov" />
+<p class="attachmentP"><a id="attachOnText_14799" href="/Streamfile/14799/sample_sorenson.mov" target="_blank" data-type="Miscellaneous">sample_sorenson.mov</a></p>
+<div id="attachmentInfoDiv_14799" class="attachmentInfoDiv"><img class="attachmentInfoIcon" src="/images/getInfo12.png" alt="" /></div>
+</div>

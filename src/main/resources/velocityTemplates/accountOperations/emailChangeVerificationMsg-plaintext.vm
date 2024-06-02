@@ -1,0 +1,20 @@
+#*
+Template for messaging a user who want to update their email address on cloud.
+Arguments:
+ - verifyLink - The  URL to verify signup
+ - ipAddress
+ - firstName
+*#
+
+Hello $firstName,
+
+Please use the link below to verify and activate your new email account in RSpace.
+  
+
+${verifyLink}
+
+#dontReply_Plaintext
+
+#signature_Plaintext
+
+#emailSourceIpFooter_Plaintext (${ipAddress})

@@ -1,0 +1,10 @@
+<p>
+ Dear ${fullName}, <br/>
+ 
+ Thank you  for registering with RSpace.
+ <p/>
+ Unfortunately, your request  was not accepted.
+ <p/>
+Please contact support@researchspace.com for more information.
+  
+#signature

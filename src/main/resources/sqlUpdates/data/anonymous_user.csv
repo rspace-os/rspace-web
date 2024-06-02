@@ -1,0 +1,2 @@
+id,username,password,first_name,last_name,email,version,contentInitialized,account_enabled,account_expired,account_locked,credentials_expired,numConsecutiveLoginFailures,tempAccount,signupSource
+-13999,rspace anonymous guest,3fa11720ad436523ee5fba7fb8c8747fe072f2013177da2f34002f7a5372d7f7,,public,anonymous@anonymous.com,1,0,1,0,0,0,0,0,SSO_BACKDOOR

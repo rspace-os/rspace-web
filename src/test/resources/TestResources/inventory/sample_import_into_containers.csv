@@ -1,0 +1,5 @@
+﻿Name,Description,Import identifier,Parent container
+Sample1,with subsample on workbench, s1,
+Sample2,with subsample inside container1, s2, cont1
+Sample3,with subsample inside container5,,cont5
+Sample4,with subsample on workbench,,

@@ -1,0 +1,74 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.48 November 2017 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+	<changeSet id="17-10-30a" author="karolis">
+		<comment>New Property Descriptors for Slack App</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="SLACK_TEAM_ID" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="SLACK_USER_ID" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+	</changeSet>
+	<changeSet id="17-10-30b" author="karolis">
+	<comment>AppConfigElementDescriptor for Slack App: id, descriptor_id, app_id</comment>
+		<sql>
+			insert into AppConfigElementDescriptor (descriptor_id, app_id)
+			select PropertyDescriptor.id as descriptor_id, App.id as app_id from PropertyDescriptor, App
+			    where PropertyDescriptor.name = 'SLACK_TEAM_ID' and App.name = 'app.slack';
+		</sql>
+		<sql>
+			insert into AppConfigElementDescriptor (descriptor_id, app_id)
+			select PropertyDescriptor.id as descriptor_id, App.id as app_id from PropertyDescriptor, App
+			    where PropertyDescriptor.name = 'SLACK_USER_ID' and App.name = 'app.slack';
+		</sql>
+	</changeSet>
+
+	<changeSet id="17-11-14a" author="karolis">
+		<comment>New Property Descriptors for Slack App (2)</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="SLACK_CHANNEL_ID" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="SLACK_USER_ACCESS_TOKEN" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+	</changeSet>
+	<changeSet id="17-11-14b" author="karolis">
+		<comment>AppConfigElementDescriptor for Slack App: id, descriptor_id, app_id</comment>
+		<sql>
+			insert into AppConfigElementDescriptor (descriptor_id, app_id)
+			select PropertyDescriptor.id as descriptor_id, App.id as app_id from PropertyDescriptor, App
+			where PropertyDescriptor.name = 'SLACK_CHANNEL_ID' and App.name = 'app.slack';
+		</sql>
+		<sql>
+			insert into AppConfigElementDescriptor (descriptor_id, app_id)
+			select PropertyDescriptor.id as descriptor_id, App.id as app_id from PropertyDescriptor, App
+			where PropertyDescriptor.name = 'SLACK_USER_ACCESS_TOKEN' and App.name = 'app.slack';
+		</sql>
+	</changeSet>
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+
+	<!-- only customChange changeSets should be placed below here -->
+    
+</databaseChangeLog>

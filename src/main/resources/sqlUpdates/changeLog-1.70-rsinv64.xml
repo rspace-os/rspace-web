@@ -1,0 +1,24 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 inventory containers Sept 2020 -->
+
+	<changeSet author="richard" id="2020-10-30a" context="run">
+		<comment>Add expiry date to Sample, default null</comment>
+		<addColumn tableName="Sample">
+			<column name="expiryDate" type="date" />
+		</addColumn>
+	</changeSet>
+
+	<changeSet author="richard" id="2020-10-30b" context="run">
+		<comment>Add expiry date to Sample_AUD, default null</comment>
+		<addColumn tableName="Sample_AUD">
+			<column name="expiryDate" type="date" />
+		</addColumn>
+	</changeSet>
+
+
+</databaseChangeLog>

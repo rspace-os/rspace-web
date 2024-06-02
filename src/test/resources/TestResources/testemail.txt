@@ -1,0 +1,17 @@
+<html>
+<body/>
+<p>Hello ${piFirstName}, </p>
+
+<p>Welcome to the Phase 1 RSpace ELN test at XYZ!  We're pleased that you're going to be test driving RSpace
+and want to make your experience as positive as possible. Please feel free to let us know about questions and issues that arise 
+by emailing test@researchspace.com.</p>
+
+<p>
+Best wishes,<br/>
+GA
+<p>
+GA<br/>
+Product specialist<br/>
+ResearchSpace<br/>
+</body>
+</html>

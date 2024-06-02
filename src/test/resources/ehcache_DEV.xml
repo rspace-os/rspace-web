@@ -1,0 +1,129 @@
+<ehcache updateCheck="false">
+
+    <!-- Sets the path to the directory where cache .data files are created.
+
+         If the path is a Java System Property it is replaced by
+         its value in the running VM.
+
+         The following properties are translated:
+         user.home - User's home directory
+         user.dir - User's current working directory
+         java.io.tmpdir - Default temp file path -->
+   <!--  <diskStore path="java.io.tmpdir/researchspace-cache"/> -->
+
+
+    <!--Default Cache configuration. These will applied to caches programmatically created through
+        the CacheManager.
+
+        The following attributes are required:
+
+        maxElementsInMemory            - Sets the maximum number of objects that will be created in memory
+        eternal                        - Sets whether elements are eternal. If eternal,  timeouts are ignored and the
+                                         element is never expired.
+        overflowToDisk                 - Sets whether elements can overflow to disk when the in-memory cache
+                                         has reached the maxInMemory limit.
+
+        The following attributes are optional:
+        timeToIdleSeconds              - Sets the time to idle for an element before it expires.
+                                         i.e. The maximum amount of time between accesses before an element expires
+                                         Is only used if the element is not eternal.
+                                         Optional attribute. A value of 0 means that an Element can idle for infinity.
+                                         The default value is 0.
+        timeToLiveSeconds              - Sets the time to live for an element before it expires.
+                                         i.e. The maximum time between creation time and when an element expires.
+                                         Is only used if the element is not eternal.
+                                         Optional attribute. A value of 0 means that and Element can live for infinity.
+                                         The default value is 0.
+        diskPersistent                 - Whether the disk store persists between restarts of the Virtual Machine.
+                                         The default value is false.
+        diskExpiryThreadIntervalSeconds- The number of seconds between runs of the disk expiry thread. The default value
+                                         is 120 seconds.
+        -->
+
+    <defaultCache
+        maxElementsInMemory="10000"
+        eternal="false"
+        overflowToDisk="false"
+        timeToIdleSeconds="120"
+        timeToLiveSeconds="120"
+        diskPersistent="false"
+        diskExpiryThreadIntervalSeconds="120"
+        statistics="true"/>
+        
+         <cache name="com.researchspace.model.Role"
+        maxElementsInMemory="100"
+        timeToLiveSeconds="0"
+        overflowToDisk="false"/>
+
+    <cache name="com.researchspace.model.Role.permissions"
+        maxElementsInMemory="100"
+        timeToLiveSeconds="0"
+        overflowToDisk="false"/>
+
+    <cache name="com.researchspace.model.User"
+        maxElementsInMemory="1000"
+        timeToLiveSeconds="3600"
+        overflowToDisk="false"/>
+
+    <cache name="com.researchspace.model.User.roles"
+        maxElementsInMemory="1000"
+        timeToLiveSeconds="3600"
+        overflowToDisk="false"/>
+        
+    <cache name="com.researchspace.model.User.fullName" 
+        maxElementsInMemory="1000"
+        timeToLiveSeconds="3600" />
+        
+    <cache name="com.researchspace.model.archive.ArchivalCheckSum"
+        maxElementsInMemory="10000"
+        timeToLiveSeconds="3600"
+        overflowToDisk="false"
+        statistics="true"/>
+        
+    <cache name="com.researchspace.model.ImageBlob"
+        maxElementsInMemory="1000"
+        timeToLiveSeconds="3600"
+        overflowToDisk="false"
+        statistics="true"/>
+        
+    <cache name="com.researchspace.model.EcatImage"
+        maxElementsInMemory="1000"
+        timeToLiveSeconds="3600"
+        overflowToDisk="false"
+        statistics="true"/>
+        
+    <cache name="com.researchspace.model.EcatMediaFile"
+        maxElementsInMemory="1000"
+        timeToLiveSeconds="3600"
+        overflowToDisk="false"
+        statistics="true"/>
+    <cache name="com.researchspace.model.record"
+        maxElementsInMemory="1000"
+        timeToLiveSeconds="3600"
+        overflowToDisk="false"
+        statistics="true"/>
+    <cache name="com.researchspace.model.BaseRecord"
+        maxElementsInMemory="1000"
+        timeToLiveSeconds="3600"
+        overflowToDisk="false"
+        statistics="true"/>
+    <cache name="com.researchspace.model.record.IconEntity"
+        maxElementsInMemory="1000"
+        timeToLiveSeconds="3600"
+        overflowToDisk="false"
+        />
+    <cache name="com.researchspace.model.Organisation" maxElementsInMemory="5000" timeToLiveSeconds="0" />
+
+	<cache name="com.researchspace.api.v1.file" maxElementsInMemory="1000" timeToLiveSeconds="3600"/>
+	<!-- query cache related cache regions-->
+	<cache name="org.hibernate.cache.internal.StandardQueryCache" 
+	  maxElementsInMemory="500" 
+	    timeToItimeToLiveSeconds="3600" timeToIdleSeconds="600" eternal="false"></cache>
+	    
+	 <cache name="org.hibernate.cache.spi.UpdateTimestampsCache" 
+	  maxElementsInMemory="500" 
+	    eternal="true"></cache>
+        
+        
+    <!-- See http://ehcache.sourceforge.net/documentation/#mozTocId258426 for how to configure caching for your objects -->
+</ehcache>

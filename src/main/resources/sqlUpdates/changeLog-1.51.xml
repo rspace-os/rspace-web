@@ -1,0 +1,170 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.51 May 2018 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+	<changeSet id="18-4-17a" author="richard">
+	  <comment>RSPAC-1498 add missing FORM:CREATE permission if there is a missing 'Create form' permission</comment>
+	  <sql>
+	    insert into Role_permissionStrings select id, 'FORM:CREATE' from roles where id not in (select distinct role_id from  Role_permissionStrings where permissionStrings like '%FORM:CREATE%');
+	  </sql>
+	</changeSet>
+
+
+	<changeSet id="18-04-24a" author="karolis">
+		<comment>RSPAC-1440 protocols_io.available system property</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="ALLOWED" />
+			<column name="name" type="STRING" value="protocols_io.available" />
+			<column name="type" type="NUMERIC" value="3" />
+		</insert>
+		<insert tableName="SystemProperty">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="dependent_id" type="NUMERIC" value="NULL" />
+			<column name="descriptor_id" type="NUMERIC"
+					valueComputed="(select id from PropertyDescriptor where name ='protocols_io.available')" />
+		</insert>
+		<insert tableName="SystemPropertyValue">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="value" type="String" value="ALLOWED" />
+			<column name="property_id" type="NUMERIC"
+					valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='protocols_io.available')" />
+		</insert>
+	</changeSet>
+	<changeSet id="18-04-24b" author="karolis">
+		<comment>RSPAC-1440 Protocols.io App</comment>
+		<insert tableName="App">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="label" type="STRING" value="Protocols.io" />
+			<column name="name" type="STRING" value="app.protocols_io" />
+			<column name="defaultEnabled" type="BOOLEAN" valueBoolean="true" />
+		</insert>
+	</changeSet>
+	<changeSet id="18-04-24c" author="karolis">
+		<comment>RSPAC-1440 Properties for Protocols.io</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="PROTOCOLS_IO_PUBLIC_ACCESS_TOKEN" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.protocols_io" and pd.name='PROTOCOLS_IO_PUBLIC_ACCESS_TOKEN';</sql>
+	</changeSet>
+	<changeSet id="18-04-30a" author="richard" context="run">
+	 <preConditions onFail="WARN" onFailMessage="Cannot resize index to satisfy utf-8 requirements" 
+	     onError="WARN" onErrorMessage="Cannot resize index to satisfy utf-8 requirements">
+	    <sqlCheck expectedResult="0">
+	         select if (max(length(title)) > 191, 1,0) from Organisation;
+	     </sqlCheck>
+	 </preConditions>
+	 <comment>
+	  Reduce key size of title column so that for MySQL  &lt; 5.7 we can use utf8 character set
+	    and satisfy max index size of 768 bytes. RSPAC-932
+	 </comment>
+	 <sql>alter table Organisation modify title varchar(191) not null;</sql>
+	</changeSet>
+	<changeSet id="18-04-30b" author="richard" context="run">
+	  <preConditions onError="WARN" onErrorMessage="Could not add unique index to Organisation-title"
+	  onFail="WARN" onFailMessage="Could not add unique index to Organisation-title">
+	   <sqlCheck expectedResult="1">
+	     select if(q.allTitle=q.uniqueTitle,1,0) from (select count(title) as allTitle, count(distinct(title)) uniqueTitle from Organisation)q;
+	   </sqlCheck>
+	  </preConditions>
+	  <comment>Add unique index to 'title' column to match Hibernate mappings</comment>
+	  <createIndex  tableName="Organisation" indexName="UK_Org_title">
+	     <column name="title">
+	   </column></createIndex>
+	</changeSet>
+	<changeSet id="18-04-30c" author="richard" context="run">
+	 <preConditions onFail="WARN" onFailMessage="Cannot resize group-uniquename to satisfy utf-8 requirements" 
+	     onError="WARN" onErrorMessage="Cannot resize index to satisfy utf-8 requirements">
+	    <sqlCheck expectedResult="0">
+	         select if (max(length(uniqueName)) > 191, 1,0) from rsGroup;
+	     </sqlCheck>
+	 </preConditions>
+	 <comment>
+	  Reduce key size of Group.uniqueName column so that for MySQL  &lt; 5.7 we can use utf8 character set
+	    and satisfy max index size of 768 bytes. RSPAC-932
+	 </comment>
+	 <sql>alter table rsGroup modify uniqueName varchar(191) not null;</sql>
+	</changeSet>
+	
+	<changeSet id="01-05-18a" author="richard" context="run">
+	  <preConditions>
+	    <indexExists tableName="Organisation" indexName="UK_Org_title"/>
+	  </preConditions>
+	  <comment>Make index created in previous changeset unique</comment>
+	  <dropIndex tableName="Organisation" indexName="UK_Org_title"/>
+	  <createIndex unique="true" tableName="Organisation" indexName="UK_Org_title">
+	   <column name="title"></column>
+	   </createIndex>
+	</changeSet>
+	
+	<changeSet id="01-05-18b" author="richard" context="run">
+	 <preConditions>
+	 <and>
+	  <sqlCheck expectedResult="0">select count(*) from RSForm where stableId is null;</sqlCheck>
+	  <sqlCheck expectedResult="0">select if (max(length(stableId)) > 50,1,0) from RSForm;</sqlCheck>
+	  </and>
+	 </preConditions>
+	 <comment>Add non-null constraint on stableId and reduce length of key for RSPAC-932</comment>
+	  <sql>alter table RSForm modify stableId varchar(50) not null;</sql>
+	</changeSet>
+	<!--  these changes below were also listed in changelog 1.41 but did not run sucessfully
+	FilePropertyAUD_OBSOLETE does not have a utf8 compliant index  -->
+		<changeSet id="18-05-01c" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="WARN">
+			<tableExists tableName="FilePropertyAUD_OBSOLETE" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="FilePropertyAUD_OBSOLETE" />
+	</changeSet>
+	<changeSet id="18-05-01d" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="WARN">
+			<tableExists tableName="FileProperty_OBSOLETE" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="FileProperty_OBSOLETE" />
+	</changeSet>
+	<changeSet id="18-05-01e" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="WARN" >
+			<tableExists tableName="FilePropertyBk_spac964" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="FilePropertyBk_spac964" />
+	</changeSet>
+	<changeSet id="18-05-01f" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="WARN">
+			<tableExists tableName="EcatMediaFile_OBSOLETE" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="EcatMediaFile_OBSOLETE" />
+	</changeSet>
+
+	<changeSet id="18-05-01g" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="WARN">
+			<tableExists tableName="EcatMediaFileAUD_OBSOLETE" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="EcatMediaFileAUD_OBSOLETE" />
+	</changeSet>
+	
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing
+		new changesets ! -->
+
+
+
+	<!-- only customChange changeSets should be placed below here -->
+
+
+<!--   -->
+
+
+</databaseChangeLog>

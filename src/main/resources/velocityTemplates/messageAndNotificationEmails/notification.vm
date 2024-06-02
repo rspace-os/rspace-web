@@ -1,0 +1,42 @@
+<html>
+#utf8header
+<body>
+<h2> Notification from RSpace </h2>
+<a href="$baseURL/userform?userId=$cmm.originator.id">$cmm.originator.fullName</a>
+#if ($cmm.notification)
+generated a notification for you of type [$cmm.notificationType] on
+#else 
+generated a notification for you on
+#end
+		
+#formatDate($dateOb)
+#if ($cmm.record && $cmm.record.notebook)
+concerning notebook
+  #if (! $cmm.ignoreRecordLinkInMessage) 
+      <a href="$baseURL/notebookEditor/$cmm.record.id">$cmm.record.name ($cmm.record.globalIdentifier)</a>  
+  #else 
+    $cmm.record.name ($cmm.record.globalIdentifier)
+  #end
+<br>
+#elseif($cmm.record)
+   #if (! $cmm.ignoreRecordLinkInMessage) 
+     concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">$cmm.record.name  ($cmm.record.globalIdentifier)</a>  
+   #else 
+    $cmm.record.name ($cmm.record.globalIdentifier)
+   #end
+<br>
+#end
+#if ($cmm.message) 
+ More details: <br>
+$cmm.message
+<br/>
+#end
+<p/>
+#if ($cmm.notification) 
+$cmm.notificationMessage
+#end
+#notificationPrefInfoSuffix(true)
+<br/>
+#dontReply
+</body>
+</html>

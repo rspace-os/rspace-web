@@ -1,0 +1,151 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70-rc9 list of materials June 2021 -->
+
+	<changeSet author="matthias" id="2021-06-09a" context="run">
+		<comment>RSINV-113: Create main tables for list of materials</comment>
+
+		<createTable tableName="ListOfMaterials">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="description" type="VARCHAR(255)" />
+			<column name="name" type="VARCHAR(255)" />
+			<column name="elnField_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="ListOfMaterials" />
+		<addForeignKeyConstraint baseColumnNames="elnField_id"
+			baseTableName="ListOfMaterials" constraintName="FK_2sny6f4vcmhuc487mm7y4js61"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Field" />
+	
+		<createTable tableName="MaterialUsage">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="quantityNumericValue" type="DECIMAL(19, 2)" />
+			<column name="quantityUnitId" type="INT" />
+			<column name="container_id" type="BIGINT" />
+			<column name="parentLom_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="sample_id" type="BIGINT" />
+			<column name="subSample_id" type="BIGINT" />
+		</createTable>
+		
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="MaterialUsage" />
+		<addForeignKeyConstraint baseColumnNames="parentLom_id"
+			baseTableName="MaterialUsage" constraintName="FK_45vkry2175qfa5posl3ink1ia"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id"
+			referencedTableName="ListOfMaterials" />
+		<addForeignKeyConstraint baseColumnNames="container_id"
+			baseTableName="MaterialUsage" constraintName="FK_flesvypjh0nv7n46jo9hj822a"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id"
+			referencedTableName="Container" />
+		<addForeignKeyConstraint baseColumnNames="sample_id"
+			baseTableName="MaterialUsage" constraintName="FK_gvk1jr0lilnthxwkf7b4liabl"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Sample" />
+		<addForeignKeyConstraint baseColumnNames="subSample_id"
+			baseTableName="MaterialUsage" constraintName="FK_e40ck7j8jm804tu8xnjgpci5v"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id"
+			referencedTableName="SubSample" />
+	</changeSet>
+
+	<changeSet author="matthias" id="2021-06-09b" context="run">
+		<comment>RSINV-113: Create audit tables for list of materials</comment>
+
+		<createTable tableName="ListOfMaterials_AUD">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="description" type="VARCHAR(255)" />
+			<column name="name" type="VARCHAR(255)" />
+			<column name="elnField_id" type="BIGINT" />
+		</createTable>
+		
+		<createTable tableName="MaterialUsage_AUD">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="quantityNumericValue" type="DECIMAL(19, 2)" />
+			<column name="quantityUnitId" type="INT" />
+			<column name="container_id" type="BIGINT" />
+			<column name="parentLom_id" type="BIGINT" />
+			<column name="sample_id" type="BIGINT" />
+			<column name="subSample_id" type="BIGINT" />
+		</createTable>
+	
+		<addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="ListOfMaterials_AUD" />
+		<addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="MaterialUsage_AUD" />
+		
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="ListOfMaterials_AUD"
+			constraintName="FK_f260rgplm38ve0wibnm6reybq" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="REV" referencedTableName="REVINFO" />
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="MaterialUsage_AUD"
+			constraintName="FK_9pj30wcfiujc6w1bbrmha6noh" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="REV" referencedTableName="REVINFO" />
+	</changeSet>
+	
+	<changeSet id="2021-06-17a" author="matthias" context="run">
+		<comment>For Samples not having default unit id set the value from Sample Template. 
+		Then, for SubSamples not having default quantity, set it to 0 (use parent's default unit).</comment>
+		<sql>
+			update Sample s join Sample st on s.STemplate_id = st.id 
+				set s.defaultUnitId = st.defaultUnitId where s.defaultUnitId is null;
+			
+			update SubSample ss join Sample s on ss.sample_id = s.id 
+				set ss.quantityNumericValue = 0, ss.quantityUnitId = s.defaultUnitId 
+				where ss.quantityNumericValue is null;
+		</sql>
+	</changeSet>
+	
+	<changeSet id="2021-06-17b" author="matthias" context="run">
+		<comment>Add db constraints ensuring Sample/SubSample always have some default unit and quantity set.</comment>
+		
+		<addNotNullConstraint columnDataType="int(10)" columnName="defaultUnitId" tableName="Sample"/>
+		<addNotNullConstraint columnDataType="int" columnName="quantityUnitId" tableName="SubSample"/>
+	</changeSet>
+	
+	<changeSet id="2021-06-28" author="matthias" context="run">
+		<comment>Inventory storing quantity with 3 decimal places precision.</comment>
+
+		<modifyDataType columnName="quantityNumericValue" newDataType="DECIMAL(19,3)" tableName="Container"/>
+		<modifyDataType columnName="quantityNumericValue" newDataType="DECIMAL(19,3)" tableName="Container_AUD"/>
+		<modifyDataType columnName="quantityNumericValue" newDataType="DECIMAL(19,3)" tableName="Sample"/>
+		<modifyDataType columnName="quantityNumericValue" newDataType="DECIMAL(19,3)" tableName="Sample_AUD"/>
+		<modifyDataType columnName="quantityNumericValue" newDataType="DECIMAL(19,3)" tableName="SubSample"/>
+		<modifyDataType columnName="quantityNumericValue" newDataType="DECIMAL(19,3)" tableName="SubSample_AUD"/>
+		<modifyDataType columnName="quantityNumericValue" newDataType="DECIMAL(19,3)" tableName="MaterialUsage"/>
+		<modifyDataType columnName="quantityNumericValue" newDataType="DECIMAL(19,3)" tableName="MaterialUsage_AUD"/>
+	
+	
+		<modifyDataType columnName="storageTempMaxNumericValue" newDataType="DECIMAL(19,3)" tableName="Sample"/>
+		<modifyDataType columnName="storageTempMinNumericValue" newDataType="DECIMAL(19,3)" tableName="Sample"/>
+		<modifyDataType columnName="storageTempMaxNumericValue" newDataType="DECIMAL(19,3)" tableName="Sample_AUD"/>
+		<modifyDataType columnName="storageTempMinNumericValue" newDataType="DECIMAL(19,3)" tableName="Sample_AUD"/>
+	</changeSet>
+
+</databaseChangeLog>

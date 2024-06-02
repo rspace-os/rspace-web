@@ -1,0 +1,24 @@
+body {
+    margin: 0px;
+}
+
+#collabora_frame {
+    width: 100%;
+    height: 100%;
+    border-width: 0px;
+}
+
+.ui-dialog {
+    z-index: 1000;
+}
+
+.frameholder {
+    position: relative;
+}
+
+.collabora-close-btn {
+    display: none;
+    position: absolute;
+    top: 15px;
+    left: 15px;
+}

@@ -1,0 +1,22 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.98 April 2024 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+
+    <changeSet id="2024-03-11" author="matthias" context="run">
+        <comment>
+            RSDEV-14: remove Sample.optLock column used for jpa version tracking
+        </comment>
+        <dropColumn columnName="optLock" tableName="Sample"/>
+        <dropColumn columnName="optLock" tableName="Sample_AUD"/>
+    </changeSet>
+
+</databaseChangeLog>

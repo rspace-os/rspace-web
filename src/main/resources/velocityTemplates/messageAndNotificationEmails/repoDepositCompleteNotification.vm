@@ -1,0 +1,19 @@
+#if($result.succeeded)
+Your deposit to repository $!app.label is complete.
+#else
+Your deposit to repository $!app.label failed.
+#end
+<br/>
+#if($result.message)
+Here is the message from the repository:
+<br/>
+$result.message
+<br/>
+#end
+#if($result.url)
+ <a href="$result.url">$result.url</a>
+#else
+ <br>No URL for the repository could be retrieved</br>
+#end
+<br/>
+#dontReply

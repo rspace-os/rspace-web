@@ -1,0 +1,137 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.43 April 2017 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+	<changeSet author="richard" id="17-04-17-RS779a" context="run">
+	<comment>Create Math table</comment>
+		<createTable tableName="RSMath">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="field_id" type="BIGINT" />
+			<column name="mathSvg_id" type="BIGINT" />
+			<column name="record_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet author="richard" id="17-04-17-RS779b" context="run">
+	<comment>add 1ary key to Math table</comment>
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="RSMath" />
+	</changeSet>
+
+	<changeSet author="richard" id="17-04-17-RS779c" context="run">
+	<comment>FK mapping to Field to Math table</comment>
+		<addForeignKeyConstraint baseColumnNames="field_id"
+			baseTableName="RSMath" constraintName="FK_53o818esycj250k9vfq43bwo1"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Field" />
+	</changeSet>
+
+	<changeSet author="richard" id="17-04-17-RS779d" context="run">
+	<comment>FK mapping to Record to Math table</comment>
+		<addForeignKeyConstraint baseColumnNames="record_id"
+			baseTableName="RSMath" constraintName="FK_m6l20a3fxxhv6dxk0ksajfac3"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Record" />
+	</changeSet>
+	<changeSet author="richard" id="17-04-17-RS779e" context="run">
+	<comment>FK mapping to SVG blob to Math table</comment>
+		<addForeignKeyConstraint baseColumnNames="mathSvg_id"
+			baseTableName="RSMath" constraintName="FK_pdojjawkeij3j15t9gxf4910h"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ImageBlob" />
+	</changeSet>
+	<changeSet author="richard" id="17-04-17-RS779f" context="run">
+	<comment>Create RSMath_AUD table</comment>
+		<createTable tableName="RSMath_AUD">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="field_id" type="BIGINT" />
+			<column name="mathSvg_id" type="BIGINT" />
+			<column name="record_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet author="richard" id="17-04-17-RS779g" context="run">
+	<comment>Create RSMath_AUD 1ary key</comment>
+		<addPrimaryKey columnNames="id, REV" constraintName="PRIMARY"
+			tableName="RSMath_AUD" />
+	</changeSet>
+	<changeSet author="richard" id="17-04-17-RS779h" context="run">
+	<comment>Add FK to rev table</comment>
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="RSMath_AUD" constraintName="FK_m3cpaywqgdl7f5wygnfcu2o3k"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="REV" referencedTableName="REVINFO" />
+	</changeSet>
+	<changeSet author="richard" id="17-04-17-RS779i" context="run">
+	 <comment> add latex data column</comment>
+	 <addColumn tableName="RSMath">
+	   <column name="latex"  type="VARCHAR(2000)"></column>
+	 </addColumn>
+	 <addNotNullConstraint tableName="RSMath" columnName="latex" columnDataType="VARCHAR(2000)"/>
+	</changeSet>
+	<changeSet author="richard" id="17-04-17-RS779j" context="run">
+	 <comment> add latex data column</comment>
+	 <addColumn tableName="RSMath_AUD">
+	   <column name="latex"  type="VARCHAR(2000)"></column>
+	 </addColumn>
+	 <addNotNullConstraint tableName="RSMath" columnName="latex" columnDataType="VARCHAR(2000)"/>
+	</changeSet>
+	<changeSet author="richard" id="24-04-17a" context="run">
+		<comment>Add verification password for SSO RSPAC-1206</comment>
+		<addColumn tableName="User">
+			<column name="verificationPassword" type="VARCHAR(255)" />
+		</addColumn>
+	</changeSet>
+	<changeSet author="karolis" id="17-04-17-a" context="run">
+		<comment>add a community column to SystemPropertyValue</comment>
+		<addColumn tableName="SystemPropertyValue">
+			<column name="community_id" type="BIGINT"/>
+		</addColumn>
+		<addForeignKeyConstraint baseColumnNames="community_id" baseTableName="SystemPropertyValue"
+								 constraintName="FK_drtsb215dfp02l875hmfseykv" deferrable="false"
+								 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+								 referencedColumnNames="id" referencedTableName="Community"/>
+	</changeSet>
+	<changeSet author="karolis" id="17-04-17-b">
+		<comment>update existing system property values from true to ALLOWED</comment>
+		<update tableName="SystemPropertyValue">
+			<column name="value" value='ALLOWED' type="varchar(255)"/>
+			<where>value='true'</where>
+		</update>
+	</changeSet>
+	<changeSet author="karolis" id="17-04-17-c">
+		<comment>update existing system property values from false to DENIED</comment>
+		<update tableName="SystemPropertyValue">
+			<column name="value" value='DENIED' type="varchar(255)"/>
+			<where>value='false'</where>
+		</update>
+	</changeSet>
+	<changeSet author="karolis" id="17-04-17-d">
+		<comment>update property descriptor default values to DENIED_BY_DEFAULT</comment>
+		<update tableName="PropertyDescriptor">
+			<column name="defaultValue" value='DENIED_BY_DEFAULT' type="varchar(255)"/>
+			<column name="type" value='3' type="int"/>
+			<where>type=0</where>
+		</update>
+	</changeSet>
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

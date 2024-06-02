@@ -1,0 +1,70 @@
+{
+  "data": [
+    {
+      "name": "idr0001-graml-sysgro/screenA",
+      "id": 3,
+      "description": "Publication Title\nA genomic Multiprocess survey of machineries that control and link cell shape, microtubule organization, and cell-cycle progression.\n\nScreen Description\nPrimary screen of fission yeast knock out mutants looking for genes controlling cell shape, microtubules, and cell-cycle progression. 262 genes controlling specific aspects of those processes are identifed, validated, and functionally annotated.",
+      "childCounts": 192,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "screen",
+      "children": [],
+      "parentId": null
+    },
+    {
+      "name": "idr0002-heriche-condensation/screenA",
+      "id": 102,
+      "description" : "K",
+      "childCounts": 12,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "screen",
+      "children": [],
+      "parentId": null
+    },
+    {
+      "name": "idr0145-ho-replicationstress/screenA",
+      "id": 3301,
+      "description" : "K",
+      "childCounts": 7,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "screen",
+      "children": [],
+      "parentId": null
+    },
+    {
+      "name": "idr0006-fong-nuclearbodies/screenA",
+      "id": 253,
+      "description": "Publication Title\nWhole-genome screening identifies proteins localized to distinct nuclear bodies.\n\nScreen Description\nA whole-genome screening for proteins localized to distinct nuclear bodies using 15,483 ORFs in the Human ORFeome Library.  A total of 325 proteins were identified in various nuclear bodies, which include 148 nucleolar proteins, 38 proteins in PML bodies, 27 proteins in nuclear speckles, 24 proteins in paraspeckles, 17 proteins in Cajal bodies, 5 proteins in Sam68 nuclear bodies, 2 proteins in Polycomb bodies, and 64 proteins in uncharacterized nuclear subcompartments. An additional 48 proteins were identified that are targeted to the nuclear envelope.",
+      "childCounts": 169,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "screen",
+      "children": [],
+      "parentId": null
+    },
+    {
+      "name": "idr0094-ellinger-sarscov2/screenB",
+      "id": 2603,
+      "description" : "K",
+      "childCounts": 102,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "screen",
+      "children": [],
+      "parentId": null
+    },
+    {
+      "name": "idr0145-ho-replicationstress/screenB",
+      "id": 3302,
+      "description" : "K",
+      "childCounts": 7,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "screen",
+      "children": [],
+      "parentId": null
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<!-- Changes for version 0.28 August 2015-->
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets !  -->
+<!-- Add changesets here... -->
+<changeSet author="radams (generated)" id="1441290758096-6" context="run">
+<comment>RSPAC-333 admin can view all docs in group</comment>
+<addColumn tableName="UserGroup">
+<column name="adminViewDocsEnabled" type="BIT(1)" defaultValueBoolean="0">
+<constraints nullable="false"/>
+</column>
+</addColumn>
+</changeSet>
+
+<changeSet author="matthias" id="2015-09-04" context="run">
+    <comment>Adding column holding record_id to Comments/Annotations/Chemicals, with foreign key relation</comment>
+    <addColumn tableName="ecat_comm">
+        <column name="record_id" type="BIGINT(19)" />
+    </addColumn>
+    <addColumn tableName="ecat_comm_AUD">
+        <column name="record_id" type="BIGINT(19)" />
+    </addColumn>
+    <addColumn tableName="ecatImageAnnotation">
+        <column name="record_id" type="BIGINT(19)" />
+    </addColumn>
+    <addColumn tableName="ecatImageAnnotation_AUD">
+        <column name="record_id" type="BIGINT(19)" />
+    </addColumn>
+    <addColumn tableName="RSChemElement">
+        <column name="record_id" type="BIGINT(19)" />
+    </addColumn>
+    <addColumn tableName="RSChemElement_AUD">
+        <column name="record_id" type="BIGINT(19)" />
+    </addColumn>
+
+    <addForeignKeyConstraint
+        baseColumnNames="record_id" baseTableName="ecat_comm"
+        constraintName="FK81AC293A1A94D963" deferrable="false"
+        initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+        referencedColumnNames="id" referencedTableName="Record" />
+    <addForeignKeyConstraint
+        baseColumnNames="record_id" baseTableName="ecatImageAnnotation"
+        constraintName="FKA941D591A94D963" deferrable="false"
+        initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+        referencedColumnNames="id" referencedTableName="Record" />
+    <addForeignKeyConstraint
+        baseColumnNames="record_id" baseTableName="RSChemElement"
+        constraintName="FKD43D0D6E1A94D963" deferrable="false"
+        initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+        referencedColumnNames="id" referencedTableName="Record" />
+</changeSet>
+
+<changeSet author="matthias" id="2015-09-10">
+    <comment>Parent id on Chemical elements should be optional</comment>
+    <dropNotNullConstraint columnDataType="bigint(19)" columnName="parentId" tableName="RSChemElement"/>
+</changeSet>
+
+<changeSet author="matthias" id="2015-09-11-a" context="run">
+    <comment>Create join table for EcatMedia and Record</comment>
+    <createTable tableName="RecordAttachment">
+        <column name="id" type="BIGINT">
+            <constraints nullable="false" />
+        </column>
+        <column name="mediaFile_id" type="BIGINT" />
+        <column name="record_id" type="BIGINT" />
+    </createTable>
+
+    <addPrimaryKey columnNames="id" constraintName="PRIMARY"
+        tableName="RecordAttachment" />
+    <addForeignKeyConstraint
+        baseColumnNames="record_id" baseTableName="RecordAttachment"
+        constraintName="FK101974741A94D963" deferrable="false"
+        initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+        referencedColumnNames="id" referencedTableName="Record" />
+    <addForeignKeyConstraint
+        baseColumnNames="mediaFile_id" baseTableName="RecordAttachment"
+        constraintName="FK101974743319B855" deferrable="false"
+        initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+        referencedColumnNames="id" referencedTableName="EcatMediaFile" />
+    <sql>alter table RecordAttachment engine=InnoDB;</sql>
+</changeSet>
+
+<changeSet author="matthias" id="2015-09-11-b" context="run">
+    <comment>Create join _AUD table for EcatMedia and Record</comment>
+    <createTable tableName="RecordAttachment_AUD">
+        <column name="id" type="BIGINT">
+            <constraints nullable="false" />
+        </column>
+        <column name="REV" type="INT">
+            <constraints nullable="false" />
+        </column>
+        <column name="REVTYPE" type="TINYINT" />
+        <column name="mediaFile_id" type="BIGINT" />
+        <column name="record_id" type="BIGINT" />
+    </createTable>
+
+    <addPrimaryKey columnNames="id, REV"
+        constraintName="PRIMARY" tableName="RecordAttachment_AUD" />
+    <addForeignKeyConstraint
+        baseColumnNames="REV" baseTableName="RecordAttachment_AUD"
+        constraintName="FKC4CE4845DF74E053" deferrable="false"
+        initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+        referencedColumnNames="REV" referencedTableName="REVINFO" />
+    <sql>alter table RecordAttachment_AUD engine=InnoDB;</sql>            
+</changeSet>
+
+<changeSet author="matthias" id="2015-09-29" context="run">
+    <validCheckSum>7:420e9d3182089423b4988823ed000a2f</validCheckSum>
+    <comment>Message length increased to 2000 chars</comment>
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="Communication_AUD" />
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="CreateGroupMessageOrRequest" /> 
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="GroupMessageOrRequest" />
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="GroupMessageOrRequest_AUD" />
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="MessageOrRequest" />
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="MessageOrRequest_AUD" />
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="Notification" />
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="Notification_AUD" />
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="ShareRecordMessageOrRequest" />
+    <modifyDataType columnName="message" newDataType="clob"
+        tableName="ShareRecordMessageOrRequest_AUD" />
+</changeSet>
+
+
+<!--  only customChange changeSets should be placed below here -->
+
+<changeSet id="15-09-21a" author="richard" >
+        <comment>Log images without corresponding FA entries</comment>
+        <customChange
+            class="com.researchspace.dao.customliquibaseupdates.AddLinksToImagesInFields_1_29">
+        </customChange>
+ </changeSet>
+
+<changeSet id="2015-09-24" author="matthias" context="run">
+     <!-- this is for a clean deployment where the FileProperty table is still called 'FilePropertys',
+      for a clean (new deployment) this changeset doesn't need to be run -->
+    <preConditions onFail="MARK_RAN">
+     <tableExists tableName="FileProperty"/>
+    </preConditions>
+    <comment>Create RecordAttachments and correct parentId/record relation between snippets and elements in their content</comment>
+    <customChange 
+        class="com.researchspace.dao.customliquibaseupdates.v29.UpdateReferencesInSnippetAttachments">
+    </customChange>
+</changeSet>
+
+</databaseChangeLog>

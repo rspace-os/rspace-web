@@ -1,0 +1,3738 @@
+swagger: '2.0'
+info:
+  title: RSpace API
+  description: >
+    Welcome to the RSpace API. This API enables you to search for and retrieve
+    your ELN data. It contains methods to create documents, upload files, and
+    search, share and retrieve them.
+
+    This documentation enables you to interactively explore the API using your
+    own data, and to generate `curl` and client code snippets.
+
+
+    API endpoints require client to be authenticated, so to use this documentation
+    interactively you need to click on 'Authorize' button below and authenticate
+    with your preferred method.
+
+    #### Authentication with an API key
+
+    To create an API key go to 'Manage API Key' section of your profile page
+    (MyRSpace -> Profile). You should keep your API key private. You can
+    regenerate API key at any time, which will invalidate the old key.
+
+    #### Authentication with OAuth
+
+    We have limited support for OAuth 'password' grant flow using `/oauth/token`
+    endpoint. You can register OAuth app on your profile page (My RSpace -> Profile).
+    For more information check our [Github documentation](https://github.com/rspace-os/api-tutorial/blob/master/oauth.md).
+
+
+    Note: when using OAuth with this interactive documentation change 'type' option
+    of 'Authorize' dialog from default 'Request body' to 'Query parameters'.
+
+    #### Versioning notes
+
+    The current _API_ version of the API is `version 1` and all URL paths begin
+    with /api/v1. Incremental changes to the API will be backwards compatible.
+    In practice, we'll be adding new methods, but keeping the old ones
+    unchanged.
+
+
+    The version of the API specified in the  `version` field of this
+    documentation indicates the specific implementation version, and is tied to RSpace version.
+
+
+    If you always work with a single instance of RSpace, code you write using the API should always work in future versions of that RSpace. If, however, you use more than one RSpace (perhaps you have an account on Community and an Enterprise account),  then code developed against a later implementation version of the API may not work on an earlier version running on a different  RSpace as the methods may not exist on the earlier version. See our full [Api
+    Changelog](https://researchspace.helpdocs.io/article/dj4l39d70d-api-changelog)
+    for details.
+
+    #### Language support
+
+    A high-level overview of API usage can be found on our [Github
+    page](https://github.com/rspace-os/api-tutorial). We are also  developing
+    rich language bindings and example code for `Python`, `Java` and others.
+    Please suggest any use-cases or ideas for improving the API!
+
+  version: "1.97"
+
+  termsOfService: >-
+    Currently unrestricted, subject to usage limits returned in X-Rate-Limit
+    header headers.
+  license:
+    name: Apache2 License
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+  contact:
+    name: RSpace API Support
+    email: support@researchspace.com
+basePath: /api/v1
+produces:
+  - application/json
+consumes:
+  - application/json
+security:
+  - ApiKeySecurity: []
+  - OAuth: []
+securityDefinitions:
+  ApiKeySecurity:
+    description: Authentication system based on API Key.
+    type: apiKey
+    in: header
+    name: apiKey
+  OAuth:
+    type: oauth2
+    flow: password
+    tokenUrl: /oauth/token
+    scopes:
+      all: Grants access to whole of API
+paths:
+  /documents:
+    get:
+      summary: All documents & advanced search
+      description: >
+        The Documents endpoint returns a paginated list of summary information
+        about  Documents in the RSpace workspace. These can be individual
+        documents or notebook entries.
+
+        The default number returned is 20; the maximum in a single query is
+        50.   The default sort order is by descending modification date. I.e,
+        most recently modified documents are returned first.
+
+        For a detailed description of how search terms are combined and
+        interpreted please visit our  [Search
+        Help](https://researchspace.helpdocs.io/article/k919di8naq-advanced-searching).
+
+        Example queries - these examples are not URL encoded, for clarity, but
+        in real usage, URL encoding should be used.
+
+        | Query | Explanation |
+
+        | --- | --- |
+
+        /documents?query=pcr | Gets documents containing the word 'pcr'
+        anywhere.
+
+        /documents?query=mouse&orderBy=created asc&pageSize=10| Gets first 10
+        documents containing the word 'mouse' anywhere, ordered by document's
+        name.
+
+        /documents?advancedQuery={ "operator": "and", "terms": [{"query" :
+        "pcr", "queryType": "tag" }, { "query": "l:protein AND mouse",
+        "queryType": "fullText"}]}&pageSize=50 | Gets first 50 documents tagged
+        with 'pcr', containing the words 'protein' and 'mouse' anywhere in the
+        content.
+      produces:
+        - application/json
+      tags:
+        - Documents
+      parameters:
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - $ref: '#/parameters/orderByParam'
+        - $ref: '#/parameters/queryParam'
+        - $ref: '#/parameters/advancedQueryParam'
+        - name: filter
+          in: query
+          description: One or more filters to apply to restrict the returned documents.
+          type: string
+          enum:
+            - favorites
+            - sharedWithMe
+      responses:
+        '200':
+          description: A list of DocumentInfo objects.
+          schema:
+            title: Search Results
+            properties:
+              totalHits:
+                type: number
+              pageNumber:
+                type: number
+              documents:
+                $ref: '#/definitions/DocumentInfoList'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period.
+              type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period.
+              type: integer
+            X-Rate-Limit-MinWaitIntervalMillis:
+              description: >-
+                The minimum time a client should wait, in milliseconds, before
+                sending another request.
+              type: integer
+          examples:
+            totalHits: 10
+            pageNumber: 2
+            documents:
+              - id: 1242
+                globalId: SD1242
+                name: Entry 3
+                created: '2016-12-07T13:07:57.000Z'
+                lastModified: '2016-12-07T13:07:56.668Z'
+                parentFolderId: 1221
+                signed: false
+                tags: null
+                form:
+                  id: 589826
+                  globalId: FM589826
+                  name: Basic Document
+                  stableId: 1481116074543null
+                  version: 0
+                owner:
+                  id: 950272
+                  username: mattk
+                  email: mattk@myrspace.com
+                  firstName: Matt
+                  lastName: K
+                  homeFolderId: 23456
+                _links:
+                  - link: 'https://myrspace.com/api/v1/documents/1242'
+                    rel: self
+              - id: 1241
+                globalId: SD1241
+                name: Entry 2
+                created: '2016-12-07T13:07:57.000Z'
+                lastModified: '2016-12-07T13:07:56.666Z'
+                parentFolderId: 1221
+                signed: false
+                tags: null
+                form:
+                  id: 589826
+                  globalId: FM589826
+                  name: Basic Document
+                  stableId: 1481116074543null
+                  version: 0
+                owner:
+                  id: 950272
+                  username: mattk
+                  email: mattk@myrspace.com
+                  firstName: Matt
+                  lastName: K
+                  homeFolderId: 23456
+                _links:
+                  - link: 'https://myrspace.com/api/v1/documents/1241'
+                    rel: self
+            _links:
+              - link: 'https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=1'
+                rel: prev
+              - link: 'https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=0'
+                rel: first
+              - link: 'https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=3'
+                rel: next
+              - link: 'https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=4'
+                rel: last
+              - link: 'https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=2'
+                rel: self
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '429':
+          $ref: '#/responses/TooManyRequests'
+    post:
+      summary: Create a new document
+      description: >-
+
+        The POST request sent to `/documents` endpoint creates a new document in
+        the   Workspace.
+
+        The request body should be a JSON object that specifies the details  of
+        the document that should be created and must be parsable into
+        #/definitions/Document model. All properties are optional, so an empty
+        JSON  object `{}` is a valid request body that will create an empty
+        document.
+
+        The `name`, `tags`, `form`, `parentFolderId` and `fields` properties are
+        read from the JSON object attached to the POST request, and are
+        processed according to  the rules described below.
+
+        See also [creating Document
+        section](https://github.com/rspace-os/api-tutorial#creating-documents)
+        of our [Github API tutorial](https://github.com/rspace-os/api-tutorial).
+
+        ## Rules for parsing POST request body
+
+        Provided request body must match #definitions/Document model (see the
+        bottom of the page). Only `name`, `tags`, `form`, `parentFolderId` and
+        `fields` properties are processed, other properties are skipped.
+
+        ### When parsing `name` and `tags` properties:
+          * the properties may be omitted
+          * if provided, should be valid `name` or `tags` for the document
+          * `tags` are saved by populating the `tags` field, any values in the `tagMetaData` field are ignored
+          * If `enforceOntologies` is true then API document creation that would add tag values will be rejected.
+
+        ### When parsing `form` property:
+          * `form` property can be left empty, in such case 'Basic Document' form
+            will be used. This form has one text field
+          * alternatively, specific form can be selected by providing either id
+            or global ID property
+
+        ### When parsing `parentFolderId` property:
+
+          * The folder ID must be the id of a folder in the Workspace, *not* a Gallery folder or a subfolder of the 'Shared' folder.
+          * If no folderID is provided, document will be created in 'ApiInbox' folder.
+
+        ### When parsing `fields` array:
+          * `fields` array may be omitted - that will create document without any content.
+          * if `fields` array is provided, its size MUST match the number of fields in form
+            (e.g. one element for Basic Document form)
+
+        ### When parsing `fields` array elements:
+          * each element will be matched to the field in form with the same index
+          * each element may be an empty object (`{}`), which means that paricular field
+            shouldn't have any content set when creating a document
+          * each element may provide `name` or `type` value which, if provided, MUST match
+            the name and type of field in form
+          * each element will have its `content` validated against any validation set for
+            the field in form
+
+        ## Different field types and their content.
+          In RSpace every document contains a list of fields, and each field has a type.
+          How many and which fields the document has depends on the form it is based on.
+          The default `Basic Document` form has a single text type field, which can store
+          any content, as well as links to Gallery files. Other forms may have fields of
+          different types, and when using the API to create documents based on such forms
+          API client must provide the content matching the required fields format and
+          validation rules set in form definition.
+
+          When creating a form, there are seven field types to choose from:
+           * `text` - represents html content, may include complex elements like sketches
+              or chemical drawings (added through the main app) and Gallery attachments
+              (images or files) which can be added through main app or API
+           * `string` - represents short text content
+           * `number` - represents numeric value, may have some validation rules
+           * `choice` - represents multiple-choice field with predefined options
+           * `radio`  - represents single-choice field with predefined options
+           * `date`   - represents a date in particular format, may have some validation rules
+           * `time`   - represents a time in particular format, may have some validation rules
+           * `reference` - a comma separated list of GlobalId references to other RSpace resources
+           * `attachment` a file to upload and store
+           * `uri` A valid URI string; for example a link to an external resource.
+
+        ## Attaching Gallery files to the document.
+          * Files previously uploaded to RSpace Gallery can be attached to the content of the
+            text field. The result will be identical to using  'Insert from Gallery' functionality
+            in the main app
+          * to attach an image or other document put the &lt;fileId=`ID`&gt; tag into the content
+            of text  field content, where `ID` should be replaced with id of the Gallery file
+          * linking to audio/video files is currently not supported
+
+        ## Linking to other documents/folders/notebooks
+          * You can add links to other RSpace content like documents/folders/notebooks if you know their ID, using syntax &lt;docId=`ID`&gt;.
+
+          * The result will be rendered in the web UI in exactly the same way
+             as if you had pasted the link or added an 'Internal Link' in the web application.
+
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+
+        | --- | --- |
+
+        `{}` | Creates a document named "Untitled document", based on Basic
+        Document form, with empty content.
+
+        `{ "name": "My Document", "tags": "API", "fields": [ { "content": "ABC"
+        } ]}` | Creates a document named "My Experiment", based on Basic
+        Document form, with `ABC` content.
+
+        `{ "name": "My Experiment", "form": { "id": 2 } }` | Creates a new
+        document based on form with id = 2, and empty content.
+
+        More advanced examples can be found in out [Github API
+        tutorial](https://github.com/rspace-os/api-tutorial#creating-and-editing-multi-field-documents).
+      tags:
+        - Documents
+      parameters:
+        - $ref: '#/parameters/docBodyParam'
+      responses:
+        '201':
+          description: >-
+            Success. Returned object represents newly created document. The
+            '_links' property contains a link to the new document.
+          schema:
+            $ref: '#/definitions/DocumentInfo'
+          examples:
+            application/json:
+              id: 22
+              globalId: SD22
+              name: My Experiment
+              created: '2017-07-09T00:00:00.000Z'
+              lastModified: '2017-07-09T00:00:00.000Z'
+              parentFolderId: 12
+              signed: false
+              tags: API
+              form:
+                id: 12
+                globalId: FM12
+                name: Basic Document
+                stableId: abcde
+                version: 1
+              owner:
+                id: 1
+                username: bsmith
+                email: bsmith@somewhere.com
+                firstName: Bob
+                lastName: Smith
+                homeFolderId: 23456
+              _links:
+                - link: 'https://myrspace.com/api/v1/documents/22'
+                  rel: self
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '500':
+          $ref: '#/responses/LicenseProblem'
+  '/documents/{docId}':
+    get:
+      summary: Retrieve a complete document by ID
+      description: >
+        Gets a document, returning a deep JSON structure that includes:
+          * The document metadata
+          * All field content
+          * Metadata about media items belonging to this document
+          * Links to download the content of media files
+
+        A CSV representation of a list of Fields can also be obtained by setting
+        an "Accept: text/csv" Header in your request or appending ".csv" to the
+        URL. Error messages are also returned in CSV format.
+      produces:
+        - application/json
+        - text/csv
+      tags:
+        - Documents
+      parameters:
+        - $ref: '#/parameters/docIdParam'
+      responses:
+        '200':
+          description: A  Document
+          schema:
+            $ref: '#/definitions/Document'
+          examples:
+            application/json:
+              id: 23
+              globalId: SD23
+              name: MyExperiment
+              created: '2016-11-09T00:00:00.000Z'
+              lastModified: '2016-11-10T00:00:00.000Z'
+              parentFolderId: 12
+              signed: false
+              tags: 'Some College,tag1,A tag__rspactags_comma__ with commas and __rspactags_forsl__ forwardslash'
+              tagMetaData: 'Some College__RSP_EXTONT_URL_DELIM__NONE__RSP_EXTONT_NAME_DELIM__MYONTOLOGY__RSP_EXTONT_VERSION_DELIM__1,tag1,A tag__rspactags_comma__ with commas and [__rspactags_forsl__] forwardslash__RSP_EXTONT_URL_DELIM__NONE__RSP_EXTONT_NAME_DELIM__MYONTOLOGY__RSP_EXTONT_VERSION_DELIM__1'
+              form:
+                id: 123
+                globalId: FM123
+                name: Experiment
+                stableId: abcde
+                version: 6
+              owner:
+                id: 1
+                username: bsmith
+                email: bsmith@somewhere.com
+                firstName: Bob
+                lastName: Smith
+                homeFolderId: 23456
+              fields:
+                - id: 32
+                  globalId: FD32
+                  name: Method
+                  lastModified: '2016-11-10T11:04:13.047Z'
+                  type: text
+                  content: >-
+                    <p> Add 2ul 50uM EDTA to Xenopus egg extract. <p> See <a
+                    href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3437562/">here</a>
+                  files:
+                    - id: 33
+                      globalId: GL33
+                      name: Worddocument.doc
+                      caption: PCR prep for Xenopus oocyte cDNA
+                      contentType: application/msword
+                      created: 2017-03-25T00:00:00.000Z
+                      size: 1234789
+                      _links:
+                        - link: 'https://myrspace.com/api/v1/files/33'
+                          rel: self
+                        - link: 'https://myrspace.com/api/v1/files/33/file'
+                          rel: enclosure
+                    - id: 24
+                      globalId: GL24
+                      name: EquipmentSetup.png
+                      caption: null
+                      contentType: image/png
+                      size: 23964
+                      _links:
+                        - link: 'https://myrspace.com/api/v1/files/24'
+                          rel: self
+                        - link: 'https://myrspace.com/api/v1/files/24/file'
+                          rel: enclosure
+                - id: 33
+                  globalId: FD32
+                  name: Results
+                  lastModified: '2016-11-02T11:04:11.047Z'
+                  type: text
+                  content: ' <ul><li>Observation 1 <li> Observation 2 <li>Observation 3 </ul>'
+                  files: null
+              _links:
+                - link: 'https://myrspace.com/api/v1/documents/23'
+                  rel: self
+            text/csv: >
+              id,globalId,name,type,lastModified,content
+
+              32,FD32,Method,text,2016-11-10T11:04:13.047Z,<p> Add 2ul 50uM EDTA
+              to Xenopus egg extract. <p> See <a
+              href=\"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3437562/\">here</a>
+
+              33,FD33,Results,text,2016-11-02T11:04:11.047Z,<ul><li>Observation
+              1 <li> Observation 2 <li>Observation 3 </ul>
+        '404':
+          $ref: '#/responses/NotFound'
+    put:
+      summary: Create a new version of a document with given ID
+      description: >
+        The PUT request sent to `/documents/{docId}` endpoint creates a new
+        revision  of a document with given `docId`.
+
+        The request body should be a JSON object that specifies the details  of
+        the update, and must be parsable into #/definitions/Document model.  All
+        properties are optional, so empty JSON object `{}` is a valid request
+        body that will create new revision of a document.
+
+        See also [editing existing
+        content](https://github.com/rspace-os/api-tutorial#editing-existing-content-in-a-basic-document)
+        section of our [Github API
+        tutorial](https://github.com/rspace-os/api-tutorial).
+
+        ## Rules for parsing PUT request body
+
+        `docId` has to be provided as a path parameter, but may be omitted from
+        JSON document passed in body.
+
+        Only fields that should change can to be provided, e.g. if the request
+        should only change document's name, then document body in form of `{
+        "name" : "new name" }` is enough.
+
+        `form` field is not needed, but if provided, its `id` parameter MUST
+        match the id of the document's form.
+
+        ### Updating document name or tags
+          * If `name` or `tags/tagMetaData` are provided, they should be valid `name` or `tags` for the document
+          * The `tags` field may only contain tag values. **The API may not save tagMetaData.** Values in the
+        tagMetaData field of API updates are ignored. If tag values are unchanged,
+        existing tagMetaData is unchanged in the DB. If the API creates new tagValues, they will be saved to tagMetaData
+        as values with no meta data and will appear in the UI as 'local ontology'.
+
+        * Tag values MUST replace commas in the tag value with __rspactags_comma__ and forward slashes with __rspactags_forsl__ or API updates will be rejected.
+        Tag values are still comma delimited
+
+        * Tag values must not contain "<", ">", "\" or "/" - or API updates will be rejected.
+
+        * Its possible to erase ALL tag and tagMetaData for a document by updating with a tags or tagMetaData value of "" (empty string)
+
+        * If the API contains NO VALUE for tags, the existing tags will remain unchanged.
+
+        * If `enforceOntologies` is true for any group the user belongs to, then any API update that would create NEW tags will be rejected. Existing
+        tags may still be deleted.
+
+        * Therefore, if a document already contains meta data values in its tagMetaData field for 'a value', the following PUT request
+        will leave existing tagMeta data unchanged:
+        ```
+        {
+        "name": "My Experiment",
+        "tags": "a value"
+        }
+        ```
+
+        * The following put request has not replaced the comma with __rspactags_comma__ and so TWO tags will be saved 'a value' and 'with a comma':
+              ```
+              {
+              "name": "My Experiment",
+              "tags": "a value, with a comma"
+              }
+              ```
+        * The following put request is correct and saved a single tag which will show in the UI: 'a value, with a comma':
+            ```
+            {
+            "name": "My Experiment",
+            "tags": "a value__rspactags_comma__ with a comma"
+            }
+            ```
+
+        * The following PUT request will replace existing tagMetaData
+        ```
+                {
+                "name": "My Experiment",
+                "tags": "a value2"
+                }
+                ```
+
+        * The following PUT request will also be allowed and will delete ALL tags in that document:
+        ```
+                {
+                "name": "My Experiment",
+                "tags": ""
+                }
+                ```
+
+        * EnforceOntologies is true: the following PUT request will also be allowed and will delete ALL tags in that document:
+               ```
+               {
+               "name": "My Experiment",
+               "tags": ""
+               }
+               ```
+
+        * EnforceOntologies is true: the following PUT request will be rejected:
+             ```
+             {
+             "name": "My Experiment",
+             "tags": "a new tag"
+             }
+             ```
+
+        * Lastly, the following PUT request will leave tags and tagMetaData unchanged
+            ```
+            {
+            "name": "My Experiment"
+            }
+            ```
+
+
+        ### Updating document content
+          New content should be provided in `fields` array. When providing the fields, there are two options:
+           * provide only fields that should be modified - each field MUST have `id` matching one of the document's fields
+           * alternatively, if you provide all fields in order matching document's field, then `id` parameters may be omitted
+
+          If any field has `id` parameter it MUST match the id of document's field with the same index.
+
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+
+        | --- | --- |
+
+        `{ "name": "new name"}` | Renames a document (new revision is also
+        created).
+
+        `{ "fields": [{ "content": "updated content"}] }` | Creates new revision
+        of a document, with the content of the only text field updated.
+
+
+        More advanced examples can be found in out [Github API
+        tutorial](https://github.com/rspace-os/api-tutorial#creating-and-editing-multi-field-documents).
+
+      tags:
+        - Documents
+      parameters:
+        - $ref: '#/parameters/docIdParam'
+        - $ref: '#/parameters/docBodyParam'
+      responses:
+        '200':
+          description: >-
+            Success. New revision of a document was created, and is attached in
+            response body.
+        '404':
+          $ref: '#/responses/NotFound'
+        '409':
+          $ref: '#/responses/EditConflict'
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '500':
+          $ref: '#/responses/LicenseProblem'
+    delete:
+      summary: Delete a document by its ID
+      description: >
+
+        Marks a document as deleted. Items deleted will not be viewable in
+        search or folder listings.
+
+        Only items belonging to the user's account can be deleted.
+      tags:
+        - Documents
+      parameters:
+        - $ref: '#/parameters/docIdParam'
+      responses:
+        '204':
+          description: No content
+  /forms:
+    get:
+      summary: 'List Forms, with optional search'
+      description: >
+        Provides a paginated list of Forms. Optional `query` parameter performs
+        a wild-card search for the occurrence of the term in the form name or
+        tag. This listing produces the same  results as in the 'Manage Forms'
+        listing in the web UI.
+
+        The `query` and  `scope` parameters, if supplied, will be combined as logical AND when searching forms.
+
+        You can use this endpoint to retrieve the IDs of the forms from which
+        you want to create documents.
+
+      produces:
+        - application/json
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - $ref: '#/parameters/orderByParam'
+        - name: query
+          in: query
+          type: string
+          description: Whole or part of a Form's name or tag.
+        - name: scope
+          in: query
+          type: string
+          enum:
+            - mine
+            - all
+          default: mine
+          required: false
+          description: Filter forms by scope - either just those belonging to your account  - `mine` or all those you have permission to see - `all`
+      responses:
+        '200':
+          description: A List of Forms
+          schema:
+            title: Form Search Results
+            properties:
+              totalHits:
+                type: number
+              pageNumber:
+                type: number
+              forms:
+                $ref: '#/definitions/FormList'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+          examples:
+            totalHits: 1
+            pageNumber: 0
+            forms:
+              - id: 1
+                globalId: FM1
+                stableId: abcde12345
+                version: 22
+                name: Freshwater Algal sample
+                tags: 'algae,grant1234'
+                publishingState: PUBLISHED
+                accessControl:
+                  ownerPermissionType: WRITE
+                  groupPermissionType: NONE
+              - id: 2
+                globalId: FM2
+                stableId: fgdehd2345
+                version: 2
+                name: Marine Algal sample
+                tags: 'algae,grant234'
+                publishingState: PUBLISHED
+                accessControl:
+                  ownerPermissionType: WRITE
+                  groupPermissionType: READ
+            _links:
+              - link: 'https://myrspace.com/api/v1/forms?query=Algal sample'
+                rel: self
+    post:
+      summary: Create a new Form
+      description: |
+        Create a new Form, supplying the field definitions. This API supports a
+        subset of the functionality in the web application. This method requires
+        all the FormFields to be defined at once.
+
+        ## Mandatory content for Forms
+
+        Every form must have its `name` property set.
+
+        ## Optional properties
+
+          - `tags`.
+
+        ## Types of Form field
+
+        There are 9 types of form field supported in the API. All fields must
+        have at least two properties set: `name` and `type`. `type` must be one
+        of the predefined types: `String`, `Text`, `Number`, `Choice`, `Radio`, `Date`,`Reference`, `Attachment` or `URI`
+
+        ### String
+
+        Optional properties:
+
+          - `defaultValue` Defines placeholder content, maximum length 255 characters. If  not set then field in documents created from this form will be initially blank.
+
+        `{"name":"Experiment title", "type":"String", "defaultValue: "Enter a
+        title"}`
+
+        ### Text
+
+        Optional properties:
+
+          - `defaultValue` Defines placeholder content that can include HTML. If  not set then the field in a document created from this form will be initially blank.
+
+        `{"name":"Method", "type":"Text", "defaultValue": "Method description"}`
+
+        ### Number
+
+        Optional properties:
+
+          - `defaultValue` Defines a default value. In `min` or `max` is set then this value must satisfy those constraints.  If  not set then the field in a document created from this form will be initially blank.
+          - `min` The minimum value for this field
+          - `max` The maximum value for this field
+          - `decimalPlaces` The number of decimal places, 0 if not set.
+
+        `{"name":"Sample Size", "type":"Number", "defaultValue": 10, "min": 5,
+        "max":  20}`
+
+        ### Choice
+
+        Defines a list of checkboxes, some of which can be selected by default.
+
+        Optional properties:
+
+          - `multipleChoice` Whether multiple selections can be made (default is `false`).
+          - `options` A list  of options. There must be at least  1 option.
+          - `defaultOptions` If not empty, must be a subset of the `options` list
+
+        `{"name":"Antibodies",
+        "type":"Choice","multipleChoice":true,"options":["gp41","gp120","gp232"],"defaultOptions":["gp41",
+        "gp120"]}`
+
+        ### Radio
+
+        Defines a list of radio buttons, one of which can be selected by default.
+
+        Optional properties:
+
+          - `options` A list  of options. There must be at least  1 option.
+          - `defaultOption` If not empty, must be an item in the `options` list.
+
+        `{"name":"Antibodies",
+        "type":"Radio","options":["gp41","gp120","gp232"],"defaultOption":"gp41"}`
+
+        ### Reference
+
+        Defines a field to hold one or more links to other RSpace resources, identified by their Global Id
+
+        Optional properties
+
+        There are no optional properties for this field.
+
+        `{"name":"SampleLink",
+        "type":"Reference"}`
+
+        ### Uri
+
+        Defines a field to hold a valid URI. This can be an external URL or a URN.
+
+        Optional properties
+
+        There are no optional properties for this field.
+
+        `{"name":"PubChemReference",
+        "type":"Uri"}`
+
+        ### Attachment
+
+        Marks that a field should hold an uploaded file. For example, a Sample Template might require a PDF of its safety data.
+
+        Optional properties
+
+        There are no optional properties for this field.
+
+        `{"name":"Safety data",
+        "type":"Attachment"}`
+
+        ### Date
+
+        Defines a DateField. All dates should be in ISO-8601 date format
+        `yyyy-MM-dd`, e.g. '2018-03-21'.
+
+        Optional properties:
+
+          - `defaultValue` Defines a default date. In `min` or `max` is set then this date must satisfy those constraints. If not set then the field in a document created from this form will be initially blank.
+          - `min` The minimum date for this field
+          - `max` The maximum date for this field.
+          - `decimalPlaces` The number of decimal places, 0 if not set.
+
+        `{"name":"SampleProductionDate","type":"Date","defaultValue":"2018-03-21","min":"2018-02-15","max":"2018-04-30"}`
+
+
+      consumes:
+        - application/json
+        - application/x-yaml
+      produces:
+        - application/json
+      tags:
+        - Forms
+      parameters:
+        - name: form
+          in: body
+          description: 'A form definition, with fields'
+          required: true
+          schema:
+            $ref: '#/definitions/FormPost'
+      responses:
+        '201':
+          description: Form was created
+          schema:
+            $ref: '#/definitions/Form'
+
+
+  '/forms/{formId}':
+    put:
+      summary: Updates a form with new, edited, removed or re-ordered fields.
+      description: |
+        Updates a Form with new field definitions. Works in exactly the same way as /forms POST, but field forms that are to be edited or re-ordered should have their `id` properties set. New fields can be included, as for POST, with no `id` value.
+
+        Please note that the `type` property of a form can't be changed. It can only be set at Form creation time, via the forms/ POST endpoint.
+
+        This operation is a high-level operation. It combines the web-application steps of editing,saving and updating the form into a single operation. If successful it will:
+
+        * Update the `version` of the form, if the form is published
+        * Maintain the publishing state of the previous version - if the previous version was published, this version will be published too, and be available for immediate use.
+        * <b>Note</b> that the updated form and fields returned will have new IDs, if the original form was published.
+          If the original form was NEW state then the form IDs will remain the same.
+
+        If the form editing fails, then the original form will remain unchanged.
+      produces:
+        - application/json
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/formIdParam'
+        - name: form
+          in: body
+          description: A form definition, with fields. The structure of the field definitions are the same as for forms/POST; however existing formfields should have their 'id' property set.
+          required: true
+          schema:
+            $ref: '#/definitions/FormPost'
+      responses:
+        '200':
+          description: The updated form. <b>Note</b> the updated form has a new ID, but the same stableId as the previous verson of the form.
+          schema:
+            $ref: '#/definitions/Form'
+        '401':
+          description: |
+            You must have read permission on the Form
+    get:
+      summary: 'Retrieves Form by its ID, including its Field definitions.'
+      description: |
+        Gets all information about a Form
+      produces:
+        - application/json
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/formIdParam'
+      responses:
+        '200':
+          description: A single Form with populated list of FormFields
+          schema:
+            $ref: '#/definitions/Form'
+        '401':
+          description: |
+            You must have read permission on the Form
+    delete:
+      summary: Deletes a form by its ID
+      description: >-
+        A form can be deleted if the form, or any versions of the form (i.e.,
+        forms with the same `stableId`) have not been used to create any
+        documents. It is permanently deleted from RSpace.
+
+        If form cannot be deleted, will return a 422 Status
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/formIdParam'
+      responses:
+        '204':
+          description: 'Deletion completed successfully, no content in response.'
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+  '/forms/{formId}/publish':
+    put:
+      summary: Publishes a Form so that it can be used to create documents
+      description: >-
+        -> A newly created form is not available to create documents from until
+        it has been published. Once it is published the `formState` property is
+        `PUBLISHED`
+
+      produces:
+        - application/json
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/formIdParam'
+      responses:
+        '200':
+          description: >-
+            The updated form. If the form was already published before this
+            action was performed, the form will not be modified by this action.
+          schema:
+            $ref: '#/definitions/Form'
+        '401':
+          description: |
+            You must be authorised to perform this action
+  '/forms/{formId}/unpublish':
+    put:
+      summary: >-
+        Unpublishes a Form so that it is hidden and can no longer be used to
+        create documents.
+      description: >
+        Unpublishing a form hides it from being available to create documents.
+        Once it is published the `formState` property is `UNPUBLISHED`
+
+      produces:
+        - application/json
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/formIdParam'
+      responses:
+        '200':
+          description: >
+            The updated form. If the form was already unpublished before this
+            action was performed, the form will not be  modified by this action.
+          schema:
+            $ref: '#/definitions/Form'
+        '401':
+          description: |
+            You must be authorised to perform this action
+  '/forms/{formId}/share':
+    put:
+      summary: Shares a Form with your groups.
+      description: >
+        Shares this form with your groups. Once it is shared the
+        `accessControl.groupPermissionType` property is `READ`.
+
+      produces:
+        - application/json
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/formIdParam'
+      responses:
+        '200':
+          description: >
+            The updated form. If the form was already shared before this action
+            was performed, the form will not be  modified by this action.
+          schema:
+            $ref: '#/definitions/Form'
+        '401':
+          description: |
+            You must be authorised to perform this action
+  '/forms/{formId}/unshare':
+    put:
+      summary: Unshares a Form.
+      description: >
+        Unshares this form with your groups. Only the owner of the Form  (its
+        creator) will be able to read or modify this Form after this action is
+        performed. Once it is unshared the `accessControl.groupPermissionType`
+        property is `NONE`.
+
+      produces:
+        - application/json
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/formIdParam'
+      responses:
+        '200':
+          description: >
+            The updated form. If the form was already unshared before this
+            action was performed, the form will not be modified by this action.
+          schema:
+            $ref: '#/definitions/Form'
+        '401':
+          description: |
+            You must be authorised to perform this action
+  '/forms/{formId}/icon':
+    post:
+      summary: Set or replace a new display icon for a form
+      description: >
+
+        Upload a display icon for a form. It should be viewable at 96x96px resolution.
+
+      produces:
+        - application/json
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/formIdParam'
+        - name: file
+          in: formData
+          type: file
+          required: true
+      consumes:
+        - multipart/form-data
+      responses:
+        '201':
+          description: Updated ApiForm object with new iconId
+          schema:
+            $ref: '#/definitions/FormInfo'
+
+  '/forms/{formId}/icon/{iconId}':
+    get:
+      summary: 'Gets the icon for the form, if set'
+      description:
+        Forms can have an icon set for them, to help with visual identification of forms in a list. This methods retrieves the bytes of the image. The ids can be obtained from an ApiForm response  from a `forms/` listing.
+
+      produces:
+        - application/octet-stream
+      tags:
+        - Forms
+      parameters:
+        - $ref: '#/parameters/formIdParam'
+        - name: iconId
+          description: The id for the formIcon
+          type: integer
+          format: int64
+          in: path
+          required: true
+      responses:
+        '200':
+          description: File as bytes.
+          schema:
+            type: file
+  /files:
+    get:
+      summary: 'Lists Gallery files, optionally by type'
+      description: >
+        Lists media items - i.e. content shown in the Gallery in RSpace web
+        application. Note that this does not include files linked from external
+        file systems or 3rd party providers (Dropbox, Box etc).
+      produces:
+        - application/json
+      tags:
+        - Files
+      parameters:
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - $ref: '#/parameters/orderByParam'
+        - name: mediaType
+          in: query
+          type: string
+          description: >
+            The general type of the attachment - one of 'image', 'chemistry', 'av' (audio or
+            video), or 'document' (any other file).
+          enum:
+            - image
+            - chemistry
+            - document
+            - av
+      responses:
+        '200':
+          description: A list of File objects.
+          schema:
+            title: File Search Results
+            properties:
+              totalHits:
+                type: number
+              pageNumber:
+                type: number
+              files:
+                $ref: '#/definitions/FileList'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period.
+              type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period.
+              type: integer
+            X-Rate-Limit-MinWaitIntervalMillis:
+              description: >
+                The minimum time a client should wait, in millis, before sending
+                another request.
+              type: integer
+          examples:
+            totalHits: 3
+            pageNumber: 0
+            files:
+              - id: 1246
+                globalId: GL1246
+                name: lemmings.gif
+                caption: TexasRed/Hoechst/FITC
+                contentType: image/gif
+                created: 2016-12-07T13:07:57.000Z
+                size: 7348
+                _links:
+                  - link: 'https://myrspace.com/api/v1/files/1246'
+                    rel: self
+                  - link: 'https://myrspace.com/api/v1/files/1246/file'
+                    rel: enclosure
+              - id: 1245
+                globalId: GL1245
+                name: anaphase.jpg
+                caption: TexasRed/Hoechst/FITC
+                contentType: image/jpeg
+                created: '2016-11-07T13:07:57.000Z'
+                size: 14426
+                _links:
+                  - link: 'https://myrspace.com/api/v1/files/1245'
+                    rel: self
+                  - link: 'https://myrspace.com/api/v1/files/1245/file'
+                    rel: enclosure
+              - id: 1231
+                globalId: GL1231
+                name: Picture1.png
+                caption: test image uploaded from mobile.
+                contentType: image/x-png
+                created: '2017-12-05T13:07:57.000Z'
+                size: 40721
+                _links:
+                  - link: 'https://myrspace.com/api/v1/files/1231'
+                    rel: self
+                  - link: 'https://myrspace.com/api/v1/files/1231/file'
+                    rel: enclosure
+            _links:
+              - link: 'https://myrspace.com/api/v1/files?pageNumber=0&mediaType=image'
+                rel: self
+    post:
+      summary: Create a new file in the Gallery
+      description: >
+        Uploads a file to the relevant section of the Gallery, performing the
+        same functionality as 'drag&drop' or 'Import File' in the web
+        application.
+
+
+        An optional folder ID may be specified, that will be the container for
+        the newly uploaded file. This folder must be a subfolder of the relevant
+        Gallery section. If one is not supplied, uploaded files will be added to
+        a folder called 'Api Inbox'.
+
+
+        The rate of file upload may be restricted, for performance reasons. If
+
+        this is restricted, then the total allowed uploads per hour, and the
+
+        amount remaining, will be returned in the response headers
+
+        'X-UploadLimitLimit' and 'X-UploadLimitRemaining'.
+
+      tags:
+        - Files
+      parameters:
+        - name: file
+          in: formData
+          type: file
+          required: true
+          description: A file to upload.
+        - name: folderId
+          in: formData
+          type: integer
+          format: int64
+          required: false
+          description: Unique identifier for the Folder
+        - name: caption
+          in: formData
+          type: string
+          required: false
+          description: Optional metadata describing the file
+          maxLength: 250
+      consumes:
+        - multipart/form-data
+      responses:
+        '201':
+          description: Success. Returned object represents newly created Gallery file.
+          schema:
+            $ref: '#/definitions/File'
+          headers:
+            X-UploadLimitLimit:
+              description: >-
+                The maximum amount of data, in kb, that can be uploaded in a
+                given period.
+              type: integer
+            X-UploadLimitRemaining:
+              description: >-
+                The remaining amount of data, in kb, that can be uploaded in the
+                current time period.
+              type: integer
+  '/files/{fileId}':
+    get:
+      summary: Retrieves a single media element
+      description: Gets a single File object by its id.
+      produces:
+        - application/json
+      tags:
+        - Files
+      parameters:
+        - $ref: '#/parameters/fileIdParam'
+      responses:
+        '200':
+          description: A File object.
+          schema:
+            $ref: '#/definitions/File'
+        '404':
+          description: 'File does not exist, or you can''t access it.'
+  '/files/{fileId}/file':
+    get:
+      summary: Gets binary content of a file
+      description: >
+        Downloads file contents. The content type of the response will be the
+        `contentType` of the enclosing media item.
+
+        When calling the endpoint with swagger-ui set the 'Response Content
+        Type' to `application/octet-stream` to get a working 'Download file'
+        link in response body, or switch the type to `application/json`to debug
+        any server error messages.
+      produces:
+        - application/octet-stream
+        - application/json
+      tags:
+        - Files
+      parameters:
+        - $ref: '#/parameters/fileIdParam'
+      responses:
+        '200':
+          description: File as bytes.
+          schema:
+            type: file
+
+    post:
+      summary: Uploads new version of a file.
+      description: >
+        The upload  creates a new revision of a media file.  Documents  that link to the media file will point to the new version in their latest (current) revision. Older revisions of documents will continue to point to the  same version of the file.
+
+        The new file can have a different name, but must have the same file extension.
+      produces:
+        - application/json
+      consumes:
+        - multipart/form-data
+      tags:
+        - Files
+      parameters:
+        - $ref: '#/parameters/fileIdParam'
+        - name: file
+          in: formData
+          type: file
+          required: true
+          description: A file to upload.
+      responses:
+        '201':
+          description: Updated ApiFile object.
+          schema:
+            $ref: '#/definitions/File'
+
+  /folders:
+    post:
+      summary: Create a new folder or notebook
+      description: |
+        Creates containers to hold RSpace documents and notebook entries.
+         You can create folders  in your Workspace and Gallery folders, and notebooks in your Workspace.
+         There are a few restrictions, consistent with the behaviour of the web application:
+
+          - Folders and Notebooks cannot be created in the 'Shared' folder or its descendants.
+          - Notebooks can't be nested. I.e, you can't create a Notebook or Folder inside an existing Notebook.
+          - Notebooks can't be created inside the Gallery Folder or its descendants.
+
+         The request body should be a JSON object, that is parsable into #/definitions/Folder model.  All properties are optional, so empty JSON object `{}` is a valid request that will a new, untitled folder in your Home folder.
+
+         Only `name`, `notebook` and `parentFolderId` properties are settable when creating a Folder or Notebook.
+
+         ## Examples of the request body
+
+         | Body | Explanation |
+
+         | --- | --- |
+
+         `{}` | Creates a folder named "Untitled Folder" in your home folder.|
+
+         `{ "name": "MyExperiment", "notebook": "true"}` | Creates a new Notebook in your home folder called 'MyExperiment'|
+
+         `{"name":"Folder1", "parentFolderId":"123"}` | Creates a new Folder 'Folder1' inside the Folder with ID '123'|
+
+      tags:
+        - Folder
+      parameters:
+        - $ref: '#/parameters/folderBodyParam'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: A representation of the newly created folder.
+          schema:
+            $ref: '#/definitions/Folder'
+          examples:
+            application/json:
+              id: 123
+              globalId: NB123
+              name: MyNotebook
+              created: '2017-12-05T13:07:57.000Z'
+              lastModified: '2017-12-07T13:07:57.000Z'
+              notebook: true
+              parentFolderId: 456
+  '/folders/{folderId}':
+    get:
+      summary: Gets a Folder by its ID
+      description: Getter for a Folder that you are authorised to view.
+      tags:
+        - Folder
+      parameters:
+        - name: folderId
+          description: The id for the folder
+          type: integer
+          format: int64
+          in: path
+          required: true
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: A Folder object
+          schema:
+            $ref: '#/definitions/Folder'
+          examples:
+            application/json:
+              id: 123
+              globalId: NB123
+              name: MyNotebook
+              created: '2017-12-05T13:07:57.000Z'
+              lastModified: '2017-12-07T13:07:57.000Z'
+              notebook: true
+              parentFolderId: 456
+    delete:
+      summary: Delete a folder or notebook
+      description: >
+        Delete a folder or notebook with the specified ID. The following
+        folders cannot be deleted:
+
+         - Home folders ( the top-level folder)
+         - System folders - these are folders such as `Gallery`, `Templates`, `Shared` top-level folders that are expected to be present.
+      tags:
+        - Folder
+      parameters:
+        - name: folderId
+          description: The id for the folder
+          type: integer
+          format: int64
+          in: path
+          required: true
+      responses:
+        '204':
+          description: 'Deletion succeeded, no response body'
+  /folders/tree:
+    get:
+      summary: >-
+        Lists contents of the Workspace Home folder.
+      description:
+        Lists the contents of the Workspace Home folder
+      produces:
+        - application/json
+      tags:
+        - Folder
+      parameters:
+        - $ref: '#/parameters/typesToIncludeParam'
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - $ref: '#/parameters/orderByParam'
+      responses:
+        '200':
+          description: >-
+            Success. A listing of the Workspace 'Home' folder is returned.
+          schema:
+            title: Folder listing
+            properties:
+              totalHits:
+                type: number
+              pageNumber:
+                type: number
+              parentId:
+                type: number
+                description: The id of the parent of the listed folder. For listings of the Workspace Home Folder, this will be null.
+              records:
+                $ref: '#/definitions/RecordTreeInfoList'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+  '/folders/tree/{folderId}':
+    get:
+      summary: >-
+        Lists contents of a folder
+      description:
+        Lists the contents of the a folder in the Workspace or the Gallery. Additional filters can be specified to restrict the returned list to Notebook, Folder or Document types using the 'typesToIncludeParam' request parameter.
+      produces:
+        - application/json
+      tags:
+        - Folder
+      parameters:
+        - name: folderId
+          description: The id for the folder
+          type: integer
+          format: int64
+          in: path
+          required: true
+        - $ref: '#/parameters/typesToIncludeParam'
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - $ref: '#/parameters/orderByParam'
+      responses:
+        '200':
+          description: >-
+            A listing of the folder is returned.
+          schema:
+            title: Folder listing
+            properties:
+              totalHits:
+                type: number
+              pageNumber:
+                type: number
+              parentId:
+                type: number
+                description: The id of the parent of the listed folder. For listings of the Workspace Home Folder, this will be null.
+              records:
+                $ref: '#/definitions/RecordTreeInfoList'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+
+  /import/word:
+    post:
+      summary: >-
+        Imports MSWord or OpenOffice document files into RSpace documents.
+      description: >
+        This reproduces the web UI functionality whereby MSWord documents  can
+        be imported into RSpace as simple document.
+
+        On success, will return summary information as to the created RSpace
+        document.
+
+        If the file cannot be imported (e.g., if the file format is not a
+        supported), returns a 422 status code and error message.
+
+        There are some restrictions on the `folderID`:
+
+         - `folderID` is optional. If not specified, document will be created in the 'ApiInbox' folder of the Workspace
+         - If specified,  `folderId` must be the home folder ID, or a workspace subfolder ID. IDs of group folders or shared folders will be rejected. If you want to share an imported document,  import it first, then share in a subsequent step.
+
+        There are some restrictions on the `imageFolderId`:
+
+        - `imageFolderId` is optional. If not specified, images extracted from
+        the Word document will be created in the top-level  folder of the Image
+        Gallery. - If specified,  `imageFolderId` must be either the ID of the
+        Image Gallery folder, or the ID of a subfolder in the ImageGallery.
+      produces:
+        - application/json
+      tags:
+        - Import
+      parameters:
+        - name: file
+          in: formData
+          type: file
+          required: true
+          description: 'An MS Word, plain text or OpenOffice file to upload.'
+        - name: folderId
+          in: formData
+          type: integer
+          format: int64
+          required: false
+          description: Unique identifier for the Folder. See restrictions above
+        - name: imageFolderId
+          in: formData
+          description: >-
+            An optional ID of a folder in the image gallery where any images
+            extracted from the Word document will be placed.
+          type: integer
+          required: false
+      consumes:
+        - multipart/form-data
+      responses:
+        '201':
+          description: >-
+            Success. Returned object represents newly created RSpace document
+            created from  Word file.
+          schema:
+            $ref: '#/definitions/DocumentInfo'
+          headers:
+            X-UploadLimitLimit:
+              description: >-
+                The maximum amount of data, in kb, that can be uploaded in a
+                given period.
+              type: integer
+            X-UploadLimitRemaining:
+              description: >-
+                The remaining amount of data, in kb, that can be uploaded in the
+                current time period.
+              type: integer
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+  /import/evernote:
+    post:
+      summary: >-
+        Imports Evernote XML files in 'enex' format into an RSpace folder. Each
+        'Note' is imported as an RSpace Basic Document.
+      description: >
+        This reproduces the web UI functionality whereby Evernote exports can be
+        imported into RSpace.
+
+        The request parameters for this operation are  the same as for
+        `import/word`
+      parameters:
+        - name: file
+          in: formData
+          type: file
+          required: true
+          description: An Evenote export file in '.enex' format to upload.
+        - name: folderId
+          in: formData
+          type: integer
+          format: int64
+          required: false
+          description: Unique identifier for the Folder. See restrictions as for import from Word
+        - name: imageFolderId
+          in: formData
+          description: >-
+            An optional ID of a folder in the image gallery where any images
+            extracted from the Evernote  file will be placed.
+          type: integer
+          required: false
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      tags:
+        - Import
+      responses:
+        '201':
+          description: >-
+            Success. Returned object represents newly created RSpace folder
+            created from  Evernote file.
+          schema:
+            $ref: '#/definitions/Folder'
+  /activity:
+    get:
+      summary: >-
+        Get recent activity from RSpace. This is the same information as
+        presented in the 'Auditing' tab in the web application.
+      description: >
+        Access to the information that is available from the RSpace audit trail.
+        This provides logged information on 'who did what, when'.
+
+
+        All query filter parameters are optional. If a parameter is not
+        provided, then the query will not be restricted by that parameter.
+
+
+        Any supplied filters are combined in a Boolean `AND` operation. For an
+        individual parameter accepting multiple values (`domains`, `actions` or
+        `usernames`), these values are combined using a Boolean `OR` operation.
+        See the examples for more explanation.
+
+        ### Permissions
+
+        You can only see the activity of users to whom  you have authorised
+        access. This is defined by your user role, as described in the table
+        below. Any unauthorised usernames supplied as request parameters will be
+        ignored.
+
+        | Role | What activity you can see |
+
+        | --- | --- |
+
+        | User | Your own activity |
+
+        | PI | Activity of users in your group |
+
+        | Community admin |Activity of users in your community. |
+
+        | Sysadmin | Activity of all users. |
+
+        ### Example queries
+
+        These examples are not URL encoded, for clarity, but in real usage, URL
+        encoding should be used. All these queries will only return users'
+        activities for which you are authorised.
+
+        | Query | Explanation |
+
+        | --- | --- |
+
+        | /activity | Gets all activity |
+
+        | /activity?actions=CREATE,WRITE | Gets union of all CREATE and WRITE
+        activity |
+
+        | /activity?actions=CREATE,WRITE&usernames=bob123,sarah456 | Gets union of
+        CREATE and WRITE activity generated by either of two users bob123 and
+        sarah456 |
+
+        | /activity?oid=SD123456 | Gets all activity pertaining to 1 document |
+
+        |
+        /activity?domains=RECORD&dateFrom=2017-08-01,dateTo=2017-08-08&usernames=bob123
+        | All record-related activity of  bob123 in the 1st week of August 2017
+
+        ### Response notes
+
+        The schema of the `payload` of each `Activity` varies depending on the
+        activity type, but typically provides information about the resource
+        involved in the activity.
+
+
+        _We advise that apart from the `id` attribute,  the internal data
+        structure of a payload may evolve in a way that breaks backwards
+        compatibility_.
+
+        ### Restrictions
+
+        For performance reasons, date ranges are restricted to 6 month's-worth
+        of activities, summarised here:
+
+        | DateFrom | DateTo | Search restricted to |
+
+        | --- | --- | --- |
+
+        | not specified |not specified | The last 6 months |
+
+        | more than 6 months ago |not specified | The last 6 months |
+
+        | not specified |any date | The 6 months preceding `DateTo` |
+
+        | more than 6 months before `DateTo` |any date | The 6 months preceding
+        `DateTo` |
+      produces:
+        - application/json
+      tags:
+        - Activity
+      parameters:
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - $ref: '#/parameters/activityOrderByParam'
+        - name: dateFrom
+          description: yyyy-mm-dd. The earliest date to retrieve activity from.
+          in: query
+          type: string
+          format: date
+          required: false
+        - name: dateTo
+          in: query
+          type: string
+          format: date
+          required: false
+          description: yyyy-mm-dd.The latest date to retrieve activity from.
+        - name: actions
+          description: A comma separated list of actions to restrict the query.
+          in: query
+          type: array
+          required: false
+          items:
+            enum:
+              - COPY
+              - CREATE
+              - DELETE
+              - EXPORT
+              - READ
+              - RESTORE
+              - SEARCH
+              - SHARE
+              - SIGN
+              - UNSHARE
+              - VIEW
+              - WITNESS
+              - WRITE
+        - name: domains
+          description: Comma-separated list of  domains to restrict the query.
+          in: query
+          type: array
+          required: false
+          items:
+            enum:
+              - RECORD
+              - NOTEBOOK
+              - WORKSPACE
+        - name: oid
+          description: 'The global ID of a resource, e.g. SD12345'
+          in: query
+          type: string
+          required: false
+        - name: usernames
+          description: A comma-separated list of usernames.
+          in: query
+          type: string
+          required: false
+      responses:
+        '200':
+          description: A paginated list of Activity objects.
+          schema:
+            title: Activity Search Results
+            type: object
+            properties:
+              totalHits:
+                type: number
+              pageNumber:
+                type: number
+              activities:
+                $ref: '#/definitions/ActivityList'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+
+  '/gallery/irods':
+    get:
+      summary: Get the IRODS server info and the end points to calls for each filestore
+        already defined by the user
+      description: List the IRODS server address plus all the filestorePathIds that can be used by the
+        user to store the file into IRODS
+      produces:
+        - application/json
+      tags:
+        - Gallery
+      parameters:
+        - name: recordIds
+          description: A comma-separated list of IDs of records to copy/move the the gallery
+          in: query
+          type: array
+          required: false
+          items:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of IRODS server address with all the existing configurations
+            that the user can use to copy/move files from gallery
+          schema:
+            title: External storage result
+            properties:
+              serverUrl:
+                type: string
+                example: 'http://irods-test.researchspace.com:1247'
+              configuredLocations:
+                $ref: '#/definitions/ConfiguredLocationList'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+  '/gallery/irods/copy':
+    post:
+      summary: Copy a list of files from RSpace to an external IRODS storage
+      description: >
+        Copy a list of files (identified by their Researchspace ID) from the RSpace filestore
+        to an external IRODS storage
+        The files that can be copied to IRODS need to live in the Gallery.
+        
+        The response message is a JSON with the detail of the operation done for each file requested
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Gallery
+      parameters:
+        - name: recordIds
+          description: A comma-separated list of IDs of records to copy the the gallery
+          in: query
+          type: array
+          required: true
+          items:
+            type: integer
+            format: int64
+        - name: filestorePathId
+          description: The id of the IRODS filestore where the files need to be stored
+          in: query
+          type: integer
+          required: true
+        - name: credentials
+          in: body
+          description: Credentials (username and password) for the IRODS account
+          required: false
+          schema:
+            $ref: '#/definitions/IrodsCredentials'
+      responses:
+        '200':
+          description: >
+            A response containing the detail of the overall status of the 'copy' 
+            operation file by file
+          schema:
+            title: External Storage Result
+            type: object
+            properties:
+              numFilesInput:
+                type: number
+                example: 1
+              numFilesSucceed:
+                type: number
+                example: 0
+              numFilesFailed:
+                type: number
+                example: 1
+              fileInfoDetails:
+                type: array
+                items:
+                  $ref: '#/definitions/ExternalStorageOperationInfo'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+  '/gallery/irods/move':
+    post:
+      summary: Move a list of files from RSpace to an external IRODS storage
+      description: >
+        Move a list of files (identified by their Researchspace ID) from the RSpace filestore
+        to an external IRODS storage
+        The files that can be moved to IRODS need to live in the Gallery
+        
+        The response message is a JSON with the detail of the operation done for each file requested
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Gallery
+      parameters:
+        - name: recordIds
+          description: A comma-separated list of IDs of records to move the the gallery
+          in: query
+          type: array
+          required: true
+          items:
+            type: integer
+            format: int64
+        - name: filestorePathId
+          description: The id of the IRODS filestore where the files need to be stored
+          in: query
+          type: integer
+          required: true
+        - name: credentials
+          in: body
+          description: Credentials (username and passoword) for the IRODS account
+          required: false
+          schema:
+            $ref: '#/definitions/IrodsCredentials'
+      responses:
+        '200':
+          description: >
+            A response containing the detail of the overall status of the 'move' 
+            operation file by file
+          schema:
+            title: External Storage Result
+            type: object
+            properties:
+              numFilesInput:
+                type: number
+                example: 1
+              numFilesSucceed:
+                type: number
+                example: 0
+              numFilesFailed:
+                type: number
+                example: 1
+              fileInfoDetails:
+                type: array
+                items:
+                  $ref: '#/definitions/ExternalStorageOperationInfo'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+
+  '/export/{file}':
+    get:
+      summary: Retrieves a completed export
+      description: >-
+
+        Downloads a completed export. Normally you will get this link from a
+        completed JobIf the file no longer exists on the server (i.e you are
+        downloading it after the expiryDate in 'CompletedJob', then an
+        unspecified error page may be generated as the response.)
+
+      produces:
+        - application/octet-stream
+      tags:
+        - Export
+      parameters:
+        - name: file
+          description: The name of the export archive file to download.
+          type: string
+          in: path
+          required: true
+      responses:
+        '200':
+          description: File as bytes.
+          schema:
+            type: file
+  '/export/{format}/{scope}':
+    post:
+      summary: >-
+        Generates an export of research record in one of RSpace's supported
+        formats - XML, HTML. This is an asynchronous operation.
+      description: >-
+        A simplified version of the configuration in the web application is
+        available. The scope (`user`, `group` or `selection`) or format (`xml` or `html`) can be set.
+
+        The returned Job object contains a link in the _links field which can be
+        used to poll the server for completion of the job.
+
+        If `selection` is chosen, with a list of IDs, the following restrictions apply:
+
+         - Between 1 and 2000 IDs can be sent in a single request. Note that this is not  restriction on the total number of RSpace documents that can be exported.A single folder ID will result in all its contents being included in the export.
+         - If an ID doesn't exist or client lacks authorisation to view, it will be ignored
+         - `maxLinkLevel` is an optional request parameter that can be used to indicate how many links should be followed during the export. For example, if document A links to B, and B links to C,  and you export document A with maxLinkLevel=0, B and C will not be exported. The default value is 1 - in which case, B would be exported, but not C.
+
+      produces:
+        - application/json
+      tags:
+        - Export
+      parameters:
+        - $ref: '#/parameters/exportFormatParam'
+        - $ref: '#/parameters/exportScopeParam'
+        - $ref: '#/parameters/exportSelectionParam'
+        - $ref: '#/parameters/maxLinkLevelParam'
+        - $ref: '#/parameters/includeRevisionHistoryParam'
+      responses:
+        '202':
+          description: Job accepted
+          schema:
+            $ref: '#/definitions/Job'
+        '400':
+          description: Bad request - format/scope is unsupported
+        '404':
+          description: unauthorised to make the export request
+        '429':
+          description: >-
+            You can only have 1 export running at a time. This status will be
+            returned if you submit an export and you already have one running.
+  '/export/{format}/{scope}/{id}':
+    post:
+      summary: Exports a specific group or user by ID
+      description: >-
+        Similar to `/export/{format}/{scope}` but further parameterised by a
+        group or user id. If `scope` is 'group' then the ID should be a group
+        Id; if `scope` is 'user' then the ID should be a user Id. This method is
+        of most use to admins or PIs; for regular users calling
+        `/export/{format}/user/` will have the desired effect of exporting your
+        work, without the need to specify your group ID.
+
+
+        You can export users or groups according to your permissions as follows:
+
+        |Role  | Exportable users |Exportable groups |
+
+        | --- | --- | --- |
+
+        | User |Self | None |
+
+        | LabAdmin or PI |Any  member of your group(s)| Your lab group |
+
+        | Community admin | Any user in your  community | Any group in your
+        community |
+
+        | Sysadmin | Any user | Any group |
+
+        Any unauthorised request will generate a 404 response.
+      produces:
+        - application/json
+      tags:
+        - Export
+      parameters:
+        - name: id
+          description: Identifier for user or group
+          in: path
+          type: integer
+          format: int64
+          required: true
+        - $ref: '#/parameters/exportFormatParam'
+        - $ref: '#/parameters/exportScopeParam'
+        - $ref: '#/parameters/includeRevisionHistoryParam'
+      responses:
+        '200':
+          description: accepted
+        '404':
+          description: >-
+            User or group does not exist, or you don't have permission to export
+            this user or group.
+        '429':
+          description: >-
+            You can only have 1 export running at a time. This status will be
+            returned if you submit an export and you already have one running.
+  '/jobs/{id}':
+    get:
+      summary: get status about an asynchronous job
+      description: >-
+        Gets status information about an asynchronous API request. Statuses will
+        be 'COMPLETED' upon successful termination, 'FAILED' or 'ABANDONED' for
+        unsuccessful termination. Other statuses indicate incomplete jobs that
+        are still running.
+
+        A job returning 'COMPLETED' status will contain an `enclosure` link in
+        its `_links` property to the resource generated.
+
+      tags:
+        - Jobs
+      parameters:
+        - name: id
+          description: A Job identifier
+          in: path
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: OK response, the job is running or has completed.
+          schema:
+            $ref: '#/definitions/Job'
+
+  /sysadmin/users:
+    get:
+      summary: List Users
+      description: >-
+        Paginated listing of users. Requires sysadmin or community admin role.
+      tags:
+        - Accounts
+      produces:
+        - application/json
+      parameters:
+        - name: tempAccountsOnly
+          in: query
+          description: Temporary accounts (true) or all accounts(false)
+          type: boolean
+          default: false
+          required: true
+
+        - name: lastLoginBefore
+          in: query
+          description: Users who last logged in before the given date.
+          type: string
+          format: date
+        - name: createdBefore
+          in: query
+          description: Users whose accounts were created before the given date.
+          type: string
+          format: date
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - name: orderBy
+          in: query
+          description: Sort order for users.
+          type: string
+          enum:
+            - creationDate asc
+            - creationDate desc
+      responses:
+        '200':
+          description: A paginated listing of User information.
+
+    post:
+      summary: Create a new user account
+      description: >-
+        <b>Note</b> this is only available for users with 'sysadmin' role.
+
+        It is also 'beta' api, so may be subject to change.
+
+        <b> To enable this API,  RSpace must be restarted with deployment property 'api.beta.enabled=true'</b>.
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/userPostBodyParam'
+      tags:
+        - Accounts
+      responses:
+        '201':
+          description: >-
+            Returns representation of a user.
+          schema:
+            $ref: '#/definitions/User'
+        '400':
+          description: If user cannot be created (e.g. username/email already exists, invalid password or email etc., )
+
+  /sysadmin/users/{userId}/enable:
+    put:
+      summary: Enable an existing user account (@since v1.97)
+      description: >-
+        <b>Note</b> this is only available for users with 'sysadmin' role.
+
+        It is also 'beta' api, so may be subject to change.
+
+        <b> To enable this API,  RSpace must be restarted with deployment property 'api.beta.enabled=true'</b>.
+        If the user was already enabled, then this end point does not perform any operation on the system.
+        Note that a license must be available when enabling an user in order for the operation to succeed.
+        When an user is enabled an notification email is automatically sent to the specific user.
+      parameters:
+        - $ref: '#/parameters/userIdParam'
+      tags:
+        - Accounts
+      responses:
+        '204':
+          description: 'User was correctly enabled, no response body'
+        '400':
+          description: User cannot be enabled (e.g. license not active, user id not existing, etc. )
+
+  /sysadmin/users/{userId}/disable:
+    put:
+      summary: Disable an existing user account (@since v1.97)
+      description: >-
+        <b>Note</b> this is only available for users with 'sysadmin' role.
+
+        It is also 'beta' api, so may be subject to change.
+
+        <b> To enable this API,  RSpace must be restarted with deployment property 'api.beta.enabled=true'</b>.
+        If the user was already disabled, then this end point does not perform any operation on the system.
+        When an user is disabled a notification email is automatically sent to the specific user.
+      parameters:
+        - $ref: '#/parameters/userIdParam'
+      tags:
+        - Accounts
+      responses:
+        '204':
+          description: 'User was correctly disabled, no response body'
+        '400':
+          description: User cannot be disabled (e.g. user id not existing, etc. )
+
+  /sysadmin/groups:
+    post:
+      summary: Create a new Group
+      description: >-
+        <b>Note</b> this is only available for users with 'sysadmin' role.
+
+        It is also 'beta' api, so may be subject to change.
+
+        <b> To enable this API,  RSpace must be restarted with deployment property 'api.beta.enabled=true'</b>.
+
+        Lab or Project type groups can be created.
+
+        The following conditions must be met (these are the same conditions as in the web UI).
+
+        -  All the users to be included in the Group must already exist. To create users, either use the web interface or the `/users POST` service.
+
+        - Additionally:
+          - for Lab Groups one member of the group <b>must</b> have a global PI role and be assigned a 'PI' RoleInGroup.
+          - for Project Groups there should be at least 1 GROUP_OWNER specified.
+
+      parameters:
+        - $ref: '#/parameters/groupPostBodyParam'
+      produces:
+        - application/json
+      tags:
+        - Accounts
+      responses:
+        '201':
+          description: The created group
+          schema:
+            $ref: '#/definitions/GroupInfo'
+        '400':
+          description: If group cannot be created (e.g. username/email already exists, invalid password or email etc., )
+
+  /groups:
+    get:
+      summary: A listing of the groups that your account belongs to.
+      description: >-
+        Summary information about the groups to which you belong, including
+        CollaborationGroups and LabGroups.
+      produces:
+        - application/json
+      tags:
+        - Groups
+      responses:
+        '200':
+          description: >-
+            A Listing of your groups. Will be empty if you are not a member of a
+            group.
+          schema:
+            $ref: '#/definitions/GroupList'
+
+  /groups/search:
+    get:
+      summary: Get details of groups whose name match search query
+      description: >
+        Summary information about public RSpace groups whose name match the search parameter.
+      produces:
+        - application/json
+      tags:
+        - Groups
+      parameters:
+        - $ref: '#/parameters/queryParam'
+      responses:
+        '200':
+          description: >-
+            A Listing of all public groups matching search query.
+          schema:
+            $ref: '#/definitions/GroupList'
+
+  /userDetails/whoami:
+    get:
+      summary: Get details of current user
+      description: >
+        Retrieves basic information about the current user.
+      produces:
+        - application/json
+      tags:
+        - User Details
+      responses:
+        '200':
+          description: Details of current user
+
+  /userDetails/groupMembers:
+    get:
+      summary: Get details about members of groups that current user belongs to
+      description: >
+        If current user belongs to any group, the endpoint retrieves basic information about other members of these groups.
+      produces:
+        - application/json
+      tags:
+        - User Details
+      responses:
+        '200':
+          description: A list of users belonging to current user's groups
+
+  /userDetails/search:
+    get:
+      summary: Get details of users whose data matches search query
+      description: >
+        The endpoint returns basic information about RSpace users whose details (i.e. username, first name, last name or email)
+        match the search query. If result list contains users not connected to current user in any way,
+        then some sensitive data of these users (e.g. an email address) may be set to 'null'.
+      produces:
+        - application/json
+      tags:
+        - User Details
+      parameters:
+        - $ref: '#/parameters/queryParam'
+      responses:
+        '200':
+          description: A list of users on the system matching the search query
+
+  /share:
+    get:
+      summary: List or search shared items
+      description: Lists documents and notebooks shared by the API account.
+      produces:
+        - application/json
+      tags:
+        - Share
+      parameters:
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - $ref: '#/parameters/orderByParam'
+        - name: query
+          in: query
+          type: string
+          description: 'Whole or part of the SharedItem''s name, or ID or global ID.'
+      responses:
+        '200':
+          description: A listing of shared items.
+          schema:
+            title: Shared Item Search Results
+            properties:
+              totalHits:
+                type: number
+              pageNumber:
+                type: number
+              shares:
+                $ref: '#/definitions/SharedList'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+    post:
+      summary: >-
+        Share 1 or more documents or notebooks with groups or individuals.
+      description: >
+
+        Share documents or notebooks with groups or individuals within a group,
+        with either 'read' or 'edit' permission.
+
+        There are some restrictions on sharing.
+
+        - Only notebooks or documents owned by the account can be shared. You
+        can't share other peoples' work, Gallery items or Snippets.
+
+
+        - Items can only be shared with groups that the account holder belongs
+        to; or individual users in those groups.
+
+
+        - If you want to share to a specific subfolder of a group SharedFolder,
+        create the folder first using the Folder API, then supply the folder Id
+        in the request body.  If no folder id is specified, or the folder ID is
+        not that of a subfolder of the group's SharedFolder, then item will be
+        shared into the top level folder of the SharedFolder.
+      produces:
+        - application/json
+      tags:
+        - Share
+      parameters:
+        - name: share
+          in: body
+          description: Sharing configuration
+          required: true
+          schema:
+            $ref: '#/definitions/SharePost'
+      responses:
+        '201':
+          description: A listing of shared resources resulting from this post action. If any items couldn't be shared, the ids are returned in the `failedShares` list
+          schema:
+            $ref: '#/definitions/ShareResult'
+  '/share/{id}':
+    delete:
+      summary: Unshares a shared resource
+      description: Unshares an item previously shared with a user or group.
+      produces:
+        - application/json
+      tags:
+        - Share
+      parameters:
+        - name: id
+          type: integer
+          format: int64
+          in: path
+          description: >-
+            The Id of the ShareInfo item to delete. This is *not* the
+            document/notebook ID but is the 'id' attribute of a `ShareInfo`
+            response
+          required: true
+      responses:
+        '204':
+          description: 'Item was deleted, no response body'
+
+  /units:
+    get:
+      summary: A list of recognized units
+      description: A list of scientific units organised by category
+      produces:
+        - application/json
+      tags:
+        - Units & Quantities
+      responses:
+        '200':
+          description:  A list of unit definitions
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Identifier for the unit.
+              label:
+                type: string
+                description: The standard abbreviated text represetation of the unit
+              category:
+                type: string
+                description: The type of measurement this unit measure; e.g. mass,volume, temperature etc
+              description:
+                type: string
+                description: Optional additional information may be provided, to clarify their intended usage
+          examples:
+            application/json:
+              - id: 1
+                label: items
+                category: dimensionless
+                description: "For measuring numbers of items"
+              - id: 2
+                label: mg
+                category: mass
+                description: ""
+
+  /quantities/add:
+    get:
+      summary: Add two quantities
+      description: |
+        Calculates a sum of two quantities. The result may be of a different unit if new unit is more convenient,
+        e.g. adding 800 ml and 200 ml may return 1 L.
+
+        Quantity values can be negative i.e. this endpoint can be used to subtract one quantity from another.
+        E.g. to subtract 200 ml from 1 L provide the parameters `value1: 1`, `unitId1: 4`, `value2: -200`, `unitId2: 3`,
+        which will result in `{ numericValue: 0.8, unitId: 4 }`.
+
+        Endpoint will return an error if quantity units are not commensurable (e.g. one represents the volume, other the mass).
+
+      parameters:
+        - name: value1
+          in: query
+          description: numeric value of first quantity
+          type: number
+        - name: unitId1
+          in: query
+          description: unit id of first quantity
+          type: integer
+          format: int32
+        - name: value2
+          in: query
+          description: numeric value of second quantity
+          type: number
+        - name: unitId2
+          in: query
+          description: unit id of second quantity
+          type: integer
+          format: int32
+      produces:
+        - application/json
+      tags:
+        - Units & Quantities
+      responses:
+        '200':
+          description:  A sum of two provided quantiies
+
+  /status:
+    get:
+      summary: Get API status
+      description: Simple API call to check that API service is available.
+      produces:
+        - application/json
+      tags:
+        - Miscellaneous
+      responses:
+        '200':
+          description: >-
+            A simple object with a status message and metadata about the RSpace
+            server.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Short status message.
+              rspaceVersion:
+                type: string
+                description: RSpace application version
+          examples:
+            application/json:
+              message: OK
+              rspaceVersion: 1.69.1
+parameters:
+  docIdParam:
+    name: docId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: A unique identifier of the document.
+  pageNumberParam:
+    name: pageNumber
+    in: query
+    description: 'For paginated results, this is the number of the page requested, 0 based.'
+    type: integer
+    format: int32
+    default: 0
+    minimum: 0
+  pageSizeParam:
+    name: pageSize
+    in: query
+    description: The maximum number of items to retrieve.
+    type: integer
+    format: int32
+    default: 20
+    minimum: 1
+    maximum: 50
+  orderByParam:
+    name: orderBy
+    in: query
+    description: Sort order for documents.
+    type: string
+    enum:
+      - lastModified asc
+      - lastModified desc
+      - name asc
+      - name desc
+      - created asc
+      - created desc
+    default: lastModified desc
+  typesToIncludeParam:
+    name: typesToInclude
+    in: query
+    description: Optional list of record types to include in the results. (Note that Swagger documentation 'Try it out' only permits a single type; in a real request,  multiple types  can be sent, e.g. 'typesToInclude=notebook,folder' )
+    type: string
+    required: false
+    enum:
+      - document
+      - notebook
+      - folder
+  activityOrderByParam:
+    name: orderBy
+    in: query
+    description: Sort order for activities.
+    type: string
+    enum:
+      - date asc
+      - date desc
+    default: date desc
+  queryParam:
+    name: query
+    in: query
+    description: >
+      Global search for a term, works identically to the  simple "All' search in
+      RSpace Workspace. Must be >= 3 characters long.
+    type: string
+  advancedQueryParam:
+    name: advancedQuery
+    in: query
+    description: >
+      Search query combining one or more search clauses, like Advanced Search in
+
+      Workspace. Provide the query string in JSON notation, with optional
+
+      `operator` field, and `terms` list. Textual search terms must be >= 3
+      characters long.
+
+
+
+      Fields:
+        1. `operator`-  (optional) a Boolean operator deciding how multiple search terms should be combined. Possible values:
+            * `and` (default)
+            * `or`
+        2. `terms` - a list of Search terms objects. Each search term object need a `query` and `queryType` field, where:
+            * `query` - a text to be matched
+            * `queryType` - a search category. The categories are as follows:
+                * `global`
+                * `fullText`
+                * `tag`
+                * `name`
+                * `created`
+                * `lastModified`
+                * `form`
+                * `attachment`
+                * `owner`
+                * `records`
+
+      Example 1 - search for documents having word 'protein' in their content:
+
+      ```
+      { "terms": [ { "query": "protein", "queryType": "fullText" } ] }
+      ```
+
+      Example 2 - search for documents having word 'protein' in their content, or word 'Protocol' in their name:
+
+      ```
+
+      { "operator": "or",
+        "terms": [ {"query": "protein", "queryType": "fullText"},
+                   {"query": "Protocol", "queryType": "name" }] }
+      ```
+
+      Example 3 - search for documents created from a given form tagged with 'PCR':
+
+      ```
+      { "operator": "and",
+        "terms": [ {"query": "FM12345", "queryType": "form"},
+                   {"query": "PCR", "queryType": "tag" }] }
+      ```
+
+      Example 4 - searching for documents created during July 2016. Note the ';' delimiter to separate the dates. Dates should be in `IS0-8601` or `yyyy-MM-dd format`.<b> Please note that the latter format is now deprecated and we will soon be  requiring exact ISO-8601 format</b>. Please use ISO-8601 for new queries.
+
+      ```
+
+      { "terms": [ { "query": "2016-07-01T00:00:00Z;2016-07-31T23:59:59Z",
+
+      "queryType": "created" }
+
+      ] }
+
+      ```
+
+      Example 5 - searching for documents contained in any specified folder or document. If a 'records' list is specified, it <b> must</b> also include another search term. This will search documents tagged with 'polymorphism' inside folders with id 123 and 456. This will also include items in subfolders.
+
+      ```
+
+      { "terms": [ { "query": "polymorphism", "queryType": "tag" },
+
+      { "query": "123,456", "queryType": "records" }
+
+      ] }
+
+      ```
+    type: string
+  docBodyParam:
+    name: document
+    in: body
+    description: 'A document, with fields'
+    required: true
+    schema:
+      $ref: '#/definitions/Document'
+  groupPostBodyParam:
+    name: group
+    in: body
+    description: 'Group information'
+    required: true
+    schema:
+      $ref: '#/definitions/GroupPost'
+  userPostBodyParam:
+    name: user
+    in: body
+    description: 'User details'
+    required: true
+    schema:
+      $ref: '#/definitions/UserPost'
+
+  folderBodyParam:
+    name: folderPost
+    in: body
+    description: To create a folder or notebook
+    required: true
+    schema:
+      $ref: '#/definitions/FolderPost'
+  fileIdParam:
+    name: fileId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: A unique identifier for the Gallery file.
+  userIdParam:
+    name: userId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: A unique identifier for a User.
+  formIdParam:
+    name: formId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: A unique identifier for a Form.
+  exportFormatParam:
+    name: format
+    description: The export format to generate
+    in: path
+    type: string
+    required: true
+    enum:
+      - html
+      - xml
+  exportScopeParam:
+    name: scope
+    description: What to export
+    in: path
+    type: string
+    required: true
+    enum:
+      - user
+      - group
+      - selection
+  maxLinkLevelParam:
+    name: maxLinkLevel
+    description: The number of links to follow to include in the export. A value of 0 will not follow any links. Only relevant if `scope`=`selection`
+    in: query
+    type: integer
+    required: false
+    default: 1
+
+  includeRevisionHistoryParam:
+    name: includeRevisionHistory
+    description: Whether or not to include revision history of each document
+    in: query
+    type: boolean
+    required: false
+    default: false
+
+  exportSelectionParam:
+    name: selections
+    description: A comma-separated list of IDs of items to export. Only required if `scope`=`selection`
+    in: query
+    type: array
+    required: false
+    items:
+      type: integer
+
+
+definitions:
+  Field:
+    description: |
+      A field in a Document, with a list of attached Files and 'listOfMaterials' that store inventory items connected to the document.
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the Field
+      globalId:
+        type: string
+        description: A unique identifier amongst all RSpace data types.
+      name:
+        type: string
+        description: The name of the field.
+      lastModified:
+        type: string
+        format: date-time
+        description: 'The last modified time of this Field, in ISO-8601 format.'
+      type:
+        type: string
+        description: The data type of this field
+        enum:
+          - string
+          - text
+          - choice
+          - radio
+          - date
+          - number
+          - time
+      content:
+        type: string
+        description: The content as a string. For Fields of type 'Text' this will be HTML.
+      files:
+        $ref: '#/definitions/FileList'
+      listOfMaterials:
+        $ref: '#/definitions/ListOfMaterialsList'
+  FieldList:
+    description: List of the fields in a Document
+    type: array
+    items:
+      $ref: '#/definitions/Field'
+
+  Job:
+    description: A Job with an additional result object. A job still  in ''RUNNING'' state  will have a null result object.
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the Job
+      status:
+        type: string
+        description: 'Current status of the job, such as ''RUNNING'' or  ''COMPLETED'' '
+      percentComplete:
+        type: number
+        description: Reports progress of the job, as a percentage of completion. For a completed job, will be 100%.
+
+      result:
+        type: object
+        description: >-
+          This field will be populated when a job returns in the 'COMPLETED'
+          state.
+        properties:
+          checksum:
+            type: string
+            description: A checksum for the created resource
+          algorithm:
+            type: string
+            description: The algorithm used to create the checksum
+          size:
+            type: integer
+            description: The size of the resource in bytes
+          expiryDate:
+            type: string
+            format: dateTime
+            description: A time after which the resource may no longer be available.
+    example:
+      id: 23
+      status: COMPLETED
+      percentComplete: 100.0
+      result:
+        checksum: abcde12345
+        algorithm: CRC32
+        size: 1024
+        expiryDate: '2017-11-25T00:00:00.000Z'
+      _links:
+        - rel: enclosure
+          link: 'https://myrspace.com/api/v1/export/exportFileToDownload.zip'
+  File:
+    description: >-
+      Metadata for an image, attachment or linked resource object, but without its binary data.
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the Media item.
+      globalId:
+        type: string
+        description: A unique identifier amongst all RSpace data types.
+      name:
+        type: string
+        description: File name of the attachment
+      caption:
+        type: string
+        description: Optional metadata for the file.
+      contentType:
+        type: string
+        description: The media type of the attached file.
+      created:
+        type: string
+        format: date-time
+        description: >-
+          The creation time of the file (the time it was first uploaded to
+          RSpace), in ISO-8601 format.
+      size:
+        type: integer
+        format: int64
+        description: 'Size, in bytes, of the file.'
+      version:
+        type: integer
+        format: int64
+        description: "File version"
+      _links:
+        $ref: '#/definitions/LinkItemList'
+    example:
+      id: 33
+      globalId: GL33
+      name: Worddocument.doc
+      caption: PCR protocol for Xenopus cDNA prep.
+      contentType: application/msword
+      created: 2017-03-25T00:00:00.000Z
+      size: 1234789
+      version: 2
+      _links:
+        - link: 'https://myrspace.com/api/v1/files/33'
+          rel: self
+        - link: 'https://myrspace.com/api/v1/files/33/file'
+          rel: enclosure
+  FileList:
+    type: array
+    items:
+      $ref: '#/definitions/File'
+  ListOfMaterialsList:
+    type: array
+    items:
+      type: object
+      description: 'Connected inventory materials and their quantity'
+
+  FormInfo:
+    description: Summary information about the a Form.
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the Form.
+      globalId:
+        type: string
+        description: A unique identifier amongst all RSpace data types.
+      stableId:
+        type: string
+        description: >-
+          An identifier that remains stable across different version of the
+          form.
+      version:
+        type: integer
+        format: int32
+        description: The version of the form.
+      name:
+        type: string
+        description: The name of the form.
+      formState:
+        type: string
+        description: 'The publishing state of the form, one of 4 values'
+        enum:
+          - NEW
+          - PUBLISHED
+          - UNPUBLISHED
+          - OLD
+      accessControl:
+        type: object
+        description: Information about the permissions to view or edit this form.
+        properties:
+          ownerPermissionType:
+            type: string
+            description: The permissions for the form's owner
+          groupPermissionType:
+            type: string
+            description: The permissions for the form's owner's group members
+          worldPermissionType:
+            type: string
+            description: >-
+              The permissions for all users on the system who are not in the
+              form's owner's groups.
+      iconId:
+        type: integer
+        description: The id of the form's icon
+  FormList:
+    type: array
+    items:
+      $ref: '#/definitions/FormInfo'
+  DocumentInfo:
+    description: Basic information about RSpace Document
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the Document.
+      globalId:
+        type: string
+        description: A unique identifier amongst all RSpace data types.
+      name:
+        type: string
+        description: The Document's name.
+      created:
+        type: string
+        format: date-time
+        description: The creation time of the Document.
+      lastModified:
+        type: string
+        format: date-time
+        description: The last modification time of the Document.
+      parentFolderId:
+        type: integer
+        format: int64
+        description: |
+          The identifier of the folder containing this document.
+      signed:
+        type: boolean
+        description: Whether Document is signed or not.
+      tags:
+        type: string
+        description: 'Document tags, if any, in a comma-separated list. Tag values should replace commas with __rspactags_comma__ and
+        forward slashes with __rspactags_forsl__'
+      tagMetaData:
+        type: string
+        description: 'Contains BOTH tag values and tag metadata, if any, in a comma-separated list. Has the
+        the format: <TAGVALUE>__RSP_EXTONT_URL_DELIM__<URI>__RSP_EXTONT_NAME_DELIM__<ONTOLOGYNAME>__RSP_EXTONT_VERSION_DELIM__<VERSION>
+        Tag values replace commas with __rspactags_comma__ and forward slashes with __rspactags_forsl__.
+      form:
+        $ref: '#/definitions/FormInfo'
+      owner:
+        $ref: '#/definitions/User'
+      _links:
+        $ref: '#/definitions/LinkItemList'
+  GroupPost:
+    description: Creating a Group
+    allOf:
+      - properties:
+          displayName:
+            type: string
+            description: The display name of the Group
+          members:
+            $ref: '#/definitions/UserGroupPostList'
+          type:
+            type: string
+            default: LAB_GROUP
+            enum: [ LAB_GROUP, PROJECT_GROUP ]
+      - example:
+          displayName: MyGroup
+          type: 'LAB_GROUP'
+          members:
+            - username: 'user1'
+              roleInGroup: 'PI'
+            - username: 'user2'
+              roleInGroup: 'DEFAULT'
+
+  UserPost:
+    description: Create a new User
+    allOf:
+      - properties:
+          username:
+            type: string
+            minLength: 6
+            maxLength: 20
+            description: The username of the new user (required)
+          email:
+            type: string
+            description: The email of the new user (required)
+          firstName:
+            type: string
+            description: The first name of the new user (required)
+          lastName:
+            type: string
+            description: The last name of the new user (required)
+          password:
+            type: string
+            minLength: 8
+            description: The password for the new user (required). This must be communicated to the new user through a secure channel.
+          role:
+            type: string
+            description: The role for the new user (required). This must be one of 'ROLE_USER', 'ROLE_PI', 'ROLE_ADMIN' or 'ROLE_SYSADMIN'.
+          affiliation:
+            type: string
+            description: The affiliation of the new user (required on Community, else optional).
+          apiKey:
+            type: string
+            minLength: 16
+            maxLength: 32
+            description: An API key for the new user. Optional.
+            default: null
+        example:
+          username: bob123
+          password: wru7%^jkdd
+          firstName: Bob
+          lastName: Smith
+          email: bob@somewhere.com
+          role: ROLE_PI
+
+  UserGroupPostList:
+    description: >
+      List of Users and their roles in the Group. There must be at least one user with a global PI role
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/definitions/UserGroupPost'
+  UserGroupPost:
+    description: A username and role in the Group
+    properties:
+      username:
+        type: string
+        description: The username of the User to add to the group
+      roleInGroup:
+        type: string
+        description: The role of the user in the group. Must be one of 'PI', 'DEFAULT', 'RS_LAB_ADMIN' or 'GROUP_OWNER'
+  Document:
+    description: A document with fields
+    allOf:
+      - $ref: '#/definitions/DocumentInfo'
+      - properties:
+          fields:
+            $ref: '#/definitions/FieldList'
+      - example:
+          name: My Experiment
+          tags: API
+          fields:
+            - content: >-
+                <p> Add 2ul 50uM EDTA to Xenopus egg extract. <p> See <a
+                href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3437562/">here</a>
+  DocumentInfoList:
+    description: 'List of DocumentInfo object metadata, i.e. returned from search results.'
+    type: array
+    items:
+      $ref: '#/definitions/DocumentInfo'
+  RecordTreeInfoList:
+    description: 'List of RecordTreeInfo metadata returned from Folder listing'
+    type: array
+    items:
+      $ref: '#/definitions/RecordTreeInfo'
+  RecordTreeInfo:
+    description: 'Individual item in a folder listing; can represent a folder, notebook, document or media file'
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the Folder.
+      globalId:
+        type: string
+        description: A unique identifier amongst all RSpace data types.
+      name:
+        type: string
+        description: The folder's name.
+      created:
+        type: string
+        format: date-time
+        description: The creation time of the Folder.
+      lastModified:
+        type: string
+        format: date-time
+        description: The last modification time of the Folder.
+      parentFolderId:
+        type: integer
+        format: int64
+        description: |
+          The identifier of the parent folder of this folder or notebook.
+      type:
+        type: string
+        description: An indication of the type of record returned - one of 'DOCUMENT', 'MEDIA', 'NOTEBOOK' or 'FOLDER'
+  FormPost:
+    description: |
+
+      Definition of a new Form, including fields
+    properties:
+      name:
+        type: string
+        description: A required   name for the form
+        minLength: 1
+      tags:
+        type: string
+        description: Optional comma-separated list of tags for the form.
+      fields:
+        $ref: '#/definitions/FormFieldListPost'
+    example:
+      name: A required name for this new form.
+      tags: 'optionalTag1, optionalTag2'
+      fields:
+        - name: A String Field
+          type: String
+          defaultValue: An optional default value
+        - name: text FormField Example
+          type: Text
+          defaultValue: 'Some placeholder text,can be simple <em>HTML</em>'
+        - name: Number FormField Example
+          type: Number
+          defaultValue: 23
+          min: 0
+        - name: Choice FormField Example
+          type: Choice
+          multipleChoice: true
+          options:
+            - antibody1
+            - antibody2
+            - antibody3
+          defaultOptions:
+            - antibody2
+            - antibody3
+        - name: Radio FormField Example
+          type: Radio
+          options:
+            - antibody1
+            - antibody2
+            - antibody3
+          defaultOption: antibody2
+        - name: date FormField Example
+          type: Date
+          defaultValue: '2018-03-21'
+          min: '2018-02-21'
+          max: '2018-04-21'
+        - name: Reference field example
+          type: Reference
+        - name: Uri field example
+          type: Uri
+        - name: Attachment field example
+          type: Attachment
+  FormFieldListPost:
+    description: List of FormFields to post
+    type: array
+    items:
+      $ref: '#/definitions/FormFieldPost'
+  FormFieldPost:
+    description: General properties of all FieldForms
+    properties:
+      id:
+        type: integer
+        description: An optional ID. Leave this field blank for POST request, set it for PUT requests
+      name:
+        type: string
+        description: A required name for the form field
+        minLength: 1
+      type:
+        description: The type of this Form field.
+        enum:
+          - String
+          - Text
+          - Number
+          - Choice
+          - Radio
+          - Date
+  Form:
+    description: A Form. Examine the example for valid content.
+    allOf:
+      - $ref: '#/definitions/FormInfo'
+      - properties:
+          fields:
+            $ref: '#/definitions/FormFieldList'
+      - example:
+          id: 12345
+          globalID: FM12345
+          stableId: 12345-stable-id-abcde
+          version: 2
+          name: Experiment Form
+          tags: 'example,api'
+          formState: PUBLISHED
+          accessControl:
+            ownerPermissionType: WRITE
+            groupPermissionType: NONE
+          fields:
+            - name: string FormField Example
+              type: String
+              defaultValue: 'Plain text, <= 255 characters'
+            - name: text FormField Example
+              type: Text
+              defaultValue: 'Some placeholder text,can be simple <em>HTML</em>'
+            - name: number FormField Example
+              type: Number
+              defaultValue: 23
+              min: 0
+              decimalPlaces: 2
+            - name: Choice FormField Example
+              type: Choice
+              multipleChoice: true
+              options:
+                - antibody1
+                - antibody2
+                - antibody3
+              defaultOptions:
+                - antibody2
+                - antibody3
+            - name: Radio FormField Example
+              type: Radio
+              options:
+                - antibody1
+                - antibody2
+                - antibody3
+              defaultOption: antibody2
+            - name: date FormField Example
+              type: Date
+              defaultValue: '2018-03-21'
+              min: '2018-02-21'
+              max: '2018-04-21'
+  FormFieldList:
+    description: List of FormFields  in the form definition.
+    type: array
+    items:
+      $ref: '#/definitions/FormField'
+  FormField:
+    description: >-
+      A FormField definition. This is an abstract type; for details of the
+      specific subtypes seen the example in the 'Form' definition. The
+      properties listed here are common to all types
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the FormField.
+      globalId:
+        type: string
+        description: A unique identifier amongst all RSpace data types.
+      name:
+        type: string
+        description: The FormField's name
+      lastModified:
+        type: string
+        format: date-time
+        description: The last modification time of the Field Form.
+      index:
+        type: integer
+        description: The 0-based index of the form field list.
+      type:
+        type: string
+        description: >-
+          the type of data stored in the field, will be one of the following
+          constants.
+        enum:
+          - Text
+          - Number
+          - String
+          - Date
+          - Choice
+          - Radio
+  FolderPost:
+    description: Fields to create a new folder or notebook
+    properties:
+      name:
+        type: string
+        description: The folder's name.
+      parentFolderId:
+        type: integer
+        format: int64
+        description: >
+          An optional  identifier of the parent folder of this folder or
+          notebook.
+      notebook:
+        type: boolean
+        default: false
+        description: >-
+          Whether or not this folder is a Notebook (`true`), or just a regular
+          folder (`false`).
+    example:
+      name: My notebook
+      parentFolderId: 2111
+      notebook: 'true'
+  Folder:
+    description: A Folder or Notebook.
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the Folder.
+      globalId:
+        type: string
+        description: A unique identifier amongst all RSpace data types.
+      name:
+        type: string
+        description: The folder's name.
+      created:
+        type: string
+        format: date-time
+        description: The creation time of the Folder.
+      lastModified:
+        type: string
+        format: date-time
+        description: The last modification time of the Folder.
+      parentFolderId:
+        type: integer
+        format: int64
+        description: |
+          The identifier of the parent folder of this folder or notebook.
+      notebook:
+        type: boolean
+        default: false
+        description: 'Whether or not this folder is a Notebook, or just a regular folder.'
+  Activity:
+    description: A single activity from the RSpace audit trail.
+    properties:
+      timestamp:
+        type: string
+        format: date-time
+        description: The timestamp the activity occurred
+      username:
+        type: string
+        description: The username of the user who performed the activity.
+      fullName:
+        type: string
+        description: The full name of the user who performed the activity.
+      domain:
+        type: array
+        description: The resource involved in the activity.
+        items:
+          enum:
+            - RECORD
+            - NOTEBOOK
+            - FOLDER
+            - MEDIA
+            - WORKSPACE
+      action:
+        type: array
+        description: The activity type.
+        items:
+          enum:
+            - COPY
+            - CREATE
+            - DELETE
+            - EXPORT
+            - READ
+            - RESTORE
+            - SEARCH
+            - SHARE
+            - SIGN
+            - UNSHARE
+            - VIEW
+            - WITNESS
+            - WRITE
+      payload:
+        type: object
+        description: >-
+          Data associated with the activity. The internal schema may be subject
+          to change.
+    example:
+      timestamp: '2014-05-19T14:42:36.885Z'
+      action: WRITE
+      domain: RECORD
+      username: bob1234
+      fullName: Bob Smith
+      payload:
+        data:
+          name: MyDocument
+          id: SD483
+          type: NORMAL
+          userVersion:
+            version: 2
+  SharePost:
+    description: >-
+      Request body to share items. At least 1 group or user must be specified as
+      a target of the share.
+    properties:
+      itemsToShare:
+        type: array
+        description: A list of document or notebook ids to share.
+        items:
+          type: integer
+      groups:
+        type: array
+        description: A list of group IDs that each item will be shared with
+        items:
+          $ref: '#/definitions/GroupSharePostItem'
+      users:
+        type: array
+        description: A list of user IDs
+        items:
+          $ref: '#/definitions/UserSharePostItem'
+    example:
+      itemsToShare:
+        - 1234
+        - 5678
+      groups:
+        - id: 12345
+          permission: EDIT
+          sharedFolderId: 8922
+        - id: 23456
+          permission: READ
+      users:
+        - id: 89999
+          permission: EDIT
+  GroupSharePostItem:
+    description: Configuration of how an item should be shared
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the Group.
+      permission:
+        type: string
+        description: >-
+          The access level of the item - either 'READ' or 'EDIT'. Default is
+          'READ'
+      sharedFolderId:
+        type: integer
+        format: int64
+        description: Optional id of a folder within the shared folder tree.
+    example:
+      id: 12345
+      permission: READ
+      sharedFolderId: 45678
+  UserSharePostItem:
+    description: Configuration of how an item should be shared with an indivdual user
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the User.
+      permission:
+        type: string
+        description: >-
+          The access level of the item - either 'READ' or 'EDIT'. Default is
+          'READ'.
+    example:
+      id: 12345
+      permission: READ
+      sharedFolderId: 45678
+  ShareResult:
+    description: Result of /share POST operation
+    properties:
+      shareInfos:
+        description: List of individual share action results
+        type: array
+        items:
+          $ref: '#/definitions/ShareInfo'
+      failedShareIds:
+        type: array
+        description: >-
+          List of Ids of documents/notebooks that weren't shared (e.g. because
+          they were already shared, they are not sharable (e.g. they are not documents or notebooks), or because the sharer is not the owner).
+        items:
+          type: integer
+  ShareInfo:
+    description: Represents the shared item
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: The Id of the newly created shared resource
+      sharedItemId:
+        type: integer
+        format: int64
+        description: The Id of the shared item (document or notebook)
+      shareItemName:
+        type: string
+        description: The display name of the shared item
+      sharedTargetType:
+        type: string
+        description: One of 'GROUP' or 'USER'
+      permission:
+        type: string
+        description: The access permission granted; one of 'READ' or 'EDIT'
+    example:
+      id: 1234
+      sharedItemId: 23456
+      sharedTargetType: GROUP
+      permission: READ
+  SharedList:
+    description: 'List of ShareInfo object metadata,  returned from search or listing.'
+    type: array
+    items:
+      $ref: '#/definitions/ShareInfo'
+  ActivityList:
+    description: List of activities
+    type: array
+    minItems: 0
+    items:
+      $ref: '#/definitions/Activity'
+  IrodsCredentials:
+    description: >
+      The credentials for the IRODS account
+    properties:
+      username:
+        type: string
+        description: the username to login on IRODS
+        example: usernameIrods
+      password:
+        type: string
+        description: the password to login on IRODS
+        example: passwordIrods
+  ConfiguredLocationInfo:
+    description: Represents configuration to use in order to move/copy a file to an external storage
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: The Id of the filestore location that can be used to move/copy
+          to external location
+        example: 1
+      name:
+        type: string
+        description: The label name of the pre-configured file store location
+        example: test_folder_1
+      path:
+        type: string
+        description: The path of the pre-configured file store location
+        example: /tempZone/home/alice/test
+      _links:
+        $ref: '#/definitions/ExternalConfigurationLinkItemList'
+  ConfiguredLocationList:
+    description: 'List of irods configuration applicable for a given list of record id'
+    type: array
+    minimum: 0
+    items:
+      $ref: '#/definitions/ConfiguredLocationInfo'
+  ExternalConfigurationLinkItem:
+    description: >
+      Provide the operation, the http method and the link to the end point that can be used
+    properties:
+      operation:
+        type: string
+        description: 'the operation that can be performed by hitting the link (i.e.: copy, move,...)'
+      link:
+        type: string
+        description: URL of the end point to hit in order to perform the operation
+      method:
+        type: string
+        description: the HTTP method to use when hitting the link for a specific operation
+    example:
+      operation: 'copy'
+      link: 'http://rspace.com:8080/api/v1/gallery/irods/copy?filestorePathId=&recordIds=123,345'
+      method: 'POST'
+  ExternalStorageOperationInfo:
+    description: >
+      Provide the status file by file of the requested operation on the 
+      external file storage (i.e.: move, copy)
+    properties:
+      recordId:
+        type: number
+        description: Rspace record id of the file
+        example: 1
+      filename:
+        type: string
+        description: the name of the file that was being copied or moved
+        example: image1.png
+      succeeded:
+        type: boolean
+        description: the overall status of the requested operation
+        example: false
+      reason:
+        type: string
+        description: the description of the reason in case of failure
+        example: >
+          attempt to overwrite file, target file already exists 
+          and no callback listener provided to ask
+  ExternalConfigurationLinkItemList:
+    description: >
+      List of metadata links. Usually contains the operation that can be performed for a
+      specific link with the http method for each item
+    type: array
+    minItems: 0
+    items:
+      $ref: '#/definitions/ExternalConfigurationLinkItem'
+  LinkItemList:
+    description: >
+      List of metadata links. Usually contains 'self' link, for paginated result
+      also 'next', 'prev', 'first' and 'last' links.
+    type: array
+    minItems: 0
+    items:
+      $ref: '#/definitions/LinkItem'
+  LinkItem:
+    description: A metadata link.
+    properties:
+      link:
+        type: string
+        description: URL.
+      rel:
+        type: string
+        description: >
+          The relation, an IANA registered relation type as listed
+          https://www.iana.org/assignments/link-relations/link-relations.xml
+    example:
+      link: 'https://myrspace.com/api/v1/files/123'
+      type: self
+  User:
+    description: Representation of a User.
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the User.
+      username:
+        type: string
+        description: Unique username for the User.
+        minLength: 6
+      email:
+        type: string
+        description: Email address for User.
+        pattern: \S+@\S+
+      firstName:
+        type: string
+        description: First name of the User.
+      lastName:
+        type: string
+        description: Last name of the User.
+      homeFolderId:
+        type: number
+        description: The id of the home folder. May be empty if account has not yet been initialised.
+    example:
+      id: 23
+      username: fbloggs
+      email: bloggs@uni.edu
+      firstName: Fred
+      lastName: Bloggs
+      homeFolderId: 24556
+  GroupList:
+    type: array
+    items:
+      $ref: '#/definitions/GroupInfo'
+  GroupInfo:
+    description: Representation of a Group
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the Group.
+      globalId:
+        type: integer
+        format: int64
+        description: RSpace-wide unique identifier for the Group.
+      name:
+        type: string
+        description: Display name of the group.
+      type:
+        type: string
+        description: The type of group - either 'LAB_GROUP', 'COLLABORATION_GROUP' or 'PROJECT_GROUP'
+      sharedFolderId:
+        type: integer
+        format: int64
+        description: Unique identifier for shared group folder.
+      members:
+        type: array
+        description: A Listing of the group's members and their roles
+        items:
+          $ref: '#/definitions/UserGroupInfo'
+    example:
+      id: 1234
+      name: Smith Group
+      type: LAB_GROUP
+      sharedFolderId: 12345
+      members:
+        - id: 12345
+          username: jsmith
+          role: PI
+        - id: 23456
+          username: fbloggs
+          role: USER
+  UserGroupInfo:
+    description: Representation of a User in a group.
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique identifier for the User.
+      username:
+        type: string
+        description: Unique username for the User.
+        minLength: 6
+      role:
+        type: string
+        description: 'The user''s role in the group. One of ''PI'', ''LAB_ADMIN'' or ''USER'''
+    example:
+      id: 12345
+      username: jsmith
+      role: PI
+  Error:
+    description: Error object
+    properties:
+      status:
+        type: string
+        description: Text representation of Http Status Code.
+      httpCode:
+        type: integer
+        description: HttpStatusCode
+      internalCode:
+        type: integer
+        description: Internal error code to report to RSpace API support team.
+      message:
+        type: string
+        description: Human-readable error message
+      errors:
+        description: Optional information on errors on individual fields.
+        type: array
+        items:
+          type: string
+    example:
+      httpCode: 422
+      internalCode: 42201
+      message: Query could not be processed.
+responses:
+  UnprocessableQuery:
+    description: Query could not be processed.
+    schema:
+      $ref: '#/definitions/Error'
+  NotFound:
+    description: >
+      Resource could not be found - either does not exist, or client is not
+      authorised.
+    schema:
+      $ref: '#/definitions/Error'
+  TooManyRequests:
+    description: Too many requests - see the X-Rate-Limit headers for more information.
+    schema:
+      $ref: '#/definitions/Error'
+  EditConflict:
+    description: Document is currently being edited by another user in the web application.
+    schema:
+      $ref: '#/definitions/Error'
+  LicenseProblem:
+    description: License expired or not active.
+    schema:
+      $ref: '#/definitions/Error'

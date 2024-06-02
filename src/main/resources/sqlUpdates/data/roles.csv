@@ -1,0 +1,5 @@
+id,description,name
+-4,System admin  role,ROLE_SYSADMIN
+-3,PI role,ROLE_PI
+-2,Default role for all Users,ROLE_USER
+-1,Administrator role (can edit Users),ROLE_ADMIN

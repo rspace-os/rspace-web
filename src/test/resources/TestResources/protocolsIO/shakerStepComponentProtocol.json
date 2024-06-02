@@ -1,0 +1,4024 @@
+{
+  "id": 54898,
+  "title": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+  "title_html": "<p>Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d </p>",
+  "image": {
+    "source": "https://s3.amazonaws.com/protocols-files/files/fvzibd4wx.jpg",
+    "placeholder": "https://s3.amazonaws.com/protocols-files/files/fvzibd4wx.jpg"
+  },
+  "doi": "dx.doi.org/10.17504/protocols.io.bzusp6we",
+  "doi_status": 2,
+  "uri": "recombinant-protein-expression-and-purification-of-bzusp6we",
+  "type_id": 1,
+  "template_id": 4,
+  "published_on": 1636148950,
+  "stats": {
+    "number_of_views": 1080,
+    "number_of_steps": 17,
+    "number_of_bookmarks": 0,
+    "number_of_comments": 0,
+    "number_of_exports": 0,
+    "number_of_runs": 0,
+    "number_of_votes": 0,
+    "is_voted": 0
+  },
+  "parent_protocols": [],
+  "parent_collections": [],
+  "cited_protocols": [],
+  "version_id": 1,
+  "version_data": {
+    "id": 1,
+    "code": "bzusp6we",
+    "parent_id": 38001,
+    "parent_uri": "recombinant-protein-expression-and-purification-of-bhcrj2v6",
+    "has_pending_merge_request": 0,
+    "has_approved_merge_request": 1
+  },
+  "created_on": 1636147678,
+  "modified_on": null,
+  "categories": null,
+  "public": 1,
+  "is_unlisted": 0,
+  "creator": {
+    "name": " ",
+    "affiliation": null,
+    "affiliations": [],
+    "username": null,
+    "note": null,
+    "link": null,
+    "image": {
+      "source": null,
+      "placeholder": null
+    },
+    "badges": [],
+    "verified": 0,
+    "is_verified_user": false,
+    "research_interests": null,
+    "blocked_by_you": false,
+    "blocked_you": false,
+    "hide_following": false
+  },
+  "journal": null,
+  "journal_name": null,
+  "journal_link": null,
+  "article_citation": null,
+  "has_versions": 1,
+  "link": null,
+  "total_collections": 0,
+  "number_of_steps": 17,
+  "authors": [
+    {
+      "name": "Maira Rivera",
+      "affiliation": "Institute for Biological and Medical Engineering, Pontificia Universidad Católica de Chile",
+      "affiliations": [],
+      "username": "m4tle122x105ple1",
+      "note": null,
+      "link": null,
+      "image": {
+        "source": "/img/avatars/008.png",
+        "placeholder": "/img/avatars/008.png"
+      },
+      "badges": [],
+      "verified": 1,
+      "is_verified_user": true,
+      "research_interests": null,
+      "blocked_by_you": false,
+      "blocked_you": false,
+      "hide_following": false
+    },
+    {
+      "name": "Javiera Reyes",
+      "affiliation": "Institute for Biological and Medical Engineering, Pontificia Universidad Católica de Chile",
+      "affiliations": [],
+      "username": "w2x29423x2u2",
+      "note": null,
+      "link": null,
+      "image": {
+        "source": "/img/avatars/017.png",
+        "placeholder": "/img/avatars/017.png"
+      },
+      "badges": [],
+      "verified": 0,
+      "is_verified_user": false,
+      "research_interests": null,
+      "blocked_by_you": false,
+      "blocked_you": false,
+      "hide_following": false
+    },
+    {
+      "name": "Paula Blazquez-Sanchez",
+      "affiliation": "Institute for Biological and Medical Engineering, Pontificia Universidad Católica de Chile",
+      "affiliations": [],
+      "username": "w2x29423x2t2",
+      "note": null,
+      "link": null,
+      "image": {
+        "source": "/img/avatars/012.png",
+        "placeholder": "/img/avatars/012.png"
+      },
+      "badges": [],
+      "verified": 0,
+      "is_verified_user": false,
+      "research_interests": null,
+      "blocked_by_you": false,
+      "blocked_you": false,
+      "hide_following": false
+    },
+    {
+      "name": "Cesar A Ramirez-Sarmiento",
+      "affiliation": "Institute for Biological and Medical Engineering, Pontificia Universidad Católica de Chile",
+      "affiliations": [],
+      "username": "cesar-a-ramirezsarmiento",
+      "note": null,
+      "link": null,
+      "image": {
+        "source": "https://lh3.googleusercontent.com/a-/AOh14GgTN0D1WruZsggT-AtWdf1l3BT0RnGf_CxkLUhYvQ=s96-c",
+        "placeholder": "https://lh3.googleusercontent.com/a-/AOh14GgTN0D1WruZsggT-AtWdf1l3BT0RnGf_CxkLUhYvQ=s96-c"
+      },
+      "badges": [],
+      "verified": 1,
+      "is_verified_user": true,
+      "research_interests": null,
+      "blocked_by_you": false,
+      "blocked_you": false,
+      "hide_following": false
+    }
+  ],
+  "versions": [
+    {
+      "id": 38001,
+      "title": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+      "title_html": "<p>Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d </p>",
+      "image": {
+        "source": "https://s3.amazonaws.com/protocols-files/public/362183f889f440e1f0bd54c8d9b4d540d8c5ed40844f88a6ea08a3884aafbf13/cbj8bd4wx.png",
+        "placeholder": "https://s3.amazonaws.com/protocols-files/public/362183f889f440e1f0bd54c8d9b4d540d8c5ed40844f88a6ea08a3884aafbf13/cbj8bd4wx.png"
+      },
+      "doi": null,
+      "doi_status": 0,
+      "uri": "recombinant-protein-expression-and-purification-of-bhcrj2v6",
+      "type_id": 0,
+      "template_id": 0,
+      "published_on": 1591750684,
+      "stats": {
+        "number_of_views": 0,
+        "number_of_steps": 0,
+        "number_of_bookmarks": 0,
+        "number_of_comments": 1,
+        "number_of_exports": 0,
+        "number_of_runs": 0,
+        "number_of_votes": 0,
+        "is_voted": 0
+      },
+      "parent_protocols": [],
+      "parent_collections": [],
+      "cited_protocols": [],
+      "version_id": 0,
+      "version_data": {
+        "id": 0,
+        "code": "bhcrj2v6",
+        "parent_id": 0,
+        "parent_uri": null,
+        "has_pending_merge_request": 0,
+        "has_approved_merge_request": 0
+      },
+      "created_on": 1591732662,
+      "modified_on": 1591750684,
+      "categories": null,
+      "public": 1,
+      "is_unlisted": 0,
+      "creator": {
+        "name": " ",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": null,
+        "image": {
+          "source": null,
+          "placeholder": null
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false
+      },
+      "journal": null,
+      "journal_name": null,
+      "journal_link": null,
+      "article_citation": null
+    },
+    {
+      "id": 54898,
+      "title": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+      "title_html": "<p>Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d </p>",
+      "image": {
+        "source": "https://s3.amazonaws.com/protocols-files/files/fvzibd4wx.jpg",
+        "placeholder": "https://s3.amazonaws.com/protocols-files/files/fvzibd4wx.jpg"
+      },
+      "doi": null,
+      "doi_status": 0,
+      "uri": "recombinant-protein-expression-and-purification-of-bzusp6we",
+      "type_id": 0,
+      "template_id": 0,
+      "published_on": 1636148950,
+      "stats": {
+        "number_of_views": 0,
+        "number_of_steps": 0,
+        "number_of_bookmarks": 0,
+        "number_of_comments": 0,
+        "number_of_exports": 0,
+        "number_of_runs": 0,
+        "number_of_votes": 0,
+        "is_voted": 0
+      },
+      "parent_protocols": [],
+      "parent_collections": [],
+      "cited_protocols": [],
+      "version_id": 1,
+      "version_data": {
+        "id": 1,
+        "code": "bzusp6we",
+        "parent_id": 38001,
+        "parent_uri": null,
+        "has_pending_merge_request": 0,
+        "has_approved_merge_request": 0
+      },
+      "created_on": 1636147678,
+      "modified_on": 1636148950,
+      "categories": null,
+      "public": 1,
+      "is_unlisted": 0,
+      "creator": {
+        "name": " ",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": null,
+        "image": {
+          "source": null,
+          "placeholder": null
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false
+      },
+      "journal": null,
+      "journal_name": null,
+      "journal_link": null,
+      "article_citation": null
+    }
+  ],
+  "groups": [
+    {
+      "id": 1836,
+      "uri": "recloneorg-the-reagent-collaboration-network",
+      "title": "Reclone.org (The Reagent Collaboration Network)",
+      "image": {
+        "source": "https://s3.amazonaws.com/protocols-files/public/45907f9b98997cc501233cee29ae2828a1b79b6cbb2ca31186951f78725183d3/b656eibw.png",
+        "placeholder": "https://s3.amazonaws.com/protocols-files/public/45907f9b98997cc501233cee29ae2828a1b79b6cbb2ca31186951f78725183d3/b656eibw.png"
+      },
+      "tech_support": {
+        "email": "protocols@recode.org",
+        "phone": null,
+        "hide_contact": 0,
+        "use_email": 0,
+        "url": "https://forum.reclone.org/"
+      },
+      "is_member": 0,
+      "request": {
+        "id": 1836,
+        "uri": "recloneorg-the-reagent-collaboration-network",
+        "title": "Reclone.org (The Reagent Collaboration Network)",
+        "image": {
+          "source": "https://s3.amazonaws.com/protocols-files/public/45907f9b98997cc501233cee29ae2828a1b79b6cbb2ca31186951f78725183d3/b656eibw.png",
+          "placeholder": "https://s3.amazonaws.com/protocols-files/public/45907f9b98997cc501233cee29ae2828a1b79b6cbb2ca31186951f78725183d3/b656eibw.png"
+        },
+        "tech_support": {
+          "email": "protocols@recode.org",
+          "phone": null,
+          "hide_contact": 0,
+          "use_email": 0,
+          "url": "https://forum.reclone.org/"
+        },
+        "is_member": 0,
+        "description": null,
+        "research_interests": null,
+        "website": null,
+        "location": null,
+        "affiliation": null,
+        "status": {
+          "is_visible": true,
+          "access_level": 0
+        },
+        "stats": {
+          "files": [],
+          "total_members": 0,
+          "total_followers": 0,
+          "total_child_groups": 0,
+          "total_parent_groups": 0,
+          "has_collaborations": 0
+        },
+        "user_status": {
+          "is_member": false,
+          "is_confirmed": true,
+          "is_invited": false,
+          "is_owner": false,
+          "is_admin": false,
+          "is_following": false
+        },
+        "join_link": null,
+        "token": null,
+        "owner": {
+          "name": " ",
+          "affiliation": null,
+          "affiliations": [],
+          "username": null,
+          "note": null,
+          "link": null,
+          "image": {
+            "source": null,
+            "placeholder": null
+          },
+          "badges": [],
+          "verified": 0,
+          "is_verified_user": false,
+          "research_interests": null,
+          "blocked_by_you": false,
+          "blocked_you": false,
+          "hide_following": false
+        },
+        "is_protocol_requested": 0,
+        "is_group_requested": 0,
+        "is_my": false,
+        "is_request": false,
+        "is_confirmed": 1,
+        "is_declined": 0,
+        "requester": {
+          "name": " ",
+          "affiliation": null,
+          "affiliation_url": null,
+          "username": null,
+          "link": null
+        },
+        "protocol": {
+          "id": 0,
+          "title": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+          "title_html": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+          "image": {
+            "source": null,
+            "placeholder": null
+          },
+          "doi": null,
+          "doi_status": 0,
+          "uri": "recombinant-protein-expression-and-purification-of-bzusp6we",
+          "type_id": 1,
+          "template_id": 0,
+          "published_on": null,
+          "stats": {
+            "number_of_views": 0,
+            "number_of_steps": 0,
+            "number_of_bookmarks": 0,
+            "number_of_comments": 0,
+            "number_of_exports": 0,
+            "number_of_runs": 0,
+            "number_of_votes": 0,
+            "is_voted": 0
+          },
+          "parent_protocols": [],
+          "parent_collections": [],
+          "cited_protocols": []
+        },
+        "created_on": 1591793954,
+        "resolve_on": 0,
+        "resolved_user": {
+          "name": " ",
+          "affiliation": null,
+          "affiliations": [],
+          "username": null,
+          "note": null,
+          "link": null,
+          "image": {
+            "source": null,
+            "placeholder": null
+          },
+          "badges": [],
+          "verified": 0,
+          "is_verified_user": false,
+          "research_interests": null,
+          "blocked_by_you": false,
+          "blocked_you": false,
+          "hide_following": false
+        },
+        "shared": false
+      }
+    }
+  ],
+  "is_owner": 0,
+  "has_subprotocols": 0,
+  "is_subprotocol": 0,
+  "is_bookmarked": 0,
+  "can_claim_authorship": 1,
+  "can_accept_authorship": 0,
+  "can_be_copied": 0,
+  "can_remove_fork": 1,
+  "fork_id": null,
+  "url": "https://www.protocols.io/view/recombinant-protein-expression-and-purification-of-bzusp6we",
+  "forks_count": {
+    "private": 1,
+    "public": 0
+  },
+  "access": {
+    "can_view": 0,
+    "can_remove": 0,
+    "can_add": 0,
+    "can_edit": 0,
+    "can_publish": 0,
+    "can_get_doi": 0,
+    "can_share": 0,
+    "can_move": 0,
+    "can_move_outside": 0,
+    "can_transfer": 0,
+    "can_download": 1,
+    "is_locked": 0
+  },
+  "guid": "5CBEEA4FEC624263B1CD4DA584780872",
+  "state_version_id": 179,
+  "steps": [
+    {
+      "id": 1284338,
+      "guid": "3B528F1F19C54F3AA647BFE9CA3BB505",
+      "previous_id": null,
+      "previous_guid": null,
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "B8963FE571064747B5F2499E7FB84F3C",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 1 – Plasmid transformation"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "56ACC061E28346F48E90754E65F5E8DB",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">Transform </div><div class = \"text-block\"><span> of plasmid containing codon-optimized into </span><span style = \"font-style:italic;\">E. coli</span><span> C41 competent cells using either heat shock or electroporation.</span></div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "93BD53F03E7F11ECAB4C676A298197E5",
+          "order_id": 2,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 100,
+            "unit": "ng",
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#A492FF",
+      "section_duration": 86400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 7200
+    },
+    {
+      "id": 1284339,
+      "guid": "065FCB1D426C42B4972DE6E189547892",
+      "previous_id": 1284338,
+      "previous_guid": "3B528F1F19C54F3AA647BFE9CA3BB505",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "6CD8AB5DB812410E9A5E9784E26C9C87",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 1 – Plasmid transformation"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "6CD28D6B6DF7427CB0C9F5BD7FEB9A21",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">Spread transformed cells in LB Agar plates supplemented with </div><div class = \"text-block\">Kan. Grow plate overnight at </div><br/></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "87E3D460AA8C11EAAC59BD9017E1E6B6",
+          "order_id": 2,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.05,
+            "unit": null,
+            "title": ""
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "E1A483A0AA8C11EAAC59BD9017E1E6B6",
+          "order_id": 3,
+          "type_id": 24,
+          "title": "temperature",
+          "source": {
+            "temperature": 37,
+            "unit": "°C",
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#A492FF",
+      "section_duration": 86400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 43200
+    },
+    {
+      "id": 1284340,
+      "guid": "D38E5032D19841FD84A982BE0A2937D1",
+      "previous_id": 1284339,
+      "previous_guid": "065FCB1D426C42B4972DE6E189547892",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "592E730373AF47A38885B021563BFDA0",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 2 – Preinoculum"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "3F52932ED1094D19A8C9307A2CA750A1",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">Select a single colony from the LB agar plate to prepare a preinoculum in </div><div class = \"text-block\"> LB media supplemented with </div><div class = \"text-block\">Kan. Grow overnight at </div><br/></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "7A471190AA8D11EAAC59BD9017E1E6B6",
+          "order_id": 2,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 10,
+            "unit": "mL",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "9281037AAA8D11EA8AF20A58A9FEAC2A",
+          "order_id": 3,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.05,
+            "unit": null,
+            "title": ""
+          }
+        },
+        {
+          "id": 1054727,
+          "guid": "AEAEE9303E7F11ECAB4C676A298197E5",
+          "order_id": 4,
+          "type_id": 33,
+          "title": "shaker",
+          "source": {
+            "duration": 0,
+            "error_shaker": false,
+            "error_temperature": false,
+            "guid": "AEAEE9303E7F11ECAB4C676A298197E5",
+            "id": 0,
+            "label": "",
+            "pause": null,
+            "preset": [],
+            "scientificNotation": {
+              "shaker": false,
+              "temperature": false
+            },
+            "shaker": "250",
+            "start": null,
+            "temperature": "37",
+            "temperatureUnit": 10,
+            "unit": 33
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#94EBFF",
+      "section_duration": 86400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 86400
+    },
+    {
+      "id": 1284341,
+      "guid": "B48773C825524C0CB6375F2D1A3A8838",
+      "previous_id": 1284340,
+      "previous_guid": "D38E5032D19841FD84A982BE0A2937D1",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "BD93664443F94C4C8450F71295C4D35F",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 3 – Protein Overexpression"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "A726C1F1CCBE47F0AEBE4948B03532F0",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">Use the full volume of the preinoculum to inoculate </div><div class = \"text-block\"> of LB (or TB) media supplemented with </div><div class = \"text-block\">Kan (1% inoculation). Grow at  </div><div class = \"text-block\"><span>  until reaching an optical density at 600 nm (OD</span><span style = \"vertical-align:sub;\">600</span><span>) = 0.8</span></div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "D49FBB10AA8D11EAAC59BD9017E1E6B6",
+          "order_id": 2,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 1,
+            "unit": "L",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "E98AAA54AA8D11EA8AF20A58A9FEAC2A",
+          "order_id": 3,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.05,
+            "unit": null,
+            "title": ""
+          }
+        },
+        {
+          "id": 1054727,
+          "guid": "DDB92F3F3E7F11EC9DCD0A58A9FEAC02",
+          "order_id": 4,
+          "type_id": 33,
+          "title": "shaker",
+          "source": {
+            "duration": 0,
+            "error_shaker": false,
+            "error_temperature": false,
+            "guid": "DDB92F3F3E7F11EC9DCD0A58A9FEAC02",
+            "id": 0,
+            "label": "",
+            "pause": null,
+            "preset": [],
+            "scientificNotation": {
+              "shaker": false,
+              "temperature": false
+            },
+            "shaker": "160",
+            "start": null,
+            "temperature": "37",
+            "temperatureUnit": 10,
+            "unit": 33
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#84CE84",
+      "section_duration": 86400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 14400
+    },
+    {
+      "id": 1284342,
+      "guid": "02D1751DB1874AD2A1094DE716782D61",
+      "previous_id": 1284341,
+      "previous_guid": "B48773C825524C0CB6375F2D1A3A8838",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "A06DFCBBE2BC452F8ED8F5F1A0525FF0",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 3 – Protein Overexpression"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "8A5477D8F4D345479246095ADE503687",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>Upon reaching OD</span><span style = \"vertical-align:sub;\">600 </span><span>= 0.8, add IPTG to a final concentration of </span></div><div class = \"text-block\"> and incubate overnight at </div><br/></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "F1C74DB0AA8E11EAAC59BD9017E1E6B6",
+          "order_id": 2,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.5,
+            "unit": "Milimolar (mM)",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "F6AF4F4A3E7F11EC9DCD0A58A9FEAC02",
+          "order_id": 3,
+          "type_id": 33,
+          "title": "shaker",
+          "source": {
+            "duration": 0,
+            "error_shaker": false,
+            "error_temperature": false,
+            "guid": "F6AF4F4A3E7F11EC9DCD0A58A9FEAC02",
+            "id": 0,
+            "label": "",
+            "pause": null,
+            "preset": [],
+            "scientificNotation": {
+              "shaker": false,
+              "temperature": false
+            },
+            "shaker": "160",
+            "start": null,
+            "temperature": "18",
+            "temperatureUnit": 10,
+            "unit": 33
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#84CE84",
+      "section_duration": 86400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 57600
+    },
+    {
+      "id": 1284343,
+      "guid": "3683C0312038485393359EA098972348",
+      "previous_id": 1284342,
+      "previous_guid": "02D1751DB1874AD2A1094DE716782D61",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "7FFA2EEB1DB146CB8792B62D2631C4D8",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4A – Protein Purification by IMAC"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "5711FE24DD7941A39603B40E39B2587A",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">Centrifuge the cell culture </div><div class = \"text-block\">.Then, resuspend the cell pellet in </div><div class = \"text-block\"><span> of </span><span style = \"font-weight:bold;\">Buffer A</span><span> freshly supplemented with </span></div><div class = \"text-block\"> PMSF and </div><div class = \"text-block\"> lysozyme.</div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "752AB5C0AA8F11EAAC59BD9017E1E6B6",
+          "order_id": 2,
+          "type_id": 30,
+          "title": "centrifuge",
+          "source": {
+            "centrifuge": "4000",
+            "duration": 1200,
+            "guid": "752AB5C0AA8F11EAAC59BD9017E1E6B6",
+            "id": 0,
+            "label": "",
+            "pause": null,
+            "preset": [],
+            "start": null,
+            "temperature": "4",
+            "temperatureUnit": 10,
+            "unit": 34
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "8BF18D10AA8F11EAAC59BD9017E1E6B6",
+          "order_id": 3,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 50,
+            "unit": "mL",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054727,
+          "guid": "4D9CC470AA9511EAB804652ADB7AA5E5",
+          "order_id": 4,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.5,
+            "unit": "Milimolar (mM)",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054728,
+          "guid": "94387B40AA9511EAB804652ADB7AA5E5",
+          "order_id": 5,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.2,
+            "unit": null,
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#FFED92",
+      "section_duration": 14400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 1800
+    },
+    {
+      "id": 1284350,
+      "guid": "2BE274803E8011ECAB4C676A298197E5",
+      "previous_id": 1284343,
+      "previous_guid": "3683C0312038485393359EA098972348",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "7A027206B7144B1EB285B0B50EBC0EF2",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4A – Protein Purification by IMAC"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "9ABAD889102549E599B6EF0AD0DC419C",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">Incubate the resuspended cells at </div><br/></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "3934CB603E8011ECAB4C676A298197E5",
+          "order_id": 2,
+          "type_id": 33,
+          "title": "shaker",
+          "source": {
+            "duration": 1200,
+            "error_shaker": false,
+            "error_temperature": false,
+            "guid": "3934CB603E8011ECAB4C676A298197E5",
+            "id": 0,
+            "label": "",
+            "pause": null,
+            "preset": [],
+            "scientificNotation": {
+              "shaker": false,
+              "temperature": false
+            },
+            "shaker": "80",
+            "start": null,
+            "temperature": "",
+            "temperatureUnit": 32,
+            "unit": 33
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#FFED92",
+      "section_duration": 14400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 1800
+    },
+    {
+      "id": 1284344,
+      "guid": "C8F44699B4D642E687762EB9F677AC3C",
+      "previous_id": 1284350,
+      "previous_guid": "2BE274803E8011ECAB4C676A298197E5",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "8AAD7CF758BF40A5A3D2BDA72291F9C9",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4A – Protein Purification by IMAC"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "BE5A63254BE04A00BCD87E1CA8712BF6",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">Sonicate on ice for </div><div class = \"text-block\"> using cycles of </div><div class = \"text-block\"> ON and </div><div class = \"text-block\"> OFF at 40% amplitude (Qsonica Q125, 125W).</div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "A1E9CAEBAA9511EA8AF20A58A9FEAC2A",
+          "order_id": 2,
+          "type_id": 4,
+          "title": "duration",
+          "source": {
+            "duration": 240,
+            "title": ""
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "B165A8A0AA9511EAB804652ADB7AA5E5",
+          "order_id": 3,
+          "type_id": 4,
+          "title": "duration",
+          "source": {
+            "duration": 1,
+            "title": ""
+          }
+        },
+        {
+          "id": 1054727,
+          "guid": "BB0BE770AA9511EAB804652ADB7AA5E5",
+          "order_id": 4,
+          "type_id": 4,
+          "title": "duration",
+          "source": {
+            "duration": 4,
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#FFED92",
+      "section_duration": 14400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 600
+    },
+    {
+      "id": 1284345,
+      "guid": "14B48BB614DE4FE68CDBCC6E6559D3A2",
+      "previous_id": 1284344,
+      "previous_guid": "C8F44699B4D642E687762EB9F677AC3C",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "CC48CB38345A47009DC065FF90B0375D",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4A – Protein Purification by IMAC"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "35187FE1EA054AD7981C16C5F5E89188",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">On an ultracentrifugation tube, Incubate the unclarified lysate at </div><div class = \"text-block\"> for </div><div class = \"text-block\"><span> to precipitate most of </span><span style = \"font-style:italic;\">E. coli</span><span> proteins, and then place on ice for </span></div><div class = \"text-block\">. Centrifuge </div><div class = \"text-block\"> and collect the supernatant. You might want to collect a small sample for SDS-PAGE afterwards.</div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "EDEDDFE0AA9511EAB804652ADB7AA5E5",
+          "order_id": 2,
+          "type_id": 24,
+          "title": "temperature",
+          "source": {
+            "temperature": 70,
+            "unit": "°C",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "F501DB10AA9511EAB804652ADB7AA5E5",
+          "order_id": 3,
+          "type_id": 4,
+          "title": "duration",
+          "source": {
+            "duration": 1800,
+            "title": ""
+          }
+        },
+        {
+          "id": 1054727,
+          "guid": "132FBA20AA9711EAB804652ADB7AA5E5",
+          "order_id": 4,
+          "type_id": 4,
+          "title": "duration",
+          "source": {
+            "duration": 300,
+            "title": ""
+          }
+        },
+        {
+          "id": 1054728,
+          "guid": "25F358B0AA9711EAB804652ADB7AA5E5",
+          "order_id": 5,
+          "type_id": 30,
+          "title": "centrifuge",
+          "source": {
+            "centrifuge": "20000",
+            "duration": 1200,
+            "guid": "25F358B0AA9711EAB804652ADB7AA5E5",
+            "id": 0,
+            "label": "",
+            "pause": null,
+            "preset": [],
+            "start": null,
+            "temperature": "4",
+            "temperatureUnit": 10,
+            "unit": 34
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#FFED92",
+      "section_duration": 14400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 3600
+    },
+    {
+      "id": 1284346,
+      "guid": "10C87B86F3574E4DBD235CF0E1425BF4",
+      "previous_id": 1284345,
+      "previous_guid": "14B48BB614DE4FE68CDBCC6E6559D3A2",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "2798B187E62F40E090C7B31941A4F9CB",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4A – Protein Purification by IMAC"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "FE80CDF197114BA2A527230212ABDB83",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>On a </span><span style = \"font-weight:bold;\">1 mL HisTrap column</span><span> preequilibrated with 10 column volumes (c.v.) (here, 10 mL) of </span><span style = \"font-weight:bold;\">Buffer A</span><span>, load the supernant.</span></div><div class = \"text-block\"><span>Wash with 10-20 c.v. of </span><span style = \"font-weight:bold;\">Buffer A.</span></div><div class = \"text-block\"><span>Then, elute with 5 c.v. of </span><span style = \"font-weight:bold;\">Buffer B</span><span>, collecting the eluted fractions every </span></div><div class = \"text-block\">in 1.5 ml tubes.</div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "17CBBB00AA9811EAB804652ADB7AA5E5",
+          "order_id": 2,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 0.5,
+            "unit": "mL",
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#FFED92",
+      "section_duration": 14400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 3600
+    },
+    {
+      "id": 1284347,
+      "guid": "405796C747074162AF090B35390FE4F2",
+      "previous_id": 1284346,
+      "previous_guid": "10C87B86F3574E4DBD235CF0E1425BF4",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "AF0E1558B6A14C39B65860E09B8CDB65",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4A – Protein Purification by IMAC"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "F5342F2BC82945BD9DB44F6584DCF24E",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">To quickly pool the fractions containing the protein of interest, prepare a 96-well plate or 1.5 mL tubes with </div><div class = \"text-block\">of Bradford reagent and </div><div class = \"text-block\">of distilled water. Then, add </div><div class = \"text-block\">of each protein fraction and compare against a blank reference sample corresponding to </div><div class = \"text-block\"><span>of </span><span style = \"font-weight:bold;\">Buffer B</span><span>. You can determine your protein-containing fractions either by absorbance at 595 nm on a plate reader or visually by comparing the blue coloration of each fraction against the blank reference. Pool your fractions and collect a </span></div><div class = \"text-block\"> sample for SDS-PAGE</div><br/></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "002C4C10AA9A11EAB804652ADB7AA5E5",
+          "order_id": 2,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 40,
+            "unit": "µl",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "03EBEC20AA9A11EAB804652ADB7AA5E5",
+          "order_id": 3,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 150,
+            "unit": "µl",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054727,
+          "guid": "063F2AF0AA9A11EAB804652ADB7AA5E5",
+          "order_id": 4,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 10,
+            "unit": "µl",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054728,
+          "guid": "0CA496A0AA9A11EAB804652ADB7AA5E5",
+          "order_id": 5,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 10,
+            "unit": "µl",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054729,
+          "guid": "E3A9E0D0AA9D11EAB804652ADB7AA5E5",
+          "order_id": 6,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 10,
+            "unit": "µl",
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#FFED92",
+      "section_duration": 14400,
+      "critical": null,
+      "critical_id": null,
+      "duration": 300
+    },
+    {
+      "id": 1284348,
+      "guid": "DABA23547FED46049BEF84839EB81490",
+      "previous_id": 1284347,
+      "previous_guid": "405796C747074162AF090B35390FE4F2",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "900E19BFA0D4453090CC4217D526C942",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4B – Second purification and buffer exchange by Heparin"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "7518662B77D4499F89EA6FAEFCD72C51",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">This method was preferred over protein dyalisis or Amicon protein concentration to avoid using large buffer volumes and proteins crashing out of the solution. </div><br/><div class = \"text-block\">Dilute the pooled fractions 3X in 50 mM Tris-HCl pH 8.0, such that the final concentration of NaCl is 100 mM.</div></div>"
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#EA9F6C",
+      "section_duration": 7200,
+      "critical": null,
+      "critical_id": null,
+      "duration": 300
+    },
+    {
+      "id": 1284352,
+      "guid": "C239B2E03E8011ECAB4C676A298197E5",
+      "previous_id": 1284348,
+      "previous_guid": "DABA23547FED46049BEF84839EB81490",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "DE0E5EB4C48A4F24811425CE4012A3E3",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4B – Second purification and buffer exchange by Heparin"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "E10FD0F48D3E4BB0AFAFAB409E69CF61",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>Next, load the diluted sample onto a </span><span style = \"font-weight:bold;\">1 ml HiTrap Heparin column</span><span> previously equilibrated with 10 c.v. (here, 10 mL) of </span><span style = \"font-weight:bold;\">Buffer HA.</span></div><div class = \"text-block\"><span>Then, elute the protein using a 10 c.v. linear gradient against </span><span style = \"font-weight:bold;\">Buffer HB</span><span>, collecting the eluted fractions every </span></div><div class = \"text-block\"> in 1.5 mL tubes. The protein will elute at high concentrations between 300 and 600 mM NaCl </div><br/><div class = \"text-block\"><span>This linear gradient can be achieved by connecting two containers, one with 5 c.v. </span><span style = \"font-weight:bold;\">Buffer HA</span><span> and the other with 5 c.v. </span><span style = \"font-weight:bold;\">Buffer HB</span><span>, with a syphon or a tube, and withdrawing solution from </span><span style = \"font-weight:bold;\">Buffer HA</span><span> container to the column using a cheap peristaltic pump or by gravity.</span></div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "C2DAE6D93E8011EC9DCD0A58A9FEAC02",
+          "order_id": 2,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 1,
+            "unit": "mL",
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#EA9F6C",
+      "section_duration": 7200,
+      "critical": null,
+      "critical_id": null,
+      "duration": 1800
+    },
+    {
+      "id": 1284353,
+      "guid": "01B8E3003E8111ECAB4C676A298197E5",
+      "previous_id": 1284352,
+      "previous_guid": "C239B2E03E8011ECAB4C676A298197E5",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "40FEA082BFE44FD8B13AA59DE91613D1",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4B – Second purification and buffer exchange by Heparin"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "4E42D377BDD54A49AFFFB5DC92374109",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">Again, determine your protein-containing fractions using the Bradford assay. Pool your fractions and determine its protein concentration using the same method and collect a </div><div class = \"text-block\"> sample for SDS-PAGE.</div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "0BA411993E8111EC9DCD0A58A9FEAC02",
+          "order_id": 2,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 10,
+            "unit": "µl",
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#EA9F6C",
+      "section_duration": 7200,
+      "critical": null,
+      "critical_id": null,
+      "duration": 300
+    },
+    {
+      "id": 1284354,
+      "guid": "41221A203E8111ECAB4C676A298197E5",
+      "previous_id": 1284353,
+      "previous_guid": "01B8E3003E8111ECAB4C676A298197E5",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "97028FEF15644280B39B9B159970F61C",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4B – Second purification and buffer exchange by Heparin"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "7546B29EA4D74B488A27F614D266EB73",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">For storage, supplement your pooled fraction with </div><div class = \"text-block\"> Nonidet P-40 and </div><div class = \"text-block\"> EDTA. Then, dilute the sample by adding glycerol up to </div><div class = \"text-block\"><span>  to reach final storage conditions: </span><span style = \"font-weight:bold;\">25 mM Tris-HCl pH 8.0, ~250 mM NaCl, 0.1 mM EDTA, 0.1% Nonidet P-40, 50% glycerol.</span></div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "446D57083E8111EC9DCD0A58A9FEAC02",
+          "order_id": 2,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.2,
+            "unit": "Volume Percent",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "446D54EF3E8111EC9DCD0A58A9FEAC02",
+          "order_id": 3,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.2,
+            "unit": "Milimolar (mM)",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054727,
+          "guid": "446D561C3E8111EC9DCD0A58A9FEAC02",
+          "order_id": 4,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 50,
+            "unit": "Volume Percent",
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#EA9F6C",
+      "section_duration": 7200,
+      "critical": null,
+      "critical_id": null,
+      "duration": 300
+    },
+    {
+      "id": 1284355,
+      "guid": "BBF4F9203E8111ECAB4C676A298197E5",
+      "previous_id": 1284354,
+      "previous_guid": "41221A203E8111ECAB4C676A298197E5",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "CCF20FF08F924F6884ED07281B04D5D7",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "DAY 4B – Second purification and buffer exchange by Heparin"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "77840ABE8D2D4546BD259D01F7D4B2DF",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><div class = \"text-block\">Generate</div><div class = \"text-block\"> aliquots of the enzyme and store it at </div><div class = \"text-block\"> until required. Usual final protein concentrations for storage are between </div><div class = \"text-block\"> and </div></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "BCA4485E3E8111EC9DCD0A58A9FEAC02",
+          "order_id": 2,
+          "type_id": 3,
+          "title": "amount",
+          "source": {
+            "amount": 200,
+            "unit": "µl",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054726,
+          "guid": "BCA449BF3E8111EC9DCD0A58A9FEAC02",
+          "order_id": 3,
+          "type_id": 24,
+          "title": "temperature",
+          "source": {
+            "temperature": -20,
+            "unit": "°C",
+            "title": ""
+          }
+        },
+        {
+          "id": 1054727,
+          "guid": "BCA44A8D3E8111EC9DCD0A58A9FEAC02",
+          "order_id": 4,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.2,
+            "unit": null,
+            "title": ""
+          }
+        },
+        {
+          "id": 1054728,
+          "guid": "BCA44B2E3E8111EC9DCD0A58A9FEAC02",
+          "order_id": 5,
+          "type_id": 25,
+          "title": "concentration",
+          "source": {
+            "concentration": 0.6,
+            "unit": null,
+            "title": ""
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#EA9F6C",
+      "section_duration": 7200,
+      "critical": null,
+      "critical_id": null,
+      "duration": 1800
+    },
+    {
+      "id": 1284349,
+      "guid": "E35B1C3486A444598D8F552113F22CAD",
+      "previous_id": 1284355,
+      "previous_guid": "BBF4F9203E8111ECAB4C676A298197E5",
+      "modified_on": 0,
+      "protocol_id": 0,
+      "components": [
+        {
+          "id": 1054723,
+          "guid": "54192FBB24C244B2B432F54E37B96315",
+          "order_id": 1,
+          "type_id": 6,
+          "title": "Section",
+          "source": {
+            "title": "SDS-PAGE Result"
+          }
+        },
+        {
+          "id": 1054724,
+          "guid": "7F81F837087C4A9D8E9309B5EA3FEF0B",
+          "order_id": 1,
+          "type_id": 1,
+          "title": "description",
+          "source": {
+            "description": "<div class = \"text-blocks\"><br/><br/><br/></div>"
+          }
+        },
+        {
+          "id": 1054725,
+          "guid": "1EFE109575C94E588C528914A9A9BD43",
+          "order_id": 2,
+          "type_id": 17,
+          "title": "result",
+          "source": {
+            "body": "<div class = \"text-blocks\"><div style = \"text-align :; float : ;\"><img style = \"\" src = \"https://s3.amazonaws.com/protocols-files/files/fvzkbd4wx.jpg\" /></div><br/></div>"
+          }
+        }
+      ],
+      "cases": [],
+      "data": null,
+      "html": null,
+      "section": null,
+      "section_color": "#E57785",
+      "section_duration": 0,
+      "critical": null,
+      "critical_id": null,
+      "duration": 0
+    }
+  ],
+  "document": "",
+  "materials": [
+    {
+      "id": 3235,
+      "mol_weight": 137.99,
+      "name": "Sodium phosphate monobasic monohydrate",
+      "linfor": "NaH2PO4 · H2O  ",
+      "url": "http://www.sigmaaldrich.com/catalog/product/sial/s9638?lang=pt&region=BR",
+      "sku": "S9638",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Sigma Aldrich",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "http://sigmaaldrich.com",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 17
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    },
+    {
+      "id": 3831,
+      "mol_weight": 0,
+      "name": "PMSF",
+      "linfor": "",
+      "url": "http://www.sigmaaldrich.com/catalog/product/sigma/p7626?lang=de&region=DE",
+      "sku": "P7626",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Sigma Aldrich",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "http://sigmaaldrich.com",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 17
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    },
+    {
+      "id": 4444,
+      "mol_weight": 141.96,
+      "name": "Sodium phosphate dibasic",
+      "linfor": "Na2HPO4",
+      "url": "http://www.sigmaaldrich.com/catalog/product/sigma/s3264?lang=pt&region=BR&gclid=CNGMhdaT_NMCFUWAkQodkxAGrA",
+      "sku": "7558-79-4",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Sigma Aldrich",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "http://sigmaaldrich.com",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 17
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    },
+    {
+      "id": 9090,
+      "mol_weight": 0,
+      "name": "Imidazole",
+      "linfor": "",
+      "url": "http://www.sigmaaldrich.com/catalog/product/sigma/i5513?lang=en&region=US",
+      "sku": "I5513",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Sigma",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "http://www.sigma.com",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 114
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    },
+    {
+      "id": 42246,
+      "mol_weight": 58.44,
+      "name": "NaCl",
+      "linfor": "NaCl",
+      "url": "http://www.sigmaaldrich.com/catalog/product/sigald/s9888?lang=en&region=CO",
+      "sku": "53014",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Sigma Aldrich",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "http://sigmaaldrich.com",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 17
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    },
+    {
+      "id": 119782,
+      "mol_weight": 0,
+      "name": "HiTrap Heparin HP affinity column",
+      "linfor": "",
+      "url": "",
+      "sku": "17040701",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Ge Life Sciences",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "http://www.gelifesciences.com/",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 16
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    },
+    {
+      "id": 124904,
+      "mol_weight": 0,
+      "name": "HisTrap FF Crude Column",
+      "linfor": "",
+      "url": "https://www.gelifesciences.com/en/us/shop/chromatography/resins/affinity-tagged-protein/histrap-ff-crude-histidine-tagged-protein-purification-columns-p-00407?current=29048631",
+      "sku": "17528601",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Ge Healthcare",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "http://www.gehealthcare.com",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 51
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    },
+    {
+      "id": 180879,
+      "mol_weight": 0,
+      "name": "Dextrose",
+      "linfor": "",
+      "url": "https://www.sigmaaldrich.com/catalog/product/sigma/d9434?lang=en&region=US",
+      "sku": "D9434",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Sigma – Aldrich",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "https://www.sigmaaldrich.com/",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 298
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    },
+    {
+      "id": 350209,
+      "mol_weight": 0,
+      "name": " Nonidet P40 Substitute",
+      "linfor": "",
+      "url": null,
+      "sku": " 74385",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Sigma Aldrich",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "http://sigmaaldrich.com",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 17
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    },
+    {
+      "id": 415635,
+      "mol_weight": 0,
+      "name": "EDTA",
+      "linfor": "",
+      "url": null,
+      "sku": "ED2SS",
+      "cas_number": "",
+      "rrid": "",
+      "public": 0,
+      "vendor": {
+        "name": "Sigma Aldrich",
+        "affiliation": null,
+        "affiliations": [],
+        "username": null,
+        "note": null,
+        "link": "http://sigmaaldrich.com",
+        "image": {
+          "source": "https://www.protocols.io/img/vendors/placeholder.png",
+          "placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+        },
+        "badges": [],
+        "verified": 0,
+        "is_verified_user": false,
+        "research_interests": null,
+        "blocked_by_you": false,
+        "blocked_you": false,
+        "hide_following": false,
+        "id": 17
+      },
+      "can_edit": 0,
+      "stats": {
+        "total_protocols": 0
+      }
+    }
+  ],
+  "description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>This protocol has been optimized for the recombinant expression of a codon-optizimed Pfu-Sso7d DNA polymerase. This is a fusion protein composed of the Pfu enzyme from </span><span style = \"font-style:italic;\">Pyrococcus furiosus</span><span> for DNA amplification by PCR fused to a small 7 kDa protein from </span><span style = \"font-style:italic;\">Sulfobulus solfataricus</span><span> that binds to double-stranded DNA without any preference for specific sequences, thus enhancing polymerization processivity without affecting the catalytic activity or thermal stability of the enzyme.</span></div><br/><div class = \"text-block\">The goal of this protocol was to eliminate the use of large volumes for dyalisis and potential issues with the protein crashing out of the solution due to the use of concentrators for buffer exchange of this enzyme into storage conditions. We also eliminated the use of DTT, which is often found in other similar protocols.</div><br/><div class = \"text-block\"><span>The sequence plasmid encoding the codon-optimized Pfu-Sso7d enzyme used here can be found at </span><a href=\"https://benchling.com/s/seq-2TcUPjO2uMbDG5ufTQN4\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\">https://benchling.com/s/seq-2TcUPjO2uMbDG5ufTQN4</span></a></div></div>",
+  "changed_on": 1636148950,
+  "guidelines": "",
+  "before_start": "",
+  "warning": "",
+  "materials_text": "<div class = \"text-blocks\"><div class = \"text-block\">MATERIALS</div><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer A, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  NaPO4, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  dextrose</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> EDTA</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>Imidazole, pH 8.0</span></div><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer B, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  NaPO4, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  dextrose</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> EDTA</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>Imidazole, pH 8.0</span></div><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer C</span><span style = \"font-weight:bold;font-weight:bold;\"> </span><span style = \"font-weight:bold;\">, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  NaPO4, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  dextrose</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> EDTA</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>Imidazole, pH 8.0</span></div><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer HA, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  Tris-HCl, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer HB, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  Tris-HCl, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div></div>"
+},
+"status_code": 0
+}{
+"protocol": {
+"id": 54898,
+"title": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+"title_html": "<p>Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d </p>",
+"image": {
+"source": "https://s3.amazonaws.com/protocols-files/files/fvzibd4wx.jpg",
+"placeholder": "https://s3.amazonaws.com/protocols-files/files/fvzibd4wx.jpg"
+},
+"doi": "dx.doi.org/10.17504/protocols.io.bzusp6we",
+"doi_status": 2,
+"uri": "recombinant-protein-expression-and-purification-of-bzusp6we",
+"type_id": 1,
+"template_id": 4,
+"published_on": 1636148950,
+"stats": {
+"number_of_views": 1080,
+"number_of_steps": 17,
+"number_of_bookmarks": 0,
+"number_of_comments": 0,
+"number_of_exports": 0,
+"number_of_runs": 0,
+"number_of_votes": 0,
+"is_voted": 0
+},
+"parent_protocols": [],
+"parent_collections": [],
+"cited_protocols": [],
+"version_id": 1,
+"version_data": {
+"id": 1,
+"code": "bzusp6we",
+"parent_id": 38001,
+"parent_uri": "recombinant-protein-expression-and-purification-of-bhcrj2v6",
+"has_pending_merge_request": 0,
+"has_approved_merge_request": 1
+},
+"created_on": 1636147678,
+"modified_on": null,
+"categories": null,
+"public": 1,
+"is_unlisted": 0,
+"creator": {
+"name": " ",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": null,
+"image": {
+"source": null,
+"placeholder": null
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false
+},
+"journal": null,
+"journal_name": null,
+"journal_link": null,
+"article_citation": null,
+"has_versions": 1,
+"link": null,
+"total_collections": 0,
+"number_of_steps": 17,
+"authors": [
+{
+"name": "Maira Rivera",
+"affiliation": "Institute for Biological and Medical Engineering, Pontificia Universidad Católica de Chile",
+"affiliations": [],
+"username": "m4tle122x105ple1",
+"note": null,
+"link": null,
+"image": {
+"source": "/img/avatars/008.png",
+"placeholder": "/img/avatars/008.png"
+},
+"badges": [],
+"verified": 1,
+"is_verified_user": true,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false
+},
+{
+"name": "Javiera Reyes",
+"affiliation": "Institute for Biological and Medical Engineering, Pontificia Universidad Católica de Chile",
+"affiliations": [],
+"username": "w2x29423x2u2",
+"note": null,
+"link": null,
+"image": {
+"source": "/img/avatars/017.png",
+"placeholder": "/img/avatars/017.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false
+},
+{
+"name": "Paula Blazquez-Sanchez",
+"affiliation": "Institute for Biological and Medical Engineering, Pontificia Universidad Católica de Chile",
+"affiliations": [],
+"username": "w2x29423x2t2",
+"note": null,
+"link": null,
+"image": {
+"source": "/img/avatars/012.png",
+"placeholder": "/img/avatars/012.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false
+},
+{
+"name": "Cesar A Ramirez-Sarmiento",
+"affiliation": "Institute for Biological and Medical Engineering, Pontificia Universidad Católica de Chile",
+"affiliations": [],
+"username": "cesar-a-ramirezsarmiento",
+"note": null,
+"link": null,
+"image": {
+"source": "https://lh3.googleusercontent.com/a-/AOh14GgTN0D1WruZsggT-AtWdf1l3BT0RnGf_CxkLUhYvQ=s96-c",
+"placeholder": "https://lh3.googleusercontent.com/a-/AOh14GgTN0D1WruZsggT-AtWdf1l3BT0RnGf_CxkLUhYvQ=s96-c"
+},
+"badges": [],
+"verified": 1,
+"is_verified_user": true,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false
+}
+],
+"versions": [
+{
+"id": 38001,
+"title": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+"title_html": "<p>Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d </p>",
+"image": {
+"source": "https://s3.amazonaws.com/protocols-files/public/362183f889f440e1f0bd54c8d9b4d540d8c5ed40844f88a6ea08a3884aafbf13/cbj8bd4wx.png",
+"placeholder": "https://s3.amazonaws.com/protocols-files/public/362183f889f440e1f0bd54c8d9b4d540d8c5ed40844f88a6ea08a3884aafbf13/cbj8bd4wx.png"
+},
+"doi": null,
+"doi_status": 0,
+"uri": "recombinant-protein-expression-and-purification-of-bhcrj2v6",
+"type_id": 0,
+"template_id": 0,
+"published_on": 1591750684,
+"stats": {
+"number_of_views": 0,
+"number_of_steps": 0,
+"number_of_bookmarks": 0,
+"number_of_comments": 1,
+"number_of_exports": 0,
+"number_of_runs": 0,
+"number_of_votes": 0,
+"is_voted": 0
+},
+"parent_protocols": [],
+"parent_collections": [],
+"cited_protocols": [],
+"version_id": 0,
+"version_data": {
+"id": 0,
+"code": "bhcrj2v6",
+"parent_id": 0,
+"parent_uri": null,
+"has_pending_merge_request": 0,
+"has_approved_merge_request": 0
+},
+"created_on": 1591732662,
+"modified_on": 1591750684,
+"categories": null,
+"public": 1,
+"is_unlisted": 0,
+"creator": {
+"name": " ",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": null,
+"image": {
+"source": null,
+"placeholder": null
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false
+},
+"journal": null,
+"journal_name": null,
+"journal_link": null,
+"article_citation": null
+},
+{
+"id": 54898,
+"title": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+"title_html": "<p>Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d </p>",
+"image": {
+"source": "https://s3.amazonaws.com/protocols-files/files/fvzibd4wx.jpg",
+"placeholder": "https://s3.amazonaws.com/protocols-files/files/fvzibd4wx.jpg"
+},
+"doi": null,
+"doi_status": 0,
+"uri": "recombinant-protein-expression-and-purification-of-bzusp6we",
+"type_id": 0,
+"template_id": 0,
+"published_on": 1636148950,
+"stats": {
+"number_of_views": 0,
+"number_of_steps": 0,
+"number_of_bookmarks": 0,
+"number_of_comments": 0,
+"number_of_exports": 0,
+"number_of_runs": 0,
+"number_of_votes": 0,
+"is_voted": 0
+},
+"parent_protocols": [],
+"parent_collections": [],
+"cited_protocols": [],
+"version_id": 1,
+"version_data": {
+"id": 1,
+"code": "bzusp6we",
+"parent_id": 38001,
+"parent_uri": null,
+"has_pending_merge_request": 0,
+"has_approved_merge_request": 0
+},
+"created_on": 1636147678,
+"modified_on": 1636148950,
+"categories": null,
+"public": 1,
+"is_unlisted": 0,
+"creator": {
+"name": " ",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": null,
+"image": {
+"source": null,
+"placeholder": null
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false
+},
+"journal": null,
+"journal_name": null,
+"journal_link": null,
+"article_citation": null
+}
+],
+"groups": [
+{
+"id": 1836,
+"uri": "recloneorg-the-reagent-collaboration-network",
+"title": "Reclone.org (The Reagent Collaboration Network)",
+"image": {
+"source": "https://s3.amazonaws.com/protocols-files/public/45907f9b98997cc501233cee29ae2828a1b79b6cbb2ca31186951f78725183d3/b656eibw.png",
+"placeholder": "https://s3.amazonaws.com/protocols-files/public/45907f9b98997cc501233cee29ae2828a1b79b6cbb2ca31186951f78725183d3/b656eibw.png"
+},
+"tech_support": {
+"email": "protocols@recode.org",
+"phone": null,
+"hide_contact": 0,
+"use_email": 0,
+"url": "https://forum.reclone.org/"
+},
+"is_member": 0,
+"request": {
+"id": 1836,
+"uri": "recloneorg-the-reagent-collaboration-network",
+"title": "Reclone.org (The Reagent Collaboration Network)",
+"image": {
+"source": "https://s3.amazonaws.com/protocols-files/public/45907f9b98997cc501233cee29ae2828a1b79b6cbb2ca31186951f78725183d3/b656eibw.png",
+"placeholder": "https://s3.amazonaws.com/protocols-files/public/45907f9b98997cc501233cee29ae2828a1b79b6cbb2ca31186951f78725183d3/b656eibw.png"
+},
+"tech_support": {
+"email": "protocols@recode.org",
+"phone": null,
+"hide_contact": 0,
+"use_email": 0,
+"url": "https://forum.reclone.org/"
+},
+"is_member": 0,
+"description": null,
+"research_interests": null,
+"website": null,
+"location": null,
+"affiliation": null,
+"status": {
+"is_visible": true,
+"access_level": 0
+},
+"stats": {
+"files": [],
+"total_members": 0,
+"total_followers": 0,
+"total_child_groups": 0,
+"total_parent_groups": 0,
+"has_collaborations": 0
+},
+"user_status": {
+"is_member": false,
+"is_confirmed": true,
+"is_invited": false,
+"is_owner": false,
+"is_admin": false,
+"is_following": false
+},
+"join_link": null,
+"token": null,
+"owner": {
+"name": " ",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": null,
+"image": {
+"source": null,
+"placeholder": null
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false
+},
+"is_protocol_requested": 0,
+"is_group_requested": 0,
+"is_my": false,
+"is_request": false,
+"is_confirmed": 1,
+"is_declined": 0,
+"requester": {
+"name": " ",
+"affiliation": null,
+"affiliation_url": null,
+"username": null,
+"link": null
+},
+"protocol": {
+"id": 0,
+"title": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+"title_html": "Recombinant protein expression and purification of codon-optimized  Pfu-Sso7d ",
+"image": {
+"source": null,
+"placeholder": null
+},
+"doi": null,
+"doi_status": 0,
+"uri": "recombinant-protein-expression-and-purification-of-bzusp6we",
+"type_id": 1,
+"template_id": 0,
+"published_on": null,
+"stats": {
+"number_of_views": 0,
+"number_of_steps": 0,
+"number_of_bookmarks": 0,
+"number_of_comments": 0,
+"number_of_exports": 0,
+"number_of_runs": 0,
+"number_of_votes": 0,
+"is_voted": 0
+},
+"parent_protocols": [],
+"parent_collections": [],
+"cited_protocols": []
+},
+"created_on": 1591793954,
+"resolve_on": 0,
+"resolved_user": {
+"name": " ",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": null,
+"image": {
+"source": null,
+"placeholder": null
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false
+},
+"shared": false
+}
+}
+],
+"is_owner": 0,
+"has_subprotocols": 0,
+"is_subprotocol": 0,
+"is_bookmarked": 0,
+"can_claim_authorship": 1,
+"can_accept_authorship": 0,
+"can_be_copied": 0,
+"can_remove_fork": 1,
+"fork_id": null,
+"url": "https://www.protocols.io/view/recombinant-protein-expression-and-purification-of-bzusp6we",
+"forks_count": {
+"private": 1,
+"public": 0
+},
+"access": {
+"can_view": 0,
+"can_remove": 0,
+"can_add": 0,
+"can_edit": 0,
+"can_publish": 0,
+"can_get_doi": 0,
+"can_share": 0,
+"can_move": 0,
+"can_move_outside": 0,
+"can_transfer": 0,
+"can_download": 1,
+"is_locked": 0
+},
+"guid": "5CBEEA4FEC624263B1CD4DA584780872",
+"state_version_id": 179,
+"steps": [
+{
+"id": 1284338,
+"guid": "3B528F1F19C54F3AA647BFE9CA3BB505",
+"previous_id": null,
+"previous_guid": null,
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "B8963FE571064747B5F2499E7FB84F3C",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 1 – Plasmid transformation"
+}
+},
+{
+"id": 1054724,
+"guid": "56ACC061E28346F48E90754E65F5E8DB",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">Transform </div><div class = \"text-block\"><span> of plasmid containing codon-optimized into </span><span style = \"font-style:italic;\">E. coli</span><span> C41 competent cells using either heat shock or electroporation.</span></div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "93BD53F03E7F11ECAB4C676A298197E5",
+"order_id": 2,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 100,
+"unit": "ng",
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#A492FF",
+"section_duration": 86400,
+"critical": null,
+"critical_id": null,
+"duration": 7200
+},
+{
+"id": 1284339,
+"guid": "065FCB1D426C42B4972DE6E189547892",
+"previous_id": 1284338,
+"previous_guid": "3B528F1F19C54F3AA647BFE9CA3BB505",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "6CD8AB5DB812410E9A5E9784E26C9C87",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 1 – Plasmid transformation"
+}
+},
+{
+"id": 1054724,
+"guid": "6CD28D6B6DF7427CB0C9F5BD7FEB9A21",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">Spread transformed cells in LB Agar plates supplemented with </div><div class = \"text-block\">Kan. Grow plate overnight at </div><br/></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "87E3D460AA8C11EAAC59BD9017E1E6B6",
+"order_id": 2,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.05,
+"unit": null,
+"title": ""
+}
+},
+{
+"id": 1054726,
+"guid": "E1A483A0AA8C11EAAC59BD9017E1E6B6",
+"order_id": 3,
+"type_id": 24,
+"title": "temperature",
+"source": {
+"temperature": 37,
+"unit": "°C",
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#A492FF",
+"section_duration": 86400,
+"critical": null,
+"critical_id": null,
+"duration": 43200
+},
+{
+"id": 1284340,
+"guid": "D38E5032D19841FD84A982BE0A2937D1",
+"previous_id": 1284339,
+"previous_guid": "065FCB1D426C42B4972DE6E189547892",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "592E730373AF47A38885B021563BFDA0",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 2 – Preinoculum"
+}
+},
+{
+"id": 1054724,
+"guid": "3F52932ED1094D19A8C9307A2CA750A1",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">Select a single colony from the LB agar plate to prepare a preinoculum in </div><div class = \"text-block\"> LB media supplemented with </div><div class = \"text-block\">Kan. Grow overnight at </div><br/></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "7A471190AA8D11EAAC59BD9017E1E6B6",
+"order_id": 2,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 10,
+"unit": "mL",
+"title": ""
+}
+},
+{
+"id": 1054726,
+"guid": "9281037AAA8D11EA8AF20A58A9FEAC2A",
+"order_id": 3,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.05,
+"unit": null,
+"title": ""
+}
+},
+{
+"id": 1054727,
+"guid": "AEAEE9303E7F11ECAB4C676A298197E5",
+"order_id": 4,
+"type_id": 33,
+"title": "shaker",
+"source": {
+"duration": 0,
+"error_shaker": false,
+"error_temperature": false,
+"guid": "AEAEE9303E7F11ECAB4C676A298197E5",
+"id": 0,
+"label": "",
+"pause": null,
+"preset": [],
+"scientificNotation": {
+"shaker": false,
+"temperature": false
+},
+"shaker": "250",
+"start": null,
+"temperature": "37",
+"temperatureUnit": 10,
+"unit": 33
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#94EBFF",
+"section_duration": 86400,
+"critical": null,
+"critical_id": null,
+"duration": 86400
+},
+{
+"id": 1284341,
+"guid": "B48773C825524C0CB6375F2D1A3A8838",
+"previous_id": 1284340,
+"previous_guid": "D38E5032D19841FD84A982BE0A2937D1",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "BD93664443F94C4C8450F71295C4D35F",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 3 – Protein Overexpression"
+}
+},
+{
+"id": 1054724,
+"guid": "A726C1F1CCBE47F0AEBE4948B03532F0",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">Use the full volume of the preinoculum to inoculate </div><div class = \"text-block\"> of LB (or TB) media supplemented with </div><div class = \"text-block\">Kan (1% inoculation). Grow at  </div><div class = \"text-block\"><span>  until reaching an optical density at 600 nm (OD</span><span style = \"vertical-align:sub;\">600</span><span>) = 0.8</span></div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "D49FBB10AA8D11EAAC59BD9017E1E6B6",
+"order_id": 2,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 1,
+"unit": "L",
+"title": ""
+}
+},
+{
+"id": 1054726,
+"guid": "E98AAA54AA8D11EA8AF20A58A9FEAC2A",
+"order_id": 3,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.05,
+"unit": null,
+"title": ""
+}
+},
+{
+"id": 1054727,
+"guid": "DDB92F3F3E7F11EC9DCD0A58A9FEAC02",
+"order_id": 4,
+"type_id": 33,
+"title": "shaker",
+"source": {
+"duration": 0,
+"error_shaker": false,
+"error_temperature": false,
+"guid": "DDB92F3F3E7F11EC9DCD0A58A9FEAC02",
+"id": 0,
+"label": "",
+"pause": null,
+"preset": [],
+"scientificNotation": {
+"shaker": false,
+"temperature": false
+},
+"shaker": "160",
+"start": null,
+"temperature": "37",
+"temperatureUnit": 10,
+"unit": 33
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#84CE84",
+"section_duration": 86400,
+"critical": null,
+"critical_id": null,
+"duration": 14400
+},
+{
+"id": 1284342,
+"guid": "02D1751DB1874AD2A1094DE716782D61",
+"previous_id": 1284341,
+"previous_guid": "B48773C825524C0CB6375F2D1A3A8838",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "A06DFCBBE2BC452F8ED8F5F1A0525FF0",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 3 – Protein Overexpression"
+}
+},
+{
+"id": 1054724,
+"guid": "8A5477D8F4D345479246095ADE503687",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>Upon reaching OD</span><span style = \"vertical-align:sub;\">600 </span><span>= 0.8, add IPTG to a final concentration of </span></div><div class = \"text-block\"> and incubate overnight at </div><br/></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "F1C74DB0AA8E11EAAC59BD9017E1E6B6",
+"order_id": 2,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.5,
+"unit": "Milimolar (mM)",
+"title": ""
+}
+},
+{
+"id": 1054726,
+"guid": "F6AF4F4A3E7F11EC9DCD0A58A9FEAC02",
+"order_id": 3,
+"type_id": 33,
+"title": "shaker",
+"source": {
+"duration": 0,
+"error_shaker": false,
+"error_temperature": false,
+"guid": "F6AF4F4A3E7F11EC9DCD0A58A9FEAC02",
+"id": 0,
+"label": "",
+"pause": null,
+"preset": [],
+"scientificNotation": {
+"shaker": false,
+"temperature": false
+},
+"shaker": "160",
+"start": null,
+"temperature": "18",
+"temperatureUnit": 10,
+"unit": 33
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#84CE84",
+"section_duration": 86400,
+"critical": null,
+"critical_id": null,
+"duration": 57600
+},
+{
+"id": 1284343,
+"guid": "3683C0312038485393359EA098972348",
+"previous_id": 1284342,
+"previous_guid": "02D1751DB1874AD2A1094DE716782D61",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "7FFA2EEB1DB146CB8792B62D2631C4D8",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4A – Protein Purification by IMAC"
+}
+},
+{
+"id": 1054724,
+"guid": "5711FE24DD7941A39603B40E39B2587A",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">Centrifuge the cell culture </div><div class = \"text-block\">.Then, resuspend the cell pellet in </div><div class = \"text-block\"><span> of </span><span style = \"font-weight:bold;\">Buffer A</span><span> freshly supplemented with </span></div><div class = \"text-block\"> PMSF and </div><div class = \"text-block\"> lysozyme.</div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "752AB5C0AA8F11EAAC59BD9017E1E6B6",
+"order_id": 2,
+"type_id": 30,
+"title": "centrifuge",
+"source": {
+"centrifuge": "4000",
+"duration": 1200,
+"guid": "752AB5C0AA8F11EAAC59BD9017E1E6B6",
+"id": 0,
+"label": "",
+"pause": null,
+"preset": [],
+"start": null,
+"temperature": "4",
+"temperatureUnit": 10,
+"unit": 34
+}
+},
+{
+"id": 1054726,
+"guid": "8BF18D10AA8F11EAAC59BD9017E1E6B6",
+"order_id": 3,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 50,
+"unit": "mL",
+"title": ""
+}
+},
+{
+"id": 1054727,
+"guid": "4D9CC470AA9511EAB804652ADB7AA5E5",
+"order_id": 4,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.5,
+"unit": "Milimolar (mM)",
+"title": ""
+}
+},
+{
+"id": 1054728,
+"guid": "94387B40AA9511EAB804652ADB7AA5E5",
+"order_id": 5,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.2,
+"unit": null,
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#FFED92",
+"section_duration": 14400,
+"critical": null,
+"critical_id": null,
+"duration": 1800
+},
+{
+"id": 1284350,
+"guid": "2BE274803E8011ECAB4C676A298197E5",
+"previous_id": 1284343,
+"previous_guid": "3683C0312038485393359EA098972348",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "7A027206B7144B1EB285B0B50EBC0EF2",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4A – Protein Purification by IMAC"
+}
+},
+{
+"id": 1054724,
+"guid": "9ABAD889102549E599B6EF0AD0DC419C",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">Incubate the resuspended cells at </div><br/></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "3934CB603E8011ECAB4C676A298197E5",
+"order_id": 2,
+"type_id": 33,
+"title": "shaker",
+"source": {
+"duration": 1200,
+"error_shaker": false,
+"error_temperature": false,
+"guid": "3934CB603E8011ECAB4C676A298197E5",
+"id": 0,
+"label": "",
+"pause": null,
+"preset": [],
+"scientificNotation": {
+"shaker": false,
+"temperature": false
+},
+"shaker": "80",
+"start": null,
+"temperature": "",
+"temperatureUnit": 32,
+"unit": 33
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#FFED92",
+"section_duration": 14400,
+"critical": null,
+"critical_id": null,
+"duration": 1800
+},
+{
+"id": 1284344,
+"guid": "C8F44699B4D642E687762EB9F677AC3C",
+"previous_id": 1284350,
+"previous_guid": "2BE274803E8011ECAB4C676A298197E5",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "8AAD7CF758BF40A5A3D2BDA72291F9C9",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4A – Protein Purification by IMAC"
+}
+},
+{
+"id": 1054724,
+"guid": "BE5A63254BE04A00BCD87E1CA8712BF6",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">Sonicate on ice for </div><div class = \"text-block\"> using cycles of </div><div class = \"text-block\"> ON and </div><div class = \"text-block\"> OFF at 40% amplitude (Qsonica Q125, 125W).</div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "A1E9CAEBAA9511EA8AF20A58A9FEAC2A",
+"order_id": 2,
+"type_id": 4,
+"title": "duration",
+"source": {
+"duration": 240,
+"title": ""
+}
+},
+{
+"id": 1054726,
+"guid": "B165A8A0AA9511EAB804652ADB7AA5E5",
+"order_id": 3,
+"type_id": 4,
+"title": "duration",
+"source": {
+"duration": 1,
+"title": ""
+}
+},
+{
+"id": 1054727,
+"guid": "BB0BE770AA9511EAB804652ADB7AA5E5",
+"order_id": 4,
+"type_id": 4,
+"title": "duration",
+"source": {
+"duration": 4,
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#FFED92",
+"section_duration": 14400,
+"critical": null,
+"critical_id": null,
+"duration": 600
+},
+{
+"id": 1284345,
+"guid": "14B48BB614DE4FE68CDBCC6E6559D3A2",
+"previous_id": 1284344,
+"previous_guid": "C8F44699B4D642E687762EB9F677AC3C",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "CC48CB38345A47009DC065FF90B0375D",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4A – Protein Purification by IMAC"
+}
+},
+{
+"id": 1054724,
+"guid": "35187FE1EA054AD7981C16C5F5E89188",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">On an ultracentrifugation tube, Incubate the unclarified lysate at </div><div class = \"text-block\"> for </div><div class = \"text-block\"><span> to precipitate most of </span><span style = \"font-style:italic;\">E. coli</span><span> proteins, and then place on ice for </span></div><div class = \"text-block\">. Centrifuge </div><div class = \"text-block\"> and collect the supernatant. You might want to collect a small sample for SDS-PAGE afterwards.</div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "EDEDDFE0AA9511EAB804652ADB7AA5E5",
+"order_id": 2,
+"type_id": 24,
+"title": "temperature",
+"source": {
+"temperature": 70,
+"unit": "°C",
+"title": ""
+}
+},
+{
+"id": 1054726,
+"guid": "F501DB10AA9511EAB804652ADB7AA5E5",
+"order_id": 3,
+"type_id": 4,
+"title": "duration",
+"source": {
+"duration": 1800,
+"title": ""
+}
+},
+{
+"id": 1054727,
+"guid": "132FBA20AA9711EAB804652ADB7AA5E5",
+"order_id": 4,
+"type_id": 4,
+"title": "duration",
+"source": {
+"duration": 300,
+"title": ""
+}
+},
+{
+"id": 1054728,
+"guid": "25F358B0AA9711EAB804652ADB7AA5E5",
+"order_id": 5,
+"type_id": 30,
+"title": "centrifuge",
+"source": {
+"centrifuge": "20000",
+"duration": 1200,
+"guid": "25F358B0AA9711EAB804652ADB7AA5E5",
+"id": 0,
+"label": "",
+"pause": null,
+"preset": [],
+"start": null,
+"temperature": "4",
+"temperatureUnit": 10,
+"unit": 34
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#FFED92",
+"section_duration": 14400,
+"critical": null,
+"critical_id": null,
+"duration": 3600
+},
+{
+"id": 1284346,
+"guid": "10C87B86F3574E4DBD235CF0E1425BF4",
+"previous_id": 1284345,
+"previous_guid": "14B48BB614DE4FE68CDBCC6E6559D3A2",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "2798B187E62F40E090C7B31941A4F9CB",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4A – Protein Purification by IMAC"
+}
+},
+{
+"id": 1054724,
+"guid": "FE80CDF197114BA2A527230212ABDB83",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>On a </span><span style = \"font-weight:bold;\">1 mL HisTrap column</span><span> preequilibrated with 10 column volumes (c.v.) (here, 10 mL) of </span><span style = \"font-weight:bold;\">Buffer A</span><span>, load the supernant.</span></div><div class = \"text-block\"><span>Wash with 10-20 c.v. of </span><span style = \"font-weight:bold;\">Buffer A.</span></div><div class = \"text-block\"><span>Then, elute with 5 c.v. of </span><span style = \"font-weight:bold;\">Buffer B</span><span>, collecting the eluted fractions every </span></div><div class = \"text-block\">in 1.5 ml tubes.</div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "17CBBB00AA9811EAB804652ADB7AA5E5",
+"order_id": 2,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 0.5,
+"unit": "mL",
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#FFED92",
+"section_duration": 14400,
+"critical": null,
+"critical_id": null,
+"duration": 3600
+},
+{
+"id": 1284347,
+"guid": "405796C747074162AF090B35390FE4F2",
+"previous_id": 1284346,
+"previous_guid": "10C87B86F3574E4DBD235CF0E1425BF4",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "AF0E1558B6A14C39B65860E09B8CDB65",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4A – Protein Purification by IMAC"
+}
+},
+{
+"id": 1054724,
+"guid": "F5342F2BC82945BD9DB44F6584DCF24E",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">To quickly pool the fractions containing the protein of interest, prepare a 96-well plate or 1.5 mL tubes with </div><div class = \"text-block\">of Bradford reagent and </div><div class = \"text-block\">of distilled water. Then, add </div><div class = \"text-block\">of each protein fraction and compare against a blank reference sample corresponding to </div><div class = \"text-block\"><span>of </span><span style = \"font-weight:bold;\">Buffer B</span><span>. You can determine your protein-containing fractions either by absorbance at 595 nm on a plate reader or visually by comparing the blue coloration of each fraction against the blank reference. Pool your fractions and collect a </span></div><div class = \"text-block\"> sample for SDS-PAGE</div><br/></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "002C4C10AA9A11EAB804652ADB7AA5E5",
+"order_id": 2,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 40,
+"unit": "µl",
+"title": ""
+}
+},
+{
+"id": 1054726,
+"guid": "03EBEC20AA9A11EAB804652ADB7AA5E5",
+"order_id": 3,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 150,
+"unit": "µl",
+"title": ""
+}
+},
+{
+"id": 1054727,
+"guid": "063F2AF0AA9A11EAB804652ADB7AA5E5",
+"order_id": 4,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 10,
+"unit": "µl",
+"title": ""
+}
+},
+{
+"id": 1054728,
+"guid": "0CA496A0AA9A11EAB804652ADB7AA5E5",
+"order_id": 5,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 10,
+"unit": "µl",
+"title": ""
+}
+},
+{
+"id": 1054729,
+"guid": "E3A9E0D0AA9D11EAB804652ADB7AA5E5",
+"order_id": 6,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 10,
+"unit": "µl",
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#FFED92",
+"section_duration": 14400,
+"critical": null,
+"critical_id": null,
+"duration": 300
+},
+{
+"id": 1284348,
+"guid": "DABA23547FED46049BEF84839EB81490",
+"previous_id": 1284347,
+"previous_guid": "405796C747074162AF090B35390FE4F2",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "900E19BFA0D4453090CC4217D526C942",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4B – Second purification and buffer exchange by Heparin"
+}
+},
+{
+"id": 1054724,
+"guid": "7518662B77D4499F89EA6FAEFCD72C51",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">This method was preferred over protein dyalisis or Amicon protein concentration to avoid using large buffer volumes and proteins crashing out of the solution. </div><br/><div class = \"text-block\">Dilute the pooled fractions 3X in 50 mM Tris-HCl pH 8.0, such that the final concentration of NaCl is 100 mM.</div></div>"
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#EA9F6C",
+"section_duration": 7200,
+"critical": null,
+"critical_id": null,
+"duration": 300
+},
+{
+"id": 1284352,
+"guid": "C239B2E03E8011ECAB4C676A298197E5",
+"previous_id": 1284348,
+"previous_guid": "DABA23547FED46049BEF84839EB81490",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "DE0E5EB4C48A4F24811425CE4012A3E3",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4B – Second purification and buffer exchange by Heparin"
+}
+},
+{
+"id": 1054724,
+"guid": "E10FD0F48D3E4BB0AFAFAB409E69CF61",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>Next, load the diluted sample onto a </span><span style = \"font-weight:bold;\">1 ml HiTrap Heparin column</span><span> previously equilibrated with 10 c.v. (here, 10 mL) of </span><span style = \"font-weight:bold;\">Buffer HA.</span></div><div class = \"text-block\"><span>Then, elute the protein using a 10 c.v. linear gradient against </span><span style = \"font-weight:bold;\">Buffer HB</span><span>, collecting the eluted fractions every </span></div><div class = \"text-block\"> in 1.5 mL tubes. The protein will elute at high concentrations between 300 and 600 mM NaCl </div><br/><div class = \"text-block\"><span>This linear gradient can be achieved by connecting two containers, one with 5 c.v. </span><span style = \"font-weight:bold;\">Buffer HA</span><span> and the other with 5 c.v. </span><span style = \"font-weight:bold;\">Buffer HB</span><span>, with a syphon or a tube, and withdrawing solution from </span><span style = \"font-weight:bold;\">Buffer HA</span><span> container to the column using a cheap peristaltic pump or by gravity.</span></div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "C2DAE6D93E8011EC9DCD0A58A9FEAC02",
+"order_id": 2,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 1,
+"unit": "mL",
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#EA9F6C",
+"section_duration": 7200,
+"critical": null,
+"critical_id": null,
+"duration": 1800
+},
+{
+"id": 1284353,
+"guid": "01B8E3003E8111ECAB4C676A298197E5",
+"previous_id": 1284352,
+"previous_guid": "C239B2E03E8011ECAB4C676A298197E5",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "40FEA082BFE44FD8B13AA59DE91613D1",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4B – Second purification and buffer exchange by Heparin"
+}
+},
+{
+"id": 1054724,
+"guid": "4E42D377BDD54A49AFFFB5DC92374109",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">Again, determine your protein-containing fractions using the Bradford assay. Pool your fractions and determine its protein concentration using the same method and collect a </div><div class = \"text-block\"> sample for SDS-PAGE.</div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "0BA411993E8111EC9DCD0A58A9FEAC02",
+"order_id": 2,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 10,
+"unit": "µl",
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#EA9F6C",
+"section_duration": 7200,
+"critical": null,
+"critical_id": null,
+"duration": 300
+},
+{
+"id": 1284354,
+"guid": "41221A203E8111ECAB4C676A298197E5",
+"previous_id": 1284353,
+"previous_guid": "01B8E3003E8111ECAB4C676A298197E5",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "97028FEF15644280B39B9B159970F61C",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4B – Second purification and buffer exchange by Heparin"
+}
+},
+{
+"id": 1054724,
+"guid": "7546B29EA4D74B488A27F614D266EB73",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">For storage, supplement your pooled fraction with </div><div class = \"text-block\"> Nonidet P-40 and </div><div class = \"text-block\"> EDTA. Then, dilute the sample by adding glycerol up to </div><div class = \"text-block\"><span>  to reach final storage conditions: </span><span style = \"font-weight:bold;\">25 mM Tris-HCl pH 8.0, ~250 mM NaCl, 0.1 mM EDTA, 0.1% Nonidet P-40, 50% glycerol.</span></div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "446D57083E8111EC9DCD0A58A9FEAC02",
+"order_id": 2,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.2,
+"unit": "Volume Percent",
+"title": ""
+}
+},
+{
+"id": 1054726,
+"guid": "446D54EF3E8111EC9DCD0A58A9FEAC02",
+"order_id": 3,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.2,
+"unit": "Milimolar (mM)",
+"title": ""
+}
+},
+{
+"id": 1054727,
+"guid": "446D561C3E8111EC9DCD0A58A9FEAC02",
+"order_id": 4,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 50,
+"unit": "Volume Percent",
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#EA9F6C",
+"section_duration": 7200,
+"critical": null,
+"critical_id": null,
+"duration": 300
+},
+{
+"id": 1284355,
+"guid": "BBF4F9203E8111ECAB4C676A298197E5",
+"previous_id": 1284354,
+"previous_guid": "41221A203E8111ECAB4C676A298197E5",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "CCF20FF08F924F6884ED07281B04D5D7",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "DAY 4B – Second purification and buffer exchange by Heparin"
+}
+},
+{
+"id": 1054724,
+"guid": "77840ABE8D2D4546BD259D01F7D4B2DF",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><div class = \"text-block\">Generate</div><div class = \"text-block\"> aliquots of the enzyme and store it at </div><div class = \"text-block\"> until required. Usual final protein concentrations for storage are between </div><div class = \"text-block\"> and </div></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "BCA4485E3E8111EC9DCD0A58A9FEAC02",
+"order_id": 2,
+"type_id": 3,
+"title": "amount",
+"source": {
+"amount": 200,
+"unit": "µl",
+"title": ""
+}
+},
+{
+"id": 1054726,
+"guid": "BCA449BF3E8111EC9DCD0A58A9FEAC02",
+"order_id": 3,
+"type_id": 24,
+"title": "temperature",
+"source": {
+"temperature": -20,
+"unit": "°C",
+"title": ""
+}
+},
+{
+"id": 1054727,
+"guid": "BCA44A8D3E8111EC9DCD0A58A9FEAC02",
+"order_id": 4,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.2,
+"unit": null,
+"title": ""
+}
+},
+{
+"id": 1054728,
+"guid": "BCA44B2E3E8111EC9DCD0A58A9FEAC02",
+"order_id": 5,
+"type_id": 25,
+"title": "concentration",
+"source": {
+"concentration": 0.6,
+"unit": null,
+"title": ""
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#EA9F6C",
+"section_duration": 7200,
+"critical": null,
+"critical_id": null,
+"duration": 1800
+},
+{
+"id": 1284349,
+"guid": "E35B1C3486A444598D8F552113F22CAD",
+"previous_id": 1284355,
+"previous_guid": "BBF4F9203E8111ECAB4C676A298197E5",
+"modified_on": 0,
+"protocol_id": 0,
+"components": [
+{
+"id": 1054723,
+"guid": "54192FBB24C244B2B432F54E37B96315",
+"order_id": 1,
+"type_id": 6,
+"title": "Section",
+"source": {
+"title": "SDS-PAGE Result"
+}
+},
+{
+"id": 1054724,
+"guid": "7F81F837087C4A9D8E9309B5EA3FEF0B",
+"order_id": 1,
+"type_id": 1,
+"title": "description",
+"source": {
+"description": "<div class = \"text-blocks\"><br/><br/><br/></div>"
+}
+},
+{
+"id": 1054725,
+"guid": "1EFE109575C94E588C528914A9A9BD43",
+"order_id": 2,
+"type_id": 17,
+"title": "result",
+"source": {
+"body": "<div class = \"text-blocks\"><div style = \"text-align :; float : ;\"><img style = \"\" src = \"https://s3.amazonaws.com/protocols-files/files/fvzkbd4wx.jpg\" /></div><br/></div>"
+}
+}
+],
+"cases": [],
+"data": null,
+"html": null,
+"section": null,
+"section_color": "#E57785",
+"section_duration": 0,
+"critical": null,
+"critical_id": null,
+"duration": 0
+}
+],
+"document": "",
+"materials": [
+{
+"id": 3235,
+"mol_weight": 137.99,
+"name": "Sodium phosphate monobasic monohydrate",
+"linfor": "NaH2PO4 · H2O  ",
+"url": "http://www.sigmaaldrich.com/catalog/product/sial/s9638?lang=pt&region=BR",
+"sku": "S9638",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Sigma Aldrich",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "http://sigmaaldrich.com",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 17
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+},
+{
+"id": 3831,
+"mol_weight": 0,
+"name": "PMSF",
+"linfor": "",
+"url": "http://www.sigmaaldrich.com/catalog/product/sigma/p7626?lang=de&region=DE",
+"sku": "P7626",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Sigma Aldrich",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "http://sigmaaldrich.com",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 17
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+},
+{
+"id": 4444,
+"mol_weight": 141.96,
+"name": "Sodium phosphate dibasic",
+"linfor": "Na2HPO4",
+"url": "http://www.sigmaaldrich.com/catalog/product/sigma/s3264?lang=pt&region=BR&gclid=CNGMhdaT_NMCFUWAkQodkxAGrA",
+"sku": "7558-79-4",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Sigma Aldrich",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "http://sigmaaldrich.com",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 17
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+},
+{
+"id": 9090,
+"mol_weight": 0,
+"name": "Imidazole",
+"linfor": "",
+"url": "http://www.sigmaaldrich.com/catalog/product/sigma/i5513?lang=en&region=US",
+"sku": "I5513",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Sigma",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "http://www.sigma.com",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 114
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+},
+{
+"id": 42246,
+"mol_weight": 58.44,
+"name": "NaCl",
+"linfor": "NaCl",
+"url": "http://www.sigmaaldrich.com/catalog/product/sigald/s9888?lang=en&region=CO",
+"sku": "53014",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Sigma Aldrich",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "http://sigmaaldrich.com",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 17
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+},
+{
+"id": 119782,
+"mol_weight": 0,
+"name": "HiTrap Heparin HP affinity column",
+"linfor": "",
+"url": "",
+"sku": "17040701",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Ge Life Sciences",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "http://www.gelifesciences.com/",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 16
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+},
+{
+"id": 124904,
+"mol_weight": 0,
+"name": "HisTrap FF Crude Column",
+"linfor": "",
+"url": "https://www.gelifesciences.com/en/us/shop/chromatography/resins/affinity-tagged-protein/histrap-ff-crude-histidine-tagged-protein-purification-columns-p-00407?current=29048631",
+"sku": "17528601",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Ge Healthcare",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "http://www.gehealthcare.com",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 51
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+},
+{
+"id": 180879,
+"mol_weight": 0,
+"name": "Dextrose",
+"linfor": "",
+"url": "https://www.sigmaaldrich.com/catalog/product/sigma/d9434?lang=en&region=US",
+"sku": "D9434",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Sigma – Aldrich",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "https://www.sigmaaldrich.com/",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 298
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+},
+{
+"id": 350209,
+"mol_weight": 0,
+"name": " Nonidet P40 Substitute",
+"linfor": "",
+"url": null,
+"sku": " 74385",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Sigma Aldrich",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "http://sigmaaldrich.com",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 17
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+},
+{
+"id": 415635,
+"mol_weight": 0,
+"name": "EDTA",
+"linfor": "",
+"url": null,
+"sku": "ED2SS",
+"cas_number": "",
+"rrid": "",
+"public": 0,
+"vendor": {
+"name": "Sigma Aldrich",
+"affiliation": null,
+"affiliations": [],
+"username": null,
+"note": null,
+"link": "http://sigmaaldrich.com",
+"image": {
+"source": "https://www.protocols.io/img/vendors/placeholder.png",
+"placeholder": "https://www.protocols.io/img/vendors/placeholder.png"
+},
+"badges": [],
+"verified": 0,
+"is_verified_user": false,
+"research_interests": null,
+"blocked_by_you": false,
+"blocked_you": false,
+"hide_following": false,
+"id": 17
+},
+"can_edit": 0,
+"stats": {
+"total_protocols": 0
+}
+}
+],
+"description": "<div class = \"text-blocks\"><div class = \"text-block\"><span>This protocol has been optimized for the recombinant expression of a codon-optizimed Pfu-Sso7d DNA polymerase. This is a fusion protein composed of the Pfu enzyme from </span><span style = \"font-style:italic;\">Pyrococcus furiosus</span><span> for DNA amplification by PCR fused to a small 7 kDa protein from </span><span style = \"font-style:italic;\">Sulfobulus solfataricus</span><span> that binds to double-stranded DNA without any preference for specific sequences, thus enhancing polymerization processivity without affecting the catalytic activity or thermal stability of the enzyme.</span></div><br/><div class = \"text-block\">The goal of this protocol was to eliminate the use of large volumes for dyalisis and potential issues with the protein crashing out of the solution due to the use of concentrators for buffer exchange of this enzyme into storage conditions. We also eliminated the use of DTT, which is often found in other similar protocols.</div><br/><div class = \"text-block\"><span>The sequence plasmid encoding the codon-optimized Pfu-Sso7d enzyme used here can be found at </span><a href=\"https://benchling.com/s/seq-2TcUPjO2uMbDG5ufTQN4\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\">https://benchling.com/s/seq-2TcUPjO2uMbDG5ufTQN4</span></a></div></div>",
+"changed_on": 1636148950,
+"guidelines": "",
+"before_start": "",
+"warning": "",
+"materials_text": "<div class = \"text-blocks\"><div class = \"text-block\">MATERIALS</div><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer A, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  NaPO4, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  dextrose</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> EDTA</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>Imidazole, pH 8.0</span></div><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer B, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  NaPO4, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  dextrose</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> EDTA</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>Imidazole, pH 8.0</span></div><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer C</span><span style = \"font-weight:bold;font-weight:bold;\"> </span><span style = \"font-weight:bold;\">, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  NaPO4, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  dextrose</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> EDTA</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>Imidazole, pH 8.0</span></div><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer HA, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  Tris-HCl, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div><br/><div class = \"text-block\"><span style = \"font-weight:bold;\">Buffer HB, pH 8.0</span></div><div class = \"text-block\"><span>    </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span>  Tris-HCl, pH 8.0</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> NaCl</span></div><div class = \"text-block\"><span>     </span><a href=\"#\" style = \"text-decoration:underline;color:blue;cursor:pointer;\"><span style = \":;\"> </span></a><span> Nonidet P-40</span></div></div>"
+}

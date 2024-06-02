@@ -1,0 +1,61 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<!-- Changes for version 0.25 May 2015-->
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets !  -->
+<!-- Add changesets here... --> 
+<changeSet author="fjlopez (generated)" id="1429175025865-3" context="run">
+	<createTable tableName="Organisation">
+		<column autoIncrement="true" name="id" type="BIGINT(19)">
+			<constraints primaryKey="true" />
+		</column>
+		<column name="approved" type="BIT(1)">
+			<constraints nullable="false" />
+		</column>
+		<column name="title" type="VARCHAR(255)">
+			<constraints nullable="false" />
+		</column>
+	</createTable>
+</changeSet>
+
+<changeSet author="fjlopez" id="16042015">
+<validCheckSum>7:19a7812942c7834cad039586ea3c4eb8</validCheckSum>
+	<!-- only add if organisations table is empty, implies this is a new, empty DB and a new deployment -->
+	<preConditions onFail="MARK_RAN">
+		<sqlCheck expectedResult="0">select count(*) from Organisation</sqlCheck>
+	</preConditions>
+	<comment>Add Organisation table</comment>
+	<loadData tableName="Organisation" file="sqlUpdates/data/organisations.csv">
+				  <column name="id" type="NUMERIC" />
+				  <column name="approved" type="NUMERIC"/>
+				 <column name="title" type="STRING"/>		
+	</loadData>
+</changeSet>
+
+<changeSet id="06052015a" author="radams" context="run">
+<comment>Add new community id column to group, see RSPAC-426</comment>
+<addColumn tableName="rsGroup">
+ <column name="communityId" defaultValue="-1" type="BIGINT(19)" ></column>
+</addColumn>
+</changeSet>
+
+<changeSet id="06052015b" author="radams" context="run">
+<comment>Update existing groups to point at correct community id</comment>
+<sql>
+update rsGroup, community_labGroups set communityId = community_labGroups.community_id where rsGroup.id=group_id;
+</sql>
+</changeSet>
+
+<changeSet id="06052015c" author="radams" context="run">
+<comment>Update existing admins to have read permission by community</comment>
+<sql>
+insert into AbstractUserOrGroupImpl_permissionStrings select user_id,  concat("RECORD:READ:community=", community_id) from  community_admin;
+</sql>
+</changeSet>
+
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets and leave this reminder in place !  -->
+</databaseChangeLog>

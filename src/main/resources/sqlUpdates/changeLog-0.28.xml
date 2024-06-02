@@ -1,0 +1,42 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<!-- Changes for version 0.28 August 2015-->
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets !  -->
+<!-- Add changesets here... -->
+<changeSet id="2015-07-24a" author="radams" context="run">
+<comment>remove obsolete column from StructuredDocument</comment>
+<dropColumn tableName="StructuredDocument" columnName="previousIdString"/>
+</changeSet>
+<changeSet id="2015-07-24b" author="radams" context="run">
+<comment>remove obsolete column from StructuredDocument_AUD</comment>
+<dropColumn tableName="StructuredDocument_AUD" columnName="previousIdString"/>
+</changeSet>
+
+<changeSet id="2015-08-20" author="matthias" context="run">
+  <comment>RSPAC-665 media files with empty ACL string are updated to have same permission string as the Gallery</comment>
+  <sql>
+    update BaseRecord as emptyMedia
+      inner join BaseRecord as imgGal
+      on imgGal.createdBy = emptyMedia.createdBy
+      and imgGal.type = 'FOLDER:SYSTEM:ROOT_MEDIA'
+      and emptyMedia.type = 'MEDIA_FILE'
+      and emptyMedia.acl = ''
+    set emptyMedia.acl = imgGal.acl
+  </sql>
+</changeSet>
+<changeSet id="26-8-15a" author="radams" context="run">
+<comment>Remove FK constraints from audit FieldAttachment table</comment>
+<dropForeignKeyConstraint baseTableName="FieldAttachment_AUD" constraintName="FK2978505F33C51952"/>
+<dropForeignKeyConstraint baseTableName="FieldAttachment_AUD" constraintName="FK2978505F3319B855"/>
+</changeSet>
+<changeSet id="2015-09-08" author="radams">
+ <comment>
+ update last remaining table to innodb
+ </comment>
+ <sql>alter table hibernate_sequences engine=InnoDB;</sql>
+</changeSet>
+</databaseChangeLog>

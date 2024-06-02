@@ -1,0 +1,25 @@
+
+Hello,
+
+Welcome to RSpace! ${creator.fullName} (${creator.email}) has invited you to join their RSpace group '${group.displayName}'.
+ 
+If you'd like to accept this invitation, please click use this link 
+
+${acceptanceLink} 
+
+where you can sign up for an account.
+
+Please use this email address when you fill out the signup form - you can change it afterwards if you want, once your account is set up.
+
+Once you've signed up, there will be an invitation message waiting for you  - accept this invitation and you will be added to ${creator.fullName}'s group.
+
+There is lots of written and video help material https://researchspace.helpdocs.io on our help website,
+or you can use the in-app 'Need Help?' button on the bottom-right of RSpace.
+
+Or, please feel free to ask for help at support@researchspace.com.
+
+#signature_Plaintext
+         
+#aboutRSpaceCloud(false)
+
+#dontReply_Plaintext

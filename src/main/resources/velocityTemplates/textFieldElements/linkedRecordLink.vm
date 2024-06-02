@@ -1,0 +1,9 @@
+#* 
+ HTML for a linked document
+ Arguments needed for mustache are:
+  - id the  ID of the linked record
+  - name the name of the linked record
+  - globalId global ID of the target record
+*#
+<a id="$id" data-globalid="$globalId" class="linkedRecord mceNonEditable" 
+    href="/globalId/$globalId" data-name="$name">$globalId: $name</a>

@@ -1,0 +1,303 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.39 Oct 2016 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+	<changeSet author="richard" id="16-9-30c-aa" context="run">
+		<comment>RSPAC-712</comment>
+		<dropForeignKeyConstraint baseTableName="RSForm"
+			constraintName="FK90A082A5E5EA33C7" />
+	</changeSet>
+	<changeSet author="richard" id="16-9-30c" context="run">
+		<comment>RSPAC-712</comment>
+		<dropColumn columnName="exemplar_id" tableName="RSForm" />
+	</changeSet>
+	<changeSet author="richard" id="16-9-30d" context="run">
+		<comment>RSPAC-712</comment>
+		<dropColumn columnName="exemplar_id" tableName="RSForm_AUD" />
+	</changeSet>
+	<changeSet author="richard" id="16-9-30e" context="run">
+		<comment>RSPAC-712</comment>
+		<dropColumn columnName="exemplified" tableName="RSForm" />
+	</changeSet>
+	<changeSet author="richard" id="16-9-30f" context="run">
+		<comment>RSPAC-712</comment>
+		<dropColumn columnName="exemplified" tableName="RSForm_AUD" />
+	</changeSet>
+	<changeSet author="richard" id="16-10-1a" context="run">
+		<comment>RSPAC-693</comment>
+		<dropColumn columnName="lineage" tableName="BaseRecord" />
+	</changeSet>
+	<changeSet author="richard" id="16-10-1b" context="run">
+		<comment>RSPAC-693</comment>
+		<dropColumn columnName="lineage" tableName="BaseRecord_AUD" />
+	</changeSet>
+	<changeSet author="richard" id="16-10-3a" context="run">
+		<comment>RSPAC-693</comment>
+		<dropColumn columnName="invisible" tableName="BaseRecord" />
+	</changeSet>
+	<changeSet author="richard" id="16-10-3b" context="run">
+		<comment>RSPAC-693</comment>
+		<dropColumn columnName="invisible" tableName="BaseRecord_AUD" />
+	</changeSet>
+
+	<!-- RSPAC-1021 Github integration -->
+	<changeSet id="16-10-9a" author="karolis">
+		<comment>RSPAC-1021 Github integration</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="false" />
+			<column name="name" type="STRING" value="github.available" />
+			<column name="type" type="NUMERIC" value="0" />
+		</insert>
+	</changeSet>
+	<changeSet id="16-10-9b" author="karolis">
+	<comment>Github - system property</comment>
+		<insert tableName="SystemProperty">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="dependent_id" type="NUMERIC" value="NULL" />
+			<column name="descriptor_id" type="NUMERIC"
+				valueComputed="(select id from PropertyDescriptor where name ='github.available')" />
+		</insert>
+	</changeSet>
+	<changeSet id="16-10-9c" author="karolis">
+	    <comment>Github - disabled by default</comment>
+		<insert tableName="SystemPropertyValue">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="value" type="String" value="false" />
+			<column name="property_id" type="NUMERIC"
+				valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='github.available')" />
+		</insert>
+	</changeSet>
+	<!-- App setup for Github -->
+	<changeSet id="16-10-9d" author="karolis">
+		<comment>Github App RSPAC-1021</comment>
+	  <insert tableName="App">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="label" type="STRING" value="Github" />
+			<column name="name" type="STRING" value="app.github" />
+			<column name="defaultEnabled" type="BOOLEAN" valueBoolean="false"/>
+		</insert>
+	</changeSet>
+	<changeSet id="16-10-9e" author="karolis">
+	<comment>Property Descriptors for GitHub App</comment>
+	<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="GITHUB_REPOSITORY_FULL_NAME" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="GITHUB_ACCESS_TOKEN" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+	</changeSet>
+	<changeSet id="16-10-9f" author="karolis">
+		<comment>AppConfigElementDescriptor for GitHub App: id, descriptor_id, app_id</comment>
+		<sql>insert into AppConfigElementDescriptor (descriptor_id,app_id)
+			select pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.github" and pd.name='GITHUB_REPOSITORY_FULL_NAME';
+		</sql>
+		<sql>insert into AppConfigElementDescriptor (descriptor_id,app_id)
+			select pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.github" and pd.name='GITHUB_ACCESS_TOKEN';
+		</sql>
+	</changeSet>
+	
+	<changeSet id="16-10-11a" author="richard" context="run">
+		<comment> RSPAC-1009 Set up dry run of Revision history reconstruction</comment>
+		<sql>
+			create table SD_AUD_TEMP select * from StructuredDocument_AUD;
+		</sql>
+		<addPrimaryKey tableName="SD_AUD_TEMP" columnNames="id, REV" />
+		<sql>
+			create table BR_AUD_TEMP select * from BaseRecord_AUD;
+		</sql>
+		<addPrimaryKey tableName="BR_AUD_TEMP" columnNames="id, REV" />
+		<!-- to speed up queries -->
+
+	</changeSet>
+
+	<changeSet id="16-10-11b" author="richard" context="run">
+		<comment>RSPAC-1009 Add missing revisions based on BaseRecord revisions of Documents or Templates</comment>
+		<sql>
+			insert into SD_AUD_TEMP select br.id, br.REV,'FIELD_CHG',NULL,0,NULL,NULL
+			from BR_AUD_TEMP br left join SD_AUD_TEMP sd
+			on br.REV=sd.REV
+			where sd.REV is NULL and (br.type='NORMAL' or br.type='NORMAL:TEMPLATE')
+			order by br.id, REV;
+		</sql>
+	</changeSet>
+
+	<changeSet id="16-10-11c" author="richard" context="run">
+		<comment>RSPAC-1009 Add Form id based on latest form version</comment>
+		<sql>
+			update SD_AUD_TEMP sd inner join
+			(select id, max(form_id) as latestForm from SD_AUD_TEMP group by id)t1
+			on t1.id=sd.id
+			set sd.form_id=t1.latestForm
+			where sd.form_id is null;
+		</sql>
+	</changeSet>
+
+	<changeSet id="16-10-11d" author="richard" context="run">
+		<comment>RSPAC-1009 Add versions descending from current min version, with minimum version  = 1</comment>
+		<sql> select @prevId := 0</sql>
+		<sql>update SD_AUD_TEMP toUpdate inner join
+			(select sd.id as qid, sd.REV as qrev,
+			if (@prevId != sd.id,
+			(select @version := min(version) -1 from SD_AUD_TEMP sd2 where sd2.id = sd.id),
+			(select if (@version != 1, @version := @version -1, 1))) as x,
+			@prevId := sd.id as currId
+			from SD_AUD_TEMP sd
+			where version is null
+			order by sd.id desc, sd.REV desc)q
+			on toUpdate.REV=q.qrev
+			set toUpdate.version = q.x;
+		</sql>
+	</changeSet>
+	<changeSet id="16-10-11e1" author="richard" context="run">
+		<comment>RSPAC-1009 Restore NULL tags in revision history if possible</comment>
+		<sql>
+			create table RSPAC_1009e1 select id, REV, docTag
+			from SD_AUD_TEMP sd1
+			where REV in
+			(select min(REV) as m from SD_AUD_TEMP
+			where length(docTag) > 0
+			group by id)
+			and length(docTag) > 0;
+		</sql>
+	</changeSet>
+	<changeSet id="16-10-11e2" author="richard" context="run">
+		<comment>RSPAC-1009 Restore NULL tags in revision history if possible</comment>
+		<sql>update SD_AUD_TEMP sd inner join RSPAC_1009e1 q
+			on sd.id=q.id
+			set sd.docTag = q.docTag where sd.docTag is null;
+		</sql>
+	</changeSet>
+	<changeSet id="16-10-11e3" author="richard" context="run">
+		<comment>Remove temp table</comment>
+		<dropTable tableName="RSPAC_1009e1" />
+	</changeSet>
+
+	<changeSet id="16-10-11f" author="richard" context="run">
+		<preConditions onError="WARN"
+			onErrorMessage="Some SD_AUD columns are invalid in SD_AUD_TEMP after the dry run"
+			onFail="WARN"
+			onFailMessage="Some SD_AUD columns are invalid in SD_AUD_TEMP after the dry run">
+			<and>
+				<sqlCheck expectedResult="0">select count(*) from SD_AUD_TEMP
+					where form_id is null</sqlCheck>
+				<sqlCheck expectedResult="0">select count(*) from SD_AUD_TEMP
+					where version is null;</sqlCheck>
+				<sqlCheck expectedResult="0">select count(*) from SD_AUD_TEMP
+					where version &lt; 1</sqlCheck>
+				<not>
+				 <tableExists tableName="RSPAC1009_OK"/>
+				</not>
+			</and>
+		</preConditions>
+		<comment>RSPAC1009 Create a marker table if all OK</comment>
+		<createTable tableName="RSPAC1009_OK">
+			<column name="ok" type="VARCHAR(255)" defaultValue="OK"></column>
+		</createTable>
+	</changeSet>
+	<!-- now we'll perform for real if dry-run went OK -->
+	<include file="changeLog-1.39-RSPAC1009-addendum.xml" relativeToChangelogFile="true"/>
+
+     <!--  this is to sort out a non-unique DB shared folder query now that we have removed the 'invisible' flag -->
+     <changeSet id="16-10-12-691a" author="richard" context="run">
+     <preConditions onError="MARK_RAN" onFail="MARK_RAN">
+      <not>
+       <sqlCheck expectedResult="0">
+       select count(*) from (
+           select br.owner_id as ownerId ,count(br.id)multipleSharedFolders
+           from BaseRecord br inner join Folder f
+             on f.id=br.id
+            where bin(systemFolder)=1 and br.name='Shared'
+            group by br.owner_id
+            having multipleSharedFolders > 1)findMultipleSharedFolders;
+       </sqlCheck>
+      </not>
+     </preConditions>
+     <comment>Only proceed if we have some non-unique shared folders. Identify obsolete shared folders.</comment>
+     <sql>
+     create table 161012691a
+        select parentFolder.name parentName, rtf.folder_id parentFolder, rtf.record_id sharedFolder
+        from RecordToFolder rtf inner join (
+           select br.id sharedfolder
+           from BaseRecord br inner join Folder f
+           on f.id=br.id
+           where owner_id in (
+             select ownerid from (
+               select br.owner_id ownerid,  count(br.id)c
+               from BaseRecord br inner join Folder f
+               on f.id=br.id
+               where bin(systemFolder) = 1 and br.name='Shared'
+               group by br.owner_id having c > 1 order by c desc)
+            owners)
+           and type='FOLDER:SYSTEM' and bin(systemFolder)=1 and br.name='Shared')
+           allMultiSharedFolders
+       on rtf.record_id=allMultiSharedFolders.sharedfolder
+       inner join BaseRecord parentFolder on parentFolder.id=rtf.folder_id
+       where parentFolder.type='FOLDER:SYSTEM';
+     </sql>
+     <sql>
+     update 161012691a t2  inner join BaseRecord br on br.id=t2.sharedFolder set br.deleted = 1;
+     </sql>
+     <dropTable tableName="161012691a"/>
+    
+     </changeSet>
+
+	<!-- RSPAC-1022 ORCID integration -->
+	<changeSet id="16-10-12-orcid-a" author="matthias">
+		<comment>orcid.available system property, disabled by default (RSPAC-1022)</comment>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="false" />
+			<column name="name" type="STRING" value="orcid.available" />
+			<column name="type" type="NUMERIC" value="0" />
+		</insert>
+		<insert tableName="SystemProperty">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="dependent_id" type="NUMERIC" value="NULL" />
+			<column name="descriptor_id" type="NUMERIC"
+				valueComputed="(select id from PropertyDescriptor where name ='orcid.available')" />
+		</insert>
+		<insert tableName="SystemPropertyValue">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="value" type="String" value="false" />
+			<column name="property_id" type="NUMERIC"
+				valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='orcid.available')" />
+		</insert>
+	</changeSet>
+	<changeSet id="16-10-12-orcid-b" author="matthias">
+		<comment>ORCID App with ORCID_ID property (RSPAC-1022)</comment>
+		<insert tableName="App">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="label" type="STRING" value="ORCID" />
+			<column name="name" type="STRING" value="app.orcid" />
+			<column name="defaultEnabled" type="BOOLEAN" valueBoolean="true" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL" />
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="ORCID_ID" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.orcid" and pd.name='ORCID_ID';</sql>
+	</changeSet>
+	<!-- RSPAC-1037 -->
+    <include file="changeLog-1.39.xml-figshare_app.xml" relativeToChangelogFile="true"/>
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

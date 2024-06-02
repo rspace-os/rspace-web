@@ -1,0 +1,440 @@
+NFO 24 Mar 2022 02:10:10,809 - UserCounterListener.contextDestroyed | Servlet context destroyed....resetting counter.
+INFO 24 Mar 2022 02:10:10,812 - QuartzScheduler.standby | Scheduler org.springframework.scheduling.quartz.SchedulerFactoryBean#0_$_NON_CLUSTERED paused.
+INFO 24 Mar 2022 02:10:10,812 - QuartzScheduler.shutdown | Scheduler org.springframework.scheduling.quartz.SchedulerFactoryBean#0_$_NON_CLUSTERED shutting down.
+INFO 24 Mar 2022 02:10:10,812 - QuartzScheduler.standby | Scheduler org.springframework.scheduling.quartz.SchedulerFactoryBean#0_$_NON_CLUSTERED paused.
+INFO 24 Mar 2022 02:10:10,813 - QuartzScheduler.shutdown | Scheduler org.springframework.scheduling.quartz.SchedulerFactoryBean#0_$_NON_CLUSTERED shutdown complete.
+INFO 24 Mar 2022 02:10:10,867 - RSEnversIntegrator.disintegrate | Disintegrating event listener integrator, nothing to do here
+INFO 24 Mar 2022 02:10:10,868 - RSpaceEventListenerIntegrator.disintegrate | Disintegrating RSpaceEventListenerIntegrator, nothing to do here
+INFO 24 Mar 2022 02:10:51,028 - LoggingInitializer.setupAppenders | Setting path to logfile as [/home/builder/rspace/tomcats/rs_acceptance/rspacelogs/error.log] for appender [ROOT_LOGGER]
+INFO 24 Mar 2022 02:10:51,028 - LoggingInitializer.setupAppenders | Setting path to logfile as [/home/builder/rspace/tomcats/rs_acceptance/rspacelogs/error.log] for appender [ROOT_LOGGER]
+INFO 24 Mar 2022 02:10:52,856 - MarkerIgnoringBase.info | SELECT COUNT(*) FROM rs_acceptance.DATABASECHANGELOGLOCK
+INFO 24 Mar 2022 02:10:52,862 - MarkerIgnoringBase.info | SELECT COUNT(*) FROM rs_acceptance.DATABASECHANGELOGLOCK
+INFO 24 Mar 2022 02:10:52,865 - MarkerIgnoringBase.info | SELECT `LOCKED` FROM rs_acceptance.DATABASECHANGELOGLOCK WHERE ID=1
+INFO 24 Mar 2022 02:10:52,877 - MarkerIgnoringBase.info | Successfully acquired change log lock
+WARN 24 Mar 2022 02:10:54,313 - MarkerIgnoringBase.warn | included file classpath:sqlUpdates/changeLog-1.41.xml/classpath:sqlUpdates/changeLog-1.41-RSPAC-1098 is not a recognized file type
+INFO 24 Mar 2022 02:10:54,723 - MarkerIgnoringBase.info | SELECT MD5SUM FROM rs_acceptance.DATABASECHANGELOG WHERE MD5SUM IS NOT NULL LIMIT 1
+INFO 24 Mar 2022 02:10:54,725 - MarkerIgnoringBase.info | SELECT COUNT(*) FROM rs_acceptance.DATABASECHANGELOG
+INFO 24 Mar 2022 02:10:54,725 - MarkerIgnoringBase.info | Reading from rs_acceptance.DATABASECHANGELOG
+INFO 24 Mar 2022 02:10:54,725 - MarkerIgnoringBase.info | SELECT * FROM rs_acceptance.DATABASECHANGELOG ORDER BY DATEEXECUTED ASC, ORDEREXECUTED ASC
+INFO 24 Mar 2022 02:10:54,758 - MarkerIgnoringBase.info | UPDATE rs_acceptance.DATABASECHANGELOG SET MD5SUM = '8:128132233326820c536771ffc31e8c1a' WHERE ID = '25-08-14a' AND AUTHOR = 'radams' AND FILENAME = 'classpath:sqlUpdates/changeLog-0.19.xml'
+INFO 24 Mar 2022 02:10:54,763 - MarkerIgnoringBase.info | SELECT COUNT(*) FROM rs_acceptance.DATABASECHANGELOG
+INFO 24 Mar 2022 02:10:54,763 - MarkerIgnoringBase.info | Reading from rs_acceptance.DATABASECHANGELOG
+INFO 24 Mar 2022 02:10:54,763 - MarkerIgnoringBase.info | SELECT * FROM rs_acceptance.DATABASECHANGELOG ORDER BY DATEEXECUTED ASC, ORDEREXECUTED ASC
+INFO 24 Mar 2022 02:10:54,873 - MarkerIgnoringBase.info | Executing: classpath:sqlUpdates/liquibase-master.xml despite precondition failure due to onFail='WARN':
+ Restoring Revision History dry-run failed, skipping for now
+INFO 24 Mar 2022 02:10:55,101 - MarkerIgnoringBase.info | UPDATE rs_acceptance.DATABASECHANGELOG SET MD5SUM = NULL WHERE ID="25-08-14a" and AUTHOR='radams'
+INFO 24 Mar 2022 02:10:55,104 - MarkerIgnoringBase.info | Data updated in DATABASECHANGELOG
+INFO 24 Mar 2022 02:10:55,104 - MarkerIgnoringBase.info | ChangeSet classpath:sqlUpdates/data-changeLog.xml::::radams ran successfully in 4ms
+INFO 24 Mar 2022 02:10:55,105 - MarkerIgnoringBase.info | SELECT MAX(ORDEREXECUTED) FROM rs_acceptance.DATABASECHANGELOG
+INFO 24 Mar 2022 02:10:55,106 - MarkerIgnoringBase.info | UPDATE rs_acceptance.DATABASECHANGELOG SET DATEEXECUTED = NOW(), DEPLOYMENT_ID = '8087854762', EXECTYPE = 'RERAN', MD5SUM = '8:abe1a6af7a3135bdddd08a82830e6a2c', ORDEREXECUTED = 16802 WHERE ID = '' AND AUTHOR = 'radams' AND FILENAME = 'classpath:sqlUpdates/data-changeLog.xml'
+INFO 24 Mar 2022 02:10:55,118 - MarkerIgnoringBase.info | select count(*) from FileProperty where root_id is null
+INFO 24 Mar 2022 02:10:55,120 - MarkerIgnoringBase.info | ChangeSet classpath:sqlUpdates/changeLog-1.35.xml::1-35-16-4-7a::richard ran successfully in 3ms
+INFO 24 Mar 2022 02:10:55,120 - MarkerIgnoringBase.info | UPDATE rs_acceptance.DATABASECHANGELOG SET DATEEXECUTED = NOW(), DEPLOYMENT_ID = '8087854762', EXECTYPE = 'RERAN', MD5SUM = '8:d41d8cd98f00b204e9800998ecf8427e', ORDEREXECUTED = 16803 WHERE ID = '1-35-16-4-7a' AND AUTHOR = 'richard' AND FILENAME = 'classpath:sqlUpdates/changeLog-1.35.xml'
+INFO 24 Mar 2022 02:10:55,126 - MarkerIgnoringBase.info | select count(*) from FileStoreRoot
+INFO 24 Mar 2022 02:10:55,128 - MarkerIgnoringBase.info | select count(*) from FileStoreRoot where current=1
+INFO 24 Mar 2022 02:10:55,128 - MarkerIgnoringBase.info | ChangeSet classpath:sqlUpdates/changeLog-1.35.xml::1-35-16-4-7b::richard ran successfully in 3ms
+INFO 24 Mar 2022 02:10:55,129 - MarkerIgnoringBase.info | UPDATE rs_acceptance.DATABASECHANGELOG SET DATEEXECUTED = NOW(), DEPLOYMENT_ID = '8087854762', EXECTYPE = 'RERAN', MD5SUM = '8:d41d8cd98f00b204e9800998ecf8427e', ORDEREXECUTED = 16804 WHERE ID = '1-35-16-4-7b' AND AUTHOR = 'richard' AND FILENAME = 'classpath:sqlUpdates/changeLog-1.35.xml'
+INFO 24 Mar 2022 02:10:55,134 - MarkerIgnoringBase.info | select count(*) from FileProperty where id in (select id from FileStoreRoot where fileStoreRoot not like ('file%'))
+INFO 24 Mar 2022 02:10:55,135 - MarkerIgnoringBase.info | ChangeSet classpath:sqlUpdates/changeLog-1.36.xml::2016-07-29d::richard ran successfully in 1ms
+INFO 24 Mar 2022 02:10:55,135 - MarkerIgnoringBase.info | UPDATE rs_acceptance.DATABASECHANGELOG SET DATEEXECUTED = NOW(), DEPLOYMENT_ID = '8087854762', EXECTYPE = 'RERAN', MD5SUM = '8:d41d8cd98f00b204e9800998ecf8427e', ORDEREXECUTED = 16805 WHERE ID = '2016-07-29d' AND AUTHOR = 'richard' AND FILENAME = 'classpath:sqlUpdates/changeLog-1.36.xml'
+INFO 24 Mar 2022 02:10:55,145 - MarkerIgnoringBase.info | INSERT INTO BATCH_STEP_EXECUTION_SEQ (ID, UNIQUE_KEY) select * from (select
+                        0 as ID, '0' as UNIQUE_KEY) as tmp where not exists(select * from
+                        BATCH_STEP_EXECUTION_SEQ)
+INFO 24 Mar 2022 02:10:55,146 - MarkerIgnoringBase.info | INSERT INTO BATCH_JOB_SEQ (ID, UNIQUE_KEY) select * from (select 0 as ID,
+                        '0' as UNIQUE_KEY) as tmp where not exists(select * from
+                        BATCH_JOB_SEQ)
+INFO 24 Mar 2022 02:10:55,148 - MarkerIgnoringBase.info | INSERT INTO BATCH_JOB_EXECUTION_SEQ (ID, UNIQUE_KEY) select * from (select
+                        0 as ID, '0' as UNIQUE_KEY) as tmp where not exists(select * from
+                        BATCH_JOB_EXECUTION_SEQ)
+INFO 24 Mar 2022 02:10:55,149 - MarkerIgnoringBase.info | Custom SQL executed
+INFO 24 Mar 2022 02:10:55,149 - MarkerIgnoringBase.info | ChangeSet classpath:sqlUpdates/changeLog-1.47.xml::17-09-13a::richard ran successfully in 6ms
+INFO 24 Mar 2022 02:10:55,150 - MarkerIgnoringBase.info | UPDATE rs_acceptance.DATABASECHANGELOG SET DATEEXECUTED = NOW(), DEPLOYMENT_ID = '8087854762', EXECTYPE = 'RERAN', MD5SUM = '8:eafb704c089823c8516dcd6092e2dd22', ORDEREXECUTED = 16806 WHERE ID = '17-09-13a' AND AUTHOR = 'richard' AND FILENAME = 'classpath:sqlUpdates/changeLog-1.47.xml'
+INFO 24 Mar 2022 02:10:55,155 - MarkerIgnoringBase.info | select if (count(*) > 0,1,0) from Notification where record_id  in (select tempRecord_id from Record)
+INFO 24 Mar 2022 02:10:55,167 - MarkerIgnoringBase.info | Continuing past: classpath:sqlUpdates/changeLog-1.49.xml::29-01-17::richard despite precondition failure due to onFail='CONTINUE':
+          classpath:sqlUpdates/liquibase-master.xml : There are no notifications linked to temporary documents, all OK
+
+INFO 24 Mar 2022 02:10:55,168 - MarkerIgnoringBase.info | UPDATE rs_acceptance.DATABASECHANGELOG SET DATEEXECUTED = NOW(), DEPLOYMENT_ID = '8087854762', EXECTYPE = 'RERAN', MD5SUM = '8:0c56d709a8fdf48681f6339081c09c24', ORDEREXECUTED = 16807 WHERE ID = '29-01-17' AND AUTHOR = 'richard' AND FILENAME = 'classpath:sqlUpdates/changeLog-1.49.xml'
+INFO 24 Mar 2022 02:10:55,187 - MarkerIgnoringBase.info | Continuing past: classpath:sqlUpdates/changeLog-1.49.xml::29-01-17b::richard despite precondition failure due to onFail='CONTINUE':
+          classpath:sqlUpdates/liquibase-master.xml : There is no temp table t1446 to delete
+
+INFO 24 Mar 2022 02:10:55,193 - MarkerIgnoringBase.info | create table groupUpdate select g.id as group_id, u.id as owner_id,  u2.id pi_id
+         from rsGroup g inner join UserGroup ug on ug.group_id = g.id
+            inner join User u on u.id = g.owner_id
+             inner join User u2 on u2.id = ug.user_id
+          where ug.roleInGroup = 1 and u.id != u2.id and g.groupType = 0
+INFO 24 Mar 2022 02:10:55,203 - MarkerIgnoringBase.info | Change set classpath:sqlUpdates/changeLog-1.64.xml::2019-10-28a::richard failed, but failOnError was false.  Error: Table 'groupUpdate' already exists [Failed SQL: (1050) create table groupUpdate select g.id as group_id, u.id as owner_id,  u2.id pi_id
+         from rsGroup g inner join UserGroup ug on ug.group_id = g.id
+            inner join User u on u.id = g.owner_id
+             inner join User u2 on u2.id = ug.user_id
+          where ug.roleInGroup = 1 and u.id != u2.id and g.groupType = 0]
+INFO 24 Mar 2022 02:10:55,208 - MarkerIgnoringBase.info | Successfully released change log lock
+INFO 24 Mar 2022 02:10:55,334 - LdapConfig.contextSource | creating production LdapContextSource and connecting to ldaps://kudu.researchspace.com - dc=test,dc=kudu,dc=axiope,dc=com
+INFO 24 Mar 2022 02:10:55,539 - EmailBroadcastImp.<init> | Email sender will rate limit to 5 mails per seconds
+INFO 24 Mar 2022 02:10:55,770 - ProductionConfig.figshareRepository | Setting figshare categories and licenses from static files, Categories: [${figshare.categories.path}]  Licenses: ${figshare.licenses.path}
+ERROR 24 Mar 2022 02:10:55,771 - ProductionConfig.figshareRepository | Error setting categories and subjects from JSON file: ${figshare.licenses.path}
+INFO 24 Mar 2022 02:10:55,771 - ProductionConfig.figshareRepository | Setting in repository implementation com.researchspace.figshare.rspaceadapter.FigshareRSpaceRepository@193476a8
+INFO 24 Mar 2022 02:10:56,449 - BaseConfig.lambda$snapgeneWSClient$0 | Creating SnapgeneClient at http://howler:8082
+INFO 24 Mar 2022 02:10:56,485 - OriginRefererCheckerImpl.init | Additional Accepted Domains: [https://rs-inventory-alpha.researchspace.com,https://129.215.1.97]
+INFO 24 Mar 2022 02:10:56,486 - OriginRefererCheckerImpl.init | All accepted domains : [https://pangolin8085.researchspace.com,https://rs-inventory-alpha.researchspace.com,https://129.215.1.97,http://localhost:,https://localhost:]
+INFO 24 Mar 2022 02:10:57,182 - ProdAPIConfig.accountInitialiser | Beta API account initialisor is enabled
+INFO 24 Mar 2022 02:10:57,251 - RSpaceSocialConfig.configureMendeley | Configuring Mendeley: Adding 5566 and MXvHQwIVZXfwlDnC
+INFO 24 Mar 2022 02:10:57,684 - StdSchedulerFactory.instantiate | Using default implementation for ThreadExecutor
+INFO 24 Mar 2022 02:10:57,703 - SchedulerSignalerImpl.<init> | Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+INFO 24 Mar 2022 02:10:57,703 - QuartzScheduler.<init> | Quartz Scheduler v.2.3.2 created.
+INFO 24 Mar 2022 02:10:57,704 - RAMJobStore.initialize | RAMJobStore initialized.
+INFO 24 Mar 2022 02:10:57,705 - QuartzScheduler.initialize | Scheduler meta-data: Quartz Scheduler (v2.3.2) 'org.springframework.scheduling.quartz.SchedulerFactoryBean#0' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 5 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+INFO 24 Mar 2022 02:10:57,705 - StdSchedulerFactory.instantiate | Quartz scheduler 'org.springframework.scheduling.quartz.SchedulerFactoryBean#0' initialized from an externally provided properties instance.
+INFO 24 Mar 2022 02:10:57,705 - StdSchedulerFactory.instantiate | Quartz scheduler version: 2.3.2
+INFO 24 Mar 2022 02:10:57,707 - QuartzScheduler.setJobFactory | JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@11bff2d9
+INFO 24 Mar 2022 02:10:57,757 - QuartzScheduler.start | Scheduler org.springframework.scheduling.quartz.SchedulerFactoryBean#0_$_NON_CLUSTERED started.
+INFO 24 Mar 2022 02:10:57,903 - GlobalInitManagerImpl.onApplicationEvent | Running under profile: prod
+INFO 24 Mar 2022 02:10:57,977 - LicenseServerChecker.onAppStartup | Contacting license server ...
+INFO 24 Mar 2022 02:10:57,985 - LicenseServerChecker.getVersionInfo | Getting version info from 4 version sources
+INFO 24 Mar 2022 02:10:58,051 - AsposeAppInvoker.doGetVersion | Running command line  java  -Dlogfile=/home/builder/rspace/aspose/aspose-8085.log -jar /home/builder/rspace/aspose/aspose-app.jar -v
+INFO 24 Mar 2022 02:10:58,414 - LicenseServerChecker.getVersionInfo | [Version info: MySQL version: version 5.7.37.0ubuntu0.18.04.1,Aspose App Document converter: version 0.21.0,Aspose Document converter web service: version 0.0.12,RSpace version: version 1.76.0.SNAPSHOT-2022-03-24T02:06:34Z]
+INFO 24 Mar 2022 02:10:58,425 - LicenseServerChecker.getMacId | Current IP address : 10.0.0.254
+INFO 24 Mar 2022 02:10:58,426 - LicenseServerChecker.getMacId | Current MAC address : 06-51-85-9C-E6-14
+INFO 24 Mar 2022 02:10:58,453 - LicenseServerChecker.getUserInfoData | Calculating usage statistics: UserStatistics [totalUsers=216, totalEnabledUsers=208, totalLockedUsers=4, totalActiveUsers=6, totalEnabledSysAdmins=8, totalEnabledRSpaceAdmins=26]
+INFO 24 Mar 2022 02:10:58,510 - LicenseServerChecker.onAppStartup | License server contacted OK!
+INFO 24 Mar 2022 02:10:58,527 - InternalFileStoreImpl.setupInternalFileStoreRoot | /home/builder/rspace/filestores/rs_acceptance_filestore/file_store is in the DB, setting as current root
+INFO 24 Mar 2022 02:10:58,695 - FileStoreRootDetector.setupInternalFileStore | Current filestore root is file:/home/builder/rspace/filestores/rs_acceptance_filestore/file_store/
+INFO 24 Mar 2022 02:10:58,695 - FileStoreRootDetector.setupExtFileStore | RSpace starting with Local FileStore only
+INFO 24 Mar 2022 02:10:58,696 - LuceneSearchIndexInitialisor.onAppStartup | 'indexOnstartup' not true, was [false]. *Not* reindexing
+INFO 24 Mar 2022 02:10:58,825 - AbstractContentInitializer.createSampleTemplates | There are already 75 templates - skipping creation of system sample templates
+INFO 24 Mar 2022 02:10:58,837 - DBDataIntegrityChecker.assertNoTemporaryFavourites | No favourite temporary records, OK
+INFO 24 Mar 2022 02:10:58,843 - DBDataIntegrityChecker.assertAllRecordsHaveOwners | All records have owners, OK
+INFO 24 Mar 2022 02:10:58,922 - DBDataIntegrityChecker.assertNotebookEntryOnlyHas1ParentNotebook | No notebook entries are in > 1 notebook, OK
+INFO 24 Mar 2022 02:10:58,925 - SanityChecker.onAppStartup | Starting sanity check ...
+INFO 24 Mar 2022 02:10:58,925 - SanityChecker.logEnvironment | Listing environment variables....
+INFO 24 Mar 2022 02:10:58,925 - SanityChecker.logEnvironment |
+PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+SHELL:/bin/bash
+SSH_CLIENT:10.0.0.69 39516 22
+JDK_JAVA_OPTIONS: --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+OLDPWD:/home/builder
+USER:builder
+LANG:en_US.UTF-8
+DBUS_SESSION_BUS_ADDRESS:unix:path=/run/user/1001/bus
+XDG_SESSION_ID:154
+SSH_CONNECTION:10.0.0.69 39516 10.0.0.254 22
+MAIL:/var/mail/builder
+LOGNAME:builder
+PWD:/home/builder/rspace/tomcats/rs_acceptance
+XDG_RUNTIME_DIR:/run/user/1001
+HOME:/home/builder
+SHLVL:2
+_:/bin/sh
+
+INFO 24 Mar 2022 02:10:58,926 - SanityChecker.logSystemProperties | Listing system properties....
+INFO 24 Mar 2022 02:10:58,926 - SanityChecker.logSystemProperties |
+awt.toolkit:sun.awt.X11.XToolkit
+java.specification.version:11
+sun.cpu.isalist:
+sun.jnu.encoding:UTF-8
+java.class.path:/home/builder/rspace/tomcats/rs_acceptance/bin/bootstrap.jar:/home/builder/rspace/tomcats/rs_acceptance/bin/tomcat-juli.jar
+java.vm.vendor:Azul Systems, Inc.
+sun.arch.data.model:64
+java.vendor.url:http://www.azulsystems.com/
+catalina.useNaming:true
+user.timezone:Etc/UTC
+com.sun.org.apache.xml.internal.dtm.DTMManager:com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault
+os.name:Linux
+java.vm.specification.version:11
+RS_FILE_BASE:/home/builder/rspace/filestores/rs_acceptance_filestore
+sun.java.launcher:SUN_STANDARD
+user.country:US
+sun.boot.library.path:/usr/lib/jvm/zulu-11-amd64/lib
+sun.java.command:org.apache.catalina.startup.Bootstrap start
+jdk.debug:release
+sun.cpu.endian:little
+user.home:/home/builder
+user.language:en
+java.specification.vendor:Oracle Corporation
+java.naming.factory.url.pkgs:org.apache.naming
+java.version.date:2019-10-15
+java.home:/usr/lib/jvm/zulu-11-amd64
+spring.profiles.active:prod
+ignore.endorsed.dirs:
+file.separator:/
+java.vm.compressedOopsMode:32-bit
+line.separator:
+
+java.specification.name:Java Platform API Specification
+java.vm.specification.vendor:Oracle Corporation
+java.awt.graphicsenv:sun.awt.X11GraphicsEnvironment
+propertyFileDir:file:/home/builder/rspace/tomcats/rs_acceptance
+java.awt.headless:true
+package.access:sun.,org.apache.catalina.,org.apache.coyote.,org.apache.jasper.,org.apache.tomcat.
+package.definition:sun.,java.,org.apache.catalina.,org.apache.coyote.,org.apache.jasper.,org.apache.naming.,org.apache.tomcat.
+jdk.tls.ephemeralDHKeySize:2048
+server.loader:
+java.util.logging.config.file:/home/builder/rspace/tomcats/rs_acceptance/conf/logging.properties
+java.protocol.handler.pkgs:org.apache.catalina.webresources
+sun.management.compiler:HotSpot 64-Bit Tiered Compilers
+java.runtime.version:11.0.5+10-LTS
+java.naming.factory.initial:org.apache.naming.java.javaURLContextFactory
+user.name:builder
+path.separator::
+common.loader:"${catalina.base}/lib","${catalina.base}/lib/*.jar","${catalina.home}/lib","${catalina.home}/lib/*.jar"
+os.version:5.4.0-1068-aws
+java.runtime.name:OpenJDK Runtime Environment
+jmelody.dir:/home/builder/rspace/tomcats/rs_acceptance/jmelody
+file.encoding:UTF-8
+java.vm.name:OpenJDK 64-Bit Server VM
+java.vendor.version:Zulu11.35+15-CA
+org.apache.catalina.security.SecurityListener.UMASK:0027
+java.vendor.url.bug:http://www.azulsystems.com/support/
+java.io.tmpdir:/home/builder/rspace/tomcats/rs_acceptance/temp
+tomcat.util.scan.StandardJarScanFilter.jarsToScan:log4j-taglib*.jar,log4j-web*.jar,log4javascript*.jar,slf4j-taglib*.jar
+catalina.home:/home/builder/rspace/tomcats/rs_acceptance
+java.version:11.0.5
+tomcat.util.scan.StandardJarScanFilter.jarsToSkip:annotations-api.jar,ant-junit*.jar,ant-launcher.jar,ant.jar,asm-*.jar,aspectj*.jar,bootstrap.jar,catalina-ant.jar,catalina-ha.jar,catalina-jmx-remote.jar,catalina-storeconfig.jar,catalina-tribes.jar,catalina-ws.jar,catalina.jar,cglib-*.jar,cobertura-*.jar,commons-beanutils*.jar,commons-codec*.jar,commons-collections*.jar,commons-daemon.jar,commons-dbcp*.jar,commons-digester*.jar,commons-fileupload*.jar,commons-httpclient*.jar,commons-io*.jar,commons-lang*.jar,commons-logging*.jar,commons-math*.jar,commons-pool*.jar,dom4j-*.jar,easymock-*.jar,ecj-*.jar,el-api.jar,geronimo-spec-jaxrpc*.jar,h2*.jar,hamcrest-*.jar,hibernate*.jar,httpclient*.jar,icu4j-*.jar,jasper-el.jar,jasper.jar,jaspic-api.jar,jaxb-*.jar,jaxen-*.jar,jdom-*.jar,jetty-*.jar,jmx-tools.jar,jmx.jar,jsp-api.jar,jstl.jar,jta*.jar,junit-*.jar,junit.jar,log4j*.jar,mail*.jar,objenesis-*.jar,oraclepki.jar,oro-*.jar,servlet-api-*.jar,servlet-api.jar,slf4j*.jar,taglibs-standard-spec-*.jar,tagsoup-*.jar,tomcat-api.jar,tomcat-coyote.jar,tomcat-dbcp.jar,tomcat-i18n-*.jar,tomcat-jdbc.jar,tomcat-jni.jar,tomcat-juli-adapters.jar,tomcat-juli.jar,tomcat-util-scan.jar,tomcat-util.jar,tomcat-websocket.jar,tools.jar,websocket-api.jar,wsdl4j*.jar,xercesImpl.jar,xml-apis.jar,xmlParserAPIs-*.jar,xmlParserAPIs.jar,xom-*.jar
+user.dir:/home/builder/rspace/tomcats/rs_acceptance
+os.arch:amd64
+java.vm.specification.name:Java Virtual Machine Specification
+java.awt.printerjob:sun.print.PSPrinterJob
+sun.os.patch.level:unknown
+catalina.base:/home/builder/rspace/tomcats/rs_acceptance
+shared.loader:
+java.util.logging.manager:org.apache.juli.ClassLoaderLogManager
+java.library.path:/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib
+java.vendor:Azul Systems, Inc.
+java.vm.info:mixed mode
+java.vm.version:11.0.5+10-LTS
+sun.io.unicode.encoding:UnicodeLittle
+tomcat.util.buf.StringCache.byte.enabled:true
+java.class.version:55.0
+liquibase.context:run
+
+INFO 24 Mar 2022 02:10:58,926 - SanityChecker.logDeploymentProperties | Resolved deployment properties:
+INFO 24 Mar 2022 02:10:58,930 - SanityChecker.logDeploymentProperties | analytics.enabled: true
+analytics.server.host: https://api.segment.io
+analytics.server.key: sVk...
+api.beta.enabled: true
+api.global.limit.15s: 75
+api.global.limit.day: 100000
+api.global.limit.hour: 10000
+api.global.minInterval: 0
+api.permissiveCors.enabled: true
+api.throttling.enabled: false
+api.user.limit.15s: 15
+api.user.limit.day: 5000
+api.user.limit.hour: 1000
+api.user.minInterval: 0
+apitoken.encryption.key: DYF...
+archive.folder.location: archive
+archive.folder.storagetime: 1
+archive.maxExpandedSizeMB: 10000
+archive.minSpaceRequiredToStartMB: 1000
+aspose.app: /home/builder/rspace/aspose/aspose-app.jar
+aspose.cacheConverted: true
+aspose.jvmArgs:
+aspose.license: /home/builder/rspace/aspose/Aspose-Total-Java.lic
+aspose.logfile: /home/builder/rspace/aspose/aspose-8085.log
+aspose.loglevel: INFO
+aspose.web.url: http://howler:8083
+authorised.signup: false
+aws.s3.hasS3Access: false
+box.client.id: 1d7...
+box.client.secret: d9X...
+cache.apply: true
+chemistry.web.url: http://howler:8099
+clustermarket.api.url: https://api.staging.clustermarket.com/v1/
+clustermarket.client.id: LJ9...
+clustermarket.secret: vEq...
+clustermarket.web.url: https://staging.clustermarket.com/
+collabora.wopi.enabled: false
+csrf.filters.acceptedDomains: https://rs-inventory-alpha.researchspace.com,https://129.215.1.97
+csrf.filters.enabled: true
+dbversion: 32
+default.taskExecutor.core: 2
+default.taskExecutor.max: 5
+default.taskExecutor.queue: 100
+deployment: dev
+deployment.cloud: false
+deployment.sso.adminLogin.enabled: false
+deployment.sso.backdoorUserCreation.enabled: false
+deployment.sso.logout.url: /public/ssologout
+deployment.sso.ssoInfoVariant:
+deployment.sso.type:
+deployment.standalone: true
+dmptool.base.url: https://dmptool-stg.cdlib.org
+dmptool.callback.base.url:
+dmptool.client.id: IBQ...
+dmptool.client.secret: 0lW...
+docConverter.taskExecutor.core: 2
+docConverter.taskExecutor.max: 10
+docConverter.taskExecutor.queue: 250
+egnyte.client.id: r7h...
+email.enabled: true
+email.signup.authoriser.emails: dev@researchspace.com
+email.signup.title.from: RSAcceptance at test8085
+errorPage.showStackTrace: false
+example.import.files: file:/home/builder/rspace/tomcats/rs_acceptance/TestExampleImport-RSPAC-1789.zip
+figshare.id: 59a....
+figshare.secret: 079...
+files.maxUploadSize: 100485760
+github.client.id: 34a...
+github.secret: 1f6...
+googledrive.client.id: 731...
+googledrive.developer.key: AIz...
+importArchiveFromServer.enabled: true
+index.taskExecutor.queue: 5000
+inventory.import.containersLimit: 500
+inventory.import.samplesLimit: 1000
+inventory.import.subSamplesLimit: 2000
+jdbc.charset: UTF-8
+jdbc.driverClassName: com.mysql.jdbc.Driver
+jdbc.password: eca...
+jdbc.url: jdbc:mysql://localhost:3306/rs_acceptance?useSSL=false
+jdbc.username: rspacedbuser
+labtools.server.location: https://pangolin.researchspace.com:8094
+ldap.anonymousBind: true
+ldap.authentication.enabled: false
+ldap.authentication.sidVerification.enabled: false
+ldap.baseSuffix: dc=test,dc=kudu,dc=axiope,dc=com
+ldap.bindQuery.dn: anonymous
+ldap.bindQuery.password: ano...
+ldap.enabled: true
+ldap.fallbackDnCalculationEnabled: false
+ldap.ignorePartialResultException: false
+ldap.url: ldaps://kudu.researchspace.com
+ldap.userSearchQuery.dnField:
+ldap.userSearchQuery.objectSidField:
+ldap.userSearchQuery.uidField: uid
+license.exceeded.custom.message:
+license.key: KQN...
+license.server.location: http://localhost:8091
+licenseserver.poll.cron: 0 1/31 * * * ?
+liquibase.context: run
+logging.dir: /home/builder/rspace/tomcats/rs_acceptance/rspacelogs
+login.customLoginContent: This is Pangolin:8085 test server. Please do not add production data, real sample data or identifying personal data of any kind.
+mail.addressChunkSize: 25
+mail.debug: false
+mail.default.from: ResearchSpace
+mail.emailAccount: XXXXXXX
+mail.emailHost: email-smtp.eu-west-2.amazonaws.com
+mail.from: support@researchspace.com
+mail.password: BF5...
+mail.port: 587
+mail.replyTo: do-not-reply@researchspace.com
+mail.ssl.enabled: false
+mail.transport.protocol: smtp
+max.tiff.conversionSize: 8192000
+mendeley.id: 5566
+mendeley.secret: MXv...
+mendeley.id: 5566
+mendeley.secret: MXv...
+msoffice.wopi.enabled: false
+msoffice.wopi.proofKey.validation.enabled: true
+netfilestores.enabled: true
+netfilestores.export.enabled: true
+netfilestores.extraSystemProps:
+netfilestores.login.directory.option: true
+netfilestores.smbj.download: false
+netfilestores.smbj.name.match.path: true
+netfilestores.smbj.shareName:
+netfilestores.smbj.withDfsEnabled: false
+offline.button.visible: false
+onedrive.client.id: 33c...
+onedrive.redirect: https://test.researchspace.com:8085/oneDrive/redirect
+orcid.client.id: APP...
+orcid.client.secret: c43...
+nextcloud.auth.type: oauth
+nextcloud.client.id: Wbv...
+nextcloud.secret: lex...
+nextcloud.server.name: ownCloud
+nextcloud.url: https://owncloud-test.researchspace.com
+pdf.defaultPageSize: A4
+pdffont.dir: /home/builder/rspace/fonts
+picreateGroupOnSignup.enabled: true
+profile.email.editable: true
+profile.firstlastname.editable: true
+profile.hiding.enabled: false
+protocolsio.client.id: pr_...
+protocolsio.secret: pr_...
+pyrat.client.token: 1-y...
+pyrat.url: https://pyrat.leibniz-fli.de/pyrat-test/api/v2/
+rs.attachment.lucene.index.dir: /home/builder/rspace/tomcats/rs_acceptance/LuceneFTsearchIndices
+rs.dev.groupcreation: ${groupcreation}
+rs.ext.filestore.baseURL: https://apprspace.egnyte.com
+rs.ext.filestore.root: /Shared/RSpaceTestFileStore
+rs.filestore: LOCAL
+rs.hibernate.searchIndex.exclusiveIndex: true
+rs.hibernate.searchIndex.folder: /home/builder/rspace/tomcats/rs_acceptance/FTsearchIndices
+rs.indexOnstartup: false
+rs.postbatchsignup.emailtemplate: defaultWelcomePostBatchSignupemail.vm
+rs.postsignon.emailtoadmin.template: activationRequest.vm
+rs.postsignon.genericAccountAuthorisation: genericAccountActivation.vm
+rs.usergroup.initfile: deployments/acceptance/initUsers.csv
+rsversion: 1.76.0-SNAPSHOT-2022-03-24T02:06:34Z
+server.urls.prefix: https://test.researchspace.com
+services.retry.back-off-delay-in-millis: 25
+services.retry.max-attempts: 4
+signup.customSignupContent: ELN service, provided by RSpace.
+slack.client.id: 279...
+slack.secret: 6bd...
+slack.verification.token: XI9...
+slow.request.time: 2000
+snapgene.web.url: http://howler:8082
+sysadmin.delete.user: true
+sysadmin.delete.user.deleteResourcesImmediately: true
+sysadmin.delete.user.resourceList.folder: archive/deletedUserResourceListings
+sysadmin.errorfile.path: /home/builder/rspace/tomcats/rs_acceptance/rspacelogs/error.log
+sysadmin.limitedIpAddresses.enabled: false
+sysadmin.nodeletenewerthan.days: 366
+sysadmin.rspace.support.email: xx@rxxx
+ui.bannerImage.loggedOutUrl: https://www.researchspace.com/
+ui.bannerImage.path: file:/home/builder/rspace/tomcats/rs_acceptance/invlogo.png
+ui.bannerImage.url: https://researchspace.helpdocs.io/article/dagfzhl3yw-rspace-inventory-hub
+ui.footer.urls: {'RSpace Ops':'https://ops2.researchspace.com'}
+user.signup: true
+user.signup.acceptedDomains:
+user.signup.captcha.enabled: false
+user.signup.captcha.secret:
+user.signup.captcha.site.key:
+user.signup.signupCode: abcdefg
+username.length.min: 6
+velocity.ext.dir: ./
+
+INFO 24 Mar 2022 02:10:58,936 - SanityChecker.assertDefaultAdminUsersPresent | Default admin user present
+INFO 24 Mar 2022 02:10:58,940 - SanityChecker.assertDefaultAdminUsersPresent | Default sysadmin user present
+
+INFO 24 Mar 2022 02:10:58,936 - SanityChecker.assertDefaultAdminUsersPresent | Default admin user present
+INFO 24 Mar 2022 02:10:58,940 - SanityChecker.assertDefaultAdminUsersPresent | Default sysadmin user present
+INFO 24 Mar 2022 02:10:58,970 - SanityChecker.assertIsValidDeployment | Property configuration is valid: PropertyHolder [urlPrefix=https://pangolin8085.researchspace.com, userSignup=true, netFileStoresEnabled=true, offlineButtonVisible=false, exportFolderLocation=archive, standalone=true, cloud=false, deleteUser=true, absPathToErrorLog=/home/builder/rspace/tomcats/rs_acceptance/rspacelogs/error.log, rspaceSupportEmail=support@researchspace.com, bannerImagePath=file:/home/builder/rspace/tomcats/rs_acceptance/invlogo.png, ldapEnabled=true, maxUploadSize=100485760, rsversion=1.76.0-SNAPSHOT-2022-03-24T02:06:34Z, oneDriveClientId=33c944b7-adcf-42c1-90f2-a33152b75172, oneDriveRedirect=https://pangolin.researchspace.com:8085/oneDrive/redirect, slackClientId=2793175987.60717545827, orcidClientId=APP-K6QNQTHK2YW9SCXT, githubClientId=34acf746f96b15931d0b, analyticsEnabled=true, loginDirectoryOption=true]
+INFO 24 Mar 2022 02:10:58,970 - SanityChecker.assertLuceneFullTextSearchIndexFolderIsUsable | Checking Lucene attachment search folder can be set....
+INFO 24 Mar 2022 02:10:58,970 - AttachmentSearchBase.setIndexFolder | Setting index folder to /home/builder/rspace/tomcats/rs_acceptance/LuceneFTsearchIndices
+INFO 24 Mar 2022 02:10:59,003 - AttachmentSearchBase.setIndexFolder | Setting index folder to /home/builder/rspace/tomcats/rs_acceptance/LuceneFTsearchIndices
+ERROR 24 Mar 2022 02:10:59,104 - FileIndexSearcher.getIndexFolderPath | this should not be called
+INFO 24 Mar 2022 02:10:59,104 - SanityChecker.assertLuceneFullTextSearchIndexFolderIsUsable | Search index folder set as [null]
+INFO 24 Mar 2022 02:10:59,104 - SanityChecker.onAppStartup | Sanity check run: ALL_OK=true
+WARN 24 Mar 2022 02:10:59,112 - ServiceLoggerAspct.doAccessCheckAndProfile | Execution time longer than 1000 ms (1210ms). In method [onApplicationEvent] in class [org.springframework.context.ApplicationListener] with args: org.springframework.context.event.ContextRefreshedEvent[source=Root WebApplicationContext, starte...
+INFO 24 Mar 2022 02:10:59,122 - LiveLiqUpdater.executeAsync | Logging live updates
+INFO 24 Mar 2022 02:10:59,132 - UserCounterListener.contextInitialized | Context initialised
+INFO 24 Mar 2022 02:10:59,156 - MarkerIgnoringBase.info | SELECT COUNT(*) FROM rs_acceptance.DATABASECHANGELOGLOCK
+INFO 24 Mar 2022 02:10:59,157 - MarkerIgnoringBase.info | SELECT COUNT(*) FROM rs_acceptance.DATABASECHANGELOGLOCK
+INFO 24 Mar 2022 02:10:59,157 - MarkerIgnoringBase.info | SELECT `LOCKED` FROM rs_acceptance.DATABASECHANGELOGLOCK WHERE ID=1
+INFO 24 Mar 2022 02:10:59,158 - MarkerIgnoringBase.info | Successfully acquired change log lock
+INFO 24 Mar 2022 02:10:59,242 - StdSchedulerFactory.instantiate | Using default implementation for ThreadExecutor
+INFO 24 Mar 2022 02:10:59,243 - SimpleThreadPool.initialize | Job execution threads will use class loader of thread: localhost-startStop-1
+INFO 24 Mar 2022 02:10:59,251 - MarkerIgnoringBase.info | SELECT MD5SUM FROM rs_acceptance.DATABASECHANGELOG WHERE MD5SUM IS NOT NULL LIMIT 1
+INFO 24 Mar 2022 02:10:59,256 - MarkerIgnoringBase.info | SELECT COUNT(*) FROM rs_acceptance.DATABASECHANGELOG
+INFO 24 Mar 2022 02:10:59,256 - SchedulerSignalerImpl.<init> | Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+INFO 24 Mar 2022 02:10:59,256 - QuartzScheduler.<init> | Quartz Scheduler v.2.3.2 created.
+INFO 24 Mar 2022 02:10:59,257 - RAMJobStore.initialize | RAMJobStore initialized.
+INFO 24 Mar 2022 02:10:59,257 - QuartzScheduler.initialize | Scheduler meta-data: Quartz Scheduler (v2.3.2) 'DefaultQuartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        1,1           Top

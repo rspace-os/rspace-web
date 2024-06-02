@@ -1,0 +1,33 @@
+{
+  "name": "blobjs",
+  "version": "1.1.1",
+  "description": "native Blob interface support (polyfill)",
+  "main": "Blob.js",
+  "scripts": {
+    "test": "exit 0",
+    "build": "node_modules/.bin/uglifyjs  Blob.js --mangle --comments '/^!|@preserve|@license|@cc_on/i' > Blob.min.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clarketm/Blob.js.git"
+  },
+  "keywords": [
+    "blob",
+    "Blob",
+    "filesaver",
+    "polyfill",
+    "shim"
+  ],
+  "authors": [
+    "clarketm <travis.m.clarke@gmail.com>",
+    "eligrey <~@eligrey.com>"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/clarketm/Blob.js/issues"
+  },
+  "homepage": "https://github.com/clarketm/Blob.js#readme",
+  "devDependencies": {
+    "uglify-js": "^2.7.4"
+  }
+}

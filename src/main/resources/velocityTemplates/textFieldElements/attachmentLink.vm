@@ -1,0 +1,23 @@
+#*
+ Attachment link HTML template.
+ Arguments needed for mustache are:
+  - record ID ($id)
+  - record name ($name}
+  - datatype ('Documents' or 'Miscellaneous')
+  - iconPath the path to the file-type icon
+ Additional arguments needed for use in Velocity are:
+    -infoIconSrc location of info icon
+*#
+
+<div class="attachmentDiv mceNonEditable">
+		<a href="/Streamfile/$id" target="_blank">
+			<img class="attachmentIcon" src="$iconPath" height="32" width="32"/>
+		</a>
+		<p class="attachmentP">
+			<a class="attachmentLinked" id="attachOnText_$id" data-type="$datatype" 
+			href="/Streamfile/$id" target="_blank">$name</a>
+		</p>
+		<div class="attachmentInfoDiv" id="attachmentInfoDiv_$id">
+			<img class="attachmentInfoIcon" src="$infoIconSrc"/>
+		</div>
+</div>

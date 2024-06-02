@@ -1,0 +1,6 @@
+﻿Name,Alternative name,Import identifier,Parent container
+Container1,Protein phosphatase 1,cont1,
+Container2,"very long alternative name - the one that should trigger text field column mapping, if everything works fine",,cont1
+Container3,-,,cont5
+Container4,-,,cont5
+Container5,-,cont5,

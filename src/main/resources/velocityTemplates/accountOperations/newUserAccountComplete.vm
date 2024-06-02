@@ -1,0 +1,40 @@
+#*
+Template for messaging a user that an  account is now created for them.
+Arguments:
+ - adminUser - the admin user who created the account
+ - newUser - The new admin user.
+ - htmlPrefix - the base URL of the application
+ - newUserRole - a String of the new Role name.
+*#
+<html>
+#utf8header
+<body>
+<p/>
+Hello ${newUser.fullName},
+<p/>
+The RSpace system administrator has created a ${newUserRole} account for you.
+ To log into your server, use any browser on any device to go to 
+ 
+ ${htmlPrefix}/workspace
+<p/>
+Your <b>username</b> for this account is ${newUser.username}.
+<br/>
+Your system administrator can provide your login password if they have not already done so.
+ If your server is using a single sign-on technology provided by your institution then your 
+ login credentials are most likely the same username and password you use to access all other institutional systems.
+<br/>
+<p> If you would like to change your profile details, please go to the "My RSpace" tab > "My Profile"
+<br/>
+<p> To access written documentation and instructional videos, click on the <b>Need Help?</b> bottom on the bottom-right of the interface. To request assistance from ResearchSpace support, please select "Chat with us" within the Need Help? interface.
+<br/>
+You can also access documentation through <a href="https://researchspace.helpdocs.io/">on our help website</a>.
+<p/>
+
+#notificationPrefInfoNewUser
+
+Best wishes,
+<p/>
+ ${adminUser.fullName}
+ </body>
+ </html>
+ #dontReply

@@ -1,0 +1,132 @@
+[
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 11,
+		"title": "Behavioral Neuroscience",
+		"parent_id": 48,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 12,
+		"title": "Cell Biology",
+		"parent_id": 48,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 13,
+		"title": "Genetics",
+		"parent_id": 48,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 14,
+		"title": "Molecular Biology",
+		"parent_id": 48,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 15,
+		"title": "Neuroscience",
+		"parent_id": 48,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 16,
+		"title": "Physiology",
+		"parent_id": 48,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 17,
+		"title": "Geography",
+		"parent_id": 26,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 19,
+		"title": "Pharmacology",
+		"parent_id": 48,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 20,
+		"title": "Computer Engineering",
+		"parent_id": 5,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 21,
+		"title": "Biotechnology",
+		"parent_id": 48,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 23,
+		"title": "Software Engineering",
+		"parent_id": 5,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 24,
+		"title": "Evolutionary Biology",
+		"parent_id": 48,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	},
+	{
+		"is_selectable": true,
+		"has_children": false,
+		"id": 25,
+		"title": "Anthropology",
+		"parent_id": 26,
+		"path": "",
+		"source_id": "",
+		"taxonomy_id": 10
+	}
+]

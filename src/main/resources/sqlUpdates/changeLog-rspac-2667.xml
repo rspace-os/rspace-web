@@ -1,0 +1,41 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2022-12-01a" context="run,dev-test" author="nhanlon2">
+        <comment>Increase size of radioOption</comment>
+        <modifyDataType
+                columnName="radioOption"
+                newDataType="longtext"
+                tableName="FieldForm"/>
+        <modifyDataType
+                columnName="radioOption"
+                newDataType="longtext"
+                tableName="FieldForm_AUD"/>
+    </changeSet>
+    <changeSet id="2022-12-01b" context="run" author="nhanlon2">
+        <addColumn tableName="FieldForm">
+            <column name="showAsPickList" type="BIT(1)" defaultValueBoolean="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="FieldForm">
+            <column name="sortAlphabetic" type="BIT(1)" defaultValueBoolean="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="FieldForm_AUD">
+            <column name="showAsPickList" type="BIT(1)" defaultValueBoolean="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="FieldForm_AUD">
+            <column name="sortAlphabetic" type="BIT(1)" defaultValueBoolean="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

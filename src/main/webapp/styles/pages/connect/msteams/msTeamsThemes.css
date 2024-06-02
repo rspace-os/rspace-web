@@ -1,0 +1,252 @@
+/* 
+ * global teams-specific styling 
+ */
+
+div.header-wrapper,
+#intercom-container, 
+#rs-google-signin-fieldset {
+    display: none !important;
+}
+
+/* password-flow styling */
+.passwordResetInstructionDiv,
+.passwordResetSentDiv {
+    font-family: "Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+/* dont display unthemed body */
+body {
+    display: none;
+}
+body.ms_theme_default,
+body.ms_theme_dark,
+body.ms_theme_contrast {
+    display: block;
+}
+
+/* 
+ * theme-dependent styling for particular pages
+ */
+
+body.ms_theme_default,
+body.ms_theme_default input {
+    color: #444;
+    background-color: #fff;
+}
+
+/* special case for login screen in full-tab rather than config view */
+@media only screen and (min-height : 400px) {
+    body.ms_theme_default {
+        background-color: #f3f2f1;
+    }
+}
+
+body.ms_theme_default .nav-pills > li.active > a,
+body.ms_theme_default .btn-primary,
+body.ms_theme_default .btn-primary:active,
+body.ms_theme_default .btn-primary:focus,
+body.ms_theme_default .btn-primary:hover,
+body.ms_theme_default .btn-primary:active:hover,
+body.ms_theme_default .rs-sign-in-form__head,
+body.ms_theme_default .searchResultDiv.selectedSearchResult,
+body.ms_theme_default .fancytree-plain.fancytree-container span.fancytree-node.fancytree-active span.fancytree-title {
+    background-color: #5558AF;
+    border-color: #5558AF;
+    background-image: none;
+    color: #fff;
+}
+
+body.ms_theme_default .bootstrap-custom-flat .form-control:focus, 
+body.ms_theme_default .bootstrap-custom-flat input.form-control:focus,
+body.ms_theme_default .rs-field__input:focus ~ .rs-field__icon {
+    -webkit-box-shadow: inset 0 -2px 0 #5558AF;
+    box-shadow: inset 0 -2px 0 #5558AF;
+    color: #5558AF;
+}
+
+body.ms_theme_default #msTeamsDomainConfigDiv a,
+body.ms_theme_default .resetPasswordDiv a,
+body.ms_theme_default #footer a,
+body.ms_theme_default .footerVersionRow a,
+body.ms_theme_default .rs-record-info-panel a {
+    color: #5558AF;
+}
+
+body.ms_theme_default .searchResultDiv {
+    background-color: #DEE0E3;
+}
+
+body.ms_theme_default #loggedUserSimpleDocPanel,
+body.ms_theme_default div#page,
+body.ms_theme_default #page .breadcrumb,
+body.ms_theme_default .rs-record-info-panel,
+body.ms_theme_default .rs-record-info-panel .rs-record-header-line > div[class*="rs-"] {
+  background-color: #f3f2f1;
+  border-color: #f3f2f1;
+}
+
+/* 
+ * dark theme
+ */
+
+body.ms_theme_dark,
+body.ms_theme_dark input {
+    background-color: #2c2b2b;
+}
+
+body.ms_theme_dark #msTeamsDomainConfigDiv,
+body.ms_theme_dark #recordPickerTabConfigDiv {
+    background-color: #36363B;
+}
+
+body.ms_theme_dark #msTeamsDomainConfigDiv,
+body.ms_theme_dark #recordPickerTabConfigDiv,
+body.ms_theme_dark #footer,
+body.ms_theme_dark .footerVersionRow,
+body.ms_theme_dark .fancytree-plain.fancytree-container span.fancytree-node span.fancytree-title {
+    color: #fff;
+}
+
+body.ms_theme_dark .fancytree-plain.fancytree-container .fancytree-node.fancytree-folder.fancytree-has-children span.fancytree-expander {
+    background-color: #fff;
+}
+
+body.ms_theme_dark .nav-pills > li.active > a,
+body.ms_theme_dark .btn-primary,
+body.ms_theme_dark .btn-primary:active,
+body.ms_theme_dark .btn-primary:focus,
+body.ms_theme_dark .btn-primary:hover,
+body.ms_theme_dark .btn-primary:active:hover,
+body.ms_theme_dark .rs-sign-in-form__head,
+body.ms_theme_dark .searchResultDiv.selectedSearchResult,
+body.ms_theme_dark .fancytree-plain.fancytree-container span.fancytree-node.fancytree-active span.fancytree-title {
+    background-color: #9FA4FE;
+    border-color: #9FA4FE;
+    color: #36363B
+}
+
+body.ms_theme_dark .bootstrap-custom-flat .form-control:focus, 
+body.ms_theme_dark .bootstrap-custom-flat input.form-control:focus{
+    -webkit-box-shadow: inset 0 -2px 0 #9FA4FE;
+    box-shadow: inset 0 -2px 0 #9FA4FE;
+}
+body.ms_theme_dark .rs-field__input:focus ~ .rs-field__icon {
+    color: #9FA4FE;
+}
+
+body.ms_theme_dark #msTeamsDomainConfigDiv a,
+body.ms_theme_dark .resetPasswordDiv a,
+body.ms_theme_dark #footer a,
+body.ms_theme_dark .footerVersionRow a,
+body.ms_theme_dark .rs-record-info-panel a {
+    color: #9FA4FE;
+}
+
+body.ms_theme_dark .searchResultDiv:hover,
+body.ms_theme_dark .fancytree-plain.fancytree-container span.fancytree-title:hover {
+    background-color: #77777B;
+}
+
+body.ms_theme_dark .searchResultDiv,
+body.ms_theme_dark #fileTreeDiv,
+body.ms_theme_dark #loggedUserSimpleDocPanel,
+body.ms_theme_dark div#page,
+body.ms_theme_dark div#page .breadcrumb,
+body.ms_theme_dark .rs-record-info-panel,
+body.ms_theme_dark .rs-record-info-panel .rs-record-header-line > div[class*="rs-"],
+body.ms_theme_dark .fieldHeaderEditButton {
+    background-color: #49494D;
+    border-color: #49494D;
+}
+
+body.ms_theme_dark #status span,
+body.ms_theme_dark .fieldHeaderName,
+body.ms_theme_dark .rs-record-info-panel .rs-record-header-line > div[class*="rs-"],
+body.ms_theme_dark .bootstrap-custom-flat .breadcrumbElems {
+    color: #FFFFFF !important;
+}
+
+/* 
+ * contrast theme
+ */
+
+body.ms_theme_contrast,
+body.ms_theme_contrast input {
+    background-color: #000;
+}
+
+body.ms_theme_contrast #msTeamsDomainConfigDiv,
+body.ms_theme_contrast #recordPickerTabConfigDiv,
+body.ms_theme_contrast #loginForm {
+    background-color: #000;
+}
+
+body.ms_theme_contrast #msTeamsDomainConfigDiv,
+body.ms_theme_contrast #recordPickerTabConfigDiv,
+body.ms_theme_contrast #footer,
+body.ms_theme_contrast .footerVersionRow,
+body.ms_theme_contrast .fancytree-plain.fancytree-container span.fancytree-node span.fancytree-title {
+    color: #fff;
+}
+
+body.ms_theme_contrast .fancytree-plain.fancytree-container .fancytree-node.fancytree-folder.fancytree-has-children span.fancytree-expander {
+    background-color: #fff;
+}
+
+body.ms_theme_contrast #msTeamsDomainConfigDiv a,
+body.ms_theme_contrast .resetPasswordDiv a,
+body.ms_theme_contrast .rs-sign-in-form__head,
+body.ms_theme_contrast #footer a,
+body.ms_theme_contrast .footerVersionRow a,
+body.ms_theme_contrast .rs-record-info-panel a {
+    background-color: #000;
+    border-color: #000;
+    color: #fffb00;
+}
+
+body.ms_theme_contrast .nav-pills > li.active > a,
+body.ms_theme_contrast .btn-primary,
+body.ms_theme_contrast .btn-primary:active,
+body.ms_theme_contrast .btn-primary:focus,
+body.ms_theme_contrast .btn-primary:hover,
+body.ms_theme_contrast .btn-primary:active:hover,
+body.ms_theme_contrast .searchResultDiv.selectedSearchResult,
+body.ms_theme_contrast .fancytree-plain.fancytree-container span.fancytree-node.fancytree-active span.fancytree-title {
+    background-color: #3ff23f;
+    border-color: #3ff23f;
+    color: #fff;
+}
+
+body.ms_theme_contrast .bootstrap-custom-flat .form-control:focus, 
+body.ms_theme_contrast .bootstrap-custom-flat input.form-control:focus {
+    -webkit-box-shadow: inset 0 -2px 0 #3ff23f;
+    box-shadow: inset 0 -2px 0 #3ff23f;
+}
+body.ms_theme_contrast .rs-field__input:focus ~ .rs-field__icon {
+    color: #3ff23f;
+}
+
+body.ms_theme_contrast .searchResultDiv:hover,
+body.ms_theme_contrast .fancytree-plain.fancytree-container span.fancytree-title:hover {
+    background-color: #77777B;
+}
+
+body.ms_theme_contrast .searchResultDiv,
+body.ms_theme_contrast #fileTreeDiv,
+body.ms_theme_contrast #loggedUserSimpleDocPanel,
+body.ms_theme_contrast div#page,
+body.ms_theme_contrast div#page .breadcrumb,
+body.ms_theme_contrast .rs-record-info-panel,
+body.ms_theme_contrast .rs-record-info-panel .rs-record-header-line > div[class*="rs-"],
+body.ms_theme_contrast .fieldHeaderEditButton {
+    background-color: #000;
+    border-color: #000;
+}
+
+body.ms_theme_contrast #status span,
+body.ms_theme_contrast .fieldHeaderName,
+body.ms_theme_contrast .rs-record-info-panel .rs-record-header-line > div[class*="rs-"],
+body.ms_theme_contrast .bootstrap-custom-flat .breadcrumbElems {
+    color: #FFFFFF !important;
+}
+

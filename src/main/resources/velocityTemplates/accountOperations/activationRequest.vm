@@ -1,0 +1,17 @@
+<p>
+ Hello, <br/>
+ 
+ A new registrant for the ${installation} installation has signed up.
+ <p/>
+ The details are as follows:<br/>
+ Full name: ${fullName}<br/>
+ Email: ${email}
+ 
+ <p/>
+ To <b>accept</b>  this request, please click <a href="${acceptlink}"> to accept. </a>
+ <p/>
+  <p/>
+ To <b>reject</b>  this request, please click <a href="${denylink}"> to deny. </a>
+ <p/>
+ 
+#dontReply

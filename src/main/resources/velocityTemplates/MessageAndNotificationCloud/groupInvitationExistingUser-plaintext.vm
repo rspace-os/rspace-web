@@ -1,0 +1,12 @@
+Hello $!{invited.fullName},
+
+${creator.fullName} (${creator.email}) has invited you to join their RSpace group '${group.displayName}'.
+
+If you'd like to accept this invitation, please login to RSpace at ${acceptanceLink}
+
+Once you've logged in, there will be an invitation message waiting for you  - accept this invitation and
+you will be added to ${creator.fullName}'s group.
+
+#signature_Plaintext
+
+#dontReply_Plaintext

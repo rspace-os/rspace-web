@@ -1,0 +1,19 @@
+{
+  "data": [
+    "Cell Line = HeLa",
+    "Gene Identifier = ENSG00000117399",
+    "Gene Identifier URL = http://www.ensembl.org/id/ENSG00000117399",
+    "Gene Symbol = CDC20",
+    "Analysis Gene Annotation Build = GRCh37, Ensembl release 61, Feb 2011",
+    "Organism = Homo sapiens",
+    "siRNA Identifier = s2748",
+    "siRNA Pool Identifier = ",
+    "Sense Sequence = CGAAAUGACUAUUACCUGATT",
+    "Antisense Sequence = UCAGGUAAUAGUCAUUUCGGA",
+    "Reagent Design Gene Annotation Build = GRCh37, Ensembl release 61, Feb 2011",
+    "Control Type = positive control",
+    "Control Comments = early mitotic phenotype",
+    "Quality Control = fail",
+    "Channels = H2B- mCherry/Cy3:chromatin;eGFP:nuclear lamina and report on nuclear envelope breakdown"
+  ]
+}

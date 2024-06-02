@@ -1,0 +1,34 @@
+{
+  "planId" : "1683214687439",
+  "foundFileSystems" : [ {
+    "id" : 1,
+    "name" : "samba-folder",
+    "url" : "smb://10.0.2.29",
+    "clientType" : "SMBJ",
+    "authType" : "PASSWORD",
+    "options" : {
+      "SAMBA_SHARE_NAME" : "samba-folder"
+    },
+    "loggedAs" : null,
+    "foundNfsLinks" : [ {
+      "fileStoreId" : 2,
+      "nfsId" : null,
+      "path" : "/test.txt",
+      "linkType" : "file"
+    } ],
+    "checkedNfsLinks" : [ ],
+    "checkedNfsLinkMessages" : { }
+  } ],
+  "foundNfsLinks" : {
+    "1_/RSpace-Test NAS/test.txt" : {
+      "fileStoreId" : 2,
+      "nfsId" : null,
+      "path" : "/test.txt",
+      "linkType" : "file"
+    }
+  },
+  "checkedNfsLinks" : { },
+  "checkedNfsLinkMessages" : { },
+  "maxArchiveSizeMBProp" : 0,
+  "currentlyAllowedArchiveSizeMB" : 0
+}

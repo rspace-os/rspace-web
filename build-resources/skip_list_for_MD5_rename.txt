@@ -1,0 +1,5 @@
+src/main/webapp/scripts/bower.json
+src/main/webapp/ui/src
+src/main/webapp/ui/package-lock.json
+src/main/webapp/ui/package.json
+src/main/webapp/ui/webpack.config.js

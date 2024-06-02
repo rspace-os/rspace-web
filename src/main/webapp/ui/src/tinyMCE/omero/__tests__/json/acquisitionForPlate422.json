@@ -1,0 +1,16 @@
+{
+  "data": [ {
+  "id" : 422,
+  "columns" : 12,
+  "rows" : 8,
+  "fake" : false,
+  "childCounts" : 96,
+  "name" : "Run 422",
+  "description" : "",
+  "annotations" : [ ],
+  "omeroConnectionKey" : "user1a",
+  "samplesUrls" : [ "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/422/wellsampleindex/0/wells/" ],
+  "type" : "plateAcquisition",
+  "parentId" : 422,
+  "children" : [ ]
+} ]}

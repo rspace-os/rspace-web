@@ -1,0 +1,86 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 inventory containers July 2020 -->
+
+	<changeSet id="2021-03-19a" author="matthias" context="run">
+		<comment>RSINV-203: add version columns to inventory items</comment>
+		<addColumn tableName="Container">
+			<column name="version" type="BIGINT(19)" valueNumeric="1" />
+		</addColumn>
+		<addColumn tableName="Container_AUD">
+			<column name="version" type="BIGINT(19)" valueNumeric="1" />
+		</addColumn>
+		<addColumn tableName="Sample">
+			<column name="version" type="BIGINT(19)" valueNumeric="1" />
+		</addColumn>
+		<addColumn tableName="Sample_AUD">
+			<column name="version" type="BIGINT(19)" valueNumeric="1" />
+		</addColumn>
+		<addColumn tableName="SubSample">
+			<column name="version" type="BIGINT(19)" valueNumeric="1" />
+		</addColumn>
+		<addColumn tableName="SubSample_AUD">
+			<column name="version" type="BIGINT(19)" valueNumeric="1" />
+		</addColumn>
+
+		<addNotNullConstraint tableName="Container" columnName="version" columnDataType="BIGINT(19)" />
+		<addNotNullConstraint tableName="Sample" columnName="version" columnDataType="BIGINT(19)" />
+		<addNotNullConstraint tableName="SubSample" columnName="version" columnDataType="BIGINT(19)" />
+	</changeSet>
+	
+	<changeSet id="2021-03-19b" author="matthias" context="run">
+		<comment>RSINV-203: add template version field to sample, set for pre-existing samples created from templates</comment>
+		<addColumn tableName="Sample">
+			<column name="STemplateLinkedVersion" type="BIGINT(19)" />
+		</addColumn>
+		<addColumn tableName="Sample_AUD">
+			<column name="STemplateLinkedVersion" type="BIGINT(19)" />
+		</addColumn>
+		<sql>
+			update Sample set STemplateLinkedVersion = 1 where STemplate_id is not null;
+			update Sample_AUD set STemplateLinkedVersion = 1 where STemplate_id is not null;
+		</sql>
+	</changeSet>
+
+	<changeSet id="2021-03-26a" author="matthias" context="run">
+		<comment>RSINV-203: add 'deleted' and 'templateField_id' columns to SampleField</comment>
+		<addColumn tableName="SampleField">
+			<column name="deleted" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="SampleField_AUD">
+			<column name="deleted" type="BIT(1)" />
+		</addColumn>
+		<addColumn tableName="SampleField">
+			<column name="templateField_id" type="BIGINT(19)" />
+		</addColumn>
+		<addColumn tableName="SampleField_AUD">
+			<column name="templateField_id" type="BIGINT(19)" />
+		</addColumn>
+	
+		<addForeignKeyConstraint
+			baseColumnNames="templateField_id" baseTableName="SampleField"
+			constraintName="FK_3y0km9bpfi2oxanow35t16fdq" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="SampleField" />
+	</changeSet>
+	
+	<changeSet id="2021-03-26b" author="matthias" context="run">
+		<comment>RSINV-203: populate templateField relation for pre-existing SampleFields</comment>
+		<sql>
+			update SampleField sf
+			  join Sample s on sf.sample_id=s.id 
+			  join Sample t on s.STemplate_id = t.id
+			  join SampleField tsf on tsf.sample_id = t.id
+			set sf.templateField_id = tsf.id
+			where tsf.name = sf.name
+		</sql>
+	</changeSet>	
+
+
+</databaseChangeLog>

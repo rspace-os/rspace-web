@@ -1,0 +1,17 @@
+body {
+    font-family: "Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+    padding: 0px;
+    margin: 0px;
+    display: none; /* shown by js code after theme selection */
+}
+#msTeamsAuthenticationDiv {
+    margin: auto;
+}
+#workspaceIframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+.maxHeight400 {
+    max-height: 400px;
+}

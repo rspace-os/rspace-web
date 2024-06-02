@@ -1,0 +1,19 @@
+[ {
+  "id" : 92515,
+  "name" : "PCR machine",
+  "manufacturer" : "Anton Paar",
+  "model_number" : "MCR 102",
+  "city" : "No Town",
+  "charging_type" : "Per Hour",
+  "currency" : "GBP",
+  "country" : "GB",
+  "room" : "",
+  "category" : {
+    "name" : "Equipment"
+  },
+  "lab" : {
+    "id" : 13940,
+    "name" : "RSpaceAdmin Dummy Lab for Auth permissions"
+  },
+  "description" : "ewewewe"
+} ]

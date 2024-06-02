@@ -1,0 +1,27 @@
+#*
+Template for messaging a user that someone has 'RunAs' them
+Arguments:
+ - runAs - The user who was impersonated
+ - systemUser - The admin user  who performed the 'RunAs' operation
+*#
+
+Hello ${runAs.fullName},
+
+The RSpace system administrator (${systemUser.fullName}) has recently  logged into your RSpace account.
+ 
+There are  several reasons why this might happen: 
+
+* To perform some admin function
+
+* Maintenance work
+
+* User assistance/fault diagnosis.
+
+
+If this is not expected, or your account has been tampered with, please contact the RSpace admin at ${systemUser.email}
+
+Best wishes 
+
+RSpace admin
+
+#dontReply_Plaintext

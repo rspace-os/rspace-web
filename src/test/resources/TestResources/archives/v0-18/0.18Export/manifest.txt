@@ -1,0 +1,9 @@
+Database version:0.19.0.begin
+Description:tert
+Exported by:user nine
+RSPace application version:0.19.0-SNAPSHOT-20140912-2345
+Source URL:http://localhost:8080
+archiveId:b52a1075-4cd6-4307-99ba-4b6a4f8524fc
+archiveSource:ResearchSpace
+exportDate:2014-09-12
+scope:SELECTION

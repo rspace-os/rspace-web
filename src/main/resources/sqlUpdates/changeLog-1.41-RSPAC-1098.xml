@@ -1,0 +1,53 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.41 Jan 2017 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<changeSet id="16-12-20a" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN">
+			<tableExists tableName="FilePropertyAUD_OBSOLETE" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="FilePropertyAUD_OBSOLETE" />
+	</changeSet>
+	<changeSet id="16-12-20d" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN">
+			<tableExists tableName="FileProperty_OBSOLETE" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="FileProperty_OBSOLETE" />
+	</changeSet>
+	<changeSet id="16-12-20e" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN">
+			<tableExists tableName="FilePropertyBk_spac964" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="FilePropertyBk_spac964" />
+	</changeSet>
+	<changeSet id="16-12-20b" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN">
+			<tableExists tableName="EcatMediaFile_OBSOLETE" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="EcatMediaFile_OBSOLETE" />
+	</changeSet>
+
+	<changeSet id="16-12-20c" author="richard" context="run">
+		<preConditions onFail="MARK_RAN" onError="MARK_RAN">
+			<tableExists tableName="EcatMediaFileAUD_OBSOLETE" />
+		</preConditions>
+		<comment>Remove obsolete table</comment>
+		<dropTable tableName="EcatMediaFileAUD_OBSOLETE" />
+	</changeSet>
+
+
+</databaseChangeLog>

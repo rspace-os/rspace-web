@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="/scripts/bower_components/jquery-ui/jquery-ui.min.js"></script>
+		<script src="/scripts/tinymceDialogUtils.js"></script>
+		<script src="/scripts/bower_components/mustache/mustache.min.js"></script>
+		<script src="/scripts/global.js"></script>
+		<script src="/scripts/externalTinymcePlugins/comments/script.js"></script>
+	</head>
+
+	<body>
+		<div class="divComment" id="">
+			<label>Enter a new comment:
+				<textarea id="commentText" class="newComment" style="width: 100%;"></textarea>
+			</label>
+			<input type="hidden" class="fieldIdComment" data-id="" aria-label="Hidden input" />
+			<input type="hidden" class="commentIdComment" data-id="" aria-label="Hidden input"/>
+		</div>
+		<div id="tablearea" class="comments" style="height: 370px; overflow:auto;">
+			<table id="tablecomments" style="background-color:#EFEDED; margin-top:6px;"></table>
+		</div>
+
+		<table id="commentRowTemplate" style="display:none">
+			<tr class="commentRow">
+				<td>
+					<table>
+						<tr>
+							<td style="color:black; font-weight: bold; background-color:#CCC; padding: 12px;"> {{user}} at {{date}}
+							</td>
+						</tr>
+						<tr style="color:black; background-color:#CCC;">
+							<td style="color:black; background-color:#FFF; width: 516px; padding: 12px;">{{comment}}</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+		<div id="commentLink" style="display: none"></div>
+	</body>
+</html>

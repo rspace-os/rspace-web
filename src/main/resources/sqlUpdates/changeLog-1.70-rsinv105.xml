@@ -1,0 +1,77 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- RSINV-105 Changes for version 1.70 inventory containers Nov 2020 -->
+
+	<changeSet author="richard" id="2020-11-18a" context="run">
+	  <comment> remove FieldForms related to samples</comment>
+	  <sql>
+	  delete ff  from FieldForm ff left join RSForm f on ff.form_id=f.id where f.formType='SAMPLE';
+	  </sql>
+	  <sql>
+	  delete ff  from FieldForm_AUD ff left join RSForm_AUD f on ff.form_id=f.id where f.formType='SAMPLE';
+	  </sql>
+	</changeSet>
+
+	<changeSet author="richard" id="2020-11-18b" context="run">
+	<comment>Delete obsolete form sample templates</comment>
+		<sql>
+		delete from RSForm where formType='SAMPLE';
+		</sql>
+		<sql>
+        delete from RSForm_AUD where formType='SAMPLE';
+		</sql>
+	</changeSet>
+	
+	<changeSet author="richard" id="2020-11-18c" context="run">
+	   <preConditions onFail="MARK_RAN">
+	    <foreignKeyConstraintExists foreignKeyName="FK_phbc9cwo8j9hdrhwuuiaamh6i" />
+	   </preConditions>
+	   <comment>drop obsolete form_id FK from Sample</comment>
+	   <dropForeignKeyConstraint baseTableName="Sample" constraintName="FK_phbc9cwo8j9hdrhwuuiaamh6i" /> 
+	</changeSet>
+	
+	<changeSet author="richard" id="2020-11-18d" context="run">
+	 <preConditions onFail="MARK_RAN">
+	  <columnExists tableName ="Sample" columnName="form_id"></columnExists>
+	 </preConditions>
+	 <comment> remove form_id from Sample, no longer needed. </comment>
+     <dropColumn tableName="Sample" columnName="form_id"></dropColumn>
+     </changeSet>
+     
+     <changeSet author="richard" id="2020-11-27a" context="run">
+	 <preConditions onFail="MARK_RAN">
+	  <columnExists tableName ="Sample_AUD" columnName="form_id"></columnExists>
+	 </preConditions>
+	 <comment> remove form_id from Sample, no longer needed. </comment>
+     <dropColumn tableName="Sample_AUD" columnName="form_id"></dropColumn>
+     </changeSet>
+     
+     <changeSet author="richard" id="2020-11-27b" context="run">
+	   <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+	    <foreignKeyConstraintExists foreignKeyName="FK_anoy8vsjyf8wa4s84lt3etmpr" />
+	   </preConditions>
+	   <comment>drop obsolete fieldForm_id FK from SampleField</comment>
+	   <dropForeignKeyConstraint baseTableName="SampleField" constraintName="FK_anoy8vsjyf8wa4s84lt3etmpr" /> 
+	</changeSet>
+	
+	 <changeSet author="richard" id="2020-11-27c" context="run">
+	 <preConditions onFail="MARK_RAN">
+	  <columnExists tableName ="SampleField" columnName="fieldForm_id"></columnExists>
+	 </preConditions>
+	 <comment> remove form_id from Sample, no longer needed. </comment>
+     <dropColumn tableName="SampleField" columnName="fieldForm_id"></dropColumn>
+     </changeSet>
+     
+      <changeSet author="richard" id="2020-11-27d" context="run">
+	 <preConditions onFail="MARK_RAN">
+	  <columnExists tableName ="SampleField_AUD" columnName="fieldForm_id"></columnExists>
+	 </preConditions>
+	 <comment> remove form_id from Sample, no longer needed. </comment>
+     <dropColumn tableName="SampleField_AUD" columnName="fieldForm_id"></dropColumn>
+     </changeSet>
+     
+</databaseChangeLog>

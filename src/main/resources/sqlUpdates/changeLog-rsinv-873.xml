@@ -1,0 +1,91 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2023-08-30a" context="run" author="nhanlon2">
+        <comment>Add a tag-metadata column to Container</comment>
+        <addColumn tableName="Container">
+            <column name="tagMetaData" type="longtext"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2023-08-30b" context="run" author="nhanlon2">
+        <comment>Add a tag-metadata column to Container AUD</comment>
+        <addColumn tableName="Container_AUD">
+            <column name="tagMetaData" type="longtext"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2023-08-30c" context="run, dev-test" author="nhanlon2">
+        <comment>Alter tags to larger varchar - keep as varchar because searches are more efficient</comment>
+        <modifyDataType columnName="tags" newDataType="varchar(8000)"
+                        tableName="Container" />
+    </changeSet>
+    <changeSet id="2023-08-30d" context="run, dev-test" author="nhanlon2">
+        <comment>Alter tags to text type in audit</comment>
+        <modifyDataType columnName="tags" newDataType="varchar(8000)"
+                        tableName="Container_AUD" />
+    </changeSet>
+    <changeSet id="2023-08-30e" context="run, dev-test" author="nhanlon2">
+        <comment>Tag values are now populated from tagMeta and the tags column is only used for searching.
+            We migrate existing tag values to tagMeta.</comment>
+        <sql> update Container container set container.tagMetaData = container.tags;</sql>
+    </changeSet>
+
+    <changeSet id="2023-08-30f" context="run" author="nhanlon2">
+        <comment>Add a tag-metadata column to Sample</comment>
+        <addColumn tableName="Sample">
+            <column name="tagMetaData" type="longtext"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2023-08-30g" context="run" author="nhanlon2">
+        <comment>Add a tag-metadata column to Sample AUD</comment>
+        <addColumn tableName="Sample_AUD">
+            <column name="tagMetaData" type="longtext"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2023-08-30h" context="run, dev-test" author="nhanlon2">
+        <comment>Alter tags to larger varchar - keep as varchar because searches are more efficient</comment>
+        <modifyDataType columnName="tags" newDataType="varchar(8000)"
+                        tableName="Sample" />
+    </changeSet>
+    <changeSet id="2023-08-30i" context="run, dev-test" author="nhanlon2">
+        <comment>Alter tags to text type in audit</comment>
+        <modifyDataType columnName="tags" newDataType="varchar(8000)"
+                        tableName="Sample_AUD" />
+    </changeSet>
+    <changeSet id="2023-08-30j" context="run, dev-test" author="nhanlon2">
+        <comment>Tag values are now populated from tagMeta and the tags column is only used for searching.
+            We migrate existing tag values to tagMeta.</comment>
+        <sql> update Sample sample set sample.tagMetaData = sample.tags;</sql>
+    </changeSet>
+
+    <changeSet id="2023-08-30k" context="run" author="nhanlon2">
+        <comment>Add a tag-metadata column to Sample</comment>
+        <addColumn tableName="SubSample">
+            <column name="tagMetaData" type="longtext"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2023-08-30l" context="run" author="nhanlon2">
+        <comment>Add a tag-metadata column to Sample AUD</comment>
+        <addColumn tableName="SubSample_AUD">
+            <column name="tagMetaData" type="longtext"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2023-08-30m" context="run, dev-test" author="nhanlon2">
+        <comment>Alter tags to larger varchar - keep as varchar because searches are more efficient</comment>
+        <modifyDataType columnName="tags" newDataType="varchar(8000)"
+                        tableName="SubSample" />
+    </changeSet>
+    <changeSet id="2023-08-30n" context="run, dev-test" author="nhanlon2">
+        <comment>Alter tags to text type in audit</comment>
+        <modifyDataType columnName="tags" newDataType="varchar(8000)"
+                        tableName="SubSample_AUD" />
+    </changeSet>
+    <changeSet id="2023-08-30o" context="run, dev-test" author="nhanlon2">
+        <comment>Tag values are now populated from tagMeta and the tags column is only used for searching.
+            We migrate existing tag values to tagMeta.</comment>
+        <sql> update SubSample ss set ss.tagMetaData = ss.tags;</sql>
+    </changeSet>
+
+</databaseChangeLog>

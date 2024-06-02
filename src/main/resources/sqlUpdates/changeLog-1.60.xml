@@ -1,0 +1,236 @@
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.60 August 2019 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing 
+        new changesets ! -->
+   
+
+    <!-- Add changesets here... -->
+
+<!--  ensure api keys are unique, should run on all systems -->
+<changeSet author="richard" id="2019-07-22a">
+    <preConditions onFailMessage ="Api keys are not unique! Please ensure all API keys are unique"> 
+     <sqlCheck expectedResult="1">
+      select if(count(distinct(apiKey)) = count(apiKey),1,0) from UserApiKey
+     </sqlCheck>
+    </preConditions>
+    <comment> Ensure API keys are unique</comment>
+    <addUniqueConstraint  columnNames="apiKey" constraintName="unique_apikey" tableName="UserApiKey"/>
+         
+</changeSet>
+
+    <changeSet id="2019-07-31a" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="FieldForm_AUD"/>
+        </preConditions>
+        <comment>Drop unused FieldForm_AUD table as a preparation for fieldform refactoring (RSPAC-1876)</comment>
+        <dropTable tableName="FieldForm_AUD" />
+    </changeSet>
+
+    <changeSet id="2019-07-31b1" author="matthias" context="run">
+        <validCheckSum>8:a6bdb51ffa5c228995f9962ccf444d3a</validCheckSum>
+        <validCheckSum>8:8a6e7f63e3d59aa752ce5cad45f3ad51</validCheckSum>
+        <comment>Create FieldForm table (RSPAC-1876)</comment>
+        <createTable tableName="FieldForm">
+            <column name="DTYPE" type="VARCHAR(31)">
+                <constraints nullable="false" />
+            </column>
+            <column name="id" type="BIGINT(20)">
+                <constraints nullable="false" />
+            </column>
+            <column name="columnIndex" type="INT(11)">
+                <constraints nullable="false" />
+            </column>
+            <column name="deleted" type="BIT(1)">
+                <constraints nullable="false" />
+            </column>
+            <column name="modificationDate" type="BIGINT(20)" />
+            <column name="name" type="VARCHAR(50)">
+                <constraints nullable="false" />
+            </column>
+            <column name="type" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="decimalPlaces" type="TINYINT(4)" />
+            <column name="defaultNumberValue" type="DOUBLE(22)" />
+            <column name="maxNumberValue" type="DOUBLE(22)" />
+            <column name="minNumberValue" type="DOUBLE(22)" />
+            <column name="defaultValue" type="LONGTEXT" />
+            <column name="defaultStringValue" type="VARCHAR(255)" />
+            <column name="ifPassword" type="BIT(1)" />
+            <column name="defaultTime" type="BIGINT(20)" />
+            <column name="maxTime" type="BIGINT(20)" />
+            <column name="minTime" type="BIGINT(20)" />
+            <column name="timeFormat" type="VARCHAR(255)" />
+            <column name="choiceOptions" type="VARCHAR(1000)" />
+            <column name="defaultChoiceOption" type="VARCHAR(255)" />
+            <column name="multipleChoice" type="BIT(1)" />
+            <column name="defaultRadioOption" type="VARCHAR(255)" />
+            <column name="radioOption" type="VARCHAR(255)" />
+            <column name="defaultDate" type="BIGINT(20)" />
+            <column name="format" type="VARCHAR(255)" />
+            <column name="max_value" type="BIGINT(20)" />
+            <column name="minValue" type="BIGINT(20)" />
+            <column name="form_id" type="BIGINT(20)">
+                <constraints nullable="false" />
+            </column>
+            <column name="tempFieldForm_id" type="BIGINT(20)" />
+        </createTable>
+        <modifySql dbms="mysql,mariadb">
+            <append value="ENGINE=INNODB CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"/>
+        </modifySql>
+    </changeSet>
+    
+    <changeSet id="2019-07-31b2" author="matthias" context="run">
+        <validCheckSum>8:0454f37426ff8f998230125cd6291a1d</validCheckSum>
+        <validCheckSum>8:dd92943a824420cd5a6201d8d021cd26</validCheckSum>
+        <comment>Create FieldForm_AUD table (RSPAC-1876)</comment>
+        <createTable tableName="FieldForm_AUD">
+            <column name="DTYPE" type="VARCHAR(31)">
+                <constraints nullable="false" />
+            </column>
+            <column name="id" type="BIGINT(20)">
+                <constraints nullable="false" />
+            </column>
+            <column name="REV" type="INT(11)">
+                <constraints nullable="false" />
+            </column>
+            <column name="REVTYPE" type="TINYINT(4)" />
+            <column name="columnIndex" type="INT(11)" />
+            <column name="deleted" type="BIT(1)" />
+            <column name="modificationDate" type="BIGINT(20)" />
+            <column name="name" type="VARCHAR(50)" />
+            <column name="type" type="VARCHAR(255)" />
+            <column name="form_id" type="BIGINT(20)" />
+            <column name="tempFieldForm_id" type="BIGINT(20)" />
+            <column name="defaultRadioOption" type="VARCHAR(255)" />
+            <column name="radioOption" type="VARCHAR(255)" />
+            <column name="choiceOptions" type="VARCHAR(1000)" />
+            <column name="defaultChoiceOption" type="VARCHAR(255)" />
+            <column name="multipleChoice" type="BIT(1)" />
+            <column name="defaultTime" type="BIGINT(20)" />
+            <column name="maxTime" type="BIGINT(20)" />
+            <column name="minTime" type="BIGINT(20)" />
+            <column name="timeFormat" type="VARCHAR(255)" />
+            <column name="defaultValue" type="LONGTEXT" />
+            <column name="defaultDate" type="BIGINT(20)" />
+            <column name="format" type="VARCHAR(255)" />
+            <column name="max_value" type="BIGINT(20)" />
+            <column name="minValue" type="BIGINT(20)" />
+            <column name="decimalPlaces" type="TINYINT(4)" />
+            <column name="defaultNumberValue" type="DOUBLE(22)" />
+            <column name="maxNumberValue" type="DOUBLE(22)" />
+            <column name="minNumberValue" type="DOUBLE(22)" />
+            <column name="defaultStringValue" type="VARCHAR(255)" />
+            <column name="ifPassword" type="BIT(1)" />
+        </createTable>
+        <modifySql dbms="mysql,mariadb">
+            <append value="ENGINE=INNODB CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"/>
+        </modifySql>
+    </changeSet>
+    
+    <changeSet id="2019-07-31b3" author="matthias" context="run">
+        <comment>Set primary key for FieldForm and FieldForm_AUD tables (RSPAC-1876)</comment>
+        <addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="FieldForm" />
+        <addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="FieldForm_AUD" />
+    </changeSet>
+
+    <changeSet id="2019-07-31c" author="matthias" context="run">
+        <comment>Copy form fields into new FormField table</comment>
+        <sql>INSERT INTO FieldForm (DTYPE, id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, choiceOptions, defaultChoiceOption, multipleChoice) 
+                SELECT 'Choice', id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, choiceOptions, defaultChoiceOption, multipleChoice FROM ChoiceFieldForm;
+        </sql>
+        <sql>INSERT INTO FieldForm (DTYPE, id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultDate, format, max_value, minValue) 
+                SELECT 'Date', id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultDate, format, max_value, minValue FROM DateFieldForm;
+        </sql>
+        <sql>INSERT INTO FieldForm (DTYPE, id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, decimalPlaces, defaultNumberValue, maxNumberValue, minNumberValue)
+                SELECT 'Number', id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, decimalPlaces, defaultNumberValue, maxNumberValue, minNumberValue FROM NumberFieldForm;
+        </sql>
+        <sql>INSERT INTO FieldForm (DTYPE, id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultRadioOption, radioOption)  
+                SELECT 'Radio', id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultRadioOption, radioOption FROM RadioFieldForm;
+        </sql>
+        <sql>INSERT INTO FieldForm (DTYPE, id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultStringValue, ifPassword)   
+                SELECT 'String', id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultStringValue, ifPassword FROM StringFieldForm;
+        </sql>
+        <sql>INSERT INTO FieldForm (DTYPE, id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultValue)  
+                SELECT 'Text', id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultValue FROM TextFieldForm;
+        </sql>
+        <sql>INSERT INTO FieldForm (DTYPE, id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultTime, maxTime, minTime, timeFormat)
+                SELECT 'Time', id, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultTime, maxTime, minTime, timeFormat FROM TimeFieldForm;
+        </sql>
+    </changeSet>
+
+    <changeSet id="2019-07-31d" author="matthias" context="run">
+        <comment>Copy form fields into new FormField_AUD table</comment>
+        <sql>INSERT INTO FieldForm_AUD (DTYPE, id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, choiceOptions, defaultChoiceOption, multipleChoice) 
+                SELECT 'Choice', id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, choiceOptions, defaultChoiceOption, multipleChoice FROM ChoiceFieldForm_AUD;
+        </sql>
+        <sql>INSERT INTO FieldForm_AUD (DTYPE, id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultDate, format, max_value, minValue) 
+                SELECT 'Date', id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultDate, format, max_value, minValue FROM DateFieldForm_AUD;
+        </sql>
+        <sql>INSERT INTO FieldForm_AUD (DTYPE, id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, decimalPlaces, defaultNumberValue, maxNumberValue, minNumberValue)
+                SELECT 'Number', id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, decimalPlaces, defaultNumberValue, maxNumberValue, minNumberValue FROM NumberFieldForm_AUD;
+        </sql>
+        <sql>INSERT INTO FieldForm_AUD (DTYPE, id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultRadioOption, radioOption)  
+                SELECT 'Radio', id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultRadioOption, radioOption FROM RadioFieldForm_AUD;
+        </sql>
+        <sql>INSERT INTO FieldForm_AUD (DTYPE, id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultStringValue, ifPassword)   
+                SELECT 'String', id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultStringValue, ifPassword FROM StringFieldForm_AUD;
+        </sql>
+        <sql>INSERT INTO FieldForm_AUD (DTYPE, id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultValue)  
+                SELECT 'Text', id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultValue FROM TextFieldForm_AUD;
+        </sql>
+        <sql>INSERT INTO FieldForm_AUD (DTYPE, id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultTime, maxTime, minTime, timeFormat)
+                SELECT 'Time', id, REV, REVTYPE, columnIndex, deleted, modificationDate, name, type, form_id, tempFieldForm_id, defaultTime, maxTime, minTime, timeFormat FROM TimeFieldForm_AUD;
+        </sql>
+    </changeSet>
+
+    <changeSet id="2019-07-31e" author="matthias" context="run">
+        <comment>Additional constraints on FieldForm/FieldForm_AUD tables (RSPAC-1876)</comment>
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="FieldForm"
+            constraintName="FK_11o2xwhsjotg0b837vv4ericn" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="tempFieldForm_id" baseTableName="FieldForm"
+            constraintName="FK_h7tb5wul51s7k0npnj6awa1ko" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="FieldForm" />
+        <addForeignKeyConstraint baseColumnNames="REV"
+            baseTableName="FieldForm_AUD"
+            constraintName="FK_7ib6fp0gh55vb0w0oyf0emua7" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="REV" referencedTableName="REVINFO" />
+    </changeSet>
+
+    <changeSet id="2019-07-31f1" author="matthias" context="run">
+        <comment>Delete Field rows that don't connect to any FieldForm.id (RSPAC-1881)</comment>
+        <sql>
+            delete f from Field f left join FieldForm ff on ff.id=f.fieldForm_id where ff.id is null;
+        </sql>
+    </changeSet>
+
+    <changeSet id="2019-07-31f2" author="matthias" context="run">
+        <comment>Add foreign key linking Field.fieldForm_id with FieldForm.id (RSPAC-1881)</comment>
+        <addForeignKeyConstraint
+            baseColumnNames="fieldForm_id" baseTableName="Field"
+            constraintName="FK_8hdhlfx9leu1is3omm43kcsls" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="FieldForm" />
+    </changeSet>
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing 
+        new changesets ! -->
+
+    <!-- only customChange changeSets should be placed below here -->
+
+
+
+
+</databaseChangeLog>

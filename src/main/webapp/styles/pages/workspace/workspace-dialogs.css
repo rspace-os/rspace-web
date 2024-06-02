@@ -1,0 +1,51 @@
+/* export dialog styling */
+.repo .repo__item {
+  line-height: 23px; }
+
+.repo .repo__description {
+  margin-bottom: 5px; }
+
+.repo .repo__option {
+  padding-top: 0 !important;
+  /* overriding bootstrap style */ }
+
+.repo .repo__alert {
+  margin-bottom: 0 !important;
+  /* overriding bootstrap style */ }
+
+.rs-form-group {
+  /* overriding bootstrap style */
+  margin-left: 0 !important;
+  margin-right: 0 !important; }
+
+.rs-form-group--inline {
+  /* overriding bootstrap style */
+  padding-left: 15px !important;
+  padding-right: 15px !important; }
+
+.btn-remove {
+  height: 34px;
+  box-sizing: border-box; }
+
+.rs-form-publish {
+  margin-bottom: 0 !important;
+  margin-left: 0 !important; }
+
+.rs-form-header {
+  /* overriding bootstrap style */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-bottom: 0 !important;
+  margin-top: 15px !important; }
+
+#dataShare-dlg {
+  overflow-x: hidden; }
+
+
+/* ============================================================================================== 
+ * patch for JQuery UI modal windows -> embed its styles in css due to conflict with bootstrap 
+ */
+
+/* 
+ * end of JQuery UI modal/bootstrap patch
+* ======================================== */

@@ -1,0 +1,254 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.50 March 2018 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+
+    <changeSet id="12-02-18aa" author="matthias" context="dev-test,run">
+        <comment>RSPAC-1454: remove orphaned EcatMediaFile_AUD rows</comment>
+        <sql>
+            delete from EcatImage_AUD where id in (select ra.id from Record_AUD ra left join Record r on ra.id = r.id where r.id is null);
+            delete from EcatAudio_AUD where id in (select ra.id from Record_AUD ra left join Record r on ra.id = r.id where r.id is null);
+            delete from EcatDocumentFile_AUD where id in (select ra.id from Record_AUD ra left join Record r on ra.id = r.id where r.id is null);
+            delete from EcatVideo_AUD where id in (select ra.id from Record_AUD ra left join Record r on ra.id = r.id where r.id is null);
+            delete from EcatMediaFile_AUD where id in (select ra.id from Record_AUD ra left join Record r on ra.id = r.id where r.id is null);
+        </sql>
+    </changeSet>
+
+    <changeSet id="12-02-18a" author="matthias" context="dev-test,run">
+        <comment>RSPAC-1454: remove orphaned BaseRecord_AUD rows and add FK relation to User and RSForm</comment>
+        <sql>
+            delete from StructuredDocument_AUD where id in (select * from (select sda.id from StructuredDocument_AUD sda left join StructuredDocument sd on sda.id = sd.id where sd.id is null) as sda);
+            delete from Record_AUD where id in (select * from (select ra.id from Record_AUD ra left join Record r on ra.id = r.id where r.id is null) as ra);
+            delete from Notebook_AUD where id in (select * from (select na.id from Notebook_AUD na left join Notebook n on na.id = n.id where n.id is null) as na);
+            delete from Folder_AUD where id in (select * from (select fa.id from Folder_AUD fa left join Folder f on fa.id = f.id where f.id is null) as fa);
+            delete from BaseRecord_AUD where id in (select * from (select bra.id from BaseRecord_AUD bra left join BaseRecord br on bra.id = br.id where br.id is null) as bra);
+            delete from BaseRecord_AUD where id in (select * from (select bra.id from BaseRecord_AUD bra left join User u on bra.owner_id = u.id where u.id is null) as bra);
+        </sql>
+        <addForeignKeyConstraint
+            baseColumnNames="owner_id" baseTableName="BaseRecord_AUD"
+            constraintName="FK_BaseRecord_AUD_owner_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="User" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="StructuredDocument_AUD"
+            constraintName="FK_StructuredDocument_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+    </changeSet>
+
+    <changeSet id="12-02-18b" author="matthias" context="run">
+        <comment>RSPAC-1454: remove orphaned *FieldForm_AUD rows and add FK relation to RSForm</comment>
+        <sql>
+            delete from ChoiceFieldForm_AUD where id in (select * from (select ffa.id from ChoiceFieldForm_AUD ffa left join ChoiceFieldForm ff on ffa.id = ff.id where ff.id is null) as ffa);
+            delete from DateFieldForm_AUD where id in (select * from (select ffa.id from DateFieldForm_AUD ffa left join DateFieldForm ff on ffa.id = ff.id where ff.id is null) as ffa);
+            delete from NumberFieldForm_AUD where id in (select * from (select ffa.id from NumberFieldForm_AUD ffa left join NumberFieldForm ff on ffa.id = ff.id where ff.id is null) as ffa);
+            delete from RadioFieldForm_AUD where id in (select * from (select ffa.id from RadioFieldForm_AUD ffa left join RadioFieldForm ff on ffa.id = ff.id where ff.id is null) as ffa);
+            delete from StringFieldForm_AUD where id in (select * from (select ffa.id from StringFieldForm_AUD ffa left join StringFieldForm ff on ffa.id = ff.id where ff.id is null) as ffa);
+            delete from TextFieldForm_AUD where id in (select * from (select ffa.id from TextFieldForm_AUD ffa left join TextFieldForm ff on ffa.id = ff.id where ff.id is null) as ffa);
+            delete from TimeFieldForm_AUD where id in (select * from (select ffa.id from TimeFieldForm_AUD ffa left join TimeFieldForm ff on ffa.id = ff.id where ff.id is null) as ffa);
+        </sql>
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="ChoiceFieldForm_AUD"
+            constraintName="FK_ChoiceFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="DateFieldForm_AUD"
+            constraintName="FK_DateFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="NumberFieldForm_AUD"
+            constraintName="FK_NumberFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="RadioFieldForm_AUD"
+            constraintName="FK_RadioFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="StringFieldForm_AUD"
+            constraintName="FK_StringFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="TextFieldForm_AUD"
+            constraintName="FK_TextFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="TimeFieldForm_AUD"
+            constraintName="FK_TimeFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+    </changeSet>
+    
+    <changeSet id="12-02-18c" author="matthias" context="dev-test,run">
+        <comment>RSPAC-1454: remove orphaned Field_AUD rows and add FK relation to StructuredDocument</comment>
+        <sql>
+            delete from Field_AUD where id in (select * from (select fa.id from Field_AUD fa left join Field f on fa.id = f.id where f.id is null) as fa);
+        </sql>
+        <addForeignKeyConstraint
+            baseColumnNames="structuredDocument_id" baseTableName="Field_AUD"
+            constraintName="FK_Field_AUD_structuredDocument_id" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="StructuredDocument" />
+    </changeSet>
+
+    <changeSet id="20-02-18a" author="matthias" context="run">
+        <comment>RSPAC-1454: replace FieldForm_AUD and Field_AUD constraints so they use onDelete CASCADE</comment>
+        <sql>
+            alter table ChoiceFieldForm_AUD drop foreign key FK_ChoiceFieldForm_AUD_form_id;
+            alter table DateFieldForm_AUD drop foreign key FK_DateFieldForm_AUD_form_id;
+            alter table NumberFieldForm_AUD drop foreign key FK_NumberFieldForm_AUD_form_id;
+            alter table RadioFieldForm_AUD drop foreign key FK_RadioFieldForm_AUD_form_id;
+            alter table StringFieldForm_AUD drop foreign key FK_StringFieldForm_AUD_form_id;
+            alter table TextFieldForm_AUD drop foreign key FK_TextFieldForm_AUD_form_id;
+            alter table TimeFieldForm_AUD drop foreign key FK_TimeFieldForm_AUD_form_id;
+            alter table Field_AUD drop foreign key FK_Field_AUD_structuredDocument_id;
+        </sql>
+
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="ChoiceFieldForm_AUD"
+            constraintName="FK_ChoiceFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="DateFieldForm_AUD"
+            constraintName="FK_DateFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="NumberFieldForm_AUD"
+            constraintName="FK_NumberFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="RadioFieldForm_AUD"
+            constraintName="FK_RadioFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="StringFieldForm_AUD"
+            constraintName="FK_StringFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="TextFieldForm_AUD"
+            constraintName="FK_TextFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="form_id" baseTableName="TimeFieldForm_AUD"
+            constraintName="FK_TimeFieldForm_AUD_form_id" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="RSForm" />
+        <addForeignKeyConstraint
+            baseColumnNames="structuredDocument_id" baseTableName="Field_AUD"
+            constraintName="FK_Field_AUD_structuredDocument_id" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="StructuredDocument" />
+    </changeSet>
+
+    <changeSet id="20-02-18a-devtest" author="matthias" context="dev-test">
+        <comment>We dropped *FieldForm tables in 1.60, so most of changes from '20-02-18a' 
+            changeset shouldn't be applied in dev-test, but we still want Field_AUD.structured id foreign key</comment>
+        <sql>
+            alter table Field_AUD drop foreign key FK_Field_AUD_structuredDocument_id;
+        </sql>
+        <addForeignKeyConstraint
+            baseColumnNames="structuredDocument_id" baseTableName="Field_AUD"
+            constraintName="FK_Field_AUD_structuredDocument_id" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="StructuredDocument" />
+    </changeSet>
+
+    <changeSet id="18-02-19a" author="karolis">
+        <comment>RSPAC-1450 ghangoutschat.available system property</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="DENIED_BY_DEFAULT" />
+            <column name="name" type="STRING" value="ghangoutschat.available" />
+            <column name="type" type="NUMERIC" value="3" />
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="dependent_id" type="NUMERIC" value="NULL" />
+            <column name="descriptor_id" type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name ='ghangoutschat.available')" />
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="value" type="String" value="DENIED" />
+            <column name="property_id" type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='ghangoutschat.available')" />
+        </insert>
+    </changeSet>
+    <changeSet id="18-02-19b" author="karolis">
+        <comment>RSPAC-1450 Google Hangouts Chat</comment>
+        <insert tableName="App">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="label" type="STRING" value="Google Hangouts Chat" />
+            <column name="name" type="STRING" value="app.ghangoutschat" />
+            <column name="defaultEnabled" type="BOOLEAN" valueBoolean="false" />
+        </insert>
+    </changeSet>
+    <changeSet id="18-02-19c" author="karolis">
+        <comment>RSPAC-1450 Properties for Google Hangouts Chat</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="GHANGOUTSCHAT_CHANNEL_LABEL" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+            select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.ghangoutschat" and pd.name='GHANGOUTSCHAT_CHANNEL_LABEL';</sql>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="GHANGOUTSCHAT_WEBHOOK_URL" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+            select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.ghangoutschat" and pd.name='GHANGOUTSCHAT_WEBHOOK_URL';</sql>
+    </changeSet>
+    <changeSet id="18-2-27a" author="richard">
+     <comment> Add index to speed permission lookups RSPAC-1468</comment>
+     <createIndex tableName="AbstractUserOrGroupImpl_permissionStrings" indexName="AbstractUserOrGroupImpl_permissionStrings_id">
+        <column name="AbstractUserOrGroupImpl_id"></column>
+     </createIndex>
+    </changeSet>
+    <changeSet id="18-03-14a" author="karolis">
+        <comment>RSPAC-1450 More properties for Google Hangouts Chat</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="GHANGOUTSCHAT_USER_ID" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+            select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.ghangoutschat" and pd.name='GHANGOUTSCHAT_USER_ID';</sql>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="GHANGOUTSCHAT_USER_DISPLAY_NAME" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+            select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.ghangoutschat" and pd.name='GHANGOUTSCHAT_USER_DISPLAY_NAME';</sql>
+    </changeSet>
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing
+		new changesets ! -->
+
+
+
+	<!-- only customChange changeSets should be placed below here -->
+    
+</databaseChangeLog>

@@ -1,0 +1,319 @@
+.mainDocumentView #fileBrowsing {
+    margin-right: 5px;
+    max-height: calc(100vh - 164px);
+    box-sizing: border-box;
+}
+
+#fileBrowsing {
+    position: sticky !important;
+    position: -webkit-sticky;
+    top: 15px;
+}
+
+.mainDocumentView #fileBrowsing #fancyTree {
+    max-height: 100% !important;
+}
+
+#page.treeBrowserWide, #page.treeBrowserWide #main, #page.treeBrowserWide #content {
+    width: 1260px;
+    max-width: 1260px;
+}
+
+#page.treeBrowserNarrow, #page.treeBrowserNarrow #main, #page.treeBrowserNarrow #content {
+    width: 990px;
+    max-width: 990px;
+}
+#page.treeBrowserNarrow #header {
+    width: 960px;
+    margin-left: 30px;
+}
+
+#page.treeBrowserNarrow #fileBrowsing {
+    display: none;
+}
+#page.treeBrowserNarrow #showFileTreeSmall {
+    position: sticky !important;
+    position: -webkit-sticky;
+    top: 15px;
+    margin-right: 5px;
+}
+
+#page.treeBrowserWide #fileBrowsing {
+    display: block;
+}
+#page.treeBrowserWide #showFileTreeSmall {
+    display: none;
+}
+
+.mainDocumentView {
+    display: flex;
+}
+.documentPanel {
+    max-width: 960px;
+}
+
+.btn#goOneLevelUp {
+    width: 24px;
+    padding: 0px;
+}
+
+.fileTreeButtons.navbar {
+    display: flex;
+    padding: 0px;
+    margin-bottom: 0px;
+    box-shadow: none;
+}
+
+#fileTreeSettingsToggle {
+    width: 40px;
+    font-size: 24px;
+}
+
+.fileTreeButtons .sortingSettingsLi {
+    width: 227px;
+    margin-top: 9px;
+}
+
+.fileTreeButtons .sortingSettings {
+    color: #b2dbfb;
+}
+
+.fileTreeButtons .sortingSettings select {
+    padding: 0px 13px 0px 1px;
+    margin: 0px;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+}
+
+.fileTreeButtons #applySortingSettings {
+    padding: 0px 5px 0px 4px;
+    width: auto;
+    height: 23px;
+    margin-top: -2px;
+    visibility: hidden;
+    -webkit-transition: visibility 0s;
+    transition: visibility 0s;
+}
+
+#fancyTree {
+    padding: 10px 7px 0px 10px;
+    margin: 0;
+    overflow-x: auto;
+    border: 1px solid #DDDDDD;
+    border-top: none;
+}
+
+.fileTreeBrowserPanel .fancytree-container {
+    border: none;
+    padding: 0;
+    background: none;
+}
+
+.fileTreeBrowserPanel .fancytree-container ul {
+    padding-left: 20px;
+}
+.fileTreeBrowserPanel .fancytree-container ul.inactive-level
+    {
+    padding-left: 0;
+}
+.fileTreeBrowserPanel .fancytree-node {
+    min-height: 25px;
+    line-height: 25px;
+    display: inline-block;
+    max-width: 100%;
+}
+.fileTreeBrowserPanel .fancytree-node.fancytree-selected .fancytree-title {
+    background: rgba(193, 193, 193, 0.5);
+}
+.fileTreeBrowserPanel .fancytree-node .fancytree-expander {
+    vertical-align: middle;
+}
+.fileTreeBrowserPanel .fancytree-node.fancytree-folder.fancytree-has-children>.fancytree-expander {
+    background: url(/images/icons/RightArrow25.png);
+    background-size: contain;
+}
+.fileTreeBrowserPanel .fancytree-node.fancytree-folder.fancytree-has-children.fancytree-expanded>.fancytree-expander {
+    background: url(/images/icons/DownArrow25.png);
+    background-size: contain;
+}
+.fileTreeBrowserPanel .fancytree-node .fancytree-title {
+    display: inline-block;
+    margin-left: 3px;
+}
+
+.fileTreeBrowserPanel .fancytree-node .fancytree-icon {
+    height: 25px;
+    width: 25px;
+    background-size: contain;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    background-position: 0 0;
+}
+.fileTreeBrowserPanel .fancytree-node.file>.fancytree-icon {
+    background-image: url(/images/icons/unknownDocument.png);
+}
+.fileTreeBrowserPanel .fancytree-node.directory>.fancytree-icon {
+    background-image: url(/images/icons/folder.png);
+}
+.fileTreeBrowserPanel .fancytree-node.notebook>.fancytree-icon {
+    background-image: url(/images/icons/notebook.png);
+}
+.fileTreeBrowserPanel .fancytree-node.record>.fancytree-icon {
+    background-image: url(/image/getIconImage/-1);
+}
+.fileTreeBrowserPanel .fancytree-node.file {
+    padding-left: 14px;
+}
+.fileTreeBrowserPanel .fancytree-node.file .fancytree-expander {
+    display: none;
+}
+
+.fileTreeBrowserPanel .fancytree-node.file.ext_avi>.fancytree-icon {
+    background-image: url(/images/icons/avi.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_bmp>.fancytree-icon {
+    background-image: url(/images/icons/bmp.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_gif>.fancytree-icon {
+    background-image: url(/images/icons/gif.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_docx>.fancytree-icon {
+    background-image: url(/images/icons/docx.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_flv>.fancytree-icon {
+    background-image: url(/images/icons/flv.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_gif>.fancytree-icon {
+    background-image: url(/images/icons/gif.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_jpg>.fancytree-icon {
+    background-image: url(/images/icons/jpg.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_jpeg>.fancytree-icon {
+    background-image: url(/images/icons/jpeg.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_m4v>.fancytree-icon {
+    background-image: url(/images/icons/m4v.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_mov>.fancytree-icon {
+    background-image: url(/images/icons/mov.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_mp3>.fancytree-icon {
+    background-image: url(/images/icons/mp3.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_mp4>.fancytree-icon {
+    background-image: url(/images/icons/mp4.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_mpg>.fancytree-icon {
+    background-image: url(/images/icons/mpg.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_ods>.fancytree-icon {
+    background-image: url(/images/icons/ods.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_odp>.fancytree-icon {
+    background-image: url(/images/icons/odp.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_csv>.fancytree-icon {
+    background-image: url(/images/icons/csv.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_pps>.fancytree-icon {
+    background-image: url(/images/icons/pps.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_odt>.fancytree-icon {
+    background-image: url(/images/icons/odt.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_pdf>.fancytree-icon {
+    background-image: url(/images/icons/pdf.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_png>.fancytree-icon {
+    background-image: url(/images/icons/png.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_rtf>.fancytree-icon {
+    background-image: url(/images/icons/rtf.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_wav>.fancytree-icon {
+    background-image: url(/images/icons/wav.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_wma>.fancytree-icon {
+    background-image: url(/images/icons/wma.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_wmv>.fancytree-icon {
+    background-image: url(/images/icons/wmv.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_xls>.fancytree-icon {
+    background-image: url(/images/icons/xls.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_xlsx>.fancytree-icon {
+    background-image: url(/images/icons/xlsx.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_xml>.fancytree-icon {
+    background-image: url(/images/icons/xml.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_zip>.fancytree-icon {
+    background-image: url(/images/icons/zip.png);
+}
+
+.fileTreeBrowserPanel .fancytree-node.file.ext_htm>.fancytree-icon {
+    background-image: url(/images/icons/html.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_html>.fancytree-icon {
+    background-image: url(/images/icons/html.png);
+}
+
+.fileTreeBrowserPanel .fancytree-node.file.ext_ppt>.fancytree-icon {
+    background-image: url(/images/icons/powerpoint.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_pptx>.fancytree-icon {
+    background-image: url(/images/icons/powerpoint.png);
+}
+
+.fileTreeBrowserPanel .fancytree-node.file.ext_txt>.fancytree-icon {
+    background-image: url(/images/icons/txt.png);
+}
+.fileTreeBrowserPanel .fancytree-node.file.ext_text>.fancytree-icon {
+    background-image: url(/images/icons/txt.png);
+}
+
+/* 
+ * styling for doc editor / notebook page 
+ */
+
+#page .breadcrumb {
+    width: 960px;
+    padding: 8px 0px;
+}
+
+#page .breadcrumb .container {
+    display: flex;
+    width: 960px;
+    margin-left: 0px;
+    padding: 0px;
+}
+
+#showFileTreeSmall {
+    display: flex;
+    width: 22px;
+    height: 64px;
+    padding: 0px 4px;
+    margin: 0px 5px 0px 3px;
+    font-size: 16px;
+    border-radius: 0px;
+    background-color: #00aeef;
+}
+
+#showFileTreeSmall:hover {
+    color: #575c70;
+}
+
+@media print {
+    #page.treeBrowserWide, #page.treeBrowserWide #main, #page.treeBrowserWide #content {
+        width: 960px;
+        max-width: 960px;
+    }
+    #page.treeBrowserWide #fileBrowsing, #page.treeBrowserNarrow #showFileTreeSmall {
+        display: none;
+    }
+}

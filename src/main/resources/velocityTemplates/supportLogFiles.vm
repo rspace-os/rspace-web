@@ -1,0 +1,21 @@
+#*
+Template for a sysadmin sending log files to support
+*#
+<p>
+${user.fullName} (${user.email}) generated an RSpace server error log file on  #formatDate($dateOb) .
+
+#if($message)
+<p> The following message was sent from $user.fullName<br/>
+$message
+#end
+<p>
+#dontReply
+<p>
+<h3> Logs </h3>
+#foreach ($line in $logLines)
+    $line <br/>
+#end
+<p/>
+END OF LOGS
+
+

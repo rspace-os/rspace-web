@@ -1,0 +1,76 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+<!-- Changes for version 0.17 -->
+
+<changeSet id="2-5-14a" author="radams">
+   <comment> Add a 'copy' permission to a user's root folder</comment>
+    <update tableName="BaseRecord">
+        <column name="acl" valueComputed="concat(acl, '&amp;',name,'=RECORD:COPY:')">  
+        </column>
+        <where>
+             name in (select username  from User);
+        </where>     
+    </update>
+</changeSet>
+<changeSet id="7-5-14a" author="radams">
+ <comment>
+  add acl to all resources; previous only added to root folder. Assume initially
+   that Copy and Delete permissions are similar   
+ </comment> 
+ <sql>
+     update BaseRecord br, User u   set acl =   concat(acl, '&amp;',username,'=RECORD:COPY:')  where  u.id=br.owner_id and  acl like '%DELETE%';
+ </sql>  
+</changeSet>
+
+<changeSet id="8-5-14a" author="matthias" context="run">
+  <preConditions onFail="MARK_RAN">
+  	<tableExists tableName="record"/>
+  </preConditions>
+  <comment> A new table for snippets </comment>
+  <createTable tableName="snippet">
+    <column name="content" type="LONGTEXT"/>
+    <column name="id" type="BIGINT(19)">
+      <constraints nullable="false"/>
+    </column>
+  </createTable>
+  <addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="snippet"/>
+  <addForeignKeyConstraint baseColumnNames="id" baseTableName="snippet" constraintName="FKE85688FDDF5C8EB5" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="record"/>
+</changeSet>
+<changeSet id="8-5-14b" author="matthias" context="run">
+  <comment>Recreate table for snippets, this time use capitalised table name</comment>
+  <sql dbms="mysql,mariadb">drop table if exists snippet;</sql>
+  <sql dbms="mysql,mariadb">drop table if exists Snippet;</sql>
+  <createTable tableName="Snippet">
+    <column name="content" type="LONGTEXT"/>
+    <column name="id" type="BIGINT(19)">
+      <constraints nullable="false"/>
+    </column>
+  </createTable>
+  <addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="Snippet"/>
+  <addForeignKeyConstraint baseColumnNames="id" baseTableName="Snippet" constraintName="FKE85688FDDF5C8EB5" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Record"/>
+</changeSet>
+
+<changeSet id="9-5-14a" author="matthias" context="run">
+    <createTable tableName="Snippet_AUD">
+        <column name="id" type="BIGINT(19)">
+            <constraints nullable="false" />
+        </column>
+        <column name="REV" type="INT(10)">
+            <constraints nullable="false" />
+        </column>
+        <column name="content" type="LONGTEXT" />
+    </createTable>
+    <addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="Snippet_AUD" />
+    <addForeignKeyConstraint baseColumnNames="id, REV" baseTableName="Snippet_AUD" constraintName="FK57EBF04EF3DC1829" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id, REV" referencedTableName="Record_AUD" />
+</changeSet>
+
+<changeSet id="27-5-2014a" author="fran">
+	<comment> Setting all users as enabled</comment>
+	<update tableName="User">
+		<column name="account_enabled" valueBoolean="true"></column>
+	</update>
+</changeSet>
+
+</databaseChangeLog>

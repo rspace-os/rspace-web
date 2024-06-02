@@ -1,0 +1,9 @@
+Hello $!{invited.fullName},
+
+${creator.fullName} (${creator.email}) wants to share a document (${recordName}) with you.
+
+If you'd like to accept this request, please login to RSpace at${acceptanceLink}
+
+Once you've logged in,  there will be a request waiting for you - accept this request and the document (${recordName}) will be shared.
+
+#signature_Plaintext

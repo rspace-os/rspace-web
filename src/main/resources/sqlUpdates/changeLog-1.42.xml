@@ -1,0 +1,75 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.42 Feb 2017 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+
+    <changeSet id="17-02-14" author="matthias" context="run">
+        <comment>Clearing references to missing temporary form fields (RSPAC-1149)</comment>
+        <sql>
+            update ChoiceFieldForm set tempFieldForm_id = NULL where id in 
+              (select id1 from (select field.id id1, fieldtemp.id tempId from ChoiceFieldForm field left join ChoiceFieldForm fieldtemp on field.tempFieldForm_id = fieldtemp.id 
+                where field.tempFieldForm_id is not null) as fields where tempId is null);
+            update DateFieldForm set tempFieldForm_id = NULL where id in 
+              (select id1 from (select field.id id1, fieldtemp.id tempId from DateFieldForm field left join DateFieldForm fieldtemp on field.tempFieldForm_id = fieldtemp.id 
+                where field.tempFieldForm_id is not null) as fields where tempId is null);
+            update NumberFieldForm set tempFieldForm_id = NULL where id in 
+              (select id1 from (select field.id id1, fieldtemp.id tempId from NumberFieldForm field left join NumberFieldForm fieldtemp on field.tempFieldForm_id = fieldtemp.id 
+                where field.tempFieldForm_id is not null) as fields where tempId is null);
+            update RadioFieldForm set tempFieldForm_id = NULL where id in 
+              (select id1 from (select field.id id1, fieldtemp.id tempId from RadioFieldForm field left join RadioFieldForm fieldtemp on field.tempFieldForm_id = fieldtemp.id 
+                where field.tempFieldForm_id is not null) as fields where tempId is null);
+            update StringFieldForm set tempFieldForm_id = NULL where id in 
+              (select id1 from (select field.id id1, fieldtemp.id tempId from StringFieldForm field left join StringFieldForm fieldtemp on field.tempFieldForm_id = fieldtemp.id 
+                where field.tempFieldForm_id is not null) as fields where tempId is null);
+            update TextFieldForm set tempFieldForm_id = NULL where id in 
+              (select id1 from (select field.id id1, fieldtemp.id tempId from TextFieldForm field left join TextFieldForm fieldtemp on field.tempFieldForm_id = fieldtemp.id 
+                where field.tempFieldForm_id is not null) as fields where tempId is null);
+            update TimeFieldForm set tempFieldForm_id = NULL where id in 
+              (select id1 from (select field.id id1, fieldtemp.id tempId from TimeFieldForm field left join TimeFieldForm fieldtemp on field.tempFieldForm_id = fieldtemp.id 
+                where field.tempFieldForm_id is not null) as fields where tempId is null);
+        </sql>
+    </changeSet>
+   <changeSet id="17-3-17a" author="richard">
+		<preConditions onError="MARK_RAN" onFail="MARK_RAN" onFailMessage="There are no null thumbnails for EcatImages">
+			<sqlCheck expectedResult="1">
+				select if(count(*) > 0, 1, 0)from EcatImage where imageThumbnailed_id is null
+			</sqlCheck>
+		</preConditions>
+		<comment> RSPAC-1173 set default image thumbnail if imageBlob is null</comment>
+		<sql> select @newId := max(id) + 1 from ImageBlob;</sql>
+		<insert tableName="ImageBlob">
+			<column name="id" valueComputed="(select @newId)"></column>
+			<column name="data" valueBlobFile="data/binaryData/GalleryPlaceholder.png"></column>
+		</insert>
+		<update tableName="EcatImage">
+			<column name="imageThumbnailed_id" valueComputed="(select @newId)"></column>
+			<where>imageThumbnailed_id is null</where>
+		</update>
+
+	</changeSet>
+	<changeSet id="17-3-17b" author="richard">
+		<preConditions onError="CONTINUE" onFail="CONTINUE"
+			onFailMessage="There are some null thumbnails for EcatImages">
+			<sqlCheck expectedResult="0">
+				select if(count(*) > 0, 1, 0) from EcatImage where imageThumbnailed_id is null
+			</sqlCheck>
+		</preConditions>
+		<comment> RSPAC-1173 Add non-null constraint for imageThumbnailed_id</comment>
+		<addNotNullConstraint columnDataType="bigint" tableName="EcatImage" columnName="imageThumbnailed_id" />
+	</changeSet>
+
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+    
+    
+    <!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

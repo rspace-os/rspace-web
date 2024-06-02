@@ -1,0 +1,34 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<!-- Changes for version 1.31 November 2015-->
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets !  -->
+<!-- Add changesets here... -->
+<changeSet id="13-11-15" author="richard">
+<comment>Update version range of supported archive versions</comment>
+<update tableName="ArchiveVersionToAppVersion"><column name="toMajor" value="2">
+</column>
+</update>
+</changeSet>
+<changeSet id="01-12-2015" author="richard">
+<validCheckSum>7:80ae6211ed399c36f7a1598c843e3938</validCheckSum>
+<validCheckSum>7:729d380e08e370485b50f330b430df23</validCheckSum>
+<preConditions onFail="MARK_RAN">
+<not>
+<tableExists tableName="UserConnection"/>
+</not>
+</preConditions>
+<comment> Creates a table for Spring Social to store auth/refresh tokens</comment>
+<sqlFile path="sqlUpdates/sql/UserConnection.sql"/>
+</changeSet>
+<changeSet id="02-12-15" author="richard">
+<comment> Make UserConnection an InnoDB table </comment>
+<sql>alter table UserConnection engine=InnoDB;</sql>
+</changeSet>
+<!--  only customChange changeSets should be placed below here -->
+
+
+</databaseChangeLog>

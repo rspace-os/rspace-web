@@ -1,0 +1,153 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 inventory containers template refactoring October 2020 -->
+	<changeSet id="2020-10-13a" author="richard" context="run">
+		<preConditions>
+			<not>
+				<tableExists tableName="InventoryChoiceFieldDef" />
+			</not>
+		</preConditions>
+		<comment>Create ChoiceFieldDefinition table</comment>
+		<createTable tableName="InventoryChoiceFieldDef">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="choiceOptions" type="longtext">
+				<constraints nullable="false" />
+			</column>
+			<column name="defaultChoiceOption" type="varchar(255)">
+
+			</column>
+			<column name="multipleChoice" type="BIT(1)"
+				defaultValue="0">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+	</changeSet>
+	<changeSet id="2020-10-13b" author="richard" context="run">
+		<comment>1ary key for InventoryChoiceFieldDef</comment>
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="InventoryChoiceFieldDef" />
+	</changeSet>
+	
+	<changeSet id="2020-10-13c" author="richard" context="run">
+		<preConditions>
+			<not>
+				<tableExists tableName="InventoryRadioFieldDef" />
+			</not>
+		</preConditions>
+		<comment>Create RadioFieldDefinition table</comment>
+		<createTable tableName="InventoryRadioFieldDef">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="radioOption" type="varchar(1000)"/>
+			<column name="defaultRadioOption" type="varchar(255)"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="2020-10-13d" author="richard" context="run">
+		<comment>1ary key for "InventoryRadioFieldDef"</comment>
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="InventoryRadioFieldDef" />
+	</changeSet>
+	
+	<changeSet id="2020-10-13e" author="richard" context="run">
+		<comment>Add  Radio/choice Definitions to SampleField"</comment>
+		<addColumn tableName="SampleField">
+		  <column name="choiceDef_id" type="BIGINT"/>
+		  <column name="radioDef_id" type="BIGINT"/>
+		  <column name="type" type="varchar(20)"/>
+		</addColumn>
+	</changeSet>
+		<changeSet id="2020-10-13k" author="richard" context="run">
+		<comment>Add  Radio/choice Definitions to SampleField_AUD"</comment>
+		<addColumn tableName="SampleField_AUD">
+		  <column name="choiceDef_id" type="BIGINT"/>
+		  <column name="radioDef_id" type="BIGINT"/>
+		  <column name="type" type="varchar(20)"/>
+		</addColumn>
+	</changeSet>
+	<changeSet author="richard" id="2020-10-13f"
+		context="run">
+		<comment>FK for ChoiceDef to SampleField</comment>
+		<addForeignKeyConstraint
+			baseColumnNames="choiceDef_id" baseTableName="SampleField"
+			constraintName="FK_l2rp030j0610hbbaavvpmrvlf" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="InventoryChoiceFieldDef" />
+	</changeSet>
+	<changeSet author="richard" id="2020-10-13g"
+		context="run">
+		<comment>FK for RadioDef to SampleField</comment>
+		<addForeignKeyConstraint
+			baseColumnNames="radioDef_id" baseTableName="SampleField"
+			constraintName="FK_kvhedr5d789vej9pqnero2w1" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="InventoryRadioFieldDef" />
+	</changeSet>
+	<!-- new sample fields -->
+	<changeSet id="2020-10-13h" author="richard" context="run">
+		<comment>Columns to support sample templates"</comment>
+		<addColumn tableName="Sample">
+		  <column name="subSampleAlias" type="varchar(30)"/>
+		  <column name="template" type="BIT(1)" defaultValue="0"/>
+		  <column name="currMaxColIndex" type="INTEGER"></column>
+		  <column name="defaultUnitId" type="INTEGER"></column>
+		</addColumn>
+	</changeSet>
+	<changeSet id="2020-10-13l" author="richard" context="run">
+		<comment>Columns to support sample templates"</comment>
+		<addColumn tableName="Sample_AUD">
+		  <column name="subSampleAlias" type="varchar(30)"/>
+		  <column name="template" type="BIT(1)" defaultValue="0"/>
+		  <column name="currMaxColIndex" type="INTEGER"></column>
+		  <column name="defaultUnitId" type="INTEGER"></column>
+		</addColumn>
+	</changeSet>
+	<!-- drop FK constraint on Sample form_id -->
+	<changeSet id="2020-10-13i" author="richard" context="run">	
+	 <comment>drop form id non-null constraint.</comment>
+	 <dropNotNullConstraint tableName="Sample" columnName="form_id" columnDataType="BIGINT"/>
+	</changeSet>
+	
+	<changeSet id="2020-10-13j" author="richard" context="run">	
+	 <comment>drop fieldForm id non-null constraint.</comment>
+	 <dropNotNullConstraint tableName="SampleField" columnName="fieldForm_id" columnDataType="BIGINT"/>
+	</changeSet>
+	
+	<changeSet id="2020-10-14a" author="richard" context="run">
+		<comment>FK reference to SampleTemplate</comment>
+		<addColumn tableName="Sample">
+		  <column name="STemplate_id" type="BIGINT"></column>
+		</addColumn>
+		<addForeignKeyConstraint
+			baseColumnNames="STemplate_id" baseTableName="Sample"
+			constraintName="FK_e92ss3qnyo5ln5tkjaxx5posr" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Sample" />
+	</changeSet>
+	<changeSet id="2020-10-14b" author="richard" context="run">
+		<comment>FK reference to SampleTemplate in Sample_AUD</comment>
+		<addColumn tableName="Sample_AUD">
+		  <column name="STemplate_id" type="BIGINT"></column>
+		</addColumn>
+	</changeSet>
+
+	<changeSet id="2020-12-08a" author="matthias" context="run">
+		<comment>For historical revision of Samples that has no subSampleAlias set it from main table</comment>
+		<sql>
+			update Sample_AUD sa join Sample s on s.id = sa.id set sa.subSampleAlias = s.subSampleAlias where sa.subSampleAlias is null;
+		</sql>
+	</changeSet>
+	<changeSet id="2020-12-08b" author="matthias" context="run">
+		<comment>For historical revision of SampleFields that have no type set it from main table</comment>
+		<sql>
+			update SampleField_AUD sfa join SampleField sf on sf.id = sfa.id set sfa.type = sf.type where sfa.type is null;
+		</sql>
+	</changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,18 @@
+
+Hello,
+
+Welcome to RSpace! ${creator.fullName} (${creator.email}) has invited you to view a document '${recordName}'.
+
+If you'd like to accept this request, please use this link 
+
+{acceptanceLink}
+
+where you can sign up for an account.
+ 
+Please use this email address when you fill out the signup form - you can change it afterwards if you want, once your account is set up.
+
+Once you've signed up, there will be a request waiting for you - accept this request and the document (${recordName}) will be shared.
+
+#signature
+         
+#aboutRSpaceCloud(false)

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+<!DOCTYPE taglib PUBLIC "-//Sun Microsystems, Inc.//DTD JSP Tag Library 1.2//EN"
+  "http://java.sun.com/dtd/web-jsptaglibrary_1_2.dtd">
+
+<taglib>
+
+  <tlib-version>1.1.2</tlib-version>
+
+  <jsp-version>1.2</jsp-version>
+
+  <short-name>ResearchSpace Shiro Extensions</short-name>
+
+  <uri>http://researchspace.com/tags/shiro</uri>
+
+  <description>Extensions to Apache Shiro JSP Tag Library.</description>
+
+   <tag>
+    <name>chkTmplatePermssns</name>
+    <tag-class>com.axiope.webapp.taglib.FormPermissionTag</tag-class>
+    <body-content>JSP</body-content>
+    <description>Displays body content only if the current Subject (user)
+     has the  permission specified by action, which should be a PermissionType.
+    </description>
+    <attribute>
+      <name>form</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+      <type>com.researchspace.model.record.RSForm</type>
+    </attribute>
+     <attribute>
+      <name>action</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+  </tag>
+  
+  <tag>
+    <name>chkRecordPermssns</name>
+    <tag-class>com.axiope.webapp.taglib.RecordPermissionTag</tag-class>
+    <body-content>JSP</body-content>
+    <description>Displays body content only if the current Subject (user)
+     has the  permission specified by action, which should be a PermissionType.
+    </description>
+    <attribute>
+      <name>record</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+      <type>com.researchspace.model.record.Record</type>
+    </attribute>
+     <attribute>
+      <name>action</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <name>user</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+      <type>com.researchspace.model.User</type>
+    </attribute>
+  </tag>
+  <tag>
+    <name>isRunAs</name>
+    <tag-class>com.axiope.webapp.taglib.IsRunAs</tag-class>
+    <body-content>JSP</body-content>
+    <description>Displays body content only if the current Subject (user)
+     is running as another user
+    </description>
+  </tag>
+
+  
+
+</taglib>

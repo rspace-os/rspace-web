@@ -1,0 +1,277 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 inventory containers July 2020 -->
+
+	<changeSet author="matthias" id="2020-07-31a" context="run">
+		<comment>Create inventory Container tables</comment>
+	
+		<createTable tableName="Container">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="barcode" type="VARCHAR(255)" />
+			<column name="deleted" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="createdBy" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationDate" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="description" type="VARCHAR(250)" />
+			<column name="modificationDate" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="modificationDateMillis" type="BIGINT" />
+			<column name="modifiedBy" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="name" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="iconId" type="BIGINT" />
+			<column name="quantityNumericValue" type="DECIMAL(19, 2)" />
+			<column name="quantityUnitId" type="INT" />
+			<column name="tags" type="VARCHAR(255)" />
+			<column name="gridLayoutColumnsNumber" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="gridLayoutRowsNumber" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="canStoreContainers" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="canStoreSamples" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="contentCount" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="containerType" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="owner_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="parentLocation_id" type="BIGINT" />
+			<column name="imageFileProperty_id" type="BIGINT" />
+			<column name="thumbnailFileProperty_id" type="BIGINT" />
+			<column name="locationsImageFileProperty_id" type="BIGINT" />
+		</createTable>
+
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="Container" />
+		<addForeignKeyConstraint baseColumnNames="owner_id"
+			baseTableName="Container" constraintName="FK_fvov1sytvpbhio02yjgdyp6a"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+		<addForeignKeyConstraint
+			baseColumnNames="imageFileProperty_id" baseTableName="Container"
+			constraintName="FK_e1gbt89odqh5aj0x65vj8c8en" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FileProperty" />
+		<addForeignKeyConstraint
+			baseColumnNames="thumbnailFileProperty_id" baseTableName="Container"
+			constraintName="FK_kc5u6kx28vg4lqxrpk1buksrt" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FileProperty" />
+		<addForeignKeyConstraint
+			baseColumnNames="locationsImageFileProperty_id" baseTableName="Container"
+			constraintName="FK_abcu6kx28vg4lqxrpk1bukabc" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FileProperty" />
+
+		<createTable tableName="Container_AUD">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="barcode" type="VARCHAR(255)" />
+			<column name="deleted" type="BIT(1)" />
+			<column name="createdBy" type="VARCHAR(255)" />
+			<column name="creationDate" type="datetime" />
+			<column name="creationDateMillis" type="BIGINT" />
+			<column name="description" type="VARCHAR(250)" />
+			<column name="modificationDate" type="datetime" />
+			<column name="modificationDateMillis" type="BIGINT" />
+			<column name="modifiedBy" type="VARCHAR(255)" />
+			<column name="name" type="VARCHAR(255)" />
+			<column name="iconId" type="BIGINT" />
+			<column name="quantityNumericValue" type="DECIMAL(19, 2)" />
+			<column name="quantityUnitId" type="INT" />
+			<column name="tags" type="VARCHAR(255)" />
+			<column name="gridLayoutRowsNumber" type="INT" />
+			<column name="gridLayoutColumnsNumber" type="INT" />
+			<column name="canStoreContainers" type="BIT(1)" />
+			<column name="canStoreSamples" type="BIT(1)" />
+			<column name="contentCount" type="INT" />
+			<column name="containerType" type="VARCHAR(255)" />
+			<column name="owner_id" type="BIGINT" />
+			<column name="parentLocation_id" type="BIGINT" />
+			<column name="imageFileProperty_id" type="BIGINT" />
+			<column name="thumbnailFileProperty_id" type="BIGINT" />
+			<column name="locationsImageFileProperty_id" type="BIGINT" />
+		</createTable>
+	
+		<addPrimaryKey columnNames="id, REV" constraintName="PRIMARY" tableName="Container_AUD" />
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="Container_AUD" constraintName="FK_iptwjnw7lw2p35v50etkxwoib"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="REV" referencedTableName="REVINFO" />
+	
+		<createTable tableName="ContainerLocation">
+			<column autoIncrement="true" name="id" type="BIGINT">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="coordX" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="coordY" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="container_id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<addForeignKeyConstraint baseColumnNames="container_id"
+			baseTableName="ContainerLocation"
+			constraintName="FK_o6nkksjhnmo72c9bn9cdu2hjg" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Container" />
+
+		<addForeignKeyConstraint
+			baseColumnNames="parentLocation_id" baseTableName="Container"
+			constraintName="FK_sok9ajva0xlfa4g3mfsnbrf2d" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="ContainerLocation" />
+	</changeSet>
+	
+	<changeSet author="matthias" id="2020-07-31b" context="run">
+		<comment>Update SubSample table with link to parent container</comment>
+		<addColumn tableName="SubSample">
+			<column name="parentLocation_id" type="BIGINT(19)" />
+		</addColumn>
+		<addColumn tableName="SubSample_AUD">
+			<column name="parentLocation_id" type="BIGINT(19)" />
+		</addColumn>
+		<addForeignKeyConstraint
+			baseColumnNames="parentLocation_id" baseTableName="SubSample"
+			constraintName="FK_h4ked9aepxh7jw4674j3hap7b" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="ContainerLocation" />
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="SampleField_AUD" constraintName="FK_ro1a2d0hx85t1yfhqip6v3ne2"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="REV" referencedTableName="REVINFO" />
+	</changeSet>
+
+	<changeSet author="matthias" id="2020-08-04" context="run">
+		<comment>Update ExtraField table with link to container</comment>
+		<addColumn tableName="ExtraField">
+			<column name="container_id" type="BIGINT(19)" />
+		</addColumn>
+		<addColumn tableName="ExtraField_AUD">
+			<column name="container_id" type="BIGINT(19)" />
+		</addColumn>
+		<addForeignKeyConstraint baseColumnNames="container_id"
+			baseTableName="ExtraField" constraintName="FK_brv0sieqdjlvl16gon9bgsdie"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id"
+			referencedTableName="Container" />
+	</changeSet>
+
+	<changeSet author="matthias" id="2020-10-19" context="run">
+		<comment>Add locations count column to Containers table</comment>
+		<addColumn tableName="Container">
+			<column name="locationsCount" type="INT">
+				<constraints nullable="false" />
+			</column>		
+		</addColumn>
+		<addColumn tableName="Container_AUD">
+			<column name="locationsCount" type="INT" />
+		</addColumn>
+	</changeSet>
+
+	<changeSet id="2020-12-03b" author="matthias" context="run">
+		<comment>Record the deletion date of an inventory item</comment>
+		<addColumn tableName="Container">
+			<column name="deletedDate" type="datetime" />
+		</addColumn>
+		<addColumn tableName="Container_AUD">
+			<column name="deletedDate" type="datetime" />
+		</addColumn>
+	</changeSet>
+
+	<changeSet id="2021-01-25" author="matthias" context="run">
+		<comment>RSINV-186 grid container axis labelling</comment>
+		<addColumn tableName="Container">
+			<column name="gridLayoutColumnsLabelType" type="VARCHAR(20)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="Container">
+			<column name="gridLayoutRowsLabelType" type="VARCHAR(20)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="Container_AUD">
+			<column name="gridLayoutColumnsLabelType" type="VARCHAR(20)" />
+		</addColumn>
+		<addColumn tableName="Container_AUD">
+			<column name="gridLayoutRowsLabelType" type="VARCHAR(20)" />
+		</addColumn>
+	</changeSet>
+
+	<changeSet id="2021-02-08" author="matthias" context="run">
+		<comment>RSINV-186: default grid axis labels for pre-existing containers</comment>
+		<sql>
+			update Container set gridLayoutColumnsLabelType='N123', gridLayoutRowsLabelType='ABC' where gridLayoutColumnsLabelType='';
+			update Container_AUD set gridLayoutColumnsLabelType='N123', gridLayoutRowsLabelType='ABC' where gridLayoutColumnsLabelType='';
+		</sql>
+	</changeSet>
+
+	<changeSet id="2021-02-19a" author="matthias" context="run">
+		<addColumn tableName="Container">
+			<column name="contentCountContainers" type="INT(10)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="Container_AUD">
+			<column name="contentCountContainers" type="INT(10)" />
+		</addColumn>
+		<addColumn tableName="Container">
+			<column name="contentCountSubSamples" type="INT(10)">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+		<addColumn tableName="Container_AUD">
+			<column name="contentCountSubSamples" type="INT(10)" />
+		</addColumn>
+	</changeSet>
+	
+	<changeSet id="2021-02-19b" author="matthias" context="run">
+		<comment>RSINV-207: set content counts for pre-existing containers</comment>
+		<sql>
+			update Container c join (select cl.container_id as id, count(*) as subcontainer_count 
+			  from ContainerLocation cl join Container sc on sc.parentLocation_id = cl.id group by cl.container_id) countTable
+			    on c.id = countTable.id 
+			   set c.contentCountContainers = countTable.subcontainer_count;
+
+			update Container c join (select cl.container_id as id, count(*) as subsample_count 
+			  from ContainerLocation cl join SubSample ss on ss.parentLocation_id = cl.id group by cl.container_id) countTable
+			    on c.id = countTable.id 
+			   set c.contentCountSubSamples = countTable.subsample_count;
+		</sql>
+	</changeSet>
+
+
+</databaseChangeLog>

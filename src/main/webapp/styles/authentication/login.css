@@ -1,0 +1,289 @@
+/* based on  http://codepen.io/kuddai/pen/RGkVkw?editors=1100
+	 with minor manual changes (.page) to fit into existing markup
+*/
+
+.page {
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 0px 20px 10px 20px;
+}
+
+.rs-dropdown {
+  position: relative;
+}
+
+.rs-dropdown__menu {
+  left: -1px;
+  padding: 5px 0;
+}
+
+.rs-dropdown__divider {
+  height: 1px;
+  margin: 9px 0;
+  overflow: hidden;
+  background-color: #ddd;
+  clear: both;
+}
+
+.rs-dropdown__item {
+  padding: 3px 20px;
+}
+
+.rs-info__name {
+  font-weight: bold;
+  color: #595959;
+}
+.rs-info__email {
+  color: #666;
+  font-weight: 300;
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+html:after, body:after {
+  box-sizing: border-box;
+}
+
+body {
+  position: relative;
+  margin: 0;
+  min-height: 100%;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+}
+
+li.rs-navbar__item:first-child {
+  /* margin-left: 10px; */
+}
+
+li.rs-navbar__item:last-child {
+  margin-right: 10px;
+}
+
+.rs-footer {
+  box-sizing: border-box;
+  width: 100%;
+  height: 70px;
+  padding: 20px;
+  position: absolute;
+  display: block;
+  left: 0px;
+  bottom: 0px;
+  background-color: #121220;
+  color: #e2e2e2;
+}
+
+.rs-footer__content {
+  max-width: 1100px;
+  margin: auto;
+}
+
+.rs-sign-in-form {
+  width: 380px;
+  margin: 50px auto;
+  box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.28);
+  border-radius: 3px;
+}
+
+.rs-sign-in-form__body {
+  padding: 20px 20px 10px 20px;
+}
+
+.rs-sign-in-form__head {
+  display: flex;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  width: 100%;
+  background-color: #2196f3;
+  height: 40px;
+  line-height: 40px !important;
+  vertical-align: middle;
+  color: white;
+  padding-left: 20px;
+  font-size: 16px !important;
+}
+
+#showChangeServerDlgBtn {
+    margin: auto 10px auto auto;
+    display: none; /* initially hidden */
+}
+
+.rs-field {
+  position: relative;
+  width: 370px !important;
+  box-sizing: border-box;
+}
+
+.form-group.rs-field--input {
+  margin-top: 10px;
+  margin-bottom: 0px;
+}
+
+.form-group.rs-field--input:first-child {
+  margin-top: 5px;
+}
+
+.rs-field.rs-field--divider {
+  margin-top: 15px;
+}
+
+.rs-field .control-label {
+  position: absolute;
+  -webkit-transition: top 0.2s, font-size 0.2s, color 0.2s;
+  transition: top 0.2s, font-size 0.2s, color 0.2s;
+  top: 4px;
+  color: #c2c2c2;
+  font-size: 16px;
+  padding-top: 0px;
+}
+
+.rs-field__input:focus + .control-label,
+.rs-field__input:valid + .control-label {
+  top: -16px;
+  font-size: 12px;
+  color: #666;
+}
+
+.rs-field__input:focus ~ .rs-field__icon {
+  color: #2196f3;
+}
+
+.rs-tooltip {
+  position: relative;
+  display: block;
+  left: 0px;
+  top: 100%;
+  width: auto;
+  max-width: 340px;
+  overflow: hidden;
+  font-size: 12px !important;
+  padding: 0px;
+  background-color: transparent;
+  color: #ff1064 !important;
+}
+
+.rs-tooltip:before {
+  display: none;
+}
+
+.rs-tooltip + .rs-tooltip {
+	margin-top: 15px;
+}
+
+
+/* giving higher priority than default bootstrap styles */
+input[type=password].rs-field__input.rs-field__input--invalid,
+input[type=text].rs-field__input.rs-field__input--invalid  {
+  box-shadow: inset 0 -2px 0 #ff1064;
+}
+
+input[type=password].rs-field__input.rs-field__input--invalid:valid,
+input[type=text].rs-field__input.rs-field__input--invalid:valid  {
+	box-shadow: inset 0 -2px 0 #2196f3;
+}
+
+.rs-field .rs-field__icon {
+  position: absolute;
+  top: 10px;
+  right: 17px;
+  font-size: 16px;
+  color: #bfbfbf;
+  display: inline-block;
+}
+
+.rs-field__button {
+  width: 100%;
+}
+
+.rs-field__text {
+	text-transform: lowercase;
+  text-align: center;
+  font-size: 16px !important;
+  color: #666666 !important;
+}
+
+.rs-field__text.rs-field__text--normal {
+	text-transform: none;
+}
+
+.btn.btn-facebook {
+  background-color: #3b539a;
+  color: white;
+}
+
+.btn.btn-google-plus {
+  background-color: #ff1200;
+  color: white;
+}
+
+.btn.btn-google-plus:hover, .btn.btn-google-plus:focus {
+  color: white;
+  background-color: #e61000;
+}
+
+.btn.btn-facebook:hover, .btn.btn-facebook:focus {
+  color: white;
+  background-color: #344988;
+}
+
+.rs-field__icon.rs-field__icon--social {
+  color: white;
+  left: 26px;
+  right: auto;
+}
+
+
+/* Section of small patches to cope with default imports which are definied above
+	 such as jquery UI
+*/
+
+.rs-field input, .rs-field input:hover, .rs-field input:focus {
+	background-color: white !important; /* cancel out jquery ui orange background on hover*/
+}
+
+.rs-field__icon.fa-key:before {
+	font-family: "fontello";
+	font-size: 16px;
+	font-style: normal;
+  font-weight: normal;
+	content: '\e800';
+}
+
+#submit { 
+    margin-top: 15px;
+}
+
+/**
+    Login page may appear within third party integration, with very little screen space, 
+    i.e. login page displayed inside MS Teams Tab configuration page.
+ */
+@media only screen and (max-height : 400px) {
+
+    body {
+        padding-top: 15px;
+        padding-bottom: 0px;
+    }
+    
+    nav.rs-navbar {
+        display: none;
+    }
+    
+    div.page {
+        padding: 0px;
+    }
+    div.rs-sign-in-form {
+        margin: 0px auto;
+    }
+    form.rs-sign-in-form__body {
+        padding-top: 10px;
+        padding-bottom: 5px;
+    }
+}

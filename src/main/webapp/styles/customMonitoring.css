@@ -1,0 +1,10 @@
+/*
+* Overrides some styles in JavaMelody page and adds some explanatory content
+* RSPAC-735
+*/
+body:before {content: "JavaMelody is a 3rd party tool used by RSpace to securely monitor and graph various server processes. To  return to RSpace, close the tab or click your browser 'Back' button.";
+}
+
+img[alt=Donate] {
+ display:none;
+}

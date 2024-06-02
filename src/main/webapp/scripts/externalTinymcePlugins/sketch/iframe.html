@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>	
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0" /> 
+	<link rel="stylesheet" href="/scripts/externalTinymcePlugins/sketch/css/sketch.css" />
+	<script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
+	<script src="/scripts/bower_components/jquery-ui/jquery-ui.min.js"></script>
+	<script src='/scripts/zwibbler2/zwibbler2.js'></script>
+    <script src='/scripts/tinymceDialogUtils.js'></script>
+	<script src="/scripts/bower_components/mustache/mustache.min.js"></script>	
+	<script src="/scripts/externalTinymcePlugins/sketch/js/main.js"></script>
+</head>
+<body style="color:#ffffff">
+<div id="draw-dialog">
+	<div id="image-editorSketch"></div>
+	<input type="hidden" class="sketchId" data-id=""/>
+	<input type="hidden" class="typeSketch" data-type="sketchType"/>
+	
+	<div id="template-nav">
+    	<input type="radio" class="radio_item" value="Template" name="template-radio-item" id="template-radio" checked>
+        <label class="label_item" for="template-radio"> <img src="/scripts/zwibbler2/wd-template.png" title="Templates"> </label>
+    	<input type="radio" class="radio_item" value="Gallery" name="template-radio-item" id="gallery-radio">
+    	<label class="label_item" for="gallery-radio"> <img src="/scripts/zwibbler2/wd-gallery.png" title="Root Image Gallery"> </label>
+    	<input type="button" id="save-template" value="Save selection" disabled="disabled" title="Please select sketch to save"></input>
+		<input type="button" id="delete-template" value="Delete item" disabled="disabled" title="Please select item to delete"></input>
+	</div>
+	
+	<div id="template-editorSketch"></div>
+	<div id="gallery-editorSketch" style="display:none"></div>
+</div>
+</body> 
+</html>

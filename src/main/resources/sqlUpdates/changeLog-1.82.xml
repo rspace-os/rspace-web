@@ -1,0 +1,42 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.82 October 2022 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+    <changeSet author="matthias" id="2022-09-26" context="run">
+        <comment>Inventory permissions (RSINV-235)</comment>
+
+        <addColumn tableName="Container">
+            <column name="sharingMode" type="INT" defaultValueNumeric="0"/>
+            <column name="acl" type="LONGTEXT(2147483647)"/>
+        </addColumn>
+        <addColumn tableName="Container_AUD">
+            <column name="sharingMode" type="INT" defaultValueNumeric="0"/>
+            <column name="acl" type="LONGTEXT(2147483647)"/>
+        </addColumn>
+        <addColumn tableName="Sample">
+            <column name="sharingMode" type="INT" defaultValueNumeric="0"/>
+            <column name="acl" type="LONGTEXT(2147483647)"/>
+        </addColumn>
+        <addColumn tableName="Sample_AUD">
+            <column name="sharingMode" type="INT" defaultValueNumeric="0"/>
+            <column name="acl" type="LONGTEXT(2147483647)"/>
+        </addColumn>
+        <addColumn tableName="SubSample">
+            <column name="sharingMode" type="INT" defaultValueNumeric="0"/>
+            <column name="acl" type="LONGTEXT(2147483647)"/>
+        </addColumn>
+        <addColumn tableName="SubSample_AUD">
+            <column name="sharingMode" type="INT" defaultValueNumeric="0"/>
+            <column name="acl" type="LONGTEXT(2147483647)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

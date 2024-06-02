@@ -1,0 +1,79 @@
+{
+  "data": {
+    "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#Dataset",
+    "@id": 51,
+    "omero:details": {
+      "@type": "TBD#Details",
+      "owner": {
+        "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#Experimenter",
+        "@id": 2,
+        "omero:details": {
+          "@type": "TBD#Details",
+          "permissions": {
+            "@type": "TBD#Permissions",
+            "perm": "rw----",
+            "canAnnotate": false,
+            "canDelete": false,
+            "canEdit": false,
+            "canLink": false,
+            "isWorldWrite": false,
+            "isWorldRead": false,
+            "isGroupWrite": false,
+            "isGroupRead": false,
+            "isGroupAnnotate": false,
+            "isUserWrite": true,
+            "isUserRead": true
+          }
+        },
+        "FirstName": "Public",
+        "MiddleName": "",
+        "LastName": "data",
+        "Email": "idr-project@lists.openmicroscopy.org.uk",
+        "Institution": "IDR Project",
+        "UserName": "demo"
+      },
+      "group": {
+        "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#ExperimenterGroup",
+        "@id": 3,
+        "omero:details": {
+          "@type": "TBD#Details",
+          "permissions": {
+            "@type": "TBD#Permissions",
+            "perm": "rwr---",
+            "canAnnotate": false,
+            "canDelete": false,
+            "canEdit": false,
+            "canLink": false,
+            "isWorldWrite": false,
+            "isWorldRead": false,
+            "isGroupWrite": false,
+            "isGroupRead": true,
+            "isGroupAnnotate": false,
+            "isUserWrite": true,
+            "isUserRead": true
+          }
+        },
+        "Name": "Public"
+      },
+      "permissions": {
+        "@type": "TBD#Permissions",
+        "perm": "rwr---",
+        "canAnnotate": false,
+        "canDelete": false,
+        "canEdit": false,
+        "canLink": false,
+        "isWorldWrite": false,
+        "isWorldRead": false,
+        "isGroupWrite": false,
+        "isGroupRead": true,
+        "isGroupAnnotate": false,
+        "isUserWrite": true,
+        "isUserRead": true
+      }
+    },
+    "Name": "CDK5RAP2-C",
+    "omero:childCount": 33,
+    "url:images": "https://idr.openmicroscopy.org/api/v0/m/datasets/51/images/",
+    "url:projects": "https://idr.openmicroscopy.org/api/v0/m/datasets/51/projects/"
+  }
+}

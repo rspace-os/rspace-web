@@ -1,0 +1,95 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.70 Sept 2020 -->
+
+	<changeSet author="matthias" id="2021-08-23" context="run">
+
+		<createTable tableName="InventoryFile">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="contentMimeType" type="VARCHAR(255)" />
+			<column name="createdBy" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="creationDate" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="deleted" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="extension" type="VARCHAR(255)" />
+			<column name="fileName" type="VARCHAR(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="fileType" type="TINYINT" />
+			<column name="size" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="container_id" type="BIGINT" />
+			<column name="sample_id" type="BIGINT" />
+			<column name="subSample_id" type="BIGINT" />
+			<column name="fileProperty_id" type="BIGINT" />
+		</createTable>
+
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="InventoryFile" />
+
+		<createTable tableName="InventoryFile_AUD">
+			<column name="id" type="BIGINT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REV" type="INT">
+				<constraints nullable="false" />
+			</column>
+			<column name="REVTYPE" type="TINYINT" />
+			<column name="contentMimeType" type="VARCHAR(255)" />
+			<column name="createdBy" type="VARCHAR(255)" />
+			<column name="creationDate" type="datetime" />
+			<column name="deleted" type="BIT(1)" />
+			<column name="extension" type="VARCHAR(255)" />
+			<column name="fileName" type="VARCHAR(255)" />
+			<column name="fileType" type="TINYINT" />
+			<column name="size" type="BIGINT" />
+			<column name="container_id" type="BIGINT" />
+			<column name="sample_id" type="BIGINT" />
+			<column name="subSample_id" type="BIGINT" />
+			<column name="fileProperty_id" type="BIGINT" />
+		</createTable>
+
+		<addPrimaryKey columnNames="id, REV"
+			constraintName="PRIMARY" tableName="InventoryFile_AUD" />
+		<addForeignKeyConstraint baseColumnNames="REV"
+			baseTableName="InventoryFile_AUD"
+			constraintName="FK_hejjvjabiwyowoerr70e12put" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="REV" referencedTableName="REVINFO" />
+
+		<addForeignKeyConstraint
+			baseColumnNames="sample_id" baseTableName="InventoryFile"
+			constraintName="FK_60r1vytsrnf4b8os2mts1285p" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Sample" />
+		<addForeignKeyConstraint
+			baseColumnNames="container_id" baseTableName="InventoryFile"
+			constraintName="FK_d2y9fd765i7uou52jtqhmruga" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="Container" />
+		<addForeignKeyConstraint
+			baseColumnNames="subSample_id" baseTableName="InventoryFile"
+			constraintName="FK_fjyr0bfuhxljl0q49wg59ku1b" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="SubSample" />
+		<addForeignKeyConstraint
+			baseColumnNames="fileProperty_id" baseTableName="InventoryFile"
+			constraintName="FK_2uehkfgpm1fxu504mnlkaqek5" deferrable="false"
+			initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+			referencedColumnNames="id" referencedTableName="FileProperty" />
+
+	</changeSet>
+
+</databaseChangeLog>

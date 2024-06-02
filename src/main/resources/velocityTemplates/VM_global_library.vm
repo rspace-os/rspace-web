@@ -1,0 +1,229 @@
+##A global macro library accessible by all templates.
+
+#* define a macro  to produce a resource link in an archive Index
+  Takes 3 arguments:
+  - href - the link href ttribute value
+  - name -  the visible hyperlinked text
+  - resource - relative path to an image icon illustrating the type of the linked resources
+*#
+#macro( indexRow $href $name $resource )
+<img src="$resource" width=32 height=32/><a href = "$href">$name</a><br/>
+#end
+
+#*
+ Takes a list of NfsElement objects for tabular representation in HTML exports
+*#
+#macro (nfsElements $nfsFiles $pathToArchiveRoot)
+#if(! $nfsFiles.isEmpty())
+  <h4> Linked filestore files referenced by this document </h4>
+  <table id="nfs">
+    <tr>
+     <th> File System Name </th>
+     <th> File System URI </th>
+     <th> File Store Path  </th>
+     <th> Relative Path </th>
+     <th> Archive Path </th>
+     <th> Reason for not including </th>
+     <th> Folder</th>
+     <th> Folder export summary</th>
+    </tr>
+    #foreach($nfs in $nfsFiles)
+     <tr class ="nfsElementMeta">
+      <td> $nfs.fileSystemName  </td>
+      <td style="word-break:break-all;"> $nfs.fileSystemUrl  </td>
+      <td> $nfs.fileStorePath  </td>
+      <td> $nfs.relativePath  </td>
+      <td> 
+        #if( $nfs.addedToArchive ) <a href="$pathToArchiveRoot/filestoreFiles/$nfs.archivePath">$nfs.archivePath.substring(17)</a> #else -not included- #end 
+      </td>
+      <td> 
+        #if( $nfs.errorMsg ) $nfs.errorMsg #end
+      </td>
+      <td> 
+        #if( $nfs.folderLink ) yes #else no #end
+      </td>
+      <td style="word-break:break-all;"> 
+        #if( $nfs.folderLink ) $nfs.folderExportSummaryMsg #end
+      </td>
+     </tr>
+    #end
+  </table>
+#end ##nfs conditional
+
+#end
+
+#*
+ Takes a list of ListOfMaterials objects for tabular representation in HTML exports
+*#
+#macro (lomsHtml $loms)
+    #if(! $loms.isEmpty())
+    <div>
+      <h4>Lists of materials</h4>
+      #foreach($lom in $loms)
+      <div class="lomDiv">
+        List of materials: $lom.name <br />
+        Description: $lom.description <br />
+        <table class="lomTable">
+          <thead>
+            <tr>
+              <td>Inventory Item Id</td>
+              <td>Inventory Item Type</td>
+              <td>Used Quantity</td>
+            </tr>
+          </thead>
+          <tbody> 
+            #foreach($material in $lom.materials)
+            <tr>
+              <td>$material.invRecId</td>
+              <td>$material.invRecType</td>
+              <td>$material.usagePlainText</td>
+            </tr>
+            #end
+          </tbody>
+        </table>
+      </div>
+      #end ## end of list of materials loop
+    </div>
+    #end ##lom conditional
+#end
+
+#macro( coreData $document )
+ <p>Created on $date.format('EEE, MMM d, yyyy  HH:mm', $document.creationDate)
+ <p>By $document.createdBy
+ <p> $!description
+#end
+
+## Given a java.util.Date, formats for display in a message.
+## For this to work, don't use a variable called '$date' in your template as this is a reserved word
+#macro (formatDate $dateobject)
+ $date.format('EEE, MMM d, yyyy', $dateobject) at $date.format('HH:mm', $dateobject)
+#end
+
+## Given an IP address, adds a section to the message stating the ip address
+## and linking to a site that resolves the IP address.
+#macro(emailSourceIpFooter $ipAddress )
+<div style="font-size:80%">
+#emailSourceIpFooter_content1($ipAddress) <a href="http://www.ip-adress.com/ip_tracer/$ipAddress">ip-adress.com</a>.
+</div>
+#end
+
+#macro(emailSourceIpFooter_Plaintext $ipAddress )
+#emailSourceIpFooter_content1($ipAddress) http://www.ip-adress.com/ip_tracer/$ipAddress
+#end
+
+http://www.ip-adress.com/ip_tracer/${ipAddress}
+
+
+#macro(emailSourceIpFooter_content1 $ipAddress )
+This request was generated from IP address ${ipAddress}. To find out more about this IP address, please visit
+#end
+
+## General footer for invitation messages in Community product.
+#macro(aboutRSpaceCloud $isHTML)
+#if($isHTML)<h3>#end
+About RSpace #if($isHTML)</h3>#end
+
+RSpace Community is a new concept.
+#if($isHTML)<p>#end
+Designed in collaboration with the University of Wisconsin and three years in the making,
+RSpace is an electronic lab notebook designed for academic labs.  It's also a research 'space'
+where labs can collaborate with other labs, at your institution or around the world. 
+#if($isHTML)<br/>#end
+
+And, it's absolutely  free!
+#if($isHTML)</p>#end
+#end
+
+
+#macro(signature)
+Best wishes,
+<p>
+The RSpace team
+</p>
+#end
+
+#macro(signature_Plaintext)
+Best wishes,
+
+The RSpace team
+#end
+
+#macro(browserAdvice)
+<p>
+#browserAdvice_Content1 
+<br>
+#browserAdvice_Content2
+</p>
+#end
+
+#macro(browserAdvice_Plaintext)
+
+#browserAdvice_Content1
+
+#browserAdvice_Content2
+#end
+
+#macro(browserAdvice_Content1)
+We support recent versions of Chrome, Safari and Firefox. 
+#end
+
+#macro(browserAdvice_Content2)
+We do not support Edge or Internet Explorer.
+#end
+
+#macro(dontReply)
+<p>
+#dontReply_content
+</p>
+#end
+
+#macro(dontReply_Plaintext)
+#dontReply_content
+#end
+
+#macro(dontReply_content)
+Please don't reply to this email, it was generated automatically.
+#end
+
+
+#macro(notificationPrefInfoNewUser)
+<p>
+#notificationPrefInfoNewUser_content1
+<br>
+#notificationPrefInfoNewUser_content2
+</p>
+#end
+
+#macro(notificationPrefInfoNewUser_Plaintext)
+
+#notificationPrefInfoNewUser_content1
+
+#notificationPrefInfoNewUser_content2
+
+#end
+
+#macro(notificationPrefInfoNewUser_content1)
+When you connect to RSpace for the first time, all of the various notification options will be set to 'on'
+ by default. 
+#end
+
+#macro(notificationPrefInfoNewUser_content2)
+If you don’t want to get notifications from RSpace you can set your notification preferences in
+ My RSpace > My Profile. The notifications settings are at the bottom of the page.
+#end
+
+#macro(notificationPrefInfoSuffix $isHTML)
+#if($isHTML)<p style = 'font-size:75%'>#end
+Too many notifications? Set your messaging preferences in MyRSpace -> My Profile
+#if($isHTML)</p>#end
+#end
+
+#macro(utf8header)
+<head>
+  <meta charset="UTF-8">
+</head>
+#end
+
+#macro(imgThumbnailSrc  $fieldId $itemId $width $height $rotation $tsMillis)
+/thumbnail/data?sourceType=IMAGE&sourceId=$itemId&sourceParentId=$fieldId&width=$width&height=$height&rotation=$rotation&time=$tsMillis
+#end

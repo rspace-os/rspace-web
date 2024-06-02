@@ -1,0 +1,26 @@
+{
+  "data" : {
+    "createDt" : null,
+    "startPage" : 0,
+    "exportScope" : "SELECTION",
+    "exportFormat" : "PDF",
+    "exportName" : "PDF export",
+    "provenance" : true,
+    "comments" : true,
+    "annotations" : true,
+    "pageName" : true,
+    "includeFieldLastModifiedDate" : true,
+    "pageSize" : "A4",
+    "dateType" : "EXP",
+    "includeFooter" : true,
+    "setPageSizeAsDefault" : false,
+    "selectionScope" : true,
+    "userScope" : false,
+    "groupScope" : false,
+    "pageSizeEnum" : "A4",
+    "dateTypeEnum" : "EXP"
+  },
+  "error" : null,
+  "success" : true,
+  "errorMsg" : null
+}

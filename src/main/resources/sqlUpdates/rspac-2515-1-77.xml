@@ -1,0 +1,1693 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.77 April 2022 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+    <changeSet id="pre-collation-2022-04-11" author="richard" context="run">
+        <comment> Record which tables are utf8mb4_general_ci before updating. </comment>
+        <createTable tableName="utf8_general_pre_rspac2515">
+            <column name="tableName" type="VARCHAR(64)"/>
+        </createTable>
+        <sql>
+            insert into utf8_general_pre_rspac2515 (select table_name from information_schema.tables where table_collation = 'utf8mb4_general_ci' and table_schema = (select database()));
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-0" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='AbstractUserOrGroupImpl_permissionStrings' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for AbstractUserOrGroupImpl_permissionStrings if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE AbstractUserOrGroupImpl_permissionStrings convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-1" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='App' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for App if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE App convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-2" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='AppConfigElement' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for AppConfigElement if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE AppConfigElement convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-3" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='AppConfigElementDescriptor' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for AppConfigElementDescriptor if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE AppConfigElementDescriptor convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-4" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='AppConfigElementSet' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for AppConfigElementSet if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE AppConfigElementSet convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-5" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ArchivalCheckSum' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ArchivalCheckSum if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ArchivalCheckSum convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-6" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ArchiveVersionToAppVersion' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ArchiveVersionToAppVersion if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ArchiveVersionToAppVersion convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-7" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BATCH_JOB_EXECUTION' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BATCH_JOB_EXECUTION if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BATCH_JOB_EXECUTION convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-8" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BATCH_JOB_EXECUTION_CONTEXT' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BATCH_JOB_EXECUTION_CONTEXT if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BATCH_JOB_EXECUTION_CONTEXT convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-9" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BATCH_JOB_EXECUTION_PARAMS' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BATCH_JOB_EXECUTION_PARAMS if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BATCH_JOB_EXECUTION_PARAMS convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-10" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BATCH_JOB_EXECUTION_SEQ' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BATCH_JOB_EXECUTION_SEQ if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BATCH_JOB_EXECUTION_SEQ convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-11" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BATCH_JOB_INSTANCE' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BATCH_JOB_INSTANCE if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BATCH_JOB_INSTANCE convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-12" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BATCH_JOB_SEQ' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BATCH_JOB_SEQ if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BATCH_JOB_SEQ convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-13" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BATCH_STEP_EXECUTION' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BATCH_STEP_EXECUTION if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BATCH_STEP_EXECUTION convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-14" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BATCH_STEP_EXECUTION_CONTEXT' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BATCH_STEP_EXECUTION_CONTEXT if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BATCH_STEP_EXECUTION_CONTEXT convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-15" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BATCH_STEP_EXECUTION_SEQ' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BATCH_STEP_EXECUTION_SEQ if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BATCH_STEP_EXECUTION_SEQ convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-16" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BR_AUD_TEMP' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BR_AUD_TEMP if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BR_AUD_TEMP convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-17" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BaseRecord' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BaseRecord if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BaseRecord convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-18" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='BaseRecord_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for BaseRecord_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE BaseRecord_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-19" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ClustermarketBookings' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ClustermarketBookings if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ClustermarketBookings convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-20" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ClustermarketEquipment' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ClustermarketEquipment if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ClustermarketEquipment convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-21" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='CollabGroupCreationTracker' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for CollabGroupCreationTracker if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE CollabGroupCreationTracker convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-22" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='CommunicationTarget' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for CommunicationTarget if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE CommunicationTarget convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-23" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Community' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Community if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Community convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-24" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Container' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Container if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Container convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-25" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ContainerLocation' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ContainerLocation if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ContainerLocation convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-26" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Container_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Container_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Container_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-27" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='CreateGroupMessageOrRequest' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for CreateGroupMessageOrRequest if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE CreateGroupMessageOrRequest convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-28" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='CreateGroupMessageOrRequest_emails' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for CreateGroupMessageOrRequest_emails if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE CreateGroupMessageOrRequest_emails convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-29" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='DMPUser' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for DMPUser if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE DMPUser convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-30" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatAudio' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatAudio if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatAudio convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-31" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatAudio_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatAudio_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatAudio_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-32" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatChemistryFile' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatChemistryFile if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatChemistryFile convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-33" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatChemistryFile_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatChemistryFile_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatChemistryFile_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-34" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatComment_EcatCommentItem_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatComment_EcatCommentItem_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatComment_EcatCommentItem_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-35" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatDocumentFile' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatDocumentFile if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatDocumentFile convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-36" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatDocumentFile_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatDocumentFile_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatDocumentFile_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-37" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatImage' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatImage if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatImage convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-38" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatImage_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatImage_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatImage_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-39" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatMediaFile' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatMediaFile if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatMediaFile convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-40" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatMediaFile_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatMediaFile_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatMediaFile_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-41" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatVideo' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatVideo if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatVideo convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-42" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='EcatVideo_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for EcatVideo_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE EcatVideo_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-43" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ExtraField' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ExtraField if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ExtraField convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-44" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ExtraField_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ExtraField_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ExtraField_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-45" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Field' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Field if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Field convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-46" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='FieldAttachment' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for FieldAttachment if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE FieldAttachment convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-47" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='FieldAttachment_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for FieldAttachment_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE FieldAttachment_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-48" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='FieldAutosaveLog' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for FieldAutosaveLog if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE FieldAutosaveLog convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-49" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='FieldForm' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for FieldForm if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE FieldForm convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-50" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='FieldForm_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for FieldForm_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE FieldForm_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-51" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Field_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Field_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Field_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-52" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='FileProperty' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for FileProperty if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE FileProperty convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-53" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='FileStoreRoot' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for FileStoreRoot if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE FileStoreRoot convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-54" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Folder' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Folder if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Folder convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-55" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Folder_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Folder_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Folder_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-56" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='FormUsage' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for FormUsage if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE FormUsage convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-57" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='FormUserMenu' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for FormUserMenu if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE FormUserMenu convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-58" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='GroupMembershipEvent' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for GroupMembershipEvent if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE GroupMembershipEvent convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-59" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='GroupMessageOrRequest' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for GroupMessageOrRequest if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE GroupMessageOrRequest convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-60" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='IconEntity' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for IconEntity if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE IconEntity convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-61" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ImageBlob' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ImageBlob if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ImageBlob convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-62" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='InternalLink' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for InternalLink if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE InternalLink convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-63" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='InventoryChoiceFieldDef' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for InventoryChoiceFieldDef if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE InventoryChoiceFieldDef convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-64" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='InventoryFile' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for InventoryFile if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE InventoryFile convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-65" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='InventoryFile_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for InventoryFile_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE InventoryFile_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-66" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='InventoryRadioFieldDef' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for InventoryRadioFieldDef if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE InventoryRadioFieldDef convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-69" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ListOfMaterials' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ListOfMaterials if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ListOfMaterials convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-70" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ListOfMaterials_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ListOfMaterials_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ListOfMaterials_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-71" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='MaterialUsage' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for MaterialUsage if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE MaterialUsage convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-72" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='MaterialUsage_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for MaterialUsage_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE MaterialUsage_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-73" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='MessageOrRequest' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for MessageOrRequest if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE MessageOrRequest convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-74" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='NfsFileStore' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for NfsFileStore if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE NfsFileStore convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-75" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='NfsFileSystem' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for NfsFileSystem if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE NfsFileSystem convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-76" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='NotBAckup_1444' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for NotBAckup_1444 if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE NotBAckup_1444 convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-77" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Notebook' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Notebook if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Notebook convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-78" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Notebook_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Notebook_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Notebook_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-79" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Notification' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Notification if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Notification convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-80" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='OAuthApp' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for OAuthApp if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE OAuthApp convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-81" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='OAuthToken' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for OAuthToken if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE OAuthToken convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-82" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='OfflineRecordUser' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for OfflineRecordUser if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE OfflineRecordUser convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-83" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Organisation' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Organisation if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Organisation convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-84" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='PropertyDescriptor' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for PropertyDescriptor if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE PropertyDescriptor convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-85" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='REVINFO' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for REVINFO if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE REVINFO convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-86" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RSChemElement' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RSChemElement if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RSChemElement convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-87" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RSChemElement_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RSChemElement_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RSChemElement_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-88" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RSForm' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RSForm if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RSForm convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-89" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RSForm_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RSForm_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RSForm_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-90" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RSMath' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RSMath if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RSMath convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-91" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RSMath_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RSMath_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RSMath_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-92" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RSMetaData' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RSMetaData if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RSMetaData convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-93" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RSPAC1093PermissionsToInvestigate' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RSPAC1093PermissionsToInvestigate if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RSPAC1093PermissionsToInvestigate convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-94" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Record' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Record if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Record convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-95" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RecordAttachment' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RecordAttachment if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RecordAttachment convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-96" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RecordAttachment_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RecordAttachment_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RecordAttachment_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-97" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RecordGroupSharing' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RecordGroupSharing if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RecordGroupSharing convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-98" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RecordToFolder' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RecordToFolder if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RecordToFolder convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-99" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='RecordUserFavorites' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for RecordUserFavorites if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE RecordUserFavorites convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-100" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Record_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Record_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Record_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-101" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Role_permissionStrings' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Role_permissionStrings if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Role_permissionStrings convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-102" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SD_AUD_TEMP' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SD_AUD_TEMP if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SD_AUD_TEMP convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-103" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Sample' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Sample if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Sample convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-104" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SampleField' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SampleField if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SampleField convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-105" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SampleField_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SampleField_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SampleField_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-106" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Sample_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Sample_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Sample_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-107" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ScheduledMaintenance' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ScheduledMaintenance if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ScheduledMaintenance convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-108" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='ShareRecordMessageOrRequest' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for ShareRecordMessageOrRequest if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE ShareRecordMessageOrRequest convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-109" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Signature' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Signature if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Signature convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-110" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SignatureHash' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SignatureHash if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SignatureHash convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-111" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Snippet' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Snippet if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Snippet convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-112" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Snippet_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Snippet_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Snippet_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-113" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='StructuredDocument' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for StructuredDocument if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE StructuredDocument convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-114" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='StructuredDocument_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for StructuredDocument_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE StructuredDocument_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-115" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SubSample' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SubSample if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SubSample convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-116" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SubSampleNote' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SubSampleNote if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SubSampleNote convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-117" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SubSampleNote_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SubSampleNote_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SubSampleNote_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-118" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SubSample_AUD' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SubSample_AUD if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SubSample_AUD convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-119" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SystemProperty' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SystemProperty if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SystemProperty convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-120" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='SystemPropertyValue' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for SystemPropertyValue if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE SystemPropertyValue convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-121" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Thumbnail' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Thumbnail if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Thumbnail convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-122" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='TokenBasedVerification' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for TokenBasedVerification if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE TokenBasedVerification convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-123" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='User' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for User if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE User convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-124" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='UserAccountEvent' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for UserAccountEvent if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE UserAccountEvent convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-125" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='UserApiKey' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for UserApiKey if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE UserApiKey convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-126" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='UserAppConfig' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for UserAppConfig if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE UserAppConfig convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-127" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='UserConnection' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for UserConnection if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE UserConnection convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-128" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='UserGroup' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for UserGroup if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE UserGroup convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-129" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='UserGroup_permissionStrings' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for UserGroup_permissionStrings if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE UserGroup_permissionStrings convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-130" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='UserKeyPair' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for UserKeyPair if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE UserKeyPair convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-131" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='UserPreference' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for UserPreference if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE UserPreference convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-132" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='UserProfile' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for UserProfile if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE UserProfile convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-133" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='WhiteListedSysAdminIPAddress' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for WhiteListedSysAdminIPAddress if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE WhiteListedSysAdminIPAddress convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-134" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='Witness' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for Witness if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE Witness convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-135" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='community_admin' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for community_admin if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE community_admin convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-136" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='community_labGroups' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for community_labGroups if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE community_labGroups convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-137" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='hibernate_sequences' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for hibernate_sequences if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE hibernate_sequences convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-142" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='roles' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for roles if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE roles convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-143" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='rsGroup' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for rsGroup if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE rsGroup convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+    <changeSet id="collate-144" author="richard" context="run">
+        <preConditions onFail="MARK_RAN" onError="CONTINUE">
+            <sqlCheck expectedResult="1">
+                SELECT if (TABLE_COLLATION='utf8mb4_general_ci',1,0)  FROM information_schema.`TABLES` T where TABLE_name='user_role' and table_schema=(select database());
+            </sqlCheck>
+        </preConditions>
+        <comment>Force utf8mb4_unicode_ci collation for user_role if it is currently utf8mb4_general_ci</comment>
+        <sql>
+            ALTER TABLE user_role convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </sql>
+    </changeSet>
+
+
+
+</databaseChangeLog>

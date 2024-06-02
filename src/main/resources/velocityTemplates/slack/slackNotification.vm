@@ -1,0 +1,19 @@
+
+<$baseURL/userform?userId=$cmm.originator.id|$cmm.originator.fullName>
+#if ($cmm.notification)
+generated a notification  of type [$cmm.notificationType].
+#else 
+generated a notification. 
+#end	
+#if ($cmm.record && $cmm.record.notebook)
+concerning notebook <$baseURL/notebookEditor/${cmm.record.id}|${cmm.record.name}>  
+#elseif($cmm.record)
+concerning document <$baseURL/workspace/editor/structuredDocument/$cmm.record.id|$cmm.record.name>  
+#end
+#if ($cmm.message) 
+More details:
+$cmm.message
+#end
+#if ($cmm.notification) 
+$cmm.notificationMessage
+#end		

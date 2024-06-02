@@ -1,0 +1,38 @@
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.61 September 2019 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing 
+        new changesets ! -->
+   
+
+    <!-- Add changesets here... -->
+
+    <changeSet id="2019-09-03" author="matthias" context="run">
+        <comment>New column for file property of image preview generated for chemical element (RSPAC-1915)</comment>
+        <addColumn tableName="RSChemElement">
+            <column name="imageFileProperty_id" type="BIGINT(19)" />
+        </addColumn>
+        <addColumn tableName="RSChemElement_AUD">
+            <column name="imageFileProperty_id" type="BIGINT(19)" />
+        </addColumn>
+        <addForeignKeyConstraint
+            baseColumnNames="imageFileProperty_id" baseTableName="RSChemElement"
+            constraintName="FK_58261u0q3tvd7kegdeek8boas" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="FileProperty" />
+    </changeSet>
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing 
+        new changesets ! -->
+
+    <!-- only customChange changeSets should be placed below here -->
+
+
+
+
+</databaseChangeLog>

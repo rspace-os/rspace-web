@@ -1,0 +1,29 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.77 April 2022 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+    <changeSet author="nhanlon" id="2022-03-28a" context="run">
+        <comment>Rename column 'booking_id' on ClustermarketBooking to 'id'</comment>
+        <renameColumn tableName="ClustermarketBookings" oldColumnName="booking_id" newColumnName="id" columnDataType="BIGINT(19)"/>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-03-28b" context="run">
+        <comment>Rename column 'equipment_id' on ClustermarketEquipment to 'id'</comment>
+        <renameColumn tableName="ClustermarketEquipment" oldColumnName="equipment_id" newColumnName="id" columnDataType="BIGINT(19)"/>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-04-20a" context="run">
+        <comment>Empty cache as Clustermarket API has new fields which we need</comment>
+        <delete tableName="ClustermarketEquipment"></delete>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-04-20b" context="run">
+        <comment>Empty cache as Clustermarket API has new fields which we need</comment>
+        <delete tableName="ClustermarketBookings"></delete>
+    </changeSet>
+</databaseChangeLog>

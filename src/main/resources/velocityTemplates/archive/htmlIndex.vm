@@ -1,0 +1,55 @@
+#*
+This is the template for the listing of contents of a folder in an HTML archive.
+It takes several arguments:
+
+folderName - a string that is the name of the folder being indexed
+indexItems - a collection of IdexItem objects
+manifest   - an optional ArchiveManifest object that can be passed in to the top-level
+                index.html
+*#
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>$folderName </title>
+<link href="resources/index.css" rel="stylesheet" />
+<meta charset="UTF-8">
+</head>
+<body>
+<div class="navigationSection">
+<a href="index.html">Top</a></div>
+#if($manifest)
+	<div class="navigationSection">
+  <a href="./a-zIndex.html">Full A-Z index of all exported items </a></div>
+  <div id="headerSection">
+  <h2> Manifest </h2>
+ <table>
+ #foreach($item in $manifest.items)
+     <tr>
+     		<td>$item.key</td>
+     		<td>$item.value</td>
+     </tr>
+  #end
+ </table>
+ </div>
+#end ## end manifest conditional
+<h3>Listing of $folderName</h3>
+#if($indexItems.isEmpty())
+ <p> There are no items in this folder.
+#end
+#foreach ($indexItem in $indexItems)
+ #if ($indexItem.record)
+  #indexRow($indexItem.url, $indexItem.name,"./resources/document.png")
+ #elseif ($indexItem.notebook)
+ 	#indexRow($indexItem.url, $indexItem.name "./resources/notebook.png")
+ #else
+  #indexRow($indexItem.url, $indexItem.name "./resources/folder.png")
+ #end
+#end ## end indexItem loop
+
+#if($includeLinkToNfsEports)
+<div id ="footer" style="margin-top:30px">
+<a href="nfs-Links.html"> Summary of links to external files </a>
+</div>
+#end
+</body>
+</html>

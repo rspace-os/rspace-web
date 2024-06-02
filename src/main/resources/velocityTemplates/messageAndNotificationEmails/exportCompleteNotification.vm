@@ -1,0 +1,10 @@
+Your export $!name is completed and generated an archive of size $size. 
+$exportedRecordsSummary
+<br/><br/>
+More details available on <a href='$exportReportLink'>export report page</a>.
+<br/><br/>
+Please click on, or copy the link into a browser to access the export: 
+<br/>
+<a href='$link'>$linkText</a>.
+<br/>$removalPolicyMessage
+<p/>

@@ -1,0 +1,16 @@
+#* Template for annotated image links.
+
+ Arguments needed for mustache are:
+  - id - composite id combining field.id and image.id
+  - annotationId 
+  - type - type of the element, should be 'annotation'
+  - unused
+  - height
+  - width
+  
+ Changelog:
+   1.29 - added 'data-id' and 'data-type' attributes, 
+        - src URL changed from "getImage/$id" to "getAnnotation/$annotationId"
+ 
+*#
+<p><img id="$id" class="imageDropped" data-id="$annotationId" data-type="$type" src="/image/getAnnotation/$annotationId/$unused" height="$height" width="$width" alt="image" /></p>&nbsp;

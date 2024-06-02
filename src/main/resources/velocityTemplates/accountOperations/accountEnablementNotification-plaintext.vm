@@ -1,0 +1,20 @@
+#*
+Template for messaging a user that their account is locked / or unlocked.
+Arguments:
+ - systemUser - the admin user who locked the account
+ - user - A user object.
+ - accountDisabled - a boolean
+ - htmlPrefix - the base URL of the application
+*#
+
+Hello ${user.fullName},
+
+#if (${accountDisabled} == 'true')
+The RSpace system administrator has disabled your user account. For more details, please contact your RSpace administrator (${systemUser.email}).
+#else 
+The RSpace system administrator has enabled your user account. To login, please visit ${htmlPrefix}/workspace .
+#end
+
+Best wishes,
+
+${systemUser.fullName}

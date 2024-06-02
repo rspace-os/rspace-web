@@ -1,0 +1,146 @@
+/* Style related with admin.jsp */
+/**
+ * Global variables and mixins are defined here.
+ *
+ * Import in other SASS stylesheets using:
+ * @import 'global_vars';
+ */
+.menuInnerPanel {
+  display: inline-block; }
+
+.menuInnerPanelIcon {
+  margin-left: 7px; }
+
+.menuInnerPanelIconNew {
+  margin-left: 22px; }
+
+input:focus {
+  outline: none; }
+
+button:focus {
+  outline: none; }
+
+/* Style related with 'directory' section (directory.jsp) and lists */
+.searchInputHolder {
+  float: left !important; }
+
+#selectDirectoryListSection {
+  display: block;
+  width: 100%;
+  margin-bottom: 14px; }
+
+#orderDirectoryListSection {
+  display: block;
+  width: 100%;
+  text-align: right; }
+
+#orderDirectoryList {
+  margin: 2px 4px 0 4px;
+  white-space: nowrap; }
+
+#directoryListTitle {
+  display: inline-block;
+  width: 100%; }
+
+#directoryContainer {
+  display: block; }
+
+.publicList {
+  width: 100% !important;
+  border-color: #DDDDDD;
+  border-style: solid;
+  border-width: 0 2px 0 2px;
+  padding: 0;
+  margin: 0; }
+
+.table_headRow {
+  background-color: #DDDDDD;
+  height: 3em; }
+
+.table_headRow th {
+  background-color: #DDDDDD;
+  height: 3em;
+  margin: 0px;
+  border: 0px;
+  padding: 3px; }
+
+.table_listRow {
+  background-color: #F6F6F6;
+  height: 3em;
+  padding: 3px; }
+
+.table_listCell {
+  background-color: #F6F6F6;
+  height: 3em;
+  padding: 0 0 0 2px;
+  text-align: left;
+  border-color: #DDDDDD;
+  border-style: solid;
+  border-width: 0 0 2px 0; }
+
+.publicListButton {
+  font-size: 1em !important;
+  line-height: 1em !important;
+  font-weight: normal !important;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  margin: 0 9px 0 0 !important;
+  background: transparent;
+  background-image: url("/images/icons/editIcon.png");
+  background-repeat: no-repeat;
+  background-position: top left;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  cursor: pointer;
+  display: inline-block; }
+  .publicListButton:focus {
+    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+
+.formAction {
+  padding-top: 3px;
+  padding-right: 7px;
+  padding-bottom: 2px;
+  margin: 6px 0 6px 5px;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #AFAFAF;
+  background: transparent;
+  background-repeat: no-repeat;
+  background-position: top left; }
+
+.breadcrumbForm {
+  background-color: #DDDDDD;
+  margin: 0;
+  padding: 4px 0 4px 8px;
+  line-height: 2em; }
+
+table#documentHistory {
+  /* Creation/Modification Date */ }
+  table#documentHistory td:last-child {
+    white-space: nowrap; }
+  table#documentHistory td:nth-child(4),
+  table#documentHistory td:nth-child(5) {
+    white-space: nowrap; }
+
+/**
+ * The Create Lab Group page
+ */
+ul.tagit#principalEmail {
+  overflow: visible; }
+ul.tagit li.tagit-new {
+  margin: 0;
+  padding: 0; }
+
+/**
+ * The Create Form page
+ */
+#multiUseBar {
+  background-color: #DDDDDD;
+  overflow: hidden; }
+  #multiUseBar #documentName {
+    display: inline-block; }
+  #multiUseBar #tagSlot {
+    float: right;
+    width: 40%;
+    line-height: 2em; }

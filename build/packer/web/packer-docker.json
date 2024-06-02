@@ -1,0 +1,61 @@
+{
+	"variables": {
+		"app_version": null,
+		"DOCKERHUB_REPO" :"{{env `DOCKERHUB_REPO`}}",
+		"DOCKERHUB_PWD": "{{env `DOCKERHUB_PWD`}}",
+		"docker_image_tag": null
+	},
+	"builders": [	
+		    {
+			"type": "docker",
+			"image":"{{user `DOCKERHUB_REPO`}}:rspace-base_ubuntu2004_java11_tomcat8.5",
+			"commit": true,
+			"pull": true,
+			"changes": [
+				"WORKDIR /usr/local/tomcat",
+			    "ENTRYPOINT [\"./bin/catalina.sh\", \"run\"]"
+			    ]
+		}
+	],
+	"provisioners": [
+
+		{
+			"type": "file",
+			"source": "../../../target/{{user `app_version`}}.war",
+			"destination": "/ROOT.war"
+		},
+		
+		{
+			"type": "file",
+			"source": "./resources/setenv.sh",
+			"destination": "/setenv.sh"
+		},
+		{
+			"type": "file",
+			"source": "./resources/license.cxl",
+			"destination": "/license.cxl"
+		},
+		{
+			"type": "shell",
+			"script": "provision-docker.sh"
+		}
+	],
+	"post-processors": [
+		{
+			"type": "manifest",
+			"output": "manifest.json",
+			"strip_path": true
+		},
+		[{
+          "type": "docker-tag",
+          "repository": "{{user `DOCKERHUB_REPO`}}",
+          "tag": "{{user `docker_image_tag`}}"
+        },
+        {
+          "type":"docker-push",
+          "login":true,
+          "login_username":"rspaceops",
+          "login_password":"{{user `DOCKERHUB_PWD`}}"
+        }]
+	]
+}

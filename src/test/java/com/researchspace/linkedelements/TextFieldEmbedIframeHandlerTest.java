@@ -1,0 +1,246 @@
+package com.researchspace.linkedelements;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.researchspace.testutils.SpringTransactionalTest;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
+
+  @Autowired TextFieldEmbedIframeHandler iframeHandler;
+
+  @Test
+  public void checkRandomIframeLeftUnconverted() {
+    // random iframe is not converted (even if safe & valid, e.g. from google calendar)
+    String randomIframeHtml =
+        "<p>start</p><img src=\"/image/123\"><div class=\"embedIframeDiv mceNonEditable\"><iframe"
+            + " src=\"https://calendar.google.com/calendar/embed?src=pl.uk%23holiday%40group.v.calendar.google.com&ctz=Europe%2FWarsaw\""
+            + " style=\"border: 0\" width=\"800\" height=\"600\" frameborder=\"0\""
+            + " scrolling=\"no\"></iframe></div><p>end</p>";
+
+    String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(randomIframeHtml);
+    assertEquals(randomIframeHtml, convertedHtml);
+
+    // decoding only changed if input contains known encoded paragraph or empty iframe wrapper
+    convertedHtml = iframeHandler.decodeKnownIframesFromParagraphs(randomIframeHtml);
+    assertEquals(randomIframeHtml, convertedHtml);
+  }
+
+  @Test
+  public void checkIncomingTagsMarkedAsKnownIframeReplacementAreStripped() {
+    // random iframe is not converted (even if safe & valid, e.g. from google calendar)
+    String randomIframeHtml =
+        "<p>start</p><p class='"
+            + TextFieldEmbedIframeHandler.KNOWN_IFRAME_PARAGRAPH_CLASS
+            + "' data-test='test'></p><p>end</p>";
+
+    String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(randomIframeHtml);
+    assertEquals("<p>start</p>\n<p>end</p>", convertedHtml);
+  }
+
+  @Test
+  public void checkIframeSrcRecognizedAsKnown() {
+    // youtube embed code src variants
+    assertTrue(iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/q27r-ZBw9lI"));
+    assertTrue(iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/YkRldqVfTJo"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/YkRldqVfTJo?start=18"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/YkRldqVfTJo?controls=0"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://www.youtube.com/embed/YkRldqVfTJo?controls=0&amp;start=16"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc("https://www.youtube-nocookie.com/embed/YkRldqVfTJo"));
+
+    // jove embed code src variants
+    assertTrue(iframeHandler.isKnownIframeSrc("https://www.jove.com/embed/player?id=54239"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://www.jove.com/embed/player?id=54239&t=1&a=1&i=1&chap=1&s=1&fpv=1"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://www.jove.com/embed/player?id=54239&a=1&s=1&i=1&chap=1&t=1&fpv=1")); // different order
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://www.jove.com/embed/player?id=54239&language=Dutch&t=1&s=1&fpv=1"));
+
+    // Jove staging site src variants
+    assertTrue(
+        iframeHandler.isKnownIframeSrc("https://richard-dev2.jove.com/embed/player?id=54239"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://richard-dev2.jove.com/embed/player?id=54239&t=1&a=1&i=1&chap=1&s=1&fpv=1"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://richard-dev2.jove.com/embed/player?id=54239&a=1&s=1&i=1&chap=1&t=1&fpv=1")); // different order
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://richard-dev2.jove.com/embed/player?id=49&t=1&s=1&fpv=1"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://richard-dev2.jove.com/embed/player?id=49&t=1&s=1&fpv=1&access=OiHE3FBw&utm_source=JoVE_RSpace"));
+
+    assertFalse(iframeHandler.isKnownIframeSrc(""));
+    assertFalse(iframeHandler.isKnownIframeSrc("test"));
+    assertFalse(
+        iframeHandler.isKnownIframeSrc("https://calendar.google.com/calendar/embed?src=pl.uk"));
+    assertFalse(iframeHandler.isKnownIframeSrc(" https://www.youtube.com/embed/YkRldqVfTJo"));
+    assertFalse(iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/YkRldqVfTJo-dummy!"));
+  }
+
+  @Test
+  public void checkYoutubeIframeConversion() {
+
+    // youtube embed code fragment
+    String youtubeEmbed =
+        "<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/q27r-ZBw9lI\""
+            + " title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay;"
+            + " clipboard-write; encrypted-media; gyroscope; picture-in-picture\" "
+            + "allowfullscreen></iframe>";
+    String expectedConvertedYoutubeEmbed =
+        "<p class=\"rsKnownIframeReplacement\""
+            + " data-src=\"https://www.youtube.com/embed/q27r-ZBw9lI\" data-title=\"YouTube video"
+            + " player\" data-width=\"560\" data-height=\"315\" data-frameborder=\"0\""
+            + " data-allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope;"
+            + " picture-in-picture\" data-allowfullscreen=\"\"></p>";
+
+    // youtube embed code fragment, with 'privacy enhanced mode' selected
+    String youtubePrivacyModeEmbed =
+        "<iframe width=\"560\" height=\"315\""
+            + " src=\"https://www.youtube-nocookie.com/embed/YkRldqVfTJo?start=18\" title=\"YouTube"
+            + " video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write;"
+            + " encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
+    String expectedConvertedYoutubePrivacyModeEmbed =
+        "<p class=\"rsKnownIframeReplacement\""
+            + " data-src=\"https://www.youtube-nocookie.com/embed/YkRldqVfTJo?start=18\""
+            + " data-title=\"YouTube video player\" data-width=\"560\" data-height=\"315\""
+            + " data-frameborder=\"0\" data-allow=\"accelerometer; autoplay; clipboard-write;"
+            + " encrypted-media; gyroscope; picture-in-picture\" data-allowfullscreen=\"\"></p>";
+
+    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n%s\n<p>end</p>";
+    String htmlFragment = String.format(htmlFragmentFormat, youtubeEmbed, youtubePrivacyModeEmbed);
+    String expectedConvertedHtml =
+        String.format(
+            htmlFragmentFormat,
+            expectedConvertedYoutubeEmbed,
+            expectedConvertedYoutubePrivacyModeEmbed);
+
+    String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(htmlFragment);
+    assertEquals(expectedConvertedHtml, convertedHtml);
+
+    String restoredHtml = iframeHandler.decodeKnownIframesFromParagraphs(convertedHtml);
+    String restoredHtmlAdjustedForEqualsAssertion =
+        restoredHtml
+            .replaceAll("/p> <iframe", "/p>\n<iframe")
+            .replaceAll("/> <iframe", "/>\n<iframe")
+            .replaceAll("> </iframe>", "></iframe>")
+            .replaceAll("allowfullscreen=\"\"", "allowfullscreen");
+    assertEquals(htmlFragment, restoredHtmlAdjustedForEqualsAssertion);
+  }
+
+  @Test
+  public void checkJoveIframeConversion() {
+
+    // jove embed code fragment
+    String joveEmbed =
+        "<iframe id=\"embed-iframe\" allowTransparency=\"true\" allow=\"encrypted-media *\""
+            + " allowfullscreen height=\"415\" width=\"460\" border=\"0\" scrolling=\"no\""
+            + " frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
+            + " src=\"https://www.jove.com/embed/player?id=54239&t=1&s=1&fpv=1\" ><p><a"
+            + " title=\"Genome-wide Purification of Extrachromosomal Circular DNA from Eukaryotic"
+            + " Cells\" "
+            + "href=\"https://www.jove.com/v/54239/genome-wide-purification-extrachromosomal-circular-dna-from\">Genome-wide"
+            + " Purification of Extrachromosomal Circular DNA from Eukaryotic Cells"
+            + "</a></p></iframe>";
+    String expectedConvertedJoveEmbed =
+        "<p class=\"rsKnownIframeReplacement\" "
+            + "data-src=\"https://www.jove.com/embed/player?id=54239&amp;t=1&amp;s=1&amp;fpv=1\" "
+            + "data-width=\"460\" data-height=\"415\" data-border=\"0\" data-frameborder=\"0\" "
+            + "data-marginwheight=\"0\" data-marginwidth=\"0\" "
+            + "data-allow=\"encrypted-media *\" data-allowfullscreen=\"\" "
+            + "data-allowtransparency=\"true\" data-scrolling=\"no\"></p>";
+    String expectedRestoredJoveEmbed =
+        "<iframe width=\"460\" height=\"415\""
+            + " src=\"https://www.jove.com/embed/player?id=54239&amp;t=1&amp;s=1&amp;fpv=1\""
+            + " border=\"0\" frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
+            + " allow=\"encrypted-media *\" allowfullscreen=\"\" allowtransparency=\"true\""
+            + " scrolling=\"no\"> </iframe>";
+
+    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n<p>end</p>";
+    String htmlFragment = String.format(htmlFragmentFormat, joveEmbed);
+    String expectedConvertedHtml = String.format(htmlFragmentFormat, expectedConvertedJoveEmbed);
+
+    String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(htmlFragment);
+    assertEquals(expectedConvertedHtml, convertedHtml);
+
+    String restoredHtml = iframeHandler.decodeKnownIframesFromParagraphs(convertedHtml);
+    String restoredHtmlAdjustedForEqualsAssertion =
+        restoredHtml.replaceAll("/p> <iframe", "/p>\n<iframe");
+    String expectedRestoredHtml = String.format(htmlFragmentFormat, expectedRestoredJoveEmbed);
+    assertEquals(expectedRestoredHtml, restoredHtmlAdjustedForEqualsAssertion);
+  }
+
+  @Test
+  public void checkOnlyKnownValidAttributesEncoded() {
+
+    // youtube embed code fragment with invalid/unknown attributes
+    String youtubeEmbed =
+        "<iframe width=\"<?>\" height=\"315a\" "
+            + "src=\"https://www.youtube.com/embed/YkRldqVfTJo\" "
+            + "title=\"YouTube video player\" allow=\"everything\" "
+            + "allowTransparency=\"why\" scrolling=\"sure\" unknown=\"yes\">"
+            + "</iframe>";
+    String expectedConvertedYoutubeEmbed =
+        "<p class=\"rsKnownIframeReplacement\" "
+            + "data-src=\"https://www.youtube.com/embed/YkRldqVfTJo\" "
+            + "data-title=\"YouTube video player\"></p>";
+
+    String htmlFragmentFormat = "<p>start</p> <img src=\"123\" />\n%s\n<p>end</p>";
+    String htmlFragment = String.format(htmlFragmentFormat, youtubeEmbed);
+    String expectedConvertedHtml = String.format(htmlFragmentFormat, expectedConvertedYoutubeEmbed);
+
+    String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(htmlFragment);
+    assertEquals(expectedConvertedHtml, convertedHtml);
+  }
+
+  @Test
+  public void checkAttributeValidityPatterns() {
+
+    assertNull(iframeHandler.getEncodedAttrValue("title", "Matt's title"));
+    assertEquals("Test Title", iframeHandler.getEncodedAttrValue("title", "Test Title"));
+
+    assertNull(iframeHandler.getEncodedAttrValue("width", "abc"));
+    assertNull(iframeHandler.getEncodedAttrValue("width", "-5"));
+    assertEquals("5", iframeHandler.getEncodedAttrValue("width", "5"));
+    assertNull(iframeHandler.getEncodedAttrValue("height", "abc"));
+    assertEquals("123", iframeHandler.getEncodedAttrValue("width", "123"));
+
+    assertNull(iframeHandler.getEncodedAttrValue("border", "abc"));
+    assertEquals("123", iframeHandler.getEncodedAttrValue("border", "123"));
+    assertNull(iframeHandler.getEncodedAttrValue("frameborder", "abc"));
+    assertEquals("123", iframeHandler.getEncodedAttrValue("frameborder", "123"));
+    assertNull(iframeHandler.getEncodedAttrValue("marginwheight", "abc"));
+    assertEquals("123", iframeHandler.getEncodedAttrValue("marginwheight", "123"));
+    assertNull(iframeHandler.getEncodedAttrValue("marginwidth", "abc"));
+    assertEquals("123", iframeHandler.getEncodedAttrValue("marginwidth", "123"));
+
+    assertNull(iframeHandler.getEncodedAttrValue("allow", "unknown"));
+    assertEquals(
+        "encrypted-media *", iframeHandler.getEncodedAttrValue("allow", "encrypted-media *"));
+    assertEquals("accelerometer;", iframeHandler.getEncodedAttrValue("allow", "accelerometer;"));
+    assertEquals("autoplay", iframeHandler.getEncodedAttrValue("allow", "autoplay"));
+    assertEquals(
+        "gyroscope; picture-in-picture; gyroscope;",
+        iframeHandler.getEncodedAttrValue("allow", "gyroscope; picture-in-picture; gyroscope;"));
+
+    assertNull(iframeHandler.getEncodedAttrValue("allowfullscreen", "abc"));
+    assertEquals("", iframeHandler.getEncodedAttrValue("allowfullscreen", ""));
+    assertNull(iframeHandler.getEncodedAttrValue("allowtransparency", "yes"));
+    assertEquals("true", iframeHandler.getEncodedAttrValue("allowtransparency", "true"));
+    assertNull(iframeHandler.getEncodedAttrValue("scrolling", "true"));
+    assertEquals("no", iframeHandler.getEncodedAttrValue("scrolling", "no"));
+  }
+}

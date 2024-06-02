@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+  <!--   <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" /> -->
+<!-- 	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManagerTest" />
+
+		override these for application-specific URLs if you like: <property 
+			name="loginUrl" value="/login.jsp"/> <property name="successUrl" value="/home.jsp"/> 
+			<property name="unauthorizedUrl" value="/unauthorized.jsp"/>
+		The 'filters' property is not necessary since any declared javax.servlet.Filter 
+			bean
+		defined will be automatically acquired and available via its beanName 
+			in chain
+		definitions, but you can perform instance overrides or name aliases 
+			here if you like:
+		<property name="filters"> <util:map> <entry key="anAlias" value-ref="someFilter"/> 
+			</util:map> </property>
+
+		<property name="filterChainDefinitions">
+			<value>
+				# some example chain definitions:
+				/admin/** = authc, roles[admin]
+				/docs/** = authc, perms[document:read]
+				/** = authc
+				# more URL-to-FilterChain definitions here
+			</value>
+		</property>
+	</bean> -->
+
+	<!--   EhCache library setup. This creates a shared instance of eh-cache shiro
+	  manager that can be reused across multiple spring context restarts during test run -->
+<!-- 	 <bean id="ehcache-shiro"
+		class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean"
+		p:shared="true" p:config-location="classpath:ehcache-spring.xml" />
+     we're setting an actual reusable ehcache object here. If we just set in the ehcache config file
+        location  then Shiro will create a new cache manager each time a spring context is loaded, and
+         this is not allowed since ehcache 2.5,.
+	<bean id="ehcacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+		<property name="cacheManager" ref="ehcache-shiro" />
+	</bean> 
+ -->
+	<!-- <bean id="securityManagerTest" class="org.apache.shiro.mgt.DefaultSecurityManager">
+		<property name="realms">
+			<list>
+				<ref bean="myRealm" />
+				<ref bean="oauthRealm" />
+				<ref bean="apiRealm" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="apiRealm" class="com.researchspace.auth.ApiRealmTestSpy">
+		<property name="authenticationCachingEnabled" value="true" />
+		<property name="authenticationCacheName" value="API.authenticationCache" />
+		<property name="cacheManager" ref="ehcacheManager"/>
+	</bean>
+	<bean id="oauthRealm" class="com.researchspace.auth.ExternalAuthPassThruRealm" /> -->
+     
+
+</beans>
+

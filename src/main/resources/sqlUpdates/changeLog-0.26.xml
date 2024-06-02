@@ -1,0 +1,187 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<!-- Changes for version 0.26 June 2015-->
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets !  -->
+<!-- Add changesets here... --> 
+
+    <changeSet id="20-05-2015a" author="matthias" context="run">
+        <comment>Renaming SambaUserFolder table to NfsFileStore</comment>
+        <renameTable newTableName="NfsFileStore" oldTableName="SambaUserFolder" />
+    </changeSet>
+
+    <changeSet id="20-05-2015b" author="matthias" context="run">
+        <comment>Renaming NfsFileStore columns to remove Samba references</comment>
+        <renameColumn tableName="NfsFileStore" columnDataType="VARCHAR(255)" 
+            oldColumnName="smbFolderName" newColumnName="name" />
+        <renameColumn tableName="NfsFileStore" columnDataType="VARCHAR(255)" 
+            oldColumnName="smbFolderPath" newColumnName="path" />
+    </changeSet>
+    
+    <changeSet id="25-05-2015a" author="matthias" context="run">
+        <comment>Adding NfsFileSystem table</comment>
+        <createTable tableName="NfsFileSystem">
+            <column autoIncrement="true" name="id" type="BIGINT(19)">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="authDetails" type="VARCHAR(255)" />
+            <column name="authType" type="VARCHAR(255)" />
+            <column name="clientDetails" type="VARCHAR(255)" />
+            <column name="clientType" type="VARCHAR(255)" />
+            <column name="disabled" type="BIT(1)">
+                <constraints nullable="false" />
+            </column>
+            <column name="name" type="VARCHAR(255)" />
+            <column name="url" type="VARCHAR(255)" />
+        </createTable>
+    </changeSet>
+    
+    <!-- next two changesets were added later but deliberately moved here, so the 
+        NfsFileSystem table engine is changed before trying to add foreign key --> 
+    <changeSet id="28-05-2015a" author="matthias" context="run">
+        <comment>Some refactoring of NfsFileSystem table</comment>
+        <addColumn tableName="NfsFileSystem">
+            <column name="authOptions" type="VARCHAR(255)" />
+        </addColumn>
+        <addColumn tableName="NfsFileSystem">
+            <column name="clientOptions" type="VARCHAR(255)" />
+        </addColumn>
+        <dropColumn columnName="authDetails" tableName="NfsFileSystem" />
+        <dropColumn columnName="clientDetails" tableName="NfsFileSystem" />
+        <sql>alter table NfsFileSystem engine=InnoDB;</sql>
+    </changeSet>
+    
+    <changeSet id="28-05-2015b" author="matthias" context="run">
+        <comment>Some more refactoring of NfsFileSystem table</comment>
+        <modifyDataType columnName="authOptions"
+            newDataType="clob" tableName="NfsFileSystem" />
+        <modifyDataType columnName="clientOptions"
+            newDataType="clob" tableName="NfsFileSystem" />
+    </changeSet>    
+    <!-- end of moved changesets. adding foreing key into NfsFileStore 
+        in the next changeSet should work fine now. -->
+    
+    <changeSet id="25-05-2015b" author="matthias" context="run">
+        <comment>Adding relation from NfsFileStore to NfsFileSystem</comment>
+        <addColumn tableName="NfsFileStore">
+            <column name="fileSystem_id" type="BIGINT(19)" />
+        </addColumn>
+        <addForeignKeyConstraint
+            baseColumnNames="fileSystem_id" baseTableName="NfsFileStore"
+            constraintName="FK9091AD6ADF43272B" deferrable="false"
+            initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+            referencedColumnNames="id" referencedTableName="NfsFileSystem" />
+    </changeSet>
+    
+    <changeSet id="27-05-2015a" author="richard" context="run">
+        <comment>Adding IP listing table for sysadminm</comment>
+        <createTable tableName="WhiteListedSysAdminIPAddress">
+            <column autoIncrement="true" name="id" type="BIGINT(19)">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="ipAddress" type="VARCHAR(255)" />
+        </createTable>
+    </changeSet>
+
+	<changeSet author="fjlopez" id="01-06-2015a" context="run">
+		<comment>Adding new table to manage starred records</comment>
+		<createTable tableName="RecordUserStarring">
+			<column name="id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+			<column name="record_id" type="BIGINT(19)" />
+			<column name="user_id" type="BIGINT(19)" />
+		</createTable>
+		<sql>alter table RecordUserStarring engine=InnoDB;</sql>
+	</changeSet>
+	<changeSet author="fjlopez" id="01-06-2015b" context="run">
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="RecordUserStarring" />
+	</changeSet>
+	<changeSet author="fjlopez" id="01-06-2015c" context="run">
+		<addForeignKeyConstraint baseColumnNames="record_id"
+			baseTableName="RecordUserStarring" constraintName="FKE5BED77ECFF3DF14"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="BaseRecord" />
+	</changeSet>
+	<changeSet author="fjlopez" id="01-06-2015d" context="run">
+		<addForeignKeyConstraint baseColumnNames="user_id"
+			baseTableName="RecordUserStarring" constraintName="FKE5BED77EDE6F978E"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+
+	<changeSet author="fjlopez" id="03-06-2015a" context="run">
+		<preConditions onFail="MARK_RAN">
+			<tableExists tableName="RecordUserStarring" />
+		</preConditions>
+		<dropForeignKeyConstraint baseTableName="RecordUserStarring"
+			constraintName="FKE5BED77ECFF3DF14" />
+	</changeSet>
+	<changeSet author="fjlopez" id="03-06-2015b" context="run">
+		<preConditions onFail="MARK_RAN">
+			<tableExists tableName="RecordUserStarring" />
+		</preConditions>
+		<dropForeignKeyConstraint baseTableName="RecordUserStarring"
+			constraintName="FKE5BED77EDE6F978E" />
+	</changeSet>
+	<changeSet author="fjlopez" id="03-06-2015c" context="run">
+		<preConditions onFail="MARK_RAN">
+			<tableExists tableName="RecordUserStarring" />
+		</preConditions>
+		<comment> Drop RecordUserStarring table</comment>
+		<dropTable tableName="RecordUserStarring" />
+	</changeSet>
+
+	<changeSet author="fjlopez" id="03-06-2015d" context="run">
+		<createTable tableName="RecordUserFavorites">
+			<column name="id" type="BIGINT(19)">
+				<constraints nullable="false" />
+			</column>
+			<column name="record_id" type="BIGINT(19)" />
+			<column name="user_id" type="BIGINT(19)" />
+		</createTable>
+		<sql>alter table RecordUserFavorites engine=InnoDB;</sql>
+	</changeSet>
+	<changeSet author="fjlopez" id="03-06-2015e" context="run">
+		<addPrimaryKey columnNames="id" constraintName="PRIMARY"
+			tableName="RecordUserFavorites" />
+	</changeSet>
+	<changeSet author="fjlopez" id="03-06-2015f" context="run">
+		<addForeignKeyConstraint baseColumnNames="record_id"
+			baseTableName="RecordUserFavorites" constraintName="FKE6B089DBCFF3DF14"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="BaseRecord" />
+	</changeSet>
+	<changeSet author="fjlopez" id="03-06-2015g" context="run">
+		<addForeignKeyConstraint baseColumnNames="user_id"
+			baseTableName="RecordUserFavorites" constraintName="FKE6B089DBDE6F978E"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	<changeSet author="fjlopez" id="03-06-2015h" context="run">
+		<addUniqueConstraint columnNames="record_id, user_id"
+			constraintName="record_id" deferrable="false" disabled="false"
+			initiallyDeferred="false" tableName="RecordUserFavorites" />
+	</changeSet>
+
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets and leave this reminder in place ! 
+     
+     Please only put below liquibase changeSets containing customChange command. 
+   Other updates should go above. That's because customChange code should be the 
+   last changeSet in a given changeLog file.  -->
+   
+    <changeSet id="nfsFileSystem_import" author="matthias" context="run">
+        <comment>Migrating netfilestore deployment properties into NfsFileSystem table</comment>
+        <customChange
+            class="com.researchspace.dao.customliquibaseupdates.v26.NfsFileSystemImporter">
+        </customChange>
+    </changeSet>
+    
+<!--  only customChange changeSets should be placed here -->
+
+</databaseChangeLog>

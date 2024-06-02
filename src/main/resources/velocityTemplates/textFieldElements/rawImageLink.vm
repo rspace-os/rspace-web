@@ -1,0 +1,19 @@
+#*
+
+ NOT split the src string in different lines which generate errors.
+  
+ Raw image link HTML template.
+ Arguments needed for mustache are:
+  - fieldId - the field into which the data is inserted.
+  - itemId  - the image ID
+  - name - the image name
+  - width the image width
+  - height the image height
+  - rotation
+  - milliseconds - modification date of the image
+*#
+<p>
+ <img id="${fieldId}-${itemId}" class="imageDropped inlineImageThumbnail"
+   src="#imgThumbnailSrc ($fieldId $itemId $width $height  $rotation $milliseconds)"
+   alt="image $name" width="$width" height="$height" data-size="${width}-${height}" data-rotation="${rotation}" />
+</p>&nbsp;

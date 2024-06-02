@@ -1,0 +1,92 @@
+/*Common Research Space widgets*/
+
+/*
+  select All/None button
+  Usage:
+  In HTML write this (emmet notation: http://docs.emmet.io/cheat-sheet/):
+  
+  button.rs-select-all > span.rs-select-all-icon + span.rs-select-all-text + span.rs-select-none-text
+  
+  In JS handle clicks on element with .rs-select-all class and toggle .active class on it.
+  From "button.rs-select-all.active" to "button.rs-select-all"
+*/
+.rs-select-all {
+	cursor: pointer;
+	background-color: rgba(158,158,158,0.0);
+	padding: 2px 5px 2px 5px;
+    width: auto;
+    display: inline-block;
+}
+
+.rs-select-all:focus, .rs-select-all.active, .rs-select-all:focus:active {
+  background-image: none;
+  outline: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+.rs-select-all:hover {
+	color:#cc0000;
+	background-color: rgba(158,158,158, 0.2);
+}
+/*draw icon using css border with the rotating trick*/
+.rs-select-all .rs-select-all-icon {
+	display: inline-block;
+	position:relative;
+	width: 10px;
+}
+
+.rs-select-all .rs-select-all-icon:after {
+  position: relative;
+	border-width: 1px;
+	border-style: solid;
+	color:#1465b7;
+  top: -9px;
+  left: 0px;
+	transition: color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.rs-select-all:hover .rs-select-all-icon:after {
+	border-color: #cc0000;
+}
+
+.rs-select-all.active .rs-select-all-icon:after {
+    content: '';
+    position: absolute;
+    width: 7px;
+    height: 4px;
+    background: transparent;
+    top: -7px;
+    left: -5px;
+    border-top: none;
+    border-right: none;
+    -webkit-transform: rotate(-45deg);
+    -moz-transform: rotate(-45deg);
+    -o-transform: rotate(-45deg);
+    -ms-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+    border-radius: 0px;
+}
+
+.rs-select-all .rs-select-all-icon:after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: transparent;
+    bottom: 1px;
+   	border-radius: 2px;
+}
+/*toggle functionality in css. In js only active class must be changed to change icon*/
+.rs-select-all.active .rs-select-none-text {
+	display:none;
+}
+.rs-select-all .rs-select-none-text {
+	display:inline;
+}
+.rs-select-all.active .rs-select-all-text {
+	display:inline;
+}
+.rs-select-all .rs-select-all-text {
+	display:none;
+}

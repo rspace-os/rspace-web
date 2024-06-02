@@ -1,0 +1,14 @@
+#*
+Template for messaging a user that a document was witnessed ( or not ).
+Arguments:
+ - user - the User who witnessed/declined to witness the document
+ - document -  the document being witnessed ( or not )
+ - status - the MessageStatus
+*#
+#if (${status} == 'COMPLETED')
+${user.fullName} has witnessed your signature of document ${record.name}.
+#elseif (${status} == 'REJECTED')
+${user.fullName} (${user.email}) has declined to witness your signature of document ${record.name}.
+#end
+ <p/>
+ #dontReply

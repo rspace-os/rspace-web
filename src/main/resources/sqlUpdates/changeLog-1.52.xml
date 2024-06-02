@@ -1,0 +1,100 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.52 July 2018 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- Add changesets here... -->
+	<changeSet id="03-07-2018a" author="radams" context="run">
+		<comment> Add rotation to EcatImage</comment>
+		<addColumn tableName="EcatImage">
+			<column name="rotation" type="TINYINT" defaultValueNumeric="0"></column>
+		</addColumn>
+		<addNotNullConstraint tableName="EcatImage"
+			columnName="rotation" defaultNullValue="0" columnDataType="TINYINT" />
+		<addColumn tableName="EcatImage_AUD">
+			<column name="rotation" type="TINYINT" defaultValueNumeric="0"></column>
+		</addColumn>
+		<addNotNullConstraint tableName="EcatImage_AUD"
+			columnName="rotation" defaultNullValue="0" columnDataType="TINYINT"  />
+	</changeSet>
+	<changeSet id="03-07-2018b" author="radams" context="run">
+		<comment> Add rotation to Thumbnail</comment>
+		<addColumn tableName="Thumbnail">
+			<column name="rotation" type="TINYINT" defaultValueNumeric="0"  ></column>
+		</addColumn>
+		<addNotNullConstraint tableName="Thumbnail"
+			columnName="rotation" defaultNullValue="0"  columnDataType="TINYINT"/>
+	</changeSet>
+	<changeSet id="18-07-30a" author="richard" context="run">
+	 <preConditions onFail="WARN" onFailMessage="Cannot resize uid index to satisfy utf-8 requirements" 
+	     onError="WARN" onErrorMessage="Cannot resize index to satisfy utf-8 requirements">
+	    <sqlCheck expectedResult="0">
+	         select if (max(length(uid)) > 191, 1,0) from ArchivalCheckSum;
+	     </sqlCheck>
+	 </preConditions>
+	 <comment>
+	  Reduce key size of uid column so that for MySQL  &lt; 5.7 we can use utf8mb4 4 byte character set
+	    and satisfy max index size of 767 bytes. RSPAC-932
+	 </comment>
+	 <sql>alter table ArchivalCheckSum modify uid varchar(191) not null;</sql>
+	</changeSet>
+	<changeSet id="18-07-30b" author="richard" context="run">
+	
+	 <preConditions onFail="WARN" onFailMessage="Cannot resize App name index to satisfy utf-8 requirements" 
+	     onError="WARN" onErrorMessage="Cannot resize index to satisfy utf-8 requirements">
+	     <and>
+	    <tableExists tableName="App"/>
+	    <sqlCheck expectedResult="0">
+	         select if (max(length(name)) > 50, 1,0) from App;
+	     </sqlCheck>
+	      </and>
+	 </preConditions>
+	 <comment>
+	  Reduce key size of name column to 50 so that for MySQL  &lt; 5.7 we can use utf8mb4 4 byte character set
+	    and satisfy max index size of 767 bytes. RSPAC-932
+	 </comment>
+	 <sql>alter table App modify name varchar(50) not null;</sql>
+	</changeSet>
+
+    <changeSet id="18-07-30c" author="richard" context="run">
+	
+	 <preConditions onFail="WARN" onFailMessage="Cannot resize UserConnection indexes to satisfy utf-8 requirements" 
+	     onError="WARN" onErrorMessage="Cannot resize index to satisfy utf-8 requirements">
+	   <and>
+	    <tableExists tableName="UserConnection"/>
+	    <sqlCheck expectedResult="0">
+	         select if (max(length(userId)) > 50, 1,0) from UserConnection;
+	     </sqlCheck>
+	     <sqlCheck expectedResult="0">
+	         select if (max(length(providerId)) > 50, 1,0) from UserConnection;
+	     </sqlCheck>
+	      <sqlCheck expectedResult="0">
+	         select if (max(length(providerUserId)) > 50, 1,0) from UserConnection;
+	     </sqlCheck>
+	   </and>
+	 </preConditions>
+	 <comment>
+	  Reduce key size of columns  so that for MySQL  &lt; 5.7 we can use utf8mb4 4 byte character set
+	    and satisfy max index size of 767 bytes. RSPAC-932
+	 </comment>
+	 <sql>alter table UserConnection modify userId varchar(50) not null;</sql>
+	 <sql>alter table UserConnection modify providerId varchar(50) not null;</sql>
+	 <sql>alter table UserConnection modify providerUserId varchar(50) not null;</sql>
+	</changeSet>
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+
+	<!-- -->
+
+
+</databaseChangeLog>

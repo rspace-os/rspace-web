@@ -1,0 +1,15 @@
+<p>
+ Dear ${fullName}, <br/>
+ 
+ Thank you  for registering with RSpace.
+ <p/>
+ Your account is now activated and can be accessed by going to: <p/>
+  ${link} <p/>
+  in your browser.
+ <p/>
+ #dontReply - please contact support@researchspace.com
+  for more information.
+  
+#notificationPrefInfoNewUser 
+  
+#signature

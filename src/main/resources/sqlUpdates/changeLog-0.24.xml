@@ -1,0 +1,148 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+<!-- Changes for version 0.24 March 2015-->
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets !  -->
+<!-- Add changesets here... --> 
+<changeSet id="06-03-2015b" author="richard" context="run">
+    <comment>removing unused typex in BaseRecord</comment>
+    <dropColumn columnName="typex" tableName="BaseRecord"/>
+    <dropColumn columnName="typex" tableName="BaseRecord_AUD"/>
+</changeSet> 
+   
+<changeSet id="16-03-2015a" author="matthias" context="run">
+    <comment>Adding table for ScheduledMaintenance entity</comment>
+    <createTable tableName="ScheduledMaintenance">
+        <column autoIncrement="true" name="id" type="BIGINT(19)">
+            <constraints primaryKey="true"/>
+        </column>
+        <column name="endDate" type="datetime">
+            <constraints nullable="false"/>
+        </column>
+        <column name="message" type="VARCHAR(255)"/>
+        <column name="startDate" type="datetime">
+            <constraints nullable="false"/>
+        </column>
+        <column name="stopUserLoginDate" type="datetime">
+            <constraints nullable="false"/>
+        </column>
+    </createTable>
+    <sql>alter table ScheduledMaintenance engine=InnoDB;</sql>
+</changeSet>
+
+<changeSet author="radams" id="16-3-15bb" context="run">
+<comment> Boolean indicator of a form that is temporary</comment>
+<addColumn tableName="RSForm">
+<column name="temporary" type="BIT(1)">
+<constraints nullable="false"/>
+</column>
+</addColumn>
+<addColumn tableName="RSForm_AUD">
+<column name="temporary" type="BIT(1)">
+<constraints nullable="false"/>
+</column>
+</addColumn>
+</changeSet>
+<changeSet  author="radams" id="16-3-15cc">
+<comment> update existing temporay forms to set temporary to true, using a temporary MySQL table.  We
+ don't need to do this for _AUD tables as temporary forms are never saved in audit history, so is always false</comment>
+<sql>create table tempFormTable as select tempForm_id from RSForm where tempForm_id is not NULL;</sql>
+<sql>update RSForm, tempFormTable set temporary = 1 where id=tempFormTable.tempForm_id;</sql>
+<dropTable tableName="tempFormTable"/>
+</changeSet>
+<changeSet author="radams (generated)" id="1427122989358-2"  context="run">
+<comment>Create join table for EcatMedia and Field</comment>
+<createTable tableName="FieldAttachment">
+ <column autoIncrement="true" name="id" type="BIGINT(19)">
+            <constraints primaryKey="true"/>
+        </column>
+<column name="field_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="mediafile_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+</createTable>
+</changeSet>
+<changeSet author="radams (generated)" id="1427122989358-3" context="run">
+<comment>Create join table  _AUD for EcatMedia and Field</comment>
+<createTable tableName="FieldAttachment_AUD">
+ <column autoIncrement="true" name="id" type="BIGINT(19)">
+            <constraints primaryKey="true"/>
+        </column>
+<column name="REV" type="INT(10)">
+<constraints nullable="false"/>
+</column>
+<column name="field_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="mediafile_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="REVTYPE" type="TINYINT(3)"/>
+</createTable>
+</changeSet>
+
+<changeSet author="radams (generated)" id="1427122989358-8"  context="run">
+<comment> foreign key mappings for media/field join table mappings</comment>
+<addForeignKeyConstraint baseColumnNames="REV" baseTableName="FieldAttachment_AUD" constraintName="FK1A3736B0DF74E053" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="REV" referencedTableName="REVINFO"/>
+<addForeignKeyConstraint baseColumnNames="mediaFile_id" baseTableName="FieldAttachment_AUD" constraintName="FK2978505F3319B855" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="EcatMediaFile_AUD"/>
+<addForeignKeyConstraint baseColumnNames="field_id" baseTableName="FieldAttachment_AUD" constraintName="FK2978505F33C51952" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Field_AUD"/>
+<addForeignKeyConstraint baseColumnNames="mediaFile_id" baseTableName="FieldAttachment" constraintName="FK2478505F3319B855" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="EcatMediaFile"/>
+<addForeignKeyConstraint baseColumnNames="field_id" baseTableName="FieldAttachment" constraintName="FK2878505F33C51952" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Field"/>
+</changeSet>
+<changeSet id="radams-test1" author="radams">
+<comment>Creates entity links for attached records</comment>
+<customChange class="com.researchspace.dao.customliquibaseupdates.AddLinksToDocumentsInFields">
+
+</customChange>
+</changeSet> 
+
+<changeSet id="01-04-2015" author="fjlopez" context="run">
+	<comment>delete 'RECORD:SHARE,EXPORT,READ:group=COLLABGROUP' permission for collaboration groups - RSPAC-382</comment>
+	<sql>
+		delete from UserGroup_permissionStrings where UserGroup_id in (select id from UserGroup where group_id in (select id from rsGroup where groupType=1)) and permissionStrings like '%RECORD%';
+	</sql>
+</changeSet>
+
+<changeSet id="02-04-2015a" author="fjlopez" context="run">
+	<comment>delete 'FORM' and 'COMMS' permissions for PIs in a collaboration groups - RSPAC-382</comment>
+	<sql>
+		delete from UserGroup_permissionStrings where UserGroup_id in (select id from UserGroup where group_id in (select id from rsGroup where groupType=1) and roleInGroup=1) and (permissionStrings like '%FORM%' or permissionStrings like '%COMMS%');
+	</sql>
+</changeSet>
+
+<changeSet id="02-04-2015b" author="fjlopez" context="run">
+	<comment>delete 'FORM' permissions for RS_LAB_ADMINs in a collaboration groups - RSPAC-382</comment>
+	<sql>
+		delete from UserGroup_permissionStrings where UserGroup_id in (select id from UserGroup where group_id in (select id from rsGroup where groupType=1) and roleInGroup=2) and (permissionStrings like '%FORM%');
+	</sql>
+</changeSet>
+
+<changeSet id="02-04-2015xyz" author="richard">
+<comment>Sets field ids into thumbnails which are currently null for chem elements</comment>
+<customChange class="com.researchspace.dao.customliquibaseupdates.ThumbnailAddParentIds"/>
+</changeSet>
+
+<changeSet id="09-04-2015" author="fjlopez" context="run">
+	<comment>Rename column 'revisionId' on Thumbnail to 'revision'</comment>
+	<renameColumn tableName="Thumbnail" oldColumnName="revisionId" newColumnName="revision" columnDataType="BIGINT(20)"/>
+</changeSet>
+
+<changeSet id="09-04-2015b" author="radams" context="run">
+	<comment>modify data type</comment>
+	<modifyDataType tableName="Thumbnail"  columnName="revision" newDataType="BIGINT(20)"/>
+</changeSet>
+
+<changeSet id="09-04-15mk" author="matthias" context="run">
+    <comment>Removing not-null constraint from RSForm_AUD.temporary column</comment>
+    <dropNotNullConstraint columnDataType="BIT(1)" columnName="temporary" tableName="RSForm_AUD"/>
+</changeSet>
+
+ 
+<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+   new changesets and leave this reminder in place !  -->
+ 
+</databaseChangeLog>

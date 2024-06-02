@@ -1,0 +1,616 @@
+/**
+ * Global variables and mixins are defined here.
+ *
+ * Import in other SASS stylesheets using:
+ * @import 'global_vars';
+ */
+
+a.templateInfo {
+  font-size: 85%;
+  color: blue; }
+
+#search {
+  float: right;
+  width: 35% !important; }
+
+#searcher {
+  float: right;
+  margin: 3px 10px 0 0; }
+
+#dropper dt {
+  font: bold 12px;
+  position: relative;
+  max-width: 100%;
+  display: inline-block;
+  margin-right: 0;
+  padding: 0 5px;
+  cursor: pointer;
+  text-align: right;
+  color: #6a6f75;
+  border: 6px;
+  background: transparent; }
+  #dropper dt a {
+    font: bold 12px;
+    display: block;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: right;
+    color: #6a6f75;
+    border: 0;
+    background: transparent url("/images/blueDropDownArrow.png") no-repeat right center;
+    box-shadow: none; }
+    #dropper dt a:focus .ui-button-text {
+      text-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+    #dropper dt a span {
+      display: block;
+      margin: 0;
+      padding: 0 10px 0 0;
+      text-align: right;
+      color: #6a6f75;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      line-height: 1.1em;
+      font-weight: bold; }
+#dropper dd ul li {
+  line-height: normal;
+  text-align: left;
+  border: 0;
+  background: transparent !important;
+  background-image: none;
+  box-shadow: none; }
+  #dropper dd ul li span.value {
+    display: none; }
+  #dropper dd ul li a {
+    line-height: normal;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent !important;
+    background-image: none;
+    box-shadow: none; }
+#dropper span.hiddenSearchOption {
+  display: none; }
+
+#search_options {
+  font: bold 12px;
+  position: relative;
+  margin-right: 5px;
+  margin-left: 5px;
+  padding: 4px;
+  padding-right: 20px;
+  cursor: pointer;
+  text-align: right;
+  color: #6a6f75; }
+
+#search_date {
+  overflow: hidden;
+  width: 146px;
+  border: 0; }
+
+.searchInputHolder {
+  float: right;
+  height: 22px;
+  padding-top: 2px;
+  border: 1px solid #afafaf;
+  background-color: #fff; }
+
+#search_submit {
+  z-index: 5;
+  font-size: 20px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  padding-bottom: 5px;
+  right: -5px;
+  width: 36px;
+  cursor: pointer;
+  color: white;
+  border: none;
+  background-color: transparent; }
+  #search_submit:focus {
+    box-shadow: none !important;
+    text-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
+  #search_submit .glyphicon:hover {
+    text-shadow: 0px 1px 5px #505050; }
+
+#search_submit.search.ui-button {
+  height: 26px !important;
+  padding: 0 !important; }
+
+#search_submit.search.ui-button.ui-widget.ui-state-default {
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #6389a8), color-stop(100%, #6389a8));
+  background: -webkit-linear-gradient(top, #6389a8 0%, #6389a8 100%);
+  background: -ms-linear-gradient(top, #6389a8 0%, #6389a8 100%); }
+
+#search_options {
+  overflow: hidden;
+  text-indent: 1px;
+  text-overflow: '';
+  -webkit-appearance: none;
+  -moz-appearance: none; }
+
+input:focus {
+  outline: 0 none; }
+
+input[type=text]:focus {
+  outline: 0 none; }
+
+button:focus {
+  outline: 0 none; }
+
+.repeatElements {
+  width: 100%;
+  margin-bottom: 3px !important; }
+  .repeatElements.first {
+    width: 50% !important; }
+  .repeatElements .operator {
+    text-align: left;
+    padding-left: 40px !important;
+    padding-top: 4px;
+    line-height: 20px;
+    font-weight: bold;
+    color: #595959 !important; }
+
+.noRepeatElements {
+  float: left; }
+
+.controlElements {
+  float: right !important;
+  height: 23px; }
+  .controlElements .btn {
+    line-height: 21px !important;
+    float: right;
+    height: auto;
+    padding: 1px 4px !important; }
+
+.removeButton {
+  float: left;
+  width: 26px; }
+
+.advanced_search_text,
+.advanced_search_date {
+  position: relative;
+  float: left;
+  margin: 0px 6px;
+  padding: 0 0 0 6px;
+  height: 23px !important;
+  vertical-align: middle;
+  border: 1px solid #b6b6b6;
+  border-radius: 3px !important;
+  /*
+    -webkit-border-top-right-radius: 4px;
+            border-top-right-radius: 4px;
+    -webkit-border-bottom-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+
+       -moz-border-top-right-radius: 4px;
+       -moz-border-bottom-right-radius: 4px;
+    */ }
+
+#advancedSearch_submit {
+  margin-left: 8px;
+}
+
+.styled-select {
+  float: left;
+  width: 119px;
+  min-height: 23px;
+  margin: 0 20px 0 0 !important;
+  padding: 2px 5px !important;
+  border-radius: 3px !important; }
+  .styled-select:hover {
+    background-color: #dcd9d5; }
+
+.adders,
+.addCont {
+  cursor: pointer;
+  border: 1px solid #b6b6b6;
+  background: -moz-linear-gradient(top, #ededed 0%, #c4c4c4 100%);
+  background: -webkit-gradient linear, left top, left bottom, color-stop(0%, #ededed), color-stop(100%, #c4c4c4); }
+
+.removeIt {
+  height: 17px;
+  width: 17px;
+  padding: 0px !important;
+  display: inline-block;
+  line-height: 17px !important;
+  color: white !important;
+  border: 0;
+  border-radius: 11px;
+  margin: 3px !important;
+  background: #e38582;
+  font-weight: bold !important;
+  font-size: 16px !important; }
+  .removeIt:hover {
+    background: #da5c58; }
+
+.removeCont {
+  /*  font-family:Verdana, Arial, Helvetica, sans-serif;*/
+  font-weight: 900;
+  margin-top: 1px;
+  cursor: pointer;
+  text-align: center;
+  vertical-align: top;
+  color: #8e482d;
+  /* Borders */
+  border: 1px solid #b6b6b6;
+  background: -moz-linear-gradient(top, #ededed 0%, #c4c4c4 100%);
+  background: -webkit-gradient linear, left top, left bottom, color-stop(0%, #ededed), color-stop(100%, #c4c4c4); }
+
+#captionInfo {
+  padding: 0 3px 0 3px; }
+
+.orderButtonClass {
+  border: none;
+  border-radius: 0 !important;
+  background: transparent;
+  background-repeat: no-repeat;
+  background-position: center; }
+
+.msgArea {
+  font-weight: bold;
+  line-height: 22px;
+  /* the same as your div height */
+  display: none;
+  height: 22px;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid black; }
+
+div.imageThumbnailContainer {
+  position: relative;
+  display: inline; }
+
+#versionChoice {
+  display: none; }
+
+div.viewActionMenu {
+  position: absolute;
+  z-index: 10001;
+  top: 44px;
+  left: 96px;
+  display: none;
+  background-color: none; }
+
+.formfield_highlighted {
+  margin-bottom: 5px;
+  padding: 5px;
+  border: 2px solid #dddddd; }
+
+.bootstrap-custom-flat .breadcrumbElems {
+  font-size: 16px !important;
+  word-spacing: 5px;
+  color: #666 !important; }
+  .bootstrap-custom-flat .breadcrumbElems a.breadcrumbLink {
+    font-weight: 400 !important;
+    display: inline-block;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    color: #2196f3 !important;
+    line-height: 15px; }
+    .bootstrap-custom-flat .breadcrumbElems a.breadcrumbLink:hover {
+      cursor: pointer;
+      color: #0a6ebd !important; }
+  .bootstrap-custom-flat .breadcrumbElems #recordNameInBreadcrumb {
+    word-wrap: break-word;
+    word-break: break-all; }
+
+.rs-record-info-panel #inlineRenameRecordForm {
+  display: inline-block;
+  max-width: 100%; }
+  .rs-record-info-panel #inlineRenameRecordForm * {
+    box-sizing: border-box; }
+  .rs-record-info-panel #inlineRenameRecordForm.info-panel {
+    height: 19px; }
+    .rs-record-info-panel #inlineRenameRecordForm.info-panel input {
+      vertical-align: top;
+      padding-top: 0px;
+      height: 19px;
+      font-size: 15px;
+      float: left; }
+      .rs-record-info-panel #inlineRenameRecordForm.info-panel input.editable:hover, .rs-record-info-panel #inlineRenameRecordForm.info-panel input.editable:focus, .rs-record-info-panel #inlineRenameRecordForm.info-panel input.editable:active {
+        background: rgba(255, 255, 255, 0.9); }
+  .rs-record-info-panel #inlineRenameRecordForm #recordNameInHeader {
+    word-wrap: break-word;
+    line-height: 19px;
+    height: 19px; }
+    .rs-record-info-panel #inlineRenameRecordForm #recordNameInHeader.editable {
+      cursor: text; }
+  .rs-record-info-panel #inlineRenameRecordForm textarea,
+  .rs-record-info-panel #inlineRenameRecordForm input {
+    background: transparent;
+    border: 1px solid transparent;
+    min-width: 30px;
+    max-width: 100%;
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 19px;
+    padding: 0 1px;
+    color: inherit;
+    resize: none;
+    overflow: hidden;
+    /* displays Save button immediately when the Name input becomes focused */ }
+    .rs-record-info-panel #inlineRenameRecordForm textarea.editable:hover, .rs-record-info-panel #inlineRenameRecordForm textarea.editable:focus, .rs-record-info-panel #inlineRenameRecordForm textarea.editable:active,
+    .rs-record-info-panel #inlineRenameRecordForm input.editable:hover,
+    .rs-record-info-panel #inlineRenameRecordForm input.editable:focus,
+    .rs-record-info-panel #inlineRenameRecordForm input.editable:active {
+      border-color: transparent;
+      border-bottom: 2px solid #6389a8;
+      outline: none !important; }
+    .rs-record-info-panel #inlineRenameRecordForm textarea.editable:focus + button,
+    .rs-record-info-panel #inlineRenameRecordForm input.editable:focus + button {
+      opacity: 1.0 !important;
+      visibility: visible !important; }
+  .rs-record-info-panel #inlineRenameRecordForm button {
+    width: auto;
+    cursor: pointer;
+    height: 18px;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    padding: 1px 3px;
+    vertical-align: middle;}
+    .rs-record-info-panel #inlineRenameRecordForm button .glyphicon {
+      line-height: 19px;
+      height: 19px;
+      top: 0;
+      color: #2196f3; }
+      .rs-record-info-panel #inlineRenameRecordForm button .glyphicon:hover {
+        text-shadow: 1px 1px 3px #666; }
+
+.breadcrumb {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgb(230,230,230);
+}
+  .breadcrumb .breadcrumbTag {
+    padding: 6px 15px !important;
+    min-height: 0px !important;
+    height: auto; }
+    .breadcrumb .breadcrumbTag.empty {
+      padding: 0 !important; }
+
+      .breadcrumb .container {
+  display: flex;
+}
+.breadcrumb .container #breadcrumbTag_editorBcrumb {
+  flex-grow: 1;
+}
+.breadcrumb .container #status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+#ajaxTagsLoadingImg {
+    display: block;
+    z-index: 999;
+    position: fixed;
+}
+
+#notebookTags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  border: none;
+  float: none;
+  margin-left: 3px;
+  position: relative;
+  overflow: hidden;
+  display: inline;
+  line-height: 19px;
+  cursor: text; }
+  #notebookTags.tagit {
+    padding-top: 22px;
+    display: block;
+    line-height: 19px; }
+#notebookTags div.smallText {
+    font-size: 10px;
+}
+  #notebookTags li {
+    box-sizing: border-box;
+    display: inline-block;
+    margin: 0px 2px 1px;
+    padding: 1px 3px;
+    cursor: pointer;
+    line-height: 19px;
+    font-size: 15px;
+    border: 0px; }
+#notebookTags div.tagit-choice {
+    position: relative;
+    background: #6389a8;
+    color: #c0e2fc;
+    float: left;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    padding-right: 5px;
+    padding-left: 5px;
+    width: auto;
+    -webkit-border-radius:6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    line-height: 15px;
+    margin-right: 2px;
+    cursor: pointer;
+}
+#notebookTags div.tagit-choice-inv {
+    position: relative;
+    color: #6389a8;
+    background: #c0e2fc;
+    float: left;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: clip;
+    padding-right: 5px;
+    padding-left: 5px;
+    width: auto;
+    -webkit-border-radius:6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    line-height: 15px;
+    margin-right: 2px;
+    cursor: pointer;
+}
+    #notebookTags li.tagit-choice {
+      position: relative;
+      background: #6389a8;
+        white-space: nowrap;
+      color: #c0e2fc;
+      float: left;
+      max-width: 100%;
+      overflow: hidden;
+        white-space: nowrap;
+      text-overflow: clip;
+      padding-right: 19px;
+      width: auto;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      line-height: 15px; }
+      #notebookTags li.tagit-choice:hover {
+        color: white;
+        background: #567c9b; }
+    #notebookTags li .tagit-label {
+      font-size: inherit;
+      color: inherit;
+      overflow: visible;
+      display: inline-block; }
+    #notebookTags li .tagit-close {
+      font-size: inherit;
+      margin-left: 2px;
+      position: absolute;
+      right: 2px; }
+      #notebookTags li .tagit-close .text-icon {
+        box-sizing: border-box;
+        color: white;
+        height: 15px;
+        line-height: 11px;
+        display: inline-block;
+        border-radius: 7px;
+        padding: 2px;
+        width: 15px;
+        text-align: right; }
+        #notebookTags li .tagit-close .text-icon:hover {
+          background: #f36; }
+  #notebookTags .tagit-new {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 17px; }
+    #notebookTags .tagit-new input {
+      border: none;
+      border-bottom: 2px solid #6389a8;
+      max-width: 200px;
+      display: inline-block;
+      width: 100%; }
+      #notebookTags .tagit-new input:focus, #notebookTags .tagit-new input:hover, #notebookTags .tagit-new input:active {
+        background: rgba(255, 255, 255, 0.5); }
+
+#editTags,
+#saveTags {
+  display: inline-block;
+  height: 15px;
+  width: 15px;
+  background: transparent;
+  outline: none !important;
+  margin: 0;
+  padding: 1px;
+  cursor: pointer;
+  border: none;
+  font-size: 13px;
+  margin-left: 5px; }
+  #editTags .glyphicon,
+  #saveTags .glyphicon {
+    font-size: 13px;
+    color: #2196f3;
+    float: left; }
+    #editTags .glyphicon:hover,
+    #saveTags .glyphicon:hover {
+      text-shadow: 1px 1px 3px #666; }
+
+.newTabularView .mainTable {
+  /* padding for all columns except first two (checkbox and record type)
+       which are different (not textual) */
+  /* name column */
+  /* user column */
+  /* Creation Date & Last Modified */ }
+  .mainTable tr th {
+    border-bottom: 0px !important; }
+  .newTabularView .mainTable td:nth-child(n+3) {
+    padding-top: 12px; }
+  .newTabularView .mainTable td:nth-child(3),
+  .newTabularView .mainTable td:nth-child(7) {
+    overflow: hidden;
+    max-width: 500px;
+    text-overflow: ellipsis; }
+  .newTabularView .mainTable td:nth-child(4),
+  .newTabularView .mainTable td:nth-child(5),
+  .newTabularView .mainTable td:nth-child(7) {
+    white-space: nowrap; }
+  .newTabularView .mainTable {
+    position: relative;
+    top: -2.5px; }
+
+img[id^="sharedStatusImg_"], .witnessedImg, .favoriteImg {
+  position: relative;
+  top: -1px;
+  width: 20px;
+  height: 20px;
+}
+
+/* document/entry top header line */
+.rs-record-info-panel {
+  font-size: 14.5px;
+  margin-left: auto;
+  margin-right: auto;
+  vertical-align: middle;
+  max-width: 960px;
+  font-family: arial;
+  box-sizing: border-box;
+  padding-top: 3px;
+  margin-bottom: 5px;
+  width: auto; }
+.rs-record-info-panel .rs-record-header-line {
+  height: auto;
+  width: 100%;
+  box-sizing: border-box;
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  border-bottom: 2px white solid; }
+.rs-record-info-panel .rs-record-header-line > div[class*="rs-"] {
+  border-right: 2px white solid;
+  padding: 3px 15px;
+  line-height: 17px;
+  display: inline-block;
+  box-sizing: border-box;
+  float: left; }
+.rs-record-info-panel .rs-record-header-line > div[class*="rs-"]:last-child {
+  border-right: none; }
+.rs-record-info-panel .rs-record-header-line .rs-header-msg {
+  line-height: 25px;
+  margin-left: 5px; }
+.rs-record-info-panel .rs-record-header-line .rs-global-id {
+  white-space: nowrap !important;
+  float: right !important; }
+  .rs-record-info-panel .rs-record-header-line .rs-global-id .recordInfoIcon {
+    cursor: pointer;
+    margin-left: 2px; }
+.rs-record-info-panel .rs-record-header-line .rs-record-name,
+.rs-record-info-panel .rs-record-header-line .rs-record-tags,
+.rs-record-info-panel .rs-record-header-line .rs-global-id {
+  white-space: normal;
+  overflow: hidden; }
+
+/* File tree stuff */
+#fileBrowsing #fancyTree {
+    padding-bottom: 5px;
+}

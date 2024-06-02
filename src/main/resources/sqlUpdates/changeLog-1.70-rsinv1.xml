@@ -1,0 +1,27 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<changeSet id="2020-04-15" author="matthias" context="dev-test,run">
+        <preConditions onError="MARK_RAN"  onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">select count(*) from OAuthApp where id = -11</sqlCheck>
+        </preConditions>
+        <comment>Add sysadmin-owned OAuth app for RSpace Inventory</comment>
+        <!-- Unhashed secret: 'rsInventoryPublicSecret' -->
+        <sql>
+            insert into OAuthApp (id,clientId,clientSecret,name,user_id)
+                values(-11, 'rsInventoryWebClient','2550de8b20f61d683a15d2681fff5f3685d479c0f667a35f43f8df03f42b0946', 'rsInventoryWebClient',
+                  (select user_id from user_role inner join roles on user_role.role_id= roles.id where roles.name ='ROLE_SYSADMIN' order by user_id limit 1));
+        </sql>
+	</changeSet>
+
+    <changeSet author="juozas" id="2020-04-17" context="run">
+        <comment>Changes for version RSinventory authentication</comment>
+        <sql>
+            ALTER TABLE OAuthToken MODIFY expiryTime DATETIME NULL;
+            ALTER TABLE OAuthToken MODIFY accessToken VARCHAR(64) NULL;
+        </sql>
+    </changeSet>
+</databaseChangeLog>

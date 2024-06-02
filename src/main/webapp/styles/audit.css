@@ -1,0 +1,74 @@
+.datesRow, .usersRow, .groupsRow, .communitiesRow{
+	height:2.5em;
+}
+
+.actionsRow {
+	line-height:2.5em;
+}
+
+.actionsInput{
+	margin-left:10px;
+	vertical-align: middle;
+	margin-bottom: 6px;
+	display:inline-block;
+}
+
+#dateFrom, #dateTo {
+	margin-left:8px;
+	margin-right:8px;
+}
+
+.remover {
+	background:transparent;
+	border:1px solid #B6B6B6;
+	text-align:center;
+	font-weight:900;
+	color:#8e482d;
+	cursor: pointer;
+	margin-left: 10px;
+}
+
+.userSelection{
+	margin-left:10px;
+	width:300px;
+}
+
+.groupSelection{
+	margin-left:10px;
+	width:300px;
+}
+
+.communitySelection{
+	margin-left:10px;
+	width:300px;
+}
+
+a.deLink:link {color: black; text-decoration: none; cursor:default; }
+a.deLink:visited {color: black; text-decoration: none; cursor:default;}
+a.deLink:hover {color: black; text-decoration: none; cursor:default;}
+a.deLink:active {color: black; text-decoration: none; cursor:default; } 
+
+#renderedTable td {
+	height:20px;
+	padding-left:5px;
+}
+
+#renderedTable tr {
+	background-color:#F6F6F6;
+}
+
+.getAudit.asc {
+    background-image: url(/images/arrow_down.png);
+    background-repeat: no-repeat;
+    background-position-x: right;
+    padding-right: 12px;
+    background-position-y: center;
+}
+
+.getAudit.desc {
+    background-image: url(/images/arrow_up.png);
+    background-repeat: no-repeat;
+    background-position-x: right;
+    padding-right: 12px;
+    background-position-y: center;
+}

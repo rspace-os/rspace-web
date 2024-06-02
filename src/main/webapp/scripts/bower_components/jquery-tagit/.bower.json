@@ -1,0 +1,14 @@
+{
+  "name": "jquery-tagit",
+  "homepage": "https://github.com/aehlke/tag-it",
+  "_release": "6ccd2de95e",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "6ccd2de95e7cf7e254ad1a82e946450c21e40421"
+  },
+  "_source": "git://github.com/aehlke/tag-it.git",
+  "_target": "*",
+  "_originalSource": "jquery-tagit",
+  "_direct": true
+}

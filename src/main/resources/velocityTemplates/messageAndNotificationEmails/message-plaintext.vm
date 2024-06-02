@@ -1,0 +1,14 @@
+## Takes a communication 'cmm', dateobject 'dateOb', and baseURL string 'baseURL'
+RSpace message  from $cmm.originator.fullName:
+
+$cmm.originator.fullName sent you a message on #formatDate($dateOb)
+		
+#if($cmm.record)	
+concerning document $cmm.record.name (id = $cmm.record.id)
+#end
+
+$cmm.message
+
+#dontReply_Plaintext
+
+To reply to the sender of this message, please do so in RSpace at $baseURL/workspace

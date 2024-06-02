@@ -1,0 +1,28 @@
+{
+	"builders": [	
+		    {
+			"type": "docker",
+			"image": "ubuntu:20.04",
+			"commit": true,
+			"pull": true
+		}
+	],
+	"provisioners": [
+		{
+			"type": "shell",
+			"script": "provision-rspace-base-docker.sh"
+		}
+	],
+	"post-processors": [
+		{
+	        "type": "manifest",
+		    "output": "manifest-rspace-base.json",
+			"strip_path": true
+		},
+        {
+          "type": "docker-tag",
+          "repository": "rspaceops/rspace-services",
+          "tag": "rspace-base_ubuntu2004_java11_tomcat8.5"
+        }
+	]
+}

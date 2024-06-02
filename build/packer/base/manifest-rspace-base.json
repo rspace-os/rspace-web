@@ -1,0 +1,32 @@
+{
+  "builds": [
+    {
+      "name": "docker",
+      "builder_type": "docker",
+      "build_time": 1583507535,
+      "files": null,
+      "artifact_id": "sha256:74cd27728e2447bf2d0fcc76ebae5b0c49e54e6446b960e291e5a61f4402f496",
+      "packer_run_uuid": "9846d045-7e3d-ed03-08da-89ed27077f01",
+      "custom_data": null
+    },
+    {
+      "name": "docker",
+      "builder_type": "docker",
+      "build_time": 1592393616,
+      "files": null,
+      "artifact_id": "sha256:3a00404ecf5a3907ed10160bf42905c5e1f12272c7fa40a6561e6931962dc309",
+      "packer_run_uuid": "379534d7-22fb-9863-8280-d0978835647c",
+      "custom_data": null
+    },
+    {
+      "name": "docker",
+      "builder_type": "docker",
+      "build_time": 1592394711,
+      "files": null,
+      "artifact_id": "sha256:d4a9b6c823c14f28033ff36b9f635499263375424595e0fd3bc79bf46649847f",
+      "packer_run_uuid": "a29f6e8a-70b5-5894-aadc-96dedc70ec6b",
+      "custom_data": null
+    }
+  ],
+  "last_run_uuid": "a29f6e8a-70b5-5894-aadc-96dedc70ec6b"
+}

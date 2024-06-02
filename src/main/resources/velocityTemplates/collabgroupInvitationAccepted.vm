@@ -1,0 +1,14 @@
+#*
+Template for messaging the response to a collaboration group invitation.
+Arguments:
+ - status - A MessageStatus enum
+ - user - A user object.
+*#
+
+#if (${status} == 'COMPLETED')
+${user.fullName} has accepted your invitation to join the ${groupType} ${groupName}.
+#elseif (${status} == 'REJECTED')
+${user.fullName} has rejected your invitation to join the ${groupType} ${groupName}.
+#end
+ <p/>
+ #dontReply

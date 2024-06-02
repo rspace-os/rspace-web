@@ -1,0 +1,20 @@
+{
+  "1": {
+    "id": 1,
+    "name": "Mullis Lab Centrifuge",
+    "manufacturer": "Abbott",
+    "model": "Centrifuge Model"
+  },
+  "2": {
+    "id": 2,
+    "name": "Mullis Lab -70 Freezer",
+    "manufacturer": null,
+    "model": "Freezer Model"
+  },
+  "3": {
+    "id": 3,
+    "name": "Biochemistry Department Mass Spectrometer",
+    "manufacturer": "Oxford Analytics",
+    "model": "Mass Spec Model"
+  }
+}

@@ -1,0 +1,113 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.49 January 2018 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+
+    <changeSet id="17-12-11" author="matthias">
+        <comment>RSPAC-1404 Removing orphaned group invitations that are no longer connected to any group</comment>
+        <sql>
+            delete from GroupMessageOrRequest where group_id is NULL;
+        </sql>
+    </changeSet>
+
+    <changeSet id="18-01-15" author="karolis" context="run">
+        <comment>RSPAC-1405 Adding a new field for more reliable archive checksum</comment>
+        <addColumn tableName="ArchivalCheckSum">
+            <column name="zipContentCheckSum" type="varchar(256)">
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
+    
+    <changeSet id="18-01-17a" author="matthias">
+        <comment>RSPAC-1416 onboarding.available system property</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="DENIED_BY_DEFAULT" />
+            <column name="name" type="STRING" value="onboarding.available" />
+            <column name="type" type="NUMERIC" value="3" />
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="dependent_id" type="NUMERIC" value="NULL" />
+            <column name="descriptor_id" type="NUMERIC"
+                valueComputed="(select id from PropertyDescriptor where name='onboarding.available')" />
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="value" type="String" value="ALLOWED" />
+            <column name="property_id" type="NUMERIC"
+                valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='onboarding.available')" />
+        </insert>
+    </changeSet>
+    <changeSet id="18-01-17b" author="matthias">
+        <comment>RSPAC-1416 RSpace onboarding as an App</comment>
+        <insert tableName="App">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="label" type="STRING" value="RSpace onboarding" />
+            <column name="name" type="STRING" value="app.onboarding" />
+            <column name="defaultEnabled" type="BOOLEAN" valueBoolean="true" />
+        </insert>
+    </changeSet>
+    <changeSet id="18-01-17c" author="matthias">
+        <comment>RSPAC-1418 SEEN_TOOLTIPS option for RSpace onboarding app</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="SEEN_TOOLTIPS" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+            select null, pd.id, app.id from PropertyDescriptor pd, App app where app.name="app.onboarding" and pd.name='SEEN_TOOLTIPS';</sql>
+    </changeSet>
+
+    <changeSet id="25-01-17" author="matthias" context="dev-test,liquibase-update-test">
+        <comment>RSPAC-1416 on test servers onboarding should be disabled by default</comment>
+        <update tableName="SystemPropertyValue">
+          <column name="value" value="DENIED"></column>
+          <where>property_id = (select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='onboarding.available')</where>
+        </update>
+    </changeSet>
+    <!-- Run this query each time till we're confident it's not re-occurring -->
+     <changeSet id="29-01-17" author="richard" runAlways="true"> 
+      <preConditions onFail="CONTINUE" onFailMessage="There are no notifications linked to temporary documents, all OK">
+        <sqlCheck expectedResult="1">
+          select if (count(*) > 0,1,0) from Notification where record_id  in (select tempRecord_id from Record);
+        </sqlCheck>
+      </preConditions>
+      <comment>RSPAC-1446  ensure notifications linked to temporary records now link to permanent records</comment>
+      <sql>
+        create temporary table t1446 select n.id as n_id, r.id as r_id, r.tempRecord_id as tempId 
+             from Notification n inner join Record r
+              on n.record_id = r.tempRecord_id
+             where r.tempRecord_id in 
+                 (select record_id from Notification 
+                      where record_id  in (select tempRecord_id from Record));
+      </sql>
+     <sql>
+        update Notification n, t1446 t  set n.record_id=t.r_id where n.id=t.n_id;
+     </sql>
+
+     </changeSet>
+      <changeSet id="29-01-17b" author="richard" runAlways="true">
+       <preConditions onFail="CONTINUE" onFailMessage="There is no temp table t1446 to delete">
+        <tableExists tableName="t1446"/>
+       </preConditions>
+       <comment>Dropping temp table t1446 from RSPAC-1446 fix</comment>
+       <dropTable tableName="t1446"/>
+      </changeSet>
+
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+
+
+	<!-- only customChange changeSets should be placed below here -->
+    
+</databaseChangeLog>

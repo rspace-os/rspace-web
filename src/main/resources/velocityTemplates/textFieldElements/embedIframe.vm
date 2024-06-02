@@ -1,0 +1,22 @@
+#*
+ Embed video iframe - based on youtube/jove embed code.
+
+ Arguments needed for mustache are:
+  - src
+  - title
+  - width
+  - height
+  - border
+  - frameborder
+  - marginwheight
+  - marginwidth
+  - allow
+  - allowfullscreen
+  - allowTransparency
+  - scrolling
+*#
+
+<iframe $width $height $src $title
+    $border $frameborder $marginwheight $marginwidth
+    $allow $allowfullscreen $allowtransparency $scrolling >
+</iframe>

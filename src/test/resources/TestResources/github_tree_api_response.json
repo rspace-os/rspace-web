@@ -1,0 +1,15 @@
+{
+  "sha": "227cf132af95d6bb43ad9119b879e19e3f209901",
+  "url": "https://api.github.com/repos/rspace-integration-test-user/test1/git/trees/227cf132af95d6bb43ad9119b879e19e3f209901",
+  "tree": [
+    {
+      "path": "file2",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3afd81aae1693c6782a2a4329516045bc6708592",
+      "size": 27,
+      "url": "https://api.github.com/repos/rspace-integration-test-user/test1/git/blobs/3afd81aae1693c6782a2a4329516045bc6708592"
+    }
+  ],
+  "truncated": false
+}

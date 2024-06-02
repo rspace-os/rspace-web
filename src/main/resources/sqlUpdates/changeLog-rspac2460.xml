@@ -1,0 +1,140 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet author="nhanlon" id="2022-04-27a" context="run, dev-test">
+        <validCheckSum>8:f49cf4184b907217be34cbc93f04e258</validCheckSum>
+        <loadData tableName="roles" file="sqlUpdates/data/anonymous_role.csv">
+            <column name="id" type="NUMERIC" />
+            <column name="description" type="STRING" />
+            <column name="name" type="STRING" />
+        </loadData>
+        <loadData tableName="User" file="sqlUpdates/data/anonymous_user.csv">
+            <column name="id" type="NUMERIC"/>
+            <column name="username" type="STRING"/>
+            <column name="password" type="STRING"/>
+            <column name="first_name" type="STRING"/>
+            <column name="last_name" type="STRING"/>
+            <column name="last_name" type="STRING"/>
+            <column name="email" type="STRING"/>
+            <column name="version" type="NUMERIC"/>
+            <column name="contentInitialized" type="NUMERIC"/>
+            <column name="account_enabled" type="NUMERIC"/>
+            <column name="account_expired" type="NUMERIC"/>
+            <column name="account_locked" type="NUMERIC"/>
+            <column name="credentials_expired" type="NUMERIC"/>
+            <column name="numConsecutiveLoginFailures" type="NUMERIC"/>
+            <column name="tempAccount" type="NUMERIC"/>
+            <column name="affiliation" type="STRING"/>
+            <column name="signupSource" type="STRING"/>
+        </loadData>
+        <loadData tableName="user_role" file="sqlUpdates/data/anonymous_user_roles.csv">
+            <column name="user_id" type="NUMERIC"/>
+            <column name="role_id" type="NUMERIC"/>
+        </loadData>
+    </changeSet>
+    <changeSet id="2022-04-27b" context="run, dev-test" author="nhanlon">
+        <comment>Create a new system property and value public_sharing</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="DENIED"/>
+            <column name="name" type="STRING" value="public_sharing"/>
+            <column name="type" type="NUMERIC" value="3"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id"
+                    type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name ='public_sharing')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value="DENIED"/>
+            <column name="property_id"
+                    type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='public_sharing')"/>
+        </insert>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-04-27c" context="run">
+        <comment>Stores the links which are used to share documents publicly with the outside world</comment>
+        <addColumn tableName="RecordGroupSharing">
+            <column name="publicLink" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-10-13" context="run">
+        <modifyDataType columnName="publicLink" newDataType="VARCHAR(100)" tableName="RecordGroupSharing"/>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-04-27d" context="run, dev-test">
+        <createIndex indexName="isPublicLink" tableName="RecordGroupSharing" unique="true">
+            <column name="publicLink"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-05-16a" context="run">
+        <addColumn tableName="RecordGroupSharing">
+            <column name="sharedBy_id"  type="BIGINT(19)"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="sharedBy_id" baseTableName="RecordGroupSharing"
+                                 constraintName="FK_RGS_USR" deferrable="false" initiallyDeferred="false" onDelete="CASCADE"
+                                 onUpdate="CASCADE" referencedColumnNames="id" referencedTableName="User"/>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-05-16b" context="run,dev-test">
+        <sql>
+            insert into Role_permissionStrings values ( (select id from roles where name='ROLE_PI'),'RECORD:PUBLISH:property_sharingACL=${self}');
+        </sql>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-05-20a" context="run,dev-test">
+        <sql>
+            insert into Role_permissionStrings values ( (select id from roles where name='ROLE_PI'),'RECORD:PUBLISH:property_owner=${self}');
+            insert into Role_permissionStrings values ( (select id from roles where name='ROLE_USER'),'RECORD:PUBLISH:property_owner=${self}');
+        </sql>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-07-21a" context="run">
+        <comment>Stores publication summary description, editing this will require republishing the document</comment>
+        <addColumn tableName="RecordGroupSharing">
+            <column name="publicationSummary" type="VARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="RecordGroupSharing">
+            <column name="displayContactDetails" type="BIT(1)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="nhanlon" id="2022-08-08a" context="run">
+        <comment>True for documents that should be indexed by SEO</comment>
+        <addColumn tableName="RecordGroupSharing">
+            <column name="publishOnInternet" type="BIT(1)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2022-08-08b" context="run, dev-test" author="nhanlon">
+        <comment>Create a new system property and value public_sharing</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="DENIED"/>
+            <column name="name" type="STRING" value="publicdocs_allow_seo"/>
+            <column name="type" type="NUMERIC" value="3"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id"
+                    type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name ='publicdocs_allow_seo')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value="DENIED"/>
+            <column name="property_id"
+                    type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='publicdocs_allow_seo')"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2022-09-09" author="matthias" context="run">
+        <comment>Set default publication flags for pre-existing documents</comment>
+        <sql>
+            update RecordGroupSharing set displayContactDetails = false, publishOnInternet = false;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

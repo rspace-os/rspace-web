@@ -1,0 +1,87 @@
+#template-nav {
+	position: absolute;
+	top: 0;
+	right: 0;
+	background: #f5f3f4;
+	width: 140px;
+	height: 20%;
+	overflow-y: scroll;
+	text-align: center;	
+}
+
+.radio_item {
+	display: none !important;
+}
+
+.label_item {
+	opacity: 0.1;
+}
+
+.label_item img {
+	max-width: 30px;
+	max-height: 30px;
+}
+
+.radio_item:checked+label {
+	opacity: 1;
+}
+
+label {
+	cursor: pointer;   
+}
+
+#template-editorSketch {
+	position: absolute;
+	top: 20%;
+	right: 0;
+	background: #f5f3f4;
+	width: 140px;
+	height: 80%;
+	overflow-y: scroll;
+	text-align: center;
+}
+
+#template-editorSketch div {
+	position: relative;
+	display: inline-block;
+	vertical-align: middle;
+	text-align: center;
+	width: 110px;
+	margin: 10px 0px;
+}
+
+#template-editorSketch div img {
+	max-width: 100px;
+	max-height: 100px;
+}
+
+#template-editorSketch div input { 
+	position: absolute; 
+	bottom: 0px; 
+	right: 0px; 
+}
+
+#gallery-editorSketch {
+	position: absolute;
+	top: 10%;
+	right: 0;
+	background: #f5f3f4;
+	width: 140px;
+	height: 90%;
+	overflow-y: scroll;
+	text-align: center;
+}
+
+#gallery-editorSketch div {
+	position: relative;
+	display: inline-block;
+	vertical-align: middle;
+	text-align: center;
+	width: 110px;
+	margin: 10px 0px;
+}
+
+#gallery-editorSketch div img {
+	max-width: 100px;
+	max-height: 100px;
+}

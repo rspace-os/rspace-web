@@ -1,0 +1,32 @@
+##  RSPAC-245 use case 2
+## This mail will get sent when a new group requires PI authorisation before it can be created.
+## Parameters: fullName, acceptanceLink,email
+##
+<html>
+#utf8header
+<body>
+Hello,
+
+<p>
+Welcome to RSpace! ${creator.fullName} (${creator.email}) wants to create an RSpace group '${groupName}', with you as its Principal Investigator.
+
+<p>
+To accept this request, all you have to do is click on this link:
+<br/>
+<a href="${acceptanceLink}"> ${acceptanceLink} </a>, where you can sign up for an account and authorize the creation of the group.
+
+<p>
+Please use this email address when you fill out the signup form - you can change it afterwards if you want, once your account is set up.
+
+<p>
+Once you've signed up,  there will be an invitation message waiting for you - accept this invitation and your group will be created, with ${creator.fullName} as your Lab Admin.
+
+<p>
+#signature
+         
+#aboutRSpaceCloud(true)
+
+<p/>
+#dontReply
+</body>
+</html>

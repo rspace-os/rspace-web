@@ -1,0 +1,27 @@
+#galleryContentDiv {
+	width:960px !important;
+}
+
+#mainGalleryPanel {
+	width: 100%;
+}
+
+#galleryBlock {
+	width: 660px;
+}
+
+#topBar {
+	width:948px;
+}
+
+#galleriesCrudInsert {
+	display: none !important;
+}
+
+#galleriesCrudDelete, #galleriesCrudMove, #galleriesCrudRename, #galleriesCrudCopy {
+	display: inline;
+}
+
+#viewer {
+    width: 100%;
+}

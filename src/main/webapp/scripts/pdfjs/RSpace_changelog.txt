@@ -1,0 +1,34 @@
+-----------------------------------------------------------------
+- This documents describes the changes to default pdf.js viewer -
+-----------------------------------------------------------------
+
+1. added RSpace favicon 
+ 
+Index: viewer.html
+===================================================================
+--- viewer.html	(revision 9115)
++++ viewer.html	(working copy)
+@@ -26,8 +26,8 @@
+     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+     <meta name="google" content="notranslate">
+     <title>PDF.js viewer</title>
++    <link rel="icon" href="/images/faviconCommunity.ico"/>
+
+2. translating 'filename' param so it's handled as an original URL (and shown as tab title)  
+
+Index: viewer.js
+===================================================================
+--- viewer.js	(revision 9115)
++++ viewer.js	(working copy)
+@@ -7317,7 +7317,11 @@
+   }
+ 
+   if (file) {
+-    PDFViewerApplication.open(file, 0);
++    var fileParams = {
++       url : file,
++       originalUrl : params.filename
++    };
++    PDFViewerApplication.open(fileParams, 0);
+   }
+ }

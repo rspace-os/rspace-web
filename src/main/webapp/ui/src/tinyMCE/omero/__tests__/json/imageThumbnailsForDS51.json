@@ -1,0 +1,54 @@
+{
+  "data": [ {
+  "id" : 1884807,
+  "name" : "Centrin_PCNT_Cep215_20110506_Fri-1545_0_SIR_PRJ.dv",
+  "description" : "",
+  "annotations" : [ ],
+  "plateAcquisitionName" : "",
+  "displayImageData" : [ "Z-sections = 1", "Timepoints = 1", "Number of Channels = 3", "Pixels Type = float", "Dimensions(XY) = 256 x 256", "Pixel Size (XYZ) = 0.040 µm x 0.040 µm x 0.125 µm" ],
+  "omeroConnectionKey" : "user1a",
+
+  "type" : "image",
+  "parentId" : 51,
+  "children" : [ ],
+  "childCounts" : 0
+}, {
+  "id" : 1884838,
+  "name" : "siControl_N20_Cep215_I_20110411_Mon-1503_0_SIR_PRJ.dv",
+  "description" : "",
+  "annotations" : [ ],
+  "plateAcquisitionName" : "",
+  "displayImageData" : [ "Z-sections = 1", "Timepoints = 1", "Number of Channels = 2", "Pixels Type = float", "Dimensions(XY) = 256 x 256", "Pixel Size (XYZ) = 0.040 µm x 0.040 µm x 0.125 µm" ],
+  "omeroConnectionKey" : "user1a",
+
+  "type" : "image",
+  "parentId" : 51,
+  "children" : [ ],
+  "childCounts" : 0
+}, {
+    "id" : 1884837,
+    "name" : "siControl_N20_Cep215_I_20110411_Mon-1501_0_SIR_PRJ.dv",
+    "description" : "",
+    "annotations" : [ ],
+    "plateAcquisitionName" : "",
+    "displayImageData" : [ "Z-sections = 1", "Timepoints = 1", "Number of Channels = 2", "Pixels Type = float", "Dimensions(XY) = 256 x 256", "Pixel Size (XYZ) = 0.040 µm x 0.040 µm x 0.125 µm" ],
+    "omeroConnectionKey" : "user1a",
+
+    "type" : "image",
+    "parentId" : 51,
+    "children" : [ ],
+    "childCounts" : 0
+  },{
+  "id" : 1884839,
+  "name" : "siControl_N20_Cep215_I_20110411_Mon-1509_0_SIR_PRJ.dv",
+  "description" : "",
+  "annotations" : [ ],
+  "plateAcquisitionName" : "",
+  "displayImageData" : [ "Z-sections = 1", "Timepoints = 1", "Number of Channels = 2", "Pixels Type = float", "Dimensions(XY) = 256 x 256", "Pixel Size (XYZ) = 0.040 µm x 0.040 µm x 0.125 µm" ],
+  "omeroConnectionKey" : "user1a",
+
+  "type" : "image",
+  "parentId" : 51,
+  "children" : [ ],
+  "childCounts" : 0
+} ] }

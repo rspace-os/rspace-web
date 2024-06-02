@@ -1,0 +1,80 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+         
+     <changeSet  id="2021-03-04a" author="richard" >	
+        <preConditions onFail="MARK_RAN">
+          <tableExists tableName="ImageBlob_AUD" />
+        </preConditions>
+        <comment> Drop obsolete ImageBlob_AUD table</comment>
+        <dropTable tableName="ImageBlob_AUD"/>
+     </changeSet>
+
+	<changeSet id="2021-01-18a" author="richard">	 
+	    <comment>
+	      Perform real deletion of image blob data for Ecat Image thumbs
+	    </comment>
+		<sql>
+			delete i from ImageBlob i inner join rspac2201_ecatimage_bk e on e.imageThumbnailed_id=i.id;
+		</sql>
+	</changeSet>
+		<changeSet id="2021-01-18b" author="richard">	 
+	    <comment>
+	      Perform real deletion of image blob data for Ecat Image_AUD thumbs
+	    </comment>
+		<sql>
+			delete i from ImageBlob i inner join rspac2201_ecatimage_aud_bk e on e.imageThumbnailed_id=i.id;
+		</sql>
+	</changeSet>
+
+		<changeSet id="2021-01-18c" author="richard">	 
+	    <comment>
+	      Perform real deletion of image blob data for Ecat Image working
+	    </comment>
+		<sql>
+			delete i from ImageBlob i inner join rspac2201_ecatimage_bk e on e.imageFileRezisedEditor_id=i.id;
+		</sql>
+	</changeSet>
+	
+	<changeSet id="2021-01-18d" author="richard">	 
+	    <comment>
+	      Perform real deletion of image blob data for Ecat Image_AUD working
+	    </comment>
+		<sql>
+			delete i from ImageBlob i inner join rspac2201_ecatimage_aud_bk e on e.imageFileRezisedEditor_id=i.id;
+		</sql>
+	</changeSet>
+	
+	<changeSet id="2021-01-18e" author="richard">	 
+	    <comment>
+	      Perform real deletion of image blob data for Thumbnail thumbs
+	    </comment>
+		<sql>
+			delete i from ImageBlob i inner join rspac2201_thumbnail_bk e on
+			e.imageBlob_id=i.id where e.sourceType=0 and e.thumbnailFP_id is not null;
+		</sql>
+	</changeSet>
+	
+	<changeSet id="2021-01-19f" author="richard">	 
+	    <comment>
+	      Perform real deletion of image blob data for EcatDocument thumbs
+	    </comment>
+		<sql>
+		   delete i from ImageBlob i inner join rspac2201_ecatdoc_bk e on e.thumbNail_id=i.id where  e.docThumbnailFP_id is not null;
+		</sql>
+	</changeSet>
+	
+	<changeSet id="2021-01-19g" author="richard">	 
+	    <comment>
+	      Perform real deletion of image blob data for EcatDocument_AUD thumbs
+	    </comment>
+		<sql>
+			delete i from ImageBlob i inner join rspac2201_ecatdoc_aud_bk e on e.thumbNail_id=i.id where  e.docThumbnailFP_id is not null;
+		</sql>
+	</changeSet>
+	
+			
+
+</databaseChangeLog>

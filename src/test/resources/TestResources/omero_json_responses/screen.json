@@ -1,0 +1,78 @@
+{
+  "data": {
+    "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#Screen",
+    "@id": 51,
+    "omero:details": {
+      "@type": "TBD#Details",
+      "owner": {
+        "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#Experimenter",
+        "@id": 2,
+        "omero:details": {
+          "@type": "TBD#Details",
+          "permissions": {
+            "@type": "TBD#Permissions",
+            "perm": "rw----",
+            "canAnnotate": false,
+            "canDelete": false,
+            "canEdit": false,
+            "canLink": false,
+            "isWorldWrite": false,
+            "isWorldRead": false,
+            "isGroupWrite": false,
+            "isGroupRead": false,
+            "isGroupAnnotate": false,
+            "isUserWrite": true,
+            "isUserRead": true
+          }
+        },
+        "FirstName": "Public",
+        "MiddleName": "",
+        "LastName": "data",
+        "Email": "idr-project@lists.openmicroscopy.org.uk",
+        "Institution": "IDR Project",
+        "UserName": "demo"
+      },
+      "group": {
+        "@type": "http://www.openmicroscopy.org/Schemas/OME/2016-06#ExperimenterGroup",
+        "@id": 3,
+        "omero:details": {
+          "@type": "TBD#Details",
+          "permissions": {
+            "@type": "TBD#Permissions",
+            "perm": "rwr---",
+            "canAnnotate": false,
+            "canDelete": false,
+            "canEdit": false,
+            "canLink": false,
+            "isWorldWrite": false,
+            "isWorldRead": false,
+            "isGroupWrite": false,
+            "isGroupRead": true,
+            "isGroupAnnotate": false,
+            "isUserWrite": true,
+            "isUserRead": true
+          }
+        },
+        "Name": "Public"
+      },
+      "permissions": {
+        "@type": "TBD#Permissions",
+        "perm": "rwr---",
+        "canAnnotate": false,
+        "canDelete": false,
+        "canEdit": false,
+        "canLink": false,
+        "isWorldWrite": false,
+        "isWorldRead": false,
+        "isGroupWrite": false,
+        "isGroupRead": true,
+        "isGroupAnnotate": false,
+        "isUserWrite": true,
+        "isUserRead": true
+      }
+    },
+    "Name": "idr0003-breker-plasticity/screenA",
+    "Description": "Publication Title\nA novel single-cell screening platform reveals proteome plasticity during yeast stress responses.\n\nScreen Description\nScreen to characterize yeast stress responses at the protein level, focusing on two key properties: protein localization and abundance, at a single-cell resolution. It measures the levels of 5,330 yeast proteins and manually assign their localization using strains from a GFP fusion library.",
+    "url:plates": "https://idr.openmicroscopy.org/api/v0/m/screens/51/plates/"
+  }
+}

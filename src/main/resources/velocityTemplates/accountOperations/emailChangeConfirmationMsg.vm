@@ -1,0 +1,25 @@
+#*
+Template for message sent to user's previous email account after successful 
+email address change.
+
+Arguments:
+  - firstName
+  - newEmailAddress
+*#
+<html>
+#utf8header
+<body>
+<p>Hello $firstName,</p>
+
+<p>Your RSpace email address was updated. New address is:</p>
+<p>
+${newEmailAddress}
+</p>
+
+<p> If you did not just change your email, please get in touch with your RSpace
+ support team.
+<p/>
+#dontReply
+
+</body>
+</html>

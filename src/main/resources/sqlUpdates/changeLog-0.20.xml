@@ -1,0 +1,21 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+	<!-- Changes for version 0.20-->
+
+	<changeSet author="fran" id="13-10-14" context="run">
+		<comment> Add height and width column to EcatImageAnnotation </comment>
+		<addColumn tableName="ecatImageAnnotation">
+			<column name="height" type="INT(11)"/>
+			<column name="width" type="INT(11)"/>
+		</addColumn>
+
+		<addColumn tableName="ecatImageAnnotation_AUD">
+			<column name="height" type="INT(11)"/>
+			<column name="width" type="INT(11)"/>
+		</addColumn>
+	</changeSet>
+	
+	
+</databaseChangeLog>

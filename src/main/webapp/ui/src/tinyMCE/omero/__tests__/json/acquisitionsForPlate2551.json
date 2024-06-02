@@ -1,0 +1,106 @@
+{
+  "data": [
+    {
+      "id": 2661,
+      "columns": 12,
+      "rows": 8,
+      "fake": false,
+      "childCounts": 96,
+      "name": "Meas_01(2012-07-31_10-41-12)",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "samplesUrls": [
+        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2661/wellsampleindex/0/wells/"
+      ],
+      "type": "plateAcquisition",
+      "parentId": 2551,
+      "children": []
+    },
+    {
+      "id": 2652,
+      "columns": 12,
+      "rows": 8,
+      "fake": false,
+      "childCounts": 96,
+      "name": "Meas_02(2012-07-31_11-56-41)",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "samplesUrls": [
+        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2652/wellsampleindex/1/wells/"
+      ],
+      "type": "plateAcquisition",
+      "parentId": 2551,
+      "children": []
+    },
+    {
+      "id": 2653,
+      "columns": 12,
+      "rows": 8,
+      "fake": false,
+      "childCounts": 96,
+      "name": "Meas_03(2012-07-31_13-12-10)",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "samplesUrls": [
+        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2653/wellsampleindex/2/wells/"
+      ],
+      "type": "plateAcquisition",
+      "parentId": 2551,
+      "children": []
+    },
+    {
+      "id": 2654,
+      "columns": 12,
+      "rows": 8,
+      "fake": false,
+      "childCounts": 96,
+      "name": "Meas_04(2012-07-31_14-27-40)",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "samplesUrls": [
+        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2654/wellsampleindex/3/wells/"
+      ],
+      "type": "plateAcquisition",
+      "parentId": 2551,
+      "children": []
+    },
+    {
+      "id": 2651,
+      "columns": 12,
+      "rows": 8,
+      "fake": false,
+      "childCounts": 96,
+      "name": "Meas_05(2012-07-31_15-43-11)",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "samplesUrls": [
+        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2651/wellsampleindex/4/wells/"
+      ],
+      "type": "plateAcquisition",
+      "parentId": 2551,
+      "children": []
+    },
+    {
+      "id": 2655,
+      "columns": 12,
+      "rows": 8,
+      "fake": false,
+      "childCounts": 96,
+      "name": "Meas_06(2012-07-31_16-58-39)",
+      "description": "",
+      "annotations": [],
+      "omeroConnectionKey": "user1a",
+      "samplesUrls": [
+        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2655/wellsampleindex/5/wells/"
+      ],
+      "type": "plateAcquisition",
+      "parentId": 2551,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+<script id="editDeleteButtonTemplate" type="text/mustache">
+ <button class="editButton btn btn-default" onclick="editField({{id}})">Edit</button>
+ <button class="deleteButton btn btn-default" onclick="deleteField({{id}})">Delete</button>
+</script>
+
+<script id="createNumberRowTemplate" type="text/mustache">
+
+<tr  id="field_{{id}}" name="number" class="field">
+  <td name="fieldName" class="field-name">{{name}}  
+			<span class='field-type-enum'> ({{type}})</span>
+      {{#mandatory}}
+      <span style="color: red">*</span>
+      {{/mandatory}}
+  </td>
+   <td class="field-value">
+			<table>
+             <tr>
+            <td class="icon-field bootstrap-custom-flat">
+			 {{>editDeleteButtonTemplate}}
+			</td>
+			</tr>
+			<tr><td class="field-value-inner">
+			<input type="text"  name="fieldData" id="{{id}}" value="{{defaultValue}}" readOnly='true' />
+			<input type="hidden" name="wasChanged" value="false"/>
+			<input type="hidden" name="changed" value="false"/>
+			<input type="hidden" name="lastValue" value="{{defaultNumberValue}}/>
+			<input type="hidden" name="defaultValue" value="{{defaultNumberValue}}/>
+			<input type="hidden" name="decimalPlaces" value="{{decimalPlaces}}"/>
+			<input type="hidden" name="minValue" value="{{minNumberValue}}"/>
+			<input type="hidden" name="maxValue" value="{{maxNumberValue}}"/>
+			<input type="hidden" name="fieldId" value="{{id}}"/>
+			</td>
+			</tr>
+			</table>
+	</td>
+</tr>
+</script>

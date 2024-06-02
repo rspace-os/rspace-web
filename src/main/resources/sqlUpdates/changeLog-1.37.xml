@@ -1,0 +1,381 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.37 August 2016 -->
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+	<!-- Add changesets here... -->
+
+	<changeSet id="1-37-16-7-13" author="matthias" context="run">
+		<comment>Create new system property and value(slack.available) - RSPAC-884</comment>
+		<insert tableName="SystemProperty">
+			<column name="id" type="NUMERIC" value="14" />
+			<column name="defaultValue" type="STRING" value="false" />
+			<column name="name" type="STRING" value="slack.available" />
+			<column name="type" type="NUMERIC" value="0" />
+		</insert>
+		<insert tableName="SystemPropertyValue">
+			<column name="value" type="STRING" value="false" />
+			<column name="property_id" type="NUMERIC" value="14" />
+		</insert>
+	</changeSet>
+	
+	<changeSet id="1-37-16-7-13b" author="richard" context="run">
+		<comment> Drop obsolete column</comment>
+		<dropColumn tableName="MessageOrRequest" columnName="typeCode" />
+		<dropColumn tableName="MessageOrRequest_AUD" columnName="typeCode" />
+	</changeSet>
+	<changeSet id="1-37-16-7-13c" author="richard" context="run">
+		<comment> Drop obsolete column</comment>
+		<dropColumn tableName="Notification" columnName="typeCode" />
+		<dropColumn tableName="Notification_AUD" columnName="typeCode" />
+	</changeSet>
+	<changeSet id="1-37-17-7-13c" author="richard" context="run">
+		<comment> Drop obsolete typecode column</comment>
+		<dropColumn tableName="ShareRecordMessageOrRequest"
+			columnName="typeCode" />
+		<dropColumn tableName="ShareRecordMessageOrRequest_AUD"
+			columnName="typeCode" />
+	</changeSet>
+	<changeSet id="1-37-17-7-13d" author="richard" context="run">
+		<comment> Drop obsolete typecode column</comment>
+		<dropColumn tableName="GroupMessageOrRequest" columnName="typeCode" />
+		<dropColumn tableName="GroupMessageOrRequest_AUD"
+			columnName="typeCode" />
+	</changeSet>
+	<changeSet id="1-37-17-7-13e" author="richard" context="run">
+	    <validCheckSum>7:cdc215af86feef02ba544cb68ff81853</validCheckSum>
+		<comment> Drop obsolete typecode column</comment>
+		<dropColumn tableName="CreateGroupMessageOrRequest"
+			columnName="typeCode" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1-37-16-7-15c"
+		context="run">
+		<comment> Remove obsolete typecode column</comment>
+		<dropColumn columnName="typeCode" tableName="Communication_AUD" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1-37-16-7-15a"
+		context="run">
+		<comment> Remove obsolete table, first of all remove FK</comment>
+		<dropForeignKeyConstraint baseTableName="SystemFolder_AUD"
+			constraintName="FKD8F246EEF3DC1829" />
+	</changeSet>
+	<changeSet author="rspace (generated)" id="1-37-16-7-15b"
+		context="run">
+		<comment> Remove obsolete SystemFolder_AUD table, first of all remove FK</comment>
+		<dropTable tableName="SystemFolder_AUD" />
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-1" context="run">
+	    <validCheckSum>7:3987b99452d7fdcc3ff71fba76e8b765</validCheckSum>
+		<comment>Create App table</comment>
+		<createTable tableName="App">
+			<column autoIncrement="true" name="id" type="BIGINT">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="defaultEnabled" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="label" type="VARCHAR(255)" />
+			<column name="name" type="VARCHAR(50)">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-2" context="run">
+		<comment>Create AppConfigElement table</comment>
+		<createTable tableName="AppConfigElement">
+			<column autoIncrement="true" name="id" type="BIGINT">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="value" type="VARCHAR(255)" />
+			<column name="appConfigElementDescriptor_id" type="BIGINT" />
+			<column name="appConfigElementSet_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-3" context="run">
+		<comment>Create AppConfigElementDescriptor table</comment>
+		<createTable tableName="AppConfigElementDescriptor">
+			<column autoIncrement="true" name="id" type="BIGINT">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="descriptor_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-4" context="run">
+		<comment>Create AppConfigElementSet table</comment>
+		<createTable tableName="AppConfigElementSet">
+			<column autoIncrement="true" name="id" type="BIGINT">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="userAppConfig_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-5" context="run">
+		<comment>Create UserAppConfig table</comment>
+		<createTable tableName="UserAppConfig">
+			<column autoIncrement="true" name="id" type="BIGINT">
+				<constraints primaryKey="true" />
+			</column>
+			<column name="enabled" type="BIT(1)">
+				<constraints nullable="false" />
+			</column>
+			<column name="app_id" type="BIGINT" />
+			<column name="user_id" type="BIGINT" />
+		</createTable>
+	</changeSet>
+	<changeSet id="16-7-16-innodb" author="richard" context="run">
+		<comment> Set tables to be InnoDB</comment>
+		<sql>alter table App engine=InnoDB;</sql>
+		<sql>alter table AppConfigElement engine=InnoDB;</sql>
+		<sql>alter table AppConfigElementSet engine=InnoDB;</sql>
+		<sql>alter table UserAppConfig engine=InnoDB;</sql>
+		<sql>alter table AppConfigElementDescriptor engine=InnoDB;</sql>
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-6" context="run">
+	
+		<comment>unique name for App</comment>
+		<addUniqueConstraint columnNames="name"
+			constraintName="name" deferrable="false" disabled="false"
+			initiallyDeferred="false" tableName="App" />
+	</changeSet>
+
+	<changeSet author="richard" id="16-7-15-app-8" context="run">
+		<comment>FK appConfigElementSet_id in appConfigElement</comment>
+		<addForeignKeyConstraint baseColumnNames="appConfigElementSet_id"
+			baseTableName="AppConfigElement" constraintName="FK14AF9CD95B6A1813"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="AppConfigElementSet" />
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-9" context="run">
+		<comment>FK appConfigElementDescriptor_id in appConfigElement</comment>
+		<addForeignKeyConstraint baseColumnNames="appConfigElementDescriptor_id"
+			baseTableName="AppConfigElement" constraintName="FK14AF9CD9A1FF1FA1"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id"
+			referencedTableName="AppConfigElementDescriptor" />
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-10" context="run">
+		<comment>FK descriptor_id in AppConfigElementDescriptor</comment>
+		<addForeignKeyConstraint baseColumnNames="descriptor_id"
+			baseTableName="AppConfigElementDescriptor" constraintName="FK22EED1284B47DE79"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="SystemProperty" />
+	</changeSet>
+	<changeSet id="16-7-15-app-10b" author="richard" context="run">
+	<dropForeignKeyConstraint constraintName="FK22EED1284B47DE79" baseTableName="AppConfigElementDescriptor"/>
+	<dropUniqueConstraint tableName="AppConfigElementDescriptor" constraintName="FK22EED1284B47DE79"/>
+
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-11" context="run">
+		<comment>FK userAppConfig_id in AppConfigElementSet</comment>
+		<addForeignKeyConstraint baseColumnNames="userAppConfig_id"
+			baseTableName="AppConfigElementSet" constraintName="FK403ECCC9CD8C853"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="UserAppConfig" />
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-12" context="run">
+		<comment>FK app_id in UserAppConfig</comment>
+		<addForeignKeyConstraint baseColumnNames="app_id"
+			baseTableName="UserAppConfig" constraintName="FKE27F8518C68E22F3"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="App" />
+	</changeSet>
+	<changeSet author="richard" id="16-7-15-app-13" context="run">
+		<comment>FK app_id in UserAppConfig</comment>
+		<addForeignKeyConstraint baseColumnNames="user_id"
+			baseTableName="UserAppConfig" constraintName="FKE27F8518DE6F978E"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+	</changeSet>
+	<!-- now we'll Create new PropertyDescriptor from SystemProperty -->
+	<changeSet id="16-7-18a" author="richard" context="run">
+	<comment> Copy data from SystemProperty to PropertyDescriptor, preserving id</comment>
+	<sql>
+	 create table PropertyDescriptor select id, defaultValue, name, type from SystemProperty;
+	</sql>
+	</changeSet>
+	<changeSet id="16-7-18b" author="richard" context="run">
+	 <comment> Add autoincrement primary key</comment>
+	 <sql>ALTER TABLE PropertyDescriptor MODIFY id bigint(20) AUTO_INCREMENT PRIMARY KEY</sql>
+	</changeSet>
+	
+	<changeSet id="16-7-18c" author="richard" context="run">
+	 <comment> Remove obsolete columns that are moved to PropertyDescriptor</comment>
+	 <dropColumn tableName="SystemProperty" columnName="name"/>
+	 <dropColumn tableName="SystemProperty" columnName="defaultValue"/>
+	 <dropColumn tableName="SystemProperty" columnName="type"/>
+	</changeSet>
+	<changeSet author="richard" id="16-7-18d" context="run">
+	<comment>Add FK relation to PropertyDescriptor</comment>
+	<addColumn tableName="SystemProperty">
+	 <column name="descriptor_id" type="BIGINT(19)"/>
+	 </addColumn>
+	 </changeSet>
+	<changeSet author="richard"  context="run" id="1468850238822-3">
+       <addForeignKeyConstraint baseColumnNames="descriptor_id" baseTableName="SystemProperty" 
+       constraintName="FK2E09E144398CEDC3" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="PropertyDescriptor"/>
+</changeSet>
+	<changeSet author="richard" id="16-7-18-h" context="run">
+		<comment>FK descriptor_id in AppConfigElementDescriptor</comment>
+		<addForeignKeyConstraint baseColumnNames="descriptor_id"
+			baseTableName="AppConfigElementDescriptor" constraintName="FK22EED1284B47DE79"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="PropertyDescriptor" />
+	</changeSet>
+	
+	<!--  for running in dev mode, table structure must agree with current Hibernate mappings -->
+	<changeSet id="16-7-18e-TestData" author="richard">
+	<preConditions onError="MARK_RAN" onFail="MARK_RAN">
+	  <sqlCheck expectedResult="0">select count(*) from PropertyDescriptor</sqlCheck>
+	</preConditions>
+	<comment>Load up if table is empty</comment>
+	<loadData file="sqlUpdates/data/SystemPropertyTestData_1-37/PropertyDescriptors.csv" tableName="PropertyDescriptor">
+	        <column name="id" type="NUMERIC" />
+			<column name="defaultValue" type="STRING" />
+			<column name="name" type="STRING" />
+			<column name="type" type="NUMERIC" />
+	</loadData>
+	</changeSet>
+	<changeSet id="16-7-18f-TestData" author="richard" >
+	<validCheckSum>7:49066e1e2b5680de808e4db5312a5942</validCheckSum><!-- required for liquibase update to 3.5 -->
+	<preConditions onError="MARK_RAN" onFail="MARK_RAN">
+	  <sqlCheck expectedResult="0">select count(*) from SystemProperty</sqlCheck>
+	</preConditions>
+	<comment>Load up if table is empty</comment>
+	
+	<loadData file="sqlUpdates/data/SystemPropertyTestData_1-37/SystemProperties.csv" tableName="SystemProperty">
+	        <column name="id" type="NUMERIC" />
+			<column name="dependent_id" type="NUMERIC" />
+			<column name="descriptor_id" type="NUMERIC" />
+	</loadData>	
+	
+	</changeSet>
+		
+	<changeSet id="16-7-18g-TestData" author="richard">
+	<validCheckSum>7:ddf72f5220005d472bb68772a85316e5</validCheckSum>
+	<preConditions onError="MARK_RAN" onFail="MARK_RAN">
+	 <sqlCheck expectedResult="0">select count(*) from SystemPropertyValue</sqlCheck>
+	</preConditions>
+	<comment>Load up if table is empty</comment>
+	<loadData file="sqlUpdates/data/SystemPropertyTestData_1-37/SystemPropertyValues.csv" tableName="SystemPropertyValue">
+	        <column name="value" type="STRING"/>
+			<column name="property_id" type="NUMERIC"/>
+	</loadData>
+	</changeSet>
+	
+	<changeSet id="16-7-19b" author="richard">
+	<validCheckSum>7:4c1ec9ce215d97a3f1ba7e7c9d65e2ba</validCheckSum>
+	<validCheckSum>7:227c02052452483717ee671eba3be001</validCheckSum>
+	<validCheckSum>8:b9ce9975e3ef48a49efef31d0975f45b</validCheckSum>
+	<preConditions onError="MARK_RAN" onFail="MARK_RAN">
+	 <sqlCheck expectedResult="1">select 1 from (select count(*) c from SystemPropertyValue)q where c = 6</sqlCheck>
+	</preConditions>
+	<comment> Add in values for old system properties previously obtained from deployment properties that have
+	 not been added by liquibase</comment>
+	 <loadData file="sqlUpdates/data/SystemPropertyTestData_1-37/SystemPropertyValuesForNewDeployments.csv" tableName="SystemPropertyValue">
+	        <column name="id" type="NUMERIC"/>
+	        <column name="value" type="STRING"/>
+			<column name="property_id" type="NUMERIC"/>
+	</loadData>
+	
+	</changeSet>
+	
+		
+	<changeSet id="16-7-18g-pre-TestData" author="richard" context="liquibase-update-test">
+	<!-- required for liquibase update to 3.5 -->
+	<validCheckSum>7:4b1a6a97be9d038bd4fd8f63f28f4b10</validCheckSum>	
+	<comment>Need to reset all property values for liquibase tests</comment>
+	<delete tableName="SystemPropertyValue"></delete>
+	<loadData file="sqlUpdates/data/SystemPropertyTestData_1-37/SystemPropertyValues.csv" tableName="SystemPropertyValue">
+	        <column name="value" type="STRING"/>
+			<column name="property_id" type="NUMERIC"/>
+	</loadData>
+	</changeSet>
+	
+	<changeSet id="16-7-18g-pre-TestData2" author="richard" context="liquibase-update-test,run">
+	<comment>Need to reset all property descriptor values for liquibase tests and production</comment>
+	<update tableName="SystemProperty">
+	     <column name="descriptor_id" valueComputed="id"/>
+	</update>
+	</changeSet>
+	
+	<changeSet author="richard" id="16-7-20a" context="run">
+	<comment> Add FK column of App id into AppConfigElementDescriptor</comment>
+	<addColumn tableName="AppConfigElementDescriptor">
+		<column name="app_id" type="BIGINT(19)" />
+	</addColumn>
+  </changeSet>
+	 <changeSet author="richard" id="16-7-20b" context="run">
+	<comment> Add FK constraint of App id into AppConfigElementDescriptor</comment>
+		<addForeignKeyConstraint baseColumnNames="app_id"
+			baseTableName="AppConfigElementDescriptor" constraintName="FK22EED128C68E22F3"
+			deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+			onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="App" />
+	</changeSet>
+	
+	<changeSet id="16-7-20c" author="richard">
+	<comment>Property Descriptors for Slack App</comment>
+	<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="SLACK_CHANNEL_NAME" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="SLACK_TEAM_NAME" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="SLACK_CHANNEL_LABEL" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+		<insert tableName="PropertyDescriptor">
+			<column name="id" type="NUMERIC" value="NULL"/>
+			<column name="defaultValue" type="STRING" value="" />
+			<column name="name" type="STRING" value="SLACK_WEBHOOK_URL" />
+			<column name="type" type="NUMERIC" value="2" />
+		</insert>
+	</changeSet>
+	<changeSet id="16-7-20d" author="richard">
+	<comment>Slack App</comment>
+	  <insert tableName="App">
+			<column name="id" type="NUMERIC" value="1"/>
+			<column name="label" type="STRING" value="Slack" />
+			<column name="name" type="STRING" value="app.slack" />
+			<column name="defaultEnabled" type="BOOLEAN" valueBoolean="true"/>
+		</insert>
+	</changeSet>
+	<changeSet id="16-7-20e" author="richard">
+		<comment>AppConfigElementDescriptor for Slack App: id, descriptor_id, app_id</comment>
+		<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select 1,id,1 from PropertyDescriptor where name =
+			'SLACK_CHANNEL_NAME';</sql>
+		<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select 2,id,1 from PropertyDescriptor where name = 'SLACK_TEAM_NAME';
+		</sql>
+		<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select 3,id,1 from PropertyDescriptor where name =
+			'SLACK_CHANNEL_LABEL';</sql>
+		<sql>insert into AppConfigElementDescriptor (id, descriptor_id,app_id)
+			select 4,id,1 from PropertyDescriptor where name =
+			'SLACK_WEBHOOK_URL';</sql>
+	</changeSet>
+	<changeSet id="16-7-25a" author="richard">
+	<comment>Add permissions for all roles to manage their own AppConfigs</comment>
+		<sql>
+			insert into Role_permissionStrings select id,'APP:CREATE,READ,WRITE,DELETE:property_user=${self}' from roles;
+		</sql>
+	</changeSet>
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+</databaseChangeLog>

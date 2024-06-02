@@ -1,0 +1,254 @@
+{
+  "userStats" : {
+    "totalUsers" : 16,
+    "totalEnabledRSpaceAdmins" : 5,
+    "totalEnabledSysAdmins" : 1,
+    "usedLicenseSeats" : 10,
+    "availableSeats" : "2147483637"
+  },
+  "pgCrit" : {
+    "resultsPerPage" : 10,
+    "orderBy" : "lastName",
+    "sortOrder" : "ASC",
+    "searchCriteria" : {
+      "allFields" : ""
+    }
+  },
+  "userInfo" : {
+    "totalHits" : 16,
+    "pageNumber" : 0,
+    "hitsPerPage" : 10,
+    "results" : [ {
+      "userInfo" : {
+        "id" : -16,
+        "username" : "richard",
+        "firstName" : "Richard",
+        "lastName" : "Smith",
+        "fullName" : "Richard Smith",
+        "fullNameSurnameFirst" : "Smith, Richard",
+        "email" : "test1@researchspace.com",
+        "previousLastLogin" : null,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_ADMIN",
+        "groupNames" : [ ],
+        "tags" : [ "foo" ]
+      },
+      "fileUsage" : 0,
+      "recordCount" : 0,
+      "lastLogin" : null,
+      "creationDate" : 1709025901000,
+      "signupSource" : "INTERNAL"
+    }, {
+      "userInfo" : {
+        "id" : -12,
+        "username" : "sysadmin1",
+        "firstName" : "System",
+        "lastName" : "Admin",
+        "fullName" : "System Admin",
+        "fullNameSurnameFirst" : "Admin, System",
+        "email" : "sysadmin@researchspace.com",
+        "previousLastLogin" : 1709224561000,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_SYSADMIN",
+        "groupNames" : [ ],
+        "tags" : [ ]
+      },
+      "fileUsage" : 362006,
+      "recordCount" : 45,
+      "lastLogin" : 1709224561000,
+      "creationDate" : 1709025728000,
+      "signupSource" : "INTERNAL"
+    }, {
+      "userInfo" : {
+        "id" : -5,
+        "username" : "user8h",
+        "firstName" : "user",
+        "lastName" : "eight",
+        "fullName" : "user eight",
+        "fullNameSurnameFirst" : "eight, user",
+        "email" : "u8@researchspace.com",
+        "previousLastLogin" : null,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_USER",
+        "groupNames" : [ ],
+        "tags" : [ "bar", "foo" ]
+      },
+      "fileUsage" : 0,
+      "recordCount" : 0,
+      "lastLogin" : null,
+      "creationDate" : 1709025901000,
+      "signupSource" : "INTERNAL"
+    }, {
+      "userInfo" : {
+        "id" : -15,
+        "username" : "gary",
+        "firstName" : "Gary",
+        "lastName" : "Meyers",
+        "fullName" : "Gary Meyers",
+        "fullNameSurnameFirst" : "Meyers, Gary",
+        "email" : "test2@researchspace.com",
+        "previousLastLogin" : null,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_ADMIN",
+        "groupNames" : [ ],
+        "tags" : [ "foo" ]
+      },
+      "fileUsage" : 0,
+      "recordCount" : 0,
+      "lastLogin" : null,
+      "creationDate" : 1709025901000,
+      "signupSource" : "INTERNAL"
+    }, {
+      "userInfo" : {
+        "id" : -6,
+        "username" : "user9i",
+        "firstName" : "user",
+        "lastName" : "nine",
+        "fullName" : "user nine",
+        "fullNameSurnameFirst" : "nine, user",
+        "email" : "u9@researchspace.com",
+        "previousLastLogin" : null,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_USER",
+        "groupNames" : [ ],
+        "tags" : [ "foo", "baz", "bar" ]
+      },
+      "fileUsage" : 0,
+      "recordCount" : 0,
+      "lastLogin" : null,
+      "creationDate" : 1709025901000,
+      "signupSource" : "INTERNAL"
+    }, {
+      "userInfo" : {
+        "id" : -2,
+        "username" : "admin",
+        "firstName" : "admin",
+        "lastName" : "one",
+        "fullName" : "admin one",
+        "fullNameSurnameFirst" : "one, admin",
+        "email" : "admin@researchspace.com",
+        "previousLastLogin" : null,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_ADMIN",
+        "groupNames" : [ ],
+        "tags" : [ "foo" ]
+      },
+      "fileUsage" : 0,
+      "recordCount" : 0,
+      "lastLogin" : null,
+      "creationDate" : 1709025901000,
+      "signupSource" : "INTERNAL"
+    }, {
+      "userInfo" : {
+        "id" : -4,
+        "username" : "user7g",
+        "firstName" : "user",
+        "lastName" : "seven",
+        "fullName" : "user seven",
+        "fullNameSurnameFirst" : "seven, user",
+        "email" : "u7@researchspace.com",
+        "previousLastLogin" : null,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_USER,ROLE_PI",
+        "groupNames" : [ ],
+        "tags" : [ "foo" ]
+      },
+      "fileUsage" : 0,
+      "recordCount" : 0,
+      "lastLogin" : null,
+      "creationDate" : 1709025901000,
+      "signupSource" : "INTERNAL"
+    }, {
+      "userInfo" : {
+        "id" : -13,
+        "username" : "fran",
+        "firstName" : "Fran",
+        "lastName" : "Tuckson",
+        "fullName" : "Fran Tuckson",
+        "fullNameSurnameFirst" : "Tuckson, Fran",
+        "email" : "test3@researchspace.com",
+        "previousLastLogin" : null,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_ADMIN",
+        "groupNames" : [ ],
+        "tags" : [ ]
+      },
+      "fileUsage" : 0,
+      "recordCount" : 0,
+      "lastLogin" : null,
+      "creationDate" : 1709025901000,
+      "signupSource" : "INTERNAL"
+    }, {
+      "userInfo" : {
+        "id" : -11,
+        "username" : "user10",
+        "firstName" : "user",
+        "lastName" : "ten",
+        "fullName" : "user ten",
+        "fullNameSurnameFirst" : "ten, user",
+        "email" : "u10@researchspace.com",
+        "previousLastLogin" : null,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_USER",
+        "groupNames" : [ ],
+        "tags" : [ "foo" ]
+      },
+      "fileUsage" : 0,
+      "recordCount" : 0,
+      "lastLogin" : null,
+      "creationDate" : 1709025901000,
+      "signupSource" : "INTERNAL"
+    }, {
+      "userInfo" : {
+        "id" : -3,
+        "username" : "user2b",
+        "firstName" : "user",
+        "lastName" : "two",
+        "fullName" : "user two",
+        "fullNameSurnameFirst" : "two, user",
+        "email" : "u2@researchspace.com",
+        "previousLastLogin" : null,
+        "accountLocked" : false,
+        "enabled" : true,
+        "temporary" : false,
+        "role" : "ROLE_USER",
+        "groupNames" : [ "userGroup" ],
+        "tags" : [ ]
+      },
+      "fileUsage" : 362006,
+      "recordCount" : 41,
+      "lastLogin" : null,
+      "creationDate" : 1709025733000,
+      "signupSource" : "INTERNAL"
+    } ]
+  },
+  "pagination" : [ {
+    "name" : "1",
+    "className" : "page_link",
+    "pageNumber" : 1,
+    "link" : "#"
+  }, {
+    "name" : "2",
+    "className" : "page_link",
+    "pageNumber" : 2,
+    "link" : "/system/ajax/list?pageNumber=1&resultsPerPage=10&sortOrder=ASC&orderBy=lastName&onlyEnabled=false&tempAccountsOnly=false"
+  } ]
+}

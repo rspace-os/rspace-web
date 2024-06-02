@@ -1,0 +1,70 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<!-- Changes for version 1.57 March 2019 -->
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- Add changesets here... -->
+
+    <changeSet id="2019-01-30" author="matthias" context="run">
+        <comment>Column for storing data connected to export archive notification (RSPAC-1611)</comment>
+        <addColumn tableName="Notification">
+            <column name="notificationData" type="LONGTEXT" />
+        </addColumn>
+    </changeSet>
+    
+    <changeSet id="2019-02-27a" author="richard" context="run">
+    <comment>RSPAC-1752 record creation date of chemical structures1. Add columns</comment>
+      <addColumn tableName="RSChemElement">
+       <column name="creationDate" type="datetime" />
+      </addColumn>
+      <addColumn tableName="RSChemElement_AUD">
+       <column name="creationDate" type="datetime" />
+      </addColumn>
+    </changeSet>
+    <changeSet  id="2019-02-27b" author="richard" context="run">
+      <comment>RSPAC-1752 2) Best guess of creation date of existing structures</comment>
+      <sql> create  table RSPAC1752 select c.id as chemId, if (f.id is not null, timestamp(FROM_UNIXTIME(floor(f.modificationDate /1000))), date_sub(curdate(), interval  4 year))
+       as chemCreateDate from RSChemElement c left join Field  f on c.parentId=f.id; </sql>
+    </changeSet>
+    <changeSet  id="2019-02-27c" author="richard" context="run">
+    <comment>RSPAC-1752 3) update RSChemElement tables</comment>
+    <sql>update RSChemElement chem, RSPAC1752 rs set chem.creationDate=rs.chemCreateDate where chem.id=rs.chemId; </sql>
+    </changeSet>
+    <changeSet  id="2019-02-27d" author="richard" context="run">
+     <comment>RSPAC-1752 4) update RSChemElement_AUD tables</comment>
+    <sql>update RSChemElement_AUD chem, RSPAC1752 rs set chem.creationDate=rs.chemCreateDate where chem.id=rs.chemId; </sql>
+    </changeSet>
+    <changeSet  id="2019-02-27e" author="richard" context="run">
+       <preConditions onFail="CONTINUE" onFailMessage="some creation dates are null" onError="CONTINUE">
+         <sqlCheck expectedResult="0">select count(*) from RSChemElement where creationDate is null</sqlCheck>
+       </preConditions>
+        <comment>set to non-null if none a actually null</comment>
+       <addNotNullConstraint columnDataType="datetime" tableName ="RSChemElement" columnName="creationDate"/>
+    </changeSet>
+    <changeSet  id="2019-02-27f" author="richard" context="run">
+      <preConditions onFail="CONTINUE" onFailMessage="2019-02-27f was not executed" onError="CONTINUE">
+        <and>
+          <changeSetExecuted id="2019-02-27e" author="richard" changeLogFile="sqlUpdates/changeLog-1.57.xml"/>
+          <tableExists tableName="RSPAC1752"></tableExists>
+        </and>
+      </preConditions>
+      <comment>Drop temp holding table if previous step completed OK</comment>
+      <dropTable tableName="RSPAC1752"></dropTable>
+    </changeSet>
+
+	<!-- Please read DatabaseChangeGuidelines in this folder before committing 
+		new changesets ! -->
+
+	<!-- only customChange changeSets should be placed below here -->
+
+
+
+
+
+</databaseChangeLog>

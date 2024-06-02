@@ -1,0 +1,108 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2022-04-06a" author="richard">
+        <!-- check if all the ImageBlob migration changesets have been applied. We only need to check these once.
+         For subsequent changesets we can see if this one has succeeded. If so, all the changesetExecuted conditions
+          must be true. Mark as continue so will re-run again.-->
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="assertDocThumbnailSize"/>
+            <changeSetExecuted id="2021-01-18a" author="richard" changeLogFile="sqlUpdates/rspac-2202-hard-blob-delete.xml"/>
+            <changeSetExecuted id="2021-01-18b" author="richard" changeLogFile="sqlUpdates/rspac-2202-hard-blob-delete.xml"/>
+            <changeSetExecuted id="2021-01-18c" author="richard" changeLogFile="sqlUpdates/rspac-2202-hard-blob-delete.xml"/>
+            <changeSetExecuted id="2021-01-18d" author="richard" changeLogFile="sqlUpdates/rspac-2202-hard-blob-delete.xml"/>
+            <changeSetExecuted id="2021-01-18e" author="richard" changeLogFile="sqlUpdates/rspac-2202-hard-blob-delete.xml"/>
+            <changeSetExecuted id="2021-01-19f" author="richard" changeLogFile="sqlUpdates/rspac-2202-hard-blob-delete.xml"/>
+            <changeSetExecuted id="2021-01-19g" author="richard" changeLogFile="sqlUpdates/rspac-2202-hard-blob-delete.xml"/>
+        </preConditions>
+        <dropTable tableName="assertDocThumbnailSize"/>
+    </changeSet>
+    <changeSet id="2022-04-06b" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="assertImgThumbnailSize"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="assertImgThumbnailSize"/>
+    </changeSet>
+    <changeSet id="2022-04-06c" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="assertImgWorkingSize"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="assertImgWorkingSize"/>
+    </changeSet>
+    <changeSet id="2022-04-06d" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="assertThumbnailSize"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="assertThumbnailSize"/>
+    </changeSet>
+    <changeSet id="2022-04-06e" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="failedDocThumbnailConversions"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="failedDocThumbnailConversions"/>
+    </changeSet>
+    <changeSet id="2022-04-06f" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="failedImgThumbnailConversions"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="failedImgThumbnailConversions"/>
+    </changeSet>
+
+    <changeSet id="2022-04-06g" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="failedImgWorkingConversions"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="failedImgWorkingConversions"/>
+    </changeSet>
+    <changeSet id="2022-04-06h" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="failedThumbnailConversions"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="failedThumbnailConversions"/>
+    </changeSet>
+    <changeSet id="2022-04-06i" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="rspac2201_ecatdoc_aud_bk"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="rspac2201_ecatdoc_aud_bk"/>
+    </changeSet>
+    <changeSet id="2022-04-06j" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="rspac2201_ecatdoc_bk"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="rspac2201_ecatdoc_bk"/>
+    </changeSet>
+    <changeSet id="2022-04-06k" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="rspac2201_ecatimage_aud_bk"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="rspac2201_ecatimage_aud_bk"/>
+    </changeSet>
+    <changeSet id="2022-04-06l" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="rspac2201_ecatimage_bk"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="rspac2201_ecatimage_bk"/>
+    </changeSet>
+    <changeSet id="2022-04-06m" author="richard">
+        <preConditions onFail="CONTINUE">
+            <tableExists tableName="rspac2201_thumbnail_bk"/>
+            <changeSetExecuted id="2022-04-06a" author="richard" changeLogFile="sqlUpdates/rspac-2521-obsolete-db-tables.xml"/>
+        </preConditions>
+        <dropTable tableName="rspac2201_thumbnail_bk"/>
+    </changeSet>
+</databaseChangeLog>

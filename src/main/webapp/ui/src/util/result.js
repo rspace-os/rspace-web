@@ -1,0 +1,379 @@
+//@flow strict
+/* eslint no-use-before-define: 0 */
+
+import { Optional } from "./optional";
+
+type ResultInternals<T> =
+  | {|
+      key: "ok",
+      value: T,
+    |}
+  | {|
+      key: "error",
+      errors: Array<Error>,
+    |};
+
+/**
+ * This class is for modeling the results of computations that can fail with
+ * some number of different errors. It is similar to (Optional)[./optional.js]
+ * but includes a list of errors when the computation fails.
+ *
+ * It adheres to the functor and monadic laws, supporting the composition of
+ * computations that may fail. The results of multiple computations that may
+ * fail can be aggregated with this data structure, such as when a parser is
+ * defined as a series of possible options, or where a value is validated
+ * against a set of validation rules. In those cases, if either any or all of
+ * the rules, respectively, end in an OK state then the final Result will be in
+ * an OK state.
+ */
+export class Result<T> {
+  +#state: ResultInternals<T>;
+
+  /**
+   * DO NOT call directly from outside this module, call the smart constructors
+   * below instead
+   */
+  constructor(internal: ResultInternals<T>) {
+    this.#state = internal;
+  }
+
+  /************************
+   ** SMART CONSTRUCTORS **
+   ************************/
+
+  static Ok<U>(value: U): Result<U> {
+    return new Result({ key: "ok", value });
+  }
+
+  static Error<U>(errors: Array<Error>): Result<U> {
+    return new Result({ key: "error", errors });
+  }
+
+  static fromNullable(value: ?T, error: Error): Result<T> {
+    if (value === null || typeof value === "undefined")
+      return Result.Error([error]);
+    return Result.Ok(value);
+  }
+
+  /****************
+   ** PREDICATES **
+   ****************/
+
+  get isOk(): boolean {
+    return this.#state.key === "ok";
+  }
+
+  get isError(): boolean {
+    return this.#state.key === "error";
+  }
+
+  /************************************
+   ** FUNCTIONS APPLIED TO OK BRANCH **
+   ************************************/
+
+  /**
+   * Just like any other functor, transform the value wrapped by the OK branch.
+   */
+  map<U>(f: (T) => U): Result<U> {
+    if (this.#state.key === "error") return Result.Error(this.#state.errors);
+    return Result.Ok(f(this.#state.value));
+  }
+
+  /**
+   * The monadic bind operator, similar to Promise's `then` method.
+   *
+   * This can be thought of a conjunctive operator, as the resulting state will
+   * only be OK if the result of both the original and passed computations is
+   * OK.
+   */
+  flatMap<U>(f: (T) => Result<U>): Result<U> {
+    if (this.#state.key === "error") return Result.Error(this.#state.errors);
+    return f(this.#state.value);
+  }
+
+  /**
+   * Perform a side-effect on the value if the result is in an OK state.
+   * Otherwise the error(s) are discarded.
+   */
+  do(f: (T) => void): void {
+    if (this.#state.key === "error") return;
+    f(this.#state.value);
+  }
+
+  /***************************************
+   ** FUNCTIONS APPLIED TO ERROR BRANCH **
+   ***************************************/
+
+  /**
+   * In the case of the error branch, return a fixed value.
+   *
+   * It is useful to return null, in order to be able to render the value
+   * wrapped in the OK branch as a React node.
+   */
+  orElse<U>(altValue: U): T | U {
+    if (this.#state.key === "error") return altValue;
+    return this.#state.value;
+  }
+
+  /**
+   * Lazily produce a value that can be returned in the case of the Error
+   * branch. This function can also throw the passed (or any other) error to
+   * convert this errors-as-values based logic into using exception handling
+   * instead.
+   */
+  orElseGet<U>(f: (Array<Error>) => U): T | U {
+    if (this.#state.key === "error") return f(this.#state.errors);
+    return this.#state.value;
+  }
+
+  /**
+   * If the first computation did not succeed, then try another.
+   *
+   * This can be thought of as a disjunctive operator as if either computation
+   * results in an OK state the output is an OK state. Across functional
+   * programming, this is known as the Alternative typeclass.
+   */
+  orElseTry<U>(func: (Array<Error>) => Result<U>): Result<T | U> {
+    /*
+     * We take the Result apart and put it back together to satisfy to flow
+     * that `Result<T> | Result<U>` is the same as `Result<T | U>`
+     */
+    if (this.#state.key === "error") {
+      const resultOfFunc = func(this.#state.errors);
+      if (resultOfFunc.#state.key === "error")
+        return Result.Error(resultOfFunc.#state.errors);
+      return Result.Ok(resultOfFunc.#state.value);
+    }
+    return Result.Ok(this.#state.value);
+  }
+
+  /**
+   * To modify/accumulate the errors collected in the Error branch.  The most
+   * common reason to do this is to take a generic error message and convert it
+   * into a specific one for the use-case at hand. Some tips:
+   *
+   *    - `AggregateError` is a useful data structure for accumulating errors;
+   *       it's first argument is the list of errors and the second the typical
+   *       message.
+   *
+   *    - The usual `Error` constructor can also take an object with key
+   *      `cause` as its second parameter to keep a reference to the original
+   *      error(s).
+   */
+  mapError(f: (Array<Error>) => Error): Result<T> {
+    if (this.#state.key === "error")
+      return Result.Error([f(this.#state.errors)]);
+    return Result.Ok(this.#state.value);
+  }
+
+  /********************
+   ** OUTPUT METHODS **
+   ********************/
+
+  toString(): string {
+    if (this.#state.key === "error") return "Result.Error";
+    return `Result.Ok`;
+  }
+
+  /**
+   * Converts the Result into an Optional, discarding the errors in the Error
+   * branch (and returning Optional.empty), and otherwise carring the wrapped
+   * value over from the Ok branch to the Optional.present one.
+   */
+  toOptional(): Optional<T> {
+    if (this.#state.key === "error") return Optional.empty();
+    return Optional.present(this.#state.value);
+  }
+
+  /**
+   * Converts the Result into a Promise, with the OK branch of the Result
+   * mapping to the resolved branch of the Promise and the Error branch mapping
+   * to the rejected branch of the Promise.
+   *
+   * The Result type can effectively be thought of as a synchronous promise,
+   * and so here we're simply lifting it up be asynchonous and thus can be
+   * composed with other asynchronous logic and used with async/await syntax.
+   *
+   * All of the errors are captured by wrapping them in an AggregateError where
+   * necessary.
+   */
+  toPromise(): Promise<T> {
+    if (this.#state.key === "error") {
+      if (this.#state.errors.length > 1) {
+        return Promise.reject(new AggregateError(this.#state.errors));
+      }
+      return Promise.reject(this.#state.errors[0]);
+    }
+    return Promise.resolve(this.#state.value);
+  }
+
+  /***********************
+   ** AGGREGATE HELPERS **
+   ***********************/
+
+  /**
+   * Accumulate up all of the values wrapped by OK states amongst the passed
+   * Results. If all of the Results are in an Error state, then accumulate up
+   * all of the errors. This is useful for defining parsers, where there are a
+   * series of possible options, of which any one suffices; should none pass
+   * then a full error report of each branch being tried can be displayed.
+   */
+  static any(
+    r: Result<T>,
+    ...rest: $ReadOnlyArray<Result<T>>
+  ): Result<$ReadOnlyArray<T>> {
+    if (rest.length > 0) {
+      return (
+        Result.any(...rest)
+          .flatMap<$ReadOnlyArray<T>>((restOfT: $ReadOnlyArray<T>) =>
+            r
+              // if `r` and `rest` are both OK, then concatenate,
+              .map((t: T) => ([t, ...restOfT]: $ReadOnlyArray<T>))
+              // else if `r` is Error and `rest` OK, then return `rest`
+              .orElseTry(() => Result.Ok(restOfT))
+          )
+          // if `rest` is Error, then return `r`
+          .orElseTry((restOfErrors) =>
+            r
+              .map((t) => ([t]: $ReadOnlyArray<T>))
+              // concatenating errors where both `r` and `rest` are Errors
+              .orElseTry((rErrors) =>
+                Result.Error([...rErrors, ...restOfErrors])
+              )
+          )
+      );
+    }
+    return r.map((t) => [t]);
+  }
+
+  /**
+   * A simple helper wrapped around `any` above, that should multiple succeed
+   * then only the first is returned.
+   */
+  static first<U>(r: Result<U>, ...rest: $ReadOnlyArray<Result<U>>): Result<U> {
+    return Result.any(r, ...rest).map((oks) => oks[0]);
+  }
+
+  /**
+   * Accumulate up all of the values wrapped by OK states and only if they all
+   * succeed then return all of the values wrapped in an OK state. Should any
+   * fail, then return an Error state with the errors from all those that
+   * failed. As such, we can be sure that the length of the array wrapped by
+   * the OK branch will be the same as the number of Results initially passed
+   * in. This is particularly useful when defining validation logic, where the
+   * user should only be able to proceed with a form completion if every field
+   * is in a valid state.
+   */
+  static all<U>(
+    r: Result<U>,
+    ...rest: $ReadOnlyArray<Result<U>>
+  ): Result<$ReadOnlyArray<U>> {
+    if (typeof r === "undefined") return Result.Ok([]);
+    if (rest.length > 0) {
+      return Result.all(...rest)
+        .orElseTry<$ReadOnlyArray<U>>((restOfErrors) =>
+          r
+            .orElseTry<$ReadOnlyArray<U>>((rErrors) =>
+              Result.Error([...rErrors, ...restOfErrors])
+            )
+            .flatMap<$ReadOnlyArray<U>>(() => Result.Error(restOfErrors))
+        )
+        .flatMap<$ReadOnlyArray<U>>((restOfT) =>
+          r.map<$ReadOnlyArray<U>>((t: U) => [t, ...restOfT])
+        );
+    }
+    return r.map((t) => [t]);
+  }
+}
+
+/*
+ * These helper functions transform passed functions that operate on normal
+ * values into function that operate on values wrapped in Results.
+ *
+ * They can't all simply be replaced with a single function that takes a rest
+ * argument and recurses over that array because the types of each of the
+ * wrapped values is different and we want to preserve that difference. As
+ * such, if the function you require is not defined then add it, and in order
+ * to do so all of functions beneath it.
+ *
+ * It is possible that all of this deep function calls and instantiation of
+ * Result may have performance implications, in which case this functional
+ * approach may not be most applicable and the code should instead be
+ * implemented using `null`s, exception handling, and flow type suppressions
+ * where required. Don't preempt that though.
+ */
+
+export function lift<A, B>(func: (A) => B, resultA: Result<A>): Result<B> {
+  return resultA.map(func);
+}
+
+export function lift2<A, B, C>(
+  func: (A, B) => C,
+  resultA: Result<A>,
+  resultB: Result<B>
+): Result<C> {
+  return resultA.flatMap((a) => lift((b) => func(a, b), resultB));
+}
+
+export function lift3<A, B, C, D>(
+  func: (A, B, C) => D,
+  resultA: Result<A>,
+  resultB: Result<B>,
+  resultC: Result<C>
+): Result<D> {
+  return resultA.flatMap((a) =>
+    lift2((b, c) => func(a, b, c), resultB, resultC)
+  );
+}
+
+export function lift4<A, B, C, D, E>(
+  func: (A, B, C, D) => E,
+  resultA: Result<A>,
+  resultB: Result<B>,
+  resultC: Result<C>,
+  resultD: Result<D>
+): Result<E> {
+  return resultA.flatMap((a) =>
+    lift3((b, c, d) => func(a, b, c, d), resultB, resultC, resultD)
+  );
+}
+
+export function lift5<A, B, C, D, E, F>(
+  func: (A, B, C, D, E) => F,
+  resultA: Result<A>,
+  resultB: Result<B>,
+  resultC: Result<C>,
+  resultD: Result<D>,
+  resultE: Result<E>
+): Result<F> {
+  return resultA.flatMap((a) =>
+    lift4(
+      (b, c, d, e) => func(a, b, c, d, e),
+      resultB,
+      resultC,
+      resultD,
+      resultE
+    )
+  );
+}
+
+export function lift6<A, B, C, D, E, F, G>(
+  func: (A, B, C, D, E, F) => G,
+  resultA: Result<A>,
+  resultB: Result<B>,
+  resultC: Result<C>,
+  resultD: Result<D>,
+  resultE: Result<E>,
+  resultF: Result<F>
+): Result<G> {
+  return resultA.flatMap((a) =>
+    lift5(
+      (b, c, d, e, f) => func(a, b, c, d, e, f),
+      resultB,
+      resultC,
+      resultD,
+      resultE,
+      resultF
+    )
+  );
+}

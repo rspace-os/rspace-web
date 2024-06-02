@@ -1,0 +1,220 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+<!-- Changes for version 0.15->0.16 DON'T EDIT THIS NOW-->
+<changeSet id="6-3-2014-1" author="radams">
+<preConditions onFail="MARK_RAN">
+ <sqlCheck expectedResult="0">select count(id) from roles where name='ROLE_PI'</sqlCheck>
+</preConditions>
+<comment>Add PI role as global role, if not already present</comment>
+<insert tableName="roles">
+	<column name="id">NULL</column>
+	<column name="description">PI role</column>
+	<column name="name">ROLE_PI</column>
+</insert>
+</changeSet>
+
+<changeSet id="6-3-2014-2" author="radams">
+<comment>Give all existing group PIs a global PI role</comment>
+<sql>
+insert into user_role select distinct user_id, roles.id  from UserGroup,roles where roleInGroup =1 and  name='ROLE_PI';
+</sql>
+</changeSet>
+
+<changeSet id="7-3-2014-1" author="radams" context="dev-test,liquibase-update-test">
+<comment>Set some test users to have PI role</comment>
+<sql>
+ insert into user_role select User.id, roles.id from User,roles where username='user1a' and name='ROLE_PI';
+  insert into user_role select User.id, roles.id from User,roles where username='user3c' and name='ROLE_PI';
+   insert into user_role select User.id, roles.id from User,roles where username='user4d' and name='ROLE_PI';
+    insert into user_role select User.id, roles.id from User,roles where username='user7g' and name='ROLE_PI';
+</sql>
+</changeSet>
+
+<changeSet id="20-3-2014-1" author="radams">
+    <comment>Add a 'Create user' permission to admins/sysadmins</comment>
+    <sql>
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_ADMIN'),'USER:CREATE:property_role=ROLEUSER,ROLEPI,ROLEADMIN');
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_SYSADMIN'),'USER:CREATE:');
+	</sql>
+    
+</changeSet>
+
+<changeSet author="radams (generated)" id="1395657188159-13" context="run">
+<comment>Create community table</comment>
+<createTable tableName="Community">
+<column name="id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="creationDate" type="datetime"/>
+<column name="displayName" type="VARCHAR(255)"/>
+<column name="uniqueName" type="VARCHAR(100)"/>
+</createTable>
+<addPrimaryKey columnNames="id" constraintName="PRIMARY" tableName="Community"/>
+<createIndex indexName="uniquename" tableName="Community" unique="true">
+<column name="uniqueName"/>
+</createIndex>
+</changeSet>
+
+<changeSet author="radams (generated)" id="1395657188159-82" context="run">
+<comment>Create community-admin join table</comment>
+<createTable tableName="community_admin">
+<column name="community_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="user_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+</createTable>
+<addPrimaryKey columnNames="community_id, user_id" constraintName="PRIMARY" tableName="community_admin"/>
+<addForeignKeyConstraint baseColumnNames="user_id" baseTableName="community_admin" constraintName="FK12144379DE6F978E" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User"/>
+<addForeignKeyConstraint baseColumnNames="community_id" baseTableName="community_admin" constraintName="FK12144379E9E1AFE6" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Community"/>
+
+</changeSet>
+
+<changeSet author="dave (generated)" id="1396127372483-2" context="run">
+	<comment>Create Thumbnail table</comment>
+	
+	<createTable tableName="Thumbnail">
+		<column autoIncrement="true" name="id" type="BIGINT(19)">
+			<constraints primaryKey="true"/>
+		</column>
+		<column name="height" type="INT(10)">
+			<constraints nullable="false"/>
+		</column>
+		<column name="sourceId" type="BIGINT(19)"/>
+		<column name="sourceType" type="INT(10)"/>
+		<column name="width" type="INT(10)">
+			<constraints nullable="false"/>
+		</column>
+		<column name="imageBlob_id" type="BIGINT(19)">
+			<constraints nullable="false"/>
+		</column>
+	</createTable>
+
+	<addForeignKeyConstraint baseColumnNames="imageBlob_id" baseTableName="Thumbnail" constraintName="FKC6C070CC310145A6" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ImageBlob"/>
+</changeSet>
+<changeSet author="radams (generated)" id="1396549248368-2" context="run">
+ <comment>Add creation date to User and Group tables</comment>
+<addColumn tableName="AbstractUserOrGroupImpl_AUD">
+<column name="creationDate" type="DATETIME(19)"/>
+</addColumn>
+<addColumn tableName="User">
+<column name="creationDate" type="DATETIME(19)"/>
+</addColumn>
+<addColumn tableName="rsGroup">
+<column name="creationDate" type="DATETIME(19)"/>
+</addColumn>
+</changeSet>
+<changeSet author="radams (generated)" id="1396549248368-5" context="run">
+<comment>Add short profile field to user profile</comment>
+<addColumn tableName="UserProfile">
+<column name="shortProfileText" type="VARCHAR(255)"/>
+</addColumn>
+</changeSet>
+<changeSet id="04-04-14a" author="radams" context="run">
+<comment>Set default creation date into existing users and groups</comment>   
+<update tableName="User">
+   <column valueComputed="(select now())" name="creationDate"></column> 
+   <where>creationDate is NULL</where>
+</update>
+<update tableName="rsGroup">
+   <column valueComputed="(select now())" name="creationDate"></column> 
+   <where>creationDate is NULL</where>
+</update>
+</changeSet>
+<changeSet author="radams (generated)" id="1396644007145-1" context="run">
+    <comment>Create community -LabGroup table</comment>
+<createTable tableName="community_labGroups">
+<column name="community_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+<column name="group_id" type="BIGINT(19)">
+<constraints nullable="false"/>
+</column>
+</createTable>
+<addPrimaryKey columnNames="community_id, group_id" constraintName="PRIMARY" tableName="community_labGroups"/>
+<addForeignKeyConstraint baseColumnNames="group_id" baseTableName="community_labGroups" constraintName="FK46B464EB1CC96626" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="rsGroup"/>
+<addForeignKeyConstraint baseColumnNames="community_id" baseTableName="community_labGroups" constraintName="FK46B464EBE9E1AFE6" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Community"/>
+
+</changeSet>
+
+<changeSet  id="07-04-14b" author="radams" context="run">
+ <comment>Alter engines to InnoDB for created tables</comment>
+ <sql>alter table UserProfile engine=InnoDB;</sql>
+ <sql>alter table UserPasswordChange engine=InnoDB;</sql>
+ <sql>alter table Community engine=InnoDB;</sql>
+  <sql>alter table community_labGroups engine=InnoDB;</sql>
+   <sql>alter table community_admin engine=InnoDB;</sql>
+   <sql>alter table Thumbnail engine=InnoDB;</sql>
+</changeSet>
+
+<changeSet id="08-04-14a" author="radams" >
+ <comment>Insert default AllGroups community</comment>   
+ <insert tableName="Community">
+     <column name="id">-1</column>
+     <column name="creationDate">now()</column>
+     <column name="uniqueName">rs.default.allGroups</column>
+     <column name="displayName">All Groups</column>  
+ </insert>
+</changeSet>
+<changeSet id="08-04-14b" author="radams" context="run" >
+ <comment>Make existing lab groups belong to default community</comment> 
+ <sql>insert into community_labGroups select -1,id from rsGroup where groupType=0;</sql>  
+ <rollback>
+     <comment>remove lab groups from default community</comment>
+     <sql>
+         delete from community_labGroups where community_id=-1;
+     </sql>
+ </rollback>
+</changeSet>
+<changeSet id="08-04-14c" author="radams" >
+ <comment>Set initial sysadmin to be default community admin. -1 is the ID of the default community</comment>   
+<sql>
+    insert into community_admin   (select  -1,(select id from User inner join user_role on User.id=user_role.user_id  where user_role.role_id=(select id from roles where name ='ROLE_SYSADMIN')  order by creationDate desc limit 1) );
+</sql>
+<rollback>
+    <sql>delete from community_admin where community_id=-1</sql>
+</rollback>
+</changeSet>
+<changeSet id="08-04-14d" author="radams" context="dev-test,liquibase-update-test,sso-ed">
+ <comment>Alter username of developer test account</comment>
+ <update tableName="User">
+     <column name="username" >v1gyang</column>
+     <where>username='sunny';</where>
+ </update>
+    
+</changeSet>
+<changeSet author="radams (generated)" id="1396998485977-1" context="run">
+    <comment>Add profile text to community table</comment>
+<addColumn tableName="Community">
+<column name="profileText" type="VARCHAR(255)"/>
+</addColumn>
+</changeSet>
+<changeSet author="radams (generated)" id="1396998485977-2" context="run">
+<comment>Add profile text to Group table</comment>
+<addColumn tableName="rsGroup">
+<column name="profileText" type="VARCHAR(255)"/>
+</addColumn>
+</changeSet>
+
+<changeSet author="dave (generated)" id="1397192259587-7" context="run">
+	<comment>Add revisionId and sourceParentId columns to Thumbnail table</comment>
+	<addColumn tableName="Thumbnail">
+		<column name="revisionId" type="BIGINT(19)"/>
+	</addColumn>
+	<addColumn tableName="Thumbnail">
+		<column name="sourceParentId" type="BIGINT(19)"/>
+	</addColumn>
+</changeSet>
+
+<changeSet id="18-4-2014-1" author="radams">
+    <comment>Add global community edit permission to sysadmin</comment>
+    <sql>
+		insert into Role_permissionStrings values ( (select id from roles where name='ROLE_SYSADMIN'),'COMMUNITY:WRITE:');
+	</sql>
+    
+</changeSet>
+
+</databaseChangeLog>

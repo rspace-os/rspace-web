@@ -1,0 +1,44 @@
+#header,
+#nav,
+#sub,
+#sub h2,
+#footer,
+#local,
+#toolbar2,
+#status,
+.rs-entry-navigation,
+#owncloudDialog,
+#prevEntryButton_mobile,
+#nextEntryButton_mobile,
+.MuiTooltip-popper,
+.displayRevisionsContainer,
+.recordInfoIcon,
+.glyphicon.glyphicon-arrow-left,
+.glyphicon.glyphicon-arrow-right,
+.glyphicon.glyphicon-pencil {
+  display: none !important;
+}
+
+table { page-break-inside:auto }
+div   { page-break-inside:avoid; } /* This is the key */
+thead { display:table-header-group }
+tfoot { display:table-footer-group }
+
+a[href]::after {
+  content: none !important;
+}
+
+.textFieldViewModeDiv {
+  background: white !important;
+  border: 0px !important;
+}
+
+.rs-record-header-line .row {
+  display: flex;
+}
+
+#main,
+#content,
+.table {
+  width: 700px;
+}

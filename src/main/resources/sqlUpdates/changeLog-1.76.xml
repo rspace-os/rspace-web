@@ -1,0 +1,48 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Changes for version 1.76 March 2022 -->
+
+    <!-- Please read DatabaseChangeGuidelines in this folder before committing
+        new changesets ! -->
+
+    <!-- Add changesets here... -->
+    <changeSet author="nhanlon" id="2022-02-28a" context="run">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="ClustermarketBookings"/>
+            </not>
+        </preConditions>
+        <comment>Store bookings data from Clustermarket API as it is immutable</comment>
+        <createTable tableName="ClustermarketBookings">
+            <column name="booking_id" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data" type="LONGTEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="booking_id" constraintName="PRIMARY" tableName="ClustermarketBookings"/>
+        <sql>alter table ClustermarketBookings engine=InnoDB, CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</sql>
+    </changeSet>
+    <changeSet id="2022-02-28b" author="nhanlon" context="run">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="ClustermarketEquipment"/>
+            </not>
+        </preConditions>
+        <createTable tableName="ClustermarketEquipment">
+            <column name="equipment_id" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data" type="LONGTEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="equipment_id" constraintName="PRIMARY" tableName="ClustermarketEquipment"/>
+        <sql>alter table ClustermarketEquipment engine=InnoDB, CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</sql>
+    </changeSet>
+</databaseChangeLog>

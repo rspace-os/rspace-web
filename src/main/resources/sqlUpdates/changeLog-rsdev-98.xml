@@ -1,0 +1,19 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2024-01-17" context="run" author="matthias">
+        <comment>Add a tag and tag-metadata column to Folder and Folder_AUD</comment>
+        <addColumn tableName="Folder">
+            <column name="docTag" type="varchar(8000)" />
+            <column name="tagMetaData" type="longtext" />
+        </addColumn>
+        <addColumn tableName="Folder_AUD">
+            <column name="docTag" type="varchar(8000)" />
+            <column name="tagMetaData" type="longtext" />
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

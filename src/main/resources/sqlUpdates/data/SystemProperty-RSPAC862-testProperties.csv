@@ -1,0 +1,4 @@
+id,defaultValue,name,type,dependent_id
+-1,parentValue,parent.property,2,NULL
+-2,childValue,child.property,2,-1
+-3,23,numeric.property,1,NULL

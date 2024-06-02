@@ -1,0 +1,48 @@
+{
+  "data": [
+    {
+      "name": "idr0018-neff-histopathology/experimentA",
+      "id": 101,
+      "description": "Experiment Description\nHistopathology raw images and annotated tiff files of tissues from mice with 10 different single gene knockouts.",
+      "childCounts": 248,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "project",
+      "children": [],
+      "parentId": null
+    },
+    {
+      "name": "idr0021-lawo-pericentriolarmaterial/experimentA",
+      "id": 51,
+      "description": "Publication Title\nSubdiffraction imaging of centrosomes reveals higher-order organizational features of pericentriolar material.\n\nExperiment Description\nImages relating to Figure 1e in Lawo et al 2012. These are the 3D-SIM reconstructed, maximum intensity projected and aligned images of centriole or PCM proteins of cycling HeLa cells in interphase.",
+      "childCounts": 10,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "project",
+      "children": [],
+      "parentId": null
+    },
+    {
+      "name": "idr0117-croce-marimba/experimentA",
+      "id": 2001,
+      "description": "Publication Title\nske-T, a T-box gene expressed in the skeletogenic mesenchyme lineage of the sea urchin embryo\n\nExperiment Description\nSpatial distribution of ske-T transcripts during development.",
+      "childCounts": 9,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "project",
+      "children": [],
+      "parentId": null
+    },
+    {
+      "name": "idr0148-schumacher-kidneytem/experimentA",
+      "id": 2651,
+      "description" : "K",
+      "childCounts": 10,
+      "omeroConnectionKey": "user1a",
+      "annotations": [],
+      "type": "project",
+      "children": [],
+      "parentId": null
+    }
+  ]
+}

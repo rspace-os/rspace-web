@@ -1,0 +1,72 @@
+FBst	collection_short_name	stock_type_cv	species	FB_genotype	description	stock_number
+FBst0000002	Bloomington	living stock ; FBsv:0000002	Dmel	w[*]; betaTub60D[2] Kr[If-1]/CyO	w[*]; betaTub60D[2] Kr[If-1]/CyO	2
+FBst0000004	Bloomington	living stock ; FBsv:0000002	Dmel	Hikone-A-W	Hikone-A-W	4
+FBst0000005	Bloomington	living stock ; FBsv:0000002	Dmel	Oregon-R-C	Oregon-R-C	5
+FBst0000006	Bloomington	living stock ; FBsv:0000002	Dmel	P{ry[+t7.2]=hsFLP}1, w[1118]; Adv[1]/CyO	P{ry[+t7.2]=hsFLP}1, w[1118]; Adv[1]/CyO	6
+FBst0000007	Bloomington	living stock ; FBsv:0000002	Dmel	P{ry[+t7.2]=hsFLP}1, y[1] w[1118]; Dr[Mio]/TM3, ry[*] Sb[1]	P{ry[+t7.2]=hsFLP}1, y[1] w[1118]; Dr[Mio]/TM3, ry[*] Sb[1]	7
+FBst0000008	Bloomington	living stock ; FBsv:0000002	Dmel	ac[4] w[a]	ac[4] w[a]	8
+FBst0000010	Bloomington	living stock ; FBsv:0000002	Dmel	amx[1] lz[g] v[1]/C(1)DX, y[1] f[1]	amx[1] lz[g] v[1]/C(1)DX, y[1] f[1]	10
+FBst0000011	Bloomington	living stock ; FBsv:0000002	Dmel	Df(3L)HR218/In(3LR)T33[L]f19[R]	Df(3L)HR218/In(3LR)T33[L]f19[R]	11
+FBst0000012	Bloomington	living stock ; FBsv:0000002	Dmel	bi[1] ct[6] g[2]/C(1)DX, y[1] f[1]	bi[1] ct[6] g[2]/C(1)DX, y[1] f[1]	12
+FBst0000013	Bloomington	living stock ; FBsv:0000002	Dmel	bo[1] v[1]	bo[1] v[1]	13
+FBst0000014	Bloomington	living stock ; FBsv:0000002	Dmel	br[1] w[e] ec[1] rb[1] t[4]/FM1, lz[+]	br[1] w[e] ec[1] rb[1] t[4]/FM1, lz[+]	14
+FBst0000015	Bloomington	living stock ; FBsv:0000002	Dmel	Bx[1]	Bx[1]	15
+FBst0000016	Bloomington	living stock ; FBsv:0000002	Dmel	C(1)RM, y[1] P{w[+mC]=lacW}elav[5-45fD] w[*] P{lacW}ogre[5-45fP] P{lacW}3-52d P{lacW}3-76a/0/C(1;Y)13, v[1] f[1]	C(1)RM, y[1] P{w[+mC]=lacW}elav[5-45fD] w[*] P{lacW}ogre[5-45fP] P{lacW}3-52d P{lacW}3-76a/0/C(1;Y)13, v[1] f[1]	16
+FBst0000018	Bloomington	living stock ; FBsv:0000002	Dmel	mid[2] cn[1] bw[1] sp[1]/CyO	mid[2] cn[1] bw[1] sp[1]/CyO	18
+FBst0000019	Bloomington	living stock ; FBsv:0000002	Dmel	car[1]	car[1]	19
+FBst0000020	Bloomington	living stock ; FBsv:0000002	Dmel	car[1] su(f)[8]	car[1] su(f)[8]	20
+FBst0000021	Bloomington	living stock ; FBsv:0000002	Dmel	cm[1]	cm[1]	21
+FBst0000022	Bloomington	living stock ; FBsv:0000002	Dmel	cm[1] ct[6]	cm[1] ct[6]	22
+FBst0000024	Bloomington	living stock ; FBsv:0000002	Dmel	ct[n] oc[1]/FM1	ct[n] oc[1]/FM1	24
+FBst0000025	Bloomington	living stock ; FBsv:0000002	Dmel	Df(2L)cl-h1/CyO, amos[Roi-1]	Df(2L)cl-h1/CyO, amos[Roi-1]	25
+FBst0000026	Bloomington	living stock ; FBsv:0000002	Dmel	Myc[dm-1]/C(1)DX, y[1] f[1]	Myc[dm-1]/C(1)DX, y[1] f[1]	26
+FBst0000027	Bloomington	living stock ; FBsv:0000002	Dmel	PolD3[rd-1]/SM5	PolD3[rd-1]/SM5	27
+FBst0000028	Bloomington	living stock ; FBsv:0000002	Dmel	dor[8]/FM6	dor[8]/FM6	28
+FBst0000029	Bloomington	living stock ; FBsv:0000002	Dmel	dow[1]/FM6	dow[1]/FM6	29
+FBst0000030	Bloomington	living stock ; FBsv:0000002	Dmel	dy[1]	dy[1]	30
+FBst0000031	Bloomington	living stock ; FBsv:0000002	Dmel	w[118]; Df(2R)H3D3/CyO	w[118]; Df(2R)H3D3/CyO	31
+FBst0000032	Bloomington	living stock ; FBsv:0000002	Dmel	ec[1]	ec[1]	32
+FBst0000033	Bloomington	living stock ; FBsv:0000002	Dmel	ec[1] ct[6] sable[1] car[1]/FM6	ec[1] ct[6] sable[1] car[1]/FM6	33
+FBst0000034	Bloomington	living stock ; FBsv:0000002	Dmel	ec[1] dx[1]	ec[1] dx[1]	34
+FBst0000035	Bloomington	living stock ; FBsv:0000002	Dmel	dor[4]/C(1)RM, y[1] w[1] f[1]	dor[4]/C(1)RM, y[1] w[1] f[1]	35
+FBst0000036	Bloomington	living stock ; FBsv:0000002	Dmel	f[1]	f[1]	36
+FBst0000039	Bloomington	living stock ; FBsv:0000002	Dmel	f[1] B[BB]/C(1)DX, y[1] f[1]	f[1] B[BB]/C(1)DX, y[1] f[1]	39
+FBst0000040	Bloomington	living stock ; FBsv:0000002	Dmel	f[1] B[36b]/C(1)DX, y[1] f[1]	f[1] B[36b]/C(1)DX, y[1] f[1]	40
+FBst0000043	Bloomington	living stock ; FBsv:0000002	Dmel	f[36a]	f[36a]	43
+FBst0000044	Bloomington	living stock ; FBsv:0000002	Dmel	f[1] su(f)[8]	f[1] su(f)[8]	44
+FBst0000045	Bloomington	living stock ; FBsv:0000002	Dmel	N[fa-1]	N[fa-1]	45
+FBst0000046	Bloomington	living stock ; FBsv:0000002	Dmel	flw[1]	flw[1]	46
+FBst0000047	Bloomington	living stock ; FBsv:0000002	Dmel	fo[1]	fo[1]	47
+FBst0000048	Bloomington	living stock ; FBsv:0000002	Dmel	N[fa-fx]/C(1)DX, y[1] f[1]	N[fa-fx]/C(1)DX, y[1] f[1]	48
+FBst0000049	Bloomington	living stock ; FBsv:0000002	Dmel	Df(3L)HR218, Dp(3;3)pdp7, ca[1]/TM6B, Tb[1] ca[1]	Df(3L)HR218, Dp(3;3)pdp7, ca[1]/TM6B, Tb[1] ca[1]	49
+FBst0000050	Bloomington	living stock ; FBsv:0000002	Dmel	g[2] pl[1]/FM3	g[2] pl[1]/FM3	50
+FBst0000051	Bloomington	living stock ; FBsv:0000002	Dmel	g[2] ty[1]/C(1)DX, y[1] f[1]	g[2] ty[1]/C(1)DX, y[1] f[1]	51
+FBst0000052	Bloomington	living stock ; FBsv:0000002	Dmel	cn[1]; P{ry[+t7.2]=dpp[shv]-lacZ.RD2}RD2, ry[506]	cn[1]; P{ry[+t7.2]=dpp[shv]-lacZ.RD2}RD2, ry[506]	52
+FBst0308253	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2050/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2050/SM1	200232
+FBst0308255	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2057/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2057/SM1	200234
+FBst0308256	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2058/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2058/SM1	200235
+FBst0308257	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2059/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2059/SM1	200236
+FBst0308258	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2060/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2060/SM1	200237
+FBst0308259	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2061/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2061/SM1	200238
+FBst0308260	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2062/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2062/SM1	200239
+FBst0308261	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2063/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2063/SM1	200240
+FBst0308262	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2064/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2064/SM1	200241
+FBst0308264	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2066/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2066/SM1	200243
+FBst0308265	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2068/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2068/SM1	200244
+FBst0308267	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2071/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2071/SM1	200246
+FBst0308269	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2075/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2075/SM1	200248
+FBst0308271	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}alpha4GT1[GS2078]/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2078/SM1	200250
+FBst0308276	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2085/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2085/SM1	200255
+FBst0308279	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2088/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2088/SM1	200258
+FBst0308284	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2094/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2094/SM1	200263
+FBst0308285	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2099/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2099/SM1	200264
+FBst0308286	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2101/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2101/SM1	200266
+FBst0308289	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2105/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2105/SM1	200269
+FBst0308290	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2106/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2106/SM1	200270
+FBst0308291	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2108/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2108/SM1	200271
+FBst0308292	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2110/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2110/SM1	200272
+FBst0308293	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}chn[GS2112]/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2112/SM1	200273
+FBst0308296	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2117/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2117/SM1	200276
+FBst0308298	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}GS2119/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}GS2119/SM1	200278
+FBst0308299	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}fy[GS2120]/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}fy[GS2120]/SM1	200279
+FBst0308300	Kyoto	living stock ; FBsv:0000002	Dmel	y[1] w[67c23]; P{w[+mC]=GSV1}ADD1[GS2121]/SM1	y[1] w[67c23]; P{w[+mC]=GSV1}CG8290[GS2121]/SM1	200280

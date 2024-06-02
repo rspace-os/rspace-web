@@ -1,0 +1,31 @@
+---
+## you can add comments
+name: Restriction Enzyme
+tags:
+  - value:  molecular biology
+  - value:  digests
+# ul volume
+defaultUnitId: 4
+subSampleAlias:
+  alias: aliquot
+  plural: aliquots
+fields:
+- name:  Recognition sequence length
+  type: Radio
+  definition:
+    options: [4, 6, 8, other]
+  selectedOptions: [6]
+- name: Incubation Temperature (C)
+  type: Number
+  content: 37
+- name: Cut-type
+  type: Radio
+  definition:
+    options: [Blunt, Overhanging]
+  selectedOptions: [Overhanging]
+- name: Recognition Site
+  type: String
+- name: Vendor
+  type: Radio
+  definition:
+    options: [Invitrogen, New England Biolabs, Amersham, Sigma]

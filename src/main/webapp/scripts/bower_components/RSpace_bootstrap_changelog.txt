@@ -1,0 +1,8 @@
+-------------------------------------------------------------------
+- This documents describes steps after updating bootstrap lib     -
+-------------------------------------------------------------------
+
+We haven't done any changes to bootstrap lib itself, but the bootstrap-namespace.min.css 
+file should be re-generated so it's the same version of bootstrap that is used across RSpace. 
+
+For steps to re-generate bootstrap-namespace css read 'scripts\bootstrap-namespace\Readme.md'. 
