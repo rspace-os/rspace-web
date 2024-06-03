@@ -123,6 +123,9 @@ const Picker = observer(
     );
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
     const [selectedSection, setSelectedSection] = React.useState("Chemistry");
+    const [drawerOpen, setDrawerOpen] = React.useState(
+      !viewport.isViewportSmall
+    );
     const { galleryListing, path, clearPath } = useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
@@ -142,11 +145,14 @@ const Picker = observer(
         <AppBar
           appliedSearchTerm={appliedSearchTerm}
           setAppliedSearchTerm={setAppliedSearchTerm}
+          setDrawerOpen={setDrawerOpen}
+          drawerOpen={drawerOpen}
         />
         <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
           <Sidebar
             selectedSection={selectedSection}
             setSelectedSection={setSelectedSection}
+            drawerOpen={drawerOpen}
           />
           <Box
             sx={{

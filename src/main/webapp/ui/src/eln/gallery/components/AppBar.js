@@ -26,13 +26,15 @@ const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
 export default function GalleryAppBar({
   appliedSearchTerm,
   setAppliedSearchTerm,
+  setDrawerOpen,
+  drawerOpen,
 }: {|
   appliedSearchTerm: string,
   setAppliedSearchTerm: (string) => void,
+  setDrawerOpen: (boolean) => void,
+  drawerOpen: boolean,
 |}): Node {
   const viewport = useViewportDimensions();
-  const [drawerOpen, setDrawerOpen] = React.useState(!viewport.isViewportSmall);
-
   const [showTextfield, setShowTextfield] = React.useState(false);
   const searchTextfield = React.useRef();
   const [searchTerm, setSearchTerm] = React.useState("");

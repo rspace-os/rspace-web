@@ -10,7 +10,6 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import useViewportDimensions from "../../../util/useViewportDimensions";
 import { darken } from "@mui/system";
 import { gallerySectionLabel } from "../picker/common";
 import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
@@ -105,12 +104,12 @@ const DrawerTab = styled(
 export default function GallerySidebar({
   selectedSection,
   setSelectedSection,
+  drawerOpen,
 }: {|
   selectedSection: string,
   setSelectedSection: (string) => void,
+  drawerOpen: boolean,
 |}): Node {
-  const viewport = useViewportDimensions();
-  const [drawerOpen] = React.useState(!viewport.isViewportSmall);
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(181);
 

@@ -15,6 +15,7 @@ import useGalleryListing, {
 } from "./picker/useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
+import useViewportDimensions from "../../util/useViewportDimensions";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -26,16 +27,22 @@ function WholePage() {
   const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
     null
   );
+  const viewport = useViewportDimensions();
+  const [drawerOpen, setDrawerOpen] = React.useState(!viewport.isViewportSmall);
+
   return (
     <>
       <AppBar
         appliedSearchTerm={appliedSearchTerm}
         setAppliedSearchTerm={setAppliedSearchTerm}
+        setDrawerOpen={setDrawerOpen}
+        drawerOpen={drawerOpen}
       />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <Sidebar
           selectedSection={selectedSection}
           setSelectedSection={setSelectedSection}
+          drawerOpen={drawerOpen}
         />
         <Box
           sx={{
