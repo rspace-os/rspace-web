@@ -4,6 +4,9 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import GalleryPicker from "./picker";
 import ErrorBoundary from "../../components/ErrorBoundary";
+import { ThemeProvider } from "@mui/material/styles";
+import createAccentedTheme from "../../accentedTheme";
+import { COLOR } from "./theme";
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
@@ -14,7 +17,9 @@ window.addEventListener("load", () => {
     root.render(
       <React.StrictMode>
         <ErrorBoundary>
-          <GalleryPicker open={true} onClose={() => {}} />
+          <ThemeProvider theme={createAccentedTheme(COLOR)}>
+            <GalleryPicker open={true} onClose={() => {}} />
+          </ThemeProvider>
         </ErrorBoundary>
       </React.StrictMode>
     );

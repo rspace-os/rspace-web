@@ -4,19 +4,13 @@ import Dialog from "@mui/material/Dialog";
 import React, { type Node, type ElementConfig, type Ref } from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
 import DialogContent from "@mui/material/DialogContent";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
+import AppBar from "../components/AppBar";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
-import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
-import SearchIcon from "@mui/icons-material/Search";
-import InputAdornment from "@mui/material/InputAdornment";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
@@ -43,22 +37,18 @@ import createAccentedTheme from "../../../accentedTheme";
 import { COLORS as baseThemeColors } from "../../../theme";
 import ChemistryIcon from "./chemistryIcon";
 import Avatar from "@mui/material/Avatar";
-import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Grow from "@mui/material/Grow";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { darken } from "@mui/system";
 import useGalleryListing, { type GalleryFile } from "./useGalleryListing";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import Fade from "@mui/material/Fade";
-import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-import CloseIcon from "@mui/icons-material/Close";
 import CardActionArea from "@mui/material/CardActionArea";
 import * as FetchingData from "../../../util/fetchingData";
 import { gallerySectionLabel } from "./common";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import { Result } from "../../../util/result";
 import { observer } from "mobx-react-lite";
-import AccessibilityTips from "../../../components/AccessibilityTips";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -409,32 +399,21 @@ const CustomGrow = React.forwardRef<ElementConfig<typeof Grow>, {||}>(
 );
 CustomGrow.displayName = "CustomGrow";
 
-const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
-  color: theme.palette.standardIcon.main,
-  height: 20,
-  width: 20,
-}));
-
 const Picker = observer(
   ({ open, onClose }: {| open: boolean, onClose: () => void |}) => {
     const viewport = useViewportDimensions();
-    const [drawerOpen, setDrawerOpen] = React.useState(
-      !viewport.isViewportSmall
-    );
+    const [drawerOpen] = React.useState(!viewport.isViewportSmall);
     const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
       React.useState(181);
     const [selectedSection, setSelectedSection] = React.useState("Chemistry");
     const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
       null
     );
-    const [searchTerm, setSearchTerm] = React.useState("");
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
     const { galleryListing, path, clearPath } = useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
     });
-    const searchTextfield = React.useRef();
-    const [showTextfield, setShowTextfield] = React.useState(false);
 
     React.useEffect(() => {
       setSelectedFile(null);
@@ -447,111 +426,10 @@ const Picker = observer(
         onClose={onClose}
         fullScreen={viewport.isViewportSmall}
       >
-        <AppBar position="relative" open={true}>
-          <Toolbar variant="dense">
-            <IconButton
-              aria-label={drawerOpen ? "close drawer" : "open drawer"}
-              onClick={() => {
-                setDrawerOpen(!drawerOpen);
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-            {(!viewport.isViewportVerySmall || !showTextfield) && (
-              <Typography variant="h6" noWrap component="h2">
-                Gallery
-              </Typography>
-            )}
-            <Box
-              flexGrow={viewport.isViewportVerySmall && showTextfield ? 0 : 1}
-            ></Box>
-            {viewport.isViewportVerySmall && !showTextfield && (
-              <IconButtonWithTooltip
-                size="small"
-                onClick={() => {
-                  setShowTextfield(true);
-                  setTimeout(() => {
-                    searchTextfield.current?.focus();
-                  }, 0);
-                }}
-                icon={<SearchIcon />}
-                title="Search this folder"
-              />
-            )}
-            <Box
-              mx={1}
-              sx={{
-                flexGrow: viewport.isViewportSmall ? 1 : 0,
-                display:
-                  !viewport.isViewportVerySmall || showTextfield
-                    ? "block"
-                    : "none",
-              }}
-            >
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  setAppliedSearchTerm(searchTerm);
-                  setShowTextfield(searchTerm !== "");
-                }}
-              >
-                <TextField
-                  placeholder="Search"
-                  sx={{
-                    /*
-                     * This is so that it doesn't obscure the "Gallery" heading on
-                     * very small mobile viewports. 300px is arbitrary width that
-                     * does is smaller enough to not cause any overlapping issues.
-                     */
-                    maxWidth: viewport.isViewportSmall ? "100%" : 300,
-                    width: viewport.isViewportSmall ? "100%" : 300,
-                  }}
-                  value={searchTerm}
-                  onChange={({ currentTarget: { value } }) =>
-                    setSearchTerm(value)
-                  }
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    endAdornment:
-                      searchTerm !== "" ? (
-                        <IconButtonWithTooltip
-                          title="Clear"
-                          icon={<StyledCloseIcon />}
-                          size="small"
-                          onClick={() => {
-                            setSearchTerm("");
-                            setAppliedSearchTerm("");
-                            setShowTextfield(false);
-                          }}
-                        />
-                      ) : null,
-                  }}
-                  inputProps={{
-                    ref: searchTextfield,
-                    onBlur: () => {
-                      setSearchTerm(appliedSearchTerm);
-                      setShowTextfield(appliedSearchTerm !== "");
-                    },
-                  }}
-                />
-              </form>
-            </Box>
-            <Box ml={1}>
-              <AccessibilityTips
-                elementType="dialog"
-                supportsReducedMotion
-                supportsHighContrastMode
-              />
-            </Box>
-            <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-              <HelpLinkIcon title="Importing from Gallery help" link="#" />
-            </Box>
-          </Toolbar>
-        </AppBar>
+        <AppBar
+          appliedSearchTerm={appliedSearchTerm}
+          setAppliedSearchTerm={setAppliedSearchTerm}
+        />
         <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
           <CustomDrawer
             open={drawerOpen}
