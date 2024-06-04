@@ -23,6 +23,14 @@
       <url>https://jitpack.io</url>
     </repository>
     <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>central</id>
+      <name>Maven Repository Switchboard</name>
+      <url>https://repo1.maven.org/maven2</url>
+    </repository>
+    <repository>
       <id>dice.repository</id>
       <name>dice.repository</name>
       <url>https://raw.github.com/DICE-UNC/DICE-Maven/master/releases</url>
@@ -35,16 +43,7 @@
         <checksumPolicy>warn</checksumPolicy>
       </snapshots>
     </repository>
-    <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>central</id>
-      <name>Maven Repository Switchboard</name>
-      <url>https://repo1.maven.org/maven2</url>
-    </repository>
   </repositories>
-
   <build>
     <defaultGoal>install</defaultGoal>
     <finalName>${artifactName}</finalName>
