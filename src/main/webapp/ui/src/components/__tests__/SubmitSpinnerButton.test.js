@@ -17,10 +17,7 @@ afterEach(cleanup);
 
 describe("SubmitSpinnerButton", () => {
   test("When the button is tapped, onClick should be called.", () => {
-    const onClick = jest.fn<
-      [Event & { currentTarget: EventTarget, ... }],
-      void
-    >();
+    const onClick = jest.fn<[Event], void>();
 
     render(
       <SubmitSpinnerButton
@@ -37,10 +34,7 @@ describe("SubmitSpinnerButton", () => {
   });
 
   test("When the button is disabled and tapped, onClick should not be called.", () => {
-    const onClick = jest.fn<
-      [Event & { currentTarget: EventTarget, ... }],
-      void
-    >();
+    const onClick = jest.fn<[Event], void>();
 
     render(
       <SubmitSpinnerButton

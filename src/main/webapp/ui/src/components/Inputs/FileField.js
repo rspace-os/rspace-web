@@ -4,7 +4,6 @@ import React, {
   type Node,
   type ComponentType,
   type ElementRef,
-  type ElementConfig,
   useState,
   useEffect,
   forwardRef,
@@ -19,7 +18,6 @@ import { makeStyles } from "tss-react/mui";
 import SelectedFileInfo from "./SelectedFileInfo";
 import { readFileAsBinaryString } from "../../util/Util";
 import InputBase from "@mui/material/InputBase";
-import BigIconButton from "../BigIconButton";
 import Grid from "@mui/material/Grid";
 
 const useStyles = makeStyles()((theme) => ({
@@ -43,14 +41,11 @@ const useStyles = makeStyles()((theme) => ({
 type ButtonThatTriggersInvisibleInputArgs = {|
   buttonLabel: string,
   InputProps: {
-    startAdornment?: Node,
     endAdornment?: Node,
   },
   disabled?: boolean,
   id: string,
   icon: Node,
-  explanatoryText?: string,
-  containerProps?: ElementConfig<typeof Grid>,
 |};
 
 const ButtonThatTriggersInvisibleInput = forwardRef<
@@ -64,41 +59,23 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
       disabled,
       id,
       icon,
-      explanatoryText,
-      containerProps,
     }: ButtonThatTriggersInvisibleInputArgs,
     ref
   ) => (
-    <Grid container spacing={1} {...containerProps}>
-      {InputProps.startAdornment}
+    <Grid container spacing={1}>
       <Grid item flexGrow={1}>
         <label htmlFor={id} ref={ref}>
-          {/* These buttons are rendered as HTMLSpanElements so that
-           * tapping them results in the click event bubbling up to the
-           * HTMLLableElement above, which in turn triggers the
-           * HTMLInputElement with type "file" that is rendered in this
-           * file, below.
-           */}
-          {explanatoryText ? (
-            <BigIconButton
-              icon={icon}
-              label={buttonLabel}
-              explanatoryText={explanatoryText}
-              component="span"
-            />
-          ) : (
-            <Button
-              size="large"
-              color="primary"
-              variant="outlined"
-              component="span"
-              fullWidth
-              startIcon={icon}
-              disabled={disabled}
-            >
-              {buttonLabel}
-            </Button>
-          )}
+          <Button
+            size="large"
+            color="primary"
+            variant="outlined"
+            component="span"
+            fullWidth
+            startIcon={icon}
+            disabled={disabled}
+          >
+            {buttonLabel}
+          </Button>
         </label>
       </Grid>
       {InputProps.endAdornment}
@@ -120,7 +97,6 @@ export type FileFieldArgs = {|
   // optional
   id?: string,
   InputProps?: {
-    startAdornment?: Node,
     endAdornment?: Node,
   },
   buttonLabel?: string,
@@ -132,23 +108,9 @@ export type FileFieldArgs = {|
   loading?: boolean,
   name?: string,
   showSelectedFilename?: boolean,
+  triggerButton?: ({| id: string |}) => Node,
   value?: string,
   warningAlert?: string,
-  explanatoryText?: string,
-  containerProps?: ElementConfig<typeof Grid>,
-
-  /*
-   * This overrides the default button that triggers the opening of the
-   * operating system's file picker. If it is set, then some of the props
-   * listed above are ignored:
-   *   - InputProps
-   *   - buttonLabel
-   *   - icon
-   *   - warningAlert
-   *   - explanatoryText
-   *   - containerProps
-   */
-  triggerButton?: ({| id: string |}) => Node,
 |};
 
 function FileField({
@@ -168,8 +130,6 @@ function FileField({
   datatestid,
   triggerButton,
   loadedFile,
-  explanatoryText,
-  containerProps,
 }: FileFieldArgs): Node {
   const generatedId = React.useId();
   const id = passedId ?? generatedId;
@@ -219,7 +179,7 @@ function FileField({
         disabled={disabled}
       />
       {triggerButton?.({ id }) ?? (
-        <FormControl sx={{ width: "100%" }}>
+        <FormControl>
           <InputBase
             type="file"
             inputProps={{
@@ -234,8 +194,6 @@ function FileField({
                 id={id}
                 icon={icon}
                 ref={ref}
-                explanatoryText={explanatoryText}
-                containerProps={containerProps}
               />
             ))}
             error={failedToLoad}
