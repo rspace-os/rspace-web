@@ -198,8 +198,31 @@ export default function GallerySidebar({
           fullWidth
           onClick={(e) => setNewMenuAnchorEl(e.currentTarget)}
           style={{ minWidth: "unset" }}
+          startIcon={
+            <AddIcon
+              style={{
+                transition: window.matchMedia(
+                  "(prefers-reduced-motion: reduce)"
+                ).matches
+                  ? "none"
+                  : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+                transform: drawerOpen ? "translateX(0px)" : "translateX(22px)",
+              }}
+            />
+          }
         >
-          {drawerOpen ? "New" : <AddIcon />}
+          <div
+            style={{
+              transition: window.matchMedia("(prefers-reduced-motion: reduce)")
+                .matches
+                ? "none"
+                : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+              opacity: drawerOpen ? 1 : 0,
+              transform: drawerOpen ? "unset" : "translateX(20px)",
+            }}
+          >
+            New
+          </div>
         </Button>
         <StyledMenu
           open={Boolean(newMenuAnchorEl)}
