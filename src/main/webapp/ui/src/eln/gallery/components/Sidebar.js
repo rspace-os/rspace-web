@@ -62,6 +62,40 @@ const StyledMenu = styled(Menu)(({ open }) => ({
   },
 }));
 
+const AddButton = styled(({ drawerOpen, ...props }) => (
+  <Button
+    {...props}
+    fullWidth
+    style={{ minWidth: "unset" }}
+    startIcon={
+      <AddIcon
+        style={{
+          transition: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "none"
+            : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+          transform: drawerOpen ? "translateX(0px)" : "translateX(22px)",
+        }}
+      />
+    }
+  >
+    <div
+      style={{
+        transition: window.matchMedia("(prefers-reduced-motion: reduce)")
+          .matches
+          ? "none"
+          : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+        opacity: drawerOpen ? 1 : 0,
+        transform: drawerOpen ? "unset" : "translateX(20px)",
+      }}
+    >
+      New
+    </div>
+  </Button>
+))(() => ({
+  color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, ${COLOR.contrastText.lightness}%, 100%)`,
+}));
+
 const NewMenuItem = styled(
   ({
     foregroundColor: _foregroundColor,
@@ -194,36 +228,10 @@ export default function GallerySidebar({
       aria-label="gallery sections drawer"
     >
       <Box width="100%" p={1.5}>
-        <Button
-          fullWidth
+        <AddButton
           onClick={(e) => setNewMenuAnchorEl(e.currentTarget)}
-          style={{ minWidth: "unset" }}
-          startIcon={
-            <AddIcon
-              style={{
-                transition: window.matchMedia(
-                  "(prefers-reduced-motion: reduce)"
-                ).matches
-                  ? "none"
-                  : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
-                transform: drawerOpen ? "translateX(0px)" : "translateX(22px)",
-              }}
-            />
-          }
-        >
-          <div
-            style={{
-              transition: window.matchMedia("(prefers-reduced-motion: reduce)")
-                .matches
-                ? "none"
-                : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
-              opacity: drawerOpen ? 1 : 0,
-              transform: drawerOpen ? "unset" : "translateX(20px)",
-            }}
-          >
-            New
-          </div>
-        </Button>
+          drawerOpen={drawerOpen}
+        />
         <StyledMenu
           open={Boolean(newMenuAnchorEl)}
           anchorEl={newMenuAnchorEl}
