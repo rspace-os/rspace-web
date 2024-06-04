@@ -36,7 +36,8 @@ public class RSMetaDataServiceImpl extends GenericManagerImpl<RSMetaData, Long>
     ArchiveVersionToAppVersion range = metadao.getAppVersionForArchiveVersion(version, schemaName);
     if (range != null
         && (currentDB.isOlderThan(range.getToExclusive())
-          || (appVersion != null && appVersion.startsWith("2."))) // FIXME quick fix for open-source
+            || (appVersion != null
+                && appVersion.startsWith("2."))) // FIXME quick fix for open-source
         && currentDB.isSameOrNewerThan(range.getFromInclusive())) {
       return true;
     } else {
