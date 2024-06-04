@@ -70,7 +70,7 @@ If you already have a `settings.xml`, add the 'profile' or 'profiles' tag from t
 <settings>
   <profiles>
     <profile>
-      <id>artifactoryrepos</id>
+      <id>rspacelocalrepo</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
