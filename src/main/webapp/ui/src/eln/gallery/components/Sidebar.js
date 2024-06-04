@@ -12,7 +12,7 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import { darken } from "@mui/system";
 import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
-import ChemistryIcon from "../picker/chemistryIcon";
+import ChemistryIcon from "../chemistryIcon";
 import Divider from "@mui/material/Divider";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
