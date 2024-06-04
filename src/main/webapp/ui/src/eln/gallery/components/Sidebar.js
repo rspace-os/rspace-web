@@ -31,12 +31,11 @@ import {
 import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import DMPonlineIcon from "../../apps/icons/dmponline.svg";
 import { COLOR as DMPTOOL_COLOR } from "../../apps/integrations/DMPTool";
 import DMPToolIcon from "../../apps/icons/dmptool.svg";
-import { COLOR as DMPONLINE_COLOR } from "../../apps/integrations/DMPonline";
 import AddIcon from "@mui/icons-material/Add";
 import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuItem";
+import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
 import NewMenuItem from "./NewMenuItem";
 library.add(faImage);
 library.add(faFilm);
@@ -209,13 +208,7 @@ export default function GallerySidebar({
             DMPs
           </Divider>
           <ArgosNewMenuItem />
-          <NewMenuItem
-            title="DMPonline"
-            avatar={<CardMedia image={DMPonlineIcon} />}
-            backgroundColor={DMPONLINE_COLOR}
-            foregroundColor={{ ...DMPONLINE_COLOR, lightness: 30 }}
-            subheader="Import from dmponline.dcc.ac.uk"
-          />
+          <DMPOnlineNewMenuItem />
           <NewMenuItem
             title="DMPTool"
             avatar={<CardMedia image={DMPToolIcon} />}
