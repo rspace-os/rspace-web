@@ -12,7 +12,7 @@ type ArgosArgs = {|
   update: (IntegrationStates["ARGOS"]) => void,
 |};
 
-const COLOR = {
+export const COLOR = {
   hue: 179,
   saturation: 68,
   lightness: 44,

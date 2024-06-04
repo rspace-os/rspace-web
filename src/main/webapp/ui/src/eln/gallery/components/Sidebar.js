@@ -14,6 +14,11 @@ import { darken } from "@mui/system";
 import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
 import ChemistryIcon from "../chemistryIcon";
 import Divider from "@mui/material/Divider";
+import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import CardMedia from "@mui/material/CardMedia";
+import CardHeader from "@mui/material/CardHeader";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faImage,
@@ -26,6 +31,14 @@ import {
   faVolumeLow,
 } from "@fortawesome/free-solid-svg-icons";
 import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
+import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import ArgosIcon from "../../apps/icons/Argos.svg";
+import { COLOR as ARGOS_COLOR } from "../../apps/integrations/Argos";
+import DMPonlineIcon from "../../apps/icons/dmponline.svg";
+import { COLOR as DMPTOOL_COLOR } from "../../apps/integrations/DMPTool";
+import DMPToolIcon from "../../apps/icons/dmptool.svg";
+import { COLOR as DMPONLINE_COLOR } from "../../apps/integrations/DMPonline";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -35,6 +48,65 @@ library.add(faShapes);
 library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
+
+const StyledMenu = styled(Menu)(({ open }) => ({
+  "& .MuiPaper-root": {
+    boxShadow: "none",
+    border: "2px solid #bdd6db",
+    ...(open
+      ? {
+          transform: "translate(0px, 4px) !important",
+        }
+      : {}),
+  },
+}));
+
+const NewMenuItem = styled(
+  ({
+    foregroundColor: _foregroundColor,
+    backgroundColor: _backgroundColor,
+    className,
+    ...props
+  }) => (
+    <MenuItem className={className}>
+      <CardHeader {...props} />
+    </MenuItem>
+  )
+)(({ theme, backgroundColor, foregroundColor }) => {
+  const color = `hsl(${foregroundColor.hue}deg, ${foregroundColor.saturation}%, ${foregroundColor.lightness}%, 100%)`;
+  return {
+    margin: theme.spacing(1),
+    padding: 0,
+    borderRadius: "2px",
+    backgroundColor: `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 12%)`,
+    transition: "background-color ease-in-out .2s",
+    "&:hover": {
+      backgroundColor: `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 24%)`,
+    },
+    "& .MuiCardHeader-avatar": {
+      border: `6px solid ${`hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`}`,
+      borderRadius: "6px",
+    },
+    "& .MuiCardMedia-root": {
+      width: 32,
+      height: 32,
+    },
+    "& .MuiSvgIcon-root": {
+      width: 32,
+      height: 32,
+      background: `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`,
+      padding: theme.spacing(0.5),
+      color,
+    },
+    "& .MuiTypography-root": {
+      color,
+    },
+    "& .MuiCardHeader-title": {
+      fontSize: "1rem",
+      fontWeight: 500,
+    },
+  };
+});
 
 const CustomDrawer = styled(Drawer)(({ open }) => ({
   width: open ? "200px" : "64px",
@@ -111,6 +183,7 @@ export default function GallerySidebar({
 |}): Node {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
+  const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
 
   return (
     <CustomDrawer
@@ -119,6 +192,57 @@ export default function GallerySidebar({
       variant="permanent"
       aria-label="gallery sections drawer"
     >
+      <Box width="100%" p={2}>
+        <Button fullWidth onClick={(e) => setNewMenuAnchorEl(e.currentTarget)}>
+          New
+        </Button>
+        <StyledMenu
+          open={Boolean(newMenuAnchorEl)}
+          anchorEl={newMenuAnchorEl}
+          onClose={() => setNewMenuAnchorEl(null)}
+          MenuListProps={{
+            disablePadding: true,
+          }}
+        >
+          <NewMenuItem
+            title="New Folder"
+            avatar={<CreateNewFolderIcon />}
+            subheader="Create an empty folder"
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+          />
+          <NewMenuItem
+            title="Upload File"
+            avatar={<UploadFileIcon />}
+            subheader="Choose a file on your device"
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+          />
+          <Divider variant="middle" />
+          <NewMenuItem
+            title="ARGOS"
+            avatar={<CardMedia image={ArgosIcon} />}
+            backgroundColor={ARGOS_COLOR}
+            foregroundColor={{ ...ARGOS_COLOR, lightness: 30 }}
+            subheader="Import a Data Management Plan"
+          />
+          <NewMenuItem
+            title="DMPonline"
+            avatar={<CardMedia image={DMPonlineIcon} />}
+            backgroundColor={DMPONLINE_COLOR}
+            foregroundColor={{ ...DMPONLINE_COLOR, lightness: 30 }}
+            subheader="Import a Data Management Plan"
+          />
+          <NewMenuItem
+            title="DMPTool"
+            avatar={<CardMedia image={DMPToolIcon} />}
+            backgroundColor={DMPTOOL_COLOR}
+            foregroundColor={{ ...DMPTOOL_COLOR, lightness: 30 }}
+            subheader="Import a Data Management Plan"
+          />
+        </StyledMenu>
+      </Box>
+      <Divider />
       <Box
         sx={{
           overflowY: "auto",
