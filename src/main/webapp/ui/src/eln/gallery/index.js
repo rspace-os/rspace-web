@@ -17,7 +17,7 @@ import useViewportDimensions from "../../util/useViewportDimensions";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
-  const [selectedSection, setSelectedSection] = React.useState("Chemistry");
+  const [selectedSection, setSelectedSection] = React.useState("Images");
   const { galleryListing, path, clearPath } = useGalleryListing({
     section: selectedSection,
     searchTerm: appliedSearchTerm,

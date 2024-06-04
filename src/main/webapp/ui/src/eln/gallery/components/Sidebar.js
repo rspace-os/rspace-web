@@ -110,7 +110,7 @@ export default function GallerySidebar({
   drawerOpen: boolean,
 |}): Node {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
-    React.useState(181);
+    React.useState(8);
 
   return (
     <CustomDrawer
