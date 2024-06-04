@@ -241,16 +241,16 @@ export default function GallerySidebar({
           }}
         >
           <NewMenuItem
-            title="New Folder"
-            avatar={<CreateNewFolderIcon />}
-            subheader="Create an empty folder"
+            title="Upload File"
+            avatar={<UploadFileIcon />}
+            subheader="Choose a file on your device"
             backgroundColor={COLOR.background}
             foregroundColor={COLOR.contrastText}
           />
           <NewMenuItem
-            title="Upload File"
-            avatar={<UploadFileIcon />}
-            subheader="Choose a file on your device"
+            title="New Folder"
+            avatar={<CreateNewFolderIcon />}
+            subheader="Create an empty folder"
             backgroundColor={COLOR.background}
             foregroundColor={COLOR.contrastText}
           />
