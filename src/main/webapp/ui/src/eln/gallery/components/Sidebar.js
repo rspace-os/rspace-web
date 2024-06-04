@@ -254,21 +254,21 @@ export default function GallerySidebar({
             avatar={<CardMedia image={ArgosIcon} />}
             backgroundColor={ARGOS_COLOR}
             foregroundColor={{ ...ARGOS_COLOR, lightness: 30 }}
-            subheader="Import a Data Management Plan"
+            subheader="Import from argos.eu"
           />
           <NewMenuItem
             title="DMPonline"
             avatar={<CardMedia image={DMPonlineIcon} />}
             backgroundColor={DMPONLINE_COLOR}
             foregroundColor={{ ...DMPONLINE_COLOR, lightness: 30 }}
-            subheader="Import a Data Management Plan"
+            subheader="Import from dmponline.dcc.ac.uk"
           />
           <NewMenuItem
             title="DMPTool"
             avatar={<CardMedia image={DMPToolIcon} />}
             backgroundColor={DMPTOOL_COLOR}
             foregroundColor={{ ...DMPTOOL_COLOR, lightness: 30 }}
-            subheader="Import a Data Management Plan"
+            subheader="Import from <server url>"
           />
         </StyledMenu>
       </Box>
