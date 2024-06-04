@@ -16,7 +16,6 @@ import ChemistryIcon from "../chemistryIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
-import CardMedia from "@mui/material/CardMedia";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faImage,
@@ -31,11 +30,10 @@ import {
 import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import { COLOR as DMPTOOL_COLOR } from "../../apps/integrations/DMPTool";
-import DMPToolIcon from "../../apps/icons/dmptool.svg";
 import AddIcon from "@mui/icons-material/Add";
 import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuItem";
 import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
+import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
 import NewMenuItem from "./NewMenuItem";
 library.add(faImage);
 library.add(faFilm);
@@ -209,13 +207,7 @@ export default function GallerySidebar({
           </Divider>
           <ArgosNewMenuItem />
           <DMPOnlineNewMenuItem />
-          <NewMenuItem
-            title="DMPTool"
-            avatar={<CardMedia image={DMPToolIcon} />}
-            backgroundColor={DMPTOOL_COLOR}
-            foregroundColor={{ ...DMPTOOL_COLOR, lightness: 30 }}
-            subheader="Import from <server url>"
-          />
+          <DMPToolNewMenuItem />
         </StyledMenu>
       </Box>
       <Divider />
