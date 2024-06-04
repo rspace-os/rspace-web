@@ -39,6 +39,7 @@ import DMPonlineIcon from "../../apps/icons/dmponline.svg";
 import { COLOR as DMPTOOL_COLOR } from "../../apps/integrations/DMPTool";
 import DMPToolIcon from "../../apps/icons/dmptool.svg";
 import { COLOR as DMPONLINE_COLOR } from "../../apps/integrations/DMPonline";
+import AddIcon from "@mui/icons-material/Add";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -55,7 +56,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
     border: "2px solid #bdd6db",
     ...(open
       ? {
-          transform: "translate(0px, 4px) !important",
+          transform: "translate(-4px, 4px) !important",
         }
       : {}),
   },
@@ -192,9 +193,13 @@ export default function GallerySidebar({
       variant="permanent"
       aria-label="gallery sections drawer"
     >
-      <Box width="100%" p={2}>
-        <Button fullWidth onClick={(e) => setNewMenuAnchorEl(e.currentTarget)}>
-          New
+      <Box width="100%" p={1.5}>
+        <Button
+          fullWidth
+          onClick={(e) => setNewMenuAnchorEl(e.currentTarget)}
+          style={{ minWidth: "unset" }}
+        >
+          {drawerOpen ? "New" : <AddIcon />}
         </Button>
         <StyledMenu
           open={Boolean(newMenuAnchorEl)}
