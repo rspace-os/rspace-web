@@ -22,7 +22,7 @@ import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
 import createAccentedTheme from "../../../accentedTheme";
 import Grow from "@mui/material/Grow";
 import useViewportDimensions from "../../../util/useViewportDimensions";
-import useGalleryListing, { type GalleryFile } from "./useGalleryListing";
+import useGalleryListing, { type GalleryFile } from "../useGalleryListing";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import { Result } from "../../../util/result";
 import { observer } from "mobx-react-lite";

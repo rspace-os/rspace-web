@@ -10,9 +10,7 @@ import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
 import Box from "@mui/material/Box";
-import useGalleryListing, {
-  type GalleryFile,
-} from "./picker/useGalleryListing";
+import useGalleryListing, { type GalleryFile } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";

@@ -16,7 +16,7 @@ import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import { COLORS as baseThemeColors } from "../../../theme";
 import * as FetchingData from "../../../util/fetchingData";
-import { type GalleryFile } from "../picker/useGalleryListing";
+import { type GalleryFile } from "../useGalleryListing";
 
 const FileCard = styled(
   ({ file, className, selected, index, setSelectedFile }) => {
