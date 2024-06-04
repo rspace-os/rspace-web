@@ -6,7 +6,7 @@ import { Result, lift6 } from "../../../util/result";
 import * as Parsers from "../../../util/parsers";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as FetchingData from "../../../util/fetchingData";
-import { gallerySectionCollectiveNoun } from "./common";
+import { gallerySectionCollectiveNoun } from "../common";
 
 export type GalleryFile = {|
   id: number,

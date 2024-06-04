@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
-import { COLOR } from "./theme";
+import { COLOR } from "./common";
 import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
