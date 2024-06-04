@@ -11,79 +11,12 @@ on their local machine.
 
 Historically we were running RSpace on MySQL 5.7 version, so some docs still mention it, but you should go with MariaDB.
 
-### Optional software
+### Recommended software
 
 Install [Maven 3](https://maven.apache.org/download.cgi) (>=3.8.1).
 
 Alternatively, you can run builds using the `./mvnw` (Unix/Linux/Mac) or `./mvnw.cmd` (Windows) which installs Maven for you
 if you don't have it already.
-
-### Update your local /etc/hosts file
-
-There are separate instructions you will have been sent to set up openVPN connection.
-Once these are done:
-
-Add the following mappings to /etc/hosts file (on Windows it's
-\\Windows\\System32\\drivers\\etc\\hosts), so you can access our
-internal servers infrastructure, including maven repositories.
-1. openvpn mappings
-   ```
-   10.0.2.33 howler howler.researchspace.com
-   ```
-
-After editing the file try connecting to
-https://artifactory.researchspace.com - that address should resolve to
-the Artifactory page. If it doesn't work you may need to restart your
-network adapter.
-
-### Configuring maven to use our internal Maven repositories (Artifactory)
-
-Some dependencies are RSpace libraries that are located in our private
-repositories. There may be other Maven repos requiring authentication
-to access. You'll need to have firewall access to get content from these
-repositories using OpenVPN. To set up, edit a file called `settings.xml`
-that lives a folder called `.m2` in your home folder. If you have
-previously used Maven, you might already have this folder and file.
-
-If not, create a folder `.m2` in your home folder, and create a file
-called `settings.xml` and insert this content (e.g. on a Mac this would be
-in `Users/myusername/.m2/settings.xml`)
-
-```xml
-<settings>
-    <profiles>
-        <profile>
-            <id>artifactoryrepos</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <repositories>
-                <repository>
-                    <id>howler.researchspace.com-libs-release</id>
-                    <name>howler.researchspace.com-libs-release</name>
-                    <url>https://artifactory.researchspace.com/artifactory/libs-release</url>
-                </repository>
-                <repository>
-                    <id>howler.researchspace.com-snapshot</id>
-                    <name>howler.researchspace.com-snapshot</name>
-                    <url>https://artifactory.researchspace.com/artifactory/libs-snapshot</url>
-                    <snapshots>
-                        <enabled>true</enabled>
-                        <updatePolicy>always</updatePolicy>
-                    </snapshots>
-                </repository>
-                <repository>
-                    <id>jitpack.io</id>
-                    <url>https://jitpack.io</url>
-                </repository>
-            </repositories>
-        </profile>
-    </profiles>
-</settings>
-```
-
-If you already have a `settings.xml`, add the 'profile' or 'profiles' tag
-into your file, and save it.
 
 ### Set up Maven toolchain
 
@@ -111,20 +44,63 @@ path to your java installation.
 
 **NOTE:** to use a specific toolchain with maven specify the java properties -Djava-vendor=<vendor> -Djava-version=<version>
 
-### Check out the project
+### Check out and compile the project
 
-Current location is https://github.com/ResearchSpace-ELN/rspace-web
+Current location of the codebase is https://github.com/rspace-os/rspace-web
 
 It's best to use a Git client to download and update source code.
-Alternatively, for one-off installation, you can download project
-directly from the page as a zip package.
+Alternatively, for one-off installation, you can download project directly from the page as a zip package.
+
+#### Download required non-public RSpace dependencies (temporary solution before official open-source version)
+
+Not all of RSpace dependencies are yet publicly available, you need to download an additional package
+of dependencies for your release from https://github.com/rspace-os/rspace-web/releases page. 
+
+The .zip archive contains folder `rspace_os_local_dependencies` with dependencies from com.researchspace and com.github.rspace-os namespace.
+The archive need to be unpacked into location that maven will be able to read from, e.g. into your `.m2` folder.
+Note this location, as it will be required in next step.
+
+#### Configuring local repository for required non-public RSpace dependencies (temporary solution before official open-source version)
+
+In your `.m2` home folder create a file called `settings.xml` (if it's not there yet) and insert this content.
+E.g. on a Mac this would be in `Users/myusername/.m2/settings.xml`.
+If you already have a `settings.xml`, add the 'profile' or 'profiles' tag from the fragment above into your file, and save it.
+
+```xml
+<settings>
+  <profiles>
+    <profile>
+      <id>artifactoryrepos</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <repositories>
+        <repository>
+          <id>rspace-os-local-dependencies-repo</id>
+          <url>file://path-to-unzipped-dependencies-folder>/rspace_os_local_dependencies</url>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+</settings>
+```
+
+Then update repository url in the fragment above so it point to the `rspace_os_local_dependencies` folder you unzipped before. 
 
 #### Sanity check
 
-As the goal, the source code should compile, after downloading a large
-number of artifacts/dependencies. Ensure you're connected to VPN (so have access to artifactory).
-Then, in command line, navigate to RSpace project top dir and run `mvn clean compile`.
-(specify java properties for vendor and jdk version if those in the pom dont work with your installed jdk).
+As the 1st goal, you should be able to compile the java side of the code. 
+In command line, navigate to RSpace project top dir and run `mvn clean compile`.
+
+Note that on first run it'll take a while (a few minutes) to download artifacts/dependencies 
+from configured maven/jitpack repositories into your local maven repository.
+
+If you get BUILD FAILURE message pointing to some missing jar, that could be intermittent issue
+so re-run mvn command with -U option which forces re-download on missing dependencies 
+(i.e. run `mvn -U clean compile`).
+
+Eventually you should see the BUILD SUCCESS message, which means maven was able to resolve
+all code dependencies and compile the code.
 
 ### Set up MySQL database
 
@@ -159,7 +135,7 @@ Finally, there may be a configuration change to set up - in MySQL prompt run:
        SELECT @@sql_mode;
 
 If the result contains 'ONLY_FULL_GROUP_BY' option, that option needs to be removed,
-otherwise some pages will fail to load (e.g. /system page for sysadmmin). 
+otherwise some pages will fail to load (e.g. /system page for sysadmmin).
 That option doesn't seem to be present on MariaDB 10.3.39, so if you run that, you can move on.
 
 The sql_mode can be overridden for a single session by running the following command in MySQL prompt, e.g.
@@ -237,8 +213,8 @@ run with the 'dev-test' profile (liquibase changes that are only configured
 to run with the 'run' profile will only run with a 'prod' launch config)
 
 **NOTE:** dont skip the tests compilation when cleaning the DB this way else existing data will not be deleted.
- - you can skip test compilation phase by adding -Dmaven.test.skip=true
- - you may find this useful if you want to apply new liquibase updates without deleting existing data.
+- you can skip test compilation phase by adding -Dmaven.test.skip=true
+- you may find this useful if you want to apply new liquibase updates without deleting existing data.
 
 To keep the database intact, replace `-Denvironment=drop-recreate-db`
 with `-Denvironment=keepdbintact`. Unless you're working on new database
@@ -268,7 +244,7 @@ sysadmin1 (with 'sysWisc23!' password)
 There are 3 product variants:
 1. Enterprise Standalone.
 2. Enterprise Institutional (SingleSignOn).
-3. Community.
+3. Community (a slightly customized version that runs at community.researchspace.com)
 
 These have slightly different behaviours. To run in development, add the
 following to your mvn launch command:
@@ -355,29 +331,6 @@ Aspose converter project.
 
 The 1st time you run this you might need to run with
 `-Denvironment=drop-recreate-db` set to clean the DB.
-
-## Links to requirements and documents
-
-We use Jira to track tasks and goals at
-https://researchspace.atlassian.net
-
-We have an open demo version, used by potential customers, running on
-Amazon at https://demos.researchspace.com
-
-RSTEST project in Jira gives a good overview of current functionality
-and what the application actually does.
-
-### Other related projects
-
-1. There is a Selenium test project at https://github.com/ResearchSpace-ELN/rspace-selenium
-which has a lot of automated Selenium tests covering ELN functionality.
-Our Jenkins CI server runs these tests nightly on pangolin8086.
-2. There is a Cypress test project at https://github.com/ResearchSpace-ELN/rspace-cypress
-which has some automated Cypress tests covering Inventory functionality.
-Jenkins CI server runs these tests nightly too.
-3. A JMeter acceptance test project, JMeterEcat script can be used to
-monitor performance.
-4. An API-acceptance test project, which checks public API.
 
 ### Developer docs on specific subjects
 

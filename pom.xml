@@ -23,17 +23,12 @@
       <url>https://jitpack.io</url>
     </repository>
     <repository>
-      <id>dice.repository</id>
-      <name>dice.repository</name>
-      <url>https://raw.github.com/DICE-UNC/DICE-Maven/master/releases</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
       <snapshots>
         <enabled>false</enabled>
-        <updatePolicy>always</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
       </snapshots>
+      <id>central</id>
+      <name>Maven Repository Switchboard</name>
+      <url>https://repo1.maven.org/maven2</url>
     </repository>
   </repositories>
 
