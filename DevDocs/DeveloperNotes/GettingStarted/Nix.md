@@ -41,13 +41,12 @@ generated shell.nix with the following:
 { pkgs ? import <nixpkgs> {} }:
 
 let
-  # Localise toolchains.xml and settings.xml
+  # Localise toolchains.xml
   maven-override = pkgs.writeScriptBin "mvn" ''
     #!${pkgs.stdenv.shell}
 
     ${pkgs.maven}/bin/mvn \
     --toolchains "$PROJECT_ROOT/.nix-mvn-toolchains.xml" \
-    --settings "$PROJECT_ROOT/.nix-mvn-settings.xml" \
     "$@"
   '';
 
@@ -75,13 +74,12 @@ For RSpace core model, the shell.nix file would look like this
 { pkgs ? import <nixpkgs> {} }:
 
 let
-  # Localise toolchains.xml and settings.xml
+  # Localise toolchains.xml
   maven-override = pkgs.writeScriptBin "mvn" ''
     #!${pkgs.stdenv.shell}
 
     ${pkgs.maven}/bin/mvn \
     --toolchains "$(dirname $IN_LORRI_SHELL)/.nix-mvn-toolchains.xml" \
-    --settings "$(dirname $IN_LORRI_SHELL)/.nix-mvn-settings.xml" \
     "$@"
   '';
 
@@ -98,52 +96,12 @@ in pkgs.mkShell {
 }
 ```
 
-RSpace setup requires `toolchains.xml` and `settings.xml` to be setup in the
-`~/.m2` directory, but since we are creating isolated environments, we don't
-want to use global configuration like that. We put the relevant configuration
-into `.nix-mvn-toolchains.xml` and `.nix-mvn-settings.xml` files instead.
-Finally, we create an [overlay](https://nixos.wiki/wiki/Overlays) so that
+RSpace setup requires `toolchains.xml` to be setup in the `~/.m2` directory,
+but since we are creating isolated environments, we don't want to use global 
+configuration like that. We put the relevant configuration into `.nix-mvn-toolchains.xml` 
+file instead. Finally, we create an [overlay](https://nixos.wiki/wiki/Overlays) so that
 we never have to pass in the arguments `--toolchains` and `--settings` on
 the command line ourselves.
-
-#### Creating `.nix-mvn-settings.xml`
-
-Exactly the same as in the getting started guide
-
-Copy and paste this into a new file `.nix-mvn-settings.xml`, no changes needed.
-```xml
-<settings>
-  <profiles>
-    <profile>
-      <id>artifactoryrepos</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <repositories>
-         <repository>
-            <id>com.springsource.repository.bundles.external</id>
-            <name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
-            <url>https://repository.springsource.com/maven/bundles/external</url>
-         </repository>
-         <repository>
-            <id>howler.researchspace.com-libs-release</id>
-            <name>howler.researchspace.com-libs-release</name>
-            <url>https://artifactory.researchspace.com/artifactory/libs-release</url>
-         </repository>
-         <repository>
-            <id>howler.researchspace.com-snapshot</id>
-            <name>howler.researchspace.com-snapshot</name>
-            <url>https://artifactory.researchspace.com/artifactory/libs-snapshot</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-         </repository>
-     </repositories>
-    </profile>
-  </profiles>
-</settings>
-```
 
 #### Creating `.nix-mvn-toolchains.xml`
 
@@ -168,8 +126,8 @@ needed.
 
 `JAVA_HOME` is automatically exported by lorri.
 
-`.nix-mvn-toolchains.xml` and `.nix-mvn-settings.xml` are not on Git because as
-of 2020 September, there's only one person using the Nix package manager.
+`.nix-mvn-toolchains.xml` is not on Git because as of 2020 September, 
+there's only one person using the Nix package manager.
 
 
 #### `.envrc` setup
@@ -286,13 +244,13 @@ export_alias jetty-drop "
 ```
 
 This script:
- - Creates a `.mysql` folder in the project root directory, where all MySQL data lives.
- - Sets the default root password to `password`
- - Initialises the RSpace database tables and data.
- - Creates a log file `db-init.log` in the project root, so you can inspect if
-   the setup was successfull. You should delete it as this is only going to be
-   created once on shell init.
- - Sets up aliases for faster development
+- Creates a `.mysql` folder in the project root directory, where all MySQL data lives.
+- Sets the default root password to `password`
+- Initialises the RSpace database tables and data.
+- Creates a log file `db-init.log` in the project root, so you can inspect if
+  the setup was successfull. You should delete it as this is only going to be
+  created once on shell init.
+- Sets up aliases for faster development
 
 __All you have to do now, is run `lorri shell` and your RSpace Web isolated dev
 environment will be set-up.__
