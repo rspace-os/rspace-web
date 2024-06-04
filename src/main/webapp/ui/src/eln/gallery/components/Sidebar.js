@@ -246,7 +246,9 @@ export default function GallerySidebar({
             backgroundColor={COLOR.background}
             foregroundColor={COLOR.contrastText}
           />
-          <Divider variant="middle" />
+          <Divider variant="middle" textAlign="left">
+            DMPs
+          </Divider>
           <NewMenuItem
             title="ARGOS"
             avatar={<CardMedia image={ArgosIcon} />}

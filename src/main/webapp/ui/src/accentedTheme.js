@@ -543,6 +543,19 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             root: {
               borderBottom: accentedBorder,
             },
+            withChildren: {
+              borderBottom: "none",
+              marginTop: baseTheme.spacing(-0.5),
+              marginBottom: baseTheme.spacing(-0.5),
+              "&:before, &:after": {
+                borderTop: accentedBorder,
+              },
+              "& .MuiDivider-wrapper": {
+                fontWeight: 500,
+                fontSize: "0.9em",
+                color: backgroundContrastTextColor,
+              },
+            },
           },
         },
         MuiBreadcrumbs: {
