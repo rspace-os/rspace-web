@@ -261,7 +261,7 @@ export default function GallerySidebar({
             title="ARGOS"
             avatar={<CardMedia image={ArgosIcon} />}
             backgroundColor={ARGOS_COLOR}
-            foregroundColor={{ ...ARGOS_COLOR, lightness: 30 }}
+            foregroundColor={{ ...ARGOS_COLOR, lightness: 28 }}
             subheader="Import from argos.eu"
           />
           <NewMenuItem
