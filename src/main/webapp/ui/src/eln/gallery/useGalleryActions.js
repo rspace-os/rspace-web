@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import * as FetchingData from "../../util/fetchingData";
+import * as ArrayUtils from "../../util/ArrayUtils";
 import { type GalleryFile } from "./useGalleryListing";
 
 export default function useGalleryActions({
@@ -19,7 +20,12 @@ export default function useGalleryActions({
     // TODO open "uploading" alert
     const formData = new FormData();
     formData.append("xfile", files[0]);
-    formData.append("targetFolderId", `${parentId}`);
+    formData.append(
+      "targetFolderId",
+      ArrayUtils.getAt(0, path)
+        .map(({ id }) => `${id}`)
+        .orElse(`${parentId}`)
+    );
     // TODO upload each file in parallel
     await axios.post<FormData, mixed>("gallery/ajax/uploadFile", formData, {
       headers: {
