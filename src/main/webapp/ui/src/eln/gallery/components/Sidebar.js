@@ -38,6 +38,13 @@ import NewMenuItem from "./NewMenuItem";
 import useGalleryActions from "../useGalleryActions";
 import { type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
+import Dialog from "@mui/material/Dialog";
+import TextField from "@mui/material/TextField";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -137,6 +144,75 @@ const UploadMenuItem = ({
   );
 };
 
+const NewFolderMenuItem = ({
+  path,
+  parentId,
+  onDialogClose,
+}: {|
+  path: $ReadOnlyArray<GalleryFile>,
+  parentId: number,
+  onDialogClose: (boolean) => void,
+|}) => {
+  const [open, setOpen] = React.useState(false);
+  const [name, setName] = React.useState("");
+  return (
+    <>
+      <Dialog
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onDialogClose(true);
+          }}
+        >
+          <DialogTitle>New Folder</DialogTitle>
+          <DialogContent>
+            <DialogContentText variant="body2" sx={{ mb: 2 }}>
+              Lease give the new folder a name.
+            </DialogContentText>
+            <TextField
+              size="small"
+              label="Name"
+              onChange={({ target: { value } }) => setName(value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setName("");
+                setOpen(false);
+                onDialogClose(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <SubmitSpinnerButton
+              type="submit"
+              loading={false}
+              disabled={false}
+              label="Create"
+            />
+          </DialogActions>
+        </form>
+      </Dialog>
+      <NewMenuItem
+        title="New Folder"
+        avatar={<CreateNewFolderIcon />}
+        subheader="Create an empty folder"
+        backgroundColor={COLOR.background}
+        foregroundColor={COLOR.contrastText}
+        onClick={() => {
+          setOpen(true);
+        }}
+      />
+    </>
+  );
+};
+
 const SelectedDrawerTabIndicator = styled(({ className }) => (
   <div className={className}></div>
 ))(({ verticalPosition }) => ({
@@ -231,24 +307,28 @@ export default function GallerySidebar({
         >
           {FetchingData.getSuccessValue(parentId)
             .map((pId) => (
-              <UploadMenuItem
-                key={null}
-                path={path}
-                parentId={pId}
-                onUploadComplete={() => {
-                  refreshListing();
-                  setNewMenuAnchorEl(null);
-                }}
-              />
+              <>
+                <UploadMenuItem
+                  key={null}
+                  path={path}
+                  parentId={pId}
+                  onUploadComplete={() => {
+                    refreshListing();
+                    setNewMenuAnchorEl(null);
+                  }}
+                />
+                <NewFolderMenuItem
+                  key={null}
+                  path={path}
+                  parentId={pId}
+                  onDialogClose={(success) => {
+                    if (success) refreshListing();
+                    setNewMenuAnchorEl(null);
+                  }}
+                />
+              </>
             ))
             .orElse(null)}
-          <NewMenuItem
-            title="New Folder"
-            avatar={<CreateNewFolderIcon />}
-            subheader="Create an empty folder"
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
-          />
           <Divider variant="middle" textAlign="left">
             DMPs
           </Divider>
