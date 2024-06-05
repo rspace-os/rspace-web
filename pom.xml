@@ -3060,7 +3060,7 @@
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
     <spotless.version>2.43.0</spotless.version>
-    <npm.dependencies.collection.arg>install</npm.dependencies.collection.arg>
+    <npm.dependencies.collection.arg>install --force</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
     <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce516/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>
