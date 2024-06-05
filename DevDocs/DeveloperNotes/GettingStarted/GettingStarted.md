@@ -7,9 +7,10 @@ on their local machine.
 
 ### Install required software
 -   Install Java JDK17, use OpenJDK rather than Oracle.
--   Install MariaDB 10.3.39 (that's one used on our production server), or later (MariaDB 11.3 is used fine on dockerized RSpace version)
+-   Install MariaDB 10.3.39, or later (MariaDB 11.3 is used fine on dockerized RSpace version)
 
 Historically we were running RSpace on MySQL 5.7 version, so some docs still mention it, but you should go with MariaDB.
+Database installation can be skipped if your only goal is to compile/build the project.
 
 ### Recommended software
 
@@ -101,6 +102,19 @@ so re-run mvn command with -U option which forces re-download on missing depende
 
 Eventually you should see the BUILD SUCCESS message, which means maven was able to resolve
 all code dependencies and compile the code.
+
+### (Optional) Build RSpace application package
+
+The application .war file can be built with the following maven command:  
+
+```
+mvn clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+  -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
+  -Djava-version=17 -Djava-vendor=openjdk
+```
+
+You can also check top-level Jenkinsfile file to see how internal tests builds are created by
+ResearchSpace dev team (check 'Build feature branch' stage script).  
 
 ### Set up MySQL database
 
