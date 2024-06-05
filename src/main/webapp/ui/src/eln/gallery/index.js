@@ -14,6 +14,7 @@ import useGalleryListing, { type GalleryFile } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
+import Alerts from "../../Inventory/components/Alerts";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -30,7 +31,7 @@ function WholePage() {
   const [drawerOpen, setDrawerOpen] = React.useState(!viewport.isViewportSmall);
 
   return (
-    <>
+    <Alerts>
       <AppBar
         appliedSearchTerm={appliedSearchTerm}
         setAppliedSearchTerm={setAppliedSearchTerm}
@@ -64,7 +65,7 @@ function WholePage() {
           />
         </Box>
       </Box>
-    </>
+    </Alerts>
   );
 }
 
