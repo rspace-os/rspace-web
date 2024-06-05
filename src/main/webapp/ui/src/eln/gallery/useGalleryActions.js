@@ -2,8 +2,9 @@
 
 import React from "react";
 import axios from "axios";
-import * as FetchingData from "../../util/fetchingData";
 import * as ArrayUtils from "../../util/ArrayUtils";
+import * as Parsers from "../../util/parsers";
+import { Result } from "../../util/result";
 import { type GalleryFile } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
@@ -19,8 +20,6 @@ export default function useGalleryActions({
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
   async function uploadFiles(files: $ReadOnlyArray<File>) {
-    console.debug(files, path, parentId);
-
     const uploadingAlert = mkAlert({
       message: "Uploading...",
       variant: "notice",
@@ -32,7 +31,7 @@ export default function useGalleryActions({
       .map(({ id }) => `${id}`)
       .orElse(`${parentId}`);
     try {
-      await Promise.all(
+      const data = await Promise.all(
         files.map((file) => {
           const formData = new FormData();
           formData.append("xfile", file);
@@ -48,10 +47,36 @@ export default function useGalleryActions({
           );
         })
       );
+      Result.any(
+        ...data.map((d) =>
+          Parsers.objectPath(["data", "exceptionMessage"], d).flatMap(
+            Parsers.isString
+          )
+        )
+      ).do((exceptionMessages) => {
+        addAlert(
+          mkAlert({
+            message: `Failed to upload file${files.length === 1 ? "" : "s"}`,
+            variant: "error",
+            details: exceptionMessages.map((m) => ({
+              title: m,
+              variant: "error",
+            })),
+          })
+        );
+      });
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to upload file${files.length === 1 ? "" : "s"}`,
+          message: e.message,
+        })
+      );
+      throw e;
     } finally {
       removeAlert(uploadingAlert);
     }
-    // TODO if error, show error alert
     // TODO if success, show success alert
   }
 
