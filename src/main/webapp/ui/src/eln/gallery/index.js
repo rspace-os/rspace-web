@@ -18,10 +18,11 @@ import useViewportDimensions from "../../util/useViewportDimensions";
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [selectedSection, setSelectedSection] = React.useState("Images");
-  const { galleryListing, path, clearPath, parentId } = useGalleryListing({
-    section: selectedSection,
-    searchTerm: appliedSearchTerm,
-  });
+  const { galleryListing, path, clearPath, parentId, refreshListing } =
+    useGalleryListing({
+      section: selectedSection,
+      searchTerm: appliedSearchTerm,
+    });
   const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
     null
   );
@@ -43,6 +44,7 @@ function WholePage() {
           drawerOpen={drawerOpen}
           path={path}
           parentId={parentId}
+          refreshListing={refreshListing}
         />
         <Box
           sx={{

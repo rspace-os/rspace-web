@@ -108,9 +108,11 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
 const UploadMenuItem = ({
   path,
   parentId,
+  refreshListing,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
   parentId: number,
+  refreshListing: () => void,
 |}) => {
   const { uploadFiles } = useGalleryActions({ path, parentId });
   return (
@@ -127,7 +129,9 @@ const UploadMenuItem = ({
         hidden
         multiple
         onChange={({ target: { files } }) => {
-          void uploadFiles(files);
+          void uploadFiles(files).then(() => {
+            refreshListing();
+          });
         }}
         type="file"
       />
@@ -194,12 +198,14 @@ export default function GallerySidebar({
   drawerOpen,
   path,
   parentId,
+  refreshListing,
 }: {|
   selectedSection: string,
   setSelectedSection: (string) => void,
   drawerOpen: boolean,
   path: $ReadOnlyArray<GalleryFile>,
   parentId: FetchingData.Fetched<number>,
+  refreshListing: () => void,
 |}): Node {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
@@ -227,7 +233,12 @@ export default function GallerySidebar({
         >
           {FetchingData.getSuccessValue(parentId)
             .map((pId) => (
-              <UploadMenuItem key={null} path={path} parentId={pId} />
+              <UploadMenuItem
+                key={null}
+                path={path}
+                parentId={pId}
+                refreshListing={refreshListing}
+              />
             ))
             .orElse(null)}
           <NewMenuItem

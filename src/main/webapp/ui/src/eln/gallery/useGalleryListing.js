@@ -145,6 +145,7 @@ export default function useGalleryListing({
     | {| tag: "empty", reason: string |}
     | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
   >,
+  refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
   parentId: FetchingData.Fetched<number>,
@@ -316,6 +317,7 @@ export default function useGalleryListing({
       path: [],
       clearPath: () => {},
       parentId: { tag: "loading" },
+      refreshListing: () => {},
     };
 
   return {
@@ -331,5 +333,8 @@ export default function useGalleryListing({
     parentId: parentId
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
+    refreshListing: () => {
+      void getGalleryFiles();
+    },
   };
 }
