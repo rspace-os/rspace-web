@@ -28,21 +28,26 @@ export default function useGalleryActions({
     });
     addAlert(uploadingAlert);
 
-    const formData = new FormData();
-    formData.append("xfile", files[0]);
-    formData.append(
-      "targetFolderId",
-      ArrayUtils.getAt(0, path)
-        .map(({ id }) => `${id}`)
-        .orElse(`${parentId}`)
-    );
-    // TODO upload each file in parallel
+    const targetFolderId = ArrayUtils.getAt(0, path)
+      .map(({ id }) => `${id}`)
+      .orElse(`${parentId}`);
     try {
-      await axios.post<FormData, mixed>("gallery/ajax/uploadFile", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await Promise.all(
+        files.map((file) => {
+          const formData = new FormData();
+          formData.append("xfile", file);
+          formData.append("targetFolderId", targetFolderId);
+          return axios.post<FormData, mixed>(
+            "gallery/ajax/uploadFile",
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+        })
+      );
     } finally {
       removeAlert(uploadingAlert);
     }
