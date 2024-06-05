@@ -108,11 +108,11 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
 const UploadMenuItem = ({
   path,
   parentId,
-  refreshListing,
+  onUploadComplete,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
   parentId: number,
-  refreshListing: () => void,
+  onUploadComplete: () => void,
 |}) => {
   const { uploadFiles } = useGalleryActions({ path, parentId });
   return (
@@ -130,7 +130,7 @@ const UploadMenuItem = ({
         multiple
         onChange={({ target: { files } }) => {
           void uploadFiles(files).then(() => {
-            refreshListing();
+            onUploadComplete();
           });
         }}
         type="file"
@@ -237,7 +237,10 @@ export default function GallerySidebar({
                 key={null}
                 path={path}
                 parentId={pId}
-                refreshListing={refreshListing}
+                onUploadComplete={() => {
+                  refreshListing();
+                  setNewMenuAnchorEl(null);
+                }}
               />
             ))
             .orElse(null)}
