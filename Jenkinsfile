@@ -111,7 +111,7 @@ pipeline {
             steps {
                 dir('src/main/webapp/ui') {
                     echo 'Installing npm packages'
-                    sh 'npm ci'
+                    sh 'npm ci --force'
                 }
             }
         }
