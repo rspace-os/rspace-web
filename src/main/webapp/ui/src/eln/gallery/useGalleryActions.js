@@ -47,29 +47,39 @@ export default function useGalleryActions({
           );
         })
       );
-      Result.any(
-        ...data.map((d) =>
-          Parsers.objectPath(["data", "exceptionMessage"], d).flatMap(
-            Parsers.isString
+
+      addAlert(
+        Result.any(
+          ...data.map((d) =>
+            Parsers.objectPath(["data", "exceptionMessage"], d).flatMap(
+              Parsers.isString
+            )
           )
         )
-      ).do((exceptionMessages) => {
-        addAlert(
-          mkAlert({
-            message: `Failed to upload file${files.length === 1 ? "" : "s"}`,
-            variant: "error",
-            details: exceptionMessages.map((m) => ({
-              title: m,
+          .map((exceptionMessages) =>
+            mkAlert({
+              message: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
               variant: "error",
-            })),
-          })
-        );
-      });
+              details: exceptionMessages.map((m) => ({
+                title: m,
+                variant: "error",
+              })),
+            })
+          )
+          .orElse(
+            mkAlert({
+              message: `Successfully uploaded file${
+                files.length === 1 ? "" : "s"
+              }.`,
+              variant: "success",
+            })
+          )
+      );
     } catch (e) {
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to upload file${files.length === 1 ? "" : "s"}`,
+          title: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
           message: e.message,
         })
       );
@@ -77,7 +87,6 @@ export default function useGalleryActions({
     } finally {
       removeAlert(uploadingAlert);
     }
-    // TODO if success, show success alert
   }
 
   return { uploadFiles };
