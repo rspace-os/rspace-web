@@ -35,6 +35,7 @@ import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuIte
 import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
 import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
 import NewMenuItem from "./NewMenuItem";
+import useGalleryActions from "../useGalleryActions";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -167,6 +168,7 @@ export default function GallerySidebar({
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
+  const { uploadFiles } = useGalleryActions();
 
   return (
     <CustomDrawer
@@ -188,13 +190,24 @@ export default function GallerySidebar({
             disablePadding: true,
           }}
         >
-          <NewMenuItem
-            title="Upload File"
-            avatar={<UploadFileIcon />}
-            subheader="Choose a file on your device"
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
-          />
+          <label>
+            <NewMenuItem
+              title="Upload Files"
+              avatar={<UploadFileIcon />}
+              subheader="Choose one or more files to upload"
+              backgroundColor={COLOR.background}
+              foregroundColor={COLOR.contrastText}
+            />
+            <input
+              accept="*"
+              hidden
+              multiple
+              onChange={({ target: { files } }) => {
+                uploadFiles(files);
+              }}
+              type="file"
+            />
+          </label>
           <NewMenuItem
             title="New Folder"
             avatar={<CreateNewFolderIcon />}
