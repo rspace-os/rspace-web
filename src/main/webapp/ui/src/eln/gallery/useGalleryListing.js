@@ -147,6 +147,7 @@ export default function useGalleryListing({
   >,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
+  parentId: FetchingData.Fetched<number>,
 |} {
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
@@ -154,6 +155,9 @@ export default function useGalleryListing({
     $ReadOnlyArray<GalleryFile>
   >([]);
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+  const [parentId, setParentId] = React.useState<Result<number>>(
+    Result.Error([])
+  );
 
   function emptyReason(): string {
     if (path.length > 0) {
@@ -214,6 +218,16 @@ export default function useGalleryListing({
           orderBy: "",
         }),
       });
+
+      setParentId(
+        Parsers.isObject(data)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("data"))
+          .flatMap(Parsers.isObject)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("parentId"))
+          .flatMap(Parsers.isNumber)
+      );
 
       setGalleryListing(
         Parsers.objectPath(["data", "items", "results"], data)
@@ -301,6 +315,7 @@ export default function useGalleryListing({
       galleryListing: { tag: "loading" },
       path: [],
       clearPath: () => {},
+      parentId: { tag: "loading" },
     };
 
   return {
@@ -313,5 +328,8 @@ export default function useGalleryListing({
     },
     path,
     clearPath: () => setPath([]),
+    parentId: parentId
+      .map((value: number) => ({ tag: "success", value }))
+      .orElseGet(([error]) => ({ tag: "error", error: error.message })),
   };
 }

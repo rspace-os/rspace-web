@@ -2,20 +2,26 @@
 
 import axios from "axios";
 import * as FetchingData from "../../util/fetchingData";
+import { type GalleryFile } from "./useGalleryListing";
 
-export default function useGalleryActions(): {|
+export default function useGalleryActions({
+  path,
+  parentId,
+}: {|
+  path: $ReadOnlyArray<GalleryFile>,
+  parentId: number,
+|}): {|
   uploadFiles: ($ReadOnlyArray<File>) => Promise<void>,
 |} {
-  function uploadFiles(files: $ReadOnlyArray<File>) {
-    console.debug(files);
+  async function uploadFiles(files: $ReadOnlyArray<File>) {
+    console.debug(files, path, parentId);
 
     // TODO open "uploading" alert
     const formData = new FormData();
     formData.append("xfile", files[0]);
-    // TODO pass folderId in as a parameter
-    formData.append("targetFolderId", 8);
+    formData.append("targetFolderId", `${parentId}`);
     // TODO upload each file in parallel
-    return axios.post("gallery/ajax/uploadFile", formData, {
+    await axios.post<FormData, mixed>("gallery/ajax/uploadFile", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

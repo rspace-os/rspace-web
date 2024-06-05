@@ -36,6 +36,8 @@ import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnli
 import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
 import NewMenuItem from "./NewMenuItem";
 import useGalleryActions from "../useGalleryActions";
+import { type GalleryFile } from "../useGalleryListing";
+import * as FetchingData from "../../../util/fetchingData";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -103,6 +105,36 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
   },
 }));
 
+const UploadMenuItem = ({
+  path,
+  parentId,
+}: {|
+  path: $ReadOnlyArray<GalleryFile>,
+  parentId: number,
+|}) => {
+  const { uploadFiles } = useGalleryActions({ path, parentId });
+  return (
+    <label>
+      <NewMenuItem
+        title="Upload Files"
+        avatar={<UploadFileIcon />}
+        subheader="Choose one or more files to upload"
+        backgroundColor={COLOR.background}
+        foregroundColor={COLOR.contrastText}
+      />
+      <input
+        accept="*"
+        hidden
+        multiple
+        onChange={({ target: { files } }) => {
+          void uploadFiles(files);
+        }}
+        type="file"
+      />
+    </label>
+  );
+};
+
 const SelectedDrawerTabIndicator = styled(({ className }) => (
   <div className={className}></div>
 ))(({ verticalPosition }) => ({
@@ -160,15 +192,18 @@ export default function GallerySidebar({
   selectedSection,
   setSelectedSection,
   drawerOpen,
+  path,
+  parentId,
 }: {|
   selectedSection: string,
   setSelectedSection: (string) => void,
   drawerOpen: boolean,
+  path: $ReadOnlyArray<GalleryFile>,
+  parentId: FetchingData.Fetched<number>,
 |}): Node {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
-  const { uploadFiles } = useGalleryActions();
 
   return (
     <CustomDrawer
@@ -190,24 +225,11 @@ export default function GallerySidebar({
             disablePadding: true,
           }}
         >
-          <label>
-            <NewMenuItem
-              title="Upload Files"
-              avatar={<UploadFileIcon />}
-              subheader="Choose one or more files to upload"
-              backgroundColor={COLOR.background}
-              foregroundColor={COLOR.contrastText}
-            />
-            <input
-              accept="*"
-              hidden
-              multiple
-              onChange={({ target: { files } }) => {
-                uploadFiles(files);
-              }}
-              type="file"
-            />
-          </label>
+          {FetchingData.getSuccessValue(parentId)
+            .map((pId) => (
+              <UploadMenuItem key={null} path={path} parentId={pId} />
+            ))
+            .orElse(null)}
           <NewMenuItem
             title="New Folder"
             avatar={<CreateNewFolderIcon />}
