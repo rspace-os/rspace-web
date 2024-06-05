@@ -50,8 +50,6 @@ library.add(faVolumeLow);
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
-    boxShadow: "none",
-    border: "2px solid #bdd6db",
     ...(open
       ? {
           transform: "translate(-4px, 4px) !important",

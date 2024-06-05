@@ -658,6 +658,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
           },
         },
+        MuiMenu: {
+          styleOverrides: {
+            paper: {
+              boxShadow: "none",
+              border: accentedBorder,
+            },
+          },
+        },
       },
     })
   );
