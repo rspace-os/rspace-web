@@ -61,7 +61,10 @@ describe("Zenodo", () => {
     enabled: boolean,
   |};
 
-  type Real = {| getByRole: typeof screen.getByRole |};
+  type Real = {|
+    getByRole: typeof screen.getByRole,
+    getByLabelText: typeof screen.getByLabelText,
+  |};
 
   class OpenDialogCommand implements Command<Model, Real> {
     constructor() {}
@@ -165,8 +168,13 @@ describe("Zenodo", () => {
       return model.open;
     }
 
-    async run(model: Model, { getByRole }: Real) {
-      fireEvent.change(getByRole("textbox"), {
+    async run(model: Model, { getByRole, getByLabelText }: Real) {
+      /*
+       * We have to use getByLabelText instead of getByRole because password
+       * fields do not have a role. For more info, see
+       * https://github.com/testing-library/dom-testing-library/issues/567
+       */
+      fireEvent.change(getByLabelText("API Key"), {
         target: { value: this.apiKey },
       });
       fireEvent.click(getByRole("button", { name: /save/i }));
@@ -194,13 +202,13 @@ describe("Zenodo", () => {
           fc.commands<Model, Real>(allCommands, { size: "medium" }),
           async (cmds: Array<Command<Model, Real>>) => {
             cleanup();
-            const { getByRole } = render(<ZenodoWrapper />);
+            const { getByRole, getByLabelText } = render(<ZenodoWrapper />);
             const s = () => ({
               model: {
                 open: false,
                 enabled: false,
               },
-              real: { getByRole },
+              real: { getByRole, getByLabelText },
             });
             await waitFor(() => {
               screen.getByText("Zenodo");
