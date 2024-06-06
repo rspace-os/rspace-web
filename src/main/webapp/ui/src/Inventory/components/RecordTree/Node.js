@@ -7,7 +7,7 @@ import React, {
   type ElementProps,
 } from "react";
 import { Observer } from "mobx-react-lite";
-import TreeItem from "@mui/lab/TreeItem";
+import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
@@ -87,7 +87,7 @@ export default function TreeNode({ node }: TreeNodeArgs): Node {
     <Observer>
       {() => (
         <CustomTreeItem
-          nodeId={node.globalId}
+          itemId={node.globalId}
           label={
             <CardHeader
               action={
