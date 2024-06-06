@@ -1,6 +1,6 @@
 import React from "react";
 import { makeStyles } from "tss-react/mui";
-import TreeItem from "@mui/lab/TreeItem";
+import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import Typography from "@mui/material/Typography";
 
 const useTreeItemStyles = makeStyles()((theme) => ({

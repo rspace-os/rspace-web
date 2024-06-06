@@ -13,6 +13,7 @@ import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mo
 import NavigateToNode from "../NavigateToNode";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 
 import Node from "../Node";
 
@@ -62,7 +63,9 @@ describe("Node", () => {
               differentSearchForSettingActiveResult: search,
             }}
           >
-            <Node node={container} />
+            <SimpleTreeView>
+              <Node node={container} />
+            </SimpleTreeView>
           </SearchContext.Provider>
         </ThemeProvider>
       );
@@ -94,7 +97,9 @@ describe("Node", () => {
             differentSearchForSettingActiveResult: search,
           }}
         >
-          <Node node={container} />
+          <SimpleTreeView>
+            <Node node={container} />
+          </SimpleTreeView>
         </SearchContext.Provider>
       </ThemeProvider>
     );

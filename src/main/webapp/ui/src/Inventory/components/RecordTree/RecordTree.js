@@ -6,9 +6,7 @@ import React, {
   type ComponentType,
 } from "react";
 import { makeStyles } from "tss-react/mui";
-import TreeView from "@mui/lab/TreeView";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { observer } from "mobx-react-lite";
 import Node from "./Node";
 import SearchContext from "../../../stores/contexts/Search";
@@ -63,19 +61,17 @@ function RecordTree(): ReactNode {
   };
 
   return (
-    <TreeView
+    <SimpleTreeView
       className={classes.root}
-      defaultCollapseIcon={<ExpandMoreIcon className={classes.openCloseIcon} />}
-      defaultExpandIcon={<ChevronRightIcon className={classes.openCloseIcon} />}
-      expanded={search.tree.expanded}
-      selected={[search.tree.selected]}
-      onNodeToggle={handleToggle}
-      onNodeSelect={handleSelect}
+      expandedItems={search.tree.expanded}
+      selectedItems={[search.tree.selected]}
+      onExpandedItemsChange={handleToggle}
+      onSelectedItemsChange={handleSelect}
     >
       {search.filteredResults.map((node) => (
         <Node key={node.globalId ?? null} node={node} />
       ))}
-    </TreeView>
+    </SimpleTreeView>
   );
 }
 
