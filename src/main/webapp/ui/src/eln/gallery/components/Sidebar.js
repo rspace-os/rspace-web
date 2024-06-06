@@ -45,6 +45,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -217,14 +218,43 @@ const NewFolderMenuItem = ({
 };
 
 const DmpMenuSection = () => {
+  const [argosEnabled, setArgosEnabled] = React.useState(false);
+  const [dmponlineEnabled, setDmponlineEnabled] = React.useState(false);
+  const [dmptoolEnabled, setDmptoolEnabled] = React.useState(false);
+
+  React.useEffect(() => {
+    fetchIntegrationInfo("ARGOS")
+      .then((r) => setArgosEnabled(r.enabled))
+      .catch((e) =>
+        console.error("Cannot establish if Argos app is enabled", e)
+      );
+  }, []);
+
+  React.useEffect(() => {
+    fetchIntegrationInfo("DMPONLINE")
+      .then((r) => setDmponlineEnabled(r.enabled))
+      .catch((e) =>
+        console.error("Cannot establish if DmpOnline app is enabled", e)
+      );
+  }, []);
+
+  React.useEffect(() => {
+    fetchIntegrationInfo("DMPTOOL")
+      .then((r) => setDmptoolEnabled(r.enabled))
+      .catch((e) =>
+        console.error("Cannot establish if DMPTool app is enabled", e)
+      );
+  }, []);
+
+  if (!argosEnabled && !dmponlineEnabled && !dmptoolEnabled) return null;
   return (
     <>
       <Divider variant="middle" textAlign="left">
         DMPs
       </Divider>
-      <ArgosNewMenuItem />
-      <DMPOnlineNewMenuItem />
-      <DMPToolNewMenuItem />
+      {argosEnabled && <ArgosNewMenuItem />}
+      {dmponlineEnabled && <DMPOnlineNewMenuItem />}
+      {dmptoolEnabled && <DMPToolNewMenuItem />}
     </>
   );
 };
