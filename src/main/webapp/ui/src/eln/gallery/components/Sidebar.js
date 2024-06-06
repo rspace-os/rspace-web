@@ -155,6 +155,7 @@ const NewFolderMenuItem = ({
 |}) => {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
+  const { createFolder } = useGalleryActions({ path, parentId });
   return (
     <>
       <Dialog
@@ -166,7 +167,9 @@ const NewFolderMenuItem = ({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            onDialogClose(true);
+            void createFolder(name).then(() => {
+              onDialogClose(true);
+            });
           }}
         >
           <DialogTitle>New Folder</DialogTitle>
@@ -307,26 +310,28 @@ export default function GallerySidebar({
         >
           {FetchingData.getSuccessValue(parentId)
             .map((pId) => (
-              <>
-                <UploadMenuItem
-                  key={null}
-                  path={path}
-                  parentId={pId}
-                  onUploadComplete={() => {
-                    refreshListing();
-                    setNewMenuAnchorEl(null);
-                  }}
-                />
-                <NewFolderMenuItem
-                  key={null}
-                  path={path}
-                  parentId={pId}
-                  onDialogClose={(success) => {
-                    if (success) refreshListing();
-                    setNewMenuAnchorEl(null);
-                  }}
-                />
-              </>
+              <UploadMenuItem
+                key={null}
+                path={path}
+                parentId={pId}
+                onUploadComplete={() => {
+                  refreshListing();
+                  setNewMenuAnchorEl(null);
+                }}
+              />
+            ))
+            .orElse(null)}
+          {FetchingData.getSuccessValue(parentId)
+            .map((pId) => (
+              <NewFolderMenuItem
+                key={null}
+                path={path}
+                parentId={pId}
+                onDialogClose={(success) => {
+                  if (success) refreshListing();
+                  setNewMenuAnchorEl(null);
+                }}
+              />
             ))
             .orElse(null)}
           <Divider variant="middle" textAlign="left">

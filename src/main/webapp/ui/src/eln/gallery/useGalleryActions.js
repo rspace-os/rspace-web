@@ -16,6 +16,7 @@ export default function useGalleryActions({
   parentId: number,
 |}): {|
   uploadFiles: ($ReadOnlyArray<File>) => Promise<void>,
+  createFolder: (string) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -89,5 +90,53 @@ export default function useGalleryActions({
     }
   }
 
-  return { uploadFiles };
+  async function createFolder(name: string) {
+    const parentFolderId = ArrayUtils.getAt(0, path)
+      .map(({ id }) => `${id}`)
+      .orElse(`${parentId}`);
+    try {
+      const formData = new FormData();
+      formData.append("folderName", name);
+      formData.append("parentId", parentFolderId);
+      formData.append("isMedia", "true");
+      const data = await axios.post<FormData, mixed>(
+        "gallery/ajax/createFolder",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      addAlert(
+        Parsers.objectPath(["data", "exceptionMessage"], data)
+          .flatMap(Parsers.isString)
+          .map((exceptionMessage) =>
+            mkAlert({
+              title: `Failed to create new folder.`,
+              message: exceptionMessage,
+              variant: "error",
+            })
+          )
+          .orElse(
+            mkAlert({
+              message: `Successfully created new folder.`,
+              variant: "success",
+            })
+          )
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to create new folder.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
+  return { uploadFiles, createFolder };
 }
