@@ -4,6 +4,7 @@ import React, { type Node, type ComponentType } from "react";
 import { styled } from "@mui/material/styles";
 import MenuItem from "@mui/material/MenuItem";
 import CardHeader from "@mui/material/CardHeader";
+import { alpha } from "@mui/system";
 
 export default (styled(
   ({
@@ -17,18 +18,19 @@ export default (styled(
     </MenuItem>
   )
 )(({ theme, backgroundColor, foregroundColor }) => {
-  const color = `hsl(${foregroundColor.hue}deg, ${foregroundColor.saturation}%, ${foregroundColor.lightness}%, 100%)`;
+  const fg = `hsl(${foregroundColor.hue}deg, ${foregroundColor.saturation}%, ${foregroundColor.lightness}%, 100%)`;
+  const bg = `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
   return {
     margin: theme.spacing(1),
     padding: 0,
     borderRadius: "2px",
-    backgroundColor: `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 12%)`,
+    backgroundColor: alpha(bg, 0.12),
     transition: "background-color ease-in-out .2s",
     "&:hover": {
-      backgroundColor: `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 24%)`,
+      backgroundColor: alpha(bg, 0.24),
     },
     "& .MuiCardHeader-avatar": {
-      border: `6px solid ${`hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`}`,
+      border: `6px solid ${bg}`,
       borderRadius: "6px",
     },
     "& .MuiCardMedia-root": {
@@ -38,12 +40,12 @@ export default (styled(
     "& .MuiSvgIcon-root": {
       width: 32,
       height: 32,
-      background: `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`,
+      background: bg,
       padding: theme.spacing(0.5),
-      color,
+      color: fg,
     },
     "& .MuiTypography-root": {
-      color,
+      color: fg,
     },
     "& .MuiCardHeader-title": {
       fontSize: "1rem",
