@@ -216,6 +216,19 @@ const NewFolderMenuItem = ({
   );
 };
 
+const DmpMenuSection = () => {
+  return (
+    <>
+      <Divider variant="middle" textAlign="left">
+        DMPs
+      </Divider>
+      <ArgosNewMenuItem />
+      <DMPOnlineNewMenuItem />
+      <DMPToolNewMenuItem />
+    </>
+  );
+};
+
 const SelectedDrawerTabIndicator = styled(({ className }) => (
   <div className={className}></div>
 ))(({ verticalPosition }) => ({
@@ -311,7 +324,7 @@ export default function GallerySidebar({
           {FetchingData.getSuccessValue(parentId)
             .map((pId) => (
               <UploadMenuItem
-                key={null}
+                key={"upload"}
                 path={path}
                 parentId={pId}
                 onUploadComplete={() => {
@@ -324,7 +337,7 @@ export default function GallerySidebar({
           {FetchingData.getSuccessValue(parentId)
             .map((pId) => (
               <NewFolderMenuItem
-                key={null}
+                key={"newFolder"}
                 path={path}
                 parentId={pId}
                 onDialogClose={(success) => {
@@ -334,12 +347,7 @@ export default function GallerySidebar({
               />
             ))
             .orElse(null)}
-          <Divider variant="middle" textAlign="left">
-            DMPs
-          </Divider>
-          <ArgosNewMenuItem />
-          <DMPOnlineNewMenuItem />
-          <DMPToolNewMenuItem />
+          <DmpMenuSection />
         </StyledMenu>
       </Box>
       <Divider />
