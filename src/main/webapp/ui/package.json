@@ -33,6 +33,7 @@
     "@testing-library/user-event": "^14.4.3",
     "axios-mock-adapter": "^1.20.0",
     "babel-loader": "=9.1.2",
+    "canvas": "^2.11.2",
     "clean-webpack-plugin": "=4.0.0",
     "css-loader": "=6.7.1",
     "dependency-cruiser": "^14.1.2",
