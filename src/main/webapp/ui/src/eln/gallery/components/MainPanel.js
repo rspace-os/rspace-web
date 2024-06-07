@@ -89,25 +89,25 @@ const CustomTransition = styled(({ children, in: open, className }) => (
     <Collapse
       in={open}
       timeout={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200
       }
     >
       {children}
     </Collapse>
   </div>
 ))(({ in: open }) => ({
-  "& .MuiTreeItem-root": {
+  "& .MuiCollapse-wrapperInner > .MuiBox-root": {
     transform:
       window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
-        ? "translateX(0px)"
+        ? "none"
         : "translateX(-10px) !important",
     opacity:
       window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
         ? 1
-        : 0,
+        : "0 !important",
     transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ? "none"
-      : "all .3s ease",
+      : "all .2s ease",
   },
 }));
 
@@ -157,50 +157,53 @@ const CustomTreeItem = ({
       };
 
   return (
-    <TreeItem
-      itemId={`${file.id}`}
-      label={
-        <Box sx={{ display: "flex" }}>
-          <Avatar
-            src={file.thumbnailUrl}
-            imgProps={{
-              role: "presentation",
-            }}
-            variant="rounded"
-            sx={{
-              width: "24px",
-              height: "24px",
-              aspectRatio: "1 / 1",
-              fontSize: "5em",
-              margin: "2px 12px 2px 8px",
-              background: "white",
-            }}
-          >
-            <FileIcon fontSize="inherit" />
-          </Avatar>
-          {file.name}
-        </Box>
-      }
-      slots={{ groupTransition: CustomTransition }}
-      ref={(node) => {
-        setDropRef(node);
-        setDragRef(node);
-      }}
-      {...listeners}
-      {...attributes}
-      style={{
-        ...dragStyle,
-        ...dropStyle,
-        borderRadius: "4px",
-      }}
+    <Box
       sx={{
         transitionDelay: `${(index + 1) * 0.04}s !important`,
       }}
     >
-      {/Folder/.test(file.type) && (
-        <TreeItemContent file={file} path={path} section={section} />
-      )}
-    </TreeItem>
+      <TreeItem
+        itemId={`${file.id}`}
+        label={
+          <Box sx={{ display: "flex" }}>
+            <Avatar
+              src={file.thumbnailUrl}
+              imgProps={{
+                role: "presentation",
+              }}
+              variant="rounded"
+              sx={{
+                width: "24px",
+                height: "24px",
+                aspectRatio: "1 / 1",
+                fontSize: "5em",
+                margin: "2px 12px 2px 8px",
+                background: "white",
+              }}
+            >
+              <FileIcon fontSize="inherit" />
+            </Avatar>
+            {file.name}
+          </Box>
+        }
+        slots={{ groupTransition: CustomTransition }}
+        ref={(node) => {
+          setDropRef(node);
+          setDragRef(node);
+        }}
+        {...listeners}
+        {...attributes}
+        style={{
+          ...dragStyle,
+          ...dropStyle,
+          borderRadius: "4px",
+        }}
+      >
+        {/Folder/.test(file.type) && (
+          <TreeItemContent file={file} path={path} section={section} />
+        )}
+      </TreeItem>
+    </Box>
   );
 };
 
