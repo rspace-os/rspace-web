@@ -382,6 +382,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 borderColor: disabledColor,
               },
             },
+            outlined: {
+              color: linkButtonText,
+              border: accentedBorder,
+              "&:hover": {
+                border: accentedBorder,
+                borderColor: darken(accentedBackground, hoverDarkenCoefficient),
+              },
+            },
             outlinedPrimary: {
               color: interactiveColor,
               borderColor: interactiveColor,

@@ -30,6 +30,21 @@ import {
   useSensor,
   MouseSensor,
 } from "@dnd-kit/core";
+import Button from "@mui/material/Button";
+import GridIcon from "@mui/icons-material/ViewCompact";
+import TreeIcon from "@mui/icons-material/AccountTree";
+import Menu from "@mui/material/Menu";
+import NewMenuItem from "./NewMenuItem";
+
+const StyledMenu = styled(Menu)(({ open }) => ({
+  "& .MuiPaper-root": {
+    ...(open
+      ? {
+          transform: "translate(0px, 4px) !important",
+        }
+      : {}),
+  },
+}));
 
 const TreeItemContent = ({
   path,
@@ -358,6 +373,8 @@ export default function GalleryMainPanel({
   const [selectedNodes, setSelectedNodes] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
   >([]);
+  const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
+  const [viewMode, setViewMode] = React.useState("grid");
   // TODO: Instead of passing -1, parentId should be optional?
   const { moveFile } = useGalleryActions({ path, parentId: -1 });
 
@@ -422,7 +439,6 @@ export default function GalleryMainPanel({
       <Grid
         container
         direction="column"
-        spacing={3}
         sx={{ height: "100%", flexWrap: "nowrap" }}
       >
         <Grid item>
@@ -438,83 +454,140 @@ export default function GalleryMainPanel({
               <div>{gallerySectionLabel[selectedSection]}</div>
             </Fade>
           </Typography>
-          <Breadcrumbs separator="›" aria-label="breadcrumb" sx={{ mt: 0.5 }}>
-            <Chip
-              size="small"
-              clickable
-              label={gallerySectionLabel[selectedSection]}
-              onClick={() => clearPath()}
-              sx={{ mt: 0.5 }}
-            />
-            {path.map((folder) => (
+        </Grid>
+        <Grid
+          item
+          container
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-start"
+          flexWrap="nowrap"
+        >
+          <Grid item>
+            <Breadcrumbs separator="›" aria-label="breadcrumb" sx={{ mt: 0.5 }}>
               <Chip
                 size="small"
                 clickable
-                label={folder.name}
-                key={folder.id}
-                disabled={!folder.open}
-                onClick={() => folder.open?.()}
+                label={gallerySectionLabel[selectedSection]}
+                onClick={() => clearPath()}
                 sx={{ mt: 0.5 }}
               />
-            ))}
-          </Breadcrumbs>
+              {path.map((folder) => (
+                <Chip
+                  size="small"
+                  clickable
+                  label={folder.name}
+                  key={folder.id}
+                  disabled={!folder.open}
+                  onClick={() => folder.open?.()}
+                  sx={{ mt: 0.5 }}
+                />
+              ))}
+            </Breadcrumbs>
+          </Grid>
+          <Grid item sx={{ mt: 0.5 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<TreeIcon />}
+              onClick={(e) => {
+                setViewMenuAnchorEl(e.target);
+              }}
+            >
+              Views
+            </Button>
+            <StyledMenu
+              open={Boolean(viewMenuAnchorEl)}
+              anchorEl={viewMenuAnchorEl}
+              onClose={() => setViewMenuAnchorEl(null)}
+              MenuListProps={{
+                disablePadding: true,
+              }}
+            >
+              <NewMenuItem
+                title="Grid"
+                subheader="Browse by thumbnail previews"
+                backgroundColor={COLOR.background}
+                foregroundColor={COLOR.contrastText}
+                avatar={<GridIcon />}
+                onClick={() => {
+                  setViewMode("grid");
+                  setViewMenuAnchorEl(null);
+                }}
+              />
+              <NewMenuItem
+                title="Tree"
+                subheader="Drag-and-drop files between folders"
+                backgroundColor={COLOR.background}
+                foregroundColor={COLOR.contrastText}
+                avatar={<TreeIcon />}
+                onClick={() => {
+                  setViewMode("tree");
+                  setViewMenuAnchorEl(null);
+                }}
+              />
+            </StyledMenu>
+          </Grid>
         </Grid>
-        <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
-          {FetchingData.match(galleryListing, {
-            loading: () => <></>,
-            error: (error) => <>{error}</>,
-            success: (listing) =>
-              listing.tag === "list" ? (
-                <DndContext
-                  sensors={[mouseSensor]}
-                  onDragEnd={(event) => {
-                    if (!event.over.data.current) return;
-                    void moveFile({
-                      target: `/${[
-                        selectedSection,
-                        ...event.over.data.current.path.map(({ name }) => name),
-                        event.over.data.current.name,
-                      ].join("/")}/`,
-                      fileId: event.active.id,
-                      section: selectedSection,
-                    });
-                  }}
-                >
-                  <SimpleTreeView
-                    selectedItems={selectedNodes}
-                    onSelectedItemsChange={(_event, nodeIds) => {
-                      setSelectedNodes(nodeIds);
+        <Grid item sx={{ overflowY: "auto", mt: 1 }} flexGrow={1}>
+          {viewMode === "tree" &&
+            FetchingData.match(galleryListing, {
+              loading: () => <></>,
+              error: (error) => <>{error}</>,
+              success: (listing) =>
+                listing.tag === "list" ? (
+                  <DndContext
+                    sensors={[mouseSensor]}
+                    onDragEnd={(event) => {
+                      if (!event.over.data.current) return;
+                      void moveFile({
+                        target: `/${[
+                          selectedSection,
+                          ...event.over.data.current.path.map(
+                            ({ name }) => name
+                          ),
+                          event.over.data.current.name,
+                        ].join("/")}/`,
+                        fileId: event.active.id,
+                        section: selectedSection,
+                      });
                     }}
                   >
-                    {listing.list.map((file) => (
-                      <CustomTreeItem
-                        file={file}
-                        path={path}
-                        key={file.id}
-                        section={selectedSection}
-                      />
-                    ))}
-                  </SimpleTreeView>
-                </DndContext>
-              ) : (
-                <div key={listing.reason}>
-                  <Fade
-                    in={true}
-                    timeout={
-                      window.matchMedia("(prefers-reduced-motion: reduce)")
-                        .matches
-                        ? 0
-                        : 300
-                    }
-                  >
-                    <div>
-                      <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
-                    </div>
-                  </Fade>
-                </div>
-              ),
-          })}
-          {false &&
+                    <SimpleTreeView
+                      selectedItems={selectedNodes}
+                      onSelectedItemsChange={(_event, nodeIds) => {
+                        setSelectedNodes(nodeIds);
+                      }}
+                    >
+                      {listing.list.map((file) => (
+                        <CustomTreeItem
+                          file={file}
+                          path={path}
+                          key={file.id}
+                          section={selectedSection}
+                        />
+                      ))}
+                    </SimpleTreeView>
+                  </DndContext>
+                ) : (
+                  <div key={listing.reason}>
+                    <Fade
+                      in={true}
+                      timeout={
+                        window.matchMedia("(prefers-reduced-motion: reduce)")
+                          .matches
+                          ? 0
+                          : 300
+                      }
+                    >
+                      <div>
+                        <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
+                      </div>
+                    </Fade>
+                  </div>
+                ),
+            })}
+          {viewMode === "grid" &&
             FetchingData.match(galleryListing, {
               loading: () => <></>,
               error: (error) => <>{error}</>,
