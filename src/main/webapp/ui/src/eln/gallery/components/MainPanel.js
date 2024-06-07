@@ -395,6 +395,9 @@ export default function GalleryMainPanel({
   const [selectedNodes, setSelectedNodes] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
   >([]);
+  const [expandedItems, setExpandedItems] = React.useState<
+    $ReadOnlyArray<GalleryFile["id"]>
+  >([]);
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
   // TODO: Instead of passing -1, parentId should be optional?
@@ -572,11 +575,17 @@ export default function GalleryMainPanel({
                         ].join("/")}/`,
                         fileId: event.active.id,
                         section: selectedSection,
+                      }).then(() => {
+                        refreshListing();
                       });
                     }}
                   >
                     <SimpleTreeView
                       sx={{ maxWidth: "500px" }}
+                      expandedItems={expandedItems}
+                      onExpandedItemsChange={(_event, nodeIds) => {
+                        setExpandedItems(nodeIds);
+                      }}
                       selectedItems={selectedNodes}
                       onSelectedItemsChange={(_event, nodeIds) => {
                         setSelectedNodes(nodeIds);
