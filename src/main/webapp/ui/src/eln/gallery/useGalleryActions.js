@@ -17,6 +17,11 @@ export default function useGalleryActions({
 |}): {|
   uploadFiles: ($ReadOnlyArray<File>) => Promise<void>,
   createFolder: (string) => Promise<void>,
+  moveFile: ({|
+    target: string,
+    fileId: number,
+    section: string,
+  |}) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -138,5 +143,30 @@ export default function useGalleryActions({
     }
   }
 
-  return { uploadFiles, createFolder };
+  async function moveFile({
+    target,
+    fileId,
+    section,
+  }: {|
+    target: string,
+    fileId: number,
+    section: string,
+  |}) {
+    const formData = new FormData();
+    formData.append("target", target);
+    formData.append("filesId[]", `${fileId}`);
+    formData.append("mediaType", section);
+    await axios.post<FormData, mixed>(
+      "gallery/ajax/moveGalleriesElements",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    // TODO handle errors
+  }
+
+  return { uploadFiles, createFolder, moveFile };
 }

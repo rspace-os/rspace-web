@@ -14,6 +14,7 @@ export type GalleryFile = {|
   modificationDate: number,
   type: string,
   thumbnailUrl: string,
+  path: $ReadOnlyArray<GalleryFile>,
   open?: () => void,
 |};
 
@@ -197,6 +198,7 @@ export default function useGalleryListing({
         id,
         modificationDate
       ),
+      path,
       ...(/Folder/.test(type)
         ? {
             open: () => {

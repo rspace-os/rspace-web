@@ -27,11 +27,8 @@ import {
   useDroppable,
   useDraggable,
   DndContext,
-  useSensors,
   useSensor,
   MouseSensor,
-  TouchSensor,
-  KeyboardSensor,
 } from "@dnd-kit/core";
 
 const TreeItemContent = ({
@@ -81,6 +78,10 @@ const CustomTreeItem = ({
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: file.id,
     disabled: !/Folder/.test(file.type),
+    data: {
+      path: file.path,
+      name: file.name,
+    },
   });
   const {
     attributes,
@@ -357,6 +358,8 @@ export default function GalleryMainPanel({
   const [selectedNodes, setSelectedNodes] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
   >([]);
+  // TODO: Instead of passing -1, parentId should be optional?
+  const { moveFile } = useGalleryActions({ path, parentId: -1 });
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -465,7 +468,16 @@ export default function GalleryMainPanel({
                 <DndContext
                   sensors={[mouseSensor]}
                   onDragEnd={(event) => {
-                    // TODO move event.active.id into event.over.id
+                    if (!event.over.data.current) return;
+                    void moveFile({
+                      target: `/${[
+                        selectedSection,
+                        ...event.over.data.current.path.map(({ name }) => name),
+                        event.over.data.current.name,
+                      ].join("/")}/`,
+                      fileId: event.active.id,
+                      section: selectedSection,
+                    });
                   }}
                 >
                   <SimpleTreeView
