@@ -34,6 +34,7 @@ import Button from "@mui/material/Button";
 import GridIcon from "@mui/icons-material/ViewCompact";
 import TreeIcon from "@mui/icons-material/AccountTree";
 import Menu from "@mui/material/Menu";
+import Box from "@mui/material/Box";
 import NewMenuItem from "./NewMenuItem";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
@@ -127,7 +128,28 @@ const CustomTreeItem = ({
   return (
     <TreeItem
       itemId={`${file.id}`}
-      label={file.name}
+      label={
+        <Box sx={{ display: "flex" }}>
+          <Avatar
+            src={file.thumbnailUrl}
+            imgProps={{
+              role: "presentation",
+            }}
+            variant="rounded"
+            sx={{
+              width: "24px",
+              height: "24px",
+              aspectRatio: "1 / 1",
+              fontSize: "5em",
+              margin: "2px 12px 2px 8px",
+              background: "white",
+            }}
+          >
+            <FileIcon fontSize="inherit" />
+          </Avatar>
+          {file.name}
+        </Box>
+      }
       ref={(node) => {
         setDropRef(node);
         setDragRef(node);
@@ -554,6 +576,7 @@ export default function GalleryMainPanel({
                     }}
                   >
                     <SimpleTreeView
+                      sx={{ maxWidth: "500px" }}
                       selectedItems={selectedNodes}
                       onSelectedItemsChange={(_event, nodeIds) => {
                         setSelectedNodes(nodeIds);
