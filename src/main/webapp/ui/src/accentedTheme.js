@@ -152,7 +152,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
    * When interactive elements such as buttons and chips are hovered over,
    * their background and borders should be subtly darkened by this amount.
    */
-  const hoverDarkenCoefficient = 0.1;
+  const hoverDarkenCoefficient = 0.05;
 
   return createTheme(
     mergeThemes(baseTheme, {
@@ -706,6 +706,30 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   },
                 },
               },
+            },
+          },
+        },
+        MuiTreeItem: {
+          styleOverrides: {
+            content: {
+              cursor: "default",
+              "&:hover": {
+                backgroundColor: darken(
+                  secondaryBackground,
+                  hoverDarkenCoefficient
+                ),
+              },
+              "&.Mui-selected": {
+                backgroundColor: accentedBackground,
+                "&.Mui-focused": {
+                  backgroundColor: accentedBackground,
+                },
+              },
+            },
+            label: {
+              fontWeight: 500,
+              letterSpacing: "0.01em",
+              color: contrastTextColor,
             },
           },
         },

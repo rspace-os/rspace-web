@@ -21,6 +21,8 @@ import { doNotAwait } from "../../../util/Util";
 import useGalleryActions from "../useGalleryActions";
 import Backdrop from "@mui/material/Backdrop";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { TreeItem } from "@mui/x-tree-view/TreeItem";
 
 const FileCard = styled(
   ({ file, className, selected, index, setSelectedFile }) => {
@@ -245,6 +247,9 @@ export default function GalleryMainPanel({
 |}): Node {
   const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
   const { uploadFiles } = useGalleryActions({ path, parentId });
+  const [selectedNodes, setSelectedNodes] = React.useState<
+    $ReadOnlyArray<GalleryFile["id"]>
+  >([]);
 
   return (
     <DialogContent
@@ -343,17 +348,22 @@ export default function GalleryMainPanel({
             error: (error) => <>{error}</>,
             success: (listing) =>
               listing.tag === "list" ? (
-                <Grid container spacing={2}>
-                  {listing.list.map((file, index) => (
-                    <FileCard
-                      selected={file === selectedFile}
-                      file={file}
+                <SimpleTreeView
+                  selectedItems={selectedNodes}
+                  onSelectedItemsChange={(_event, nodeIds) =>
+                    setSelectedNodes(nodeIds)
+                  }
+                >
+                  {listing.list.map((file) => (
+                    <TreeItem
+                      itemId={`${file.id}`}
+                      label={file.name}
                       key={file.id}
-                      index={index}
-                      setSelectedFile={() => setSelectedFile(file)}
-                    />
+                    >
+                      <TreeItem itemId={`${file.id}_inner`} label={"foo"} />
+                    </TreeItem>
                   ))}
-                </Grid>
+                </SimpleTreeView>
               ) : (
                 <div key={listing.reason}>
                   <Fade
@@ -372,6 +382,41 @@ export default function GalleryMainPanel({
                 </div>
               ),
           })}
+          {false &&
+            FetchingData.match(galleryListing, {
+              loading: () => <></>,
+              error: (error) => <>{error}</>,
+              success: (listing) =>
+                listing.tag === "list" ? (
+                  <Grid container spacing={2}>
+                    {listing.list.map((file, index) => (
+                      <FileCard
+                        selected={file === selectedFile}
+                        file={file}
+                        key={file.id}
+                        index={index}
+                        setSelectedFile={() => setSelectedFile(file)}
+                      />
+                    ))}
+                  </Grid>
+                ) : (
+                  <div key={listing.reason}>
+                    <Fade
+                      in={true}
+                      timeout={
+                        window.matchMedia("(prefers-reduced-motion: reduce)")
+                          .matches
+                          ? 0
+                          : 300
+                      }
+                    >
+                      <div>
+                        <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
+                      </div>
+                    </Fade>
+                  </div>
+                ),
+            })}
         </Grid>
         <Backdrop
           open={fileDragAndDrop > 0}
