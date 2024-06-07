@@ -36,6 +36,7 @@ import TreeIcon from "@mui/icons-material/AccountTree";
 import Menu from "@mui/material/Menu";
 import Box from "@mui/material/Box";
 import NewMenuItem from "./NewMenuItem";
+import Collapse from "@mui/material/Collapse";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -70,9 +71,10 @@ const TreeItemContent = ({
     error: (error) => <>{error}</>,
     success: (listing) =>
       listing.tag === "list"
-        ? listing.list.map((f) => (
+        ? listing.list.map((f, i) => (
             <CustomTreeItem
               file={f}
+              index={i}
               path={[...path, file]}
               section={section}
               key={f.id}
@@ -82,12 +84,41 @@ const TreeItemContent = ({
   });
 };
 
+const CustomTransition = styled(({ children, in: open, className }) => (
+  <div className={className}>
+    <Collapse
+      in={open}
+      timeout={
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300
+      }
+    >
+      {children}
+    </Collapse>
+  </div>
+))(({ in: open }) => ({
+  "& .MuiTreeItem-root": {
+    transform:
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
+        ? "translateX(0px)"
+        : "translateX(-10px) !important",
+    opacity:
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
+        ? 1
+        : 0,
+    transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "none"
+      : "all .3s ease",
+  },
+}));
+
 const CustomTreeItem = ({
   file,
+  index,
   path,
   section,
 }: {|
   file: GalleryFile,
+  index: number,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
 |}) => {
@@ -150,6 +181,7 @@ const CustomTreeItem = ({
           {file.name}
         </Box>
       }
+      slots={{ groupTransition: CustomTransition }}
       ref={(node) => {
         setDropRef(node);
         setDragRef(node);
@@ -160,6 +192,9 @@ const CustomTreeItem = ({
         ...dragStyle,
         ...dropStyle,
         borderRadius: "4px",
+      }}
+      sx={{
+        transitionDelay: `${(index + 1) * 0.04}s !important`,
       }}
     >
       {/Folder/.test(file.type) && (
@@ -591,8 +626,9 @@ export default function GalleryMainPanel({
                         setSelectedNodes(nodeIds);
                       }}
                     >
-                      {listing.list.map((file) => (
+                      {listing.list.map((file, index) => (
                         <CustomTreeItem
+                          index={index}
                           file={file}
                           path={path}
                           key={file.id}
