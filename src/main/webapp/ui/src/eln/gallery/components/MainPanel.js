@@ -23,6 +23,16 @@ import Backdrop from "@mui/material/Backdrop";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
+import {
+  useDroppable,
+  useDraggable,
+  DndContext,
+  useSensors,
+  useSensor,
+  MouseSensor,
+  TouchSensor,
+  KeyboardSensor,
+} from "@dnd-kit/core";
 
 const TreeItemContent = ({
   path,
@@ -68,8 +78,52 @@ const CustomTreeItem = ({
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
 |}) => {
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: file.id,
+    disabled: !/Folder/.test(file.type),
+  });
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    transform,
+  } = useDraggable({
+    disabled: /Folder/.test(file.type),
+    id: file.id,
+  });
+
+  const dragStyle: { [string]: string | number } = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: 1, // just needs to be rendered above Nodes later in the DOM
+        position: "relative",
+        boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
+      }
+    : {};
+  const dropStyle: { [string]: string | number } = isOver
+    ? {
+        border: `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+      }
+    : {
+        border: "2px solid white",
+      };
+
   return (
-    <TreeItem itemId={`${file.id}`} label={file.name}>
+    <TreeItem
+      itemId={`${file.id}`}
+      label={file.name}
+      ref={(node) => {
+        setDropRef(node);
+        setDragRef(node);
+      }}
+      {...listeners}
+      {...attributes}
+      style={{
+        ...dragStyle,
+        ...dropStyle,
+        borderRadius: "4px",
+      }}
+    >
       {/Folder/.test(file.type) && (
         <TreeItemContent file={file} path={path} section={section} />
       )}
@@ -304,6 +358,13 @@ export default function GalleryMainPanel({
     $ReadOnlyArray<GalleryFile["id"]>
   >([]);
 
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: {
+      delay: 500,
+      tolerance: 5,
+    },
+  });
+
   return (
     <DialogContent
       aria-live="polite"
@@ -401,21 +462,28 @@ export default function GalleryMainPanel({
             error: (error) => <>{error}</>,
             success: (listing) =>
               listing.tag === "list" ? (
-                <SimpleTreeView
-                  selectedItems={selectedNodes}
-                  onSelectedItemsChange={(_event, nodeIds) => {
-                    setSelectedNodes(nodeIds);
+                <DndContext
+                  sensors={[mouseSensor]}
+                  onDragEnd={(event) => {
+                    // TODO move event.active.id into event.over.id
                   }}
                 >
-                  {listing.list.map((file) => (
-                    <CustomTreeItem
-                      file={file}
-                      path={path}
-                      key={file.id}
-                      section={selectedSection}
-                    />
-                  ))}
-                </SimpleTreeView>
+                  <SimpleTreeView
+                    selectedItems={selectedNodes}
+                    onSelectedItemsChange={(_event, nodeIds) => {
+                      setSelectedNodes(nodeIds);
+                    }}
+                  >
+                    {listing.list.map((file) => (
+                      <CustomTreeItem
+                        file={file}
+                        path={path}
+                        key={file.id}
+                        section={selectedSection}
+                      />
+                    ))}
+                  </SimpleTreeView>
+                </DndContext>
               ) : (
                 <div key={listing.reason}>
                   <Fade
