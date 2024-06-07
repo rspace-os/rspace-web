@@ -16,13 +16,62 @@ import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import { COLORS as baseThemeColors } from "../../../theme";
 import * as FetchingData from "../../../util/fetchingData";
-import { type GalleryFile } from "../useGalleryListing";
+import useGalleryListing, { type GalleryFile } from "../useGalleryListing";
 import { doNotAwait } from "../../../util/Util";
 import useGalleryActions from "../useGalleryActions";
 import Backdrop from "@mui/material/Backdrop";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
+
+const TreeItemContent = ({
+  path,
+  file,
+  section,
+}: {|
+  file: GalleryFile,
+  path: $ReadOnlyArray<GalleryFile>,
+  section: string,
+|}): Node => {
+  const { galleryListing } = useGalleryListing({
+    section,
+    searchTerm: "",
+    path: [...path, file],
+  });
+  return FetchingData.match(galleryListing, {
+    loading: () => <>Loading...</>,
+    error: (error) => <>{error}</>,
+    success: (listing) =>
+      listing.tag === "list"
+        ? listing.list.map((f) => (
+            <CustomTreeItem
+              file={f}
+              path={[...path, file]}
+              section={section}
+              key={f.id}
+            />
+          ))
+        : null,
+  });
+};
+
+const CustomTreeItem = ({
+  file,
+  path,
+  section,
+}: {|
+  file: GalleryFile,
+  path: $ReadOnlyArray<GalleryFile>,
+  section: string,
+|}) => {
+  return (
+    <TreeItem itemId={`${file.id}`} label={file.name}>
+      {/Folder/.test(file.type) && (
+        <TreeItemContent file={file} path={path} section={section} />
+      )}
+    </TreeItem>
+  );
+};
 
 const FileCard = styled(
   ({ file, className, selected, index, setSelectedFile }) => {
@@ -350,18 +399,17 @@ export default function GalleryMainPanel({
               listing.tag === "list" ? (
                 <SimpleTreeView
                   selectedItems={selectedNodes}
-                  onSelectedItemsChange={(_event, nodeIds) =>
-                    setSelectedNodes(nodeIds)
-                  }
+                  onSelectedItemsChange={(_event, nodeIds) => {
+                    setSelectedNodes(nodeIds);
+                  }}
                 >
                   {listing.list.map((file) => (
-                    <TreeItem
-                      itemId={`${file.id}`}
-                      label={file.name}
+                    <CustomTreeItem
+                      file={file}
+                      path={path}
                       key={file.id}
-                    >
-                      <TreeItem itemId={`${file.id}_inner`} label={"foo"} />
-                    </TreeItem>
+                      section={selectedSection}
+                    />
                   ))}
                 </SimpleTreeView>
               ) : (

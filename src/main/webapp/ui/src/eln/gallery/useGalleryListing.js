@@ -137,9 +137,11 @@ function generateIconSrc(
 export default function useGalleryListing({
   section,
   searchTerm,
+  path: defaultPath,
 }: {|
   section: string,
   searchTerm: string,
+  path?: $ReadOnlyArray<GalleryFile>,
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
@@ -155,7 +157,9 @@ export default function useGalleryListing({
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
-  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
+    defaultPath ?? []
+  );
   const [parentId, setParentId] = React.useState<Result<number>>(
     Result.Error([])
   );
@@ -307,7 +311,7 @@ export default function useGalleryListing({
   }, [searchTerm, path]);
 
   React.useEffect(() => {
-    setPath([]);
+    setPath(defaultPath ?? []);
   }, [section]);
 
   if (loading)

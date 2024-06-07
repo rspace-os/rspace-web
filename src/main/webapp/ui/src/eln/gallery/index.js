@@ -24,6 +24,7 @@ function WholePage() {
     useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
+      path: [],
     });
   const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
     null
