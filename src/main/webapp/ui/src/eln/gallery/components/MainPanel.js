@@ -39,7 +39,11 @@ const TreeItemContent = ({
     path: [...path, file],
   });
   return FetchingData.match(galleryListing, {
-    loading: () => <>Loading...</>,
+    /*
+     * nothing is shown whilst loading otherwise the UI ends up being quite
+     * janky when there ends up being nothing in the folder
+     */
+    loading: () => null,
     error: (error) => <>{error}</>,
     success: (listing) =>
       listing.tag === "list"
