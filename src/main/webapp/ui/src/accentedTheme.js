@@ -732,12 +732,15 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 "&.Mui-focused": {
                   backgroundColor: accentedBackground,
                 },
+                "& .MuiTreeItem-label": {
+                  color: contrastTextColor,
+                },
               },
             },
             label: {
               fontWeight: 500,
               letterSpacing: "0.01em",
-              color: contrastTextColor,
+              color: backgroundContrastTextColor,
             },
           },
         },
