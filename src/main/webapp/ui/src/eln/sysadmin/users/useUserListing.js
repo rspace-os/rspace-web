@@ -6,6 +6,7 @@ import axios from "axios";
 import { Optional } from "../../../util/optional";
 import { Result } from "../../../util/result";
 import RsSet from "../../../util/set";
+import * as Parsers from "../../../util/parsers";
 
 export opaque type UserId = number;
 
@@ -341,6 +342,14 @@ export function useUserListing(): {|
             userId: id,
             usernameAlias: alias,
           });
+          Parsers.isObject(data)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+            .flatMap(Parsers.isString)
+            .do((exceptionMessage) => {
+              throw new Error(exceptionMessage);
+            });
+
           refreshListing();
         } catch (error) {
           console.error(error);
