@@ -1,0 +1,15 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2024-06-07" context="run" author="matthias">
+        <comment>RSDEV-212: Add an usernameAlias column to User table</comment>
+        <addColumn tableName="User">
+            <column name="usernameAlias" type="VARCHAR(255)"/>
+        </addColumn>
+        <addUniqueConstraint columnNames="usernameAlias" constraintName="unique_usernameAlias" tableName="User"/>
+    </changeSet>
+
+</databaseChangeLog>

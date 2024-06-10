@@ -135,7 +135,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     return query.uniqueResult();
   }
 
-  public User getUserByUserName(String username) {
+  public User getUserByUsername(String username) {
     CriteriaBuilder builder = getSession().getCriteriaBuilder();
 
     // eagerly fetch path usergroups.group.usergroups.user to load associated users in the same
@@ -162,6 +162,14 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     } else {
       return user;
     }
+  }
+
+  @Override
+  public Optional<User> getUserByUsernameAlias(String usernameAlias) {
+    return getSession()
+        .createQuery("from User where usernameAlias=:usernameAlias", User.class)
+        .setParameter("usernameAlias", usernameAlias)
+        .uniqueResultOptional();
   }
 
   public List<User> getUserByEmail(String email) {

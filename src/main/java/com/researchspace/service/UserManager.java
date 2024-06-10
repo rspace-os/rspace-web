@@ -68,6 +68,14 @@ public interface UserManager extends GenericManager<User, Long> {
   List<User> searchUsers(String term);
 
   /**
+   * Method allowing to find a username from incoming username or usernameAlias
+   *
+   * @param usernameOrAlias
+   * @return
+   */
+  String findUsernameByUsernameOrAlias(String usernameOrAlias);
+
+  /**
    * Variant method to retrieve user based on username, with option to force a fresh reload from the
    * database.
    *
@@ -304,6 +312,8 @@ public interface UserManager extends GenericManager<User, Long> {
    * @return the updated user
    */
   User changeEmail(User user, String email);
+
+  User changeUsernameAlias(Long userId, String usernameAlias) throws UserExistsException;
 
   Optional<String> getUsernameByToken(String token);
 

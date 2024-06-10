@@ -525,7 +525,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       throws IllegalAddChildOperation {
 
     String usernameInSession = SecurityUtils.getSubject().getPrincipal().toString();
-    User userInSession = userDao.getUserByUserName(usernameInSession);
+    User userInSession = userDao.getUserByUsername(usernameInSession);
 
     if (toShareWith.isUser()) {
       boolean sysAdminUnsharingAPublicLink = false;
@@ -1183,6 +1183,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       throw new IllegalStateException(
           "'" + indFolderName + "' does not contain the deleter's username");
     }
-    return userDao.getUserByUserName(otherName);
+    return userDao.getUserByUsername(otherName);
   }
 }

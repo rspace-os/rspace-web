@@ -113,10 +113,22 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     }
   }
 
+  private void checkUsernameAndAliasUnique(String username, String usernameAlias)
+      throws UserExistsException {
+    String foundUsername = findUsernameByUsernameOrAlias(username);
+    String foundAlias = findUsernameByUsernameOrAlias(usernameAlias);
+    if (foundUsername != null || foundAlias != null) {
+      throw new UserExistsException(
+          "There is already a username with usernameAlias matching proposed username, "
+              + "or with username matching proposed usernameAlias!");
+    }
+  }
+
   /** {@inheritDoc} */
   public User saveNewUser(User user) throws UserExistsException {
 
     checkEmailUnique(user.getEmail());
+    checkUsernameAndAliasUnique(user.getUsername(), user.getUsernameAlias());
     encryptPasswordIfRequired(user);
 
     // set up roles if not already done.
@@ -198,7 +210,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
         && ((User) sessionUser).getUsername().equals(username)) {
       return (User) session.getAttribute(SessionAttributeUtils.USER);
     } else {
-      User u = userDao.getUserByUserName(username);
+      User u = userDao.getUserByUsername(username);
       if (u.getUsername().equals(SecurityUtils.getSubject().getPrincipal()) && session != null) {
         session.setAttribute(SessionAttributeUtils.USER, u);
       }
@@ -220,6 +232,17 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
    */
   public User getUserByUsername(String username) {
     return getUserByUsername(username, false);
+  }
+
+  public String findUsernameByUsernameOrAlias(String usernameOrAlias) {
+    if (userExists(usernameOrAlias)) {
+      return usernameOrAlias;
+    }
+    Optional<User> userWithAlias = userDao.getUserByUsernameAlias(usernameOrAlias);
+    if (userWithAlias.isPresent()) {
+      return userWithAlias.get().getUsername();
+    }
+    return null;
   }
 
   public List<User> getUserByEmail(String userEmail) {
@@ -432,7 +455,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private ISearchResults<User> listUsersInAdminsCommunity(
       String adminUsername, PaginationCriteria<User> pgCrit) {
-    User admin = userDao.getUserByUserName(adminUsername);
+    User admin = userDao.getUserByUsername(adminUsername);
     assertAdminHasAdminRole(admin);
     List<Community> comms = communityDao.listCommunitiesForAdmin(admin.getId());
     if (comms.isEmpty()) {
@@ -527,12 +550,40 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     return user;
   }
 
+  @Override
+  public User changeUsernameAlias(Long userId, String newAlias) throws UserExistsException {
+
+    User user = get(userId);
+    if (userExists(newAlias)) {
+      throw new UserExistsException(
+          String.format("There is already a user with username [%s]", newAlias),
+          true,
+          false,
+          false);
+    }
+    Optional<User> userWithAlias = userDao.getUserByUsernameAlias(newAlias);
+    if (userWithAlias.isPresent()) {
+      throw new UserExistsException(
+          String.format(
+              "usernameAlias [%s] is already used by user [%s]",
+              newAlias, userWithAlias.get().getUsername()),
+          false,
+          true,
+          false);
+    }
+
+    user.setUsernameAlias(newAlias);
+    SECURITY_LOG.info(
+        "{} [{}] changed usernameAlias to  {}", user.getFullName(), user.getId(), newAlias);
+    return user;
+  }
+
   /*
    * for testing
    */
   @Override
   public User getUserByUsernameNoSession(String userName) {
-    return userDao.getUserByUserName(userName);
+    return userDao.getUserByUsername(userName);
   }
 
   @Override

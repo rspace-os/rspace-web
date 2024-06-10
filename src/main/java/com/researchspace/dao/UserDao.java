@@ -51,7 +51,9 @@ public interface UserDao extends GenericDao<User, Long> {
 
   String getUserPassword(String username);
 
-  User getUserByUserName(String userName);
+  User getUserByUsername(String userName);
+
+  Optional<User> getUserByUsernameAlias(String usernameAlias);
 
   /**
    * Gets a paginated list of users and returns an {@link ISearchResults}

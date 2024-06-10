@@ -74,6 +74,6 @@ public class SampleTemplateAppInitialiserTest {
   }
 
   private void mockGetUserByUsername() {
-    when(userdao.getUserByUserName(Constants.SYSADMIN_UNAME)).thenReturn(user);
+    when(userdao.getUserByUsername(Constants.SYSADMIN_UNAME)).thenReturn(user);
   }
 }

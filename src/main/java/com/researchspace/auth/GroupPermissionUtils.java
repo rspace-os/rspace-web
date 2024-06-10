@@ -135,7 +135,7 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
   }
 
   private User loadUser(String leaveCandidateUsername) {
-    return userDao.getUserByUserName(leaveCandidateUsername);
+    return userDao.getUserByUsername(leaveCandidateUsername);
   }
 
   private void throwAuthException(User subject, String msg) {

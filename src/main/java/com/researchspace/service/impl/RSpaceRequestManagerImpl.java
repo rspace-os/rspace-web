@@ -58,7 +58,7 @@ public class RSpaceRequestManagerImpl implements RSpaceRequestManager {
   @Override
   public MessageOrRequest updateStatus(
       String username, CommunicationStatus newStatus, Long requestID, String optionalMessage) {
-    User authUser = userDao.getUserByUserName(username);
+    User authUser = userDao.getUserByUsername(username);
     MessageOrRequest mor = (MessageOrRequest) commDao.get(requestID);
     boolean enabled =
         mor.getRecipients().stream().anyMatch(ct -> ct.getRecipient().equals(authUser));

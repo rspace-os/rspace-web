@@ -78,7 +78,7 @@ public class MessageOrRequestCreatorManagerImpl implements MessageOrRequestCreat
       Long prevMessageId,
       Date requestedCompletionDate) {
 
-    User user = userDao.getUserByUserName(originatorUserName);
+    User user = userDao.getUserByUsername(originatorUserName);
     checkPerms(reqCmnd, user);
     MessageOrRequest mor = createMessageOrRequestObject(reqCmnd, originatorUserName);
     mor.setRequestedCompletionDate(requestedCompletionDate);
@@ -140,7 +140,7 @@ public class MessageOrRequestCreatorManagerImpl implements MessageOrRequestCreat
   MessageOrRequest createMessageOrRequestObject(
       MsgOrReqstCreationCfg command, String originatorUserName) {
 
-    User originator = userDao.getUserByUserName(originatorUserName);
+    User originator = userDao.getUserByUsername(originatorUserName);
     RSpaceDocView record = null;
     if (command.getRecordId() != null) {
       record = isRecord(originator, command.getRecordId());
