@@ -8,7 +8,7 @@ import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
 import Fade from "@mui/material/Fade";
 import { gallerySectionLabel, COLOR } from "../common";
-import { styled, alpha } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
@@ -192,117 +192,102 @@ const CustomBreadcrumbs = ({
   );
 };
 
-const CustomTreeItem = styled(
-  ({
-    file,
-    index,
-    path,
-    section,
-    className,
-  }: {|
-    file: GalleryFile,
-    index: number,
-    path: $ReadOnlyArray<GalleryFile>,
-    section: string,
-    className: string,
-  |}) => {
-    const { setNodeRef: setDropRef, isOver } = useDroppable({
-      id: file.id,
-      disabled: !/Folder/.test(file.type),
-      data: {
-        path: file.path,
-        name: file.name,
-      },
-    });
-    const {
-      attributes,
-      listeners,
-      setNodeRef: setDragRef,
-      transform,
-    } = useDraggable({
-      disabled: false,
-      id: file.id,
-    });
+const CustomTreeItem = ({
+  file,
+  index,
+  path,
+  section,
+}: {|
+  file: GalleryFile,
+  index: number,
+  path: $ReadOnlyArray<GalleryFile>,
+  section: string,
+|}) => {
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: file.id,
+    disabled: !/Folder/.test(file.type),
+    data: {
+      path: file.path,
+      name: file.name,
+    },
+  });
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    transform,
+  } = useDraggable({
+    disabled: false,
+    id: file.id,
+  });
 
-    const dragStyle: { [string]: string | number } = transform
-      ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-          zIndex: 1, // just needs to be rendered above Nodes later in the DOM
-          position: "relative",
-          boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
-          maxWidth: "max-content",
-        }
-      : {};
-    const dropStyle: { [string]: string | number } = isOver
-      ? {
-          border: `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-        }
-      : {
-          border: "2px solid white",
-        };
+  const dragStyle: { [string]: string | number } = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: 1, // just needs to be rendered above Nodes later in the DOM
+        position: "relative",
+        boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
+        maxWidth: "max-content",
+      }
+    : {};
+  const dropStyle: { [string]: string | number } = isOver
+    ? {
+        border: `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+      }
+    : {
+        border: "2px solid transparent",
+      };
 
-    return (
-      <Box
-        className={className}
-        sx={{
-          transitionDelay: `${(index + 1) * 0.04}s !important`,
+  return (
+    <Box
+      sx={{
+        transitionDelay: `${(index + 1) * 0.04}s !important`,
+      }}
+    >
+      <TreeItem
+        itemId={`${file.id}`}
+        label={
+          <Box sx={{ display: "flex" }}>
+            <Avatar
+              src={file.thumbnailUrl}
+              imgProps={{
+                role: "presentation",
+              }}
+              variant="rounded"
+              sx={{
+                width: "24px",
+                height: "24px",
+                aspectRatio: "1 / 1",
+                fontSize: "5em",
+                margin: "2px 12px 2px 8px",
+                background: "white",
+              }}
+            >
+              <FileIcon fontSize="inherit" />
+            </Avatar>
+            {file.name}
+          </Box>
+        }
+        slots={{ groupTransition: CustomTransition }}
+        ref={(node) => {
+          setDropRef(node);
+          setDragRef(node);
+        }}
+        {...listeners}
+        {...attributes}
+        style={{
+          ...dragStyle,
+          ...dropStyle,
+          borderRadius: "4px",
         }}
       >
-        <TreeItem
-          itemId={`${file.id}`}
-          label={
-            <Box sx={{ display: "flex" }}>
-              <Avatar
-                src={file.thumbnailUrl}
-                imgProps={{
-                  role: "presentation",
-                }}
-                variant="rounded"
-                sx={{
-                  width: "24px",
-                  height: "24px",
-                  aspectRatio: "1 / 1",
-                  fontSize: "5em",
-                  margin: "2px 12px 2px 8px",
-                  background: "white",
-                }}
-              >
-                <FileIcon fontSize="inherit" />
-              </Avatar>
-              {file.name}
-            </Box>
-          }
-          slots={{ groupTransition: CustomTransition }}
-          ref={(node) => {
-            setDropRef(node);
-            setDragRef(node);
-          }}
-          {...listeners}
-          {...attributes}
-          style={{
-            ...dragStyle,
-            ...dropStyle,
-            borderRadius: "4px",
-          }}
-        >
-          {/Folder/.test(file.type) && (
-            <TreeItemContent file={file} path={path} section={section} />
-          )}
-        </TreeItem>
-      </Box>
-    );
-  }
-)(({ theme }) => ({
-  [`& .${treeItemClasses.content}`]: {
-    padding: theme.spacing(0.5, 1),
-    margin: theme.spacing(0.2, 0),
-  },
-  [`& .${treeItemClasses.groupTransition}`]: {
-    marginLeft: 15,
-    paddingLeft: 18,
-    borderLeft: `2px solid ${alpha(theme.palette.primary.main, 0.4)}`,
-  },
-}));
+        {/Folder/.test(file.type) && (
+          <TreeItemContent file={file} path={path} section={section} />
+        )}
+      </TreeItem>
+    </Box>
+  );
+};
 
 const FileCard = styled(
   ({ file, className, selected, index, setSelectedFile }) => {
@@ -719,7 +704,6 @@ export default function GalleryMainPanel({
                 success: (listing) =>
                   listing.tag === "list" ? (
                     <SimpleTreeView
-                      sx={{ maxWidth: "500px" }}
                       expandedItems={expandedItems}
                       onExpandedItemsChange={(_event, nodeIds) => {
                         setExpandedItems(nodeIds);

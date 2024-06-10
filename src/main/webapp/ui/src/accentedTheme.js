@@ -721,19 +721,33 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           styleOverrides: {
             content: {
               cursor: "default",
+              backgroundColor: darken(
+                secondaryBackground,
+                hoverDarkenCoefficient
+              ),
+              maxWidth: "fit-content",
               "&:hover": {
                 backgroundColor: darken(
                   secondaryBackground,
-                  hoverDarkenCoefficient
+                  hoverDarkenCoefficient * 2
                 ),
               },
               "&.Mui-selected": {
                 backgroundColor: accentedBackground,
                 "&.Mui-focused": {
-                  backgroundColor: accentedBackground,
+                  backgroundColor: darken(
+                    secondaryBackground,
+                    hoverDarkenCoefficient * 5
+                  ),
                 },
                 "& .MuiTreeItem-label": {
                   color: contrastTextColor,
+                },
+                "&:hover": {
+                  backgroundColor: darken(
+                    secondaryBackground,
+                    hoverDarkenCoefficient * 6
+                  ),
                 },
               },
             },
@@ -741,6 +755,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               fontWeight: 500,
               letterSpacing: "0.01em",
               color: backgroundContrastTextColor,
+              marginRight: baseTheme.spacing(1),
             },
           },
         },
