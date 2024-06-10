@@ -593,7 +593,13 @@ const SetUsernamAliasAction = ({
               <DialogTitle>Set Username Alias</DialogTitle>
               <DialogContent>
                 <DialogContentText variant="body2" sx={{ mb: 2 }}>
-                  <Typography variant="body2">Some explanatory text</Typography>
+                  <Typography variant="body2">
+                    SysAdmins can set a username alias for a user, enabling both
+                    the username and its alias to be used during login. The
+                    alias is only recognised during the login process, and does
+                    not replace the user’s username as their main identifier
+                    inside RSpace.
+                  </Typography>
                 </DialogContentText>
                 <TextField
                   size="small"
