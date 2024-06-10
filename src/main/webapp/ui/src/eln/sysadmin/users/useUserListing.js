@@ -341,6 +341,7 @@ export function useUserListing(): {|
             userId: id,
             usernameAlias: alias,
           });
+          refreshListing();
         } catch (error) {
           console.error(error);
           throw error;
