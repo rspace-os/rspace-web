@@ -86,6 +86,7 @@ export type User = {|
   enable: () => Promise<void>,
   disable: () => Promise<void>,
   delete: () => Promise<void>,
+  setAlias: (string) => Promise<void>,
 |};
 
 export type UserListing = {|
@@ -329,6 +330,21 @@ export function useUserListing(): {|
         }
       }
 
+      async function setAlias(alias: string): Promise<void> {
+        try {
+          const { data } = await axios.post<
+            {| userId: UserId, usernameAlias: string |},
+            mixed
+          >("/system/users/saveUsernameAlias", {
+            userId: id,
+            usernameAlias: alias,
+          });
+        } catch (error) {
+          console.error(error);
+          throw error;
+        }
+      }
+
       return {
         id,
         url: `/userform?userId=${id}`,
@@ -360,6 +376,7 @@ export function useUserListing(): {|
         enable,
         disable,
         delete: deleteUser,
+        setAlias,
       };
     };
 

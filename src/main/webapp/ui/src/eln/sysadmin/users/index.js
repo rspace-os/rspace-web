@@ -569,7 +569,7 @@ const SetUsernamAliasAction = ({
                 e.preventDefault();
                 void (async () => {
                   try {
-                    // await TODO
+                    await user.setAlias(alias);
                     addAlert(
                       mkAlert({
                         variant: "success",
