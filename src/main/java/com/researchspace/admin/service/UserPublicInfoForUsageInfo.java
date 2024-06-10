@@ -15,6 +15,7 @@ public class UserPublicInfoForUsageInfo {
 
   private Long id;
   private String username;
+  private String usernameAlias;
   private String firstName;
   private String lastName;
   private String fullName;
@@ -43,6 +44,7 @@ public class UserPublicInfoForUsageInfo {
     this.temporary = publicInfo.isTemporary();
     this.role = publicInfo.getRole();
 
+    this.usernameAlias = user.getUsernameAlias();
     this.tags = user.getTagsList();
     this.groupNames =
         user.getGroups().stream().map(Group::getDisplayName).collect(Collectors.toList());
