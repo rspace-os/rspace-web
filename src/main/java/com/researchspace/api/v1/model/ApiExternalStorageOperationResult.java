@@ -12,12 +12,14 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @JsonPropertyOrder(
     value = {"numFilesInput", "numFilesSucceed", "numFilesFailed", "fileInfoDetails", "_links"})
+@ToString(callSuper = true)
 public class ApiExternalStorageOperationResult extends LinkableApiObject {
 
   @JsonProperty("fileInfoDetails")
@@ -86,6 +88,7 @@ public class ApiExternalStorageOperationResult extends LinkableApiObject {
       result.add(
           new ApiExternalStorageOperationInfo(
               currentEntry.getKey().getId(),
+              null,
               currentEntry.getKey().getFileName(),
               StringUtils.isBlank(currentEntry.getValue()),
               currentEntry.getValue()));

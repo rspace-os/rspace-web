@@ -114,10 +114,15 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     deleteOAuthTokens(userId, session);
     deleteOAuthApps(userId, session);
     deleteGroupMembershipEvent(userId, session);
+    deleteExternalStorageLocation(userId, session);
 
     userDao.remove(userId);
 
     return new ServiceOperationResult<>(toDelete, true, "Temporary [" + userId + "] deleted");
+  }
+
+  private void deleteExternalStorageLocation(Long userId, Session session) {
+    execute(userId, session, "delete from ExternalStorageLocation where operationUser_id=:id");
   }
 
   // this is called at the end, as userToDelete is removed from any groups in the same transaction,
