@@ -7,6 +7,7 @@ import static com.researchspace.api.v1.controller.GalleryApiController.Operation
 import static com.researchspace.api.v1.controller.GalleryApiController.Operation.copy;
 import static com.researchspace.api.v1.controller.GalleryApiController.Operation.move;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -16,6 +17,7 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationInfo;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
+import com.researchspace.model.netfiles.ExternalStorageLocation;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -25,6 +27,7 @@ import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.irods.IRODSClient;
 import com.researchspace.netfiles.irods.JargonFacade;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
@@ -32,6 +35,7 @@ import com.researchspace.testutils.TestGroup;
 import com.researchspace.webapp.controller.GalleryController;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import org.irods.jargon.core.connection.IRODSAccount;
 import org.junit.After;
@@ -65,6 +69,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
   @Autowired private NfsManager nfsManager;
   @Autowired private GalleryController galleryController;
   @Autowired private BaseRecordManager baseRecordManager;
+  @Autowired private ExternalStorageManager externalStorageManager;
 
   /****** IRODS teardown management **********/
   private IRODSClient irodsClient;
@@ -76,9 +81,10 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
 
   private Long fileStorePathId1, fileStorePathId2;
 
-  private String apiKey;
+  private TestGroup testGrp;
+  private String apiKeyUser1;
   private ApiNfsCredentials irodsCredentials;
-  private User user;
+  private User user1;
 
   private static final String EXPECTED_NO_SEVER_INFO =
       "{\n"
@@ -153,14 +159,14 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
   public void setup() throws Exception {
     super.setUp();
     IRODS_TARGET_PATH = IRODS_HOME_DIR + "/test";
-    TestGroup testGrp1 = createTestGroup(1, new TestGroupConfig(true));
-    user = testGrp1.getUserByPrefix("u1");
+    testGrp = createTestGroup(2, new TestGroupConfig(true));
+    user1 = testGrp.getUserByPrefix("u1");
     NfsFileSystem iRodsFileSystem = createIrodsFileSystem();
     fileStorePathId1 = createIrodsFileStore(iRodsFileSystem, "test_folder_1", IRODS_TARGET_PATH);
     fileStorePathId2 =
         createIrodsFileStore(iRodsFileSystem, "test_folder_2", IRODS_HOME_DIR + "/training_jpgs");
-    logoutAndLoginAs(user);
-    apiKey = createApiKeyForuser(user);
+    logoutAndLoginAs(user1);
+    apiKeyUser1 = createApiKeyForuser(user1);
     irodsCredentials =
         ApiNfsCredentials.builder().username(IRODS_USERNAME).password(IRODS_PASSWORD).build();
     iRodsAccount =
@@ -201,7 +207,10 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void testIrodsGetMappingEmptyIds() throws Exception {
     MvcResult getResult =
-        mockMvc.perform(createIrodsGetBuilder(user, apiKey)).andExpect(status().isOk()).andReturn();
+        mockMvc
+            .perform(createIrodsGetBuilder(user1, apiKeyUser1))
+            .andExpect(status().isOk())
+            .andReturn();
 
     System.out.println(getResult.getResponse().getContentAsString());
     // do not throw exception here
@@ -215,7 +224,8 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
   public void testIrodsGetMappingPassingIds() throws Exception {
     MvcResult getResult =
         mockMvc
-            .perform(createIrodsGetBuilder(user, apiKey).param("recordIds", "123", "345", "456"))
+            .perform(
+                createIrodsGetBuilder(user1, apiKeyUser1).param("recordIds", "123", "345", "456"))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -230,6 +240,10 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   @RunIfSystemPropertyDefined("nightly")
   public void testIrodsCopyingFilesSuccessfully() throws IOException {
+    User user2 = testGrp.getUserByPrefix("u2");
+    logoutAndLoginAs(user2);
+    String apiKeyUser2 = createApiKeyForuser(user2);
+
     EcatMediaFile imageInGallery1 = uploadFileIntoRspace("image1.png");
     EcatMediaFile imageInGallery2 = uploadFileIntoRspace("image2.png");
     EcatMediaFile imageInGallery3 = uploadFileIntoRspace("image3.png");
@@ -239,7 +253,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
     try { // copy the image1 into irods so that it is already there when copy again
       mockMvc
           .perform(
-              createIrodsPostBuilder(user, apiKey, irodsCredentials, copy)
+              createIrodsPostBuilder(user2, apiKeyUser2, irodsCredentials, copy)
                   .param(PARAM_RECORD_IDS, imageInGallery1.getId().toString())
                   .param(PARAM_FILESTORE_PATH_ID, fileStorePathId1.toString()))
           .andExpect(status().isOk())
@@ -259,7 +273,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
       MvcResult result =
           mockMvc
               .perform(
-                  createIrodsPostBuilder(user, apiKey, irodsCredentials, copy)
+                  createIrodsPostBuilder(user2, apiKeyUser2, irodsCredentials, copy)
                       .param(
                           PARAM_RECORD_IDS,
                           imageInGallery1.getId().toString(),
@@ -289,6 +303,19 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
         }
       }
       assertFalse(response.getLinks().get(0).getLink().isBlank());
+
+      // check database
+      List<ExternalStorageLocation> databaseEntries =
+          externalStorageManager.getAllExternalStorageLocationsByUser(user2);
+      assertEquals(3, databaseEntries.size());
+      for (ExternalStorageLocation currentDbEntry : databaseEntries) {
+        assertEquals(user2, currentDbEntry.getOperationUser());
+        assertEquals(fileStorePathId1, currentDbEntry.getFileStore().getId());
+        assertNotNull(currentDbEntry.getConnectedMediaFile());
+        assertNotNull(currentDbEntry.getId());
+        assertNotNull(currentDbEntry.getOperationDate());
+        assertNotNull(currentDbEntry.getExternalStorageId());
+      }
 
       assertTrue(
           "The file has not been created in IRODS", irodsClient.iRodsFileExists(irodsFileName1));
@@ -318,7 +345,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
     try { // copy the image1 into irods so that it is already there when copy again
       mockMvc
           .perform(
-              createIrodsPostBuilder(user, apiKey, irodsCredentials, copy)
+              createIrodsPostBuilder(user1, apiKeyUser1, irodsCredentials, copy)
                   .param(PARAM_RECORD_IDS, imageInGallery1.getId().toString())
                   .param(PARAM_FILESTORE_PATH_ID, fileStorePathId1.toString()))
           .andExpect(status().isOk())
@@ -338,7 +365,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
       MvcResult result =
           mockMvc
               .perform(
-                  createIrodsPostBuilder(user, apiKey, irodsCredentials, move)
+                  createIrodsPostBuilder(user1, apiKeyUser1, irodsCredentials, move)
                       .param(
                           PARAM_RECORD_IDS,
                           imageInGallery1.getId().toString(),
@@ -357,6 +384,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
       assertEquals(1, response.getNumFilesFailed().intValue());
       assertEquals(3, response.getFileInfoDetails().size());
 
+      // check response
       Iterator<ApiExternalStorageOperationInfo> fileInfoIterator =
           response.getFileInfoDetails().iterator();
       while (fileInfoIterator.hasNext()) {
@@ -369,6 +397,19 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
         }
       }
       assertFalse(response.getLinks().get(0).getLink().isBlank());
+
+      // check database
+      List<ExternalStorageLocation> databaseEntries =
+          externalStorageManager.getAllExternalStorageLocationsByUser(user1);
+      assertEquals(3, databaseEntries.size());
+      for (ExternalStorageLocation currentDbEntry : databaseEntries) {
+        assertEquals(user1, currentDbEntry.getOperationUser());
+        assertEquals(fileStorePathId1, currentDbEntry.getFileStore().getId());
+        assertNotNull(currentDbEntry.getConnectedMediaFile());
+        assertNotNull(currentDbEntry.getId());
+        assertNotNull(currentDbEntry.getOperationDate());
+        assertNotNull(currentDbEntry.getExternalStorageId());
+      }
 
       assertTrue(
           "The file has not been created in IRODS", irodsClient.iRodsFileExists(irodsFileName1));
@@ -394,7 +435,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
     MockMultipartFile mf =
         new MockMultipartFile("xfile", filename, "png", getTestResourceFileStream("Picture1.png"));
     RecordInformation imageInGallery = galleryController.uploadFile(mf, null, null, null).getData();
-    return baseRecordManager.retrieveMediaFile(user, imageInGallery.getId());
+    return baseRecordManager.retrieveMediaFile(user1, imageInGallery.getId());
   }
 
   private void teardownIrods(String absolutePathFilename) {
@@ -414,7 +455,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
     fileStore.setDeleted(false);
     fileStore.setName(name);
     fileStore.setPath(path);
-    fileStore.setUser(user);
+    fileStore.setUser(user1);
     nfsManager.saveNfsFileStore(fileStore);
     return fileStore.getId();
   }

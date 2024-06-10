@@ -25,7 +25,7 @@ import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.service.BaseRecordManager;
-import com.researchspace.service.DocumentAlreadyEditedException;
+import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import java.io.IOException;
@@ -49,6 +49,7 @@ class GalleryApiControllerTest {
   @Mock private RecordDeletionManager deletionManager;
   @Mock private BaseRecordManager baseRecordManager;
   @Mock private NfsAuthentication nfsAuthentication;
+  @Mock private ExternalStorageManager externalStorageManager;
   @Mock private User user;
 
   private GalleryApiController galleryApiController;
@@ -63,7 +64,12 @@ class GalleryApiControllerTest {
   public void setup() throws IOException {
     MockitoAnnotations.openMocks(this);
     galleryApiController =
-        new GalleryApiController(nfsManager, deletionManager, baseRecordManager, nfsAuthentication);
+        new GalleryApiController(
+            nfsManager,
+            deletionManager,
+            baseRecordManager,
+            nfsAuthentication,
+            externalStorageManager);
     galleryApiController.rsBaseLink =
         UriComponentsBuilder.fromHttpUrl("http://url").path(API_GALLERY_V1);
     ;
@@ -91,7 +97,7 @@ class GalleryApiControllerTest {
     when(baseRecordManager.retrieveMediaFile(any(), eq(789L)))
         .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "789"));
 
-    when(nfsManager.uploadFilesToNfs(anySet(), anyString(), any()))
+    when(nfsManager.uploadFilesToNfs(anyCollection(), anyString(), any()))
         .thenReturn(new ApiExternalStorageOperationResult());
     when(deletionManager.deleteMediaFileSet(anySet(), any()))
         .thenReturn(new CompositeRecordOperationResult<>());
@@ -317,12 +323,11 @@ class GalleryApiControllerTest {
         new ApiNfsCredentials(null, USERNAME, PASSWORD),
         new BeanPropertyBindingResult(validRecordIds, "bean"),
         user);
-    verify(nfsManager).uploadFilesToNfs(anySet(), anyString(), any());
+    verify(nfsManager).uploadFilesToNfs(anyCollection(), anyString(), any());
   }
 
   @Test
-  void testMoveToIrodsFailure()
-      throws UnsupportedOperationException, IOException, DocumentAlreadyEditedException {
+  void testMoveToIrodsFailure() throws UnsupportedOperationException, IOException {
     doThrow(new ObjectRetrievalFailureException("EcatMediaFile", 2L))
         .when(deletionManager)
         .deleteMediaFileSet(anySet(), any(User.class));
