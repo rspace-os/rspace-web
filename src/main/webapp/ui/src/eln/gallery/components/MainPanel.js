@@ -1,6 +1,6 @@
 //@flow
 
-import React, { type Node } from "react";
+import React, { type Node, Children, type ElementConfig } from "react";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -155,6 +155,40 @@ const Breadcrumb = ({
       onClick={onClick}
       sx={{ mt: 0.5 }}
     />
+  );
+};
+
+const CustomBreadcrumbs = ({
+  children,
+  ...props
+}: ElementConfig<typeof Breadcrumbs>) => {
+  const [open, setOpen] = React.useState(false);
+  let contents = Children.toArray<typeof Breadcrumb | typeof Chip>(children);
+  if (!open && contents.length > 2) {
+    contents = [
+      contents[0],
+      <Chip
+        size="small"
+        clickable
+        label="..."
+        sx={{ mt: 0.5 }}
+        key="..."
+        onMouseEnter={() => {
+          setOpen(true);
+        }}
+      />,
+      contents[contents.length - 1],
+    ];
+  }
+  return (
+    <Breadcrumbs
+      {...props}
+      onMouseLeave={() => {
+        setOpen(false);
+      }}
+    >
+      {contents}
+    </Breadcrumbs>
   );
 };
 
@@ -594,7 +628,7 @@ export default function GalleryMainPanel({
             flexWrap="nowrap"
           >
             <Grid item>
-              <Breadcrumbs
+              <CustomBreadcrumbs
                 separator="›"
                 aria-label="breadcrumb"
                 sx={{ mt: 0.5 }}
@@ -616,7 +650,7 @@ export default function GalleryMainPanel({
                     selectedSection={selectedSection}
                   />
                 ))}
-              </Breadcrumbs>
+              </CustomBreadcrumbs>
             </Grid>
             <Grid item sx={{ mt: 0.5 }}>
               <Button
