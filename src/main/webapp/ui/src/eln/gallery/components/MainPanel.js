@@ -183,7 +183,7 @@ const CustomTreeItem = ({
     setNodeRef: setDragRef,
     transform,
   } = useDraggable({
-    disabled: /Folder/.test(file.type),
+    disabled: false,
     id: file.id,
   });
 
