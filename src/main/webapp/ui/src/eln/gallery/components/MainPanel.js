@@ -550,7 +550,7 @@ export default function GalleryMainPanel({
       <DndContext
         sensors={[mouseSensor]}
         onDragEnd={(event) => {
-          if (!event.over.data.current) return;
+          if (!event.over?.data.current) return;
           void moveFile({
             target: `/${[
               selectedSection,
