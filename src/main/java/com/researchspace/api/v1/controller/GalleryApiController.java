@@ -3,10 +3,12 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.GalleryApi;
 import com.researchspace.api.v1.model.ApiConfiguredLocation;
 import com.researchspace.api.v1.model.ApiExternalStorageInfo;
+import com.researchspace.api.v1.model.ApiExternalStorageOperationInfo;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.NfsUserFileSystem;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
+import com.researchspace.model.netfiles.ExternalStorageLocation;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -14,6 +16,7 @@ import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import java.util.LinkedHashMap;
@@ -54,6 +57,8 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
 
   @Autowired private BaseRecordManager baseRecordManager;
 
+  @Autowired private ExternalStorageManager externalStorageManager;
+
   @Autowired
   @Qualifier("nfsUserPasswordAuthentication")
   private NfsAuthentication nfsAuthentication;
@@ -70,11 +75,13 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
       NfsManager nfsManager,
       RecordDeletionManager deletionManager,
       BaseRecordManager baseRecordManager,
-      NfsAuthentication nfsAuthentication) {
+      NfsAuthentication nfsAuthentication,
+      ExternalStorageManager externalStorageManager) {
     this.nfsManager = nfsManager;
     this.deletionManager = deletionManager;
     this.baseRecordManager = baseRecordManager;
     this.nfsAuthentication = nfsAuthentication;
+    this.externalStorageManager = externalStorageManager;
   }
 
   @PostConstruct
@@ -170,14 +177,29 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
     NfsClient nfsClient =
         validateCredentialsAndLoginNfs(credentials, errors, user, nfsFileStore.getFileSystem());
 
-    Set<EcatMediaFile> mediaFileSet = retrieveMediaFiles(recordIds, user, errors);
+    Map<Long, EcatMediaFile> mediaFileMapById = retrieveMediaFiles(recordIds, user, errors).stream()
+        .collect(Collectors.toMap(EcatMediaFile::getId, value -> value));
+
     log.info(
         "Preparing file list {} to be copied into IRODS path [{}]",
-        mediaFileSet,
+        mediaFileMapById.values(),
         nfsFileStore.getPath());
     try {
       // store the files to the IRODS server
-      result = nfsManager.uploadFilesToNfs(mediaFileSet, nfsFileStore.getPath(), nfsClient);
+      result = nfsManager.uploadFilesToNfs(mediaFileMapById.values(), nfsFileStore.getPath(), nfsClient);
+
+      ExternalStorageLocation externalLocation;
+      for (ApiExternalStorageOperationInfo resultInfo : result.getFileInfoDetails()) {
+        if (resultInfo.getSucceeded()) {
+          externalLocation = new ExternalStorageLocation();
+          externalLocation.setFileStore(nfsFileStore);
+          externalLocation.setOperationUser(user);
+          externalLocation.setExternalStorageId(resultInfo.getExternalStorageId());
+          externalLocation.setConnectedMediaFile(mediaFileMapById.get(resultInfo.getRecordId()));
+          externalStorageManager.saveExternalStorageLocation(externalLocation);
+        }
+      }
+
     } catch (Exception e) {
       log.error("An error occurred while uploading files to IRODS: ", e);
       errors.addError(new ObjectError("nfsClient", e.getMessage()));

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,6 +21,8 @@ public class ApiExternalStorageOperationInfo
   @JsonProperty("recordId")
   private Long recordId;
 
+  @JsonIgnore private Long externalStorageId;
+
   @JsonProperty("fileName")
   private String fileName;
 
@@ -31,15 +34,22 @@ public class ApiExternalStorageOperationInfo
   private String reason;
 
   public ApiExternalStorageOperationInfo(
-      Long recordId, String fileName, Boolean succeeded, String reason) {
+      Long recordId, Long externalStorageId, String fileName, Boolean succeeded, String reason) {
     this.recordId = recordId;
+    this.externalStorageId = externalStorageId;
     this.fileName = fileName;
     this.succeeded = succeeded;
     this.reason = reason;
   }
 
-  public ApiExternalStorageOperationInfo(Long recordId, String fileName, Boolean succeeded) {
-    this(recordId, fileName, succeeded, null);
+  public ApiExternalStorageOperationInfo(
+      Long recordId, Long externalStorageId, String fileName, Boolean succeeded) {
+    this(recordId, externalStorageId, fileName, succeeded, null);
+  }
+
+  public ApiExternalStorageOperationInfo(
+      Long recordId, String fileName, Boolean succeeded, String reason) {
+    this(recordId, null, fileName, succeeded, reason);
   }
 
   @Override

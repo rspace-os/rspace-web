@@ -218,8 +218,11 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
           iRodsFile = irodsFileFactory.instanceIRODSFile(iRODSAbsolutePathFilename);
           dtoIRODS.putOperation(currentFile, iRodsFile, null, null);
           if (iRodsFile.exists()) {
+            Long irodsFileId =
+                (long) getIrodsDataObject(new NfsTarget(iRODSAbsolutePathFilename)).getId();
             result.add(
-                new ApiExternalStorageOperationInfo(currentRecordId, currentFile.getName(), true));
+                new ApiExternalStorageOperationInfo(
+                    currentRecordId, irodsFileId, currentFile.getName(), true));
             log.info(
                 "File [{}] successfully copied into IRODS path [{}]",
                 currentFile.getName(),

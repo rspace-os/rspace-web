@@ -26,6 +26,7 @@ import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DocumentAlreadyEditedException;
+import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import java.io.IOException;
@@ -49,6 +50,7 @@ class GalleryApiControllerTest {
   @Mock private RecordDeletionManager deletionManager;
   @Mock private BaseRecordManager baseRecordManager;
   @Mock private NfsAuthentication nfsAuthentication;
+  @Mock private ExternalStorageManager externalStorageManager;
   @Mock private User user;
 
   private GalleryApiController galleryApiController;
@@ -63,7 +65,12 @@ class GalleryApiControllerTest {
   public void setup() throws IOException {
     MockitoAnnotations.openMocks(this);
     galleryApiController =
-        new GalleryApiController(nfsManager, deletionManager, baseRecordManager, nfsAuthentication);
+        new GalleryApiController(
+            nfsManager,
+            deletionManager,
+            baseRecordManager,
+            nfsAuthentication,
+            externalStorageManager);
     galleryApiController.rsBaseLink =
         UriComponentsBuilder.fromHttpUrl("http://url").path(API_GALLERY_V1);
     ;

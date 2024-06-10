@@ -48,4 +48,5 @@ public class UserPermissionUtils implements IUserPermissionUtils {
       return false; // default fallback, shouldn't be called unless we add new roles
     }
   }
+
 }
