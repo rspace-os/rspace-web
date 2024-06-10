@@ -82,6 +82,7 @@ import Alerts from "../../../components/Alerts/Alerts";
 import Badge from "@mui/material/Badge";
 import docLinks from "../../../assets/DocLinks";
 import createAccentedTheme from "../../../accentedTheme";
+import UserAliasIcon from "@mui/icons-material/ContactEmergency";
 
 const Panel = ({
   anchorEl,
@@ -515,6 +516,120 @@ const PiAction = ({
   );
 };
 
+const SetUsernamAliasAction = ({
+  selectedUser,
+  setActionsAnchorEl,
+}: {|
+  selectedUser: Result<User>,
+  setActionsAnchorEl: (null) => void,
+|}) => {
+  const { addAlert } = React.useContext(AlertContext);
+  const [open, setOpen] = React.useState(false);
+  const [alias, setAlias] = React.useState("");
+
+  const allowedToSetAlias: Result<User> = selectedUser.mapError(
+    () => new Error("Only one user can have an alias set at a time.")
+  );
+
+  return (
+    <>
+      <MenuItem
+        disabled={allowedToSetAlias.isError}
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        <ListItemIcon>
+          <UserAliasIcon />
+        </ListItemIcon>
+        <ListItemText
+          primary="Set Username Alias"
+          secondary={allowedToSetAlias
+            .map(() => null)
+            .orElseGet(([error]) => error.message)}
+          secondaryTypographyProps={{
+            style: {
+              whiteSpace: "break-spaces",
+            },
+          }}
+        />
+      </MenuItem>
+      {allowedToSetAlias
+        .map((user) => (
+          <Dialog
+            key={null}
+            open={open}
+            onClose={() => {
+              setOpen(false);
+              setActionsAnchorEl(null);
+            }}
+          >
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void (async () => {
+                  try {
+                    // await TODO
+                    addAlert(
+                      mkAlert({
+                        variant: "success",
+                        message: "Successfully set username alias.",
+                      })
+                    );
+                    setOpen(false);
+                    setActionsAnchorEl(null);
+                  } catch (error) {
+                    addAlert(
+                      mkAlert({
+                        title: "Could not set username alias.",
+                        message: error.message,
+                        variant: "error",
+                      })
+                    );
+                  }
+                })();
+              }}
+            >
+              <DialogTitle>Set Username Alias</DialogTitle>
+              <DialogContent>
+                <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                  <Typography variant="body2">Some explanatory text</Typography>
+                </DialogContentText>
+                <TextField
+                  size="small"
+                  label="Username Alias"
+                  value={alias}
+                  onChange={(e) => {
+                    setAlias(e.target.value);
+                  }}
+                  fullWidth
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={() => {
+                    setAlias("");
+                    setOpen(false);
+                    setActionsAnchorEl(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <SubmitSpinnerButton
+                  type="submit"
+                  loading={false}
+                  disabled={false}
+                  label="Set Alias"
+                />
+              </DialogActions>
+            </form>
+          </Dialog>
+        ))
+        .orElse(null)}
+    </>
+  );
+};
+
 const DeleteAction = ({
   selectedUser,
   setActionsAnchorEl,
@@ -854,6 +969,12 @@ const SelectionActions = ({
                     }}
                   />
                 </MenuItem>
+                <EventBoundary>
+                  <SetUsernamAliasAction
+                    selectedUser={selectedUser}
+                    setActionsAnchorEl={setActionsAnchorEl}
+                  />
+                </EventBoundary>
                 <MenuItem
                   disabled={enableDisableAction.isError}
                   onClick={() =>
