@@ -719,6 +719,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         },
         MuiTreeItem: {
           styleOverrides: {
+            root: {
+              marginTop: baseTheme.spacing(0.5),
+            },
             content: {
               cursor: "default",
               backgroundColor: darken(
@@ -756,6 +759,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               letterSpacing: "0.01em",
               color: backgroundContrastTextColor,
               marginRight: baseTheme.spacing(1),
+            },
+            groupTransition: {
+              paddingLeft: "calc(2 * var(--TreeView-itemChildrenIndentation))",
             },
           },
         },
