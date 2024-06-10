@@ -111,6 +111,24 @@ const CustomTransition = styled(({ children, in: open, className }) => (
   },
 }));
 
+const Breadcrumb = ({
+  label,
+  onClick,
+}: {|
+  label: string,
+  onClick: () => void,
+|}) => {
+  return (
+    <Chip
+      size="small"
+      clickable
+      label={label}
+      onClick={onClick}
+      sx={{ mt: 0.5 }}
+    />
+  );
+};
+
 const CustomTreeItem = ({
   file,
   index,
@@ -528,22 +546,15 @@ export default function GalleryMainPanel({
         >
           <Grid item>
             <Breadcrumbs separator="›" aria-label="breadcrumb" sx={{ mt: 0.5 }}>
-              <Chip
-                size="small"
-                clickable
+              <Breadcrumb
                 label={gallerySectionLabel[selectedSection]}
                 onClick={() => clearPath()}
-                sx={{ mt: 0.5 }}
               />
               {path.map((folder) => (
-                <Chip
-                  size="small"
-                  clickable
+                <Breadcrumb
                   label={folder.name}
                   key={folder.id}
-                  disabled={!folder.open}
                   onClick={() => folder.open?.()}
-                  sx={{ mt: 0.5 }}
                 />
               ))}
             </Breadcrumbs>
