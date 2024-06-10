@@ -1604,6 +1604,11 @@ export const UsersPage = (): Node => {
         );
       },
     }),
+    DataGridColumn.newColumnWithFieldName<User, _>("usernameAlias", {
+      headerName: "Username Alias",
+      flex: 1,
+      sortable: false,
+    }),
   ];
 
   return (
@@ -1758,6 +1763,7 @@ export const UsersPage = (): Node => {
                             lastName: false,
                             locked: false,
                             tags: false,
+                            usernameAlias: false,
                           },
                         },
                       }}

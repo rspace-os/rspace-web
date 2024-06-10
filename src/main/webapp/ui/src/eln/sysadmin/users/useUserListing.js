@@ -22,6 +22,7 @@ type FetchedUser = {|
     accountLocked: boolean,
     groupNames: Array<string>,
     tags: Array<string>,
+    usernameAlias: string,
   |},
   recordCount: number,
   fileUsage: number,
@@ -80,6 +81,7 @@ export type User = {|
   locked: boolean,
   groups: Array<string>,
   tags: Array<string>,
+  usernameAlias: string,
   grantPiRole: (string) => Promise<void>,
   revokePiRole: (string) => Promise<void>,
   unlock: () => Promise<void>,
@@ -368,6 +370,7 @@ export function useUserListing(): {|
         locked: fetchedUser.userInfo.accountLocked,
         groups: fetchedUser.userInfo.groupNames,
         tags: fetchedUser.userInfo.tags,
+        usernameAlias: fetchedUser.userInfo.usernameAlias,
 
         // operations on a single user
         grantPiRole,
