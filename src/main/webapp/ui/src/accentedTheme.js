@@ -235,10 +235,13 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           styleOverrides: {
             root: {
               backgroundColor: mainBackground,
-              padding: `${baseTheme.spacing(1.25)} ${baseTheme.spacing(2)}`,
-              marginBottom: baseTheme.spacing(2),
               borderBottom: dialogBorder,
-              borderBottomWidth: "1px",
+              borderWidth: "2px",
+              textTransform: "uppercase",
+              fontWeight: 700,
+              lineHeight: 1.167,
+              padding: "0",
+              margin: baseTheme.spacing(2),
             },
           },
         },
