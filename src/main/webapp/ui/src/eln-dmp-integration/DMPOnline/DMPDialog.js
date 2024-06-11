@@ -2,8 +2,6 @@
 
 import React, { type Node, type ElementProps } from "react";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
-import Alerts from "../../components/Alerts/Alerts";
-import ErrorBoundary from "../../components/ErrorBoundary";
 import Portal from "@mui/material/Portal";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import { withStyles } from "Styles";
@@ -375,26 +373,22 @@ export default function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <ErrorBoundary topOfViewport>
-      <ThemeProvider theme={createAccentedTheme(COLOR)}>
-        <Portal>
-          <Alerts>
-            <DialogBoundary>
-              <CustomDialog
-                onClose={() => {
-                  setOpen(false);
-                }}
-                open={open}
-                maxWidth="lg"
-                fullWidth
-                fullScreen={isViewportSmall}
-              >
-                <DMPDialogContent setOpen={setOpen} />
-              </CustomDialog>
-            </DialogBoundary>
-          </Alerts>
-        </Portal>
-      </ThemeProvider>
-    </ErrorBoundary>
+    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <Portal>
+        <DialogBoundary>
+          <CustomDialog
+            onClose={() => {
+              setOpen(false);
+            }}
+            open={open}
+            maxWidth="lg"
+            fullWidth
+            fullScreen={isViewportSmall}
+          >
+            <DMPDialogContent setOpen={setOpen} />
+          </CustomDialog>
+        </DialogBoundary>
+      </Portal>
+    </ThemeProvider>
   );
 }
