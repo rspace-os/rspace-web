@@ -19,6 +19,8 @@ import * as FetchingData from "../../../util/fetchingData";
 import { type GalleryFile } from "../useGalleryListing";
 import { doNotAwait } from "../../../util/Util";
 import useGalleryActions from "../useGalleryActions";
+import Backdrop from "@mui/material/Backdrop";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 const FileCard = styled(
   ({ file, className, selected, index, setSelectedFile }) => {
@@ -248,7 +250,8 @@ export default function GalleryMainPanel({
     <DialogContent
       aria-live="polite"
       sx={{
-        border: "2px solid transparent",
+        border: "4px solid transparent",
+        position: "relative",
         ...(fileDragAndDrop > 0
           ? {
               borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
@@ -370,6 +373,18 @@ export default function GalleryMainPanel({
               ),
           })}
         </Grid>
+        <Backdrop
+          open={fileDragAndDrop > 0}
+          sx={{
+            position: "absolute",
+            backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, 85%, 11%, 50%)`,
+            color: "white",
+            fontSize: "3em",
+          }}
+        >
+          <UploadFileIcon fontSize="3em" />
+          Drop to upload
+        </Backdrop>
       </Grid>
     </DialogContent>
   );
