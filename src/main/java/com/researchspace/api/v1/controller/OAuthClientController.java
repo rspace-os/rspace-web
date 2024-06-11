@@ -63,7 +63,7 @@ public class OAuthClientController {
               "Password grant requires parameters `username` and `password` to be present.");
         }
         try {
-          User user = userManager.getUserByUsername(userName);
+          User user = userManager.getUserByUsernameOrAlias(userName);
 
           if (user.isLoginDisabled()) {
             throw new ApiAuthenticationException(

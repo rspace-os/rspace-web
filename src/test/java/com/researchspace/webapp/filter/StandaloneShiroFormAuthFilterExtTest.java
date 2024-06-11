@@ -65,11 +65,11 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
   }
 
   // this needs to be called each time we make a request as response can only be used once.
-  private void initHttpReqAndResp(User u) {
+  private void initHttpReqAndResp(String username) {
     req = new MockHttpServletRequest();
     resp = new MockHttpServletResponse();
-    if (u != null) {
-      req.setParameter("username", u.getUsername());
+    if (username != null) {
+      req.setParameter("username", username);
     }
   }
 
@@ -141,7 +141,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     assertEquals(0, u.getNumConsecutiveLoginFailures());
 
     // sid verification problem
-    initHttpReqAndResp(u);
+    initHttpReqAndResp(u.getUsername());
     SidVerificationException sidException =
         new SidVerificationException("sid verification exception");
     authException = new AuthenticationException(null, sidException);
@@ -152,7 +152,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     assertEquals(0, u.getNumConsecutiveLoginFailures());
 
     // wrong password problem
-    initHttpReqAndResp(u);
+    initHttpReqAndResp(u.getUsername());
     authException = new AuthenticationException("wrong password");
     filter.onLoginFailure(token, authException, req, resp);
     assertEquals(null, req.getAttribute("checkedExceptionMessage"));
@@ -198,7 +198,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     u.setNumConsecutiveLoginFailures((byte) policy.getMaxFailures());
     userMgr.save(u);
 
-    initHttpReqAndResp(u);
+    initHttpReqAndResp(u.getUsername());
     configureHttpReqAsLoginRequest();
     filter.onAccessDenied(req, resp);
     assertNotNull(getShiroLoginFailureAttr(req));
@@ -230,7 +230,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     RSpaceTestUtils.login(u.getUsername(), TESTPASSWD);
     // sanity check
     assertTrue(subject.isAuthenticated());
-    initHttpReqAndResp(u);
+    initHttpReqAndResp(u.getUsername());
     // also if is initialised, if disabled fails too
     initialiseContentWithEmptyContent(u);
     assertFalse(filter.onLoginSuccess(getTokenAndSetUsernameInRequest(u), subject, req, resp));

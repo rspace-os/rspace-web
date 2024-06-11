@@ -84,7 +84,7 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
     }
 
     try {
-      User user = userMgr.getUserByUsername(remoteUser);
+      User user = userMgr.getUserByUsernameOrAlias(remoteUser);
       if (user == null) {
         return false;
       }

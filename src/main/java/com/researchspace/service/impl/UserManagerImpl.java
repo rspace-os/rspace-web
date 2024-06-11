@@ -234,6 +234,16 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     return getUserByUsername(username, false);
   }
 
+  @Override
+  public User getUserByUsernameOrAlias(String usernameOrAlias) {
+    String usernameToUse = findUsernameByUsernameOrAlias(usernameOrAlias);
+    if (usernameToUse == null) {
+      // probably not found, but let the downstream method deal with it
+      usernameToUse = usernameOrAlias;
+    }
+    return getUserByUsername(usernameToUse);
+  }
+
   public String findUsernameByUsernameOrAlias(String usernameOrAlias) {
     if (userExists(usernameOrAlias)) {
       return usernameOrAlias;

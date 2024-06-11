@@ -118,7 +118,7 @@ public class BaseShiroFormAuthFilterExt extends FormAuthenticationFilter {
       AuthenticationToken token, Subject subject, ServletRequest request, ServletResponse response)
       throws Exception {
 
-    User user = userMgr.getUserByUsername((String) subject.getPrincipal());
+    User user = userMgr.getUserByUsernameOrAlias((String) subject.getPrincipal());
     for (LoginAuthorizer authorizer : loginAuthorizers) {
       if (!authorizer.isLoginPermitted(request, response, user)) {
         return false;

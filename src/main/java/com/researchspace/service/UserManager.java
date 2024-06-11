@@ -51,6 +51,14 @@ public interface UserManager extends GenericManager<User, Long> {
   User getUserByUsername(String username);
 
   /**
+   * To be used during login flow - finds a user with given username, or usernameAlias
+   *
+   * @param usernameOrAlias the user's username or usernameAlias used to login
+   * @return User a populated user object, same as {@link #getUserByUsername(String)}
+   */
+  User getUserByUsernameOrAlias(String usernameOrAlias);
+
+  /**
    * Gets a possibly empty but noon-null list of Users with given email
    *
    * @param userEmail

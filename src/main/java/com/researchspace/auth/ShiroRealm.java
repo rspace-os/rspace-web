@@ -45,10 +45,11 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
       throws AuthenticationException {
 
     UsernamePasswordToken token = (UsernamePasswordToken) authcToken;
-    String username = token.getUsername();
+    String incomingUsername = token.getUsername();
 
     User user = null;
-    boolean isRspaceUser = userMgr.userExists(username);
+    String username = userMgr.findUsernameByUsernameOrAlias(incomingUsername);
+    boolean isRspaceUser = username != null;
 
     if (isRspaceUser) {
       log.debug("Username {} exists in DB", username);
@@ -60,7 +61,7 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
         user = userMgr.getUserByUsername(username, true);
       }
     } else {
-      log.debug("Username {} does *not* exist in DB", username);
+      log.debug("Username {} does *not* exist in DB", incomingUsername);
     }
     if (user == null) {
       log.debug("User is null, returning");
@@ -79,7 +80,7 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
       SECURITY_LOG.warn(
           "Rejecting DefaultUserPasswordRealm login attempt to a regular user account [{}] in SSO"
               + " mode.",
-          username);
+          incomingUsername);
       Exception e =
           new IncorrectSignupSourceException("non-internal user login attempt in sso mode");
       throw new AuthenticationException(e.getMessage(), e);
