@@ -20,8 +20,6 @@ import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import clsx from "clsx";
-import Alerts from "../../components/Alerts/Alerts";
-import ErrorBoundary from "../../components/ErrorBoundary";
 import WarningIcon from "@mui/icons-material/Warning";
 import Typography from "@mui/material/Typography";
 import axios from "axios";
@@ -297,25 +295,21 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <ErrorBoundary topOfViewport>
-      <Portal>
-        <Alerts>
-          <DialogBoundary>
-            <CustomDialog
-              onClose={() => {
-                setOpen(false);
-              }}
-              open={open}
-              maxWidth="lg"
-              fullWidth
-              fullScreen={isViewportSmall}
-            >
-              <DMPDialogContent setOpen={setOpen} />
-            </CustomDialog>
-          </DialogBoundary>
-        </Alerts>
-      </Portal>
-    </ErrorBoundary>
+    <Portal>
+      <DialogBoundary>
+        <CustomDialog
+          onClose={() => {
+            setOpen(false);
+          }}
+          open={open}
+          maxWidth="lg"
+          fullWidth
+          fullScreen={isViewportSmall}
+        >
+          <DMPDialogContent setOpen={setOpen} />
+        </CustomDialog>
+      </DialogBoundary>
+    </Portal>
   );
 }
 
