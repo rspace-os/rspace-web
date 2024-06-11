@@ -4,6 +4,8 @@ import React, { useState, useEffect, type Node } from "react";
 import DMPDialog from "./DMPDialog";
 import MenuItem from "@mui/material/MenuItem";
 import { fetchIntegrationInfo } from "../../common/integrationHelpers";
+import Alerts from "../../components/Alerts/Alerts";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 type ArgosMenuItemArgs = {|
   onClick: (boolean) => void,
@@ -22,7 +24,7 @@ export default function ArgosMenuItem({ onClick }: ArgosMenuItemArgs): Node {
   }, []);
 
   return DMPAppEnabled ? (
-    <>
+    <ErrorBoundary topOfViewport>
       <MenuItem
         onClick={() => {
           onClick(false);
@@ -31,7 +33,9 @@ export default function ArgosMenuItem({ onClick }: ArgosMenuItemArgs): Node {
       >
         DMP from Argos
       </MenuItem>
-      <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
-    </>
+      <Alerts>
+        <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
+      </Alerts>
+    </ErrorBoundary>
   ) : null;
 }
