@@ -17,6 +17,8 @@ import FileIcon from "@mui/icons-material/InsertDriveFile";
 import { COLORS as baseThemeColors } from "../../../theme";
 import * as FetchingData from "../../../util/fetchingData";
 import { type GalleryFile } from "../useGalleryListing";
+import { doNotAwait } from "../../../util/Util";
+import useGalleryActions from "../useGalleryActions";
 
 const FileCard = styled(
   ({ file, className, selected, index, setSelectedFile }) => {
@@ -224,6 +226,8 @@ export default function GalleryMainPanel({
   galleryListing,
   selectedFile,
   setSelectedFile,
+  parentId,
+  refreshListing,
 }: {|
   selectedSection: string,
   path: $ReadOnlyArray<GalleryFile>,
@@ -234,8 +238,11 @@ export default function GalleryMainPanel({
   >,
   selectedFile: null | GalleryFile,
   setSelectedFile: (null | GalleryFile) => void,
+  parentId: number,
+  refreshListing: () => void,
 |}): Node {
   const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
+  const { uploadFiles } = useGalleryActions({ path, parentId });
 
   return (
     <DialogContent
@@ -248,27 +255,30 @@ export default function GalleryMainPanel({
             }
           : {}),
       }}
-      onDrop={(e) => {
+      onDrop={doNotAwait(async (e) => {
         e.preventDefault();
         e.stopPropagation();
         setFileDragAndDrop(0);
+        const files = [];
 
         if (e.dataTransfer.items) {
           // Use DataTransferItemList interface to access the file(s)
-          [...e.dataTransfer.items].forEach((item, i) => {
+          [...e.dataTransfer.items].forEach((item) => {
             // If dropped items aren't files, reject them
             if (item.kind === "file") {
-              const file = item.getAsFile();
-              console.log(`… file[${i}].name = ${file.name}`);
+              files.push(item.getAsFile());
             }
           });
         } else {
           // Use DataTransfer interface to access the file(s)
-          [...e.dataTransfer.files].forEach((file, i) => {
-            console.log(`… file[${i}].name = ${file.name}`);
+          [...e.dataTransfer.files].forEach((file) => {
+            files.push(file);
           });
         }
-      }}
+
+        await uploadFiles(files);
+        refreshListing();
+      })}
       onDragOver={(e) => {
         e.preventDefault();
         e.stopPropagation();

@@ -15,6 +15,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import Alerts from "../../Inventory/components/Alerts";
+import * as FetchingData from "../../util/fetchingData";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -55,14 +56,21 @@ function WholePage() {
             flexGrow: 1,
           }}
         >
-          <MainPanel
-            selectedSection={selectedSection}
-            path={path}
-            clearPath={clearPath}
-            galleryListing={galleryListing}
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
-          />
+          {FetchingData.getSuccessValue(parentId)
+            .map((pId) => (
+              <MainPanel
+                selectedSection={selectedSection}
+                path={path}
+                clearPath={clearPath}
+                galleryListing={galleryListing}
+                selectedFile={selectedFile}
+                setSelectedFile={setSelectedFile}
+                parentId={pId}
+                refreshListing={refreshListing}
+                key={null}
+              />
+            ))
+            .orElse(null)}
         </Box>
       </Box>
     </Alerts>
