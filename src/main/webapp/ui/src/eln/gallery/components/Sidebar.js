@@ -176,7 +176,7 @@ const NewFolderMenuItem = ({
           <DialogTitle>New Folder</DialogTitle>
           <DialogContent>
             <DialogContentText variant="body2" sx={{ mb: 2 }}>
-              Lease give the new folder a name.
+              Please give the new folder a name.
             </DialogContentText>
             <TextField
               size="small"
