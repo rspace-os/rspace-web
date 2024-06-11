@@ -636,6 +636,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               letterSpacing: "0.02em",
               marginBottom: baseTheme.spacing(0.5),
               color: backgroundContrastTextColor,
+              "&.Mui-focused": {
+                color: backgroundContrastTextColor,
+              },
             },
           },
         },
@@ -666,6 +669,19 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             paper: {
               boxShadow: "none",
               border: accentedBorder,
+            },
+          },
+        },
+        MuiTextField: {
+          styleOverrides: {
+            root: {
+              "& .MuiFormLabel-root": {
+                "&.MuiInputLabel-root": {
+                  "&.MuiInputLabel-outlined": {
+                    fontSize: "0.9375em",
+                  },
+                },
+              },
             },
           },
         },
