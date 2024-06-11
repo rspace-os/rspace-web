@@ -235,8 +235,55 @@ export default function GalleryMainPanel({
   selectedFile: null | GalleryFile,
   setSelectedFile: (null | GalleryFile) => void,
 |}): Node {
+  const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
+
   return (
-    <DialogContent aria-live="polite">
+    <DialogContent
+      aria-live="polite"
+      sx={{
+        border: "2px solid transparent",
+        ...(fileDragAndDrop > 0
+          ? {
+              borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+            }
+          : {}),
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setFileDragAndDrop(0);
+
+        if (e.dataTransfer.items) {
+          // Use DataTransferItemList interface to access the file(s)
+          [...e.dataTransfer.items].forEach((item, i) => {
+            // If dropped items aren't files, reject them
+            if (item.kind === "file") {
+              const file = item.getAsFile();
+              console.log(`… file[${i}].name = ${file.name}`);
+            }
+          });
+        } else {
+          // Use DataTransfer interface to access the file(s)
+          [...e.dataTransfer.files].forEach((file, i) => {
+            console.log(`… file[${i}].name = ${file.name}`);
+          });
+        }
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setFileDragAndDrop((x) => x + 1);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setFileDragAndDrop((x) => x - 1);
+      }}
+    >
       <Grid
         container
         direction="column"
