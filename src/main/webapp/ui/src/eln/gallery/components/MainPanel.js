@@ -16,9 +16,12 @@ import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import { COLORS as baseThemeColors } from "../../../theme";
 import * as FetchingData from "../../../util/fetchingData";
-import useGalleryListing, { type GalleryFile } from "../useGalleryListing";
+import {
+  useGalleryListing,
+  useGalleryActions,
+  type GalleryFile,
+} from "../useGallery";
 import { doNotAwait } from "../../../util/Util";
-import useGalleryActions from "../useGalleryActions";
 import Backdrop from "@mui/material/Backdrop";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
@@ -511,7 +514,7 @@ export default function GalleryMainPanel({
   refreshListing: () => void,
 |}): Node {
   const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
-  const { uploadFiles } = useGalleryActions({ path, parentId });
+  const { uploadFiles } = useGalleryActions();
   const [selectedNodes, setSelectedNodes] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
   >([]);
@@ -520,8 +523,7 @@ export default function GalleryMainPanel({
   >([]);
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
-  // TODO: Instead of passing -1, parentId should be optional?
-  const { moveFile } = useGalleryActions({ path, parentId: -1 });
+  const { moveFile } = useGalleryActions();
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -563,7 +565,7 @@ export default function GalleryMainPanel({
           });
         }
 
-        await uploadFiles(files);
+        await uploadFiles(path, parentId, files);
         refreshListing();
       })}
       onDragOver={(e) => {

@@ -35,8 +35,7 @@ import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuIte
 import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
 import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
 import NewMenuItem from "./NewMenuItem";
-import useGalleryActions from "../useGalleryActions";
-import { type GalleryFile } from "../useGalleryListing";
+import { useGalleryActions, type GalleryFile } from "../useGallery";
 import * as FetchingData from "../../../util/fetchingData";
 import Dialog from "@mui/material/Dialog";
 import TextField from "@mui/material/TextField";
@@ -121,7 +120,7 @@ const UploadMenuItem = ({
   parentId: number,
   onUploadComplete: () => void,
 |}) => {
-  const { uploadFiles } = useGalleryActions({ path, parentId });
+  const { uploadFiles } = useGalleryActions();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   return (
     <>
@@ -144,7 +143,7 @@ const UploadMenuItem = ({
         hidden
         multiple
         onChange={({ target: { files } }) => {
-          void uploadFiles([...files]).then(() => {
+          void uploadFiles(path, parentId, [...files]).then(() => {
             onUploadComplete();
           });
         }}
@@ -165,7 +164,7 @@ const NewFolderMenuItem = ({
 |}) => {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
-  const { createFolder } = useGalleryActions({ path, parentId });
+  const { createFolder } = useGalleryActions();
   return (
     <>
       <Dialog
@@ -177,7 +176,7 @@ const NewFolderMenuItem = ({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void createFolder(name).then(() => {
+            void createFolder(path, parentId, name).then(() => {
               onDialogClose(true);
             });
           }}
