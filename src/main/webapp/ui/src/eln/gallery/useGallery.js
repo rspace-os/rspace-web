@@ -359,7 +359,7 @@ export function useGalleryActions(): {|
     FolderId,
     string
   ) => Promise<void>,
-  moveFileWithId: (number) => {|
+  moveFilesWithIds: ($ReadOnlyArray<number>) => {|
     to: ({|
       target: string,
       section: string,
@@ -494,7 +494,7 @@ export function useGalleryActions(): {|
     }
   }
 
-  function moveFileWithId(fileId: number) {
+  function moveFilesWithIds(fileIds: $ReadOnlyArray<number>) {
     return {
       to: async ({
         target,
@@ -505,7 +505,9 @@ export function useGalleryActions(): {|
       |}) => {
         const formData = new FormData();
         formData.append("target", target);
-        formData.append("filesId[]", `${fileId}`);
+        fileIds.forEach((fileId) => {
+          formData.append("filesId[]", `${fileId}`);
+        });
         formData.append("mediaType", section);
         await axios.post<FormData, mixed>(
           "gallery/ajax/moveGalleriesElements",
@@ -521,5 +523,5 @@ export function useGalleryActions(): {|
     };
   }
 
-  return { uploadFiles, createFolder, moveFileWithId };
+  return { uploadFiles, createFolder, moveFilesWithIds };
 }

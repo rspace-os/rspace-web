@@ -30,6 +30,7 @@ import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import {
   useDroppable,
   useDraggable,
+  useDndContext,
   DndContext,
   useSensor,
   MouseSensor,
@@ -350,6 +351,7 @@ const GridView = observer(
                 });
               }
             }}
+            draggingIds={[...selectedFiles]}
           />
         ))}
       </Grid>
@@ -357,190 +359,215 @@ const GridView = observer(
   }
 );
 
-const FileCard = styled(({ file, className, selected, index, onClick }) => {
-  const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: file.id,
-    disabled: !/Folder/.test(file.type),
-    data: {
-      path: file.path,
-      name: file.name,
-    },
-  });
-  const {
-    attributes,
-    listeners,
-    setNodeRef: setDragRef,
-    transform,
-  } = useDraggable({
-    disabled: false,
-    id: file.id,
-  });
+const FileCard = styled(
+  ({ file, className, selected, index, onClick, draggingIds }) => {
+    const { setNodeRef: setDropRef, isOver } = useDroppable({
+      id: file.id,
+      disabled: !/Folder/.test(file.type),
+      data: {
+        path: file.path,
+        name: file.name,
+      },
+    });
+    const {
+      attributes,
+      listeners,
+      setNodeRef: setDragRef,
+      transform,
+    } = useDraggable({
+      disabled: false,
+      id: file.id,
+      data: {
+        draggingIds,
+      },
+    });
+    const dndContext = useDndContext();
 
-  const dragStyle: { [string]: string | number } = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 1, // just needs to be rendered above Nodes later in the DOM
-        position: "relative",
-        boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
-      }
-    : {};
-  const dropStyle: { [string]: string | number } = isOver
-    ? {
-        borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-      }
-    : {};
-  const viewportDimensions = useViewportDimensions();
-  const cardWidth = {
-    xs: 6,
-    sm: 4,
-    md: 3,
-    lg: 2,
-    xl: 2,
-  };
+    const dragStyle: { [string]: string | number } = transform
+      ? {
+          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+          zIndex: 1, // just needs to be rendered above Nodes later in the DOM
+          position: "relative",
+          boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
+        }
+      : {};
+    const dropStyle: { [string]: string | number } = isOver
+      ? {
+          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        }
+      : {};
+    const inGroupBeingDraggedStyle: { [string]: string | number } =
+      (dndContext.active?.data.current?.draggingIds ?? []).includes(file.id) &&
+      dndContext.active?.id !== file.id
+        ? {
+            opacity: 0,
+          }
+        : {};
 
-  return (
-    <Fade
-      in={true}
-      timeout={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400
-      }
-    >
-      <Grid
-        item
-        {...cardWidth}
-        sx={{
-          /*
-           * This way, the animation takes the same amount of time (36ms) for
-           * each row of cards
-           */
-          transitionDelay: window.matchMedia("(prefers-reduced-motion: reduce)")
-            .matches
-            ? "0s"
-            : `${
-                (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
-              }ms !important`,
-        }}
+    const viewportDimensions = useViewportDimensions();
+    const cardWidth = {
+      xs: 6,
+      sm: 4,
+      md: 3,
+      lg: 2,
+      xl: 2,
+    };
+
+    return (
+      <Fade
+        in={true}
+        timeout={
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? 0
+            : 400
+        }
       >
-        <Card
-          elevation={0}
-          className={className}
-          ref={(node) => {
-            setDropRef(node);
-            setDragRef(node);
-          }}
-          {...listeners}
-          {...attributes}
-          style={{
-            ...dragStyle,
-            ...dropStyle,
+        <Grid
+          item
+          {...cardWidth}
+          sx={{
+            /*
+             * This way, the animation takes the same amount of time (36ms) for
+             * each row of cards
+             */
+            transitionDelay: window.matchMedia(
+              "(prefers-reduced-motion: reduce)"
+            ).matches
+              ? "0s"
+              : `${
+                  (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
+                }ms !important`,
           }}
         >
-          <CardActionArea
-            role={file.open ? "button" : "radio"}
-            aria-checked={selected}
-            onClick={(e) => {
-              if (file.open) file.open();
-              else onClick(e);
+          <Card
+            elevation={0}
+            className={className}
+            ref={(node) => {
+              setDropRef(node);
+              setDragRef(node);
             }}
-            sx={{ height: "100%" }}
+            {...listeners}
+            {...attributes}
+            style={{
+              ...dragStyle,
+              ...dropStyle,
+              ...inGroupBeingDraggedStyle,
+            }}
           >
-            <Grid container direction="column" height="100%" flexWrap="nowrap">
+            <CardActionArea
+              role={file.open ? "button" : "radio"}
+              aria-checked={selected}
+              onClick={(e) => {
+                if (file.open) file.open();
+                else onClick(e);
+              }}
+              sx={{ height: "100%" }}
+            >
               <Grid
-                item
-                sx={{
-                  flexShrink: 0,
-                  padding: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "calc(100% - 9999999px)",
-                  flexDirection: "column",
-                  flexGrow: 1,
-                }}
-              >
-                <Avatar
-                  src={file.thumbnailUrl}
-                  imgProps={{
-                    role: "presentation",
-                  }}
-                  variant="rounded"
-                  sx={{
-                    width: "auto",
-                    height: "100%",
-                    aspectRatio: "1 / 1",
-                    fontSize: "5em",
-                    backgroundColor: "transparent",
-                  }}
-                >
-                  <FileIcon fontSize="inherit" />
-                </Avatar>
-              </Grid>
-              <Grid
-                item
                 container
-                direction="row"
+                direction="column"
+                height="100%"
                 flexWrap="nowrap"
-                alignItems="baseline"
-                sx={{
-                  padding: "8px",
-                  paddingTop: 0,
-                }}
               >
                 <Grid
                   item
                   sx={{
-                    textAlign: "center",
+                    flexShrink: 0,
+                    padding: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "calc(100% - 9999999px)",
+                    flexDirection: "column",
                     flexGrow: 1,
-                    ...(selected
-                      ? {
-                          backgroundColor: window.matchMedia(
-                            "(prefers-contrast: more)"
-                          ).matches
-                            ? "black"
-                            : "#35afef",
-                          p: 0.25,
-                          borderRadius: "4px",
-                          mx: 0.5,
-                        }
-                      : {}),
                   }}
                 >
-                  <Typography
+                  <Avatar
+                    src={file.thumbnailUrl}
+                    imgProps={{
+                      role: "presentation",
+                    }}
+                    variant="rounded"
                     sx={{
-                      ...(selected
-                        ? {
-                            color: window.matchMedia("(prefers-contrast: more)")
-                              .matches
-                              ? "white"
-                              : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-                          }
-                        : {}),
-                      fontSize: "0.8125rem",
-                      fontWeight: window.matchMedia("(prefers-contrast: more)")
-                        .matches
-                        ? 700
-                        : 400,
-
-                      // wrap onto a second line, but use an ellipsis after that
-                      overflowWrap: "anywhere",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      display: "-webkit-box",
-                      WebkitLineClamp: "2",
-                      WebkitBoxOrient: "vertical",
+                      width: "auto",
+                      height: "100%",
+                      aspectRatio: "1 / 1",
+                      fontSize: "5em",
+                      backgroundColor: "transparent",
                     }}
                   >
-                    {file.name}
-                  </Typography>
+                    <FileIcon fontSize="inherit" />
+                  </Avatar>
+                </Grid>
+                <Grid
+                  item
+                  container
+                  direction="row"
+                  flexWrap="nowrap"
+                  alignItems="baseline"
+                  sx={{
+                    padding: "8px",
+                    paddingTop: 0,
+                  }}
+                >
+                  <Grid
+                    item
+                    sx={{
+                      textAlign: "center",
+                      flexGrow: 1,
+                      ...(selected
+                        ? {
+                            backgroundColor: window.matchMedia(
+                              "(prefers-contrast: more)"
+                            ).matches
+                              ? "black"
+                              : "#35afef",
+                            p: 0.25,
+                            borderRadius: "4px",
+                            mx: 0.5,
+                          }
+                        : {}),
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        ...(selected
+                          ? {
+                              color: window.matchMedia(
+                                "(prefers-contrast: more)"
+                              ).matches
+                                ? "white"
+                                : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
+                            }
+                          : {}),
+                        fontSize: "0.8125rem",
+                        fontWeight: window.matchMedia(
+                          "(prefers-contrast: more)"
+                        ).matches
+                          ? 700
+                          : 400,
+
+                        // wrap onto a second line, but use an ellipsis after that
+                        overflowWrap: "anywhere",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: "2",
+                        WebkitBoxOrient: "vertical",
+                      }}
+                    >
+                      {file.name}
+                    </Typography>
+                  </Grid>
                 </Grid>
               </Grid>
-            </Grid>
-          </CardActionArea>
-        </Card>
-      </Grid>
-    </Fade>
-  );
-})(({ selected }) => ({
+            </CardActionArea>
+          </Card>
+        </Grid>
+      </Fade>
+    );
+  }
+)(({ selected }) => ({
   height: "150px",
   ...(selected
     ? {
@@ -621,7 +648,7 @@ export default function GalleryMainPanel({
   >([]);
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
-  const { moveFileWithId } = useGalleryActions();
+  const { moveFilesWithIds } = useGalleryActions();
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -688,7 +715,9 @@ export default function GalleryMainPanel({
         sensors={[mouseSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
-          void moveFileWithId(event.active.id)
+          void moveFilesWithIds(
+            event.active?.data.current?.draggingIds ?? [event.active.id]
+          )
             .to({
               target: `/${[
                 selectedSection,
