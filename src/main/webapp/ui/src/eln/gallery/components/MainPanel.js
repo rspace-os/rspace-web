@@ -510,7 +510,7 @@ export default function GalleryMainPanel({
   >,
   selectedFile: null | GalleryFile,
   setSelectedFile: (null | GalleryFile) => void,
-  parentId: number,
+  parentId: FetchingData.Fetched<number>,
   refreshListing: () => void,
 |}): Node {
   const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
@@ -565,7 +565,10 @@ export default function GalleryMainPanel({
           });
         }
 
-        await uploadFiles(path, parentId, files);
+        const pId = FetchingData.getSuccessValue(parentId).orElseGet(() => {
+          throw new Error("Unknown sub-section id");
+        });
+        await uploadFiles(path, pId, files);
         refreshListing();
       })}
       onDragOver={(e) => {
