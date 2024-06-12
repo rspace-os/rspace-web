@@ -20,7 +20,7 @@ public class AsposeConversionChecker implements ConversionChecker {
    * Checks the list of supported output types allowed by rspace
    */
   private boolean supportsConversionTo(String extension) {
-    List<String> supportedFormats = Arrays.asList("png", "pdf", "html", "htm");
+    List<String> supportedFormats = Arrays.asList("png", "pdf", "html", "htm", "doc", "docx");
     return supportedFormats.contains(extension);
   }
 

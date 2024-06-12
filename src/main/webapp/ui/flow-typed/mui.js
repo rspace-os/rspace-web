@@ -23,6 +23,14 @@ declare module "@mui/system" {
    * @returns {string} A CSS color string. Hex input values are returned as rgb
    */
   declare export function darken(color: string, coefficient: number): string;
+
+  /**
+   * Applies a transparency to a color.
+   * @param {string} color - CSS color, i.e. one of: #nnn, #nnnnnn, rgb(), rgba(), hsl(), hsla(), color()
+   * @param {number} opacity - number in the range 0 - 1
+   * @returns {string} A CSS color string. Hex input values are returned as rgb
+   */
+  declare export function alpha(color: string, opacity: number): string;
 }
 
 declare module "@mui/x-data-grid" {

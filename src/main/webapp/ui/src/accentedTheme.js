@@ -5,7 +5,7 @@ import baseTheme from "./theme";
 import React, { type ElementConfig, type Ref } from "react";
 import Grow from "@mui/material/Grow";
 import { mergeThemes } from "./util/styles";
-import { darken } from "@mui/system";
+import { darken, alpha } from "@mui/system";
 
 /**
  * This theme is used for pages that use the new styling, wherein the page (or
@@ -197,6 +197,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   },
                 },
               },
+              "& .MuiDivider-root": {
+                borderRight: accentedBorder,
+                borderColor: prefersMoreContrast
+                  ? "rgb(0,0,0)"
+                  : alpha(contrastTextColor, 0.2),
+              },
             },
           },
         },
@@ -256,6 +262,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               backgroundColor: secondaryBackground,
               "& .MuiListItemButton-root": {
                 paddingLeft: baseTheme.spacing(3),
+                border: "none",
+                borderRadius: 0,
+                background: "unset",
+                boxShadow: "none",
+                "& .MuiSvgIcon-root": {
+                  color: "unset",
+                  fontSize: "1rem",
+                },
                 "&.Mui-selected": {
                   backgroundColor: accentedBackground,
                   "& .MuiTypography-root": {
@@ -274,6 +288,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                     hoverDarkenCoefficient
                   ),
                 },
+                "& .MuiTouchRipple-root": {
+                  color: accentedBackground,
+                },
                 "& .MuiListItemIcon-root": {
                   minWidth: baseTheme.spacing(4),
                   color: prefersMoreContrast ? "rgb(0,0,0)" : linkColor,
@@ -285,6 +302,22 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               },
               "& .MuiPaper-root": {
                 borderRight: accentedBorder,
+              },
+            },
+          },
+        },
+        MuiCard: {
+          styleOverrides: {
+            root: {
+              border: accentedBorder,
+              "&:has(.MuiCardActionArea-root)": {
+                "&:hover": {
+                  backgroundColor: "white",
+                  borderColor: darken(
+                    accentedBackground,
+                    hoverDarkenCoefficient
+                  ),
+                },
               },
             },
           },
@@ -601,6 +634,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               "& .MuiTypography-root": {
                 color: "hsl(123deg 40% 19.61%) !important",
               },
+            },
+          },
+        },
+        MuiAvatar: {
+          styleOverrides: {
+            root: {
+              backgroundColor: "rgb(255,255,255)",
+              color: mainAccentColor,
             },
           },
         },
