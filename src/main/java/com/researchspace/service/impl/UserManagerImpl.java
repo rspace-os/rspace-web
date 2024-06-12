@@ -563,28 +563,31 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   @Override
   public User changeUsernameAlias(Long userId, String newAlias) throws UserExistsException {
 
-    User user = get(userId);
-    if (userExists(newAlias)) {
-      throw new UserExistsException(
-          String.format("There is already a user with username [%s]", newAlias),
-          true,
-          false,
-          false);
-    }
-    Optional<User> userWithAlias = userDao.getUserByUsernameAlias(newAlias);
-    if (userWithAlias.isPresent()) {
-      throw new UserExistsException(
-          String.format(
-              "usernameAlias [%s] is already used by user [%s]",
-              newAlias, userWithAlias.get().getUsername()),
-          false,
-          true,
-          false);
+    String aliasToSave = StringUtils.trimToNull(newAlias);
+    if (aliasToSave != null) {
+      if (userExists(aliasToSave)) {
+        throw new UserExistsException(
+            String.format("There is already a user with username [%s]", aliasToSave),
+            true,
+            false,
+            false);
+      }
+      Optional<User> userWithAlias = userDao.getUserByUsernameAlias(aliasToSave);
+      if (userWithAlias.isPresent()) {
+        throw new UserExistsException(
+            String.format(
+                "usernameAlias [%s] is already used by user [%s]",
+                aliasToSave, userWithAlias.get().getUsername()),
+            false,
+            true,
+            false);
+      }
     }
 
-    user.setUsernameAlias(newAlias);
+    User user = get(userId);
+    user.setUsernameAlias(aliasToSave);
     SECURITY_LOG.info(
-        "{} [{}] changed usernameAlias to  {}", user.getFullName(), user.getId(), newAlias);
+        "{} [{}] changed usernameAlias to  {}", user.getFullName(), user.getId(), aliasToSave);
     return user;
   }
 
