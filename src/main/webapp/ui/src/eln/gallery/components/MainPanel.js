@@ -293,6 +293,48 @@ const CustomTreeItem = ({
   );
 };
 
+const GridView = ({
+  listing,
+}: {|
+  listing:
+    | {| tag: "empty", reason: string |}
+    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
+|}) => {
+  const [selectedFile, setSelectedFile] = React.useState<null | GalleryFile>(
+    null
+  );
+  if (listing.tag === "empty")
+    return (
+      <div key={listing.reason}>
+        <Fade
+          in={true}
+          timeout={
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? 0
+              : 300
+          }
+        >
+          <div>
+            <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
+          </div>
+        </Fade>
+      </div>
+    );
+  return (
+    <Grid container spacing={2}>
+      {listing.list.map((file, index) => (
+        <FileCard
+          selected={file === selectedFile}
+          file={file}
+          key={file.id}
+          index={index}
+          setSelectedFile={() => setSelectedFile(file)}
+        />
+      ))}
+    </Grid>
+  );
+};
+
 const FileCard = styled(
   ({ file, className, selected, index, setSelectedFile }) => {
     const { setNodeRef: setDropRef, isOver } = useDroppable({
@@ -541,8 +583,6 @@ export default function GalleryMainPanel({
   path,
   clearPath,
   galleryListing,
-  selectedFile,
-  setSelectedFile,
   folderId,
   refreshListing,
 }: {|
@@ -796,36 +836,7 @@ export default function GalleryMainPanel({
               FetchingData.match(galleryListing, {
                 loading: () => <></>,
                 error: (error) => <>{error}</>,
-                success: (listing) =>
-                  listing.tag === "list" ? (
-                    <Grid container spacing={2}>
-                      {listing.list.map((file, index) => (
-                        <FileCard
-                          selected={file === selectedFile}
-                          file={file}
-                          key={file.id}
-                          index={index}
-                          setSelectedFile={() => setSelectedFile(file)}
-                        />
-                      ))}
-                    </Grid>
-                  ) : (
-                    <div key={listing.reason}>
-                      <Fade
-                        in={true}
-                        timeout={
-                          window.matchMedia("(prefers-reduced-motion: reduce)")
-                            .matches
-                            ? 0
-                            : 300
-                        }
-                      >
-                        <div>
-                          <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
-                        </div>
-                      </Fade>
-                    </div>
-                  ),
+                success: (listing) => <GridView listing={listing} />,
               })}
           </Grid>
         </Grid>
