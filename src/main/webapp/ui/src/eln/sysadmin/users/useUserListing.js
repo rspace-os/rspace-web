@@ -353,6 +353,11 @@ export function useUserListing(): {|
           refreshListing();
         } catch (error) {
           console.error(error);
+          Parsers.objectPath(["response", "data", "message"], error)
+            .flatMap(Parsers.isString)
+            .do((message) => {
+              throw new Error(message);
+            });
           throw error;
         }
       }
