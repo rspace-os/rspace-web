@@ -352,11 +352,12 @@ export function useGalleryActions(): {|
     $ReadOnlyArray<File>
   ) => Promise<void>,
   createFolder: ($ReadOnlyArray<GalleryFile>, number, string) => Promise<void>,
-  moveFile: ({|
-    target: string,
-    fileId: number,
-    section: string,
-  |}) => Promise<void>,
+  moveFileWithId: (number) => {|
+    to: ({|
+      target: string,
+      section: string,
+    |}) => Promise<void>,
+  |},
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -486,30 +487,32 @@ export function useGalleryActions(): {|
     }
   }
 
-  async function moveFile({
-    target,
-    fileId,
-    section,
-  }: {|
-    target: string,
-    fileId: number,
-    section: string,
-  |}) {
-    const formData = new FormData();
-    formData.append("target", target);
-    formData.append("filesId[]", `${fileId}`);
-    formData.append("mediaType", section);
-    await axios.post<FormData, mixed>(
-      "gallery/ajax/moveGalleriesElements",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    // TODO handle errors
+  function moveFileWithId(fileId: number) {
+    return {
+      to: async ({
+        target,
+        section,
+      }: {|
+        target: string,
+        section: string,
+      |}) => {
+        const formData = new FormData();
+        formData.append("target", target);
+        formData.append("filesId[]", `${fileId}`);
+        formData.append("mediaType", section);
+        await axios.post<FormData, mixed>(
+          "gallery/ajax/moveGalleriesElements",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        // TODO handle errors
+      },
+    };
   }
 
-  return { uploadFiles, createFolder, moveFile };
+  return { uploadFiles, createFolder, moveFileWithId };
 }

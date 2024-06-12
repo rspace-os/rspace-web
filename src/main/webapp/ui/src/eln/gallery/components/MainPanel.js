@@ -523,7 +523,7 @@ export default function GalleryMainPanel({
   >([]);
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
-  const { moveFile } = useGalleryActions();
+  const { moveFileWithId } = useGalleryActions();
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -590,19 +590,20 @@ export default function GalleryMainPanel({
         sensors={[mouseSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
-          void moveFile({
-            target: `/${[
-              selectedSection,
-              ...event.over.data.current.path.map(({ name }) => name),
-              ...(event.over.data.current.name === ""
-                ? []
-                : [event.over.data.current.name]),
-            ].join("/")}/`,
-            fileId: event.active.id,
-            section: selectedSection,
-          }).then(() => {
-            refreshListing();
-          });
+          void moveFileWithId(event.active.id)
+            .to({
+              target: `/${[
+                selectedSection,
+                ...event.over.data.current.path.map(({ name }) => name),
+                ...(event.over.data.current.name === ""
+                  ? []
+                  : [event.over.data.current.name]),
+              ].join("/")}/`,
+              section: selectedSection,
+            })
+            .then(() => {
+              refreshListing();
+            });
         }}
       >
         <Grid
