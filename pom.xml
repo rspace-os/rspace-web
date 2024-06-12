@@ -680,10 +680,6 @@
         <version>0.12.0</version>
         <exclusions>
             <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-core-util</artifactId>
-            </exclusion>
-            <exclusion>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
             </exclusion>
@@ -1752,14 +1748,6 @@
         <artifactId>rspace-core-model</artifactId>
         <version>${rspace-core-model.version}</version>
         <exclusions>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-core-util</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-audit</artifactId>
-            </exclusion>
           <exclusion>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -1781,14 +1769,6 @@
         <scope>test</scope>
         <type>test-jar</type>
         <exclusions>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-core-util</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-audit</artifactId>
-            </exclusion>
           <exclusion>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -1891,14 +1871,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
             </exclusion>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-core-util</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>repository-spi</artifactId>
-            </exclusion>
         </exclusions>
     </dependency>
     <dependency>
@@ -1913,10 +1885,6 @@
             <exclusion>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-core-util</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
@@ -2040,10 +2008,6 @@
         <artifactId>rest-api-utils</artifactId>
         <version>1.2.0</version>
         <exclusions>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-core-util</artifactId>
-            </exclusion>
             <exclusion>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-webmvc</artifactId>
@@ -3055,7 +3019,7 @@
     <jstl.version>1.1.2</jstl.version>
     <lucene.version>5.5.5</lucene.version>
     <netty.version>4.1.63.Final</netty.version>
-    <rspace-core-model.version>1.99.2</rspace-core-model.version>
+    <rspace-core-model.version>1.100.0-SNAPSHOT</rspace-core-model.version>
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
