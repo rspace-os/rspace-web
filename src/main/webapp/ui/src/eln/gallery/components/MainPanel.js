@@ -41,6 +41,8 @@ import Menu from "@mui/material/Menu";
 import Box from "@mui/material/Box";
 import NewMenuItem from "./NewMenuItem";
 import Collapse from "@mui/material/Collapse";
+import { observable, runInAction } from "mobx";
+import { useLocalObservable, observer } from "mobx-react-lite";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -293,241 +295,252 @@ const CustomTreeItem = ({
   );
 };
 
-const GridView = ({
-  listing,
-}: {|
-  listing:
-    | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
-|}) => {
-  const [selectedFile, setSelectedFile] = React.useState<null | GalleryFile>(
-    null
-  );
-  if (listing.tag === "empty")
+const GridView = observer(
+  ({
+    listing,
+  }: {|
+    listing:
+      | {| tag: "empty", reason: string |}
+      | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
+  |}) => {
+    // $FlowExpectedError[prop-missing] Difficult to get this library type right
+    const selectedFiles = useLocalObservable(() => observable.set([]));
+
+    if (listing.tag === "empty")
+      return (
+        <div key={listing.reason}>
+          <Fade
+            in={true}
+            timeout={
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? 0
+                : 300
+            }
+          >
+            <div>
+              <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
+            </div>
+          </Fade>
+        </div>
+      );
     return (
-      <div key={listing.reason}>
-        <Fade
-          in={true}
-          timeout={
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              ? 0
-              : 300
-          }
-        >
-          <div>
-            <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
-          </div>
-        </Fade>
-      </div>
+      <Grid container spacing={2}>
+        {listing.list.map((file, index) => (
+          <FileCard
+            selected={selectedFiles.has(file.id)}
+            file={file}
+            key={file.id}
+            index={index}
+            onClick={(e) => {
+              if (e.shiftKey) return;
+              if (e.ctrlKey || e.metaKey) {
+                if (selectedFiles.has(file.id)) {
+                  runInAction(() => {
+                    selectedFiles.delete(file.id);
+                  });
+                } else {
+                  runInAction(() => {
+                    selectedFiles.add(file.id);
+                  });
+                }
+              } else {
+                runInAction(() => {
+                  selectedFiles.clear();
+                  selectedFiles.add(file.id);
+                });
+              }
+            }}
+          />
+        ))}
+      </Grid>
     );
+  }
+);
+
+const FileCard = styled(({ file, className, selected, index, onClick }) => {
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: file.id,
+    disabled: !/Folder/.test(file.type),
+    data: {
+      path: file.path,
+      name: file.name,
+    },
+  });
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    transform,
+  } = useDraggable({
+    disabled: false,
+    id: file.id,
+  });
+
+  const dragStyle: { [string]: string | number } = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: 1, // just needs to be rendered above Nodes later in the DOM
+        position: "relative",
+        boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
+      }
+    : {};
+  const dropStyle: { [string]: string | number } = isOver
+    ? {
+        borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+      }
+    : {};
+  const viewportDimensions = useViewportDimensions();
+  const cardWidth = {
+    xs: 6,
+    sm: 4,
+    md: 3,
+    lg: 2,
+    xl: 2,
+  };
+
   return (
-    <Grid container spacing={2}>
-      {listing.list.map((file, index) => (
-        <FileCard
-          selected={file === selectedFile}
-          file={file}
-          key={file.id}
-          index={index}
-          setSelectedFile={() => setSelectedFile(file)}
-        />
-      ))}
-    </Grid>
-  );
-};
-
-const FileCard = styled(
-  ({ file, className, selected, index, setSelectedFile }) => {
-    const { setNodeRef: setDropRef, isOver } = useDroppable({
-      id: file.id,
-      disabled: !/Folder/.test(file.type),
-      data: {
-        path: file.path,
-        name: file.name,
-      },
-    });
-    const {
-      attributes,
-      listeners,
-      setNodeRef: setDragRef,
-      transform,
-    } = useDraggable({
-      disabled: false,
-      id: file.id,
-    });
-
-    const dragStyle: { [string]: string | number } = transform
-      ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-          zIndex: 1, // just needs to be rendered above Nodes later in the DOM
-          position: "relative",
-          boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
-        }
-      : {};
-    const dropStyle: { [string]: string | number } = isOver
-      ? {
-          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-        }
-      : {};
-    const viewportDimensions = useViewportDimensions();
-    const cardWidth = {
-      xs: 6,
-      sm: 4,
-      md: 3,
-      lg: 2,
-      xl: 2,
-    };
-
-    return (
-      <Fade
-        in={true}
-        timeout={
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? 0
-            : 400
-        }
+    <Fade
+      in={true}
+      timeout={
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400
+      }
+    >
+      <Grid
+        item
+        {...cardWidth}
+        sx={{
+          /*
+           * This way, the animation takes the same amount of time (36ms) for
+           * each row of cards
+           */
+          transitionDelay: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "0s"
+            : `${
+                (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
+              }ms !important`,
+        }}
       >
-        <Grid
-          item
-          {...cardWidth}
-          sx={{
-            /*
-             * This way, the animation takes the same amount of time (36ms) for
-             * each row of cards
-             */
-            transitionDelay: window.matchMedia(
-              "(prefers-reduced-motion: reduce)"
-            ).matches
-              ? "0s"
-              : `${
-                  (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
-                }ms !important`,
+        <Card
+          elevation={0}
+          className={className}
+          ref={(node) => {
+            setDropRef(node);
+            setDragRef(node);
+          }}
+          {...listeners}
+          {...attributes}
+          style={{
+            ...dragStyle,
+            ...dropStyle,
           }}
         >
-          <Card
-            elevation={0}
-            className={className}
-            ref={(node) => {
-              setDropRef(node);
-              setDragRef(node);
+          <CardActionArea
+            role={file.open ? "button" : "radio"}
+            aria-checked={selected}
+            onClick={(e) => {
+              if (file.open) file.open();
+              else onClick(e);
             }}
-            {...listeners}
-            {...attributes}
-            style={{
-              ...dragStyle,
-              ...dropStyle,
-            }}
+            sx={{ height: "100%" }}
           >
-            <CardActionArea
-              role={file.open ? "button" : "radio"}
-              aria-checked={selected}
-              onClick={() => (file.open ?? setSelectedFile)()}
-              sx={{ height: "100%" }}
-            >
+            <Grid container direction="column" height="100%" flexWrap="nowrap">
               <Grid
+                item
+                sx={{
+                  flexShrink: 0,
+                  padding: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "calc(100% - 9999999px)",
+                  flexDirection: "column",
+                  flexGrow: 1,
+                }}
+              >
+                <Avatar
+                  src={file.thumbnailUrl}
+                  imgProps={{
+                    role: "presentation",
+                  }}
+                  variant="rounded"
+                  sx={{
+                    width: "auto",
+                    height: "100%",
+                    aspectRatio: "1 / 1",
+                    fontSize: "5em",
+                    backgroundColor: "transparent",
+                  }}
+                >
+                  <FileIcon fontSize="inherit" />
+                </Avatar>
+              </Grid>
+              <Grid
+                item
                 container
-                direction="column"
-                height="100%"
+                direction="row"
                 flexWrap="nowrap"
+                alignItems="baseline"
+                sx={{
+                  padding: "8px",
+                  paddingTop: 0,
+                }}
               >
                 <Grid
                   item
                   sx={{
-                    flexShrink: 0,
-                    padding: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "calc(100% - 9999999px)",
-                    flexDirection: "column",
+                    textAlign: "center",
                     flexGrow: 1,
+                    ...(selected
+                      ? {
+                          backgroundColor: window.matchMedia(
+                            "(prefers-contrast: more)"
+                          ).matches
+                            ? "black"
+                            : "#35afef",
+                          p: 0.25,
+                          borderRadius: "4px",
+                          mx: 0.5,
+                        }
+                      : {}),
                   }}
                 >
-                  <Avatar
-                    src={file.thumbnailUrl}
-                    imgProps={{
-                      role: "presentation",
-                    }}
-                    variant="rounded"
+                  <Typography
                     sx={{
-                      width: "auto",
-                      height: "100%",
-                      aspectRatio: "1 / 1",
-                      fontSize: "5em",
-                      backgroundColor: "transparent",
-                    }}
-                  >
-                    <FileIcon fontSize="inherit" />
-                  </Avatar>
-                </Grid>
-                <Grid
-                  item
-                  container
-                  direction="row"
-                  flexWrap="nowrap"
-                  alignItems="baseline"
-                  sx={{
-                    padding: "8px",
-                    paddingTop: 0,
-                  }}
-                >
-                  <Grid
-                    item
-                    sx={{
-                      textAlign: "center",
-                      flexGrow: 1,
                       ...(selected
                         ? {
-                            backgroundColor: window.matchMedia(
-                              "(prefers-contrast: more)"
-                            ).matches
-                              ? "black"
-                              : "#35afef",
-                            p: 0.25,
-                            borderRadius: "4px",
-                            mx: 0.5,
+                            color: window.matchMedia("(prefers-contrast: more)")
+                              .matches
+                              ? "white"
+                              : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
                           }
                         : {}),
+                      fontSize: "0.8125rem",
+                      fontWeight: window.matchMedia("(prefers-contrast: more)")
+                        .matches
+                        ? 700
+                        : 400,
+
+                      // wrap onto a second line, but use an ellipsis after that
+                      overflowWrap: "anywhere",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: "2",
+                      WebkitBoxOrient: "vertical",
                     }}
                   >
-                    <Typography
-                      sx={{
-                        ...(selected
-                          ? {
-                              color: window.matchMedia(
-                                "(prefers-contrast: more)"
-                              ).matches
-                                ? "white"
-                                : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-                            }
-                          : {}),
-                        fontSize: "0.8125rem",
-                        fontWeight: window.matchMedia(
-                          "(prefers-contrast: more)"
-                        ).matches
-                          ? 700
-                          : 400,
-
-                        // wrap onto a second line, but use an ellipsis after that
-                        overflowWrap: "anywhere",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: "2",
-                        WebkitBoxOrient: "vertical",
-                      }}
-                    >
-                      {file.name}
-                    </Typography>
-                  </Grid>
+                    {file.name}
+                  </Typography>
                 </Grid>
               </Grid>
-            </CardActionArea>
-          </Card>
-        </Grid>
-      </Fade>
-    );
-  }
-)(({ selected }) => ({
+            </Grid>
+          </CardActionArea>
+        </Card>
+      </Grid>
+    </Fade>
+  );
+})(({ selected }) => ({
   height: "150px",
   ...(selected
     ? {
