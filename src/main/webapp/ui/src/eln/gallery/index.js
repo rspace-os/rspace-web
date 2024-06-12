@@ -19,7 +19,7 @@ import Alerts from "../../Inventory/components/Alerts";
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [selectedSection, setSelectedSection] = React.useState("Images");
-  const { galleryListing, path, clearPath, parentId, refreshListing } =
+  const { galleryListing, path, clearPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
@@ -45,7 +45,7 @@ function WholePage() {
           setSelectedSection={setSelectedSection}
           drawerOpen={drawerOpen}
           path={path}
-          parentId={parentId}
+          folderId={folderId}
           refreshListing={refreshListing}
         />
         <Box
@@ -63,7 +63,7 @@ function WholePage() {
             galleryListing={galleryListing}
             selectedFile={selectedFile}
             setSelectedFile={setSelectedFile}
-            parentId={parentId}
+            folderId={folderId}
             refreshListing={refreshListing}
             key={null}
           />

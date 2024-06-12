@@ -9,6 +9,8 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
 import { gallerySectionCollectiveNoun } from "./common";
 
+export opaque type FolderId = number;
+
 export type GalleryFile = {|
   id: number,
   name: string,
@@ -152,7 +154,7 @@ export function useGalleryListing({
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
-  parentId: FetchingData.Fetched<number>,
+  folderId: FetchingData.Fetched<FolderId>,
 |} {
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
@@ -162,7 +164,7 @@ export function useGalleryListing({
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
     defaultPath ?? []
   );
-  const [parentId, setParentId] = React.useState<Result<number>>(
+  const [parentId, setParentId] = React.useState<Result<FolderId>>(
     Result.Error([])
   );
 
@@ -235,6 +237,7 @@ export function useGalleryListing({
           .flatMap(Parsers.isNotNull)
           .flatMap(Parsers.getValueWithKey("parentId"))
           .flatMap(Parsers.isNumber)
+          .map((x) => x) // possibly a bug in Flow
       );
 
       setGalleryListing(
@@ -322,7 +325,7 @@ export function useGalleryListing({
       galleryListing: { tag: "loading" },
       path: [],
       clearPath: () => {},
-      parentId: { tag: "loading" },
+      folderId: { tag: "loading" },
       refreshListing: () => {},
     };
 
@@ -336,7 +339,7 @@ export function useGalleryListing({
     },
     path,
     clearPath: () => setPath([]),
-    parentId: parentId
+    folderId: parentId
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: () => {
@@ -348,10 +351,14 @@ export function useGalleryListing({
 export function useGalleryActions(): {|
   uploadFiles: (
     $ReadOnlyArray<GalleryFile>,
-    number,
+    FolderId,
     $ReadOnlyArray<File>
   ) => Promise<void>,
-  createFolder: ($ReadOnlyArray<GalleryFile>, number, string) => Promise<void>,
+  createFolder: (
+    $ReadOnlyArray<GalleryFile>,
+    FolderId,
+    string
+  ) => Promise<void>,
   moveFileWithId: (number) => {|
     to: ({|
       target: string,

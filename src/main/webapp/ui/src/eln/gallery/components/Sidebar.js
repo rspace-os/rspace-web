@@ -35,7 +35,11 @@ import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuIte
 import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
 import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
 import NewMenuItem from "./NewMenuItem";
-import { useGalleryActions, type GalleryFile } from "../useGallery";
+import {
+  useGalleryActions,
+  type GalleryFile,
+  type FolderId,
+} from "../useGallery";
 import * as FetchingData from "../../../util/fetchingData";
 import Dialog from "@mui/material/Dialog";
 import TextField from "@mui/material/TextField";
@@ -113,11 +117,11 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
 
 const UploadMenuItem = ({
   path,
-  parentId,
+  folderId,
   onUploadComplete,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
-  parentId: number,
+  folderId: FolderId,
   onUploadComplete: () => void,
 |}) => {
   const { uploadFiles } = useGalleryActions();
@@ -143,7 +147,7 @@ const UploadMenuItem = ({
         hidden
         multiple
         onChange={({ target: { files } }) => {
-          void uploadFiles(path, parentId, [...files]).then(() => {
+          void uploadFiles(path, folderId, [...files]).then(() => {
             onUploadComplete();
           });
         }}
@@ -155,11 +159,11 @@ const UploadMenuItem = ({
 
 const NewFolderMenuItem = ({
   path,
-  parentId,
+  folderId,
   onDialogClose,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
-  parentId: number,
+  folderId: FolderId,
   onDialogClose: (boolean) => void,
 |}) => {
   const [open, setOpen] = React.useState(false);
@@ -176,7 +180,7 @@ const NewFolderMenuItem = ({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void createFolder(path, parentId, name).then(() => {
+            void createFolder(path, folderId, name).then(() => {
               onDialogClose(true);
             });
           }}
@@ -352,14 +356,14 @@ export default function GallerySidebar({
   setSelectedSection,
   drawerOpen,
   path,
-  parentId,
+  folderId,
   refreshListing,
 }: {|
   selectedSection: string,
   setSelectedSection: (string) => void,
   drawerOpen: boolean,
   path: $ReadOnlyArray<GalleryFile>,
-  parentId: FetchingData.Fetched<number>,
+  folderId: FetchingData.Fetched<FolderId>,
   refreshListing: () => void,
 |}): Node {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
@@ -392,12 +396,12 @@ export default function GallerySidebar({
             disablePadding: true,
           }}
         >
-          {FetchingData.getSuccessValue(parentId)
-            .map((pId) => (
+          {FetchingData.getSuccessValue(folderId)
+            .map((fId) => (
               <UploadMenuItem
                 key={"upload"}
                 path={path}
-                parentId={pId}
+                folderId={fId}
                 onUploadComplete={() => {
                   refreshListing();
                   setNewMenuAnchorEl(null);
@@ -405,12 +409,12 @@ export default function GallerySidebar({
               />
             ))
             .orElse(null)}
-          {FetchingData.getSuccessValue(parentId)
-            .map((pId) => (
+          {FetchingData.getSuccessValue(folderId)
+            .map((fId) => (
               <NewFolderMenuItem
                 key={"newFolder"}
                 path={path}
-                parentId={pId}
+                folderId={fId}
                 onDialogClose={(success) => {
                   if (success) refreshListing();
                   setNewMenuAnchorEl(null);

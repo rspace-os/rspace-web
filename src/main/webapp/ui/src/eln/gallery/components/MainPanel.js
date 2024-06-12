@@ -20,6 +20,7 @@ import {
   useGalleryListing,
   useGalleryActions,
   type GalleryFile,
+  type FolderId,
 } from "../useGallery";
 import { doNotAwait } from "../../../util/Util";
 import Backdrop from "@mui/material/Backdrop";
@@ -498,7 +499,7 @@ export default function GalleryMainPanel({
   galleryListing,
   selectedFile,
   setSelectedFile,
-  parentId,
+  folderId,
   refreshListing,
 }: {|
   selectedSection: string,
@@ -510,7 +511,7 @@ export default function GalleryMainPanel({
   >,
   selectedFile: null | GalleryFile,
   setSelectedFile: (null | GalleryFile) => void,
-  parentId: FetchingData.Fetched<number>,
+  folderId: FetchingData.Fetched<FolderId>,
   refreshListing: () => void,
 |}): Node {
   const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
@@ -565,10 +566,10 @@ export default function GalleryMainPanel({
           });
         }
 
-        const pId = FetchingData.getSuccessValue(parentId).orElseGet(() => {
-          throw new Error("Unknown sub-section id");
+        const fId = FetchingData.getSuccessValue(folderId).orElseGet(() => {
+          throw new Error("Unknown folder id");
         });
-        await uploadFiles(path, pId, files);
+        await uploadFiles(path, fId, files);
         refreshListing();
       })}
       onDragOver={(e) => {
