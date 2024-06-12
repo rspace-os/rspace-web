@@ -295,6 +295,37 @@ const CustomTreeItem = ({
 
 const FileCard = styled(
   ({ file, className, selected, index, setSelectedFile }) => {
+    const { setNodeRef: setDropRef, isOver } = useDroppable({
+      id: file.id,
+      disabled: !/Folder/.test(file.type),
+      data: {
+        path: file.path,
+        name: file.name,
+      },
+    });
+    const {
+      attributes,
+      listeners,
+      setNodeRef: setDragRef,
+      transform,
+    } = useDraggable({
+      disabled: false,
+      id: file.id,
+    });
+
+    const dragStyle: { [string]: string | number } = transform
+      ? {
+          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+          zIndex: 1, // just needs to be rendered above Nodes later in the DOM
+          position: "relative",
+          boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
+        }
+      : {};
+    const dropStyle: { [string]: string | number } = isOver
+      ? {
+          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        }
+      : {};
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
       xs: 6,
@@ -330,7 +361,20 @@ const FileCard = styled(
                 }ms !important`,
           }}
         >
-          <Card elevation={0} className={className}>
+          <Card
+            elevation={0}
+            className={className}
+            ref={(node) => {
+              setDropRef(node);
+              setDragRef(node);
+            }}
+            {...listeners}
+            {...attributes}
+            style={{
+              ...dragStyle,
+              ...dropStyle,
+            }}
+          >
             <CardActionArea
               role={file.open ? "button" : "radio"}
               aria-checked={selected}
