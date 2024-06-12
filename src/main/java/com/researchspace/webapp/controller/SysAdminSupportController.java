@@ -80,7 +80,7 @@ public class SysAdminSupportController extends BaseController {
   @GetMapping("/ajax/viewLog")
   @ResponseBody
   public AjaxReturnObject<List<String>> viewServerErrorLog(
-      @RequestParam(value = "numLines", required = false, defaultValue = "500") Integer numlines) {
+      @RequestParam(value = "numLines", required = false, defaultValue = "1000") Integer numlines) {
     assertSubjectIsSysadmin();
     try {
       List<String> lines = sysMgr.getLastNLinesLogs(numlines);

@@ -298,16 +298,16 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   @Override
-  public void addPermission(ConstraintBasedPermission permission, String userName) {
-    User u = getUserByUsername(userName, true);
+  public void addPermission(ConstraintBasedPermission permission, String username) {
+    User u = getUserByUsername(username, true);
     u.addPermission(permission);
     dao.save(u);
     permissnUtils.refreshCache();
   }
 
   @Override
-  public void removePermission(ConstraintBasedPermission permission, String userName) {
-    User u = getUserByUsername(userName);
+  public void removePermission(ConstraintBasedPermission permission, String username) {
+    User u = getUserByUsername(username);
     u.removePermission(permission);
     dao.save(u);
     permissnUtils.refreshCache();
@@ -595,8 +595,8 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
    * for testing
    */
   @Override
-  public User getUserByUsernameNoSession(String userName) {
-    return userDao.getUserByUsername(userName);
+  public User getUserByUsernameNoSession(String username) {
+    return userDao.getUserByUsername(username);
   }
 
   @Override

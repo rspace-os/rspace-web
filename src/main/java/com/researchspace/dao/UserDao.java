@@ -51,7 +51,7 @@ public interface UserDao extends GenericDao<User, Long> {
 
   String getUserPassword(String username);
 
-  User getUserByUsername(String userName);
+  User getUserByUsername(String username);
 
   Optional<User> getUserByUsernameAlias(String usernameAlias);
 

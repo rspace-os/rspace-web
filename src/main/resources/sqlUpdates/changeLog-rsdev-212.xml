@@ -7,7 +7,7 @@
     <changeSet id="2024-06-07" context="run" author="matthias">
         <comment>RSDEV-212: Add an usernameAlias column to User table</comment>
         <addColumn tableName="User">
-            <column name="usernameAlias" type="VARCHAR(255)"/>
+            <column name="usernameAlias" type="VARCHAR(50)"/>
         </addColumn>
         <addUniqueConstraint columnNames="usernameAlias" constraintName="unique_usernameAlias" tableName="User"/>
     </changeSet>
