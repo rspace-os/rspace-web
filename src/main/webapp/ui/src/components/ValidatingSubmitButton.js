@@ -1,6 +1,6 @@
 //@flow
 
-import { Result } from "../util/result";
+import Result from "../util/result";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 import React, { type Node } from "react";
 import Popover from "@mui/material/Popover";

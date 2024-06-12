@@ -2,7 +2,7 @@
 
 import React from "react";
 import axios from "axios";
-import { Result, lift6 } from "../../util/result";
+import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
@@ -226,8 +226,7 @@ export default function useGalleryListing({
                 Parsers.isObject(m)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) => {
-                    return lift6(
-                      mkGalleryFile,
+                    return Result.lift6(mkGalleryFile)(
                       Parsers.getValueWithKey("id")(obj).flatMap(
                         Parsers.isNumber
                       ),

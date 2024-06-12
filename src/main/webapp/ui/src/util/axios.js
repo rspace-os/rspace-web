@@ -1,6 +1,6 @@
 //@flow strict
 
-import { Result } from "./result";
+import Result from "./result";
 
 /*
  * These are just some general utility functions for working with the axios

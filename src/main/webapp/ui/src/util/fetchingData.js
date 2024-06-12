@@ -6,7 +6,7 @@
  * success, loading, and error -- are always correctly covered.
  */
 
-import { Result } from "./result";
+import Result from "./result";
 
 export type Fetched<A> =
   | {| tag: "loading" |}

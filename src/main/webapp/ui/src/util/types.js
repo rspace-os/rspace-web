@@ -2,7 +2,7 @@
 
 import { parseString } from "./parsers";
 import { Optional } from "./optional";
-import { Result } from "./result";
+import Result from "./result";
 
 /*
  * Some general purpose type definitions.

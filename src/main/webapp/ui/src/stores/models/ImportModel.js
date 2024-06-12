@@ -29,7 +29,7 @@ import {
 import { parseString } from "../../util/parsers";
 import { type Field as TemplateField } from "../definitions/Field";
 import { pick } from "../../util/unsafeUtils";
-import { Result } from "../../util/result";
+import Result from "../../util/result";
 
 export const Fields: { [string]: symbol } = {
   name: Symbol.for("NAME"),

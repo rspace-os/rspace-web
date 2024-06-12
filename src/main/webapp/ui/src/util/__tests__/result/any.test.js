@@ -1,6 +1,6 @@
 //@flow
 /* eslint-env jest */
-import { Result } from "../../result";
+import Result from "../../result";
 
 describe("any", () => {
   test("A single OK, should be wrapped in an array.", () => {

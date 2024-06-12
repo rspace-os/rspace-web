@@ -1,6 +1,6 @@
 //@flow strict
 
-import { Result } from "./result";
+import Result from "./result";
 import { Optional, lift2 } from "./optional";
 
 /**

@@ -7,7 +7,7 @@ import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ValidatingSubmitButton from "../ValidatingSubmitButton";
-import { Result } from "../../util/result";
+import Result from "../../util/result";
 import "../../../__mocks__/matchMedia";
 import each from "jest-each";
 

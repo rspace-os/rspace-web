@@ -7,7 +7,7 @@ import {
   ABSOLUTE_ZERO,
 } from "../stores/definitions/Units";
 import { type Temperature } from "../stores/definitions/Sample";
-import { Result } from "./result";
+import Result from "./result";
 import * as Parsers from "./parsers";
 
 /* quantity conversions */

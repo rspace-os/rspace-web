@@ -1,7 +1,7 @@
 //@flow strict
 
 import { getByKey } from "./optional";
-import { Result } from "./result";
+import Result from "./result";
 
 /*
  * These are some simple functions for converting strings into slightly more

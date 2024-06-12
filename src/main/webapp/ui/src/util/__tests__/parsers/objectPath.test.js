@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import { objectPath } from "../../parsers";
-import { Result } from "../../result";
+import Result from "../../result";
 import "@testing-library/jest-dom";
 
 describe("objectPath", () => {

@@ -26,7 +26,7 @@ type ResultInternals<T> =
  * the rules, respectively, end in an OK state then the final Result will be in
  * an OK state.
  */
-export class Result<T> {
+export default class Result<T> {
   +#state: ResultInternals<T>;
 
   /**
@@ -41,19 +41,32 @@ export class Result<T> {
    ** SMART CONSTRUCTORS **
    ************************/
 
-  static Ok<U>(value: U): Result<U> {
+  /*
+   * These constructor functions are defined as static properties with a
+   * function type and arrow-function value rather than as static methods so
+   * that they may be disassociated from the class. By doing so, we can call
+   * these smart constructors like so `[1,2,3].map(Result.Ok)`, as opposed to
+   * having to create a temporary lambda `[1,2,3].map((x) => Result.Ok(x))`.
+   * The `+` syntax makes the properties read-only and prevents some code
+   * outside of this module from altering the behaviour of these functions.
+   */
+
+  static +Ok: <U>(U) => Result<U> = (value) => {
     return new Result({ key: "ok", value });
-  }
+  };
 
-  static Error<U>(errors: Array<Error>): Result<U> {
-    return new Result({ key: "error", errors });
-  }
+  static +Error: <U>(Array<Error>) => Result<U> = <U>(errors): Result<U> => {
+    return new Result<U>({ key: "error", errors });
+  };
 
-  static fromNullable(value: ?T, error: Error): Result<T> {
+  static +fromNullable: <U>(?U, Error) => Result<U> = <U>(
+    value: ?U,
+    error: Error
+  ): Result<U> => {
     if (value === null || typeof value === "undefined")
       return Result.Error([error]);
     return Result.Ok(value);
-  }
+  };
 
   /****************
    ** PREDICATES **
@@ -284,96 +297,90 @@ export class Result<T> {
     }
     return r.map((t) => [t]);
   }
-}
 
-/*
- * These helper functions transform passed functions that operate on normal
- * values into function that operate on values wrapped in Results.
- *
- * They can't all simply be replaced with a single function that takes a rest
- * argument and recurses over that array because the types of each of the
- * wrapped values is different and we want to preserve that difference. As
- * such, if the function you require is not defined then add it, and in order
- * to do so all of functions beneath it.
- *
- * It is possible that all of this deep function calls and instantiation of
- * Result may have performance implications, in which case this functional
- * approach may not be most applicable and the code should instead be
- * implemented using `null`s, exception handling, and flow type suppressions
- * where required. Don't preempt that though.
- */
+  /*
+   * These helper functions transform passed functions that operate on normal
+   * values into function that operate on values wrapped in Results.
+   *
+   * They can't all simply be replaced with a single function that takes a rest
+   * argument and recurses over that array because the types of each of the
+   * wrapped values is different and we want to preserve that difference. As
+   * such, if the function you require is not defined then add it, and in order
+   * to do so all of functions beneath it.
+   *
+   * It is possible that all of this deep function calls and instantiation of
+   * Result may have performance implications, in which case this functional
+   * approach may not be most applicable and the code should instead be
+   * implemented using `null`s, exception handling, and flow type suppressions
+   * where required. Don't preempt that though.
+   */
 
-export function lift<A, B>(func: (A) => B, resultA: Result<A>): Result<B> {
-  return resultA.map(func);
-}
+  static lift<A, B>(func: (A) => B): (Result<A>) => Result<B> {
+    return (resultA) => resultA.map(func);
+  }
 
-export function lift2<A, B, C>(
-  func: (A, B) => C,
-  resultA: Result<A>,
-  resultB: Result<B>
-): Result<C> {
-  return resultA.flatMap((a) => lift((b) => func(a, b), resultB));
-}
+  static lift2<A, B, C>(
+    func: (A, B) => C
+  ): (Result<A>, Result<B>) => Result<C> {
+    return (resultA, resultB) =>
+      resultA.flatMap((a) => Result.lift((b: B) => func(a, b))(resultB));
+  }
 
-export function lift3<A, B, C, D>(
-  func: (A, B, C) => D,
-  resultA: Result<A>,
-  resultB: Result<B>,
-  resultC: Result<C>
-): Result<D> {
-  return resultA.flatMap((a) =>
-    lift2((b, c) => func(a, b, c), resultB, resultC)
-  );
-}
+  static lift3<A, B, C, D>(
+    func: (A, B, C) => D
+  ): (Result<A>, Result<B>, Result<C>) => Result<D> {
+    return (resultA, resultB, resultC) =>
+      resultA.flatMap((a) =>
+        Result.lift2((b: B, c: C) => func(a, b, c))(resultB, resultC)
+      );
+  }
 
-export function lift4<A, B, C, D, E>(
-  func: (A, B, C, D) => E,
-  resultA: Result<A>,
-  resultB: Result<B>,
-  resultC: Result<C>,
-  resultD: Result<D>
-): Result<E> {
-  return resultA.flatMap((a) =>
-    lift3((b, c, d) => func(a, b, c, d), resultB, resultC, resultD)
-  );
-}
+  static lift4<A, B, C, D, E>(
+    func: (A, B, C, D) => E
+  ): (Result<A>, Result<B>, Result<C>, Result<D>) => Result<E> {
+    return (resultA, resultB, resultC, resultD) =>
+      resultA.flatMap((a) =>
+        Result.lift3((b: B, c: C, d: D) => func(a, b, c, d))(
+          resultB,
+          resultC,
+          resultD
+        )
+      );
+  }
 
-export function lift5<A, B, C, D, E, F>(
-  func: (A, B, C, D, E) => F,
-  resultA: Result<A>,
-  resultB: Result<B>,
-  resultC: Result<C>,
-  resultD: Result<D>,
-  resultE: Result<E>
-): Result<F> {
-  return resultA.flatMap((a) =>
-    lift4(
-      (b, c, d, e) => func(a, b, c, d, e),
-      resultB,
-      resultC,
-      resultD,
-      resultE
-    )
-  );
-}
+  static lift5<A, B, C, D, E, F>(
+    func: (A, B, C, D, E) => F
+  ): (Result<A>, Result<B>, Result<C>, Result<D>, Result<E>) => Result<F> {
+    return (resultA, resultB, resultC, resultD, resultE) =>
+      resultA.flatMap((a) =>
+        Result.lift4((b: B, c: C, d: D, e: E) => func(a, b, c, d, e))(
+          resultB,
+          resultC,
+          resultD,
+          resultE
+        )
+      );
+  }
 
-export function lift6<A, B, C, D, E, F, G>(
-  func: (A, B, C, D, E, F) => G,
-  resultA: Result<A>,
-  resultB: Result<B>,
-  resultC: Result<C>,
-  resultD: Result<D>,
-  resultE: Result<E>,
-  resultF: Result<F>
-): Result<G> {
-  return resultA.flatMap((a) =>
-    lift5(
-      (b, c, d, e, f) => func(a, b, c, d, e, f),
-      resultB,
-      resultC,
-      resultD,
-      resultE,
-      resultF
-    )
-  );
+  static lift6<A, B, C, D, E, F, G>(
+    func: (A, B, C, D, E, F) => G
+  ): (
+    Result<A>,
+    Result<B>,
+    Result<C>,
+    Result<D>,
+    Result<E>,
+    Result<F>
+  ) => Result<G> {
+    return (resultA, resultB, resultC, resultD, resultE, resultF) =>
+      resultA.flatMap((a) =>
+        Result.lift5((b: B, c: C, d: D, e: E, f: F) => func(a, b, c, d, e, f))(
+          resultB,
+          resultC,
+          resultD,
+          resultE,
+          resultF
+        )
+      );
+  }
 }

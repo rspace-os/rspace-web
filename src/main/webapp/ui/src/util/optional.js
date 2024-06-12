@@ -1,6 +1,6 @@
 //@flow strict
 /* eslint no-use-before-define: 0 */
-import { Result } from "./result";
+import Result from "./result";
 
 /*
  * This type defines the internal state of the class. It is not exported to

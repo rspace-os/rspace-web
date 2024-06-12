@@ -6,7 +6,7 @@ import { getByKey, Optional } from "../../util/optional";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { parseString } from "../../util/parsers";
-import { Result } from "../../util/result";
+import Result from "../../util/result";
 
 /*
  * This module provide the functionality for interacting with the

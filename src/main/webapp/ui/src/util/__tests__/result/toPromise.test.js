@@ -3,7 +3,7 @@
  */
 //@flow
 /* eslint-env jest */
-import { Result } from "../../result";
+import Result from "../../result";
 import "@testing-library/jest-dom";
 import fc from "fast-check";
 

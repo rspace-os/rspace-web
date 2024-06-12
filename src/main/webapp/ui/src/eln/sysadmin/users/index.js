@@ -68,7 +68,7 @@ import RemoveUserIcon from "@mui/icons-material/PersonRemove";
 import DisableIcon from "@mui/icons-material/NoAccounts";
 import ExportIcon from "@mui/icons-material/GetApp";
 import MakePiIcon from "@mui/icons-material/Badge";
-import { Result } from "../../../util/result";
+import Result from "../../../util/result";
 import TickIcon from "@mui/icons-material/Done";
 import CrossIcon from "@mui/icons-material/Clear";
 import LockIcon from "@mui/icons-material/Lock";

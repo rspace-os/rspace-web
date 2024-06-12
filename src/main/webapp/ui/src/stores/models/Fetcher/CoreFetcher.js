@@ -29,7 +29,7 @@ import {
 import { type InventoryRecord } from "../../definitions/InventoryRecord";
 import { type Order, parseOrder } from "../../../util/types";
 import { pick } from "../../../util/unsafeUtils";
-import { Result } from "../../../util/result";
+import Result from "../../../util/result";
 
 export const DEFAULT_SEARCH = {
   query: "",

@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 
-import { Result } from "../../result";
+import Result from "../../result";
 
 describe("orElseTry", () => {
   test("The types should be merged.", () => {

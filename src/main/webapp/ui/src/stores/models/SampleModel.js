@@ -78,7 +78,7 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
-import { Result } from "../../util/result";
+import Result from "../../util/result";
 
 type SampleEditableFields = {
   ...RecordWithQuantityEditableFields,

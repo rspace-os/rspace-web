@@ -11,7 +11,7 @@ import { type SubSample } from "./SubSample";
 import { type Order } from "../../util/types";
 import { type Basket } from "./Basket";
 import { parseString } from "../../util/parsers";
-import { Result } from "../../util/result";
+import Result from "../../util/result";
 
 export type SearchView = "LIST" | "TREE" | "CARD" | "IMAGE" | "GRID";
 export const TYPE_LABEL = {

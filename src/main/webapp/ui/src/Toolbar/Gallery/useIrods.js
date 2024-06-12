@@ -2,7 +2,7 @@
 
 import axios, { type Axios } from "axios";
 import React from "react";
-import { Result, lift2, lift5 } from "../../util/result";
+import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import * as FetchingData from "../../util/fetchingData";
 import useOauthToken from "../../common/useOauthToken";
@@ -21,8 +21,10 @@ function parseIrodsLocationLinks(obj: { ... }): Result<$ReadOnlyArray<Link>> {
           Parsers.isObject(m)
             .flatMap(Parsers.isNotNull)
             .flatMap((linkObj) =>
-              lift2(
-                (operation, href) => ({ operation, href }),
+              Result.lift2((operation: string, href: string) => ({
+                operation,
+                href,
+              }))(
                 Parsers.getValueWithKey("operation")(linkObj).flatMap(
                   Parsers.isString
                 ),
@@ -118,12 +120,11 @@ function handleErrors(response: mixed): Alert {
                            * Otherwise parse filename and reason, and show a red
                            * alert
                            */
-                          lift2(
-                            (filename, reason) => ({
-                              variant: "error",
-                              title: filename,
-                              help: reason,
-                            }),
+                          Result.lift2((filename: string, reason: string) => ({
+                            variant: "error",
+                            title: filename,
+                            help: reason,
+                          }))(
                             Parsers.getValueWithKey("fileName")(obj).flatMap(
                               Parsers.isString
                             ),
@@ -330,9 +331,7 @@ export default function useIrods(
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) => {
                     const links = parseIrodsLocationLinks(obj);
-                    return lift5(
-                      mkIrodsLocation,
-
+                    return Result.lift5(mkIrodsLocation)(
                       Parsers.getValueWithKey("id")(obj).flatMap(
                         Parsers.isNumber
                       ),
@@ -378,15 +377,16 @@ export default function useIrods(
 
   if (loading) return { tag: "loading" };
   if (errorMessage) return { tag: "error", error: errorMessage };
-  return lift2(
-    (url, locations) => ({
+  return Result.lift2(
+    (url: string, locations: $ReadOnlyArray<IrodsLocation>) => ({
       tag: "success",
       value: {
         serverUrl: url,
         configuredLocations: locations,
       },
-    }),
-    serverUrl,
-    configuredLocations
-  ).orElseGet(([error]) => ({ tag: "error", error: error.message }));
+    })
+  )(serverUrl, configuredLocations).orElseGet(([error]) => ({
+    tag: "error",
+    error: error.message,
+  }));
 }

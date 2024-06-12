@@ -1,6 +1,6 @@
 //@flow
 /* eslint-env jest */
-import { Result } from "../../result";
+import Result from "../../result";
 
 describe("first", () => {
   test("A single OK, should be the value.", () => {
