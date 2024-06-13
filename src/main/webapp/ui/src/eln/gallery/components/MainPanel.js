@@ -954,7 +954,7 @@ export default function GalleryMainPanel({
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
-      delay: 500,
+      delay: 0,
       tolerance: 5,
     },
   });
