@@ -506,16 +506,43 @@ export function useGalleryActions(): {|
           formData.append("filesId[]", `${fileId}`);
         });
         formData.append("mediaType", section);
-        await axios.post<FormData, mixed>(
-          "gallery/ajax/moveGalleriesElements",
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-        // TODO handle errors
+        try {
+          const data = await axios.post<FormData, mixed>(
+            "gallery/ajax/moveGalleriesElements",
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+          addAlert(
+            Parsers.objectPath(["data", "exceptionMessage"], data)
+              .flatMap(Parsers.isString)
+              .map((exceptionMessage) =>
+                mkAlert({
+                  title: `Failed to move item.`,
+                  message: exceptionMessage,
+                  variant: "error",
+                })
+              )
+              .orElse(
+                mkAlert({
+                  message: `Successfully moved item.`,
+                  variant: "success",
+                })
+              )
+          );
+        } catch (e) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: `Failed to move item.`,
+              message: e.message,
+            })
+          );
+          throw e;
+        }
       },
     };
   }
