@@ -44,6 +44,7 @@ import Collapse from "@mui/material/Collapse";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
+import Slide from "@mui/material/Slide";
 import { observable, runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 
@@ -58,73 +59,92 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 }));
 
 const ImportDropzone = styled(
-  ({ className, folderId, path, refreshListing, onDrop }) => {
-    const { uploadFiles } = useGalleryActions();
-    const [over, setOver] = React.useState(0);
-    return (
-      <Card
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onDragEnter={(e) => {
-          e.preventDefault();
-          setOver((x) => x + 1);
-        }}
-        onDragLeave={(e) => {
-          e.preventDefault();
-          setOver((x) => x - 1);
-        }}
-        onDrop={doNotAwait(async (e) => {
-          onDrop();
-          setOver(0);
-          e.preventDefault();
-          e.stopPropagation();
-          const files = [];
+  //eslint-disable-next-line react/display-name
+  React.forwardRef(
+    (
+      {
+        className,
+        folderId,
+        path,
+        refreshListing,
+        onDrop,
+      }: {|
+        className: string,
+        folderId: FetchingData.Fetched<FolderId>,
+        path: $ReadOnlyArray<GalleryFile>,
+        refreshListing: () => void,
+        onDrop: () => void,
+      |},
+      ref
+    ) => {
+      const { uploadFiles } = useGalleryActions();
+      const [over, setOver] = React.useState(0);
+      return (
+        <Card
+          ref={ref}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            setOver((x) => x + 1);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setOver((x) => x - 1);
+          }}
+          onDrop={doNotAwait(async (e) => {
+            onDrop();
+            setOver(0);
+            e.preventDefault();
+            e.stopPropagation();
+            const files = [];
 
-          if (e.dataTransfer.items) {
-            // Use DataTransferItemList interface to access the file(s)
-            [...e.dataTransfer.items].forEach((item) => {
-              // If dropped items aren't files, reject them
-              if (item.kind === "file") {
-                files.push(item.getAsFile());
-              }
+            if (e.dataTransfer.items) {
+              // Use DataTransferItemList interface to access the file(s)
+              [...e.dataTransfer.items].forEach((item) => {
+                // If dropped items aren't files, reject them
+                if (item.kind === "file") {
+                  files.push(item.getAsFile());
+                }
+              });
+            } else {
+              // Use DataTransfer interface to access the file(s)
+              [...e.dataTransfer.files].forEach((file) => {
+                files.push(file);
+              });
+            }
+
+            const fId = FetchingData.getSuccessValue<FolderId>(
+              folderId
+            ).orElseGet(() => {
+              throw new Error("Unknown folder id");
             });
-          } else {
-            // Use DataTransfer interface to access the file(s)
-            [...e.dataTransfer.files].forEach((file) => {
-              files.push(file);
-            });
+            await uploadFiles(path, fId, files);
+            refreshListing();
+          })}
+          className={className}
+          sx={
+            over > 0
+              ? {
+                  borderColor: `hsl(${baseThemeColors.primary.hue}deg, 100%, 37%)`,
+                  backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, 50%, 90%)`,
+                  color: `hsl(${baseThemeColors.primary.hue}deg, 100%, 37%) !important`,
+                }
+              : {}
           }
-
-          const fId = FetchingData.getSuccessValue<FolderId>(
-            folderId
-          ).orElseGet(() => {
-            throw new Error("Unknown folder id");
-          });
-          await uploadFiles(path, fId, files);
-          refreshListing();
-        })}
-        className={className}
-        sx={
-          over > 0
-            ? {
-                borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%, 15%)`,
-                color: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%) !important`,
-              }
-            : {}
-        }
-      >
-        <ListItem disablePadding>
-          <ListItemIcon>
-            <UploadFileIcon />
-          </ListItemIcon>
-          <ListItemText primary="Drop here to upload" />
-        </ListItem>
-      </Card>
-    );
-  }
+        >
+          <ListItem disablePadding>
+            <ListItemIcon>
+              <UploadFileIcon />
+            </ListItemIcon>
+            <ListItemText primary="Drop here to upload" />
+          </ListItem>
+        </Card>
+      );
+    }
+  )
 )(({ theme }) => ({
   position: "absolute",
   bottom: 0,
@@ -974,6 +994,7 @@ export default function GalleryMainPanel({
       aria-live="polite"
       sx={{
         position: "relative",
+        overflowY: "hidden",
         ...(fileDragAndDrop > 0
           ? {
               borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
@@ -1134,7 +1155,12 @@ export default function GalleryMainPanel({
               })}
           </Grid>
         </Grid>
-        <Collapse in={fileDragAndDrop > 0}>
+        <Slide
+          direction="up"
+          in={fileDragAndDrop > 0}
+          mountOnEnter
+          unmountOnExit
+        >
           <ImportDropzone
             folderId={folderId}
             path={path}
@@ -1143,7 +1169,7 @@ export default function GalleryMainPanel({
               setFileDragAndDrop(0);
             }}
           />
-        </Collapse>
+        </Slide>
       </DndContext>
     </DialogContent>
   );
