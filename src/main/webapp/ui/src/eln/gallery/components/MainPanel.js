@@ -690,6 +690,17 @@ const FileCard = styled(
                 if (file.open) file.open();
                 else onClick(e);
               }}
+              onDragStart={(e) => {
+                /*
+                 * This prevents the user from accidentally dragging the
+                 * thumbnail image and uploading it by triggering the upload
+                 * file drag-and-drop when they mean to drag the FileCard as
+                 * part of the within-webpage drag-and-drop to move gallery
+                 * files into folders.
+                 */
+                e.preventDefault();
+                e.stopPropagation();
+              }}
               sx={{ height: "100%" }}
             >
               <Grid
