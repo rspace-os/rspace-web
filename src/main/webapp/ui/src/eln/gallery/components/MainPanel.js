@@ -59,10 +59,12 @@ const TreeItemContent = ({
   path,
   file,
   section,
+  draggingIds,
 }: {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
+  draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
 |}): Node => {
   const { galleryListing } = useGalleryListing({
     section,
@@ -85,6 +87,7 @@ const TreeItemContent = ({
               path={[...path, file]}
               section={section}
               key={f.id}
+              draggingIds={draggingIds}
             />
           ))
         : null,
@@ -204,11 +207,13 @@ const CustomTreeItem = ({
   index,
   path,
   section,
+  draggingIds,
 }: {|
   file: GalleryFile,
   index: number,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
+  draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
 |}) => {
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: file.id,
@@ -226,7 +231,9 @@ const CustomTreeItem = ({
   } = useDraggable({
     disabled: false,
     id: file.id,
+    data: { draggingIds },
   });
+  const dndContext = useDndContext();
 
   const dragStyle: { [string]: string | number } = transform
     ? {
@@ -244,6 +251,14 @@ const CustomTreeItem = ({
     : {
         border: "2px solid transparent",
       };
+  const inGroupBeingDraggedStyle: { [string]: string | number } =
+    (dndContext.active?.data.current?.draggingIds ?? []).includes(
+      `${file.id}`
+    ) && dndContext.active?.id !== file.id
+      ? {
+          opacity: 0.2,
+        }
+      : {};
 
   return (
     <Box
@@ -285,11 +300,17 @@ const CustomTreeItem = ({
         style={{
           ...dragStyle,
           ...dropStyle,
+          ...inGroupBeingDraggedStyle,
           borderRadius: "4px",
         }}
       >
         {/Folder/.test(file.type) && (
-          <TreeItemContent file={file} path={path} section={section} />
+          <TreeItemContent
+            file={file}
+            path={path}
+            section={section}
+            draggingIds={draggingIds}
+          />
         )}
       </TreeItem>
     </Box>
@@ -697,6 +718,7 @@ const TreeView = ({
           path={path}
           key={file.id}
           section={selectedSection}
+          draggingIds={selectedNodes}
         />
       ))}
     </SimpleTreeView>
