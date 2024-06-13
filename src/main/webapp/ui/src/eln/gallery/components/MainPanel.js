@@ -633,6 +633,65 @@ const FileCard = styled(
     : `hsl(${COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
 }));
 
+const TreeView = ({
+  listing,
+  path,
+  selectedSection,
+}: {|
+  listing:
+    | {| tag: "empty", reason: string |}
+    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
+  path: $ReadOnlyArray<GalleryFile>,
+  selectedSection: string,
+|}) => {
+  const [selectedNodes, setSelectedNodes] = React.useState<
+    $ReadOnlyArray<GalleryFile["id"]>
+  >([]);
+  const [expandedItems, setExpandedItems] = React.useState<
+    $ReadOnlyArray<GalleryFile["id"]>
+  >([]);
+
+  if (listing.tag === "empty")
+    return (
+      <div key={listing.reason}>
+        <Fade
+          in={true}
+          timeout={
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? 0
+              : 300
+          }
+        >
+          <div>
+            <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
+          </div>
+        </Fade>
+      </div>
+    );
+  return (
+    <SimpleTreeView
+      expandedItems={expandedItems}
+      onExpandedItemsChange={(_event, nodeIds) => {
+        setExpandedItems(nodeIds);
+      }}
+      selectedItems={selectedNodes}
+      onSelectedItemsChange={(_event, nodeIds) => {
+        setSelectedNodes(nodeIds);
+      }}
+    >
+      {listing.list.map((file, index) => (
+        <CustomTreeItem
+          index={index}
+          file={file}
+          path={path}
+          key={file.id}
+          section={selectedSection}
+        />
+      ))}
+    </SimpleTreeView>
+  );
+};
+
 const PlaceholderLabel = styled(({ children, className }) => (
   <Grid container className={className}>
     <Grid
@@ -686,12 +745,6 @@ export default function GalleryMainPanel({
 |}): Node {
   const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
   const { uploadFiles } = useGalleryActions();
-  const [selectedNodes, setSelectedNodes] = React.useState<
-    $ReadOnlyArray<GalleryFile["id"]>
-  >([]);
-  const [expandedItems, setExpandedItems] = React.useState<
-    $ReadOnlyArray<GalleryFile["id"]>
-  >([]);
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
   const { moveFilesWithIds } = useGalleryActions();
@@ -880,45 +933,13 @@ export default function GalleryMainPanel({
               FetchingData.match(galleryListing, {
                 loading: () => <></>,
                 error: (error) => <>{error}</>,
-                success: (listing) =>
-                  listing.tag === "list" ? (
-                    <SimpleTreeView
-                      expandedItems={expandedItems}
-                      onExpandedItemsChange={(_event, nodeIds) => {
-                        setExpandedItems(nodeIds);
-                      }}
-                      selectedItems={selectedNodes}
-                      onSelectedItemsChange={(_event, nodeIds) => {
-                        setSelectedNodes(nodeIds);
-                      }}
-                    >
-                      {listing.list.map((file, index) => (
-                        <CustomTreeItem
-                          index={index}
-                          file={file}
-                          path={path}
-                          key={file.id}
-                          section={selectedSection}
-                        />
-                      ))}
-                    </SimpleTreeView>
-                  ) : (
-                    <div key={listing.reason}>
-                      <Fade
-                        in={true}
-                        timeout={
-                          window.matchMedia("(prefers-reduced-motion: reduce)")
-                            .matches
-                            ? 0
-                            : 300
-                        }
-                      >
-                        <div>
-                          <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
-                        </div>
-                      </Fade>
-                    </div>
-                  ),
+                success: (listing) => (
+                  <TreeView
+                    listing={listing}
+                    path={path}
+                    selectedSection={selectedSection}
+                  />
+                ),
               })}
             {viewMode === "grid" &&
               FetchingData.match(galleryListing, {
