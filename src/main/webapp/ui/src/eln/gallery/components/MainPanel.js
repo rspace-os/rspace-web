@@ -675,8 +675,19 @@ const TreeView = ({
         setExpandedItems(nodeIds);
       }}
       selectedItems={selectedNodes}
-      onSelectedItemsChange={(_event, nodeIds) => {
-        setSelectedNodes(nodeIds);
+      onItemSelectionToggle={(event, itemId, selected) => {
+        if (event.shiftKey) return;
+        if (event.ctrlKey || event.metaKey) {
+          if (selected) {
+            setSelectedNodes([...selectedNodes, itemId]);
+          } else {
+            setSelectedNodes(selectedNodes.filter((x) => x !== itemId));
+          }
+        } else if (selected) {
+          setSelectedNodes([itemId]);
+        } else {
+          setSelectedNodes([]);
+        }
       }}
     >
       {listing.list.map((file, index) => (
