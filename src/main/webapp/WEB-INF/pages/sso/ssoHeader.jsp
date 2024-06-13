@@ -1,13 +1,15 @@
 <%@ include file="/common/taglibs.jsp" %>
 
 <script >
-    var ssoheader_rspaceUsername = '${sessionScope.userInfo.username}';
     var ssoheader_ssoUsername = '${sessionScope.remoteUserUsername}' || '${remoteUserUsername}';
+    var ssoheader_rspaceUsername = '${sessionScope.userInfo.username}';
+    var ssoheader_rspaceUsernameAlias = '${sessionScope.userInfo.usernameAlias}';
     var ssoheader_operateAs =  "${sessionScope['rs.IS_RUN_AS']}" == 'true';
 
     $(document).ready(function() {
         
-        var rspaceUserSameAsSsoUser = ssoheader_rspaceUsername == ssoheader_ssoUsername;
+        var rspaceUserSameAsSsoUser = (ssoheader_ssoUsername == ssoheader_rspaceUsername) ||
+            (ssoheader_rspaceUsernameAlias == ssoheader_ssoUsername);
         
         if (!rspaceUserSameAsSsoUser) {
             $('#ssoDifferentUserHeaderDiv').show();

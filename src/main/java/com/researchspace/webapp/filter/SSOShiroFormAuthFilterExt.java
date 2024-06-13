@@ -9,7 +9,6 @@ import java.io.IOException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.shiro.SecurityUtils;
@@ -70,8 +69,7 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
     /* RSPAC-2691: be careful with session creation if response is already committed */
     if (!response.isCommitted()) {
       /* RSPAC-2189: UI may want to know sso username in case it's different from current user's username */
-      HttpSession session = httpRequest.getSession();
-      session.setAttribute(REMOTE_USER_USERNAME_ATTR, remoteUser);
+      httpRequest.getSession().setAttribute(REMOTE_USER_USERNAME_ATTR, remoteUser);
     }
 
     if (isAdminLogin(request)) {

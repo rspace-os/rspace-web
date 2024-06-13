@@ -29,7 +29,7 @@ public class AdminLoginController extends BaseController {
       return "/sso/adminLoginUnavailable";
     }
 
-    String remoteUser = remoteUserPolicy.getRemoteUser((HttpServletRequest) request);
+    String remoteUser = remoteUserPolicy.getRemoteUser(request);
     // if remoteUser is unpopulated on request level, let's retrieve from session
     if (StringUtils.isBlank(remoteUser)) {
       remoteUser =
