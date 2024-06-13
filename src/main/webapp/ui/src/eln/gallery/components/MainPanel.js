@@ -58,7 +58,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 }));
 
 const ImportDropzone = styled(
-  ({ className, folderId, path, refreshListing }) => {
+  ({ className, folderId, path, refreshListing, onDrop }) => {
     const { uploadFiles } = useGalleryActions();
     const [over, setOver] = React.useState(0);
     return (
@@ -69,18 +69,17 @@ const ImportDropzone = styled(
         }}
         onDragEnter={(e) => {
           e.preventDefault();
-          e.stopPropagation();
           setOver((x) => x + 1);
         }}
         onDragLeave={(e) => {
           e.preventDefault();
-          e.stopPropagation();
           setOver((x) => x - 1);
         }}
         onDrop={doNotAwait(async (e) => {
+          onDrop();
+          setOver(0);
           e.preventDefault();
           e.stopPropagation();
-          setOver(0);
           const files = [];
 
           if (e.dataTransfer.items) {
@@ -1140,6 +1139,9 @@ export default function GalleryMainPanel({
             folderId={folderId}
             path={path}
             refreshListing={refreshListing}
+            onDrop={() => {
+              setFileDragAndDrop(0);
+            }}
           />
         </Collapse>
       </DndContext>
