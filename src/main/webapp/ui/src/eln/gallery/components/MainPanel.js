@@ -307,6 +307,25 @@ const GridView = observer(
     // $FlowExpectedError[prop-missing] Difficult to get this library type right
     const selectedFiles = useLocalObservable(() => observable.set([]));
 
+    /*
+     * When shift-clicking, all of the items in the grid between the tapped
+     * item and the last item to be tapped without shift being held should be
+     * selected. This coordinate is that last item to be tapped without shift.
+     */
+    const [shiftSelectCoord, setShiftSelectCoord] = React.useState<null | {|
+      x: number,
+      y: number,
+    |}>(null);
+    const viewportDimensions = useViewportDimensions();
+    const cardWidth = {
+      xs: 6,
+      sm: 4,
+      md: 3,
+      lg: 2,
+      xl: 2,
+    };
+    const cols = 12 / cardWidth[viewportDimensions.viewportSize];
+
     if (listing.tag === "empty")
       return (
         <div key={listing.reason}>
@@ -333,8 +352,31 @@ const GridView = observer(
             key={file.id}
             index={index}
             onClick={(e) => {
-              if (e.shiftKey) return;
-              if (e.ctrlKey || e.metaKey) {
+              if (e.shiftKey) {
+                if (!shiftSelectCoord) return;
+                const tappedCoord = {
+                  x: index % cols,
+                  y: Math.floor(index / cols),
+                };
+                const toSelect = listing.list.filter((_file, i) => {
+                  const coord = {
+                    x: i % cols,
+                    y: Math.floor(i / cols),
+                  };
+                  return (
+                    coord.x >= Math.min(tappedCoord.x, shiftSelectCoord.x) &&
+                    coord.x <= Math.max(tappedCoord.x, shiftSelectCoord.x) &&
+                    coord.y >= Math.min(tappedCoord.y, shiftSelectCoord.y) &&
+                    coord.y <= Math.max(tappedCoord.y, shiftSelectCoord.y)
+                  );
+                });
+                runInAction(() => {
+                  selectedFiles.clear();
+                  toSelect.forEach(({ id }) => {
+                    selectedFiles.add(id);
+                  });
+                });
+              } else if (e.ctrlKey || e.metaKey) {
                 if (selectedFiles.has(file.id)) {
                   runInAction(() => {
                     selectedFiles.delete(file.id);
@@ -348,6 +390,10 @@ const GridView = observer(
                 runInAction(() => {
                   selectedFiles.clear();
                   selectedFiles.add(file.id);
+                });
+                setShiftSelectCoord({
+                  x: index % cols,
+                  y: Math.floor(index / cols),
                 });
               }
             }}
