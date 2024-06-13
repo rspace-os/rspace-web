@@ -1041,7 +1041,10 @@ export default function GalleryMainPanel({
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
-      delay: 0,
+      /*
+       * This is necessary otherwise tapping gets registered as dragging
+       */
+      delay: 500,
       tolerance: 5,
     },
   });
