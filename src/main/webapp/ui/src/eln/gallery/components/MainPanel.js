@@ -370,10 +370,10 @@ const CustomTreeItem = ({
 
   const dragStyle: { [string]: string | number } = transform
     ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
         zIndex: 1, // just needs to be rendered above Nodes later in the DOM
         position: "relative",
-        boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
+        boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
         maxWidth: "max-content",
       }
     : {};
@@ -382,7 +382,7 @@ const CustomTreeItem = ({
         border: `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
       }
     : {
-        border: "2px solid transparent",
+        border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
       };
   const inGroupBeingDraggedStyle: { [string]: string | number } =
     (dndContext.active?.data.current?.draggingIds ?? []).includes(
@@ -638,10 +638,10 @@ const FileCard = styled(
 
     const dragStyle: { [string]: string | number } = transform
       ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+          transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
           zIndex: 1, // just needs to be rendered above Nodes later in the DOM
           position: "relative",
-          boxShadow: `hsl(0deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
+          boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
         }
       : {};
     const dropStyle: { [string]: string | number } = isOver
@@ -653,7 +653,7 @@ const FileCard = styled(
       (dndContext.active?.data.current?.draggingIds ?? []).includes(file.id) &&
       dndContext.active?.id !== file.id
         ? {
-            opacity: 0,
+            opacity: 0.2,
           }
         : {};
     const fileUploadDropping: { [string]: string | number } = over
