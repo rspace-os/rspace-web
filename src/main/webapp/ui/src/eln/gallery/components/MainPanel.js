@@ -697,6 +697,15 @@ const TreeView = ({
       }}
       selectedItems={selectedNodes}
       onItemSelectionToggle={(event, itemId, selected) => {
+        /*
+         * It's not possible for us to support shift-clicking in tree view
+         * because there's no data structure we can query to find a range of
+         * adjacent nodes. There's simply no way for us to get the itemIds of
+         * the nodes between two selected nodes; even more so if the user were
+         * to attempt to select nodes are different levels of the hierarchy.
+         * SimpleTreeView does have a multiSelect mode but attempting to use it
+         * just results in console errors.
+         */
         if (event.shiftKey) return;
         if (event.ctrlKey || event.metaKey) {
           if (selected) {
