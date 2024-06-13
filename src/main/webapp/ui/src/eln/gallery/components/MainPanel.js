@@ -1077,8 +1077,13 @@ export default function GalleryMainPanel({
         sensors={[mouseSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
+          const idsOfSelectedFiles =
+            event.active?.data.current?.draggingIds ?? [];
+          const idOfFileJustBeingDragged = event.active.id;
           void moveFilesWithIds(
-            event.active?.data.current?.draggingIds ?? [event.active.id]
+            idsOfSelectedFiles.length > 0
+              ? idsOfSelectedFiles
+              : [idOfFileJustBeingDragged]
           )
             .to({
               target: `/${[
