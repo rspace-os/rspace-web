@@ -35,11 +35,7 @@ import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuIte
 import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
 import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
 import NewMenuItem from "./NewMenuItem";
-import {
-  useGalleryActions,
-  type GalleryFile,
-  type FolderId,
-} from "../useGallery";
+import { useGalleryActions, type GalleryFile, type Id } from "../useGallery";
 import * as FetchingData from "../../../util/fetchingData";
 import Dialog from "@mui/material/Dialog";
 import TextField from "@mui/material/TextField";
@@ -121,7 +117,7 @@ const UploadMenuItem = ({
   onUploadComplete,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
-  folderId: FolderId,
+  folderId: Id,
   onUploadComplete: () => void,
 |}) => {
   const { uploadFiles } = useGalleryActions();
@@ -163,7 +159,7 @@ const NewFolderMenuItem = ({
   onDialogClose,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
-  folderId: FolderId,
+  folderId: Id,
   onDialogClose: (boolean) => void,
 |}) => {
   const [open, setOpen] = React.useState(false);
@@ -363,7 +359,7 @@ export default function GallerySidebar({
   setSelectedSection: (string) => void,
   drawerOpen: boolean,
   path: $ReadOnlyArray<GalleryFile>,
-  folderId: FetchingData.Fetched<FolderId>,
+  folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
 |}): Node {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =

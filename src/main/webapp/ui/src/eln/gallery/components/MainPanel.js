@@ -20,7 +20,8 @@ import {
   useGalleryListing,
   useGalleryActions,
   type GalleryFile,
-  type FolderId,
+  type Id,
+  idToString,
 } from "../useGallery";
 import { doNotAwait } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -70,7 +71,7 @@ const ImportDropzone = styled(
         onDrop,
       }: {|
         className: string,
-        folderId: FetchingData.Fetched<FolderId>,
+        folderId: FetchingData.Fetched<Id>,
         path: $ReadOnlyArray<GalleryFile>,
         refreshListing: () => void,
         onDrop: () => void,
@@ -116,11 +117,11 @@ const ImportDropzone = styled(
               });
             }
 
-            const fId = FetchingData.getSuccessValue<FolderId>(
-              folderId
-            ).orElseGet(() => {
-              throw new Error("Unknown folder id");
-            });
+            const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(
+              () => {
+                throw new Error("Unknown folder id");
+              }
+            );
             await uploadFiles(path, fId, files);
             refreshListing();
           })}
@@ -211,7 +212,7 @@ const TreeItemContent = ({
               index={i}
               path={[...path, file]}
               section={section}
-              key={f.id}
+              key={idToString(f.id)}
               draggingIds={draggingIds}
             />
           ))
@@ -340,6 +341,8 @@ const CustomTreeItem = ({
   section: string,
   draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
 |}) => {
+  const { uploadFiles } = useGalleryActions();
+  const [over, setOver] = React.useState(0);
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: file.id,
     disabled: !/Folder/.test(file.type),
@@ -378,12 +381,17 @@ const CustomTreeItem = ({
       };
   const inGroupBeingDraggedStyle: { [string]: string | number } =
     (dndContext.active?.data.current?.draggingIds ?? []).includes(
-      `${file.id}`
+      idToString(file.id)
     ) && dndContext.active?.id !== file.id
       ? {
           opacity: 0.2,
         }
       : {};
+  const fileUploadDropping: { [string]: string | number } = over
+    ? {
+        borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+      }
+    : {};
 
   return (
     <Box
@@ -392,7 +400,7 @@ const CustomTreeItem = ({
       }}
     >
       <TreeItem
-        itemId={`${file.id}`}
+        itemId={idToString(file.id)}
         label={
           <Box sx={{ display: "flex" }}>
             <Avatar
@@ -416,6 +424,54 @@ const CustomTreeItem = ({
           </Box>
         }
         slots={{ groupTransition: CustomTransition }}
+        /*
+         * These are for dragging files from outside the browser
+         */
+        onDrop={doNotAwait(async (e) => {
+          setOver(0);
+          e.preventDefault();
+          e.stopPropagation();
+          const files = [];
+
+          if (e.dataTransfer.items) {
+            // Use DataTransferItemList interface to access the file(s)
+            [...e.dataTransfer.items].forEach((item) => {
+              // If dropped items aren't files, reject them
+              if (item.kind === "file") {
+                files.push(item.getAsFile());
+              }
+            });
+          } else {
+            // Use DataTransfer interface to access the file(s)
+            [...e.dataTransfer.files].forEach((f) => {
+              files.push(f);
+            });
+          }
+
+          await uploadFiles(file.path, file.id, files);
+          /*
+           * No need to refresh the listing as the uploaded file has been
+           * placed inside a folder into which the user cannot currently
+           * see
+           */
+        })}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (/Folder/.test(file.type)) setOver((x) => x + 1);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (/Folder/.test(file.type)) setOver((x) => x - 1);
+        }}
+        /*
+         * These are for dragging files between folders within the gallery
+         */
         ref={(node) => {
           setDropRef(node);
           setDragRef(node);
@@ -426,6 +482,7 @@ const CustomTreeItem = ({
           ...dragStyle,
           ...dropStyle,
           ...inGroupBeingDraggedStyle,
+          ...fileUploadDropping,
           borderRadius: "4px",
         }}
       >
@@ -495,7 +552,7 @@ const GridView = observer(
           <FileCard
             selected={selectedFiles.has(file.id)}
             file={file}
-            key={file.id}
+            key={idToString(file.id)}
             index={index}
             onClick={(e) => {
               if (e.shiftKey) {
@@ -917,7 +974,7 @@ const TreeView = ({
           index={index}
           file={file}
           path={path}
-          key={file.id}
+          key={idToString(file.id)}
           section={selectedSection}
           draggingIds={selectedNodes}
         />
@@ -974,7 +1031,7 @@ export default function GalleryMainPanel({
   >,
   selectedFile: null | GalleryFile,
   setSelectedFile: (null | GalleryFile) => void,
-  folderId: FetchingData.Fetched<FolderId>,
+  folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
 |}): Node {
   const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
@@ -1081,7 +1138,7 @@ export default function GalleryMainPanel({
                 {path.map((folder) => (
                   <Breadcrumb
                     label={folder.name}
-                    key={folder.id}
+                    key={idToString(folder.id)}
                     onClick={() => folder.open?.()}
                     folderName={folder.name}
                     path={folder.path}

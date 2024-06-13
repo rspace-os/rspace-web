@@ -9,10 +9,13 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
 import { gallerySectionCollectiveNoun } from "./common";
 
-export opaque type FolderId = number;
+export opaque type Id = number;
+export function idToString(id: Id): string {
+  return `${id}`;
+}
 
 export type GalleryFile = {|
-  id: number,
+  id: Id,
   name: string,
   modificationDate: number,
   type: string,
@@ -154,7 +157,7 @@ export function useGalleryListing({
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
-  folderId: FetchingData.Fetched<FolderId>,
+  folderId: FetchingData.Fetched<Id>,
 |} {
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
@@ -164,9 +167,7 @@ export function useGalleryListing({
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
     defaultPath ?? []
   );
-  const [parentId, setParentId] = React.useState<Result<FolderId>>(
-    Result.Error([])
-  );
+  const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([]));
 
   function emptyReason(): string {
     if (path.length > 0) {
@@ -351,14 +352,10 @@ export function useGalleryListing({
 export function useGalleryActions(): {|
   uploadFiles: (
     $ReadOnlyArray<GalleryFile>,
-    FolderId,
+    Id,
     $ReadOnlyArray<File>
   ) => Promise<void>,
-  createFolder: (
-    $ReadOnlyArray<GalleryFile>,
-    FolderId,
-    string
-  ) => Promise<void>,
+  createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
   moveFilesWithIds: ($ReadOnlyArray<number>) => {|
     to: ({|
       target: string,
