@@ -23,7 +23,6 @@ import {
   type FolderId,
 } from "../useGallery";
 import { doNotAwait } from "../../../util/Util";
-import Backdrop from "@mui/material/Backdrop";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
@@ -42,6 +41,9 @@ import Menu from "@mui/material/Menu";
 import Box from "@mui/material/Box";
 import NewMenuItem from "./NewMenuItem";
 import Collapse from "@mui/material/Collapse";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import { observable, runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 
@@ -52,6 +54,110 @@ const StyledMenu = styled(Menu)(({ open }) => ({
           transform: "translate(0px, 4px) !important",
         }
       : {}),
+  },
+}));
+
+const ImportDropzone = styled(
+  ({ className, folderId, path, refreshListing }) => {
+    const { uploadFiles } = useGalleryActions();
+    const [over, setOver] = React.useState(0);
+    return (
+      <Card
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOver((x) => x + 1);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOver((x) => x - 1);
+        }}
+        onDrop={doNotAwait(async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOver(0);
+          const files = [];
+
+          if (e.dataTransfer.items) {
+            // Use DataTransferItemList interface to access the file(s)
+            [...e.dataTransfer.items].forEach((item) => {
+              // If dropped items aren't files, reject them
+              if (item.kind === "file") {
+                files.push(item.getAsFile());
+              }
+            });
+          } else {
+            // Use DataTransfer interface to access the file(s)
+            [...e.dataTransfer.files].forEach((file) => {
+              files.push(file);
+            });
+          }
+
+          const fId = FetchingData.getSuccessValue<FolderId>(
+            folderId
+          ).orElseGet(() => {
+            throw new Error("Unknown folder id");
+          });
+          await uploadFiles(path, fId, files);
+          refreshListing();
+        })}
+        className={className}
+        sx={
+          over > 0
+            ? {
+                borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%, 15%)`,
+                color: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%) !important`,
+              }
+            : {}
+        }
+      >
+        <ListItem disablePadding>
+          <ListItemIcon>
+            <UploadFileIcon />
+          </ListItemIcon>
+          <ListItemText primary="Drop here to upload" />
+        </ListItem>
+      </Card>
+    );
+  }
+)(({ theme }) => ({
+  position: "absolute",
+  bottom: 0,
+  height: "100px",
+  left: 0,
+  right: 0,
+  borderRadius: 0,
+  borderLeft: "none",
+  borderRight: "none",
+  borderBottom: "none",
+  textAlign: "center",
+  fontSize: "2em",
+  verticalAlign: "middle",
+  letterSpacing: "0.03em",
+  color: theme.palette.primary.saturated,
+  padding: "20px",
+  "& .MuiListItem-root": {
+    marginLeft: "auto",
+    marginRight: "auto",
+    width: "max-content",
+  },
+  "& .MuiListItemIcon-root": {
+    color: "inherit",
+  },
+  "& .MuiSvgIcon-root": {
+    width: "2em",
+    height: "2em",
+    color: "inherit",
+  },
+  "& .MuiListItemText-primary": {
+    fontSize: "2rem",
+    color: "inherit",
   },
 }));
 
@@ -428,6 +534,8 @@ const GridView = observer(
 
 const FileCard = styled(
   ({ file, className, selected, index, onClick, draggingIds }) => {
+    const { uploadFiles } = useGalleryActions();
+    const [over, setOver] = React.useState(0);
     const { setNodeRef: setDropRef, isOver } = useDroppable({
       id: file.id,
       disabled: !/Folder/.test(file.type),
@@ -470,6 +578,11 @@ const FileCard = styled(
             opacity: 0,
           }
         : {};
+    const fileUploadDropping: { [string]: string | number } = over
+      ? {
+          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        }
+      : {};
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
@@ -509,6 +622,54 @@ const FileCard = styled(
           <Card
             elevation={0}
             className={className}
+            /*
+             * These are for dragging files from outside the browser
+             */
+            onDrop={doNotAwait(async (e) => {
+              setOver(0);
+              e.preventDefault();
+              e.stopPropagation();
+              const files = [];
+
+              if (e.dataTransfer.items) {
+                // Use DataTransferItemList interface to access the file(s)
+                [...e.dataTransfer.items].forEach((item) => {
+                  // If dropped items aren't files, reject them
+                  if (item.kind === "file") {
+                    files.push(item.getAsFile());
+                  }
+                });
+              } else {
+                // Use DataTransfer interface to access the file(s)
+                [...e.dataTransfer.files].forEach((f) => {
+                  files.push(f);
+                });
+              }
+
+              await uploadFiles(file.path, file.id, files);
+              /*
+               * No need to refresh the listing as the uploaded file has been
+               * placed inside a folder into which the user cannot currently
+               * see
+               */
+            })}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (/Folder/.test(file.type)) setOver((x) => x + 1);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (/Folder/.test(file.type)) setOver((x) => x - 1);
+            }}
+            /*
+             * These are for dragging files between folders within the gallery
+             */
             ref={(node) => {
               setDropRef(node);
               setDragRef(node);
@@ -519,6 +680,7 @@ const FileCard = styled(
               ...dragStyle,
               ...dropStyle,
               ...inGroupBeingDraggedStyle,
+              ...fileUploadDropping,
             }}
           >
             <CardActionArea
@@ -786,7 +948,6 @@ export default function GalleryMainPanel({
   refreshListing: () => void,
 |}): Node {
   const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
-  const { uploadFiles } = useGalleryActions();
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
   const { moveFilesWithIds } = useGalleryActions();
@@ -802,7 +963,6 @@ export default function GalleryMainPanel({
     <DialogContent
       aria-live="polite"
       sx={{
-        border: "4px solid transparent",
         position: "relative",
         ...(fileDragAndDrop > 0
           ? {
@@ -810,33 +970,6 @@ export default function GalleryMainPanel({
             }
           : {}),
       }}
-      onDrop={doNotAwait(async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setFileDragAndDrop(0);
-        const files = [];
-
-        if (e.dataTransfer.items) {
-          // Use DataTransferItemList interface to access the file(s)
-          [...e.dataTransfer.items].forEach((item) => {
-            // If dropped items aren't files, reject them
-            if (item.kind === "file") {
-              files.push(item.getAsFile());
-            }
-          });
-        } else {
-          // Use DataTransfer interface to access the file(s)
-          [...e.dataTransfer.files].forEach((file) => {
-            files.push(file);
-          });
-        }
-
-        const fId = FetchingData.getSuccessValue(folderId).orElseGet(() => {
-          throw new Error("Unknown folder id");
-        });
-        await uploadFiles(path, fId, files);
-        refreshListing();
-      })}
       onDragOver={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -991,18 +1124,13 @@ export default function GalleryMainPanel({
               })}
           </Grid>
         </Grid>
-        <Backdrop
-          open={fileDragAndDrop > 0}
-          sx={{
-            position: "absolute",
-            backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, 85%, 11%, 50%)`,
-            color: "white",
-            fontSize: "3em",
-          }}
-        >
-          <UploadFileIcon fontSize="3em" />
-          Drop to upload
-        </Backdrop>
+        <Collapse in={fileDragAndDrop > 0}>
+          <ImportDropzone
+            folderId={folderId}
+            path={path}
+            refreshListing={refreshListing}
+          />
+        </Collapse>
       </DndContext>
     </DialogContent>
   );
