@@ -186,11 +186,13 @@ const TreeItemContent = ({
   file,
   section,
   draggingIds,
+  refreshListing,
 }: {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
   draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
+  refreshListing: () => void,
 |}): Node => {
   const { galleryListing } = useGalleryListing({
     section,
@@ -214,6 +216,7 @@ const TreeItemContent = ({
               section={section}
               key={idToString(f.id)}
               draggingIds={draggingIds}
+              refreshListing={refreshListing}
             />
           ))
         : null,
@@ -334,12 +337,14 @@ const CustomTreeItem = ({
   path,
   section,
   draggingIds,
+  refreshListing,
 }: {|
   file: GalleryFile,
   index: number,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
   draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
+  refreshListing: () => void,
 |}) => {
   const { uploadFiles } = useGalleryActions();
   const [over, setOver] = React.useState(0);
@@ -449,11 +454,7 @@ const CustomTreeItem = ({
           }
 
           await uploadFiles(file.path, file.id, files);
-          /*
-           * No need to refresh the listing as the uploaded file has been
-           * placed inside a folder into which the user cannot currently
-           * see
-           */
+          refreshListing();
         })}
         onDragOver={(e) => {
           e.preventDefault();
@@ -492,6 +493,7 @@ const CustomTreeItem = ({
             path={path}
             section={section}
             draggingIds={draggingIds}
+            refreshListing={refreshListing}
           />
         )}
       </TreeItem>
@@ -907,12 +909,14 @@ const TreeView = ({
   listing,
   path,
   selectedSection,
+  refreshListing,
 }: {|
   listing:
     | {| tag: "empty", reason: string |}
     | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: string,
+  refreshListing: () => void,
 |}) => {
   const [selectedNodes, setSelectedNodes] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
@@ -977,6 +981,7 @@ const TreeView = ({
           key={idToString(file.id)}
           section={selectedSection}
           draggingIds={selectedNodes}
+          refreshListing={refreshListing}
         />
       ))}
     </SimpleTreeView>
@@ -1209,6 +1214,7 @@ export default function GalleryMainPanel({
                     listing={listing}
                     path={path}
                     selectedSection={selectedSection}
+                    refreshListing={refreshListing}
                   />
                 ),
               })}
