@@ -678,6 +678,16 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>snapgene-client</artifactId>
       <version>0.2.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.jayway.jsonpath</groupId>
+          <artifactId>json-path</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
