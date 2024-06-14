@@ -420,7 +420,20 @@ const CustomTreeItem = ({
       <TreeItem
         itemId={idToString(file.id)}
         label={
-          <Box sx={{ display: "flex" }}>
+          <Box
+            sx={{ display: "flex" }}
+            onDragStart={(e) => {
+              /*
+               * This prevents the user from accidentally dragging the
+               * thumbnail image and uploading it by triggering the upload file
+               * drag-and-drop when they mean to drag the TreeItem as part of
+               * the within-webpage drag-and-drop to move gallery files into
+               * folders.
+               */
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             <Avatar
               src={file.thumbnailUrl}
               imgProps={{
