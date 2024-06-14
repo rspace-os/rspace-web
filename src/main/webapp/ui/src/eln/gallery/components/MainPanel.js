@@ -574,6 +574,12 @@ const GridView = observer(
      */
     const [tabIndexCoord, setTabIndexCoord] = React.useState({ x: 0, y: 0 });
 
+    const focusFileCardRef = React.useRef(null);
+    const [hasFocus, setHasFocus] = React.useState(false);
+    React.useEffect(() => {
+      if (hasFocus) focusFileCardRef.current?.focus();
+    }, [tabIndexCoord]);
+
     if (listing.tag === "empty")
       return (
         <div key={listing.reason}>
@@ -646,6 +652,18 @@ const GridView = observer(
       >
         {listing.list.map((file, index) => (
           <FileCard
+            ref={
+              index % cols === tabIndexCoord.x &&
+              Math.floor(index / cols) === tabIndexCoord.y
+                ? focusFileCardRef
+                : null
+            }
+            onFocus={() => {
+              setHasFocus(true);
+            }}
+            onBlur={() => {
+              setHasFocus(false);
+            }}
             selected={selectedFiles.has(file.id)}
             file={file}
             key={idToString(file.id)}
@@ -712,312 +730,335 @@ const GridView = observer(
 );
 
 const FileCard = styled(
-  ({
-    file,
-    className,
-    selected,
-    index,
-    onClick,
-    draggingIds,
-    setFileDragAndDrop,
-    tabIndex,
-  }) => {
-    const { uploadFiles } = useGalleryActions();
-    const [over, setOver] = React.useState(0);
-    const { setNodeRef: setDropRef, isOver } = useDroppable({
-      id: file.id,
-      disabled: !/Folder/.test(file.type),
-      data: {
-        path: file.path,
-        name: file.name,
-      },
-    });
-    const {
-      attributes,
-      listeners,
-      setNodeRef: setDragRef,
-      transform,
-    } = useDraggable({
-      disabled: false,
-      id: file.id,
-      data: {
-        /*
-         * If this `file` is one of the selected files (i.e. is in
-         * `draggingIds`) then all of the selected files are to be moved by the
-         * drag operation. If it is not included then just move this file.
-         */
-        draggingIds: draggingIds.includes(file.id) ? draggingIds : [],
-      },
-    });
-    const dndContext = useDndContext();
+  //eslint-disable-next-line react/display-name
+  React.forwardRef(
+    (
+      {
+        file,
+        className,
+        selected,
+        index,
+        onClick,
+        draggingIds,
+        setFileDragAndDrop,
+        tabIndex,
+        onFocus,
+        onBlur,
+      }: {|
+        file: GalleryFile,
+        className: string,
+        selected: boolean,
+        index: number,
+        onClick: (Event) => void,
+        draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
+        setFileDragAndDrop: UseStateSetter<number>,
+        tabIndex: number,
+        onFocus: () => void,
+        onBlur: () => void,
+      |},
+      ref
+    ) => {
+      const { uploadFiles } = useGalleryActions();
+      const [over, setOver] = React.useState(0);
+      const { setNodeRef: setDropRef, isOver } = useDroppable({
+        id: file.id,
+        disabled: !/Folder/.test(file.type),
+        data: {
+          path: file.path,
+          name: file.name,
+        },
+      });
+      const {
+        attributes,
+        listeners,
+        setNodeRef: setDragRef,
+        transform,
+      } = useDraggable({
+        disabled: false,
+        id: file.id,
+        data: {
+          /*
+           * If this `file` is one of the selected files (i.e. is in
+           * `draggingIds`) then all of the selected files are to be moved by the
+           * drag operation. If it is not included then just move this file.
+           */
+          draggingIds: draggingIds.includes(file.id) ? draggingIds : [],
+        },
+      });
+      const dndContext = useDndContext();
 
-    const dragStyle: { [string]: string | number } = transform
-      ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
-          zIndex: 1, // just needs to be rendered above Nodes later in the DOM
-          position: "relative",
-          boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
-        }
-      : {};
-    const dropStyle: { [string]: string | number } = isOver
-      ? {
-          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-        }
-      : {};
-    const inGroupBeingDraggedStyle: { [string]: string | number } =
-      (dndContext.active?.data.current?.draggingIds ?? []).includes(file.id) &&
-      dndContext.active?.id !== file.id
+      const dragStyle: { [string]: string | number } = transform
         ? {
-            opacity: 0.2,
+            transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
+            zIndex: 1, // just needs to be rendered above Nodes later in the DOM
+            position: "relative",
+            boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
           }
         : {};
-    const fileUploadDropping: { [string]: string | number } = over
-      ? {
-          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-        }
-      : {};
+      const dropStyle: { [string]: string | number } = isOver
+        ? {
+            borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+          }
+        : {};
+      const inGroupBeingDraggedStyle: { [string]: string | number } =
+        (dndContext.active?.data.current?.draggingIds ?? []).includes(
+          file.id
+        ) && dndContext.active?.id !== file.id
+          ? {
+              opacity: 0.2,
+            }
+          : {};
+      const fileUploadDropping: { [string]: string | number } = over
+        ? {
+            borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+          }
+        : {};
 
-    const viewportDimensions = useViewportDimensions();
-    const cardWidth = {
-      xs: 6,
-      sm: 4,
-      md: 3,
-      lg: 2,
-      xl: 2,
-    };
+      const viewportDimensions = useViewportDimensions();
+      const cardWidth = {
+        xs: 6,
+        sm: 4,
+        md: 3,
+        lg: 2,
+        xl: 2,
+      };
 
-    return (
-      <Fade
-        in={true}
-        timeout={
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? 0
-            : 400
-        }
-      >
-        <Grid
-          item
-          {...cardWidth}
-          sx={{
-            /*
-             * This way, the animation takes the same amount of time (36ms) for
-             * each row of cards
-             */
-            transitionDelay: window.matchMedia(
-              "(prefers-reduced-motion: reduce)"
-            ).matches
-              ? "0s"
-              : `${
-                  (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
-                }ms !important`,
-          }}
+      return (
+        <Fade
+          in={true}
+          timeout={
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? 0
+              : 400
+          }
         >
-          <Card
-            elevation={0}
-            className={className}
-            /*
-             * These are for dragging files from outside the browser
-             */
-            onDrop={doNotAwait(async (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setOver(0);
-              setFileDragAndDrop(0);
-
-              if (!/Folder/.test(file.type)) return;
-
-              const files = [];
-              if (e.dataTransfer.items) {
-                // Use DataTransferItemList interface to access the file(s)
-                [...e.dataTransfer.items].forEach((item) => {
-                  // If dropped items aren't files, reject them
-                  if (item.kind === "file") {
-                    files.push(item.getAsFile());
-                  }
-                });
-              } else {
-                // Use DataTransfer interface to access the file(s)
-                [...e.dataTransfer.files].forEach((f) => {
-                  files.push(f);
-                });
-              }
-
-              await uploadFiles(file.path, file.id, files);
+          <Grid
+            item
+            {...cardWidth}
+            sx={{
               /*
-               * No need to refresh the listing as the uploaded file has been
-               * placed inside a folder into which the user cannot currently
-               * see
+               * This way, the animation takes the same amount of time (36ms) for
+               * each row of cards
                */
-            })}
-            onDragOver={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onDragEnter={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (/Folder/.test(file.type)) setOver((x) => x + 1);
-              else setFileDragAndDrop((x) => x + 1);
-            }}
-            onDragLeave={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (/Folder/.test(file.type)) setOver((x) => x - 1);
-              else setFileDragAndDrop((x) => x - 1);
-            }}
-            /*
-             * These are for dragging files between folders within the gallery
-             */
-            ref={(node) => {
-              setDropRef(node);
-              setDragRef(node);
-            }}
-            {...listeners}
-            {...attributes}
-            tabIndex={tabIndex}
-            style={{
-              ...dragStyle,
-              ...dropStyle,
-              ...inGroupBeingDraggedStyle,
-              ...fileUploadDropping,
-              /*
-               * We don't need the outline as the selected styles will indicate
-               * which item has focus
-               */
-              outline: "none",
-            }}
-            onKeyDown={(e) => {
-              if (e.key === " ") {
-                if (file.open) file.open();
-                else onClick(e);
-              }
+              transitionDelay: window.matchMedia(
+                "(prefers-reduced-motion: reduce)"
+              ).matches
+                ? "0s"
+                : `${
+                    (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
+                  }ms !important`,
             }}
           >
-            <CardActionArea
-              role={file.open ? "button" : "radio"}
-              aria-checked={selected}
-              tabIndex={-1}
-              onClick={(e) => {
-                if (file.open) file.open();
-                else onClick(e);
-              }}
-              onDragStart={(e) => {
+            <Card
+              elevation={0}
+              className={className}
+              /*
+               * These are for dragging files from outside the browser
+               */
+              onDrop={doNotAwait(async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setOver(0);
+                setFileDragAndDrop(0);
+
+                if (!/Folder/.test(file.type)) return;
+
+                const files = [];
+                if (e.dataTransfer.items) {
+                  // Use DataTransferItemList interface to access the file(s)
+                  [...e.dataTransfer.items].forEach((item) => {
+                    // If dropped items aren't files, reject them
+                    if (item.kind === "file") {
+                      files.push(item.getAsFile());
+                    }
+                  });
+                } else {
+                  // Use DataTransfer interface to access the file(s)
+                  [...e.dataTransfer.files].forEach((f) => {
+                    files.push(f);
+                  });
+                }
+
+                await uploadFiles(file.path, file.id, files);
                 /*
-                 * This prevents the user from accidentally dragging the
-                 * thumbnail image and uploading it by triggering the upload
-                 * file drag-and-drop when they mean to drag the FileCard as
-                 * part of the within-webpage drag-and-drop to move gallery
-                 * files into folders.
+                 * No need to refresh the listing as the uploaded file has been
+                 * placed inside a folder into which the user cannot currently
+                 * see
                  */
+              })}
+              onDragOver={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
               }}
-              sx={{ height: "100%" }}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (/Folder/.test(file.type)) setOver((x) => x + 1);
+                else setFileDragAndDrop((x) => x + 1);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (/Folder/.test(file.type)) setOver((x) => x - 1);
+                else setFileDragAndDrop((x) => x - 1);
+              }}
+              /*
+               * These are for dragging files between folders within the gallery
+               */
+              ref={(node) => {
+                setDropRef(node);
+                setDragRef(node);
+                // $FlowExpectedError[prop-missing]
+                if (ref) ref.current = node;
+              }}
+              {...listeners}
+              {...attributes}
+              tabIndex={tabIndex}
+              onFocus={onFocus}
+              onBlur={onBlur}
+              style={{
+                ...dragStyle,
+                ...dropStyle,
+                ...inGroupBeingDraggedStyle,
+                ...fileUploadDropping,
+                /*
+                 * We don't need the outline as the selected styles will indicate
+                 * which item has focus
+                 */
+                outline: "none",
+              }}
+              onKeyDown={(e) => {
+                if (e.key === " ") {
+                  if (file.open) file.open();
+                }
+              }}
             >
-              <Grid
-                container
-                direction="column"
-                height="100%"
-                flexWrap="nowrap"
+              <CardActionArea
+                role={file.open ? "button" : "radio"}
+                aria-checked={selected}
+                tabIndex={-1}
+                onClick={(e) => {
+                  if (file.open) file.open();
+                  else onClick(e);
+                }}
+                onDragStart={(e) => {
+                  /*
+                   * This prevents the user from accidentally dragging the
+                   * thumbnail image and uploading it by triggering the upload
+                   * file drag-and-drop when they mean to drag the FileCard as
+                   * part of the within-webpage drag-and-drop to move gallery
+                   * files into folders.
+                   */
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                sx={{ height: "100%" }}
               >
                 <Grid
-                  item
-                  sx={{
-                    flexShrink: 0,
-                    padding: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "calc(100% - 9999999px)",
-                    flexDirection: "column",
-                    flexGrow: 1,
-                  }}
-                >
-                  <Avatar
-                    src={file.thumbnailUrl}
-                    imgProps={{
-                      role: "presentation",
-                    }}
-                    variant="rounded"
-                    sx={{
-                      width: "auto",
-                      height: "100%",
-                      aspectRatio: "1 / 1",
-                      fontSize: "5em",
-                      backgroundColor: "transparent",
-                    }}
-                  >
-                    <FileIcon fontSize="inherit" />
-                  </Avatar>
-                </Grid>
-                <Grid
-                  item
                   container
-                  direction="row"
+                  direction="column"
+                  height="100%"
                   flexWrap="nowrap"
-                  alignItems="baseline"
-                  sx={{
-                    padding: "8px",
-                    paddingTop: 0,
-                  }}
                 >
                   <Grid
                     item
                     sx={{
-                      textAlign: "center",
+                      flexShrink: 0,
+                      padding: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: "calc(100% - 9999999px)",
+                      flexDirection: "column",
                       flexGrow: 1,
-                      ...(selected
-                        ? {
-                            backgroundColor: window.matchMedia(
-                              "(prefers-contrast: more)"
-                            ).matches
-                              ? "black"
-                              : "#35afef",
-                            p: 0.25,
-                            borderRadius: "4px",
-                            mx: 0.5,
-                          }
-                        : {}),
                     }}
                   >
-                    <Typography
+                    <Avatar
+                      src={file.thumbnailUrl}
+                      imgProps={{
+                        role: "presentation",
+                      }}
+                      variant="rounded"
                       sx={{
-                        ...(selected
-                          ? {
-                              color: window.matchMedia(
-                                "(prefers-contrast: more)"
-                              ).matches
-                                ? "white"
-                                : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-                            }
-                          : {}),
-                        fontSize: "0.8125rem",
-                        fontWeight: window.matchMedia(
-                          "(prefers-contrast: more)"
-                        ).matches
-                          ? 700
-                          : 400,
-
-                        // wrap onto a second line, but use an ellipsis after that
-                        overflowWrap: "anywhere",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: "2",
-                        WebkitBoxOrient: "vertical",
+                        width: "auto",
+                        height: "100%",
+                        aspectRatio: "1 / 1",
+                        fontSize: "5em",
+                        backgroundColor: "transparent",
                       }}
                     >
-                      {file.name}
-                    </Typography>
+                      <FileIcon fontSize="inherit" />
+                    </Avatar>
+                  </Grid>
+                  <Grid
+                    item
+                    container
+                    direction="row"
+                    flexWrap="nowrap"
+                    alignItems="baseline"
+                    sx={{
+                      padding: "8px",
+                      paddingTop: 0,
+                    }}
+                  >
+                    <Grid
+                      item
+                      sx={{
+                        textAlign: "center",
+                        flexGrow: 1,
+                        ...(selected
+                          ? {
+                              backgroundColor: window.matchMedia(
+                                "(prefers-contrast: more)"
+                              ).matches
+                                ? "black"
+                                : "#35afef",
+                              p: 0.25,
+                              borderRadius: "4px",
+                              mx: 0.5,
+                            }
+                          : {}),
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          ...(selected
+                            ? {
+                                color: window.matchMedia(
+                                  "(prefers-contrast: more)"
+                                ).matches
+                                  ? "white"
+                                  : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
+                              }
+                            : {}),
+                          fontSize: "0.8125rem",
+                          fontWeight: window.matchMedia(
+                            "(prefers-contrast: more)"
+                          ).matches
+                            ? 700
+                            : 400,
+
+                          // wrap onto a second line, but use an ellipsis after that
+                          overflowWrap: "anywhere",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: "2",
+                          WebkitBoxOrient: "vertical",
+                        }}
+                      >
+                        {file.name}
+                      </Typography>
+                    </Grid>
                   </Grid>
                 </Grid>
-              </Grid>
-            </CardActionArea>
-          </Card>
-        </Grid>
-      </Fade>
-    );
-  }
+              </CardActionArea>
+            </Card>
+          </Grid>
+        </Fade>
+      );
+    }
+  )
 )(({ selected }) => ({
   height: "150px",
   ...(selected
