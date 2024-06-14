@@ -789,6 +789,13 @@ const FileCard = styled(
           draggingIds: draggingIds.includes(file.id) ? draggingIds : [],
         },
       });
+      /*
+       * DndKit wants to set the role to "button" but if we do that then the
+       * keyboard controls of MUI's SimpleTreeView stop working. Keeping the
+       * correct role for tree items doesn't prevent DndKit from working.
+       */
+      delete attributes.role;
+
       const dndContext = useDndContext();
 
       const dragStyle: { [string]: string | number } = transform
