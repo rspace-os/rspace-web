@@ -612,7 +612,7 @@ const GridView = observer(
             }),
             ArrowDown: ({ x, y }) => ({
               x,
-              y: Math.min(y + 1, Math.ceil(listing.list.length / cols)),
+              y: Math.min(y + 1, Math.floor(listing.list.length / cols)),
             }),
             ArrowUp: ({ x, y }) => ({
               x,
@@ -622,6 +622,14 @@ const GridView = observer(
           if (!(e.key in newCoord)) return;
           e.preventDefault();
           const { x, y } = newCoord[e.key](tabIndexCoord);
+
+          /*
+           * This check prevents the user from moving passed the end of the
+           * last row if it doesn't fill a complete row or down in a column
+           * that doesn't have `listing.list.length / cols` rows
+           */
+          if (y * cols + (x + 1) > listing.list.length) return;
+
           setTabIndexCoord({ x, y });
           runInAction(() => {
             selectedFiles.clear();
