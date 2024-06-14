@@ -565,6 +565,15 @@ const GridView = observer(
     };
     const cols = 12 / cardWidth[viewportDimensions.viewportSize];
 
+    /*
+     * This coordinate specifies the roving tab-index.
+     * When user tabs to the grid, initially the first card has focus.  They
+     * can then use the arrow keys, as implemented below, to move that focus.
+     * If they then tab away from the table and back again, the last card they
+     * had focussed is remembered and returned to.
+     */
+    const [tabIndexCoord, setTabIndexCoord] = React.useState({ x: 0, y: 0 });
+
     if (listing.tag === "empty")
       return (
         <div key={listing.reason}>
@@ -583,13 +592,62 @@ const GridView = observer(
         </div>
       );
     return (
-      <Grid container spacing={2}>
+      <Grid
+        container
+        spacing={2}
+        onKeyDown={(e) => {
+          const newCoord: {
+            [string]: ({ x: number, y: number }) => {
+              x: number,
+              y: number,
+            },
+          } = {
+            ArrowRight: ({ x, y }) => ({
+              x: Math.min(x + 1, cols),
+              y,
+            }),
+            ArrowLeft: ({ x, y }) => ({
+              x: Math.max(x - 1, 0),
+              y,
+            }),
+            ArrowDown: ({ x, y }) => ({
+              x,
+              y: Math.min(y + 1, Math.ceil(listing.list.length / cols)),
+            }),
+            ArrowUp: ({ x, y }) => ({
+              x,
+              y: Math.max(y - 1, 0),
+            }),
+          };
+          if (!(e.key in newCoord)) return;
+          e.preventDefault();
+          const { x, y } = newCoord[e.key](tabIndexCoord);
+          setTabIndexCoord({ x, y });
+          runInAction(() => {
+            selectedFiles.clear();
+            selectedFiles.add(listing.list[y * cols + x].id);
+          });
+        }}
+        onFocus={() => {
+          const { x, y } = tabIndexCoord;
+          runInAction(() => {
+            selectedFiles.clear();
+            selectedFiles.add(listing.list[y * cols + x].id);
+          });
+        }}
+      >
         {listing.list.map((file, index) => (
           <FileCard
             selected={selectedFiles.has(file.id)}
             file={file}
             key={idToString(file.id)}
             index={index}
+            tabIndex={
+              index % cols === tabIndexCoord.x &&
+              Math.floor(index / cols) === tabIndexCoord.y
+                ? 0
+                : -1
+            }
             onClick={(e) => {
               if (e.shiftKey) {
                 if (!shiftSelectCoord) return;
@@ -654,6 +712,7 @@ const FileCard = styled(
     onClick,
     draggingIds,
     setFileDragAndDrop,
+    tabIndex,
   }) => {
     const { uploadFiles } = useGalleryActions();
     const [over, setOver] = React.useState(0);
@@ -807,16 +866,29 @@ const FileCard = styled(
             }}
             {...listeners}
             {...attributes}
+            tabIndex={tabIndex}
             style={{
               ...dragStyle,
               ...dropStyle,
               ...inGroupBeingDraggedStyle,
               ...fileUploadDropping,
+              /*
+               * We don't need the outline as the selected styles will indicate
+               * which item has focus
+               */
+              outline: "none",
+            }}
+            onKeyDown={(e) => {
+              if (e.key === " ") {
+                if (file.open) file.open();
+                else onClick(e);
+              }
             }}
           >
             <CardActionArea
               role={file.open ? "button" : "radio"}
               aria-checked={selected}
+              tabIndex={-1}
               onClick={(e) => {
                 if (file.open) file.open();
                 else onClick(e);
