@@ -85,7 +85,26 @@ window.addEventListener("load", () => {
           <StyledEngineProvider injectFirst>
             <CssBaseline />
             <ThemeProvider theme={createAccentedTheme(COLOR)}>
-              <WholePage />
+              <div
+                onDragOver={(e) => {
+                  /*
+                   * Allow root of page to accept drop events...
+                   */
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={(e) => {
+                  /*
+                   * ..and then ignore those drop events. This way, if the user
+                   * drags a file over the page but misses one of the dropzones
+                   * the drag action gets cancelled rather than resulting in
+                   * the file being opened in a new browser tab.
+                   */
+                  e.preventDefault();
+                }}
+              >
+                <WholePage />
+              </div>
             </ThemeProvider>
           </StyledEngineProvider>
         </ErrorBoundary>
