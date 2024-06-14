@@ -115,12 +115,20 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private void checkUsernameAndAliasUnique(String username, String usernameAlias)
       throws UserExistsException {
-    String foundUsername = findUsernameByUsernameOrAlias(username);
-    String foundAlias = findUsernameByUsernameOrAlias(usernameAlias);
-    if (foundUsername != null || foundAlias != null) {
-      throw new UserExistsException(
-          "There is already a username with usernameAlias matching proposed username, "
-              + "or with username matching proposed usernameAlias!");
+    String foundByUsername = findUsernameByUsernameOrAlias(username);
+    String foundByAlias = findUsernameByUsernameOrAlias(usernameAlias);
+    if (foundByUsername != null || foundByAlias != null) {
+      UserExistsException uee =
+          new UserExistsException(
+              "There is already a username with usernameAlias matching proposed username, "
+                  + "or with username matching proposed usernameAlias!");
+      if ((foundByUsername != null && foundByUsername.equals(username))
+          || (foundByAlias != null && !foundByAlias.equals(usernameAlias))) {
+        uee.setExistingUsername(true);
+      } else {
+        uee.setExistingUsernameAlias(true);
+      }
+      throw uee;
     }
   }
 
@@ -566,28 +574,29 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     String aliasToSave = StringUtils.trimToNull(newAlias);
     if (aliasToSave != null) {
       if (userExists(aliasToSave)) {
-        throw new UserExistsException(
-            String.format("There is already a user with username [%s]", aliasToSave),
-            true,
-            false,
-            false);
+        UserExistsException uee =
+            new UserExistsException(
+                String.format("There is already a user with username [%s]", aliasToSave));
+        uee.setExistingUsername(true);
+        throw uee;
       }
       Optional<User> userWithAlias = userDao.getUserByUsernameAlias(aliasToSave);
       if (userWithAlias.isPresent()) {
-        throw new UserExistsException(
-            String.format(
-                "usernameAlias [%s] is already used by user [%s]",
-                aliasToSave, userWithAlias.get().getUsername()),
-            false,
-            true,
-            false);
+        UserExistsException uee =
+            new UserExistsException(
+                String.format(
+                    "usernameAlias [%s] is already used by user [%s]",
+                    aliasToSave, userWithAlias.get().getUsername()));
+        uee.setExistingUsernameAlias(true);
+        throw uee;
       }
     }
 
     User user = get(userId);
     user.setUsernameAlias(aliasToSave);
-    SECURITY_LOG.info(
-        "{} [{}] changed usernameAlias to  {}", user.getFullName(), user.getId(), aliasToSave);
+    log.info(
+        String.format(
+            "Changed usernameAlias of user [%s] to [%s]", user.getUsername(), aliasToSave));
     return user;
   }
 

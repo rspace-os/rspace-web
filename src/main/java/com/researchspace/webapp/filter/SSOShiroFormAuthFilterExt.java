@@ -86,6 +86,12 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
       if (user == null) {
         return false;
       }
+      if (!user.getUsername().equals(remoteUser)) {
+        SECURITY_LOG.info(
+            String.format(
+                "Processing login of user [%s] through username alias [%s]",
+                user.getUsername(), remoteUser));
+      }
 
       // trying to log into backdoor account with SSO identity
       SignupSource userSignupSource = user.getSignupSource();

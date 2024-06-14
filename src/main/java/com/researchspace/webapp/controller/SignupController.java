@@ -199,12 +199,18 @@ public class SignupController extends BaseController {
       savedUser = manualSignupPolicy.saveUser(user, request);
     } catch (UserExistsException e) {
       // if that's username problem we may give user better message
-      if (e.isExistingUsername() && !e.isExistingEmail()) {
+      if (e.isExistingUsername()) {
         errors.rejectValue(
             "username",
-            "errors.existing.user2",
+            "errors.existing.username",
             new Object[] {user.getUsername()},
             "duplicate username");
+      } else if (e.isExistingUsernameAlias()) {
+        errors.rejectValue(
+            "username",
+            "errors.existing.usernameAlias",
+            new Object[] {user.getUsername()},
+            "duplicate username alias");
       } else {
         errors.rejectValue(
             "username",

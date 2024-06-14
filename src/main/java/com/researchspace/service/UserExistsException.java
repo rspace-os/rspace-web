@@ -12,20 +12,7 @@ public class UserExistsException extends Exception {
 
   private boolean existingUsernameAlias;
 
-  private boolean existingEmail;
-
   public UserExistsException(final String message) {
     super(message);
-  }
-
-  public UserExistsException(
-      final String message,
-      boolean existingUsername,
-      boolean existingUsernameAlias,
-      boolean existingEmail) {
-    super(message);
-    this.existingUsername = existingUsername;
-    this.existingUsernameAlias = existingUsernameAlias;
-    this.existingEmail = existingEmail;
   }
 }

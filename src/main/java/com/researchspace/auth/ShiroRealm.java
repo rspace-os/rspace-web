@@ -47,11 +47,17 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
     UsernamePasswordToken token = (UsernamePasswordToken) authcToken;
     String incomingUsername = token.getUsername();
 
-    User user = null;
     String username = userMgr.findUsernameByUsernameOrAlias(incomingUsername);
-    boolean isRspaceUser = username != null;
+    boolean isRSpaceUser = username != null;
+    if (isRSpaceUser && !username.equals(incomingUsername)) {
+      SECURITY_LOG.info(
+          String.format(
+              "Processing login of user [%s] through username alias [%s]",
+              username, incomingUsername));
+    }
 
-    if (isRspaceUser) {
+    User user = null;
+    if (isRSpaceUser) {
       log.debug("Username {} exists in DB", username);
       if (ignoreSession) {
         // special case flow
