@@ -370,7 +370,14 @@ const CustomTreeItem = ({
   } = useDraggable({
     disabled: false,
     id: file.id,
-    data: { draggingIds },
+    data: {
+      /*
+       * If this `file` is one of the selected files (i.e. is in
+       * `draggingIds`) then all of the selected files are to be moved by the
+       * drag operation. If it is not included then just move this file.
+       */
+      draggingIds: draggingIds.includes(file.id) ? draggingIds : [],
+    },
   });
   const dndContext = useDndContext();
 
@@ -654,7 +661,12 @@ const FileCard = styled(
       disabled: false,
       id: file.id,
       data: {
-        draggingIds,
+        /*
+         * If this `file` is one of the selected files (i.e. is in
+         * `draggingIds`) then all of the selected files are to be moved by the
+         * drag operation. If it is not included then just move this file.
+         */
+        draggingIds: draggingIds.includes(file.id) ? draggingIds : [],
       },
     });
     const dndContext = useDndContext();
