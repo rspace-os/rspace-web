@@ -504,10 +504,12 @@ const CustomTreeItem = ({
 const GridView = observer(
   ({
     listing,
+    setFileDragAndDrop,
   }: {|
     listing:
       | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
+    setFileDragAndDrop: (number) => void,
   |}) => {
     // $FlowExpectedError[prop-missing] Difficult to get this library type right
     const selectedFiles = useLocalObservable(() => observable.set([]));
@@ -603,6 +605,7 @@ const GridView = observer(
               }
             }}
             draggingIds={[...selectedFiles]}
+            setFileDragAndDrop={setFileDragAndDrop}
           />
         ))}
       </Grid>
@@ -611,7 +614,15 @@ const GridView = observer(
 );
 
 const FileCard = styled(
-  ({ file, className, selected, index, onClick, draggingIds }) => {
+  ({
+    file,
+    className,
+    selected,
+    index,
+    onClick,
+    draggingIds,
+    setFileDragAndDrop,
+  }) => {
     const { uploadFiles } = useGalleryActions();
     const [over, setOver] = React.useState(0);
     const { setNodeRef: setDropRef, isOver } = useDroppable({
@@ -704,11 +715,14 @@ const FileCard = styled(
              * These are for dragging files from outside the browser
              */
             onDrop={doNotAwait(async (e) => {
-              setOver(0);
               e.preventDefault();
               e.stopPropagation();
-              const files = [];
+              setOver(0);
+              setFileDragAndDrop(0);
 
+              if (!/Folder/.test(file.type)) return;
+
+              const files = [];
               if (e.dataTransfer.items) {
                 // Use DataTransferItemList interface to access the file(s)
                 [...e.dataTransfer.items].forEach((item) => {
@@ -739,11 +753,13 @@ const FileCard = styled(
               e.preventDefault();
               e.stopPropagation();
               if (/Folder/.test(file.type)) setOver((x) => x + 1);
+              else setFileDragAndDrop((x) => x + 1);
             }}
             onDragLeave={(e) => {
               e.preventDefault();
               e.stopPropagation();
               if (/Folder/.test(file.type)) setOver((x) => x - 1);
+              else setFileDragAndDrop((x) => x - 1);
             }}
             /*
              * These are for dragging files between folders within the gallery
@@ -1222,7 +1238,12 @@ export default function GalleryMainPanel({
               FetchingData.match(galleryListing, {
                 loading: () => <></>,
                 error: (error) => <>{error}</>,
-                success: (listing) => <GridView listing={listing} />,
+                success: (listing) => (
+                  <GridView
+                    listing={listing}
+                    setFileDragAndDrop={setFileDragAndDrop}
+                  />
+                ),
               })}
           </Grid>
         </Grid>
