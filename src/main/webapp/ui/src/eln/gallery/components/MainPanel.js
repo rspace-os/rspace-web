@@ -34,6 +34,7 @@ import {
   DndContext,
   useSensor,
   MouseSensor,
+  KeyboardSensor,
 } from "@dnd-kit/core";
 import Button from "@mui/material/Button";
 import GridIcon from "@mui/icons-material/ViewCompact";
@@ -543,6 +544,8 @@ const GridView = observer(
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
     setFileDragAndDrop: UseStateSetter<number>,
   |}) => {
+    const dndContext = useDndContext();
+
     // $FlowExpectedError[prop-missing] Difficult to get this library type right
     const selectedFiles = useLocalObservable(() => observable.set([]));
 
@@ -602,6 +605,7 @@ const GridView = observer(
         container
         spacing={2}
         onKeyDown={(e) => {
+          if (dndContext.active) return;
           const newCoord: {
             [string]: ({ x: number, y: number }) => {
               x: number,
@@ -927,11 +931,19 @@ const FileCard = styled(
                  */
                 outline: "none",
               }}
-              onKeyDown={(e) => {
-                if (e.key === " ") {
-                  if (file.open) file.open();
-                }
-              }}
+              /*
+               * We conditionally just add the onKeyDown when file has an
+               * `open` action (which is to say it is a folder), leaving the
+               * keyDown event to propagate up to the KeyboardSensor of the
+               * drag-and-drop mechanism for all other files
+               */
+              {...(file.open
+                ? {
+                    onKeyDown: (e) => {
+                      if (e.key === " ") file.open?.();
+                    },
+                  }
+                : {})}
             >
               <CardActionArea
                 role={file.open ? "button" : "radio"}
@@ -1230,6 +1242,7 @@ export default function GalleryMainPanel({
       tolerance: 5,
     },
   });
+  const keyboardSensor = useSensor(KeyboardSensor, {});
 
   return (
     <DialogContent
@@ -1259,7 +1272,7 @@ export default function GalleryMainPanel({
       }}
     >
       <DndContext
-        sensors={[mouseSensor]}
+        sensors={[mouseSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
           const idsOfSelectedFiles =
