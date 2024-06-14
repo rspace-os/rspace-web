@@ -48,6 +48,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import Slide from "@mui/material/Slide";
 import { observable, runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
+import { type UseStateSetter } from "../../../util/types";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -187,12 +188,14 @@ const TreeItemContent = ({
   section,
   draggingIds,
   refreshListing,
+  setFileDragAndDrop,
 }: {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
   draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
   refreshListing: () => void,
+  setFileDragAndDrop: UseStateSetter<number>,
 |}): Node => {
   const { galleryListing } = useGalleryListing({
     section,
@@ -217,6 +220,7 @@ const TreeItemContent = ({
               key={idToString(f.id)}
               draggingIds={draggingIds}
               refreshListing={refreshListing}
+              setFileDragAndDrop={setFileDragAndDrop}
             />
           ))
         : null,
@@ -338,6 +342,7 @@ const CustomTreeItem = ({
   section,
   draggingIds,
   refreshListing,
+  setFileDragAndDrop,
 }: {|
   file: GalleryFile,
   index: number,
@@ -345,6 +350,7 @@ const CustomTreeItem = ({
   section: string,
   draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
   refreshListing: () => void,
+  setFileDragAndDrop: UseStateSetter<number>,
 |}) => {
   const { uploadFiles } = useGalleryActions();
   const [over, setOver] = React.useState(0);
@@ -433,11 +439,14 @@ const CustomTreeItem = ({
          * These are for dragging files from outside the browser
          */
         onDrop={doNotAwait(async (e) => {
-          setOver(0);
           e.preventDefault();
           e.stopPropagation();
-          const files = [];
+          setOver(0);
+          setFileDragAndDrop(0);
 
+          if (!/Folder/.test(file.type)) return;
+
+          const files = [];
           if (e.dataTransfer.items) {
             // Use DataTransferItemList interface to access the file(s)
             [...e.dataTransfer.items].forEach((item) => {
@@ -464,11 +473,13 @@ const CustomTreeItem = ({
           e.preventDefault();
           e.stopPropagation();
           if (/Folder/.test(file.type)) setOver((x) => x + 1);
+          else setFileDragAndDrop((x) => x + 1);
         }}
         onDragLeave={(e) => {
           e.preventDefault();
           e.stopPropagation();
           if (/Folder/.test(file.type)) setOver((x) => x - 1);
+          else setFileDragAndDrop((x) => x - 1);
         }}
         /*
          * These are for dragging files between folders within the gallery
@@ -494,6 +505,7 @@ const CustomTreeItem = ({
             section={section}
             draggingIds={draggingIds}
             refreshListing={refreshListing}
+            setFileDragAndDrop={setFileDragAndDrop}
           />
         )}
       </TreeItem>
@@ -509,7 +521,7 @@ const GridView = observer(
     listing:
       | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
-    setFileDragAndDrop: (number) => void,
+    setFileDragAndDrop: UseStateSetter<number>,
   |}) => {
     // $FlowExpectedError[prop-missing] Difficult to get this library type right
     const selectedFiles = useLocalObservable(() => observable.set([]));
@@ -926,6 +938,7 @@ const TreeView = ({
   path,
   selectedSection,
   refreshListing,
+  setFileDragAndDrop,
 }: {|
   listing:
     | {| tag: "empty", reason: string |}
@@ -933,6 +946,7 @@ const TreeView = ({
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: string,
   refreshListing: () => void,
+  setFileDragAndDrop: UseStateSetter<number>,
 |}) => {
   const [selectedNodes, setSelectedNodes] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
@@ -998,6 +1012,7 @@ const TreeView = ({
           section={selectedSection}
           draggingIds={selectedNodes}
           refreshListing={refreshListing}
+          setFileDragAndDrop={setFileDragAndDrop}
         />
       ))}
     </SimpleTreeView>
@@ -1231,6 +1246,7 @@ export default function GalleryMainPanel({
                     path={path}
                     selectedSection={selectedSection}
                     refreshListing={refreshListing}
+                    setFileDragAndDrop={setFileDragAndDrop}
                   />
                 ),
               })}
