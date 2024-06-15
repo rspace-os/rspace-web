@@ -49,7 +49,7 @@ public class DeveloperGroupSetup extends AbstractAppInitializor {
     UsernamePasswordToken admintoken =
         new UsernamePasswordToken(
             AbstractAppInitializor.SYSADMIN_UNAME, AbstractAppInitializor.SYSADMIN_PWD, false);
-    final User admin = userdao.getUserByUserName(admintoken.getUsername());
+    final User admin = userdao.getUserByUsername(admintoken.getUsername());
 
     String[] users = new String[] {"user1a", "user2b", "user3c", "user4d"};
     List<UsernamePasswordToken> tokesn = new ArrayList<>();
@@ -60,7 +60,7 @@ public class DeveloperGroupSetup extends AbstractAppInitializor {
     Map<String, User> uname2user = new HashMap<>();
     final Subject subject = SecurityUtils.getSubject();
     for (UsernamePasswordToken tok : tokesn) {
-      final User user = userdao.getUserByUserName(tok.getUsername());
+      final User user = userdao.getUserByUsername(tok.getUsername());
       uname2user.put(user.getUsername(), user);
       subject.login(tok);
       Boolean rc =

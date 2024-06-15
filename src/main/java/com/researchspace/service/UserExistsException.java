@@ -1,34 +1,18 @@
 package com.researchspace.service;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class UserExistsException extends Exception {
-  private static final long serialVersionUID = 4050482305178810162L;
+  private static final long serialVersionUID = 4050482305178810135L;
 
   private boolean existingUsername;
 
-  private boolean existingEmail;
+  private boolean existingUsernameAlias;
 
-  /**
-   * Constructor for UserExistsException.
-   *
-   * @param message exception message
-   */
   public UserExistsException(final String message) {
     super(message);
-  }
-
-  public boolean isExistingUsername() {
-    return existingUsername;
-  }
-
-  public void setExistingUsername(boolean existingUsername) {
-    this.existingUsername = existingUsername;
-  }
-
-  public boolean isExistingEmail() {
-    return existingEmail;
-  }
-
-  public void setExistingEmail(boolean existingEmail) {
-    this.existingEmail = existingEmail;
   }
 }

@@ -32,7 +32,7 @@ public class SampleTemplateAppInitialiser extends AbstractAppInitializor {
     try {
       GlobalInitSysadminAuthenticationToken sysAdminToken =
           new GlobalInitSysadminAuthenticationToken();
-      final User sysAdmin = userdao.getUserByUserName(sysAdminToken.getPrincipal().toString());
+      final User sysAdmin = userdao.getUserByUsername(sysAdminToken.getPrincipal().toString());
 
       subject.login(sysAdminToken);
       Boolean rc =

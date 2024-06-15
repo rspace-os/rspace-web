@@ -64,7 +64,7 @@ public class CustomFormAppInitialiserTest {
     lenient()
         .when(securityManagerMock.createSubject(any(SubjectContext.class)))
         .thenReturn(subjectMock);
-    lenient().when(userdao.getUserByUserName(any(String.class))).thenReturn(mockUser);
+    lenient().when(userdao.getUserByUsername(any(String.class))).thenReturn(mockUser);
     lenient().when(mockUser.getUsername()).thenReturn("sysadmin1");
     // simulate a pre-existing ontologies form
     lenient()
@@ -145,7 +145,7 @@ public class CustomFormAppInitialiserTest {
   public void shouldNotAttemptToCreateFormIfSysadminUserDoesNotExist() {
     doThrow(new ObjectRetrievalFailureException(User.class, "sysadmin1"))
         .when(userdao)
-        .getUserByUserName(eq("sysadmin1"));
+        .getUserByUsername(eq("sysadmin1"));
     testee.onAppStartup(mockAppContext);
     verify(formDao, never()).save(any(RSForm.class));
   }

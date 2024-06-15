@@ -651,7 +651,7 @@ public class RecordManagerImpl implements RecordManager {
   public FolderRecordPair saveStructuredDocument(
       long structuredDocumentId, String userName, boolean unlockRecord, ErrorList warningList)
       throws DocumentAlreadyEditedException {
-    User userEditor = userDao.getUserByUserName(userName);
+    User userEditor = userDao.getUserByUsername(userName);
     StructuredDocument structuredDocument = get(structuredDocumentId).asStrucDoc();
     assertNotEditedByOther(userEditor, structuredDocument);
     permissnUtils.assertIsPermitted(
@@ -717,7 +717,7 @@ public class RecordManagerImpl implements RecordManager {
   public BaseRecord cancelStructuredDocumentAutosavedEdits(
       long structuredDocumentId, String userName) throws DocumentAlreadyEditedException {
 
-    User userEditor = userDao.getUserByUserName(userName);
+    User userEditor = userDao.getUserByUsername(userName);
     StructuredDocument structuredDocument = (StructuredDocument) get(structuredDocumentId);
     assertNotEditedByOther(userEditor, structuredDocument);
 
@@ -803,7 +803,7 @@ public class RecordManagerImpl implements RecordManager {
   public void unlockRecord(Long recordId, String username, Supplier<String> sessionIdProvider) {
     if (recordDao.exists(recordId)) {
       tracker.unlockRecord(
-          recordDao.get(recordId), userDao.getUserByUserName(username), sessionIdProvider);
+          recordDao.get(recordId), userDao.getUserByUsername(username), sessionIdProvider);
     }
   }
 

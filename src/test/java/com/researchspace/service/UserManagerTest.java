@@ -2,12 +2,12 @@ package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -41,7 +41,6 @@ public class UserManagerTest extends SpringTransactionalTest {
   private static final String USER2 = "user1a";
   private Logger log = LoggerFactory.getLogger(UserManagerTest.class);
 
-  private @Autowired UserManager userManager;
   private @Autowired RoleManager roleManager;
 
   @Before
@@ -51,7 +50,7 @@ public class UserManagerTest extends SpringTransactionalTest {
 
   @Test
   public void testGetUser() {
-    User user = userManager.getUserByUsername(USER2);
+    User user = userMgr.getUserByUsername(USER2);
     assertNotNull(user);
     log.debug(user.getUsername());
     assertEquals(2, user.getRoles().size());
@@ -61,14 +60,14 @@ public class UserManagerTest extends SpringTransactionalTest {
   public void testSave2UsersWithSamePasswordIsDifferentDueToSalt() throws UserExistsException {
     User u1 = TestFactory.createAnyUser("XXXXXX");
     u1.setPassword("password1");
-    userManager.saveNewUser(u1);
+    userMgr.saveNewUser(u1);
 
     User u2 = TestFactory.createAnyUser("XXXXXX2");
     u2.setPassword("password1");
-    userManager.saveNewUser(u2);
+    userMgr.saveNewUser(u2);
 
-    u1 = userManager.get(u1.getId());
-    u2 = userManager.get(u2.getId());
+    u1 = userMgr.get(u1.getId());
+    u2 = userMgr.get(u2.getId());
     assertNotNull(u1.getSalt());
     assertNotNull(u2.getSalt());
     assertFalse(u1.getSalt().equals(u2.getSalt()));
@@ -78,14 +77,14 @@ public class UserManagerTest extends SpringTransactionalTest {
   @Test
   public void testSaveUser() {
     final int n5 = 5;
-    User user = userManager.getUserByUsername(USER2);
+    User user = userMgr.getUserByUsername(USER2);
 
     assertEquals(2, user.getRoles().size());
     // has no roles
     User u1 = createAndSaveUserIfNotExists(getRandomName(n5));
     // set role
     u1.addRole(roleManager.getRole(Constants.PI_ROLE));
-    u1 = userManager.save(u1); // handles association to real roles
+    u1 = userMgr.save(u1); // handles association to real roles
 
     // assert that pi has user role as well
     assertTrue(u1.hasRole(Role.PI_ROLE));
@@ -229,7 +228,7 @@ public class UserManagerTest extends SpringTransactionalTest {
     User another = createAndSaveUserIfNotExists("another1");
     initialiseContentWithEmptyContent(another);
     grpMgr.addUserToGroup(another.getUsername(), group.getId(), RoleInGroup.DEFAULT);
-    pi1 = userDao.getUserByUserName(pi1.getUniqueName());
+    pi1 = userDao.getUserByUsername(pi1.getUniqueName());
     ISearchResults<User> adminable5 = userMgr.getViewableUsers(pi1, pgcrit);
     assertEquals(2, adminable5.getTotalHits().intValue());
 
@@ -250,10 +249,10 @@ public class UserManagerTest extends SpringTransactionalTest {
   public void setTokenComplete() {
     User u = createAndSaveUserIfNotExists("token");
     TokenBasedVerification token =
-        userManager.createTokenBasedVerificationRequest(
+        userMgr.createTokenBasedVerificationRequest(
             u, u.getEmail(), "anything", TokenBasedVerificationType.PASSWORD_CHANGE);
     assertFalse(token.isResetCompleted());
-    token = userManager.setTokenCompleted(token);
+    token = userMgr.setTokenCompleted(token);
     assertTrue(token.isResetCompleted());
   }
 
@@ -261,7 +260,7 @@ public class UserManagerTest extends SpringTransactionalTest {
   public void testViewableUserListSingleUser() throws IllegalAddChildOperation {
     User user = createAndSaveUserIfNotExists(getRandomName(10), Constants.USER_ROLE);
     initialiseContentWithEmptyContent(user);
-    assertEquals(1, userManager.getViewableUserList(user).size());
+    assertEquals(1, userMgr.getViewableUserList(user).size());
   }
 
   @Test
@@ -276,7 +275,7 @@ public class UserManagerTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(pi, user1, user2, user3);
 
     // initially user1 is only connected to themselves
-    List<User> connectedUsers = userManager.populateConnectedUserList(user1);
+    List<User> connectedUsers = userMgr.populateConnectedUserList(user1);
     assertEquals(1, connectedUsers.size());
     assertEquals(user1.getUsername(), connectedUsers.get(0).getUsername());
     assertTrue(user1.isConnectedToUser(user1));
@@ -291,25 +290,25 @@ public class UserManagerTest extends SpringTransactionalTest {
     addUsersToGroup(pi, group2, user3);
 
     // user is connected to first group and members, even if nothing is shared
-    connectedUsers = userManager.populateConnectedUserList(user1);
+    connectedUsers = userMgr.populateConnectedUserList(user1);
     assertEquals(3, connectedUsers.size());
     assertTrue(user1.isConnectedToUser(pi));
     assertTrue(user1.isConnectedToUser(user2));
     assertFalse(user1.isConnectedToUser(user3));
 
-    userManager.populateConnectedGroupList(user1);
+    userMgr.populateConnectedGroupList(user1);
     assertTrue(user1.isConnectedToGroup(group1));
     assertFalse(user1.isConnectedToGroup(group2));
 
     // pi of both groups is connected to all users, but not to community admin
-    connectedUsers = userManager.populateConnectedUserList(pi);
+    connectedUsers = userMgr.populateConnectedUserList(pi);
     assertEquals(4, connectedUsers.size());
     assertTrue(pi.isConnectedToUser(user1));
     assertTrue(pi.isConnectedToUser(user2));
     assertTrue(pi.isConnectedToUser(user3));
     assertFalse(pi.isConnectedToUser(admin));
 
-    userManager.populateConnectedGroupList(pi);
+    userMgr.populateConnectedGroupList(pi);
     assertTrue(pi.isConnectedToGroup(group1));
     assertTrue(pi.isConnectedToGroup(group2));
 
@@ -318,25 +317,25 @@ public class UserManagerTest extends SpringTransactionalTest {
     StructuredDocument docD1 = createBasicDocumentInRootFolderWithText(user3, "test");
     shareRecordWithUser(user3, docD1, user1);
 
-    connectedUsers = userManager.populateConnectedUserList(user1);
+    connectedUsers = userMgr.populateConnectedUserList(user1);
     assertEquals(4, connectedUsers.size());
     assertTrue(user1.isConnectedToUser(user3)); // connected now through share
 
     // community admin can see all users in their community, but not one from other
-    connectedUsers = userManager.populateConnectedUserList(admin);
+    connectedUsers = userMgr.populateConnectedUserList(admin);
     assertEquals(4, connectedUsers.size());
     assertTrue(admin.isConnectedToUser(pi));
     assertTrue(admin.isConnectedToUser(user1));
     assertTrue(admin.isConnectedToUser(user2));
     assertFalse(admin.isConnectedToUser(user3));
 
-    userManager.populateConnectedGroupList(admin);
+    userMgr.populateConnectedGroupList(admin);
     assertTrue(admin.isConnectedToGroup(group1));
     assertFalse(admin.isConnectedToGroup(group2));
 
     // sysadmin always connected to everyone, but connection list is not really populated
     User sysadmin = createAndSaveSysadminUser();
-    List<User> sysadminConnections = userManager.populateConnectedUserList(sysadmin);
+    List<User> sysadminConnections = userMgr.populateConnectedUserList(sysadmin);
     assertEquals(1, sysadminConnections.size()); // just sysadmin
     assertTrue(sysadmin.isConnectedToUser(pi));
     assertTrue(sysadmin.isConnectedToUser(user1));
@@ -344,7 +343,7 @@ public class UserManagerTest extends SpringTransactionalTest {
     assertTrue(sysadmin.isConnectedToUser(user3));
     assertTrue(sysadmin.isConnectedToUser(admin));
 
-    userManager.populateConnectedGroupList(sysadmin);
+    userMgr.populateConnectedGroupList(sysadmin);
     assertTrue(sysadmin.isConnectedToGroup(group1));
     assertTrue(sysadmin.isConnectedToGroup(group2));
   }
@@ -363,11 +362,11 @@ public class UserManagerTest extends SpringTransactionalTest {
     addUsersToGroup(pi, group, user1, user2, user3);
     final int TOTAL_GROUP_SIZE = 4;
 
-    assertEquals(TOTAL_GROUP_SIZE, userManager.getViewableUserList(pi).size());
+    assertEquals(TOTAL_GROUP_SIZE, userMgr.getViewableUserList(pi).size());
     // individual users can only see themselves
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user1).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user2).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user3).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user1).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user2).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user3).size());
 
     // user1 now shares with user2
     logoutAndLoginAs(user1);
@@ -375,18 +374,18 @@ public class UserManagerTest extends SpringTransactionalTest {
     shareRecordWithUser(user1, docD1, user2);
 
     // This covers sharing a record individually within a group (stand alone and cloud environment)
-    assertEquals(2, userManager.getViewableUserList(user2).size());
+    assertEquals(2, userMgr.getViewableUserList(user2).size());
 
     // user 3 now shares with everyone in the group
     logoutAndLoginAs(user3);
     StructuredDocument docD2 = createBasicDocumentInRootFolderWithText(user3, "any");
     shareRecordWithGroup(user3, group, docD2);
     // user 1 + user 3
-    assertEquals(2, userManager.getViewableUserList(user1).size());
+    assertEquals(2, userMgr.getViewableUserList(user1).size());
     // user1, user2, user3
-    assertEquals(3, userManager.getViewableUserList(user2).size());
+    assertEquals(3, userMgr.getViewableUserList(user2).size());
     // no-one has shared with user1, so can only see themselves
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user3).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user3).size());
   }
 
   @Test
@@ -414,15 +413,15 @@ public class UserManagerTest extends SpringTransactionalTest {
     addUsersToGroup(piA, collabGroup, user1, user3);
 
     // piA can see user1 and user2 (Group Right) => BUG FIXED
-    assertEquals(3, userManager.getViewableUserList(piA).size());
+    assertEquals(3, userMgr.getViewableUserList(piA).size());
 
     // piB can see user3 and user4 (Group Right) => BUG FIXED
-    assertEquals(3, userManager.getViewableUserList(piB).size());
+    assertEquals(3, userMgr.getViewableUserList(piB).size());
 
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user1).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user2).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user3).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user4).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user1).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user2).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user3).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user4).size());
 
     // user1 shares with collab group
     logoutAndLoginAs(user1);
@@ -431,14 +430,13 @@ public class UserManagerTest extends SpringTransactionalTest {
     shareRecordWithGroup(user1, collabGroup, docD1);
 
     // After sharing a record with the collaboration group.
-    assertEquals(3, userManager.getViewableUserList(piA).size());
-    assertEquals(4, userManager.getViewableUserList(piB).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user1).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userManager.getViewableUserList(user2).size());
+    assertEquals(3, userMgr.getViewableUserList(piA).size());
+    assertEquals(4, userMgr.getViewableUserList(piB).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user1).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user2).size());
     // user3 is in collab group with user1 so can now potentially see his documents
-    assertEquals(
-        INDIVIDUAL_DEFAULT_VIEWABLE_USERS + 1, userManager.getViewableUserList(user3).size());
-    assertEquals(1, userManager.getViewableUserList(user4).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS + 1, userMgr.getViewableUserList(user3).size());
+    assertEquals(1, userMgr.getViewableUserList(user4).size());
   }
 
   @Test
@@ -447,17 +445,17 @@ public class UserManagerTest extends SpringTransactionalTest {
     UserPreference userPreference =
         userMgr.setPreference(Preference.BOX, "true", user.getUsername());
     assertEquals(true, userPreference.getValueAsBoolean());
-    userPreference = userManager.getPreferenceForUser(user, Preference.BOX);
+    userPreference = userMgr.getPreferenceForUser(user, Preference.BOX);
     assertEquals(true, userPreference.getValueAsBoolean());
     userPreference = userMgr.setPreference(Preference.BOX, "false", user.getUsername());
     assertEquals(false, userPreference.getValueAsBoolean());
-    userPreference = userManager.getPreferenceForUser(user, Preference.BOX);
+    userPreference = userMgr.getPreferenceForUser(user, Preference.BOX);
     assertEquals(false, userPreference.getValueAsBoolean());
   }
 
   @Test
   public void updatePreferenceInvalidValue() {
-    User user = userManager.getUserByUsername(USER2);
+    User user = userMgr.getUserByUsername(USER2);
     assertIllegalArgumentException(
         () -> userMgr.setPreference(Preference.UI_PDF_PAGE_SIZE, "INVALID", user.getUsername()));
   }
@@ -466,13 +464,13 @@ public class UserManagerTest extends SpringTransactionalTest {
   public void saveUserAccountEvent() throws InterruptedException {
     // given
     User user = createAndSaveRandomUser();
-    assertEquals(0, userManager.getAccountEventsForUser(user).size());
-    assertThat(Boolean.FALSE, is(user.isLoginDisabled()));
+    assertEquals(0, userMgr.getAccountEventsForUser(user).size());
+    assertFalse(user.isLoginDisabled());
     Instant b4Save = Instant.now().minus(1, ChronoUnit.SECONDS);
     UserAccountEvent toSave = new UserAccountEvent(user, AccountEventType.DISABLED);
 
     // when
-    UserAccountEvent savedAccountEvent = userManager.saveUserAccountEvent(toSave);
+    UserAccountEvent savedAccountEvent = userMgr.saveUserAccountEvent(toSave);
     Instant afterSave = Instant.now().plus(1, ChronoUnit.SECONDS);
 
     // then
@@ -482,25 +480,69 @@ public class UserManagerTest extends SpringTransactionalTest {
     assertTrue(savedAccountEvent.getTimestamp().before(new Date(afterSave.toEpochMilli())));
     assertTrue(savedAccountEvent.getTimestamp().after(new Date(b4Save.toEpochMilli())));
 
-    assertEquals(1, userManager.getAccountEventsForUser(user).size());
+    assertEquals(1, userMgr.getAccountEventsForUser(user).size());
   }
 
   @Test
   public void getOriginalUserForOperateAs() {
     User user = createInitAndLoginAnyUser();
     // returns same user;
-    assertEquals(user, userManager.getOriginalUserForOperateAs(user));
+    assertEquals(user, userMgr.getOriginalUserForOperateAs(user));
 
     // now run as, make sure we get sysadmin back.
     logoutAndLoginAsSysAdmin();
     permissionUtils.doRunAs(new MockHttpSession(), getSysAdminUser(), user);
-    assertEquals(getSysAdminUser(), userManager.getOriginalUserForOperateAs(user));
+    assertEquals(getSysAdminUser(), userMgr.getOriginalUserForOperateAs(user));
     RSpaceTestUtils.logout();
 
     // don't allow admin imposters to operate As!
     User adminImposter = createInitAndLoginAnyUser();
     permissionUtils.doRunAs(new MockHttpSession(), adminImposter, user);
     CoreTestUtils.assertIllegalStateExceptionThrown(
-        () -> userManager.getOriginalUserForOperateAs(user));
+        () -> userMgr.getOriginalUserForOperateAs(user));
+  }
+
+  @Test
+  public void changeUsernameAlias() throws UserExistsException {
+    final String testUsername = "testUsernameAliasUser";
+    final String testAlias = "testAlias";
+
+    User firstUser = doCreateAndInitUser(testUsername);
+    assertNull(firstUser.getUsernameAlias());
+
+    // user findable by username, not by alias
+    assertEquals(testUsername, userMgr.findUsernameByUsernameOrAlias(testUsername));
+    assertNull(userMgr.findUsernameByUsernameOrAlias(testAlias));
+
+    // cannot save alias to an existing username
+    UserExistsException exception =
+        assertThrows(
+            UserExistsException.class,
+            () -> userMgr.changeUsernameAlias(firstUser.getId(), testUsername));
+    assertEquals(
+        "There is already a user with username [testUsernameAliasUser]", exception.getMessage());
+
+    // set unique alias, search again
+    userMgr.changeUsernameAlias(firstUser.getId(), testAlias);
+    assertEquals(testUsername, userMgr.findUsernameByUsernameOrAlias(testUsername));
+    assertEquals(testUsername, userMgr.findUsernameByUsernameOrAlias(testAlias));
+
+    // cannot save new user with username matching existing alias
+    User secondUser = TestFactory.createAnyUser(testAlias);
+    assertThrows(UserExistsException.class, () -> userMgr.saveNewUser(secondUser));
+
+    // cannot save new user with alias matching existing username
+    secondUser.setUsername(testUsername + ".2");
+    secondUser.setUsernameAlias(testUsername);
+    assertThrows(UserExistsException.class, () -> userMgr.saveNewUser(secondUser));
+
+    // cannot save new user with alias matching existing alias
+    secondUser.setUsernameAlias(testAlias);
+    assertThrows(UserExistsException.class, () -> userMgr.saveNewUser(secondUser));
+
+    // can save with unique username and alias
+    secondUser.setUsernameAlias(testAlias + ".2");
+    userMgr.saveNewUser(secondUser);
+    assertEquals(testUsername + ".2", userMgr.findUsernameByUsernameOrAlias(testAlias + ".2"));
   }
 }

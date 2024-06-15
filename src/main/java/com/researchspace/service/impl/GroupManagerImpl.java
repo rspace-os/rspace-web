@@ -165,7 +165,7 @@ public class GroupManagerImpl implements GroupManager {
       throws IllegalAddChildOperation {
 
     Group group = groupDao.get(groupId);
-    User userToAdd = userDao.getUserByUserName(usernameToAdd);
+    User userToAdd = userDao.getUserByUsername(usernameToAdd);
     Set<ConstraintBasedPermission> grpRolePerms = getPermissionsForRole(role, group);
     // if group already has user, just return
     if (group.hasMember(userToAdd)) {
@@ -388,7 +388,7 @@ public class GroupManagerImpl implements GroupManager {
 
   public Folder createSharedCommunalGroupFolders(Long grpId, String creatorName)
       throws IllegalAddChildOperation {
-    User creator = userDao.getUserByUserName(creatorName);
+    User creator = userDao.getUserByUsername(creatorName);
     Group grp = groupDao.get(grpId);
     Folder grpFolder = null;
     if (grp.isGroupFolderWanted() && !grp.isGroupFolderCreated()) {
@@ -860,7 +860,7 @@ public class GroupManagerImpl implements GroupManager {
   @Override
   public Set<Group> listGroupsForUser() {
     String uname = (String) SecurityUtils.getSubject().getPrincipal();
-    return userDao.getUserByUserName(uname).getGroups();
+    return userDao.getUserByUsername(uname).getGroups();
   }
 
   @Override

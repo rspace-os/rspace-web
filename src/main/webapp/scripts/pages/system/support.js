@@ -80,14 +80,6 @@ function addViewLogHandler() {
 					var html = Mustache.render(template, resp);
 					$('#mainArea').html(html);
 				});
-//				var html="<pre>";
-//				var lines =  resp.data;
-//				for (var i = 0; i< lines.length; i++) {
-//					html = html + lines[i] + "<br/>";
-//				}
-//				html = html +"</pre>";
-//				
-//				$('#mainArea').html(html);
 			} else if (resp.errorMsg != null){
 				apprise(getValidationErrorString(resp.errorMsg));
 			}
