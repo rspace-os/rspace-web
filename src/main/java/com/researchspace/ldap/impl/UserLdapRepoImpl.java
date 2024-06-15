@@ -225,7 +225,7 @@ public class UserLdapRepoImpl implements UserLdapRepo {
 
   @Override
   public String retrieveSidForLdapUser(String username) {
-    User dbUser = userManager.getUserByUsernameOrAlias(username);
+    User dbUser = userManager.getUserByUsername(username);
     if (dbUser == null) {
       log.info("User {} not found", username);
       throw new IllegalArgumentException("asked for SID retrieval for unknown user: " + username);
