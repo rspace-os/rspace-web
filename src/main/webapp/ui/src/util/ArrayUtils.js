@@ -53,6 +53,12 @@ export function head<T>(array: $ReadOnlyArray<T>): Result<T> {
     : Result.Error([new Error("Array is empty")]);
 }
 
+export function last<T>(array: $ReadOnlyArray<T>): Result<T> {
+  return array.length > 0
+    ? Result.Ok(array[array.length - 1])
+    : Result.Error([new Error("Array is empty")]);
+}
+
 /**
  * Calculates the outer product of two arrays, with the provided function
  *  applying the values

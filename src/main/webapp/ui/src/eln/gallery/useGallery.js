@@ -377,7 +377,7 @@ export function useGalleryActions(): {|
     });
     addAlert(uploadingAlert);
 
-    const targetFolderId = ArrayUtils.getAt(0, path)
+    const targetFolderId = ArrayUtils.last(path)
       .map(({ id }) => `${id}`)
       .orElse(`${parentId}`);
     try {

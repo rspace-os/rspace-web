@@ -325,7 +325,7 @@ const CustomTreeItem = ({
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
       onDrop: doNotAwait(async (files) => {
-        await uploadFiles(file.path, file.id, files);
+        await uploadFiles([...file.path, file], file.id, files);
         refreshListing();
       }),
       disabled: !/Folder/.test(file.type),
@@ -738,7 +738,7 @@ const FileCard = styled(
       const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
         useFileImportDropZone({
           onDrop: (files) => {
-            void uploadFiles(file.path, file.id, files);
+            void uploadFiles([...file.path, file], file.id, files);
             /*
              * No need to refresh the listing as the uploaded file has been
              * placed inside a folder into which the user cannot currently see
