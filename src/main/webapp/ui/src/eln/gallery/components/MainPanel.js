@@ -322,7 +322,14 @@ const CustomTreeItem = ({
   refreshListing: () => void,
 |}) => {
   const { uploadFiles } = useGalleryActions();
-  const [over, setOver] = React.useState(0);
+  const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
+    useFileImportDropZone({
+      onDrop: doNotAwait(async (files) => {
+        await uploadFiles(file.path, file.id, files);
+        refreshListing();
+      }),
+      disabled: !/Folder/.test(file.type),
+    });
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: file.id,
     disabled: !/Folder/.test(file.type),
@@ -427,46 +434,10 @@ const CustomTreeItem = ({
         /*
          * These are for dragging files from outside the browser
          */
-        onDrop={doNotAwait(async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setOver(0);
-
-          if (!/Folder/.test(file.type)) return;
-
-          const files = [];
-          if (e.dataTransfer.items) {
-            // Use DataTransferItemList interface to access the file(s)
-            [...e.dataTransfer.items].forEach((item) => {
-              // If dropped items aren't files, reject them
-              if (item.kind === "file") {
-                files.push(item.getAsFile());
-              }
-            });
-          } else {
-            // Use DataTransfer interface to access the file(s)
-            [...e.dataTransfer.files].forEach((f) => {
-              files.push(f);
-            });
-          }
-
-          await uploadFiles(file.path, file.id, files);
-          refreshListing();
-        })}
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onDragEnter={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (/Folder/.test(file.type)) setOver((x) => x + 1);
-        }}
-        onDragLeave={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (/Folder/.test(file.type)) setOver((x) => x - 1);
-        }}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
         /*
          * These are for dragging files between folders within the gallery
          */
