@@ -53,8 +53,10 @@ export const DisableDragAndDropByDefault = ({
 
 export const useFileImportDropZone = ({
   onDrop: onDropProp,
+  disabled,
 }: {|
   onDrop: ($ReadOnlyArray<File>) => void,
+  disabled?: boolean,
 |}): ({|
   onDragEnter: (DragEvent) => void,
   onDragOver: (DragEvent) => void,
@@ -66,7 +68,8 @@ export const useFileImportDropZone = ({
 
   function onDragEnter(e: DragEvent) {
     e.preventDefault();
-    //e.stopPropagation();
+    if (disabled) return;
+    e.stopPropagation();
     setOverCount((x) => x + 1);
   }
 
@@ -77,15 +80,19 @@ export const useFileImportDropZone = ({
 
   function onDragLeave(e: DragEvent) {
     e.preventDefault();
-    //e.stopPropagation();
+    if (disabled) return;
+    e.stopPropagation();
     setOverCount((x) => x - 1);
   }
 
   function onDrop(e: DragEvent) {
+    e.preventDefault();
     setOverCount(0);
 
-    const files: Array<File> = [];
+    if (disabled) return;
+    e.stopPropagation();
 
+    const files: Array<File> = [];
     if (e.dataTransfer?.items) {
       // Use DataTransferItemList interface to access the file(s)
       [...e.dataTransfer.items].forEach((item) => {

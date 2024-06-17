@@ -763,7 +763,17 @@ const FileCard = styled(
       ref
     ) => {
       const { uploadFiles } = useGalleryActions();
-      const [over, setOver] = React.useState(0);
+      const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
+        useFileImportDropZone({
+          onDrop: (files) => {
+            void uploadFiles(file.path, file.id, files);
+            /*
+             * No need to refresh the listing as the uploaded file has been
+             * placed inside a folder into which the user cannot currently see
+             */
+          },
+          disabled: !/Folder/.test(file.type),
+        });
       const { setNodeRef: setDropRef, isOver } = useDroppable({
         id: file.id,
         disabled: !/Folder/.test(file.type),
@@ -866,54 +876,10 @@ const FileCard = styled(
               /*
                * These are for dragging files from outside the browser
                */
-              onDrop={doNotAwait(async (e) => {
-                e.preventDefault();
-                setOver(0);
-
-                if (!/Folder/.test(file.type)) return;
-                e.stopPropagation();
-
-                const files = [];
-                if (e.dataTransfer.items) {
-                  // Use DataTransferItemList interface to access the file(s)
-                  [...e.dataTransfer.items].forEach((item) => {
-                    // If dropped items aren't files, reject them
-                    if (item.kind === "file") {
-                      files.push(item.getAsFile());
-                    }
-                  });
-                } else {
-                  // Use DataTransfer interface to access the file(s)
-                  [...e.dataTransfer.files].forEach((f) => {
-                    files.push(f);
-                  });
-                }
-
-                await uploadFiles(file.path, file.id, files);
-                /*
-                 * No need to refresh the listing as the uploaded file has been
-                 * placed inside a folder into which the user cannot currently
-                 * see
-                 */
-              })}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                if (/Folder/.test(file.type)) {
-                  e.stopPropagation();
-                  setOver((x) => x + 1);
-                }
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                if (/Folder/.test(file.type)) {
-                  e.stopPropagation();
-                  setOver((x) => x - 1);
-                }
-              }}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onDragEnter={onDragEnter}
+              onDragLeave={onDragLeave}
               /*
                * These are for dragging files between folders within the gallery
                */
