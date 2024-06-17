@@ -764,6 +764,10 @@ const GridView = observer(
                   x: index % cols,
                   y: Math.floor(index / cols),
                 });
+                setTabIndexCoord({
+                  x: index % cols,
+                  y: Math.floor(index / cols),
+                });
               }
             }}
             draggingIds={[...selectedFiles]}
