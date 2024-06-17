@@ -50,3 +50,66 @@ export const DisableDragAndDropByDefault = ({
     {children}
   </div>
 );
+
+export const useFileImportDropZone = ({
+  onDrop: onDropProp,
+}: {|
+  onDrop: ($ReadOnlyArray<File>) => void,
+|}): ({|
+  onDragEnter: (DragEvent) => void,
+  onDragOver: (DragEvent) => void,
+  onDragLeave: (DragEvent) => void,
+  onDrop: (DragEvent) => void,
+  over: boolean,
+|}) => {
+  const [overCount, setOverCount] = React.useState(0);
+
+  function onDragEnter(e: DragEvent) {
+    e.preventDefault();
+    //e.stopPropagation();
+    setOverCount((x) => x + 1);
+  }
+
+  function onDragOver(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function onDragLeave(e: DragEvent) {
+    e.preventDefault();
+    //e.stopPropagation();
+    setOverCount((x) => x - 1);
+  }
+
+  function onDrop(e: DragEvent) {
+    setOverCount(0);
+
+    const files: Array<File> = [];
+
+    if (e.dataTransfer?.items) {
+      // Use DataTransferItemList interface to access the file(s)
+      [...e.dataTransfer.items].forEach((item) => {
+        // If dropped items aren't files, reject them
+        if (item.kind === "file") {
+          const f = item.getAsFile();
+          if (f) files.push(f);
+        }
+      });
+    } else {
+      // Use DataTransfer interface to access the file(s)
+      [...(e.dataTransfer?.files ?? [])].forEach((file) => {
+        files.push(file);
+      });
+    }
+
+    onDropProp(files);
+  }
+
+  return {
+    onDragEnter,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    over: overCount > 0,
+  };
+};

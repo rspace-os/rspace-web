@@ -50,6 +50,7 @@ import Slide from "@mui/material/Slide";
 import { observable, runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { type UseStateSetter } from "../../../util/types";
+import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -70,7 +71,7 @@ const ImportDropzone = styled(
         folderId,
         path,
         refreshListing,
-        onDrop,
+        onDrop: onDropProp,
       }: {|
         className: string,
         folderId: FetchingData.Fetched<Id>,
@@ -81,44 +82,9 @@ const ImportDropzone = styled(
       ref
     ) => {
       const { uploadFiles } = useGalleryActions();
-      const [over, setOver] = React.useState(0);
-      return (
-        <Card
-          ref={ref}
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onDragEnter={(e) => {
-            e.preventDefault();
-            setOver((x) => x + 1);
-          }}
-          onDragLeave={(e) => {
-            e.preventDefault();
-            setOver((x) => x - 1);
-          }}
-          onDrop={doNotAwait(async (e) => {
-            onDrop();
-            setOver(0);
-            e.preventDefault();
-            e.stopPropagation();
-            const files = [];
-
-            if (e.dataTransfer.items) {
-              // Use DataTransferItemList interface to access the file(s)
-              [...e.dataTransfer.items].forEach((item) => {
-                // If dropped items aren't files, reject them
-                if (item.kind === "file") {
-                  files.push(item.getAsFile());
-                }
-              });
-            } else {
-              // Use DataTransfer interface to access the file(s)
-              [...e.dataTransfer.files].forEach((file) => {
-                files.push(file);
-              });
-            }
-
+      const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
+        useFileImportDropZone({
+          onDrop: doNotAwait(async (files) => {
             const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(
               () => {
                 throw new Error("Unknown folder id");
@@ -126,10 +92,22 @@ const ImportDropzone = styled(
             );
             await uploadFiles(path, fId, files);
             refreshListing();
-          })}
+          }),
+        });
+
+      return (
+        <Card
+          ref={ref}
+          onDragOver={onDragOver}
+          onDragEnter={onDragEnter}
+          onDragLeave={onDragLeave}
+          onDrop={(e) => {
+            onDrop(e);
+            onDropProp();
+          }}
           className={className}
           sx={
-            over > 0
+            over
               ? {
                   borderColor: `hsl(${baseThemeColors.primary.hue}deg, 100%, 37%)`,
                   backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, 50%, 90%)`,
