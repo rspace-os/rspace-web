@@ -49,7 +49,6 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import Slide from "@mui/material/Slide";
 import { observable, runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
-import { type UseStateSetter } from "../../../util/types";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
@@ -71,13 +70,11 @@ const ImportDropzone = styled(
         folderId,
         path,
         refreshListing,
-        onDrop: onDropProp,
       }: {|
         className: string,
         folderId: FetchingData.Fetched<Id>,
         path: $ReadOnlyArray<GalleryFile>,
         refreshListing: () => void,
-        onDrop: () => void,
       |},
       ref
     ) => {
@@ -101,10 +98,7 @@ const ImportDropzone = styled(
           onDragOver={onDragOver}
           onDragEnter={onDragEnter}
           onDragLeave={onDragLeave}
-          onDrop={(e) => {
-            onDrop(e);
-            onDropProp();
-          }}
+          onDrop={onDrop}
           className={className}
           sx={
             over
@@ -167,14 +161,12 @@ const TreeItemContent = ({
   section,
   draggingIds,
   refreshListing,
-  setFileDragAndDrop,
 }: {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
   draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
   refreshListing: () => void,
-  setFileDragAndDrop: UseStateSetter<number>,
 |}): Node => {
   const { galleryListing } = useGalleryListing({
     section,
@@ -199,7 +191,6 @@ const TreeItemContent = ({
               key={idToString(f.id)}
               draggingIds={draggingIds}
               refreshListing={refreshListing}
-              setFileDragAndDrop={setFileDragAndDrop}
             />
           ))
         : null,
@@ -321,7 +312,6 @@ const CustomTreeItem = ({
   section,
   draggingIds,
   refreshListing,
-  setFileDragAndDrop,
 }: {|
   file: GalleryFile,
   index: number,
@@ -329,7 +319,6 @@ const CustomTreeItem = ({
   section: string,
   draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
   refreshListing: () => void,
-  setFileDragAndDrop: UseStateSetter<number>,
 |}) => {
   const { uploadFiles } = useGalleryActions();
   const [over, setOver] = React.useState(0);
@@ -441,7 +430,6 @@ const CustomTreeItem = ({
           e.preventDefault();
           e.stopPropagation();
           setOver(0);
-          setFileDragAndDrop(0);
 
           if (!/Folder/.test(file.type)) return;
 
@@ -472,13 +460,11 @@ const CustomTreeItem = ({
           e.preventDefault();
           e.stopPropagation();
           if (/Folder/.test(file.type)) setOver((x) => x + 1);
-          else setFileDragAndDrop((x) => x + 1);
         }}
         onDragLeave={(e) => {
           e.preventDefault();
           e.stopPropagation();
           if (/Folder/.test(file.type)) setOver((x) => x - 1);
-          else setFileDragAndDrop((x) => x - 1);
         }}
         /*
          * These are for dragging files between folders within the gallery
@@ -504,7 +490,6 @@ const CustomTreeItem = ({
             section={section}
             draggingIds={draggingIds}
             refreshListing={refreshListing}
-            setFileDragAndDrop={setFileDragAndDrop}
           />
         )}
       </TreeItem>
@@ -515,12 +500,10 @@ const CustomTreeItem = ({
 const GridView = observer(
   ({
     listing,
-    setFileDragAndDrop,
   }: {|
     listing:
       | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
-    setFileDragAndDrop: UseStateSetter<number>,
   |}) => {
     const dndContext = useDndContext();
 
@@ -745,7 +728,6 @@ const GridView = observer(
               }
             }}
             draggingIds={[...selectedFiles]}
-            setFileDragAndDrop={setFileDragAndDrop}
           />
         ))}
       </Grid>
@@ -764,7 +746,6 @@ const FileCard = styled(
         index,
         onClick,
         draggingIds,
-        setFileDragAndDrop,
         tabIndex,
         onFocus,
         onBlur,
@@ -775,7 +756,6 @@ const FileCard = styled(
         index: number,
         onClick: (Event) => void,
         draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
-        setFileDragAndDrop: UseStateSetter<number>,
         tabIndex: number,
         onFocus: () => void,
         onBlur: () => void,
@@ -888,11 +868,10 @@ const FileCard = styled(
                */
               onDrop={doNotAwait(async (e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 setOver(0);
-                setFileDragAndDrop(0);
 
                 if (!/Folder/.test(file.type)) return;
+                e.stopPropagation();
 
                 const files = [];
                 if (e.dataTransfer.items) {
@@ -923,15 +902,17 @@ const FileCard = styled(
               }}
               onDragEnter={(e) => {
                 e.preventDefault();
-                e.stopPropagation();
-                if (/Folder/.test(file.type)) setOver((x) => x + 1);
-                else setFileDragAndDrop((x) => x + 1);
+                if (/Folder/.test(file.type)) {
+                  e.stopPropagation();
+                  setOver((x) => x + 1);
+                }
               }}
               onDragLeave={(e) => {
                 e.preventDefault();
-                e.stopPropagation();
-                if (/Folder/.test(file.type)) setOver((x) => x - 1);
-                else setFileDragAndDrop((x) => x - 1);
+                if (/Folder/.test(file.type)) {
+                  e.stopPropagation();
+                  setOver((x) => x - 1);
+                }
               }}
               /*
                * These are for dragging files between folders within the gallery
@@ -1123,7 +1104,6 @@ const TreeView = ({
   path,
   selectedSection,
   refreshListing,
-  setFileDragAndDrop,
 }: {|
   listing:
     | {| tag: "empty", reason: string |}
@@ -1131,7 +1111,6 @@ const TreeView = ({
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: string,
   refreshListing: () => void,
-  setFileDragAndDrop: UseStateSetter<number>,
 |}) => {
   const [selectedNodes, setSelectedNodes] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
@@ -1197,7 +1176,6 @@ const TreeView = ({
           section={selectedSection}
           draggingIds={selectedNodes}
           refreshListing={refreshListing}
-          setFileDragAndDrop={setFileDragAndDrop}
         />
       ))}
     </SimpleTreeView>
@@ -1255,7 +1233,10 @@ export default function GalleryMainPanel({
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
 |}): Node {
-  const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
+  const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
+    useFileImportDropZone({
+      onDrop: () => {},
+    });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
   const { moveFilesWithIds } = useGalleryActions();
@@ -1277,29 +1258,16 @@ export default function GalleryMainPanel({
       sx={{
         position: "relative",
         overflowY: "hidden",
-        ...(fileDragAndDrop > 0
+        ...(over
           ? {
               borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
             }
           : {}),
       }}
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-      onDragEnter={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setFileDragAndDrop((x) => x + 1);
-      }}
-      onDragLeave={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setFileDragAndDrop((x) => x - 1);
-      }}
-      onDrop={() => {
-        setFileDragAndDrop(0);
-      }}
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
       <DndContext
         sensors={[mouseSensor, keyboardSensor]}
@@ -1435,7 +1403,6 @@ export default function GalleryMainPanel({
                     path={path}
                     selectedSection={selectedSection}
                     refreshListing={refreshListing}
-                    setFileDragAndDrop={setFileDragAndDrop}
                   />
                 ),
               })}
@@ -1443,28 +1410,15 @@ export default function GalleryMainPanel({
               FetchingData.match(galleryListing, {
                 loading: () => <></>,
                 error: (error) => <>{error}</>,
-                success: (listing) => (
-                  <GridView
-                    listing={listing}
-                    setFileDragAndDrop={setFileDragAndDrop}
-                  />
-                ),
+                success: (listing) => <GridView listing={listing} />,
               })}
           </Grid>
         </Grid>
-        <Slide
-          direction="up"
-          in={fileDragAndDrop > 0}
-          mountOnEnter
-          unmountOnExit
-        >
+        <Slide direction="up" in={over} mountOnEnter unmountOnExit>
           <ImportDropzone
             folderId={folderId}
             path={path}
             refreshListing={refreshListing}
-            onDrop={() => {
-              setFileDragAndDrop(0);
-            }}
           />
         </Slide>
       </DndContext>
