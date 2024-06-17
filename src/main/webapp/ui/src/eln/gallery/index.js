@@ -15,6 +15,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import Alerts from "../../Inventory/components/Alerts";
+import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -85,26 +86,9 @@ window.addEventListener("load", () => {
           <StyledEngineProvider injectFirst>
             <CssBaseline />
             <ThemeProvider theme={createAccentedTheme(COLOR)}>
-              <div
-                onDragOver={(e) => {
-                  /*
-                   * Allow root of page to accept drop events...
-                   */
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onDrop={(e) => {
-                  /*
-                   * ..and then ignore those drop events. This way, if the user
-                   * drags a file over the page but misses one of the dropzones
-                   * the drag action gets cancelled rather than resulting in
-                   * the file being opened in a new browser tab.
-                   */
-                  e.preventDefault();
-                }}
-              >
+              <DisableDragAndDropByDefault>
                 <WholePage />
-              </div>
+              </DisableDragAndDropByDefault>
             </ThemeProvider>
           </StyledEngineProvider>
         </ErrorBoundary>
