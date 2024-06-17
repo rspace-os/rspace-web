@@ -549,15 +549,6 @@ const GridView = observer(
     // $FlowExpectedError[prop-missing] Difficult to get this library type right
     const selectedFiles = useLocalObservable(() => observable.set([]));
 
-    /*
-     * When shift-clicking, all of the items in the grid between the tapped
-     * item and the last item to be tapped without shift being held should be
-     * selected. This coordinate is that last item to be tapped without shift.
-     */
-    const [shiftSelectCoord, setShiftSelectCoord] = React.useState<null | {|
-      x: number,
-      y: number,
-    |}>(null);
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
       xs: 6,
@@ -584,10 +575,11 @@ const GridView = observer(
     }, [tabIndexCoord]);
 
     /*
-     * When using the arrow keys with shift held down, the region of selected
-     * files expands relative to the current focussed file and the file that had
-     * focus when the shift key began being held down. This state variables holds
-     * that later coordinate for the duration of the shift key being held.
+     * When using the arrow keys or clicking with shift held down, the region
+     * of selected files expands relative to the current focussed file and the
+     * file that had focus when the shift key began being held down. This state
+     * variables holds that later coordinate for the duration of the shift key
+     * being held.
      */
     const [shiftOrigin, setShiftOrigin] = React.useState<null | {|
       x: number,
@@ -722,7 +714,7 @@ const GridView = observer(
             }
             onClick={(e) => {
               if (e.shiftKey) {
-                if (!shiftSelectCoord) return;
+                if (!shiftOrigin) return;
                 const tappedCoord = {
                   x: index % cols,
                   y: Math.floor(index / cols),
@@ -733,10 +725,10 @@ const GridView = observer(
                     y: Math.floor(i / cols),
                   };
                   return (
-                    coord.x >= Math.min(tappedCoord.x, shiftSelectCoord.x) &&
-                    coord.x <= Math.max(tappedCoord.x, shiftSelectCoord.x) &&
-                    coord.y >= Math.min(tappedCoord.y, shiftSelectCoord.y) &&
-                    coord.y <= Math.max(tappedCoord.y, shiftSelectCoord.y)
+                    coord.x >= Math.min(tappedCoord.x, shiftOrigin.x) &&
+                    coord.x <= Math.max(tappedCoord.x, shiftOrigin.x) &&
+                    coord.y >= Math.min(tappedCoord.y, shiftOrigin.y) &&
+                    coord.y <= Math.max(tappedCoord.y, shiftOrigin.y)
                   );
                 });
                 runInAction(() => {
@@ -744,6 +736,10 @@ const GridView = observer(
                   toSelect.forEach(({ id }) => {
                     selectedFiles.add(id);
                   });
+                });
+                setTabIndexCoord({
+                  x: index % cols,
+                  y: Math.floor(index / cols),
                 });
               } else if (e.ctrlKey || e.metaKey) {
                 if (selectedFiles.has(file.id)) {
@@ -760,7 +756,7 @@ const GridView = observer(
                   selectedFiles.clear();
                   selectedFiles.add(file.id);
                 });
-                setShiftSelectCoord({
+                setShiftOrigin({
                   x: index % cols,
                   y: Math.floor(index / cols),
                 });
