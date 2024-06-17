@@ -46,6 +46,15 @@ export const DisableDragAndDropByDefault = ({
        */
       e.preventDefault();
     }}
+    /*
+     * Also prevent the user from accidently dragging any content on the page
+     * and then initiating the drag event, with the content unintentionally
+     * dropped onto a dropzone intended for files from outside the browser.
+     */
+    onDragStart={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }}
   >
     {children}
   </div>
