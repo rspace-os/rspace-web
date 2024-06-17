@@ -54,9 +54,30 @@ export const DisableDragAndDropByDefault = ({
 export const useFileImportDropZone = ({
   onDrop: onDropProp,
   disabled,
+  stopPropagation = true,
 }: {|
   onDrop: ($ReadOnlyArray<File>) => void,
   disabled?: boolean,
+
+  /*
+   * There are cases where we might want to have one dropzone nested inside
+   * another, for example the Gallery page allows users to drop files into the
+   * current folder as well as a specific sub-folder.
+   *
+   * For this to work correctly, we must stop the events, such as onDragEnter
+   * and onDragLeave, from propagating up to the parent dropzone so that the
+   * inner dropzone becomes a carved out region of the parent dropzone where
+   * the parent's functionality does not get invoked. As such, by default, when
+   * this prop is true, we stop the events from propagating.
+   *
+   * However, there are also times when the events SHOULD be propagated because
+   * the inner dropzone should also trigger the outer one. Again as an example,
+   * the Gallery page displays a pop-up panel onto which files can be dropped
+   * to upload into the current folder. We want the events to propagate up for
+   * the parent dropzone's `open` to remain true and for the popup to stay
+   * open.
+   */
+  stopPropagation?: boolean,
 |}): ({|
   onDragEnter: (DragEvent) => void,
   onDragOver: (DragEvent) => void,
@@ -69,19 +90,19 @@ export const useFileImportDropZone = ({
   function onDragEnter(e: DragEvent) {
     e.preventDefault();
     if (disabled) return;
-    e.stopPropagation();
+    if (stopPropagation) e.stopPropagation();
     setOverCount((x) => x + 1);
   }
 
   function onDragOver(e: DragEvent) {
     e.preventDefault();
-    e.stopPropagation();
+    if (stopPropagation) e.stopPropagation();
   }
 
   function onDragLeave(e: DragEvent) {
     e.preventDefault();
     if (disabled) return;
-    e.stopPropagation();
+    if (stopPropagation) e.stopPropagation();
     setOverCount((x) => x - 1);
   }
 
@@ -90,7 +111,7 @@ export const useFileImportDropZone = ({
     setOverCount(0);
 
     if (disabled) return;
-    e.stopPropagation();
+    if (stopPropagation) e.stopPropagation();
 
     const files: Array<File> = [];
     if (e.dataTransfer?.items) {

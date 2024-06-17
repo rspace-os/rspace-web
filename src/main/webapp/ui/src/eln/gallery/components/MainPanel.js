@@ -90,6 +90,7 @@ const ImportDropzone = styled(
             await uploadFiles(path, fId, files);
             refreshListing();
           }),
+          stopPropagation: false,
         });
 
       return (
