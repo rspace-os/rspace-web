@@ -583,6 +583,17 @@ const GridView = observer(
       if (hasFocus) focusFileCardRef.current?.focus();
     }, [tabIndexCoord]);
 
+    /*
+     * When using the arrow keys with shift held down, the region of selected
+     * files expands relative to the current focussed file and the file that had
+     * focus when the shift key began being held down. This state variables holds
+     * that later coordinate for the duration of the shift key being held.
+     */
+    const [shiftOrigin, setShiftOrigin] = React.useState<null | {|
+      x: number,
+      y: number,
+    |}>(null);
+
     if (listing.tag === "empty")
       return (
         <div key={listing.reason}>
@@ -606,6 +617,12 @@ const GridView = observer(
         spacing={2}
         onKeyDown={(e) => {
           if (dndContext.active) return;
+          if (e.key === "Escape") {
+            runInAction(() => {
+              selectedFiles.clear();
+            });
+            return;
+          }
           const newCoord: {
             [string]: ({ x: number, y: number }) => {
               x: number,
@@ -640,18 +657,43 @@ const GridView = observer(
            */
           if (y * cols + (x + 1) > listing.list.length) return;
 
-          setTabIndexCoord({ x, y });
+          const origin = e.shiftKey ? shiftOrigin ?? tabIndexCoord : { x, y };
+          const left = Math.min(x, origin.x);
+          const right = Math.max(x, origin.x);
+          const top = Math.min(y, origin.y);
+          const bottom = Math.max(y, origin.y);
+
           runInAction(() => {
             selectedFiles.clear();
-            selectedFiles.add(listing.list[y * cols + x].id);
+            listing.list.forEach(({ id }, i) => {
+              const fileX = i % cols;
+              const fileY = Math.floor(i / cols);
+              if (
+                fileX >= left &&
+                fileX <= right &&
+                fileY >= top &&
+                fileY <= bottom
+              )
+                selectedFiles.add(id);
+            });
           });
+
+          setShiftOrigin(e.shiftKey ? shiftOrigin ?? tabIndexCoord : null);
+          setTabIndexCoord({ x, y });
         }}
         onFocus={() => {
+          /*
+           * This is so that when the grid first receives tab focus, and thus
+           * no files have been selected, the file card with a tabIndex of 0 is
+           * selected. This was, the selected styling acts as a focus ring.
+           * Pressing the escape key will clear the selection so when the grid
+           * regains focus this will then run again
+           */
           const { x, y } = tabIndexCoord;
-          runInAction(() => {
-            selectedFiles.clear();
-            selectedFiles.add(listing.list[y * cols + x].id);
-          });
+          if (selectedFiles.size === 0)
+            runInAction(() => {
+              selectedFiles.add(listing.list[y * cols + x].id);
+            });
         }}
       >
         {listing.list.map((file, index) => (
