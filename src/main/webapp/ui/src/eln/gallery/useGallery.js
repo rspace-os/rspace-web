@@ -528,7 +528,9 @@ export function useGalleryActions(): {|
               )
               .orElse(
                 mkAlert({
-                  message: `Successfully moved item.`,
+                  message: `Successfully moved item${
+                    fileIds.length > 0 ? "s" : ""
+                  }.`,
                   variant: "success",
                 })
               )
@@ -537,7 +539,7 @@ export function useGalleryActions(): {|
           addAlert(
             mkAlert({
               variant: "error",
-              title: `Failed to move item.`,
+              title: `Failed to move item${fileIds.length > 0 ? "s" : ""}.`,
               message: e.message,
             })
           );
