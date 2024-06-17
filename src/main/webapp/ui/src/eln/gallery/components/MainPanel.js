@@ -1319,6 +1319,9 @@ export default function GalleryMainPanel({
         e.stopPropagation();
         setFileDragAndDrop((x) => x - 1);
       }}
+      onDrop={() => {
+        setFileDragAndDrop(0);
+      }}
     >
       <DndContext
         sensors={[mouseSensor, keyboardSensor]}
