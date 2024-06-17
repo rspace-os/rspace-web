@@ -383,7 +383,7 @@ const CustomTreeItem = ({
       : {};
   const fileUploadDropping: { [string]: string | number } = over
     ? {
-        borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        border: `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
       }
     : {};
 
