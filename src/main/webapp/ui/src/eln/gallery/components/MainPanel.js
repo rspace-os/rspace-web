@@ -1202,7 +1202,15 @@ export default function GalleryMainPanel({
 |}): Node {
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
-      onDrop: () => {},
+      onDrop: () => {
+        /*
+         * Do nothing. This dropzone is purely used to open the ImportDropzone
+         * panel, onto which files can then be dropped. The ImportDropzone
+         * component handles the `drop` events and thus the uploading of files
+         * itself. When a file is dropped elsewhere in the DialogContent,
+         * nothing should happen.
+         */
+      },
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
