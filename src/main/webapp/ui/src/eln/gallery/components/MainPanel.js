@@ -170,7 +170,7 @@ const TreeItemContent = ({
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
-  draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
+  draggingIds: $ReadOnlyArray<string>,
   refreshListing: () => void,
 |}): Node => {
   const { galleryListing } = useGalleryListing({
@@ -323,7 +323,7 @@ const CustomTreeItem = ({
   index: number,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
-  draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
+  draggingIds: $ReadOnlyArray<string>,
   refreshListing: () => void,
 |}) => {
   const { uploadFiles } = useGalleryActions();
@@ -357,7 +357,7 @@ const CustomTreeItem = ({
        * `draggingIds`) then all of the selected files are to be moved by the
        * drag operation. If it is not included then just move this file.
        */
-      draggingIds: draggingIds.includes(file.id) ? draggingIds : [],
+      draggingIds: draggingIds.includes(idToString(file.id)) ? draggingIds : [],
     },
   });
   const dndContext = useDndContext();
@@ -721,7 +721,7 @@ const FileCard = styled(
         selected: boolean,
         index: number,
         onClick: (Event) => void,
-        draggingIds: $ReadOnlyArray<GalleryFile["id"]>,
+        draggingIds: $ReadOnlyArray<string>,
         tabIndex: number,
         onFocus: () => void,
         onBlur: () => void,
@@ -1047,7 +1047,7 @@ const TreeView = ({
   refreshListing: () => void,
 |}) => {
   const [selectedNodes, setSelectedNodes] = React.useState<
-    $ReadOnlyArray<GalleryFile["id"]>
+    $ReadOnlyArray<string>
   >([]);
   const [expandedItems, setExpandedItems] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
@@ -1077,7 +1077,7 @@ const TreeView = ({
         setExpandedItems(nodeIds);
       }}
       selectedItems={selectedNodes}
-      onItemSelectionToggle={(event, itemId, selected) => {
+      onItemSelectionToggle={(event, itemId: string, selected) => {
         /*
          * It's not possible for us to support shift-clicking in tree view
          * because there's no data structure we can query to find a range of
