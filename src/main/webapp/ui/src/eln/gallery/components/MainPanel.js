@@ -887,7 +887,7 @@ const FileCard = styled(
                 : {})}
             >
               <CardActionArea
-                role={file.open ? "button" : "radio"}
+                role={file.open ? "button" : "checkbox"}
                 aria-checked={selected}
                 tabIndex={-1}
                 onFocus={(e) => {
