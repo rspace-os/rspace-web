@@ -51,6 +51,7 @@ import Slide from "@mui/material/Slide";
 import { observable, runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 const SELECTED_OR_FOCUS_BLUE = `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`;
 const SELECTED_OR_FOCUS_BORDER = `2px solid ${SELECTED_OR_FOCUS_BLUE}`;
@@ -1046,6 +1047,7 @@ const TreeView = ({
   selectedSection: string,
   refreshListing: () => void,
 |}) => {
+  const { addAlert } = React.useContext(AlertContext);
   const [selectedNodes, setSelectedNodes] = React.useState<
     $ReadOnlyArray<string>
   >([]);
@@ -1087,7 +1089,19 @@ const TreeView = ({
          * SimpleTreeView does have a multiSelect mode but attempting to use it
          * just results in console errors.
          */
-        if (event.shiftKey) return;
+        if (event.shiftKey) {
+          if (selected) {
+            addAlert(
+              mkAlert({
+                title: "Shift selection is not supported in tree view.",
+                message:
+                  "Either use command/ctrl to select each in turn, or use grid view.",
+                variant: "warning",
+              })
+            );
+          }
+          return;
+        }
         if (event.ctrlKey || event.metaKey) {
           if (selected) {
             setSelectedNodes([...selectedNodes, itemId]);
