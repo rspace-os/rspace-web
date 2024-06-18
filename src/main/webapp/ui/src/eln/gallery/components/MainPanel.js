@@ -600,7 +600,7 @@ const GridView = observer(
           /*
            * This is so that when the grid first receives tab focus, and thus
            * no files have been selected, the file card with a tabIndex of 0 is
-           * selected. This was, the selected styling acts as a focus ring.
+           * selected. This way, the selected styling acts as a focus ring.
            * Pressing the escape key will clear the selection so when the grid
            * regains focus this will then run again
            */
@@ -885,6 +885,18 @@ const FileCard = styled(
                 role={file.open ? "button" : "radio"}
                 aria-checked={selected}
                 tabIndex={-1}
+                onFocus={(e) => {
+                  /*
+                   * We're manually handling focus states through a roving tab
+                   * index on the GridView component, so we don't need to
+                   * handle focus state triggered by keyboard events here.
+                   * Moreover, we don't want mouse events, such as clicking, to
+                   * trigger a focus event either as the file with the current
+                   * tabIndexCoord will end up selected instead of the one the
+                   * user taps.
+                   */
+                  e.stopPropagation();
+                }}
                 onClick={(e) => {
                   if (file.open) file.open();
                   else onClick(e);
