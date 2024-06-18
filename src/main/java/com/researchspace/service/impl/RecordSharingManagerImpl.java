@@ -1048,7 +1048,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   private void checkSubjectCanShareWithUser(User subject, User user) throws AuthorizationException {
     UserPermissionAdapter userAdpter = new UserPermissionAdapter(user);
     userAdpter.setDomain(PermissionDomain.GROUP);
-    userAdpter.setActions(PermissionType.SHARE);
+    userAdpter.setAction(PermissionType.SHARE);
     if (subject != null && !subject.isPermitted(userAdpter, true)) {
       throw new AuthorizationException(
           "Unauthorized attempt by "

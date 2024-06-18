@@ -206,7 +206,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     toTest.setOwner(user);
     // check can read/export all records
     RecordPermissionAdapter rpa = new RecordPermissionAdapter(toTest);
-    rpa.setActions(PermissionType.READ);
+    rpa.setAction(PermissionType.READ);
     grp1 = grpMgr.getGroup(grp1.getId());
     for (User u : grp1.getMembers()) {
       if (u.equals(pi)) {
@@ -214,16 +214,16 @@ public class GroupManagerTest extends SpringTransactionalTest {
       }
     }
 
-    rpa.setActions(PermissionType.EXPORT);
+    rpa.setAction(PermissionType.EXPORT);
     assertTrue(pi.isPermitted(rpa, true));
 
     RSForm form = TestFactory.createAnyForm("temp1");
     form.setOwner(user);
     // check can read/export all tempaltes
     FormPermissionAdapter tpa = new FormPermissionAdapter(form);
-    tpa.setActions(PermissionType.WRITE);
+    tpa.setAction(PermissionType.WRITE);
     assertTrue(pi.isPermitted(tpa, true));
-    tpa.setActions(PermissionType.READ);
+    tpa.setAction(PermissionType.READ);
     assertTrue(pi.isPermitted(tpa, true));
   }
 
@@ -491,9 +491,9 @@ public class GroupManagerTest extends SpringTransactionalTest {
     toTest.setOwner(user);
     // check cant read/export all records
     RecordPermissionAdapter rpa = new RecordPermissionAdapter(toTest);
-    rpa.setActions(PermissionType.READ);
+    rpa.setAction(PermissionType.READ);
     assertFalse(admin.isPermitted(rpa, true));
-    rpa.setActions(PermissionType.EXPORT);
+    rpa.setAction(PermissionType.EXPORT);
     assertFalse(admin.isPermitted(rpa, true));
 
     RSForm form = TestFactory.createAnyForm("temp1");
