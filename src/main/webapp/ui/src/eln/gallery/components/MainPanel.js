@@ -34,6 +34,7 @@ import {
   DndContext,
   useSensor,
   MouseSensor,
+  TouchSensor,
   KeyboardSensor,
 } from "@dnd-kit/core";
 import Button from "@mui/material/Button";
@@ -396,7 +397,9 @@ const CustomTreeItem = ({
       <TreeItem
         itemId={idToString(file.id)}
         label={
-          <Box sx={{ display: "flex" }}>
+          <Box
+            sx={{ display: "flex", pointerEvents: "none", userSelect: "none" }}
+          >
             <Avatar
               src={file.thumbnailUrl}
               imgProps={{
@@ -919,6 +922,7 @@ const FileCard = styled(
                         aspectRatio: "1 / 1",
                         fontSize: "5em",
                         backgroundColor: "transparent",
+                        pointerEvents: "none",
                       }}
                     >
                       <FileIcon fontSize="inherit" />
@@ -1172,6 +1176,15 @@ export default function GalleryMainPanel({
       tolerance: 5,
     },
   });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      /*
+       * This is necessary otherwise tapping gets registered as dragging
+       */
+      delay: 500,
+      tolerance: 5,
+    },
+  });
   const keyboardSensor = useSensor(KeyboardSensor, {});
 
   return (
@@ -1192,7 +1205,7 @@ export default function GalleryMainPanel({
       onDrop={onDrop}
     >
       <DndContext
-        sensors={[mouseSensor, keyboardSensor]}
+        sensors={[mouseSensor, touchSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
           const idsOfSelectedFiles =
@@ -1314,7 +1327,11 @@ export default function GalleryMainPanel({
               </StyledMenu>
             </Grid>
           </Grid>
-          <Grid item sx={{ overflowY: "auto", mt: 1 }} flexGrow={1}>
+          <Grid
+            item
+            sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}
+            flexGrow={1}
+          >
             {viewMode === "tree" &&
               FetchingData.match(galleryListing, {
                 loading: () => <></>,
