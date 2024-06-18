@@ -4,7 +4,7 @@ import React from "react";
 import axios from "axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
-import { Result } from "../../util/result";
+import Result from "../../util/result";
 import { type GalleryFile } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
