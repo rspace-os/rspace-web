@@ -12,7 +12,7 @@ type DMPOnlineArgs = {|
   update: (IntegrationStates["DMPONLINE"]) => void,
 |};
 
-const COLOR = {
+export const COLOR = {
   hue: 39,
   saturation: 99,
   lightness: 46,

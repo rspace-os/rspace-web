@@ -19,8 +19,6 @@ import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
-import Alerts from "../../components/Alerts/Alerts";
-import ErrorBoundary from "../../components/ErrorBoundary";
 import Typography from "@mui/material/Typography";
 import { type UseState } from "../../util/types";
 import {
@@ -594,25 +592,21 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <ErrorBoundary topOfViewport>
-      <Portal>
-        <Alerts>
-          <DialogBoundary>
-            <CustomDialog
-              onClose={() => {
-                setOpen(false);
-              }}
-              open={open}
-              maxWidth="lg"
-              fullWidth
-              fullScreen={isViewportSmall}
-            >
-              <DMPDialogContent setOpen={setOpen} />
-            </CustomDialog>
-          </DialogBoundary>
-        </Alerts>
-      </Portal>
-    </ErrorBoundary>
+    <Portal>
+      <DialogBoundary>
+        <CustomDialog
+          onClose={() => {
+            setOpen(false);
+          }}
+          open={open}
+          maxWidth="lg"
+          fullWidth
+          fullScreen={isViewportSmall}
+        >
+          <DMPDialogContent setOpen={setOpen} />
+        </CustomDialog>
+      </DialogBoundary>
+    </Portal>
   );
 }
 

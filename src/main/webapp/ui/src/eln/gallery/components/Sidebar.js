@@ -14,6 +14,8 @@ import { darken } from "@mui/system";
 import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
 import ChemistryIcon from "../chemistryIcon";
 import Divider from "@mui/material/Divider";
+import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faImage,
@@ -26,6 +28,24 @@ import {
   faVolumeLow,
 } from "@fortawesome/free-solid-svg-icons";
 import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
+import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import AddIcon from "@mui/icons-material/Add";
+import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuItem";
+import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
+import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
+import NewMenuItem from "./NewMenuItem";
+import useGalleryActions from "../useGalleryActions";
+import { type GalleryFile } from "../useGalleryListing";
+import * as FetchingData from "../../../util/fetchingData";
+import Dialog from "@mui/material/Dialog";
+import TextField from "@mui/material/TextField";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -35,6 +55,50 @@ library.add(faShapes);
 library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
+
+const StyledMenu = styled(Menu)(({ open }) => ({
+  "& .MuiPaper-root": {
+    ...(open
+      ? {
+          transform: "translate(-4px, 4px) !important",
+        }
+      : {}),
+  },
+}));
+
+const AddButton = styled(({ drawerOpen, ...props }) => (
+  <Button
+    {...props}
+    fullWidth
+    style={{ minWidth: "unset" }}
+    startIcon={
+      <AddIcon
+        style={{
+          transition: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "none"
+            : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+          transform: drawerOpen ? "translateX(0px)" : "translateX(22px)",
+        }}
+      />
+    }
+  >
+    <div
+      style={{
+        transition: window.matchMedia("(prefers-reduced-motion: reduce)")
+          .matches
+          ? "none"
+          : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+        opacity: drawerOpen ? 1 : 0,
+        transform: drawerOpen ? "unset" : "translateX(20px)",
+      }}
+    >
+      New
+    </div>
+  </Button>
+))(() => ({
+  color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, ${COLOR.contrastText.lightness}%, 100%)`,
+}));
 
 const CustomDrawer = styled(Drawer)(({ open }) => ({
   width: open ? "200px" : "64px",
@@ -46,6 +110,154 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
     overflowX: "hidden",
   },
 }));
+
+const UploadMenuItem = ({
+  path,
+  parentId,
+  onUploadComplete,
+}: {|
+  path: $ReadOnlyArray<GalleryFile>,
+  parentId: number,
+  onUploadComplete: () => void,
+|}) => {
+  const { uploadFiles } = useGalleryActions({ path, parentId });
+  return (
+    <label>
+      <NewMenuItem
+        title="Upload Files"
+        avatar={<UploadFileIcon />}
+        subheader="Choose one or more files to upload"
+        backgroundColor={COLOR.background}
+        foregroundColor={COLOR.contrastText}
+      />
+      <input
+        accept="*"
+        hidden
+        multiple
+        onChange={({ target: { files } }) => {
+          void uploadFiles([...files]).then(() => {
+            onUploadComplete();
+          });
+        }}
+        type="file"
+      />
+    </label>
+  );
+};
+
+const NewFolderMenuItem = ({
+  path,
+  parentId,
+  onDialogClose,
+}: {|
+  path: $ReadOnlyArray<GalleryFile>,
+  parentId: number,
+  onDialogClose: (boolean) => void,
+|}) => {
+  const [open, setOpen] = React.useState(false);
+  const [name, setName] = React.useState("");
+  const { createFolder } = useGalleryActions({ path, parentId });
+  return (
+    <>
+      <Dialog
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void createFolder(name).then(() => {
+              onDialogClose(true);
+            });
+          }}
+        >
+          <DialogTitle>New Folder</DialogTitle>
+          <DialogContent>
+            <DialogContentText variant="body2" sx={{ mb: 2 }}>
+              Please give the new folder a name.
+            </DialogContentText>
+            <TextField
+              size="small"
+              label="Name"
+              onChange={({ target: { value } }) => setName(value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setName("");
+                setOpen(false);
+                onDialogClose(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <SubmitSpinnerButton
+              type="submit"
+              loading={false}
+              disabled={false}
+              label="Create"
+            />
+          </DialogActions>
+        </form>
+      </Dialog>
+      <NewMenuItem
+        title="New Folder"
+        avatar={<CreateNewFolderIcon />}
+        subheader="Create an empty folder"
+        backgroundColor={COLOR.background}
+        foregroundColor={COLOR.contrastText}
+        onClick={() => {
+          setOpen(true);
+        }}
+      />
+    </>
+  );
+};
+
+const DmpMenuSection = () => {
+  const [argosEnabled, setArgosEnabled] = React.useState(false);
+  const [dmponlineEnabled, setDmponlineEnabled] = React.useState(false);
+  const [dmptoolEnabled, setDmptoolEnabled] = React.useState(false);
+
+  React.useEffect(() => {
+    fetchIntegrationInfo("ARGOS")
+      .then((r) => setArgosEnabled(r.enabled))
+      .catch((e) =>
+        console.error("Cannot establish if Argos app is enabled", e)
+      );
+  }, []);
+
+  React.useEffect(() => {
+    fetchIntegrationInfo("DMPONLINE")
+      .then((r) => setDmponlineEnabled(r.enabled))
+      .catch((e) =>
+        console.error("Cannot establish if DmpOnline app is enabled", e)
+      );
+  }, []);
+
+  React.useEffect(() => {
+    fetchIntegrationInfo("DMPTOOL")
+      .then((r) => setDmptoolEnabled(r.enabled))
+      .catch((e) =>
+        console.error("Cannot establish if DMPTool app is enabled", e)
+      );
+  }, []);
+
+  if (!argosEnabled && !dmponlineEnabled && !dmptoolEnabled) return null;
+  return (
+    <>
+      <Divider variant="middle" textAlign="left">
+        DMPs
+      </Divider>
+      {argosEnabled && <ArgosNewMenuItem />}
+      {dmponlineEnabled && <DMPOnlineNewMenuItem />}
+      {dmptoolEnabled && <DMPToolNewMenuItem />}
+    </>
+  );
+};
 
 const SelectedDrawerTabIndicator = styled(({ className }) => (
   <div className={className}></div>
@@ -104,13 +316,20 @@ export default function GallerySidebar({
   selectedSection,
   setSelectedSection,
   drawerOpen,
+  path,
+  parentId,
+  refreshListing,
 }: {|
   selectedSection: string,
   setSelectedSection: (string) => void,
   drawerOpen: boolean,
+  path: $ReadOnlyArray<GalleryFile>,
+  parentId: FetchingData.Fetched<number>,
+  refreshListing: () => void,
 |}): Node {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
+  const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
 
   return (
     <CustomDrawer
@@ -119,6 +338,49 @@ export default function GallerySidebar({
       variant="permanent"
       aria-label="gallery sections drawer"
     >
+      <Box width="100%" p={1.5}>
+        <AddButton
+          onClick={(e) => setNewMenuAnchorEl(e.currentTarget)}
+          drawerOpen={drawerOpen}
+        />
+        <StyledMenu
+          open={Boolean(newMenuAnchorEl)}
+          anchorEl={newMenuAnchorEl}
+          onClose={() => setNewMenuAnchorEl(null)}
+          MenuListProps={{
+            disablePadding: true,
+          }}
+        >
+          {FetchingData.getSuccessValue(parentId)
+            .map((pId) => (
+              <UploadMenuItem
+                key={"upload"}
+                path={path}
+                parentId={pId}
+                onUploadComplete={() => {
+                  refreshListing();
+                  setNewMenuAnchorEl(null);
+                }}
+              />
+            ))
+            .orElse(null)}
+          {FetchingData.getSuccessValue(parentId)
+            .map((pId) => (
+              <NewFolderMenuItem
+                key={"newFolder"}
+                path={path}
+                parentId={pId}
+                onDialogClose={(success) => {
+                  if (success) refreshListing();
+                  setNewMenuAnchorEl(null);
+                }}
+              />
+            ))
+            .orElse(null)}
+          <DmpMenuSection />
+        </StyledMenu>
+      </Box>
+      <Divider />
       <Box
         sx={{
           overflowY: "auto",

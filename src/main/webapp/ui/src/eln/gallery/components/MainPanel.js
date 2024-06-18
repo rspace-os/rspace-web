@@ -17,6 +17,10 @@ import FileIcon from "@mui/icons-material/InsertDriveFile";
 import { COLORS as baseThemeColors } from "../../../theme";
 import * as FetchingData from "../../../util/fetchingData";
 import { type GalleryFile } from "../useGalleryListing";
+import { doNotAwait } from "../../../util/Util";
+import useGalleryActions from "../useGalleryActions";
+import Backdrop from "@mui/material/Backdrop";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 const FileCard = styled(
   ({ file, className, selected, index, setSelectedFile }) => {
@@ -224,6 +228,8 @@ export default function GalleryMainPanel({
   galleryListing,
   selectedFile,
   setSelectedFile,
+  parentId,
+  refreshListing,
 }: {|
   selectedSection: string,
   path: $ReadOnlyArray<GalleryFile>,
@@ -234,9 +240,63 @@ export default function GalleryMainPanel({
   >,
   selectedFile: null | GalleryFile,
   setSelectedFile: (null | GalleryFile) => void,
+  parentId: number,
+  refreshListing: () => void,
 |}): Node {
+  const [fileDragAndDrop, setFileDragAndDrop] = React.useState(0);
+  const { uploadFiles } = useGalleryActions({ path, parentId });
+
   return (
-    <DialogContent aria-live="polite">
+    <DialogContent
+      aria-live="polite"
+      sx={{
+        border: "4px solid transparent",
+        position: "relative",
+        ...(fileDragAndDrop > 0
+          ? {
+              borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+            }
+          : {}),
+      }}
+      onDrop={doNotAwait(async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setFileDragAndDrop(0);
+        const files = [];
+
+        if (e.dataTransfer.items) {
+          // Use DataTransferItemList interface to access the file(s)
+          [...e.dataTransfer.items].forEach((item) => {
+            // If dropped items aren't files, reject them
+            if (item.kind === "file") {
+              files.push(item.getAsFile());
+            }
+          });
+        } else {
+          // Use DataTransfer interface to access the file(s)
+          [...e.dataTransfer.files].forEach((file) => {
+            files.push(file);
+          });
+        }
+
+        await uploadFiles(files);
+        refreshListing();
+      })}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setFileDragAndDrop((x) => x + 1);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setFileDragAndDrop((x) => x - 1);
+      }}
+    >
       <Grid
         container
         direction="column"
@@ -313,6 +373,18 @@ export default function GalleryMainPanel({
               ),
           })}
         </Grid>
+        <Backdrop
+          open={fileDragAndDrop > 0}
+          sx={{
+            position: "absolute",
+            backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, 85%, 11%, 50%)`,
+            color: "white",
+            fontSize: "3em",
+          }}
+        >
+          <UploadFileIcon fontSize="3em" />
+          Drop to upload
+        </Backdrop>
       </Grid>
     </DialogContent>
   );

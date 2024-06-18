@@ -235,10 +235,13 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           styleOverrides: {
             root: {
               backgroundColor: mainBackground,
-              padding: `${baseTheme.spacing(1.25)} ${baseTheme.spacing(2)}`,
-              marginBottom: baseTheme.spacing(2),
               borderBottom: dialogBorder,
-              borderBottomWidth: "1px",
+              borderWidth: "2px",
+              textTransform: "uppercase",
+              fontWeight: 700,
+              lineHeight: 1.167,
+              padding: "0",
+              margin: baseTheme.spacing(2),
             },
           },
         },
@@ -543,6 +546,19 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             root: {
               borderBottom: accentedBorder,
             },
+            withChildren: {
+              borderBottom: "none",
+              marginTop: baseTheme.spacing(-0.5),
+              marginBottom: baseTheme.spacing(-0.5),
+              "&:before, &:after": {
+                borderTop: accentedBorder,
+              },
+              "& .MuiDivider-wrapper": {
+                fontWeight: 500,
+                fontSize: "0.9em",
+                color: backgroundContrastTextColor,
+              },
+            },
           },
         },
         MuiBreadcrumbs: {
@@ -620,6 +636,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               letterSpacing: "0.02em",
               marginBottom: baseTheme.spacing(0.5),
               color: backgroundContrastTextColor,
+              "&.Mui-focused": {
+                color: backgroundContrastTextColor,
+              },
             },
           },
         },
@@ -642,6 +661,27 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             root: {
               backgroundColor: "rgb(255,255,255)",
               color: mainAccentColor,
+            },
+          },
+        },
+        MuiMenu: {
+          styleOverrides: {
+            paper: {
+              boxShadow: "none",
+              border: accentedBorder,
+            },
+          },
+        },
+        MuiTextField: {
+          styleOverrides: {
+            root: {
+              "& .MuiFormLabel-root": {
+                "&.MuiInputLabel-root": {
+                  "&.MuiInputLabel-outlined": {
+                    fontSize: "0.9375em",
+                  },
+                },
+              },
             },
           },
         },
