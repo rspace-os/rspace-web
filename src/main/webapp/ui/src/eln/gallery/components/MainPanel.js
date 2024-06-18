@@ -52,6 +52,9 @@ import { observable, runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 
+const SELECTED_OR_FOCUS_BLUE = `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`;
+const SELECTED_OR_FOCUS_BORDER = `2px solid ${SELECTED_OR_FOCUS_BLUE}`;
+
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
     ...(open
@@ -251,11 +254,12 @@ const Breadcrumb = ({
   });
   const dropStyle: { [string]: string | number } = isOver
     ? {
-        border: `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        border: SELECTED_OR_FOCUS_BORDER,
       }
     : {
         border: "2px solid white",
       };
+
   return (
     <Chip
       ref={(node) => {
@@ -369,7 +373,7 @@ const CustomTreeItem = ({
     : {};
   const dropStyle: { [string]: string | number } = isOver
     ? {
-        border: `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        border: SELECTED_OR_FOCUS_BORDER,
       }
     : {
         border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
@@ -384,7 +388,7 @@ const CustomTreeItem = ({
       : {};
   const fileUploadDropping: { [string]: string | number } = over
     ? {
-        border: `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        border: SELECTED_OR_FOCUS_BORDER,
       }
     : {};
 
@@ -780,7 +784,7 @@ const FileCard = styled(
         : {};
       const dropStyle: { [string]: string | number } = isOver
         ? {
-            borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+            borderColor: SELECTED_OR_FOCUS_BLUE,
           }
         : {};
       const inGroupBeingDraggedStyle: { [string]: string | number } =
@@ -793,7 +797,7 @@ const FileCard = styled(
           : {};
       const fileUploadDropping: { [string]: string | number } = over
         ? {
-            borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+            borderColor: SELECTED_OR_FOCUS_BLUE,
           }
         : {};
 
@@ -1015,11 +1019,11 @@ const FileCard = styled(
     ? {
         border: window.matchMedia("(prefers-contrast: more)").matches
           ? "2px solid black"
-          : `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+          : SELECTED_OR_FOCUS_BORDER,
         "&:hover": {
           border: window.matchMedia("(prefers-contrast: more)").matches
             ? "2px solid black !important"
-            : `2px solid hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%) !important`,
+            : `${SELECTED_OR_FOCUS_BORDER} !important`,
         },
       }
     : {}),
@@ -1207,7 +1211,7 @@ export default function GalleryMainPanel({
         overflowY: "hidden",
         ...(over
           ? {
-              borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+              borderColor: SELECTED_OR_FOCUS_BLUE,
             }
           : {}),
       }}

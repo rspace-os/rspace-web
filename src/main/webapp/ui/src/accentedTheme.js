@@ -724,33 +724,33 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
             content: {
               cursor: "default",
-              backgroundColor: darken(
-                secondaryBackground,
-                hoverDarkenCoefficient
-              ),
+              backgroundColor: prefersMoreContrast
+                ? "transparent"
+                : darken(secondaryBackground, hoverDarkenCoefficient),
+              border: prefersMoreContrast ? accentedBorder : "none",
               maxWidth: "fit-content",
               "&:hover": {
-                backgroundColor: darken(
-                  secondaryBackground,
-                  hoverDarkenCoefficient * 2
-                ),
+                backgroundColor: prefersMoreContrast
+                  ? "transparent"
+                  : darken(secondaryBackground, hoverDarkenCoefficient * 2),
               },
               "&.Mui-selected": {
                 backgroundColor: accentedBackground,
                 "&.Mui-focused": {
-                  backgroundColor: darken(
-                    secondaryBackground,
-                    hoverDarkenCoefficient * 5
-                  ),
+                  backgroundColor: prefersMoreContrast
+                    ? accentedBackground
+                    : darken(secondaryBackground, hoverDarkenCoefficient * 5),
                 },
                 "& .MuiTreeItem-label": {
                   color: contrastTextColor,
                 },
+                "& .MuiTreeItem-iconContainer": {
+                  color: contrastTextColor,
+                },
                 "&:hover": {
-                  backgroundColor: darken(
-                    secondaryBackground,
-                    hoverDarkenCoefficient * 6
-                  ),
+                  backgroundColor: prefersMoreContrast
+                    ? accentedBackground
+                    : darken(secondaryBackground, hoverDarkenCoefficient * 6),
                 },
               },
             },
@@ -759,6 +759,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               letterSpacing: "0.01em",
               color: backgroundContrastTextColor,
               marginRight: baseTheme.spacing(1),
+            },
+            iconContainer: {
+              color: backgroundContrastTextColor,
             },
             groupTransition: {
               paddingLeft: "calc(2 * var(--TreeView-itemChildrenIndentation))",
