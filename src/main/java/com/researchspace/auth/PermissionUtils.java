@@ -214,7 +214,7 @@ public class PermissionUtils implements IPermissionUtils {
         continue;
       }
       AbstractEntityPermissionAdapter adapter = next.getPermissionsAdapter();
-      adapter.setActions(permissionType);
+      adapter.setAction(permissionType);
       if (!checkPermissions(adapter, authUser)) {
         it.remove();
       }
@@ -251,7 +251,7 @@ public class PermissionUtils implements IPermissionUtils {
       throw new IllegalArgumentException(
           toTest.getClass() + " can't be adapted to the Permissions interface");
     }
-    adapter.setActions(permissionType);
+    adapter.setAction(permissionType);
     return checkPermissions(adapter, user);
   }
 

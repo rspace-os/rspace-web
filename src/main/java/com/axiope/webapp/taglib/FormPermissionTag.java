@@ -50,7 +50,7 @@ public class FormPermissionTag extends TagSupport {
     RSForm t = getForm();
     FormPermissionAdapter tpa = new FormPermissionAdapter(t);
     PermissionType pt = PermissionType.valueOf(action);
-    tpa.setActions(pt);
+    tpa.setAction(pt);
 
     boolean show = checkAuthorisation(tpa);
     if (show) {

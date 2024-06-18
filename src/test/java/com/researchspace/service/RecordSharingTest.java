@@ -68,7 +68,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
   private boolean groupCanEditRecord(Group group, StructuredDocument recordToShare) {
     Group updated = grpdao.get(group.getId());
     RecordPermissionAdapter rpa = new RecordPermissionAdapter(recordToShare);
-    rpa.setActions(PermissionType.WRITE);
+    rpa.setAction(PermissionType.WRITE);
     rpa.setDomain(PermissionDomain.RECORD);
     return updated.isPermitted(rpa, true);
   }
