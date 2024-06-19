@@ -35,7 +35,11 @@ import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuIte
 import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
 import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
 import NewMenuItem from "./NewMenuItem";
-import { useGalleryActions, type GalleryFile, type Id } from "../useGallery";
+import {
+  useGalleryActions,
+  type GalleryFile,
+  type Id,
+} from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
 import Dialog from "@mui/material/Dialog";
 import TextField from "@mui/material/TextField";

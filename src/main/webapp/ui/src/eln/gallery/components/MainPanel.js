@@ -22,7 +22,7 @@ import {
   type GalleryFile,
   type Id,
   idToString,
-} from "../useGallery";
+} from "../useGalleryListing";
 import { doNotAwait } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";

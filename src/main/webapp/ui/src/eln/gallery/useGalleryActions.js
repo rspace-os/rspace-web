@@ -5,7 +5,7 @@ import axios from "axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
-import { type GalleryFile } from "./useGalleryListing";
+import { type GalleryFile, idToString } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
 export default function useGalleryActions({
@@ -34,7 +34,7 @@ export default function useGalleryActions({
     addAlert(uploadingAlert);
 
     const targetFolderId = ArrayUtils.getAt(0, path)
-      .map(({ id }) => `${id}`)
+      .map(({ id }) => idToString(id))
       .orElse(`${parentId}`);
     try {
       const data = await Promise.all(
@@ -97,7 +97,7 @@ export default function useGalleryActions({
 
   async function createFolder(name: string) {
     const parentFolderId = ArrayUtils.getAt(0, path)
-      .map(({ id }) => `${id}`)
+      .map(({ id }) => idToString(id))
       .orElse(`${parentId}`);
     try {
       const formData = new FormData();
