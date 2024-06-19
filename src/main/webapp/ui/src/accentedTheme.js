@@ -2,10 +2,27 @@
 
 import { createTheme } from "@mui/material";
 import baseTheme from "./theme";
-import React, { type ElementConfig, type Ref } from "react";
-import Grow from "@mui/material/Grow";
 import { mergeThemes } from "./util/styles";
 import { darken, alpha } from "@mui/system";
+import { toolbarClasses } from "@mui/material/Toolbar";
+import { typographyClasses } from "@mui/material/Typography";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import { textFieldClasses } from "@mui/material/TextField";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { dividerClasses } from "@mui/material/Divider";
+import { listItemButtonClasses } from "@mui/material/ListItemButton";
+import { listItemIconClasses } from "@mui/material/ListItemIcon";
+import { paperClasses } from "@mui/material/Paper";
+import { cardActionAreaClasses } from "@mui/material/CardActionArea";
+import { buttonClasses } from "@mui/material/Button";
+import { outlinedInputClasses } from "@mui/material/OutlinedInput";
+import { gridClasses } from "@mui/x-data-grid";
+import { alertTitleClasses } from "@mui/material/AlertTitle";
+import { checkboxClasses } from "@mui/material/Checkbox";
+import { radioClasses } from "@mui/material/Radio";
+import { chipClasses } from "@mui/material/Chip";
+import { formLabelClasses } from "@mui/material/FormLabel";
+import { inputLabelClasses } from "@mui/material/InputLabel";
 
 /**
  * This theme is used for pages that use the new styling, wherein the page (or
@@ -158,28 +175,28 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           styleOverrides: {
             root: {
               boxShadow: "unset",
-              "& > .MuiToolbar-root": {
+              [`& > .${toolbarClasses.root}`]: {
                 paddingBottom: baseTheme.spacing(0.25),
                 paddingLeft: `${baseTheme.spacing(1.5)} !important`,
                 paddingRight: `${baseTheme.spacing(1)} !important`,
                 color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
                 background: prefersMoreContrast ? "white" : accentedBackground,
                 borderBottom: prefersMoreContrast ? accentedBorder : "none",
-                "& .MuiTypography-root": {
+                [`& .${typographyClasses.root}`]: {
                   marginLeft: baseTheme.spacing(0.5),
                   letterSpacing: "0.02em",
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
                 },
-                "& .MuiSvgIcon-root": {
+                [`& .${svgIconClasses.root}`]: {
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
                 },
               },
-              "& .MuiTextField-root": {
+              [`& .${textFieldClasses.root}`]: {
                 background: lighterInteractiveColor,
                 borderRadius: "3px",
-                "& .MuiInputBase-root": {
+                [`& .${inputBaseClasses.root}`]: {
                   paddingLeft: baseTheme.spacing(1),
-                  "& .MuiSvgIcon-root": {
+                  [`& .${svgIconClasses.root}`]: {
                     fill: prefersMoreContrast
                       ? "rgb(0,0,0)"
                       : contrastTextColor,
@@ -197,7 +214,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   },
                 },
               },
-              "& .MuiDivider-root": {
+              [`& .${dividerClasses.root}`]: {
                 borderRight: accentedBorder,
                 borderColor: prefersMoreContrast
                   ? "rgb(0,0,0)"
@@ -263,22 +280,22 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           styleOverrides: {
             root: {
               backgroundColor: secondaryBackground,
-              "& .MuiListItemButton-root": {
+              [`& .${listItemButtonClasses.root}`]: {
                 paddingLeft: baseTheme.spacing(3),
                 border: "none",
                 borderRadius: 0,
                 background: "unset",
                 boxShadow: "none",
-                "& .MuiSvgIcon-root": {
+                [`& .${svgIconClasses.root}`]: {
                   color: "unset",
                   fontSize: "1rem",
                 },
-                "&.Mui-selected": {
+                [`&.${listItemButtonClasses.selected}`]: {
                   backgroundColor: accentedBackground,
-                  "& .MuiTypography-root": {
+                  [`& .${typographyClasses.root}`]: {
                     color: prefersMoreContrast ? "white" : contrastTextColor,
                   },
-                  "& .MuiListItemIcon-root": {
+                  [`& .${listItemIconClasses.root}`]: {
                     color: prefersMoreContrast ? "white" : contrastTextColor,
                   },
                   "&:hover": {
@@ -294,16 +311,16 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 "& .MuiTouchRipple-root": {
                   color: accentedBackground,
                 },
-                "& .MuiListItemIcon-root": {
+                [`& .${listItemIconClasses.root}`]: {
                   minWidth: baseTheme.spacing(4),
                   color: prefersMoreContrast ? "rgb(0,0,0)" : linkColor,
                 },
-                "& .MuiTypography-body1": {
+                [`& .${typographyClasses.body1}`]: {
                   fontWeight: 700,
                   fontSize: "0.8rem",
                 },
               },
-              "& .MuiPaper-root": {
+              [`& .${paperClasses.root}`]: {
                 borderRight: accentedBorder,
               },
             },
@@ -313,7 +330,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           styleOverrides: {
             root: {
               border: accentedBorder,
-              "&:has(.MuiCardActionArea-root)": {
+              [`&:has(.${cardActionAreaClasses.root})`]: {
                 "&:hover": {
                   backgroundColor: "white",
                   borderColor: darken(
@@ -344,7 +361,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               "&:hover": {
                 borderColor: darken(accentedBackground, hoverDarkenCoefficient),
               },
-              "&.Mui-disabled": {
+              [`&.${buttonClasses.disabled}`]: {
                 border: accentedBorder,
                 borderColor: disabledColor,
               },
@@ -360,7 +377,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   hoverDarkenCoefficient
                 ),
               },
-              "&.Mui-disabled": {
+              [`&.${buttonClasses.disabled}`]: {
                 backgroundColor: disabledColor,
                 borderColor: disabledColor,
               },
@@ -393,7 +410,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               // .MuiOutlinedInput-notchedOutline inside) because of the way
               // Mui applies its styles
               "&:hover": {
-                "& .MuiOutlinedInput-notchedOutline": {
+                [`& .${outlinedInputClasses.notchedOutline}`]: {
                   borderColor: darken(
                     accentedBackground,
                     hoverDarkenCoefficient
@@ -427,22 +444,22 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               "& p": {
                 marginBottom: 0,
               },
-              "& .MuiDataGrid-withBorderColor": {
+              [`& .${gridClasses.withBorderColor}`]: {
                 borderColor: accentedBackground,
                 borderWidth: "1px",
               },
-              "& .MuiDataGrid-columnSeparator": {
+              [`& .${gridClasses.columnSeparator}`]: {
                 visibility: "visible",
                 color: accentedBackground,
               },
-              "& .MuiDataGrid-menuIcon": {
+              [`& .${gridClasses.menuIcon}`]: {
                 width: "unset !important",
                 visibility: "visible !important",
               },
-              "& .MuiDataGrid-columnHeader": {
+              [`& .${gridClasses.columnHeader}`]: {
                 color: backgroundContrastTextColor,
               },
-              "& .MuiDataGrid-row": {
+              [`& .${gridClasses.row}`]: {
                 "&.even": {
                   backgroundColor: `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%, 6%)`,
                 },
@@ -453,12 +470,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   backgroundColor: `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%, 20%)`,
                 },
               },
-              "& .MuiDataGrid-toolbarContainer": {
+              [`& .${gridClasses.toolbarContainer}`]: {
                 paddingRight: 0,
                 marginRight: "-2px",
                 marginLeft: "-4px",
               },
-              "& .MuiButton-root": {
+              [`& .${buttonClasses.root}`]: {
                 "&:hover": {
                   /*
                    * we have to replicate specifying the border width here
@@ -473,7 +490,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   ),
                 },
               },
-              "& .MuiButton-outlinedPrimary": {
+              [`& .${buttonClasses.outlinedPrimary}`]: {
                 color: linkButtonText,
                 border: accentedBorder,
                 "&:hover": {
@@ -483,9 +500,10 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   ),
                 },
               },
-              "& .MuiDataGrid-cellContent, & .MuiDataGrid-cell--withRenderer": {
-                color: backgroundContrastTextColor,
-              },
+              [`& .${gridClasses.cellContent}, & .${gridClasses["cell--withRenderer"]}`]:
+                {
+                  color: backgroundContrastTextColor,
+                },
             },
           },
         },
@@ -496,7 +514,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               borderRadius: 8,
               background: "#fff",
               boxShadow: `hsl(${accent.main.hue}deg, 100%, 20%, 20%) 0px 2px 8px 0px`,
-              "& .MuiSvgIcon-root": {
+              [`& .${svgIconClasses.root}`]: {
                 color: linkColor,
                 fontSize: "2.8em",
               },
@@ -508,7 +526,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             root: {
               letterSpacing: "0.02em",
               color: backgroundContrastTextColor,
-              "&.MuiAlertTitle-root": {
+              [`&.${alertTitleClasses.root}`]: {
                 color: "inherit",
               },
             },
@@ -553,7 +571,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               "&:before, &:after": {
                 borderTop: accentedBorder,
               },
-              "& .MuiDivider-wrapper": {
+              [`& .${dividerClasses.wrapper}`]: {
                 fontWeight: 500,
                 fontSize: "0.9em",
                 color: backgroundContrastTextColor,
@@ -571,8 +589,8 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiCheckbox: {
           styleOverrides: {
             root: {
-              "&.Mui-checked": {
-                "& .MuiSvgIcon-root": {
+              [`&.${checkboxClasses.checked}`]: {
+                [`& .${svgIconClasses.root}`]: {
                   fill: interactiveColor,
                 },
               },
@@ -582,8 +600,8 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiRadio: {
           styleOverrides: {
             root: {
-              "&.Mui-checked": {
-                "& .MuiSvgIcon-root": {
+              [`&.${radioClasses.checked}`]: {
+                [`& .${svgIconClasses.root}`]: {
                   fill: interactiveColor,
                 },
               },
@@ -605,7 +623,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               fontWeight: 500,
               letterSpacing: "0.03em",
               color: backgroundContrastTextColor,
-              "&.MuiChip-filled.MuiChip-clickable": {
+              [`&.${chipClasses.filled}${chipClasses.clickable}`]: {
                 backgroundColor: lighterInteractiveColor,
                 color: linkColor,
                 border: prefersMoreContrast ? accentedBorder : "none",
@@ -616,13 +634,13 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   ),
                 },
               },
-              "&.MuiChip-outlined": {
+              [`&.${chipClasses.outlined}`]: {
                 border: accentedBorder,
-                "& .MuiSvgIcon-root": {
+                [`& .${svgIconClasses.root}`]: {
                   color: linkColor,
                 },
               },
-              "&.MuiChip-deletable": {
+              [`&.${chipClasses.deletable}`]: {
                 padding: 0,
               },
             },
@@ -636,7 +654,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               letterSpacing: "0.02em",
               marginBottom: baseTheme.spacing(0.5),
               color: backgroundContrastTextColor,
-              "&.Mui-focused": {
+              [`&.${formLabelClasses.focused}`]: {
                 color: backgroundContrastTextColor,
               },
             },
@@ -645,12 +663,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiAlert: {
           styleOverrides: {
             standardInfo: {
-              "& .MuiTypography-root": {
+              [`& .${typographyClasses.root}`]: {
                 color: "hsl(206.47deg 53.13% 25.1%) !important",
               },
             },
             standardSuccess: {
-              "& .MuiTypography-root": {
+              [`& .${typographyClasses.root}`]: {
                 color: "hsl(123deg 40% 19.61%) !important",
               },
             },
@@ -675,9 +693,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiTextField: {
           styleOverrides: {
             root: {
-              "& .MuiFormLabel-root": {
-                "&.MuiInputLabel-root": {
-                  "&.MuiInputLabel-outlined": {
+              [`& .${formLabelClasses.root}`]: {
+                [`& .${inputLabelClasses.root}`]: {
+                  [`& .${inputLabelClasses.outlined}`]: {
                     fontSize: "0.9375em",
                   },
                 },
