@@ -6,6 +6,10 @@ import { modulo } from "../util/Util";
 export default function useVerticalRovingTabIndex<RefComponent: HTMLElement>({
   max,
 }: {|
+  /**
+   * The index of the last element of the vertical list, where the indexing is
+   * 0-based.
+   */
   max: number,
 |}): {|
   /**
@@ -14,8 +18,16 @@ export default function useVerticalRovingTabIndex<RefComponent: HTMLElement>({
    */
   getTabIndex: (number) => -1 | 0,
 
+  /**
+   * Given the index of an element of the vertical list, return a ref if it has
+   * a tab index of 0. Otherwise returns null.
+   */
   getRef: (number) => null | {| current: RefComponent | null |},
 
+  /**
+   * The set of the event handlers that must be attached to the container
+   * component of all of the elements of the vertical list.
+   */
   eventHandlers: {|
     onFocus: () => void,
     onBlur: () => void,
