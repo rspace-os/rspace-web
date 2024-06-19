@@ -166,9 +166,8 @@ export const isoToLocale = (
       month: "short",
       day: "numeric",
     });
-  } else {
-    return new Date(Date.parse(isoString)).toLocaleString();
   }
+  return new Date(Date.parse(isoString)).toLocaleString();
 };
 
 export const listToObject = <T, V>(list: Array<T>, f: (T) => V): { [T]: V } =>
@@ -205,9 +204,9 @@ export const capitalise = (str: string): string => {
 };
 
 export function classMixin<T>(cls: Class<T>, ...src: Array<T>): void {
-  for (let _cl of src) {
+  for (const _cl of src) {
     // $FlowFixMe[incompatible-use]
-    for (var key of Object.getOwnPropertyNames(_cl.prototype)) {
+    for (const key of Object.getOwnPropertyNames(_cl.prototype)) {
       // $FlowFixMe[incompatible-use]
       cls.prototype[key] = _cl.prototype[key];
     }
@@ -278,3 +277,5 @@ export const isInventoryPermalink = (str: string): boolean => {
 export const mapNullable = <A, B>(f: (A) => B, a: ?A): ?B => {
   return a === null || typeof a === "undefined" ? a : f(a);
 };
+
+export const modulo = (a: number, b: number): number => ((a % b) + b) % b;

@@ -46,6 +46,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
+import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabIndex";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -338,12 +339,11 @@ export default function GallerySidebar({
     React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
 
-  const [rovingTabIndex, setRovingTabIndex] = React.useState(0);
-  const [hasFocus, setHasFocus] = React.useState(false);
-  const refOfRovingTabIndex = React.useRef(null);
-  React.useEffect(() => {
-    if (hasFocus) refOfRovingTabIndex.current?.focus();
-  }, [rovingTabIndex]);
+  const { getTabIndex, getRef, eventHandlers } = useVerticalRovingTabIndex<
+    typeof ListItemButton
+  >({
+    max: 8,
+  });
 
   return (
     <CustomDrawer
@@ -351,19 +351,6 @@ export default function GallerySidebar({
       anchor="left"
       variant="permanent"
       aria-label="gallery sections drawer"
-      onFocus={() => {
-        setHasFocus(true);
-      }}
-      onBlur={() => {
-        setHasFocus(false);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "ArrowUp") {
-          setRovingTabIndex(Math.max(0, rovingTabIndex - 1));
-        } else if (e.key === "ArrowDown") {
-          setRovingTabIndex(Math.min(8, rovingTabIndex + 1));
-        }
-      }}
     >
       <Box width="100%" p={1.5}>
         <AddButton
@@ -409,6 +396,7 @@ export default function GallerySidebar({
       </Box>
       <Divider />
       <Box
+        {...eventHandlers}
         sx={{
           overflowY: "auto",
           overflowX: "hidden",
@@ -423,8 +411,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Images}
             icon={<FaIcon icon="image" />}
             index={0}
-            tabIndex={rovingTabIndex === 0 ? 0 : -1}
-            ref={rovingTabIndex === 0 ? refOfRovingTabIndex : null}
+            tabIndex={getTabIndex(0)}
+            ref={getRef(0)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Images"}
             onClick={(event) => {
@@ -436,8 +424,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Audios}
             icon={<FaIcon icon="volume-low" />}
             index={1}
-            tabIndex={rovingTabIndex === 1 ? 0 : -1}
-            ref={rovingTabIndex === 1 ? refOfRovingTabIndex : null}
+            tabIndex={getTabIndex(1)}
+            ref={getRef(1)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Audios"}
             onClick={(event) => {
@@ -449,8 +437,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Videos}
             icon={<FaIcon icon="film" />}
             index={2}
-            tabIndex={rovingTabIndex === 2 ? 0 : -1}
-            ref={rovingTabIndex === 2 ? refOfRovingTabIndex : null}
+            tabIndex={getTabIndex(2)}
+            ref={getRef(2)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Videos"}
             onClick={(event) => {
@@ -462,8 +450,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Documents}
             icon={<FaIcon icon="file" />}
             index={3}
-            tabIndex={rovingTabIndex === 3 ? 0 : -1}
-            ref={rovingTabIndex === 3 ? refOfRovingTabIndex : null}
+            tabIndex={getTabIndex(3)}
+            ref={getRef(3)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Documents"}
             onClick={(event) => {
@@ -475,8 +463,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Chemistry}
             icon={<ChemistryIcon />}
             index={4}
-            tabIndex={rovingTabIndex === 4 ? 0 : -1}
-            ref={rovingTabIndex === 4 ? refOfRovingTabIndex : null}
+            tabIndex={getTabIndex(4)}
+            ref={getRef(4)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Chemistry"}
             onClick={(event) => {
@@ -488,8 +476,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.DMPs}
             icon={<FaIcon icon="file-invoice" />}
             index={5}
-            tabIndex={rovingTabIndex === 5 ? 0 : -1}
-            ref={rovingTabIndex === 5 ? refOfRovingTabIndex : null}
+            tabIndex={getTabIndex(5)}
+            ref={getRef(5)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "DMPs"}
             onClick={(event) => {
@@ -500,9 +488,9 @@ export default function GallerySidebar({
           <DrawerTab
             label={gallerySectionLabel.Snippets}
             icon={<FaIcon icon="fa-regular fa-note-sticky" />}
-            index={7}
-            tabIndex={rovingTabIndex === 6 ? 0 : -1}
-            ref={rovingTabIndex === 6 ? refOfRovingTabIndex : null}
+            index={6}
+            tabIndex={getTabIndex(6)}
+            ref={getRef(6)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Snippets"}
             onClick={(event) => {
@@ -513,9 +501,9 @@ export default function GallerySidebar({
           <DrawerTab
             label={gallerySectionLabel.Miscellaneous}
             icon={<FaIcon icon="shapes" />}
-            index={8}
-            tabIndex={rovingTabIndex === 7 ? 0 : -1}
-            ref={rovingTabIndex === 7 ? refOfRovingTabIndex : null}
+            index={7}
+            tabIndex={getTabIndex(7)}
+            ref={getRef(7)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Miscellaneous"}
             onClick={(event) => {
@@ -529,9 +517,9 @@ export default function GallerySidebar({
           <DrawerTab
             label={gallerySectionLabel.PdfDocuments}
             icon={<FaIcon icon="fa-circle-down" />}
-            index={9}
-            tabIndex={rovingTabIndex === 8 ? 0 : -1}
-            ref={rovingTabIndex === 8 ? refOfRovingTabIndex : null}
+            index={8}
+            tabIndex={getTabIndex(8)}
+            ref={getRef(8)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "PdfDocuments"}
             onClick={(event) => {
