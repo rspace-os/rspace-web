@@ -14,7 +14,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,17 +56,17 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
   }
 
   @Override
-  public DMPUser doPdfDownload(DMPToolDMP dmp, String title, String accessToken)
+  public DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
       throws URISyntaxException, IOException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public ServiceOperationResult<DMPUser> doPdfDownload(DMPToolDMP dmp, String title, User user)
+  public ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
       throws URISyntaxException, IOException {
-    byte[] exampleBytes = getPdfBytes(dmp, "");
+    String jsonString = getJson(dmp, "");
     if (assertIsNewDMP(dmp, user)) {
-      return new ServiceOperationResult<>(saveDMPPdf(dmp, title, user, exampleBytes), true);
+      return new ServiceOperationResult<>(saveJsonDMP(dmp, title, user, jsonString), true);
     } else {
       return new ServiceOperationResult<>(
           null, false, " DMP with id " + dmp.getId() + " already exists");
@@ -78,12 +77,12 @@ public class DMPClientStub extends AbstractDMPToolDMPProvider implements DMPTool
     return new ServiceOperationResult<>("Success", true);
   }
 
-  byte[] getPdfBytes(DMPToolDMP dmp, String accessToken) {
+  String getJson(DMPToolDMP dmp, String accessToken) {
     try (FileInputStream fis = new FileInputStream(pdfPath)) {
-      return IOUtils.toByteArray(fis);
+      return fis.toString();
     } catch (IOException e) {
       LOG.error("Error creating input stream.", e);
-      return new byte[0];
+      return "";
     }
   }
 
