@@ -1985,7 +1985,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>dmptool-java-client</artifactId>
-        <version>0.1.0</version>
+        <version>RSDEV-241-dmptool-SNAPSHOT</version>
         <exclusions>
             <exclusion>
                 <groupId>com.fasterxml.jackson.core</groupId>
