@@ -359,9 +359,9 @@ export default function GallerySidebar({
       }}
       onKeyDown={(e) => {
         if (e.key === "ArrowUp") {
-          setRovingTabIndex(rovingTabIndex - 1);
+          setRovingTabIndex(Math.max(0, rovingTabIndex - 1));
         } else if (e.key === "ArrowDown") {
-          setRovingTabIndex(rovingTabIndex + 1);
+          setRovingTabIndex(Math.min(8, rovingTabIndex + 1));
         }
       }}
     >
