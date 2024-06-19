@@ -276,8 +276,28 @@ const SelectedDrawerTabIndicator = styled(({ className }) => (
 }));
 
 const DrawerTab = styled(
+  //eslint-disable-next-line react/display-name
   React.forwardRef(
-    ({ icon, label, index, className, selected, onClick, tabIndex }, ref) => (
+    (
+      {
+        icon,
+        label,
+        index,
+        className,
+        selected,
+        onClick,
+        tabIndex,
+      }: {|
+        icon: Node,
+        label: Node,
+        index: number,
+        className: string,
+        selected: boolean,
+        onClick: () => void,
+        tabIndex: number,
+      |},
+      ref
+    ) => (
       <ListItem disablePadding className={className}>
         <ListItemButton
           selected={selected}
