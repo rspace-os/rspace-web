@@ -173,6 +173,25 @@ function CreateInContextDialog({
         explanation: "A new Template will be created from the selected Sample.",
         disabled: false,
       },
+      {
+        id: "sa-2",
+        name: "Split",
+        explanation:
+          selectedResult instanceof SampleModel &&
+          selectedResult.subSamples.length === 1 ? (
+            "Split this sample's only subsample into two subsamples."
+          ) : (
+            <>
+              Only samples with a single subsample can be split. <br />
+              Go to a specific subsample and then open this Create dialog to
+              split it.
+            </>
+          ),
+        disabled: !(
+          selectedResult instanceof SampleModel &&
+          selectedResult.subSamples.length === 1
+        ),
+      },
     ],
     SAMPLE_TEMPLATE: [
       {
@@ -297,6 +316,12 @@ function CreateInContextDialog({
     ) {
       if (createOption === createActions[selectedResult.type][0].name) {
         createStore.setTemplateCreationContext(menuID);
+      }
+      if (createOption === createActions[selectedResult.type][1].name) {
+        await searchStore.search.splitRecord(
+          parseInt(splitCopies, 10),
+          selectedResult.subSamples[0]
+        );
       }
     }
     onClose();
@@ -464,6 +489,8 @@ function CreateInContextDialog({
             {selectedResult instanceof SubSampleModel && (
               <SplitCopiesSelector />
             )}
+            {selectedResult instanceof SampleModel &&
+              selectedResult.subSamples.length === 1 && <SplitCopiesSelector />}
             {createActions[selectedResult.type].length === 0 && (
               <NoValue label="No option available." />
             )}
