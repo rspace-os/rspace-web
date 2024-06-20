@@ -696,7 +696,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-audit</artifactId>
-        <version>0.12.0</version>
+        <version>0.13.0</version>
         <exclusions>
             <exclusion>
                 <groupId>org.apache.commons</groupId>
@@ -723,7 +723,7 @@
                 <artifactId>commons-io</artifactId>
             </exclusion>
             <exclusion>
-                <groupId>com.researchspace</groupId>
+                <groupId>com.github.rspace-os</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
         </exclusions>
@@ -1765,6 +1765,10 @@
             <artifactId>rspace-core-util</artifactId>
           </exclusion>
           <exclusion>
+            <groupId>com.github.rspace-os</groupId>
+            <artifactId>rspace-audit</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
           </exclusion>
@@ -1788,6 +1792,10 @@
           <exclusion>
             <groupId>com.github.rspace-os</groupId>
             <artifactId>rspace-core-util</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
+            <artifactId>rspace-audit</artifactId>
           </exclusion>
           <exclusion>
             <groupId>commons-io</groupId>
@@ -1886,6 +1894,10 @@
             <exclusion>
                 <groupId>com.researchspace</groupId>
                 <artifactId>rspace-core-util</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>com.researchspace</groupId>
+                <artifactId>repository-spi</artifactId>
             </exclusion>
             <exclusion>
                 <groupId>log4j</groupId>
