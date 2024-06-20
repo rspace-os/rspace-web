@@ -680,6 +680,10 @@
       <version>0.2.0</version>
       <exclusions>
         <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-core-util</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
@@ -692,7 +696,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-audit</artifactId>
-        <version>0.12.0</version>
+        <version>0.13.0</version>
         <exclusions>
             <exclusion>
                 <groupId>org.apache.commons</groupId>
@@ -717,6 +721,10 @@
             <exclusion>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>com.github.rspace-os</groupId>
+                <artifactId>rspace-core-util</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
@@ -1548,6 +1556,10 @@
         <version>1.1.0</version>
         <exclusions>
             <exclusion>
+                <groupId>com.github.rspace-os</groupId>
+                <artifactId>rspace-core-util</artifactId>
+            </exclusion>
+            <exclusion>
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
             </exclusion>
@@ -1734,19 +1746,28 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-core-util</artifactId>
-        <version>0.26.0</version>
-        <exclusions>
-            <exclusion>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-            </exclusion>
-        </exclusions>
+        <version>1.0.0-SNAPSHOT</version>
+      <exclusions>
+      <exclusion>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+      </exclusion>
+      </exclusions>
+
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-core-model</artifactId>
         <version>${rspace-core-model.version}</version>
         <exclusions>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
+            <artifactId>rspace-core-util</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
+            <artifactId>rspace-audit</artifactId>
+          </exclusion>
           <exclusion>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -1768,6 +1789,14 @@
         <scope>test</scope>
         <type>test-jar</type>
         <exclusions>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
+            <artifactId>rspace-core-util</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
+            <artifactId>rspace-audit</artifactId>
+          </exclusion>
           <exclusion>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -1863,6 +1892,14 @@
         <version>0.22.0</version>
         <exclusions>
             <exclusion>
+                <groupId>com.github.rspace-os</groupId>
+                <artifactId>rspace-core-util</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>com.github.rspace-os</groupId>
+                <artifactId>repository-spi</artifactId>
+            </exclusion>
+            <exclusion>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
             </exclusion>
@@ -1877,6 +1914,10 @@
         <artifactId>dryad-rspace-adapter</artifactId>
         <version>0.3.0</version>
         <exclusions>
+            <exclusion>
+                <groupId>com.github.rspace-os</groupId>
+                <artifactId>rspace-core-util</artifactId>
+            </exclusion>
             <exclusion>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
@@ -2007,6 +2048,10 @@
         <artifactId>rest-api-utils</artifactId>
         <version>1.2.0</version>
         <exclusions>
+            <exclusion>
+                <groupId>com.github.rspace-os</groupId>
+                <artifactId>rspace-core-util</artifactId>
+            </exclusion>
             <exclusion>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-webmvc</artifactId>
@@ -2196,7 +2241,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>snapgene-rspace-client</artifactId>
-        <version>0.3.0</version>
+        <version>0.3.1</version>
         <exclusions>
           <exclusion>
             <groupId>log4j</groupId>
@@ -2206,28 +2251,28 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-core-util</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>com.jayway.jsonpath</groupId>
-                <artifactId>json-path</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-web</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-            </exclusion>
           <exclusion>
-            <groupId>com.researchspace</groupId>
+              <groupId>com.github.rspace-os</groupId>
+              <artifactId>rspace-core-util</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>com.jayway.jsonpath</groupId>
+              <artifactId>json-path</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>org.springframework</groupId>
+              <artifactId>spring-web</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-api</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>commons-io</groupId>
+              <artifactId>commons-io</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
             <artifactId>rest-api-utils</artifactId>
           </exclusion>
         </exclusions>
