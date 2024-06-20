@@ -723,7 +723,7 @@
                 <artifactId>commons-io</artifactId>
             </exclusion>
             <exclusion>
-                <groupId>com.github.rspace-os</groupId>
+                <groupId>com.researchspace</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
         </exclusions>
@@ -1747,6 +1747,13 @@
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-core-util</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+      <exclusions>
+      <exclusion>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+      </exclusion>
+      </exclusions>
+
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
@@ -1877,7 +1884,7 @@
         <version>0.22.0</version>
         <exclusions>
             <exclusion>
-                <groupId>com.github.rspace-os</groupId>
+                <groupId>com.researchspace</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
             <exclusion>
@@ -1896,7 +1903,7 @@
         <version>0.3.0</version>
         <exclusions>
             <exclusion>
-                <groupId>com.github.rspace-os</groupId>
+                <groupId>com.researchspace</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
             <exclusion>
@@ -2030,7 +2037,7 @@
         <version>1.2.0</version>
         <exclusions>
             <exclusion>
-                <groupId>com.github.rspace-os</groupId>
+                <groupId>com.researchspace</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
             <exclusion>
@@ -2233,7 +2240,7 @@
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
             <exclusion>
-                <groupId>com.github.rspace-os</groupId>
+                <groupId>com.researchspace</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
             <exclusion>
