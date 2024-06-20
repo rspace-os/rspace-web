@@ -518,6 +518,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 color: linkColor,
                 fontSize: "2.8em",
               },
+              "&:focus-visible": {
+                backgroundColor: darken(
+                  secondaryBackground,
+                  hoverDarkenCoefficient
+                ),
+              },
             },
           },
         },
