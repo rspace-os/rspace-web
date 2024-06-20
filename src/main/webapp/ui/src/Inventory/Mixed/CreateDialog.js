@@ -179,12 +179,11 @@ function CreateInContextDialog({
         explanation:
           selectedResult instanceof SampleModel &&
           selectedResult.subSamples.length === 1 ? (
-            "Split this sample's only subsample into two subsamples."
+            "Split this sample's only subsample into multiple subsamples."
           ) : (
             <>
-              Only samples with a single subsample can be split. <br />
-              Go to a specific subsample and then open this Create dialog to
-              split it.
+              Only samples with a single subsample can be split directly. <br />
+              Go to a specific subsample and open its Create dialog to split it.
             </>
           ),
         disabled: !(
