@@ -1892,11 +1892,11 @@
         <version>0.22.0</version>
         <exclusions>
             <exclusion>
-                <groupId>com.researchspace</groupId>
+                <groupId>com.github.rspace-os</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
             <exclusion>
-                <groupId>com.researchspace</groupId>
+                <groupId>com.github.rspace-os</groupId>
                 <artifactId>repository-spi</artifactId>
             </exclusion>
             <exclusion>
@@ -1915,7 +1915,7 @@
         <version>0.3.0</version>
         <exclusions>
             <exclusion>
-                <groupId>com.researchspace</groupId>
+                <groupId>com.github.rspace-os</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
             <exclusion>
@@ -2049,7 +2049,7 @@
         <version>1.2.0</version>
         <exclusions>
             <exclusion>
-                <groupId>com.researchspace</groupId>
+                <groupId>com.github.rspace-os</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
             <exclusion>
@@ -2241,7 +2241,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>snapgene-rspace-client</artifactId>
-        <version>0.3.0</version>
+        <version>0.3.1</version>
         <exclusions>
           <exclusion>
             <groupId>log4j</groupId>
@@ -2251,28 +2251,28 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
-            <exclusion>
-                <groupId>com.researchspace</groupId>
-                <artifactId>rspace-core-util</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>com.jayway.jsonpath</groupId>
-                <artifactId>json-path</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-web</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-            </exclusion>
           <exclusion>
-            <groupId>com.researchspace</groupId>
+              <groupId>com.github.rspace-os</groupId>
+              <artifactId>rspace-core-util</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>com.jayway.jsonpath</groupId>
+              <artifactId>json-path</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>org.springframework</groupId>
+              <artifactId>spring-web</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-api</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>commons-io</groupId>
+              <artifactId>commons-io</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
             <artifactId>rest-api-utils</artifactId>
           </exclusion>
         </exclusions>
