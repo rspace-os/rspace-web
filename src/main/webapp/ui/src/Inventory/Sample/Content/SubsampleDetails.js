@@ -8,6 +8,12 @@ import Grid from "@mui/material/Grid";
 import Collapse from "@mui/material/Collapse";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButton from "@mui/material/IconButton";
+import Toolbar from "@mui/material/Toolbar";
+import AppBar from "@mui/material/AppBar";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import { useTheme } from "@mui/material/styles";
+import LocationField from "../../components/Fields/Location";
 
 const Wrapper = ({ children }: {| children: Node |}) => {
   const [sectionOpen, setSectionOpen] = React.useState(true);
@@ -21,8 +27,8 @@ const Wrapper = ({ children }: {| children: Node |}) => {
           <ExpandCollapseIcon open={sectionOpen} />
         </IconButton>
       </Grid>
-      <Grid item>
-        <Collapse in={sectionOpen} collapsedSize={44}>
+      <Grid item flexGrow={1}>
+        <Collapse in={sectionOpen} collapsedSize={50}>
           {children}
         </Collapse>
       </Grid>
@@ -35,11 +41,34 @@ type SubsampleDetailsArgs = {|
 |};
 
 function SubsampleDetails({ subsample }: SubsampleDetailsArgs) {
+  const theme = useTheme();
+
   if (subsample === null) return <Wrapper>No subsamples</Wrapper>;
 
-  if (!subsample instanceof SubSampleModel)
+  if (!(subsample instanceof SubSampleModel))
     throw new Error("All Subsamples must be instances of SubSampleModel");
-  return <Wrapper>{subsample.name}</Wrapper>;
+  return (
+    <Wrapper>
+      <Card
+        variant="outlined"
+        sx={{ border: `2px solid ${theme.palette.record.subSample.bg}` }}
+      >
+        <AppBar
+          position="relative"
+          open={true}
+          sx={{
+            backgroundColor: theme.palette.record.subSample.bg,
+            boxShadow: "none",
+          }}
+        >
+          <Toolbar variant="dense">{subsample.name}</Toolbar>
+        </AppBar>
+        <CardContent>
+          <LocationField fieldOwner={subsample} />
+        </CardContent>
+      </Card>
+    </Wrapper>
+  );
 }
 
 export default (observer(
