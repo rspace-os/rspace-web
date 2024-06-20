@@ -122,16 +122,24 @@ const UploadMenuItem = ({
   onUploadComplete: () => void,
 |}) => {
   const { uploadFiles } = useGalleryActions({ path, parentId });
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
   return (
-    <label>
+    <>
       <NewMenuItem
         title="Upload Files"
         avatar={<UploadFileIcon />}
         subheader="Choose one or more files to upload"
         backgroundColor={COLOR.background}
         foregroundColor={COLOR.contrastText}
+        onKeyDown={(e: KeyboardEvent) => {
+          if (e.key === " ") inputRef.current?.click();
+        }}
+        onClick={() => {
+          inputRef.current?.click();
+        }}
       />
       <input
+        ref={inputRef}
         accept="*"
         hidden
         multiple
@@ -142,7 +150,7 @@ const UploadMenuItem = ({
         }}
         type="file"
       />
-    </label>
+    </>
   );
 };
 

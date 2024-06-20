@@ -11,9 +11,16 @@ export default (styled(
     foregroundColor: _foregroundColor,
     backgroundColor: _backgroundColor,
     className,
+    onClick,
+    onKeyDown,
     ...props
   }) => (
-    <MenuItem className={className}>
+    <MenuItem
+      className={className}
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+      onClick={onClick}
+    >
       <CardHeader {...props} />
     </MenuItem>
   )
@@ -63,4 +70,5 @@ export default (styled(
   foregroundColor: {| hue: number, saturation: number, lightness: number |},
   backgroundColor: {| hue: number, saturation: number, lightness: number |},
   onClick?: () => void,
+  onKeyDown?: (KeyboardEvent) => void,
 |}>);
