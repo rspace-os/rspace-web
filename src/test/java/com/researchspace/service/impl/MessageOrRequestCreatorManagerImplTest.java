@@ -84,7 +84,7 @@ public class MessageOrRequestCreatorManagerImplTest {
   }
 
   private void setUpMocks(MsgOrReqstCreationCfg cmd, User subject) {
-    when(userDao.getUserByUserName(subject.getUsername())).thenReturn(subject);
+    when(userDao.getUserByUsername(subject.getUsername())).thenReturn(subject);
     when(grpDao.get(1L)).thenReturn(group);
     when(permUtils.isPermitted(cmd.getMessageType(), PermissionType.READ, subject))
         .thenReturn(true);

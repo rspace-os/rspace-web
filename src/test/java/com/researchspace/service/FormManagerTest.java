@@ -72,7 +72,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     assertEquals(user.getUsername(), form.getCreatedBy());
 
     // admin can create template
-    User admin = userDao.getUserByUserName("admin");
+    User admin = userDao.getUserByUsername("admin");
     formMgr.create(admin);
   }
 
@@ -81,7 +81,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     // check
     // regular user can create templates
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
-    User user = userDao.getUserByUserName(USER1A);
+    User user = userDao.getUserByUsername(USER1A);
     formMgr.create(user);
   }
 
@@ -92,7 +92,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     RSForm form = formMgr.create(user);
     // this user does not have rights to share the template.
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
-    User u = userDao.getUserByUserName(USER1A);
+    User u = userDao.getUserByUsername(USER1A);
     formMgr.publish(form.getId(), true, null, u);
   }
 
@@ -140,7 +140,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     DateFieldDTO<DateFieldForm> dto2 = createAnyDTO("date2");
     DateFieldForm dft = formMgr.createFieldForm(dto, form.getId(), user);
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
-    User imposter = userDao.getUserByUserName(USER1A);
+    User imposter = userDao.getUserByUsername(USER1A);
     formMgr.updateFieldForm(dto2, dft.getId(), imposter);
   }
 
@@ -188,7 +188,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     RSForm form = formMgr.create(user);
     NumberFieldDTO<NumberFieldForm> dto = createAnyNumberFieldDTO();
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
-    User imposter = userDao.getUserByUserName(USER1A);
+    User imposter = userDao.getUserByUsername(USER1A);
     formMgr.createFieldForm(dto, form.getId(), imposter);
   }
 

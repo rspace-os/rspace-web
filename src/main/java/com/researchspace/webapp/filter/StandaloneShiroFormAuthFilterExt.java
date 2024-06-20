@@ -60,7 +60,7 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
     // check if account isn't temporarily locked due to wrong password attempts (RSPAC-2265)
     try {
       String username = getUsername(request);
-      User u = userMgr.getUserByUsername(username);
+      User u = userMgr.getUserByUsernameOrAlias(username);
       if (u.isAccountLocked()
           && u.getLoginFailure() != null
           && !lockoutPolicy.isAfterLockoutTime(u)) {
@@ -88,7 +88,7 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
       AuthenticationToken token, Subject subject, ServletRequest request, ServletResponse response)
       throws Exception {
 
-    User u = userMgr.getUserByUsername(getUsername(request));
+    User u = userMgr.getUserByUsernameOrAlias(getUsername(request));
     if (u.isAccountLocked() && u.getLoginFailure() != null) {
       lockoutPolicy.handleLockoutOnSuccess(u);
     }
@@ -132,7 +132,7 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
         WebUtils.toHttp(request).setAttribute("checkedExceptionMessage", e.getCause().getMessage());
       } else {
         try {
-          User u = userMgr.getUserByUsername(username);
+          User u = userMgr.getUserByUsernameOrAlias(username);
           lockoutPolicy.handleLockoutOnFailure(u);
           userMgr.save(u);
         } catch (DataAccessException re) {

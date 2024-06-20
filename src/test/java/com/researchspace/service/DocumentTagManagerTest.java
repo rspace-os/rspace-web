@@ -75,7 +75,7 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
             .createOntologiesForm(
                 CustomFormAppInitialiser.ONTOLOGY_FORM_NAME,
                 CustomFormAppInitialiser.ONTOLOGY_DESCRIPTION,
-                userDao.getUserByUserName("sysadmin1"));
+                userDao.getUserByUsername("sysadmin1"));
     formDao.save(ontologiesForm);
   }
 

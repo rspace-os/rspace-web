@@ -20,6 +20,8 @@ import {
 } from "../../common/integrationHelpers";
 import { mapNullable } from "../../util/Util";
 import { type UseState } from "../../util/types";
+import Alerts from "../../components/Alerts/Alerts";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 type DMPToolMenuItemArgs = {|
   /*
@@ -57,7 +59,7 @@ export default function DMPToolMenuItem({
 
   if (!dmpToolIntegrationInfo || !dmpToolIntegrationInfo.enabled) return null;
   return (
-    <>
+    <ErrorBoundary topOfViewport>
       <MenuItem
         id="fromDMP"
         data-test-id="gallery-import-dmp"
@@ -78,7 +80,9 @@ export default function DMPToolMenuItem({
           }
         />
       </MenuItem>
-      <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
-    </>
+      <Alerts>
+        <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
+      </Alerts>
+    </ErrorBoundary>
   );
 }

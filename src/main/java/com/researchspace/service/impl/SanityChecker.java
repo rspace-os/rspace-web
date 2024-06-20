@@ -133,7 +133,7 @@ public class SanityChecker extends AbstractAppInitializor {
   private boolean assertSysadmin1UserPresent() {
     boolean rc = true;
 
-    User sysadmin = userDao.getUserByUserName(SYSADMIN_UNAME);
+    User sysadmin = userDao.getUserByUsername(SYSADMIN_UNAME);
     if (sysadmin == null) {
       fatalStartUpLog("No default sysadmin user found!");
       rc = false;

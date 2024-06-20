@@ -65,12 +65,32 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
 
   @Test
   public void testExistingUserAccessAllowed() throws UserExistsException {
+    propertyHolder.setUserSignup("false");
+
     User u = createAndSaveSsoTestUser();
     assertFalse(hasRemoteUserUsernameSet());
     remoteUserPolicy.setUsername(u.getUsername());
     remoteUserPolicy.setPassword(RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD);
     assertTrue(filter.isAccessAllowed(req, resp, null));
     assertTrue(hasRemoteUserUsernameSet());
+
+    // can login using usernameAlias
+    logoutAndResetMockRequestResponse();
+    remoteUserPolicy.setUsername(u.getUsernameAlias());
+    assertTrue(filter.isAccessAllowed(req, resp, null));
+    assertTrue(hasRemoteUserUsernameSet());
+
+    // confirm access rejected for unknown login/alias
+    logoutAndResetMockRequestResponse();
+    remoteUserPolicy.setUsername(u.getUsername() + "unknown");
+    assertFalse(filter.isAccessAllowed(req, resp, null));
+    assertTrue(hasRemoteUserUsernameSet());
+  }
+
+  private void logoutAndResetMockRequestResponse() {
+    SecurityUtils.getSubject().logout();
+    req = new MockHttpServletRequest();
+    resp = new MockHttpServletResponse();
   }
 
   private boolean hasRemoteUserUsernameSet() {
@@ -175,6 +195,7 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   private User createAndSaveSsoTestUser() throws UserExistsException {
     User u = TestFactory.createAnyUser("ssoTestUser");
     u.setEmail(u.getUsername() + "@rs.com");
+    u.setUsernameAlias("ssoTestAlias");
     u.setPassword(SSO_DUMMY_PASSWORD);
     u = userMgr.saveNewUser(u);
     return u;

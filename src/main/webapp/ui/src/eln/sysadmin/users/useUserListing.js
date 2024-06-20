@@ -6,6 +6,7 @@ import axios from "axios";
 import { Optional } from "../../../util/optional";
 import Result from "../../../util/result";
 import RsSet from "../../../util/set";
+import * as Parsers from "../../../util/parsers";
 
 export opaque type UserId = number;
 
@@ -22,6 +23,7 @@ type FetchedUser = {|
     accountLocked: boolean,
     groupNames: Array<string>,
     tags: Array<string>,
+    usernameAlias: string,
   |},
   recordCount: number,
   fileUsage: number,
@@ -80,12 +82,14 @@ export type User = {|
   locked: boolean,
   groups: Array<string>,
   tags: Array<string>,
+  usernameAlias: string,
   grantPiRole: (string) => Promise<void>,
   revokePiRole: (string) => Promise<void>,
   unlock: () => Promise<void>,
   enable: () => Promise<void>,
   disable: () => Promise<void>,
   delete: () => Promise<void>,
+  setAlias: (string) => Promise<void>,
 |};
 
 export type UserListing = {|
@@ -329,6 +333,35 @@ export function useUserListing(): {|
         }
       }
 
+      async function setAlias(alias: string): Promise<void> {
+        try {
+          const { data } = await axios.post<
+            {| userId: UserId, usernameAlias: string |},
+            mixed
+          >("/system/users/saveUsernameAlias", {
+            userId: id,
+            usernameAlias: alias,
+          });
+          Parsers.isObject(data)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+            .flatMap(Parsers.isString)
+            .do((exceptionMessage) => {
+              throw new Error(exceptionMessage);
+            });
+
+          refreshListing();
+        } catch (error) {
+          console.error(error);
+          Parsers.objectPath(["response", "data", "message"], error)
+            .flatMap(Parsers.isString)
+            .do((message) => {
+              throw new Error(message);
+            });
+          throw error;
+        }
+      }
+
       return {
         id,
         url: `/userform?userId=${id}`,
@@ -352,6 +385,7 @@ export function useUserListing(): {|
         locked: fetchedUser.userInfo.accountLocked,
         groups: fetchedUser.userInfo.groupNames,
         tags: fetchedUser.userInfo.tags,
+        usernameAlias: fetchedUser.userInfo.usernameAlias,
 
         // operations on a single user
         grantPiRole,
@@ -360,6 +394,7 @@ export function useUserListing(): {|
         enable,
         disable,
         delete: deleteUser,
+        setAlias,
       };
     };
 

@@ -59,6 +59,7 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from OfflineRecordUser");
     jdbcTemplate.update("delete from WhiteListedSysAdminIPAddress");
 
+    jdbcTemplate.update("delete from ExternalStorageLocation");
     jdbcTemplate.update("delete from NfsFileStore");
     jdbcTemplate.update("delete from NfsFileSystem");
     jdbcTemplate.update("delete from UserKeyPair");

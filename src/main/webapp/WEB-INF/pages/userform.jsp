@@ -27,9 +27,13 @@
 <p style="visibility: hidden;">--hidden spacing--</p>
 
 <div style="font-size: 1.5em; margin: 15px 0px; display: inline-block;">
-	<c:if test="${canEdit == true}">My </c:if>
-	Profile <span style="font-size: .7em;"> -
-		<fmt:message key="user.username" />: ${user.username}</span>
+	<c:if test="${canEdit}">My</c:if>
+	<c:if test="${not canEdit}">User</c:if>
+	Profile
+	<span style="font-size: .7em;">
+		<fmt:message key="user.username" />:
+		${user.username}<c:if test="${not empty user.usernameAlias}">, login alias: ${user.usernameAlias}</c:if>
+	</span>
 </div>
 
 <div id="profileBlock" style="display:block; overflow: auto">

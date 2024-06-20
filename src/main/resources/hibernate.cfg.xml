@@ -105,6 +105,7 @@
         <mapping class="com.researchspace.model.Organisation"/>
         <mapping class="com.researchspace.model.netfiles.NfsFileStore"/>
         <mapping class="com.researchspace.model.netfiles.NfsFileSystem"/>
+        <mapping class="com.researchspace.model.netfiles.ExternalStorageLocation"/>
         <mapping class="com.researchspace.maintenance.model.WhiteListedSysAdminIPAddress"/>
         <mapping class="com.researchspace.model.record.RecordUserFavorites"/>
         <mapping class="com.researchspace.model.system.SystemProperty"/>

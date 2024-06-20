@@ -14,14 +14,17 @@ import useGalleryListing, { type GalleryFile } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
+import Alerts from "../../Inventory/components/Alerts";
+import * as FetchingData from "../../util/fetchingData";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [selectedSection, setSelectedSection] = React.useState("Images");
-  const { galleryListing, path, clearPath } = useGalleryListing({
-    section: selectedSection,
-    searchTerm: appliedSearchTerm,
-  });
+  const { galleryListing, path, clearPath, parentId, refreshListing } =
+    useGalleryListing({
+      section: selectedSection,
+      searchTerm: appliedSearchTerm,
+    });
   const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
     null
   );
@@ -29,7 +32,7 @@ function WholePage() {
   const [drawerOpen, setDrawerOpen] = React.useState(!viewport.isViewportSmall);
 
   return (
-    <>
+    <Alerts>
       <AppBar
         appliedSearchTerm={appliedSearchTerm}
         setAppliedSearchTerm={setAppliedSearchTerm}
@@ -41,6 +44,9 @@ function WholePage() {
           selectedSection={selectedSection}
           setSelectedSection={setSelectedSection}
           drawerOpen={drawerOpen}
+          path={path}
+          parentId={parentId}
+          refreshListing={refreshListing}
         />
         <Box
           sx={{
@@ -50,17 +56,24 @@ function WholePage() {
             flexGrow: 1,
           }}
         >
-          <MainPanel
-            selectedSection={selectedSection}
-            path={path}
-            clearPath={clearPath}
-            galleryListing={galleryListing}
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
-          />
+          {FetchingData.getSuccessValue(parentId)
+            .map((pId) => (
+              <MainPanel
+                selectedSection={selectedSection}
+                path={path}
+                clearPath={clearPath}
+                galleryListing={galleryListing}
+                selectedFile={selectedFile}
+                setSelectedFile={setSelectedFile}
+                parentId={pId}
+                refreshListing={refreshListing}
+                key={null}
+              />
+            ))
+            .orElse(null)}
         </Box>
       </Box>
-    </>
+    </Alerts>
   );
 }
 

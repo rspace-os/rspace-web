@@ -42,7 +42,7 @@ public class OAuthClientController {
   @IgnoreInLoggingInterceptor(ignoreRequestParams = {"client_secret", "password"})
   public NewOAuthTokenResponse getToken(
       @RequestParam(name = "grant_type") String grantType,
-      @RequestParam(name = "username", required = false) String userName,
+      @RequestParam(name = "username", required = false) String username,
       @RequestParam(required = false) String password,
       @RequestParam(name = "refresh_token", required = false) String refreshToken,
       @RequestParam(name = "client_secret") String clientSecret,
@@ -58,21 +58,26 @@ public class OAuthClientController {
 
     switch (grantType) {
       case "password":
-        if (StringUtils.isEmpty(userName) || StringUtils.isEmpty(password)) {
+        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
           throw new IllegalArgumentException(
               "Password grant requires parameters `username` and `password` to be present.");
         }
         try {
-          User user = userManager.getUserByUsername(userName);
-
+          User user = userManager.getUserByUsernameOrAlias(username);
+          if (!username.equals(user.getUsername())) {
+            SECURITY_LOG.info(
+                String.format(
+                    "Processing login of user [%s] through username alias [%s]",
+                    user.getUsername(), username));
+          }
           if (user.isLoginDisabled()) {
             throw new ApiAuthenticationException(
-                "User '" + userName + "' has their account locked or disabled.");
+                "User '" + user.getUsername() + "' has their account locked or disabled.");
           }
 
           return passwordGrant(clientId, clientSecret, user, password, isJwt);
         } catch (DataAccessException e) {
-          SECURITY_LOG.warn("OAuth password flow request for unknown user: " + userName);
+          SECURITY_LOG.warn("OAuth password flow request for unknown user: " + username);
           throw new ApiAuthenticationException("Invalid user credentials.");
         }
       case "refresh_token":

@@ -58,7 +58,7 @@ public class CustomFormAppInitialiser extends AbstractAppInitializor {
     try {
       subject = SecurityUtils.getSubject();
       try {
-        User sysadmin1 = userdao.getUserByUserName("sysadmin1");
+        User sysadmin1 = userdao.getUserByUsername("sysadmin1");
       } catch (ObjectRetrievalFailureException e) {
         log.info("Sysadmin1 user does not exist so custom form not created");
         return;
@@ -148,7 +148,7 @@ public class CustomFormAppInitialiser extends AbstractAppInitializor {
   private User loginAsSysAdmin() {
     GlobalInitSysadminAuthenticationToken sysAdminToken =
         new GlobalInitSysadminAuthenticationToken();
-    final User sysAdmin = userdao.getUserByUserName(sysAdminToken.getPrincipal().toString());
+    final User sysAdmin = userdao.getUserByUsername(sysAdminToken.getPrincipal().toString());
     subject.login(sysAdminToken);
     return sysAdmin;
   }

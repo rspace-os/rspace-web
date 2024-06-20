@@ -1,0 +1,66 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!-- Changes for version 1.100 June 2024 -->
+
+  <!-- Please read DatabaseChangeGuidelines in this folder before committing
+      new changesets ! -->
+
+  <!-- Add changesets here... -->
+
+  <changeSet id="31-05-2024a" author="nico" context="run">
+    <comment>Adding ExternalStorageLocation table</comment>
+    <createTable tableName="ExternalStorageLocation">
+      <column autoIncrement="true" name="id" type="BIGINT(19)">
+        <constraints primaryKey="true"/>
+      </column>
+      <column name="externalStorageId" type="BIGINT(19)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="operationDate" type="BIGINT(19)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="fileStore_id" type="BIGINT(19)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="connectedMediaFile_id" type="BIGINT(19)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="operationUser_id" type="BIGINT(19)">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <sql>alter table ExternalStorageLocation engine=InnoDB, CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</sql>
+  </changeSet>
+
+  <changeSet id="31-05-2024b" author="nico" context="run">
+    <comment>Adding foreign key from ExternalStorageLocation to User</comment>
+    <addForeignKeyConstraint
+      baseColumnNames="operationUser_id" baseTableName="ExternalStorageLocation"
+      constraintName="FK9091AB6ADF43265C" deferrable="false"
+      initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+      referencedColumnNames="id" referencedTableName="User" />
+  </changeSet>
+
+  <changeSet id="31-05-2024c" author="nico" context="run">
+    <comment>Adding foreign key from ExternalStorageLocation to NfsFileStore</comment>
+    <addForeignKeyConstraint
+      baseColumnNames="fileStore_id" baseTableName="ExternalStorageLocation"
+      constraintName="FK9091AB6ADF43287D" deferrable="false"
+      initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+      referencedColumnNames="id" referencedTableName="NfsFileStore" />
+  </changeSet>
+
+  <changeSet id="31-05-2024d" author="nico" context="run">
+    <comment>Adding foreign key from ExternalStorageLocation to EcatMediaFile</comment>
+    <addForeignKeyConstraint
+      baseColumnNames="connectedMediaFile_id" baseTableName="ExternalStorageLocation"
+      constraintName="FK9091AB6ADF43244B" deferrable="false"
+      initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+      referencedColumnNames="id" referencedTableName="EcatMediaFile" />
+  </changeSet>
+
+</databaseChangeLog>

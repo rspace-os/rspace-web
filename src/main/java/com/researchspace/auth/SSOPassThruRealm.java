@@ -22,7 +22,6 @@ public class SSOPassThruRealm extends RSpaceRealm {
   @Override
   protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token)
       throws AuthenticationException {
-    token = (SSOAuthenticationToken) token;
     return new SimpleAuthenticationInfo(token.getPrincipal(), token.getCredentials(), getName());
   }
 }

@@ -1063,7 +1063,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
   private void setUpUserToGetRequestUpdateNotifications(User u) {
     openTransaction();
     // refresh to avoid locking exception
-    u = userDao.getUserByUserName(u.getUsername());
+    u = userDao.getUserByUsername(u.getUsername());
     u.setPreference(
         new UserPreference(
             Preference.NOTIFICATION_REQUEST_STATUS_CHANGE_PREF, u, Boolean.TRUE.toString()));

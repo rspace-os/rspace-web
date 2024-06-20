@@ -38,6 +38,7 @@ import com.researchspace.model.dtos.UserRoleChangeCmnd;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.dtos.UserTagData;
 import com.researchspace.model.dtos.UserToPiCommandValidator;
+import com.researchspace.model.dtos.UserUsernameAliasData;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.IUserPermissionUtils;
 import com.researchspace.model.permissions.PermissionFactory;
@@ -56,6 +57,7 @@ import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
 import com.researchspace.service.UserEnablementUtils;
+import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserRoleHandler;
 import com.researchspace.service.UserStatisticsManager;
 import com.researchspace.service.UserTagManager;
@@ -435,6 +437,26 @@ public class SysAdminController extends BaseController {
     return ResponseEntity.status(HttpStatus.OK).build();
   }
 
+  @PostMapping("/users/saveUsernameAlias")
+  @ResponseBody
+  public ResponseEntity<Object> saveUsernameAlias(
+      @RequestBody UserUsernameAliasData incomingData, Principal principal) {
+
+    User currentUser = getUserByUsername(principal.getName());
+    assertUserIsSysAdmin(currentUser);
+
+    if (!userManager.exists(incomingData.getUserId())) {
+      throw new IllegalArgumentException("No user found for id: " + incomingData.getUserId());
+    }
+
+    try {
+      userManager.changeUsernameAlias(incomingData.getUserId(), incomingData.getUsernameAlias());
+    } catch (UserExistsException uee) {
+      return getAjaxMessageResponseEntity(HttpStatus.BAD_REQUEST, uee.getMessage());
+    }
+    return ResponseEntity.status(HttpStatus.OK).build();
+  }
+
   /**
    * Starts returning list after 2+ characters
    *
@@ -473,7 +495,7 @@ public class SysAdminController extends BaseController {
     model.addAttribute("user", userInSession);
     model.addAttribute("role", role);
     model.addAttribute("communities", getCommunitiesList(principal));
-    model.addAttribute("usernamePattern", getUserNamePattern());
+    model.addAttribute("usernamePattern", getUsernamePattern());
     model.addAttribute("usernamePatternTitle", getUserNameTitle());
     model.addAttribute("affiliationRequired", isAffiliationRequired());
     model.addAttribute("ldapLookupRequired", isLdapLookupRequired());
@@ -501,7 +523,7 @@ public class SysAdminController extends BaseController {
     return createUserFormConfigurer.getUsernamePatternTitle();
   }
 
-  private String getUserNamePattern() {
+  private String getUsernamePattern() {
     return createUserFormConfigurer.getUsernamePattern();
   }
 

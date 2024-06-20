@@ -41,7 +41,7 @@ public class RequestCommandTest extends SpringTransactionalTest {
 
   @Test
   public void testSetFilterByPermissions() {
-    User u = userDao.getUserByUserName("user1a"); // already created by dbunit
+    User u = userDao.getUserByUsername("user1a"); // already created by dbunit
     RSpaceTestUtils.logoutCurrUserAndLoginAs(u.getUsername(), "user1234");
     MsgOrReqstCreationCfg rc = new MsgOrReqstCreationCfg(u, permissionUtils);
     rc.setPermUtils(permissionUtils);

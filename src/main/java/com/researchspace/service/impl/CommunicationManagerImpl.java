@@ -111,7 +111,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
       Set<String> recipientUserNames, Communication mor) {
     Set<CommunicationTarget> targets = new HashSet<>();
     for (String uname : recipientUserNames) {
-      User trget = userDao.getUserByUserName(uname);
+      User trget = userDao.getUserByUsername(uname);
       CommunicationTarget ct = new CommunicationTarget();
       ct.setCommunication(mor);
       ct.setRecipient(trget);
@@ -131,19 +131,19 @@ public class CommunicationManagerImpl implements CommunicationManager {
     if (targetFinderPolicy != null) {
       policyToUse = targetFinderPolicy;
     }
-    User subject = userDao.getUserByUserName(originatorUserName);
+    User subject = userDao.getUserByUsername(originatorUserName);
     return policyToUse.findPotentialTargetsFor(messageType, record, searchTerm, subject);
   }
 
   @Override
   public ISearchResults<Notification> getNewNotificationsForUser(
       String userName, PaginationCriteria<CommunicationTarget> pgCrit) {
-    return commDao.getNewNotificationsForUser(userDao.getUserByUserName(userName), pgCrit);
+    return commDao.getNewNotificationsForUser(userDao.getUserByUsername(userName), pgCrit);
   }
 
   @Override
   public void markNotificationsAsRead(Set<Long> notificationIdsToMarkAsRead, String subject) {
-    User user = userDao.getUserByUserName(subject);
+    User user = userDao.getUserByUsername(subject);
     for (Long id : notificationIdsToMarkAsRead) {
       Notification notificn = (Notification) commDao.get(id);
       int altered = 0;
@@ -167,7 +167,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   @Override
   public void markAllNotificationsAsRead(String username, Date since) {
     int removed = commDao.markAllNotificationsAsRead(username, since);
-    User user = userDao.getUserByUserName(username);
+    User user = userDao.getUserByUsername(username);
     // this may not be strictly true, if new notifications have been generated
     // after the 'since' date, but will be pic
     notificnTracker.changeUserNotificationCount(user.getId(), removed * -1);
@@ -177,14 +177,14 @@ public class CommunicationManagerImpl implements CommunicationManager {
   public ISearchResults<MessageOrRequest> getActiveMessagesAndRequestsForUserTarget(
       String username, PaginationCriteria<CommunicationTarget> pgCrit) {
     return commDao.getActiveRequestsAndMessagesForUser(
-        userDao.getUserByUserName(username), pgCrit, MessageTypeFilter.ALL_TYPES);
+        userDao.getUserByUsername(username), pgCrit, MessageTypeFilter.ALL_TYPES);
   }
 
   @Override
   public ISearchResults<MessageOrRequest> getActiveMessagesAndRequestsForUserTargetByType(
       String username, PaginationCriteria<CommunicationTarget> pgCrit, MessageTypeFilter filter) {
     return commDao.getActiveRequestsAndMessagesForUser(
-        userDao.getUserByUserName(username), pgCrit, filter);
+        userDao.getUserByUsername(username), pgCrit, filter);
   }
 
   public void cancelRequest(String userNameCancelling, Long requestID, boolean quiet) {
@@ -255,7 +255,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
     boolean hasPermission = false;
     String msg = "Request cancelled";
 
-    User userInSession = userDao.getUserByUserName(sessionUsername);
+    User userInSession = userDao.getUserByUsername(sessionUsername);
     Group group = mor.getGroup();
     for (UserGroup ug : userInSession.getUserGroups()) {
       if (ug.getGroup().equals(group)) {
@@ -324,7 +324,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
       Set<User> recipients,
       String optionalhumanmessage,
       String systemMsg) {
-    User origUSer = userDao.getUserByUserName(originator);
+    User origUSer = userDao.getUserByUsername(originator);
     Notification notificn =
         createNotificationObject(type, null, record, optionalhumanmessage, origUSer, systemMsg);
     Set<CommunicationTarget> cts = createCommunicationTargetsForUsers(recipients, notificn);
@@ -372,7 +372,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
       String sysMsg,
       NotificationConfig config) {
 
-    User originator = userDao.getUserByUserName(originatorUserName);
+    User originator = userDao.getUserByUsername(originatorUserName);
     Set<String> unames = new HashSet<>();
     for (User u : toNotify) {
       unames.add(u.getUsername());
@@ -425,7 +425,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   @Override
   public ISearchResults<MessageOrRequest> getSentRequests(
       String originatorUserName, PaginationCriteria<MessageOrRequest> pgCrit) {
-    User originator = userDao.getUserByUserName(originatorUserName);
+    User originator = userDao.getUserByUsername(originatorUserName);
     return commDao.getSentRequests(originator, pgCrit);
   }
 
@@ -481,7 +481,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
       String msg,
       String recipientName,
       boolean broadcast) {
-    User recipient = userDao.getUserByUserName(recipientName);
+    User recipient = userDao.getUserByUsername(recipientName);
     if (!recipient.wantsNotificationFor(notificationType)) {
       return null;
     }
@@ -501,7 +501,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   @Override
   public ISearchResults<MessageOrRequest> getAllSentAndReceivedSimpleMessagesForUser(
       String username, PaginationCriteria<CommunicationTarget> pgCrit) {
-    User user = userDao.getUserByUserName(username);
+    User user = userDao.getUserByUsername(username);
     return commDao.getAllSentAndReceivedSimpleMessagesForUser(user, pgCrit);
   }
 

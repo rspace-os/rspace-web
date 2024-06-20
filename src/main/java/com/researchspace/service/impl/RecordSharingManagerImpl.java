@@ -525,7 +525,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       throws IllegalAddChildOperation {
 
     String usernameInSession = SecurityUtils.getSubject().getPrincipal().toString();
-    User userInSession = userDao.getUserByUserName(usernameInSession);
+    User userInSession = userDao.getUserByUsername(usernameInSession);
 
     if (toShareWith.isUser()) {
       boolean sysAdminUnsharingAPublicLink = false;
@@ -1048,7 +1048,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   private void checkSubjectCanShareWithUser(User subject, User user) throws AuthorizationException {
     UserPermissionAdapter userAdpter = new UserPermissionAdapter(user);
     userAdpter.setDomain(PermissionDomain.GROUP);
-    userAdpter.setActions(PermissionType.SHARE);
+    userAdpter.setAction(PermissionType.SHARE);
     if (subject != null && !subject.isPermitted(userAdpter, true)) {
       throw new AuthorizationException(
           "Unauthorized attempt by "
@@ -1183,6 +1183,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       throw new IllegalStateException(
           "'" + indFolderName + "' does not contain the deleter's username");
     }
-    return userDao.getUserByUserName(otherName);
+    return userDao.getUserByUsername(otherName);
   }
 }

@@ -60,7 +60,7 @@ public class StrictPermissionCheckingRecipientFinderPolicy
       PermissionType action = getRequiredPermissionForMessageType(messageType);
 
       RecordPermissionAdapter rpa = new RecordPermissionAdapter(record);
-      rpa.setActions(action);
+      rpa.setAction(action);
       rpa.setDomain(PermissionDomain.RECORD);
 
       for (AbstractUserOrGroupImpl gp : explicitlySharedUsersGroups) {

@@ -85,14 +85,14 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
       Set<User> users = new HashSet<>();
       for (String uname : fileUsage.keySet()) {
         if (userDao.userExists(uname)) {
-          users.add(userDao.getUserByUserName(uname));
+          users.add(userDao.getUserByUsername(uname));
         }
       }
       Map<String, DatabaseUsageByUserGroupByResult> recordCounts =
           recordDao.getTotalRecordsForUsers(users, pgCrit);
       for (Entry<String, DatabaseUsageByUserGroupByResult> entry : fileUsage.entrySet()) {
         if (userDao.userExists(entry.getKey())) {
-          User user = userDao.getUserByUserName(entry.getKey());
+          User user = userDao.getUserByUsername(entry.getKey());
           UserUsageInfo info =
               setUserUsageInfoProperties(
                   user, entry.getValue(), recordCounts.get(user.getUsername()));
@@ -115,7 +115,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
       }
       Map<String, User> users = new HashMap<>();
       for (String uname : recordCount.keySet()) {
-        users.put(uname, userDao.getUserByUserName(uname));
+        users.put(uname, userDao.getUserByUsername(uname));
       }
       Map<String, DatabaseUsageByUserGroupByResult> fileUsage =
           fileDao.getTotalFileUsageForUsers(users.values(), pgCrit);

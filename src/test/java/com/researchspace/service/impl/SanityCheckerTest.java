@@ -48,7 +48,7 @@ public class SanityCheckerTest {
 
   @Test
   public void testSanityCheckOnAppStartup() throws Exception {
-    when(userDao.getUserByUserName(Mockito.anyString()))
+    when(userDao.getUserByUsername(Mockito.anyString()))
         .thenReturn(TestFactory.createAnyUser("any"));
     when(searchStrategy.isLocal()).thenReturn(false);
     sanityChecker.onAppStartup(context);

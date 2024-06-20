@@ -12,6 +12,12 @@ type DMPToolArgs = {|
   update: (IntegrationStates["DMPTOOL"]) => void,
 |};
 
+export const COLOR = {
+  hue: 208,
+  saturation: 60,
+  lightness: 65,
+};
+
 /*
  * DMPTool uses OAuth based authentication, as implemeted by the form below.
  */
@@ -23,11 +29,7 @@ function DMPTool({ integrationState, update }: DMPToolArgs): Node {
         integrationState={integrationState}
         explanatoryText="Create Data Management Plans for your research through a guided web-based tool with templates."
         image={DMPToolIcon}
-        color={{
-          hue: 208,
-          saturation: 60,
-          lightness: 65,
-        }}
+        color={COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
