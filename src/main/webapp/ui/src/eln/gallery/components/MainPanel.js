@@ -18,11 +18,11 @@ import { COLORS as baseThemeColors } from "../../../theme";
 import * as FetchingData from "../../../util/fetchingData";
 import {
   useGalleryListing,
-  useGalleryActions,
   type GalleryFile,
   type Id,
   idToString,
 } from "../useGalleryListing";
+import { useGalleryActions } from "../useGalleryActions";
 import { doNotAwait } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";

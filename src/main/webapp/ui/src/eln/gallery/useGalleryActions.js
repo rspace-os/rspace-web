@@ -5,27 +5,30 @@ import axios from "axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
-import { type GalleryFile, idToString } from "./useGalleryListing";
+import { type GalleryFile, idToString, type Id } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
-export default function useGalleryActions({
-  path,
-  parentId,
-}: {|
-  path: $ReadOnlyArray<GalleryFile>,
-  parentId: number,
-|}): {|
-  uploadFiles: ($ReadOnlyArray<File>) => Promise<void>,
-  createFolder: (string) => Promise<void>,
-  moveFile: ({|
-    target: string,
-    fileId: number,
-    section: string,
-  |}) => Promise<void>,
+export function useGalleryActions(): {|
+  uploadFiles: (
+    $ReadOnlyArray<GalleryFile>,
+    Id,
+    $ReadOnlyArray<File>
+  ) => Promise<void>,
+  createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
+  moveFilesWithIds: ($ReadOnlyArray<number>) => {|
+    to: ({|
+      target: string,
+      section: string,
+    |}) => Promise<void>,
+  |},
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
-  async function uploadFiles(files: $ReadOnlyArray<File>) {
+  async function uploadFiles(
+    path: $ReadOnlyArray<GalleryFile>,
+    parentId: Id,
+    files: $ReadOnlyArray<File>
+  ) {
     const uploadingAlert = mkAlert({
       message: "Uploading...",
       variant: "notice",
@@ -33,9 +36,9 @@ export default function useGalleryActions({
     });
     addAlert(uploadingAlert);
 
-    const targetFolderId = ArrayUtils.getAt(0, path)
+    const targetFolderId = ArrayUtils.last(path)
       .map(({ id }) => idToString(id))
-      .orElse(`${parentId}`);
+      .orElse(idToString(parentId));
     try {
       const data = await Promise.all(
         files.map((file) => {
@@ -95,10 +98,14 @@ export default function useGalleryActions({
     }
   }
 
-  async function createFolder(name: string) {
-    const parentFolderId = ArrayUtils.getAt(0, path)
+  async function createFolder(
+    path: $ReadOnlyArray<GalleryFile>,
+    parentId: Id,
+    name: string
+  ) {
+    const parentFolderId = ArrayUtils.last(path)
       .map(({ id }) => idToString(id))
-      .orElse(`${parentId}`);
+      .orElse(idToString(parentId));
     try {
       const formData = new FormData();
       formData.append("folderName", name);
@@ -143,30 +150,63 @@ export default function useGalleryActions({
     }
   }
 
-  async function moveFile({
-    target,
-    fileId,
-    section,
-  }: {|
-    target: string,
-    fileId: number,
-    section: string,
-  |}) {
-    const formData = new FormData();
-    formData.append("target", target);
-    formData.append("filesId[]", `${fileId}`);
-    formData.append("mediaType", section);
-    await axios.post<FormData, mixed>(
-      "gallery/ajax/moveGalleriesElements",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    // TODO handle errors
+  function moveFilesWithIds(fileIds: $ReadOnlyArray<number>) {
+    return {
+      to: async ({
+        target,
+        section,
+      }: {|
+        target: string,
+        section: string,
+      |}) => {
+        const formData = new FormData();
+        formData.append("target", target);
+        fileIds.forEach((fileId) => {
+          formData.append("filesId[]", `${fileId}`);
+        });
+        formData.append("mediaType", section);
+        try {
+          const data = await axios.post<FormData, mixed>(
+            "gallery/ajax/moveGalleriesElements",
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+          addAlert(
+            Parsers.objectPath(["data", "exceptionMessage"], data)
+              .flatMap(Parsers.isString)
+              .map((exceptionMessage) =>
+                mkAlert({
+                  title: `Failed to move item.`,
+                  message: exceptionMessage,
+                  variant: "error",
+                })
+              )
+              .orElse(
+                mkAlert({
+                  message: `Successfully moved item${
+                    fileIds.length > 0 ? "s" : ""
+                  }.`,
+                  variant: "success",
+                })
+              )
+          );
+        } catch (e) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: `Failed to move item${fileIds.length > 0 ? "s" : ""}.`,
+              message: e.message,
+            })
+          );
+          throw e;
+        }
+      },
+    };
   }
 
-  return { uploadFiles, createFolder, moveFile };
+  return { uploadFiles, createFolder, moveFilesWithIds };
 }
