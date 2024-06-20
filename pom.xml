@@ -680,6 +680,10 @@
       <version>0.2.0</version>
       <exclusions>
         <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-core-util</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
@@ -717,6 +721,10 @@
             <exclusion>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>com.researchspace</groupId>
+                <artifactId>rspace-core-util</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
@@ -1548,6 +1556,10 @@
         <version>1.1.0</version>
         <exclusions>
             <exclusion>
+                <groupId>com.github.rspace-os</groupId>
+                <artifactId>rspace-core-util</artifactId>
+            </exclusion>
+            <exclusion>
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
             </exclusion>
@@ -1734,19 +1746,17 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-core-util</artifactId>
-        <version>0.26.0</version>
-        <exclusions>
-            <exclusion>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-            </exclusion>
-        </exclusions>
+        <version>1.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-core-model</artifactId>
         <version>${rspace-core-model.version}</version>
         <exclusions>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
+            <artifactId>rspace-core-util</artifactId>
+          </exclusion>
           <exclusion>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -1768,6 +1778,10 @@
         <scope>test</scope>
         <type>test-jar</type>
         <exclusions>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
+            <artifactId>rspace-core-util</artifactId>
+          </exclusion>
           <exclusion>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -1863,6 +1877,10 @@
         <version>0.22.0</version>
         <exclusions>
             <exclusion>
+                <groupId>com.researchspace</groupId>
+                <artifactId>rspace-core-util</artifactId>
+            </exclusion>
+            <exclusion>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
             </exclusion>
@@ -1877,6 +1895,10 @@
         <artifactId>dryad-rspace-adapter</artifactId>
         <version>0.3.0</version>
         <exclusions>
+            <exclusion>
+                <groupId>com.researchspace</groupId>
+                <artifactId>rspace-core-util</artifactId>
+            </exclusion>
             <exclusion>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
@@ -2007,6 +2029,10 @@
         <artifactId>rest-api-utils</artifactId>
         <version>1.2.0</version>
         <exclusions>
+            <exclusion>
+                <groupId>com.researchspace</groupId>
+                <artifactId>rspace-core-util</artifactId>
+            </exclusion>
             <exclusion>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-webmvc</artifactId>
