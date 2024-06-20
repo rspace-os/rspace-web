@@ -30,6 +30,7 @@ import {
 } from "../components/Stepper/StepperPanelHeader";
 import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import type { Person } from "../../stores/definitions/Person";
+import SubsampleDetails from "./Content/SubsampleDetails";
 
 const OverviewSection = observer(
   ({ activeResult }: { activeResult: SampleModel }) => {
@@ -225,6 +226,7 @@ function Form(): Node {
               recordType="sample"
             >
               <SubsampleListing sample={activeResult} />
+              <SubsampleDetails subsample={activeResult.search.activeResult} />
             </StepperPanel>
           ) : null}
         </>

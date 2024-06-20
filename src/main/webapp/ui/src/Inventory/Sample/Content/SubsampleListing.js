@@ -36,6 +36,11 @@ function SubsampleListing({ sample }: SubsampleListingArgs): Node {
     setSearchOpen(sample.subSamples.length > 1);
   }, [sample.subSamples]);
 
+  React.useEffect(() => {
+    if (!sample.search.activeResult && sample.search.filteredResults.length > 0)
+      void sample.search.setActiveResult();
+  }, [sample.search.filteredResults]);
+
   const handleSearch = (query: string) => {
     void sample.search.fetcher.performInitialSearch({
       query,
@@ -62,8 +67,8 @@ function SubsampleListing({ sample }: SubsampleListingArgs): Node {
             value={{
               search: sample.search,
               scopedResult: sample,
-              isChild: true,
-              differentSearchForSettingActiveResult: search,
+              isChild: false,
+              differentSearchForSettingActiveResult: sample.search,
             }}
           >
             <InnerSearchNavigationContext>
