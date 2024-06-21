@@ -1,4 +1,4 @@
-# 👋 Welcome to RSpace
+# 👋 Welcome to RSpace 
 <picture>
  <img alt="Map of how the RSpace platform creates an ecosystem of digital tools to support workflows for preparing, conducting and reporting on research." src="https://github.com/rspace-os/rspace-marketing-resources/blob/2921f20007717ba0122ae293b30f17858c49c31c/main_graphic.png" width = 400 align = right>
 </picture>
