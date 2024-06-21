@@ -469,15 +469,14 @@ const CustomTreeItem = ({
 const GridView = observer(
   ({
     listing,
+    selectedFiles,
   }: {|
     listing:
       | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
+    selectedFiles: Set<string>,
   |}) => {
     const dndContext = useDndContext();
-
-    // $FlowExpectedError[prop-missing] Difficult to get this library type right
-    const selectedFiles = useLocalObservable(() => observable.set([]));
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
@@ -596,7 +595,7 @@ const GridView = observer(
                 fileY >= top &&
                 fileY <= bottom
               )
-                selectedFiles.add(id);
+                selectedFiles.add(idToString(id));
             });
           });
 
@@ -614,7 +613,7 @@ const GridView = observer(
           const { x, y } = tabIndexCoord;
           if (selectedFiles.size === 0)
             runInAction(() => {
-              selectedFiles.add(listing.list[y * cols + x].id);
+              selectedFiles.add(idToString(listing.list[y * cols + x].id));
             });
         }}
       >
@@ -632,7 +631,7 @@ const GridView = observer(
             onBlur={() => {
               setHasFocus(false);
             }}
-            selected={selectedFiles.has(file.id)}
+            selected={selectedFiles.has(idToString(file.id))}
             file={file}
             key={idToString(file.id)}
             index={index}
@@ -664,7 +663,7 @@ const GridView = observer(
                 runInAction(() => {
                   selectedFiles.clear();
                   toSelect.forEach(({ id }) => {
-                    selectedFiles.add(id);
+                    selectedFiles.add(idToString(id));
                   });
                 });
                 setTabIndexCoord({
@@ -672,19 +671,19 @@ const GridView = observer(
                   y: Math.floor(index / cols),
                 });
               } else if (e.ctrlKey || e.metaKey) {
-                if (selectedFiles.has(file.id)) {
+                if (selectedFiles.has(idToString(file.id))) {
                   runInAction(() => {
-                    selectedFiles.delete(file.id);
+                    selectedFiles.delete(idToString(file.id));
                   });
                 } else {
                   runInAction(() => {
-                    selectedFiles.add(file.id);
+                    selectedFiles.add(idToString(file.id));
                   });
                 }
               } else {
                 runInAction(() => {
                   selectedFiles.clear();
-                  selectedFiles.add(file.id);
+                  selectedFiles.add(idToString(file.id));
                 });
                 setShiftOrigin({
                   x: index % cols,
@@ -1036,119 +1035,127 @@ const FileCard = styled(
     : `hsl(${COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
 }));
 
-const TreeView = ({
-  listing,
-  path,
-  selectedSection,
-  refreshListing,
-}: {|
-  listing:
-    | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
-  path: $ReadOnlyArray<GalleryFile>,
-  selectedSection: string,
-  refreshListing: () => void,
-|}) => {
-  const { addAlert } = React.useContext(AlertContext);
-  const [selectedNodes, setSelectedNodes] = React.useState<
-    $ReadOnlyArray<string>
-  >([]);
-  const [expandedItems, setExpandedItems] = React.useState<
-    $ReadOnlyArray<GalleryFile["id"]>
-  >([]);
+const TreeView = observer(
+  ({
+    listing,
+    path,
+    selectedSection,
+    refreshListing,
+    selectedFiles,
+  }: {|
+    listing:
+      | {| tag: "empty", reason: string |}
+      | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
+    path: $ReadOnlyArray<GalleryFile>,
+    selectedSection: string,
+    refreshListing: () => void,
+    selectedFiles: Set<string>,
+  |}) => {
+    const { addAlert } = React.useContext(AlertContext);
+    const [expandedItems, setExpandedItems] = React.useState<
+      $ReadOnlyArray<GalleryFile["id"]>
+    >([]);
 
-  if (listing.tag === "empty")
+    if (listing.tag === "empty")
+      return (
+        <div key={listing.reason}>
+          <Fade
+            in={true}
+            timeout={
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? 0
+                : 300
+            }
+          >
+            <div>
+              <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
+            </div>
+          </Fade>
+        </div>
+      );
     return (
-      <div key={listing.reason}>
-        <Fade
-          in={true}
-          timeout={
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              ? 0
-              : 300
+      <SimpleTreeView
+        expandedItems={expandedItems}
+        onExpandedItemsChange={(_event, nodeIds) => {
+          setExpandedItems(nodeIds);
+        }}
+        selectedItems={[...selectedFiles]}
+        onItemSelectionToggle={(
+          event,
+          itemId: string | $ReadOnlyArray<string>,
+          selected
+        ) => {
+          /*
+           * If there are multiple files selected and the user taps any file
+           * (already selected or not) then this function is called twice: first
+           * with `itemId` as an array of all of the selected nodes with
+           * `selected` set to false, followed by `itemId` as a string value and
+           * `selected` set to true. The idea being, that you can first clear the
+           * data structure being passed as `selectedItems` and then add back the
+           * singular selected item. However, because we wish to handle ctrl/meta
+           * keys, we ignore this first invocation and instead just consider
+           * whether the tapped file is already selected or not to toggle its
+           * state. As such, we can ignore the first invocation where `itemId` is
+           * an array.
+           */
+          if (Array.isArray(itemId)) return;
+          /*
+           * It's not possible for us to support shift-clicking in tree view
+           * because there's no data structure we can query to find a range of
+           * adjacent nodes. There's simply no way for us to get the itemIds of
+           * the nodes between two selected nodes; even more so if the user were
+           * to attempt to select nodes are different levels of the hierarchy.
+           * SimpleTreeView does have a multiSelect mode but attempting to use it
+           * just results in console errors.
+           */
+          if (event.shiftKey) {
+            if (selected) {
+              addAlert(
+                mkAlert({
+                  title: "Shift selection is not supported in tree view.",
+                  message:
+                    "Either use command/ctrl to select each in turn, or use grid view.",
+                  variant: "warning",
+                })
+              );
+            }
+            return;
           }
-        >
-          <div>
-            <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
-          </div>
-        </Fade>
-      </div>
-    );
-  return (
-    <SimpleTreeView
-      expandedItems={expandedItems}
-      onExpandedItemsChange={(_event, nodeIds) => {
-        setExpandedItems(nodeIds);
-      }}
-      selectedItems={selectedNodes}
-      onItemSelectionToggle={(
-        event,
-        itemId: string | $ReadOnlyArray<string>,
-        selected
-      ) => {
-        /*
-         * If there are multiple files selected and the user taps any file
-         * (already selected or not) then this function is called twice: first
-         * with `itemId` as an array of all of the selected nodes with
-         * `selected` set to false, followed by `itemId` as a string value and
-         * `selected` set to true. The idea being, that you can first clear the
-         * data structure being passed as `selectedItems` and then add back the
-         * singular selected item. However, because we wish to handle ctrl/meta
-         * keys, we ignore this first invocation and instead just consider
-         * whether the tapped file is already selected or not to toggle its
-         * state. As such, we can ignore the first invocation where `itemId` is
-         * an array.
-         */
-        if (Array.isArray(itemId)) return;
-        /*
-         * It's not possible for us to support shift-clicking in tree view
-         * because there's no data structure we can query to find a range of
-         * adjacent nodes. There's simply no way for us to get the itemIds of
-         * the nodes between two selected nodes; even more so if the user were
-         * to attempt to select nodes are different levels of the hierarchy.
-         * SimpleTreeView does have a multiSelect mode but attempting to use it
-         * just results in console errors.
-         */
-        if (event.shiftKey) {
-          if (selected) {
-            addAlert(
-              mkAlert({
-                title: "Shift selection is not supported in tree view.",
-                message:
-                  "Either use command/ctrl to select each in turn, or use grid view.",
-                variant: "warning",
-              })
-            );
-          }
-          return;
-        }
-        if (event.ctrlKey || event.metaKey) {
-          if (selectedNodes.includes(itemId)) {
-            setSelectedNodes(selectedNodes.filter((x) => x !== itemId));
+          if (event.ctrlKey || event.metaKey) {
+            runInAction(() => {
+              if (selectedFiles.has(itemId)) {
+                selectedFiles.delete(itemId);
+              } else {
+                selectedFiles.add(itemId);
+              }
+            });
+          } else if (selected) {
+            runInAction(() => {
+              selectedFiles.clear();
+              selectedFiles.add(itemId);
+            });
           } else {
-            setSelectedNodes([...selectedNodes, itemId]);
+            runInAction(() => {
+              selectedFiles.clear();
+            });
           }
-        } else if (selected) {
-          setSelectedNodes([itemId]);
-        } else {
-          setSelectedNodes([]);
-        }
-      }}
-    >
-      {listing.list.map((file, index) => (
-        <CustomTreeItem
-          index={index}
-          file={file}
-          path={path}
-          key={idToString(file.id)}
-          section={selectedSection}
-          draggingIds={selectedNodes}
-          refreshListing={refreshListing}
-        />
-      ))}
-    </SimpleTreeView>
-  );
-};
+        }}
+      >
+        {listing.list.map((file, index) => (
+          <CustomTreeItem
+            index={index}
+            file={file}
+            path={path}
+            key={idToString(file.id)}
+            section={selectedSection}
+            draggingIds={[...selectedFiles]}
+            refreshListing={refreshListing}
+          />
+        ))}
+      </SimpleTreeView>
+    );
+  }
+);
 
 const PlaceholderLabel = styled(({ children, className }) => (
   <Grid container className={className}>
@@ -1236,6 +1243,9 @@ export default function GalleryMainPanel({
     },
   });
   const keyboardSensor = useSensor(KeyboardSensor, {});
+
+  // $FlowExpectedError[prop-missing] Difficult to get this library type right
+  const selectedFiles = useLocalObservable(() => observable.set([]));
 
   return (
     <DialogContent
@@ -1354,6 +1364,9 @@ export default function GalleryMainPanel({
                   onClick={() => {
                     setViewMode("grid");
                     setViewMenuAnchorEl(null);
+                    runInAction(() => {
+                      selectedFiles.clear();
+                    });
                   }}
                 />
                 <NewMenuItem
@@ -1365,6 +1378,9 @@ export default function GalleryMainPanel({
                   onClick={() => {
                     setViewMode("tree");
                     setViewMenuAnchorEl(null);
+                    runInAction(() => {
+                      selectedFiles.clear();
+                    });
                   }}
                 />
               </StyledMenu>
@@ -1385,6 +1401,7 @@ export default function GalleryMainPanel({
                     path={path}
                     selectedSection={selectedSection}
                     refreshListing={refreshListing}
+                    selectedFiles={selectedFiles}
                   />
                 ),
               })}
@@ -1392,7 +1409,9 @@ export default function GalleryMainPanel({
               FetchingData.match(galleryListing, {
                 loading: () => <></>,
                 error: (error) => <>{error}</>,
-                success: (listing) => <GridView listing={listing} />,
+                success: (listing) => (
+                  <GridView listing={listing} selectedFiles={selectedFiles} />
+                ),
               })}
           </Grid>
         </Grid>
