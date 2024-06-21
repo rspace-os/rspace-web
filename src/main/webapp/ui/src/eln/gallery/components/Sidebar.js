@@ -46,6 +46,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
+import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabIndex";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -121,16 +122,24 @@ const UploadMenuItem = ({
   onUploadComplete: () => void,
 |}) => {
   const { uploadFiles } = useGalleryActions({ path, parentId });
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
   return (
-    <label>
+    <>
       <NewMenuItem
         title="Upload Files"
         avatar={<UploadFileIcon />}
         subheader="Choose one or more files to upload"
         backgroundColor={COLOR.background}
         foregroundColor={COLOR.contrastText}
+        onKeyDown={(e: KeyboardEvent) => {
+          if (e.key === " ") inputRef.current?.click();
+        }}
+        onClick={() => {
+          inputRef.current?.click();
+        }}
       />
       <input
+        ref={inputRef}
         accept="*"
         hidden
         multiple
@@ -141,7 +150,7 @@ const UploadMenuItem = ({
         }}
         type="file"
       />
-    </label>
+    </>
   );
 };
 
@@ -275,16 +284,43 @@ const SelectedDrawerTabIndicator = styled(({ className }) => (
 }));
 
 const DrawerTab = styled(
-  ({ icon, label, index, className, selected, onClick }) => (
-    <ListItem disablePadding className={className}>
-      <ListItemButton selected={selected} onClick={onClick}>
-        <ListItemIcon>{icon}</ListItemIcon>
-        <ListItemText
-          primary={label}
-          sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
-        />
-      </ListItemButton>
-    </ListItem>
+  //eslint-disable-next-line react/display-name
+  React.forwardRef(
+    (
+      {
+        icon,
+        label,
+        index,
+        className,
+        selected,
+        onClick,
+        tabIndex,
+      }: {|
+        icon: Node,
+        label: Node,
+        index: number,
+        className: string,
+        selected: boolean,
+        onClick: () => void,
+        tabIndex: number,
+      |},
+      ref
+    ) => (
+      <ListItem disablePadding className={className}>
+        <ListItemButton
+          selected={selected}
+          onClick={onClick}
+          tabIndex={tabIndex}
+          ref={ref}
+        >
+          <ListItemIcon>{icon}</ListItemIcon>
+          <ListItemText
+            primary={label}
+            sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
+          />
+        </ListItemButton>
+      </ListItem>
+    )
   )
 )(({ drawerOpen }) => ({
   position: "static",
@@ -330,6 +366,12 @@ export default function GallerySidebar({
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
+
+  const { getTabIndex, getRef, eventHandlers } = useVerticalRovingTabIndex<
+    typeof ListItemButton
+  >({
+    max: 8,
+  });
 
   return (
     <CustomDrawer
@@ -382,6 +424,7 @@ export default function GallerySidebar({
       </Box>
       <Divider />
       <Box
+        {...eventHandlers}
         sx={{
           overflowY: "auto",
           overflowX: "hidden",
@@ -396,6 +439,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Images}
             icon={<FaIcon icon="image" />}
             index={0}
+            tabIndex={getTabIndex(0)}
+            ref={getRef(0)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Images"}
             onClick={(event) => {
@@ -407,6 +452,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Audios}
             icon={<FaIcon icon="volume-low" />}
             index={1}
+            tabIndex={getTabIndex(1)}
+            ref={getRef(1)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Audios"}
             onClick={(event) => {
@@ -418,6 +465,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Videos}
             icon={<FaIcon icon="film" />}
             index={2}
+            tabIndex={getTabIndex(2)}
+            ref={getRef(2)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Videos"}
             onClick={(event) => {
@@ -429,6 +478,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Documents}
             icon={<FaIcon icon="file" />}
             index={3}
+            tabIndex={getTabIndex(3)}
+            ref={getRef(3)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Documents"}
             onClick={(event) => {
@@ -440,6 +491,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.Chemistry}
             icon={<ChemistryIcon />}
             index={4}
+            tabIndex={getTabIndex(4)}
+            ref={getRef(4)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Chemistry"}
             onClick={(event) => {
@@ -451,6 +504,8 @@ export default function GallerySidebar({
             label={gallerySectionLabel.DMPs}
             icon={<FaIcon icon="file-invoice" />}
             index={5}
+            tabIndex={getTabIndex(5)}
+            ref={getRef(5)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "DMPs"}
             onClick={(event) => {
@@ -461,7 +516,9 @@ export default function GallerySidebar({
           <DrawerTab
             label={gallerySectionLabel.Snippets}
             icon={<FaIcon icon="fa-regular fa-note-sticky" />}
-            index={7}
+            index={6}
+            tabIndex={getTabIndex(6)}
+            ref={getRef(6)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Snippets"}
             onClick={(event) => {
@@ -472,7 +529,9 @@ export default function GallerySidebar({
           <DrawerTab
             label={gallerySectionLabel.Miscellaneous}
             icon={<FaIcon icon="shapes" />}
-            index={8}
+            index={7}
+            tabIndex={getTabIndex(7)}
+            ref={getRef(7)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "Miscellaneous"}
             onClick={(event) => {
@@ -486,7 +545,9 @@ export default function GallerySidebar({
           <DrawerTab
             label={gallerySectionLabel.PdfDocuments}
             icon={<FaIcon icon="fa-circle-down" />}
-            index={9}
+            index={8}
+            tabIndex={getTabIndex(8)}
+            ref={getRef(8)}
             drawerOpen={drawerOpen}
             selected={selectedSection === "PdfDocuments"}
             onClick={(event) => {
