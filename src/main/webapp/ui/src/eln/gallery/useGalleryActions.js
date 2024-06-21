@@ -21,6 +21,7 @@ export function useGalleryActions(): {|
       section: string,
     |}) => Promise<void>,
   |},
+  deleteFiles: (Set<string>) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -232,5 +233,49 @@ export function useGalleryActions(): {|
     };
   }
 
-  return { uploadFiles, createFolder, moveFilesWithIds };
+  async function deleteFiles(fileIds: Set<string>) {
+    const formData = new FormData();
+    for (const fileId of fileIds) formData.append("idsToDelete[]", fileId);
+    try {
+      const data = await axios.post<FormData, mixed>(
+        "gallery/ajax/deleteElementFromGallery",
+        formData,
+        {
+          headers: {
+            "content-type": "multipart/form-data",
+          },
+        }
+      );
+      addAlert(
+        Parsers.objectPath(["data", "exceptionMessage"], data)
+          .flatMap(Parsers.isString)
+          .map((exceptionMessage) =>
+            mkAlert({
+              title: `Failed to delete item.`,
+              message: exceptionMessage,
+              variant: "error",
+            })
+          )
+          .orElse(
+            mkAlert({
+              message: `Successfully deleted item${
+                fileIds.size > 0 ? "s" : ""
+              }.`,
+              variant: "success",
+            })
+          )
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to delete item${fileIds.size > 0 ? "s" : ""}.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
+  return { uploadFiles, createFolder, moveFilesWithIds, deleteFiles };
 }

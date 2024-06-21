@@ -1340,7 +1340,10 @@ export default function GalleryMainPanel({
             </Grid>
             <Grid item sx={{ mt: 0.5 }}>
               <Stack direction="row" spacing={1}>
-                <ActionsMenu selectedFiles={selectedFiles} />
+                <ActionsMenu
+                  selectedFiles={selectedFiles}
+                  refreshListing={refreshListing}
+                />
                 <Button
                   variant="outlined"
                   size="small"

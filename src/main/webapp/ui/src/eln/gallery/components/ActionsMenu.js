@@ -17,6 +17,7 @@ import ShareIcon from "@mui/icons-material/Share";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
+import { useGalleryActions } from "../useGalleryActions";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -30,16 +31,18 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 
 type ActionsMenuArgs = {|
   selectedFiles: Set<string>,
+  refreshListing: () => void,
 |};
 
-function ActionsMenu({ selectedFiles }: ActionsMenuArgs): Node {
+function ActionsMenu({ selectedFiles, refreshListing }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
+  const { deleteFiles } = useGalleryActions();
+
   return (
     <>
       <Button
         variant="outlined"
         size="small"
-        onClick={() => {}}
         aria-haspopup="menu"
         startIcon={<ChecklistIcon />}
         onClick={(e) => {
@@ -96,7 +99,10 @@ function ActionsMenu({ selectedFiles }: ActionsMenuArgs): Node {
           foregroundColor={COLOR.contrastText}
           avatar={<DeleteOutlineOutlinedIcon />}
           onClick={() => {
-            setActionsMenuAnchorEl(null);
+            void deleteFiles(selectedFiles).then(() => {
+              refreshListing();
+              setActionsMenuAnchorEl(null);
+            });
           }}
           compact
           disabled={selectedFiles.size === 0}
