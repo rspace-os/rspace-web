@@ -1746,14 +1746,13 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-core-util</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
       <exclusions>
-      <exclusion>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-      </exclusion>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
       </exclusions>
-
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
@@ -1877,8 +1876,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>document-conversion-spi</artifactId>
-        <version>0.20.0</version>
+        <artifactId>rspace-document-conversion-spi</artifactId>
+        <version>1.0.1</version>
         <exclusions>
             <exclusion>
                 <groupId>commons-io</groupId>
@@ -3029,7 +3028,7 @@
     <jstl.version>1.1.2</jstl.version>
     <lucene.version>5.5.5</lucene.version>
     <netty.version>4.1.63.Final</netty.version>
-    <rspace-core-model.version>2.0.1-SNAPSHOT</rspace-core-model.version>
+    <rspace-core-model.version>2.0.1</rspace-core-model.version>
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
