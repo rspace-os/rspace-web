@@ -48,10 +48,12 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Slide from "@mui/material/Slide";
+import Stack from "@mui/material/Stack";
 import { observable, runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import ActionsMenu from "./ActionsMenu";
 
 const SELECTED_OR_FOCUS_BLUE = `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`;
 const SELECTED_OR_FOCUS_BORDER = `2px solid ${SELECTED_OR_FOCUS_BLUE}`;
@@ -1337,53 +1339,56 @@ export default function GalleryMainPanel({
               </CustomBreadcrumbs>
             </Grid>
             <Grid item sx={{ mt: 0.5 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<TreeIcon />}
-                onClick={(e) => {
-                  setViewMenuAnchorEl(e.target);
-                }}
-              >
-                Views
-              </Button>
-              <StyledMenu
-                open={Boolean(viewMenuAnchorEl)}
-                anchorEl={viewMenuAnchorEl}
-                onClose={() => setViewMenuAnchorEl(null)}
-                MenuListProps={{
-                  disablePadding: true,
-                }}
-              >
-                <NewMenuItem
-                  title="Grid"
-                  subheader="Browse by thumbnail previews"
-                  backgroundColor={COLOR.background}
-                  foregroundColor={COLOR.contrastText}
-                  avatar={<GridIcon />}
-                  onClick={() => {
-                    setViewMode("grid");
-                    setViewMenuAnchorEl(null);
-                    runInAction(() => {
-                      selectedFiles.clear();
-                    });
+              <Stack direction="row" spacing={1}>
+                <ActionsMenu selectedFiles={selectedFiles} />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<TreeIcon />}
+                  onClick={(e) => {
+                    setViewMenuAnchorEl(e.target);
                   }}
-                />
-                <NewMenuItem
-                  title="Tree"
-                  subheader="View and manage folder hierarchy"
-                  backgroundColor={COLOR.background}
-                  foregroundColor={COLOR.contrastText}
-                  avatar={<TreeIcon />}
-                  onClick={() => {
-                    setViewMode("tree");
-                    setViewMenuAnchorEl(null);
-                    runInAction(() => {
-                      selectedFiles.clear();
-                    });
+                >
+                  Views
+                </Button>
+                <StyledMenu
+                  open={Boolean(viewMenuAnchorEl)}
+                  anchorEl={viewMenuAnchorEl}
+                  onClose={() => setViewMenuAnchorEl(null)}
+                  MenuListProps={{
+                    disablePadding: true,
                   }}
-                />
-              </StyledMenu>
+                >
+                  <NewMenuItem
+                    title="Grid"
+                    subheader="Browse by thumbnail previews"
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={<GridIcon />}
+                    onClick={() => {
+                      setViewMode("grid");
+                      setViewMenuAnchorEl(null);
+                      runInAction(() => {
+                        selectedFiles.clear();
+                      });
+                    }}
+                  />
+                  <NewMenuItem
+                    title="Tree"
+                    subheader="View and manage folder hierarchy"
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={<TreeIcon />}
+                    onClick={() => {
+                      setViewMode("tree");
+                      setViewMenuAnchorEl(null);
+                      runInAction(() => {
+                        selectedFiles.clear();
+                      });
+                    }}
+                  />
+                </StyledMenu>
+              </Stack>
             </Grid>
           </Grid>
           <Grid
