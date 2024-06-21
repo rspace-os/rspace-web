@@ -1,6 +1,6 @@
 //@flow
 
-import React, { type Node } from "react";
+import React, { type Node, type ComponentType } from "react";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import Button from "@mui/material/Button";
 import { COLOR } from "../common";
@@ -16,6 +16,7 @@ import AcUnitIcon from "@mui/icons-material/AcUnit";
 import ShareIcon from "@mui/icons-material/Share";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
+import { observer } from "mobx-react-lite";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -27,11 +28,11 @@ const StyledMenu = styled(Menu)(({ open }) => ({
   },
 }));
 
-export default function ActionsMenu({
-  selectedFiles,
-}: {|
+type ActionsMenuArgs = {|
   selectedFiles: Set<string>,
-|}): Node {
+|};
+
+function ActionsMenu({ selectedFiles }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
   return (
     <>
@@ -90,7 +91,7 @@ export default function ActionsMenu({
         />
         <NewMenuItem
           title="Delete"
-          subheader=""
+          subheader={selectedFiles.size === 0 ? "Nothing selected." : ""}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<DeleteOutlineOutlinedIcon />}
@@ -98,6 +99,7 @@ export default function ActionsMenu({
             setActionsMenuAnchorEl(null);
           }}
           compact
+          disabled={selectedFiles.size === 0}
         />
         <NewMenuItem
           title="Export"
@@ -162,3 +164,5 @@ export default function ActionsMenu({
     </>
   );
 }
+
+export default (observer(ActionsMenu): ComponentType<ActionsMenuArgs>);
