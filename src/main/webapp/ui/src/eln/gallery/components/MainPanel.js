@@ -1079,7 +1079,25 @@ const TreeView = ({
         setExpandedItems(nodeIds);
       }}
       selectedItems={selectedNodes}
-      onItemSelectionToggle={(event, itemId: string, selected) => {
+      onItemSelectionToggle={(
+        event,
+        itemId: string | $ReadOnlyArray<string>,
+        selected
+      ) => {
+        /*
+         * If there are multiple files selected and the user taps any file
+         * (already selected or not) then this function is called twice: first
+         * with `itemId` as an array of all of the selected nodes with
+         * `selected` set to false, followed by `itemId` as a string value and
+         * `selected` set to true. The idea being, that you can first clear the
+         * data structure being passed as `selectedItems` and then add back the
+         * singular selected item. However, because we wish to handle ctrl/meta
+         * keys, we ignore this first invocation and instead just consider
+         * whether the tapped file is already selected or not to toggle its
+         * state. As such, we can ignore the first invocation where `itemId` is
+         * an array.
+         */
+        if (Array.isArray(itemId)) return;
         /*
          * It's not possible for us to support shift-clicking in tree view
          * because there's no data structure we can query to find a range of
@@ -1103,10 +1121,10 @@ const TreeView = ({
           return;
         }
         if (event.ctrlKey || event.metaKey) {
-          if (selected) {
-            setSelectedNodes([...selectedNodes, itemId]);
-          } else {
+          if (selectedNodes.includes(itemId)) {
             setSelectedNodes(selectedNodes.filter((x) => x !== itemId));
+          } else {
+            setSelectedNodes([...selectedNodes, itemId]);
           }
         } else if (selected) {
           setSelectedNodes([itemId]);
