@@ -1552,8 +1552,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>dataverse-rspace-adaptor</artifactId>
-        <version>1.1.0</version>
+        <artifactId>rspace-dataverse-adapter</artifactId>
+        <version>2.0.0</version>
         <exclusions>
           <exclusion>
                 <groupId>com.github.rspace-os</groupId>
