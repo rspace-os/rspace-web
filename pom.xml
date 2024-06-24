@@ -1887,8 +1887,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>figshare-rspace-adaptor</artifactId>
-        <version>0.22.0</version>
+        <artifactId>rspace-figshare-adapter</artifactId>
+        <version>1.0.0</version>
         <exclusions>
             <exclusion>
                 <groupId>com.github.rspace-os</groupId>
