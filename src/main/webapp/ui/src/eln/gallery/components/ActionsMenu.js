@@ -94,7 +94,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
         />
         <NewMenuItem
           title="Delete"
-          subheader={selection.someFilesAreSelected ? "" : "Nothing selected."}
+          subheader={selection.isEmpty() ? "Nothing selected." : ""}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<DeleteOutlineOutlinedIcon />}
@@ -105,7 +105,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             });
           }}
           compact
-          disabled={!selection.someFilesAreSelected()}
+          disabled={selection.isEmpty()}
         />
         <NewMenuItem
           title="Export"

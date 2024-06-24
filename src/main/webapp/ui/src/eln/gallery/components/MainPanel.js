@@ -640,8 +640,7 @@ const GridView = observer(
            * regains focus this will then run again
            */
           const { x, y } = tabIndexCoord;
-          if (!selection.someFilesAreSelected())
-            selection.append(listing.list[y * cols + x]);
+          if (selection.isEmpty()) selection.append(listing.list[y * cols + x]);
         }}
       >
         {listing.list.map((file, index) => (
