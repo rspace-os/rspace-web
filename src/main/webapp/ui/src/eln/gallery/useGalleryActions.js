@@ -21,7 +21,7 @@ export function useGalleryActions(): {|
       section: string,
     |}) => Promise<void>,
   |},
-  deleteFiles: (Set<string>) => Promise<void>,
+  deleteFiles: (Set<GalleryFile>) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -233,9 +233,10 @@ export function useGalleryActions(): {|
     };
   }
 
-  async function deleteFiles(fileIds: Set<string>) {
+  async function deleteFiles(files: Set<GalleryFile>) {
     const formData = new FormData();
-    for (const fileId of fileIds) formData.append("idsToDelete[]", fileId);
+    for (const file of files)
+      formData.append("idsToDelete[]", idToString(file.id));
     try {
       const data = await axios.post<FormData, mixed>(
         "gallery/ajax/deleteElementFromGallery",
@@ -258,9 +259,7 @@ export function useGalleryActions(): {|
           )
           .orElse(
             mkAlert({
-              message: `Successfully deleted item${
-                fileIds.size > 0 ? "s" : ""
-              }.`,
+              message: `Successfully deleted item${files.size > 0 ? "s" : ""}.`,
               variant: "success",
             })
           )
@@ -269,7 +268,7 @@ export function useGalleryActions(): {|
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to delete item${fileIds.size > 0 ? "s" : ""}.`,
+          title: `Failed to delete item${files.size > 0 ? "s" : ""}.`,
           message: e.message,
         })
       );

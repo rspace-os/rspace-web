@@ -1,6 +1,11 @@
 //@flow
 
-import React, { type Node, Children, type ElementConfig } from "react";
+import React, {
+  type Node,
+  Children,
+  type ElementConfig,
+  type ComponentType,
+} from "react";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -16,6 +21,7 @@ import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import { COLORS as baseThemeColors } from "../../../theme";
 import * as FetchingData from "../../../util/fetchingData";
+import * as MapUtils from "../../../util/MapUtils";
 import {
   useGalleryListing,
   type GalleryFile,
@@ -163,47 +169,64 @@ const ImportDropzone = styled(
   },
 }));
 
-const TreeItemContent = ({
-  path,
-  file,
-  section,
-  draggingIds,
-  refreshListing,
-}: {|
+type TreeItemContentArgs = {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
-  draggingIds: $ReadOnlyArray<string>,
+  selectedFiles: Map<string, GalleryFile>,
+  idMap: Map<string, GalleryFile>,
   refreshListing: () => void,
-|}): Node => {
-  const { galleryListing } = useGalleryListing({
+|};
+
+const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
+  ({
+    path,
+    file,
     section,
-    searchTerm: "",
-    path: [...path, file],
-  });
-  return FetchingData.match(galleryListing, {
-    /*
-     * nothing is shown whilst loading otherwise the UI ends up being quite
-     * janky when there ends up being nothing in the folder
-     */
-    loading: () => null,
-    error: (error) => <>{error}</>,
-    success: (listing) =>
-      listing.tag === "list"
-        ? listing.list.map((f, i) => (
-            <CustomTreeItem
-              file={f}
-              index={i}
-              path={[...path, file]}
-              section={section}
-              key={idToString(f.id)}
-              draggingIds={draggingIds}
-              refreshListing={refreshListing}
-            />
-          ))
-        : null,
-  });
-};
+    selectedFiles,
+    idMap,
+    refreshListing,
+  }: TreeItemContentArgs): Node => {
+    const { galleryListing } = useGalleryListing({
+      section,
+      searchTerm: "",
+      path: [...path, file],
+    });
+
+    React.useEffect(() => {
+      FetchingData.getSuccessValue(galleryListing).do((listing) => {
+        if (listing.tag === "empty") return;
+        runInAction(() => {
+          for (const f of listing.list) idMap.set(idToString(f.id), f);
+        });
+      });
+    }, [galleryListing]);
+
+    return FetchingData.match(galleryListing, {
+      /*
+       * nothing is shown whilst loading otherwise the UI ends up being quite
+       * janky when there ends up being nothing in the folder
+       */
+      loading: () => null,
+      error: (error) => <>{error}</>,
+      success: (listing) =>
+        listing.tag === "list"
+          ? listing.list.map((f, i) => (
+              <CustomTreeItem
+                file={f}
+                index={i}
+                path={[...path, file]}
+                section={section}
+                key={idToString(f.id)}
+                selectedFiles={selectedFiles}
+                idMap={idMap}
+                refreshListing={refreshListing}
+              />
+            ))
+          : null,
+    });
+  }
+);
 
 const CustomTransition = styled(({ children, in: open, className }) => (
   <div className={className}>
@@ -246,11 +269,9 @@ const Breadcrumb = ({
   folder?: GalleryFile,
 |}) => {
   const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: `/${[
-      selectedSection,
-      ...path.map(({ name }) => name),
-      folder?.name ?? "",
-    ].join("/")}/`,
+    id: `/${[selectedSection, ...path.map(({ name }) => name), folder?.name ?? ""].join(
+      "/"
+    )}/`,
     disabled: false,
     data: {
       path,
@@ -316,157 +337,168 @@ const CustomBreadcrumbs = ({
   );
 };
 
-const CustomTreeItem = ({
-  file,
-  index,
-  path,
-  section,
-  draggingIds,
-  refreshListing,
-}: {|
-  file: GalleryFile,
-  index: number,
-  path: $ReadOnlyArray<GalleryFile>,
-  section: string,
-  draggingIds: $ReadOnlyArray<string>,
-  refreshListing: () => void,
-|}) => {
-  const { uploadFiles } = useGalleryActions();
-  const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
-    useFileImportDropZone({
-      onDrop: doNotAwait(async (files) => {
-        await uploadFiles([...file.path, file], file.id, files);
-        refreshListing();
-      }),
+const CustomTreeItem = observer(
+  ({
+    file,
+    index,
+    path,
+    section,
+    selectedFiles,
+    idMap,
+    refreshListing,
+  }: {|
+    file: GalleryFile,
+    index: number,
+    path: $ReadOnlyArray<GalleryFile>,
+    section: string,
+    selectedFiles: Map<string, GalleryFile>,
+    idMap: Map<string, GalleryFile>,
+    refreshListing: () => void,
+  |}) => {
+    const { uploadFiles } = useGalleryActions();
+    const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
+      useFileImportDropZone({
+        onDrop: doNotAwait(async (files) => {
+          await uploadFiles([...file.path, file], file.id, files);
+          refreshListing();
+        }),
+        disabled: !/Folder/.test(file.type),
+      });
+    const { setNodeRef: setDropRef, isOver } = useDroppable({
+      id: file.id,
       disabled: !/Folder/.test(file.type),
+      data: {
+        path: file.path,
+        destination: { key: "folder", folder: file },
+      },
     });
-  const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: file.id,
-    disabled: !/Folder/.test(file.type),
-    data: {
-      path: file.path,
-      destination: { key: "folder", folder: file },
-    },
-  });
-  const {
-    attributes,
-    listeners,
-    setNodeRef: setDragRef,
-    transform,
-  } = useDraggable({
-    disabled: false,
-    id: file.id,
-    data: {
-      /*
-       * If this `file` is one of the selected files (i.e. is in
-       * `draggingIds`) then all of the selected files are to be moved by the
-       * drag operation. If it is not included then just move this file.
-       */
-      draggingIds: draggingIds.includes(idToString(file.id)) ? draggingIds : [],
-    },
-  });
-  const dndContext = useDndContext();
+    const {
+      attributes,
+      listeners,
+      setNodeRef: setDragRef,
+      transform,
+    } = useDraggable({
+      disabled: false,
+      id: file.id,
+      data: {
+        /*
+         * If this `file` is one of the selected files then all of the selected
+         * files are to be moved by the drag operation. If it is not included
+         * then just move this file.
+         */
+        selectedFiles: selectedFiles.has(idToString(file.id))
+          ? selectedFiles
+          : new Map(),
+      },
+    });
+    const dndContext = useDndContext();
 
-  const dragStyle: { [string]: string | number } = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
-        zIndex: 1, // just needs to be rendered above Nodes later in the DOM
-        position: "relative",
-        boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
-        maxWidth: "max-content",
-      }
-    : {};
-  const dropStyle: { [string]: string | number } = isOver
-    ? {
-        border: SELECTED_OR_FOCUS_BORDER,
-      }
-    : {
-        border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-      };
-  const inGroupBeingDraggedStyle: { [string]: string | number } =
-    (dndContext.active?.data.current?.draggingIds ?? []).includes(
-      idToString(file.id)
-    ) && dndContext.active?.id !== file.id
+    const dragStyle: { [string]: string | number } = transform
       ? {
-          opacity: 0.2,
+          transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
+          zIndex: 1, // just needs to be rendered above Nodes later in the DOM
+          position: "relative",
+          boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
+          maxWidth: "max-content",
         }
       : {};
-  const fileUploadDropping: { [string]: string | number } = over
-    ? {
-        border: SELECTED_OR_FOCUS_BORDER,
-      }
-    : {};
-
-  return (
-    <Box
-      sx={{
-        transitionDelay: `${(index + 1) * 0.04}s !important`,
-      }}
-    >
-      <TreeItem
-        itemId={idToString(file.id)}
-        label={
-          <Box
-            sx={{ display: "flex", pointerEvents: "none", userSelect: "none" }}
-          >
-            <Avatar
-              src={file.thumbnailUrl}
-              imgProps={{
-                role: "presentation",
-              }}
-              variant="rounded"
-              sx={{
-                width: "24px",
-                height: "24px",
-                aspectRatio: "1 / 1",
-                fontSize: "5em",
-                margin: "2px 12px 2px 8px",
-                background: "white",
-              }}
-            >
-              <FileIcon fontSize="inherit" />
-            </Avatar>
-            {file.name}
-          </Box>
+    const dropStyle: { [string]: string | number } = isOver
+      ? {
+          border: SELECTED_OR_FOCUS_BORDER,
         }
-        slots={{ groupTransition: CustomTransition }}
-        /*
-         * These are for dragging files from outside the browser
-         */
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onDragEnter={onDragEnter}
-        onDragLeave={onDragLeave}
-        /*
-         * These are for dragging files between folders within the gallery
-         */
-        ref={(node) => {
-          setDropRef(node);
-          setDragRef(node);
-        }}
-        {...listeners}
-        {...attributes}
-        style={{
-          ...dragStyle,
-          ...dropStyle,
-          ...inGroupBeingDraggedStyle,
-          ...fileUploadDropping,
-          borderRadius: "4px",
+      : {
+          border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
+        };
+    const inGroupBeingDraggedStyle: { [string]: string | number } =
+      (dndContext.active?.data.current?.selectedFiles ?? new Map()).has(
+        idToString(file.id)
+      ) && dndContext.active?.id !== file.id
+        ? {
+            opacity: 0.2,
+          }
+        : {};
+    const fileUploadDropping: { [string]: string | number } = over
+      ? {
+          border: SELECTED_OR_FOCUS_BORDER,
+        }
+      : {};
+
+    return (
+      <Box
+        sx={{
+          transitionDelay: `${(index + 1) * 0.04}s !important`,
         }}
       >
-        {/Folder/.test(file.type) && (
-          <TreeItemContent
-            file={file}
-            path={path}
-            section={section}
-            draggingIds={draggingIds}
-            refreshListing={refreshListing}
-          />
-        )}
-      </TreeItem>
-    </Box>
-  );
-};
+        <TreeItem
+          itemId={idToString(file.id)}
+          label={
+            <Box
+              sx={{
+                display: "flex",
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+            >
+              <Avatar
+                src={file.thumbnailUrl}
+                imgProps={{
+                  role: "presentation",
+                }}
+                variant="rounded"
+                sx={{
+                  width: "24px",
+                  height: "24px",
+                  aspectRatio: "1 / 1",
+                  fontSize: "5em",
+                  margin: "2px 12px 2px 8px",
+                  background: "white",
+                }}
+              >
+                <FileIcon fontSize="inherit" />
+              </Avatar>
+              {file.name}
+            </Box>
+          }
+          slots={{ groupTransition: CustomTransition }}
+          /*
+           * These are for dragging files from outside the browser
+           */
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragEnter={onDragEnter}
+          onDragLeave={onDragLeave}
+          /*
+           * These are for dragging files between folders within the gallery
+           */
+          ref={(node) => {
+            setDropRef(node);
+            setDragRef(node);
+          }}
+          {...listeners}
+          {...attributes}
+          style={{
+            ...dragStyle,
+            ...dropStyle,
+            ...inGroupBeingDraggedStyle,
+            ...fileUploadDropping,
+            borderRadius: "4px",
+          }}
+        >
+          {/Folder/.test(file.type) && (
+            <TreeItemContent
+              file={file}
+              path={path}
+              section={section}
+              selectedFiles={selectedFiles}
+              idMap={idMap}
+              refreshListing={refreshListing}
+            />
+          )}
+        </TreeItem>
+      </Box>
+    );
+  }
+);
 
 const GridView = observer(
   ({
@@ -476,7 +508,7 @@ const GridView = observer(
     listing:
       | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
-    selectedFiles: Set<string>,
+    selectedFiles: Map<string, GalleryFile>,
   |}) => {
     const dndContext = useDndContext();
 
@@ -588,7 +620,7 @@ const GridView = observer(
 
           runInAction(() => {
             selectedFiles.clear();
-            listing.list.forEach(({ id }, i) => {
+            listing.list.forEach((file, i) => {
               const fileX = i % cols;
               const fileY = Math.floor(i / cols);
               if (
@@ -597,7 +629,7 @@ const GridView = observer(
                 fileY >= top &&
                 fileY <= bottom
               )
-                selectedFiles.add(idToString(id));
+                selectedFiles.set(idToString(file.id), file);
             });
           });
 
@@ -615,7 +647,10 @@ const GridView = observer(
           const { x, y } = tabIndexCoord;
           if (selectedFiles.size === 0)
             runInAction(() => {
-              selectedFiles.add(idToString(listing.list[y * cols + x].id));
+              selectedFiles.set(
+                idToString(listing.list[y * cols + x].id),
+                listing.list[y * cols + x]
+              );
             });
         }}
       >
@@ -664,8 +699,8 @@ const GridView = observer(
                 });
                 runInAction(() => {
                   selectedFiles.clear();
-                  toSelect.forEach(({ id }) => {
-                    selectedFiles.add(idToString(id));
+                  toSelect.forEach((f) => {
+                    selectedFiles.set(idToString(f.id), f);
                   });
                 });
                 setTabIndexCoord({
@@ -679,13 +714,13 @@ const GridView = observer(
                   });
                 } else {
                   runInAction(() => {
-                    selectedFiles.add(idToString(file.id));
+                    selectedFiles.set(idToString(file.id), file);
                   });
                 }
               } else {
                 runInAction(() => {
                   selectedFiles.clear();
-                  selectedFiles.add(idToString(file.id));
+                  selectedFiles.set(idToString(file.id), file);
                 });
                 setShiftOrigin({
                   x: index % cols,
@@ -697,7 +732,7 @@ const GridView = observer(
                 });
               }
             }}
-            draggingIds={[...selectedFiles]}
+            selectedFiles={selectedFiles}
           />
         ))}
       </Grid>
@@ -715,7 +750,7 @@ const FileCard = styled(
         selected,
         index,
         onClick,
-        draggingIds,
+        selectedFiles,
         tabIndex,
         onFocus,
         onBlur,
@@ -725,7 +760,7 @@ const FileCard = styled(
         selected: boolean,
         index: number,
         onClick: (Event) => void,
-        draggingIds: $ReadOnlyArray<string>,
+        selectedFiles: Map<string, GalleryFile>,
         tabIndex: number,
         onFocus: () => void,
         onBlur: () => void,
@@ -762,11 +797,13 @@ const FileCard = styled(
         id: file.id,
         data: {
           /*
-           * If this `file` is one of the selected files (i.e. is in
-           * `draggingIds`) then all of the selected files are to be moved by the
-           * drag operation. If it is not included then just move this file.
+           * If this `file` is one of the selected files  then all of the
+           * selected files are to be moved by the drag operation. If it is not
+           * included then just move this file.
            */
-          draggingIds: draggingIds.includes(file.id) ? draggingIds : [],
+          selectedFiles: selectedFiles.has(idToString(file.id))
+            ? selectedFiles
+            : new Map(),
         },
       });
       /*
@@ -792,8 +829,8 @@ const FileCard = styled(
           }
         : {};
       const inGroupBeingDraggedStyle: { [string]: string | number } =
-        (dndContext.active?.data.current?.draggingIds ?? []).includes(
-          file.id
+        (dndContext.active?.data.current?.selectedFiles ?? new Map()).has(
+          idToString(file.id)
         ) && dndContext.active?.id !== file.id
           ? {
               opacity: 0.2,
@@ -1051,12 +1088,22 @@ const TreeView = observer(
     path: $ReadOnlyArray<GalleryFile>,
     selectedSection: string,
     refreshListing: () => void,
-    selectedFiles: Set<string>,
+    selectedFiles: Map<string, GalleryFile>,
   |}) => {
     const { addAlert } = React.useContext(AlertContext);
     const [expandedItems, setExpandedItems] = React.useState<
       $ReadOnlyArray<GalleryFile["id"]>
     >([]);
+
+    /*
+     * Problem is, this map only contains the root level files/folders
+     */
+    const idMap = useLocalObservable(() => {
+      const map = new Map<string, GalleryFile>();
+      if (listing.tag === "empty") return map;
+      for (const file of listing.list) map.set(idToString(file.id), file);
+      return map;
+    });
 
     if (listing.tag === "empty")
       return (
@@ -1081,7 +1128,7 @@ const TreeView = observer(
         onExpandedItemsChange={(_event, nodeIds) => {
           setExpandedItems(nodeIds);
         }}
-        selectedItems={[...selectedFiles]}
+        selectedItems={[...selectedFiles.keys()]}
         onItemSelectionToggle={(
           event,
           itemId: string | $ReadOnlyArray<string>,
@@ -1126,15 +1173,21 @@ const TreeView = observer(
           if (event.ctrlKey || event.metaKey) {
             runInAction(() => {
               if (selectedFiles.has(itemId)) {
-                selectedFiles.delete(itemId);
+                MapUtils.get(idMap, itemId).do((file) => {
+                  selectedFiles.delete(idToString(file.id));
+                });
               } else {
-                selectedFiles.add(itemId);
+                MapUtils.get(idMap, itemId).do((file) => {
+                  selectedFiles.set(idToString(file.id), file);
+                });
               }
             });
           } else if (selected) {
             runInAction(() => {
               selectedFiles.clear();
-              selectedFiles.add(itemId);
+              MapUtils.get(idMap, itemId).do((file) => {
+                selectedFiles.set(idToString(file.id), file);
+              });
             });
           } else {
             runInAction(() => {
@@ -1150,7 +1203,8 @@ const TreeView = observer(
             path={path}
             key={idToString(file.id)}
             section={selectedSection}
-            draggingIds={[...selectedFiles]}
+            selectedFiles={selectedFiles}
+            idMap={idMap}
             refreshListing={refreshListing}
           />
         ))}
@@ -1190,14 +1244,7 @@ const PlaceholderLabel = styled(({ children, className }) => (
   },
 }));
 
-export default function GalleryMainPanel({
-  selectedSection,
-  path,
-  clearPath,
-  galleryListing,
-  folderId,
-  refreshListing,
-}: {|
+type GalleryMainPanelArgs = {|
   selectedSection: string,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
@@ -1209,7 +1256,16 @@ export default function GalleryMainPanel({
   setSelectedFile: (null | GalleryFile) => void,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
-|}): Node {
+|};
+
+function GalleryMainPanel({
+  selectedSection,
+  path,
+  clearPath,
+  galleryListing,
+  folderId,
+  refreshListing,
+}: GalleryMainPanelArgs): Node {
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
       onDrop: () => {
@@ -1247,7 +1303,7 @@ export default function GalleryMainPanel({
   const keyboardSensor = useSensor(KeyboardSensor, {});
 
   // $FlowExpectedError[prop-missing] Difficult to get this library type right
-  const selectedFiles = useLocalObservable(() => observable.set([]));
+  const selectedFiles: Map<string, GalleryFile> = observable.map();
 
   return (
     <DialogContent
@@ -1270,8 +1326,9 @@ export default function GalleryMainPanel({
         sensors={[mouseSensor, touchSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
-          const idsOfSelectedFiles =
-            event.active?.data.current?.draggingIds ?? [];
+          const idsOfSelectedFiles = [
+            ...(event.active?.data.current?.selectedFiles.values() ?? []),
+          ].map(({ id }) => id);
           const idOfFileJustBeingDragged = event.active.id;
           void moveFilesWithIds(
             idsOfSelectedFiles.length > 0
@@ -1434,3 +1491,7 @@ export default function GalleryMainPanel({
     </DialogContent>
   );
 }
+
+export default (observer(
+  GalleryMainPanel
+): ComponentType<GalleryMainPanelArgs>);

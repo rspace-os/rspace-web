@@ -18,6 +18,7 @@ import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
 import { useGalleryActions } from "../useGalleryActions";
+import { type GalleryFile } from "../useGalleryListing";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -30,7 +31,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 }));
 
 type ActionsMenuArgs = {|
-  selectedFiles: Set<string>,
+  selectedFiles: Map<string, GalleryFile>,
   refreshListing: () => void,
 |};
 
@@ -99,7 +100,7 @@ function ActionsMenu({ selectedFiles, refreshListing }: ActionsMenuArgs): Node {
           foregroundColor={COLOR.contrastText}
           avatar={<DeleteOutlineOutlinedIcon />}
           onClick={() => {
-            void deleteFiles(selectedFiles).then(() => {
+            void deleteFiles(new Set(selectedFiles.values())).then(() => {
               refreshListing();
               setActionsMenuAnchorEl(null);
             });
