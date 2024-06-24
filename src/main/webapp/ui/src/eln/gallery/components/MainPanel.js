@@ -1382,7 +1382,7 @@ function GalleryMainPanel({
             <Grid item sx={{ mt: 0.5 }}>
               <Stack direction="row" spacing={1}>
                 <ActionsMenu
-                  selectedFiles={selectedFiles}
+                  selection={selectedFiles}
                   refreshListing={refreshListing}
                 />
                 <Button

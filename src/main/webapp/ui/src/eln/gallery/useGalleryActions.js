@@ -22,7 +22,7 @@ export function useGalleryActions(): {|
       section: string,
     |}) => Promise<void>,
   |},
-  deleteSelection: (Selection) => Promise<void>,
+  deleteFiles: (Set<GalleryFile>) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -234,9 +234,9 @@ export function useGalleryActions(): {|
     };
   }
 
-  async function deleteSelection(sel: Selection) {
+  async function deleteFiles(files: Set<GalleryFile>) {
     const formData = new FormData();
-    for (const file of [...sel.values()])
+    for (const file of files)
       formData.append("idsToDelete[]", idToString(file.id));
     try {
       const data = await axios.post<FormData, mixed>(
@@ -260,7 +260,7 @@ export function useGalleryActions(): {|
           )
           .orElse(
             mkAlert({
-              message: `Successfully deleted item${sel.size > 0 ? "s" : ""}.`,
+              message: `Successfully deleted item${files.size > 0 ? "s" : ""}.`,
               variant: "success",
             })
           )
@@ -269,7 +269,7 @@ export function useGalleryActions(): {|
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to delete item${sel.size > 0 ? "s" : ""}.`,
+          title: `Failed to delete item${files.size > 0 ? "s" : ""}.`,
           message: e.message,
         })
       );
@@ -277,7 +277,7 @@ export function useGalleryActions(): {|
     }
   }
 
-  return { uploadFiles, createFolder, moveFilesWithIds, deleteSelection };
+  return { uploadFiles, createFolder, moveFilesWithIds, deleteFiles };
 }
 
 export opaque type Selection = Map<string, GalleryFile>;
@@ -323,4 +323,8 @@ export function selectionAsTreeViewModel(
   sel: Selection
 ): $ReadOnlyArray<string> {
   return [...sel.keys()];
+}
+
+export function files(sel: Selection): Set<GalleryFile> {
+  return new Set(sel.values());
 }

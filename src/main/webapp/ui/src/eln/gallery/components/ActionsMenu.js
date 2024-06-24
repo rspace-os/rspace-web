@@ -21,6 +21,7 @@ import {
   useGalleryActions,
   type Selection,
   someFilesAreSelected,
+  files,
 } from "../useGalleryActions";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
@@ -34,13 +35,13 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 }));
 
 type ActionsMenuArgs = {|
-  selectedFiles: Selection,
+  selection: Selection,
   refreshListing: () => void,
 |};
 
-function ActionsMenu({ selectedFiles, refreshListing }: ActionsMenuArgs): Node {
+function ActionsMenu({ selection, refreshListing }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
-  const { deleteSelection } = useGalleryActions();
+  const { deleteFiles } = useGalleryActions();
 
   return (
     <>
@@ -98,20 +99,18 @@ function ActionsMenu({ selectedFiles, refreshListing }: ActionsMenuArgs): Node {
         />
         <NewMenuItem
           title="Delete"
-          subheader={
-            someFilesAreSelected(selectedFiles) ? "" : "Nothing selected."
-          }
+          subheader={someFilesAreSelected(selection) ? "" : "Nothing selected."}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<DeleteOutlineOutlinedIcon />}
           onClick={() => {
-            void deleteSelection(selectedFiles).then(() => {
+            void deleteFiles(files(selection)).then(() => {
               refreshListing();
               setActionsMenuAnchorEl(null);
             });
           }}
           compact
-          disabled={!someFilesAreSelected(selectedFiles)}
+          disabled={!someFilesAreSelected(selection)}
         />
         <NewMenuItem
           title="Export"
