@@ -312,7 +312,7 @@ export function useGallerySelection(): {|
   clear: () => void,
   append: (GalleryFile) => void,
   remove: (GalleryFile) => void,
-  isSelected: (GalleryFile) => boolean,
+  includes: (GalleryFile) => boolean,
   asSet: () => Set<GalleryFile>,
   asSetOfIds: () => Set<GalleryFile["id"]>,
   asTreeViewModel: () => $ReadOnlyArray<string>,
@@ -335,7 +335,7 @@ export function useGallerySelection(): {|
         selection.delete(idToString(file.id));
       });
     },
-    isSelected: (file) => {
+    includes: (file) => {
       return selection.has(idToString(file.id));
     },
     asSet: () => new Set(selection.values()),

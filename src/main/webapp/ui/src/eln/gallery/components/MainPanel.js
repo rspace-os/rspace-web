@@ -386,7 +386,7 @@ const CustomTreeItem = observer(
          * files are to be moved by the drag operation. If it is not included
          * then just move this file.
          */
-        selectedFiles: selection.isSelected(file)
+        selectedFiles: selection.includes(file)
           ? selection.asSetOfIds()
           : mkSelection(),
         currentFile: file,
@@ -658,7 +658,7 @@ const GridView = observer(
             onBlur={() => {
               setHasFocus(false);
             }}
-            selected={selection.isSelected(file)}
+            selected={selection.includes(file)}
             file={file}
             key={idToString(file.id)}
             index={index}
@@ -696,7 +696,7 @@ const GridView = observer(
                   y: Math.floor(index / cols),
                 });
               } else if (e.ctrlKey || e.metaKey) {
-                if (selection.isSelected(file)) {
+                if (selection.includes(file)) {
                   selection.remove(file);
                 } else {
                   selection.append(file);
@@ -781,7 +781,7 @@ const FileCard = styled(
            * selected files are to be moved by the drag operation. If it is not
            * included then just move this file.
            */
-          selectedFiles: selection.isSelected(file)
+          selectedFiles: selection.includes(file)
             ? selection.asSetOfIds()
             : mkSelection(),
           currentFile: file,
@@ -1152,7 +1152,7 @@ const TreeView = observer(
           }
           if (event.ctrlKey || event.metaKey) {
             MapUtils.get(idMap, itemId).do((file) => {
-              if (selection.isSelected(file)) {
+              if (selection.includes(file)) {
                 selection.remove(file);
               } else {
                 selection.append(file);
@@ -1296,7 +1296,7 @@ function GalleryMainPanel({
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
           void moveFiles(
-            selection.isSelected(event.active.data.current.currentFile)
+            selection.includes(event.active.data.current.currentFile)
               ? selection.asSet()
               : new Set([event.active.data.current.currentFile])
           )
