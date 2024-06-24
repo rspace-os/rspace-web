@@ -30,15 +30,8 @@ import {
 } from "../useGalleryListing";
 import {
   useGalleryActions,
+  useGallerySelection,
   mkSelection,
-  type Selection,
-  clearSelection,
-  someFilesAreSelected,
-  appendSelection,
-  removeFromSelection,
-  isSelected,
-  files,
-  selectionAsTreeViewModel,
 } from "../useGalleryActions";
 import { doNotAwait } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -184,7 +177,6 @@ type TreeItemContentArgs = {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
-  selectedFiles: Selection,
   idMap: Map<string, GalleryFile>,
   refreshListing: () => void,
 |};
@@ -194,7 +186,6 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     path,
     file,
     section,
-    selectedFiles,
     idMap,
     refreshListing,
   }: TreeItemContentArgs): Node => {
@@ -229,7 +220,6 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                 path={[...path, file]}
                 section={section}
                 key={idToString(f.id)}
-                selectedFiles={selectedFiles}
                 idMap={idMap}
                 refreshListing={refreshListing}
               />
@@ -354,7 +344,6 @@ const CustomTreeItem = observer(
     index,
     path,
     section,
-    selectedFiles,
     idMap,
     refreshListing,
   }: {|
@@ -362,11 +351,11 @@ const CustomTreeItem = observer(
     index: number,
     path: $ReadOnlyArray<GalleryFile>,
     section: string,
-    selectedFiles: Selection,
     idMap: Map<string, GalleryFile>,
     refreshListing: () => void,
   |}) => {
     const { uploadFiles } = useGalleryActions();
+    const selection = useGallerySelection();
     const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
       useFileImportDropZone({
         onDrop: doNotAwait(async (files) => {
@@ -397,9 +386,9 @@ const CustomTreeItem = observer(
          * files are to be moved by the drag operation. If it is not included
          * then just move this file.
          */
-        selectedFiles: isSelected(selectedFiles, file)
-          ? selectedFiles
-          : new Map(),
+        selectedFiles: selection.isSelected(file)
+          ? selection.asSetOfIds()
+          : mkSelection(),
         currentFile: file,
       },
     });
@@ -422,8 +411,8 @@ const CustomTreeItem = observer(
           border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
         };
     const inGroupBeingDraggedStyle: { [string]: string | number } =
-      (dndContext.active?.data.current?.selectedFiles ?? new Map()).has(
-        idToString(file.id)
+      (dndContext.active?.data.current?.selectedFiles ?? new Set()).has(
+        file.id
       ) && dndContext.active?.id !== file.id
         ? {
             opacity: 0.2,
@@ -501,7 +490,6 @@ const CustomTreeItem = observer(
               file={file}
               path={path}
               section={section}
-              selectedFiles={selectedFiles}
               idMap={idMap}
               refreshListing={refreshListing}
             />
@@ -515,14 +503,13 @@ const CustomTreeItem = observer(
 const GridView = observer(
   ({
     listing,
-    selectedFiles,
   }: {|
     listing:
       | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
-    selectedFiles: Selection,
   |}) => {
     const dndContext = useDndContext();
+    const selection = useGallerySelection();
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
@@ -585,9 +572,7 @@ const GridView = observer(
         onKeyDown={(e) => {
           if (dndContext.active) return;
           if (e.key === "Escape") {
-            runInAction(() => {
-              clearSelection(selectedFiles);
-            });
+            selection.clear();
             return;
           }
           const newCoord: {
@@ -630,7 +615,7 @@ const GridView = observer(
           const top = Math.min(y, origin.y);
           const bottom = Math.max(y, origin.y);
 
-          clearSelection(selectedFiles);
+          selection.clear();
           listing.list.forEach((file, i) => {
             const fileX = i % cols;
             const fileY = Math.floor(i / cols);
@@ -640,7 +625,7 @@ const GridView = observer(
               fileY >= top &&
               fileY <= bottom
             )
-              appendSelection(selectedFiles, file);
+              selection.append(file);
           });
 
           setShiftOrigin(e.shiftKey ? shiftOrigin ?? tabIndexCoord : null);
@@ -655,8 +640,8 @@ const GridView = observer(
            * regains focus this will then run again
            */
           const { x, y } = tabIndexCoord;
-          if (!someFilesAreSelected(selectedFiles))
-            appendSelection(selectedFiles, listing.list[y * cols + x]);
+          if (!selection.someFilesAreSelected())
+            selection.append(listing.list[y * cols + x]);
         }}
       >
         {listing.list.map((file, index) => (
@@ -673,7 +658,7 @@ const GridView = observer(
             onBlur={() => {
               setHasFocus(false);
             }}
-            selected={isSelected(selectedFiles, file)}
+            selected={selection.isSelected(file)}
             file={file}
             key={idToString(file.id)}
             index={index}
@@ -702,23 +687,23 @@ const GridView = observer(
                     coord.y <= Math.max(tappedCoord.y, shiftOrigin.y)
                   );
                 });
-                clearSelection(selectedFiles);
+                selection.clear();
                 toSelect.forEach((f) => {
-                  appendSelection(selectedFiles, f);
+                  selection.append(f);
                 });
                 setTabIndexCoord({
                   x: index % cols,
                   y: Math.floor(index / cols),
                 });
               } else if (e.ctrlKey || e.metaKey) {
-                if (isSelected(selectedFiles, file)) {
-                  removeFromSelection(selectedFiles, file);
+                if (selection.isSelected(file)) {
+                  selection.remove(file);
                 } else {
-                  appendSelection(selectedFiles, file);
+                  selection.append(file);
                 }
               } else {
-                clearSelection(selectedFiles);
-                appendSelection(selectedFiles, file);
+                selection.clear();
+                selection.append(file);
                 setShiftOrigin({
                   x: index % cols,
                   y: Math.floor(index / cols),
@@ -729,7 +714,6 @@ const GridView = observer(
                 });
               }
             }}
-            selectedFiles={selectedFiles}
           />
         ))}
       </Grid>
@@ -747,7 +731,6 @@ const FileCard = styled(
         selected,
         index,
         onClick,
-        selectedFiles,
         tabIndex,
         onFocus,
         onBlur,
@@ -757,7 +740,6 @@ const FileCard = styled(
         selected: boolean,
         index: number,
         onClick: (Event) => void,
-        selectedFiles: Map<string, GalleryFile>,
         tabIndex: number,
         onFocus: () => void,
         onBlur: () => void,
@@ -765,6 +747,7 @@ const FileCard = styled(
       ref
     ) => {
       const { uploadFiles } = useGalleryActions();
+      const selection = useGallerySelection();
       const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
         useFileImportDropZone({
           onDrop: (files) => {
@@ -798,9 +781,9 @@ const FileCard = styled(
            * selected files are to be moved by the drag operation. If it is not
            * included then just move this file.
            */
-          selectedFiles: selectedFiles.has(idToString(file.id))
-            ? selectedFiles
-            : new Map(),
+          selectedFiles: selection.isSelected(file)
+            ? selection.asSetOfIds()
+            : mkSelection(),
           currentFile: file,
         },
       });
@@ -827,8 +810,8 @@ const FileCard = styled(
           }
         : {};
       const inGroupBeingDraggedStyle: { [string]: string | number } =
-        (dndContext.active?.data.current?.selectedFiles ?? new Map()).has(
-          idToString(file.id)
+        (dndContext.active?.data.current?.selectedFiles ?? new Set()).has(
+          file.id
         ) && dndContext.active?.id !== file.id
           ? {
               opacity: 0.2,
@@ -1078,7 +1061,6 @@ const TreeView = observer(
     path,
     selectedSection,
     refreshListing,
-    selectedFiles,
   }: {|
     listing:
       | {| tag: "empty", reason: string |}
@@ -1086,9 +1068,9 @@ const TreeView = observer(
     path: $ReadOnlyArray<GalleryFile>,
     selectedSection: string,
     refreshListing: () => void,
-    selectedFiles: Selection,
   |}) => {
     const { addAlert } = React.useContext(AlertContext);
+    const selection = useGallerySelection();
     const [expandedItems, setExpandedItems] = React.useState<
       $ReadOnlyArray<GalleryFile["id"]>
     >([]);
@@ -1126,7 +1108,7 @@ const TreeView = observer(
         onExpandedItemsChange={(_event, nodeIds) => {
           setExpandedItems(nodeIds);
         }}
-        selectedItems={selectionAsTreeViewModel(selectedFiles)}
+        selectedItems={selection.asTreeViewModel()}
         onItemSelectionToggle={(
           event,
           itemId: string | $ReadOnlyArray<string>,
@@ -1170,17 +1152,17 @@ const TreeView = observer(
           }
           if (event.ctrlKey || event.metaKey) {
             MapUtils.get(idMap, itemId).do((file) => {
-              if (isSelected(selectedFiles, file)) {
-                removeFromSelection(selectedFiles, file);
+              if (selection.isSelected(file)) {
+                selection.remove(file);
               } else {
-                appendSelection(selectedFiles, file);
+                selection.append(file);
               }
             });
           } else {
-            clearSelection(selectedFiles);
+            selection.clear();
             if (selected) {
               MapUtils.get(idMap, itemId).do((file) => {
-                appendSelection(selectedFiles, file);
+                selection.append(file);
               });
             }
           }
@@ -1193,7 +1175,6 @@ const TreeView = observer(
             path={path}
             key={idToString(file.id)}
             section={selectedSection}
-            selectedFiles={selectedFiles}
             idMap={idMap}
             refreshListing={refreshListing}
           />
@@ -1271,6 +1252,7 @@ function GalleryMainPanel({
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
   const { moveFiles } = useGalleryActions();
+  const selection = useGallerySelection();
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -1291,8 +1273,6 @@ function GalleryMainPanel({
     },
   });
   const keyboardSensor = useSensor(KeyboardSensor, {});
-
-  const selectedFiles = mkSelection();
 
   return (
     <DialogContent
@@ -1316,8 +1296,8 @@ function GalleryMainPanel({
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
           void moveFiles(
-            isSelected(selectedFiles, event.active.data.current.currentFile)
-              ? files(selectedFiles)
+            selection.isSelected(event.active.data.current.currentFile)
+              ? selection.asSet()
               : new Set([event.active.data.current.currentFile])
           )
             .to({
@@ -1382,10 +1362,7 @@ function GalleryMainPanel({
             </Grid>
             <Grid item sx={{ mt: 0.5 }}>
               <Stack direction="row" spacing={1}>
-                <ActionsMenu
-                  selection={selectedFiles}
-                  refreshListing={refreshListing}
-                />
+                <ActionsMenu refreshListing={refreshListing} />
                 <Button
                   variant="outlined"
                   size="small"
@@ -1413,7 +1390,7 @@ function GalleryMainPanel({
                     onClick={() => {
                       setViewMode("grid");
                       setViewMenuAnchorEl(null);
-                      clearSelection(selectedFiles);
+                      selection.clear();
                     }}
                   />
                   <NewMenuItem
@@ -1425,7 +1402,7 @@ function GalleryMainPanel({
                     onClick={() => {
                       setViewMode("tree");
                       setViewMenuAnchorEl(null);
-                      clearSelection(selectedFiles);
+                      selection.clear();
                     }}
                   />
                 </StyledMenu>
@@ -1447,7 +1424,6 @@ function GalleryMainPanel({
                     path={path}
                     selectedSection={selectedSection}
                     refreshListing={refreshListing}
-                    selectedFiles={selectedFiles}
                   />
                 ),
               })}
@@ -1455,9 +1431,7 @@ function GalleryMainPanel({
               FetchingData.match(galleryListing, {
                 loading: () => <></>,
                 error: (error) => <>{error}</>,
-                success: (listing) => (
-                  <GridView listing={listing} selectedFiles={selectedFiles} />
-                ),
+                success: (listing) => <GridView listing={listing} />,
               })}
           </Grid>
         </Grid>

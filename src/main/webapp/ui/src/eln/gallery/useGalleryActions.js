@@ -1,6 +1,6 @@
 //@flow
 
-import React from "react";
+import React, { type Context, type Node } from "react";
 import axios from "axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
@@ -286,38 +286,60 @@ export function mkSelection(): Selection {
   return observable.map();
 }
 
-export function someFilesAreSelected(sel: Selection): boolean {
-  return sel.size > 0;
-}
+export opaque type SelectionContextType = {|
+  selection: Selection,
+|};
 
-export function clearSelection(sel: Selection): void {
-  runInAction(() => {
-    sel.clear();
-  });
-}
+const DEFAULT_SELECTION_CONTEXT: SelectionContextType = {
+  selection: mkSelection(),
+};
 
-export function appendSelection(sel: Selection, file: GalleryFile): void {
-  runInAction(() => {
-    sel.set(idToString(file.id), file);
-  });
-}
+export const SelectionContext: Context<SelectionContextType> =
+  React.createContext(DEFAULT_SELECTION_CONTEXT);
 
-export function removeFromSelection(sel: Selection, file: GalleryFile): void {
-  runInAction(() => {
-    sel.delete(idToString(file.id));
-  });
-}
+export const GallerySelection = ({ children }: {| children: Node |}): Node => (
+  <SelectionContext.Provider
+    value={{
+      selection: mkSelection(),
+    }}
+  >
+    {children}
+  </SelectionContext.Provider>
+);
 
-export function isSelected(sel: Selection, file: GalleryFile): boolean {
-  return sel.has(idToString(file.id));
-}
-
-export function selectionAsTreeViewModel(
-  sel: Selection
-): $ReadOnlyArray<string> {
-  return [...sel.keys()];
-}
-
-export function files(sel: Selection): Set<GalleryFile> {
-  return new Set(sel.values());
+export function useGallerySelection(): {|
+  someFilesAreSelected: () => boolean,
+  clear: () => void,
+  append: (GalleryFile) => void,
+  remove: (GalleryFile) => void,
+  isSelected: (GalleryFile) => boolean,
+  asSet: () => Set<GalleryFile>,
+  asSetOfIds: () => Set<GalleryFile["id"]>,
+  asTreeViewModel: () => $ReadOnlyArray<string>,
+|} {
+  const { selection } = React.useContext(SelectionContext);
+  return {
+    someFilesAreSelected: () => selection.size > 0,
+    clear: () => {
+      runInAction(() => {
+        selection.clear();
+      });
+    },
+    append: (file) => {
+      runInAction(() => {
+        selection.set(idToString(file.id), file);
+      });
+    },
+    remove: (file) => {
+      runInAction(() => {
+        selection.delete(idToString(file.id));
+      });
+    },
+    isSelected: (file) => {
+      return selection.has(idToString(file.id));
+    },
+    asSet: () => new Set(selection.values()),
+    asSetOfIds: () => new Set([...selection.values()].map(({ id }) => id)),
+    asTreeViewModel: () => [...selection.keys()],
+  };
 }

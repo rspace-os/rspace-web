@@ -17,6 +17,7 @@ import useViewportDimensions from "../../util/useViewportDimensions";
 import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
+import { GallerySelection } from "./useGalleryActions";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -58,17 +59,19 @@ function WholePage() {
             flexGrow: 1,
           }}
         >
-          <MainPanel
-            selectedSection={selectedSection}
-            path={path}
-            clearPath={clearPath}
-            galleryListing={galleryListing}
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
-            folderId={folderId}
-            refreshListing={refreshListing}
-            key={null}
-          />
+          <GallerySelection>
+            <MainPanel
+              selectedSection={selectedSection}
+              path={path}
+              clearPath={clearPath}
+              galleryListing={galleryListing}
+              selectedFile={selectedFile}
+              setSelectedFile={setSelectedFile}
+              folderId={folderId}
+              refreshListing={refreshListing}
+              key={null}
+            />
+          </GallerySelection>
         </Box>
       </Box>
     </Alerts>
