@@ -17,8 +17,11 @@ import ShareIcon from "@mui/icons-material/Share";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
-import { useGalleryActions } from "../useGalleryActions";
-import { type GalleryFile } from "../useGalleryListing";
+import {
+  useGalleryActions,
+  type Selection,
+  someFilesAreSelected,
+} from "../useGalleryActions";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -31,13 +34,13 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 }));
 
 type ActionsMenuArgs = {|
-  selectedFiles: Map<string, GalleryFile>,
+  selectedFiles: Selection,
   refreshListing: () => void,
 |};
 
 function ActionsMenu({ selectedFiles, refreshListing }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
-  const { deleteFiles } = useGalleryActions();
+  const { deleteSelection } = useGalleryActions();
 
   return (
     <>
@@ -95,18 +98,20 @@ function ActionsMenu({ selectedFiles, refreshListing }: ActionsMenuArgs): Node {
         />
         <NewMenuItem
           title="Delete"
-          subheader={selectedFiles.size === 0 ? "Nothing selected." : ""}
+          subheader={
+            someFilesAreSelected(selectedFiles) ? "" : "Nothing selected."
+          }
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<DeleteOutlineOutlinedIcon />}
           onClick={() => {
-            void deleteFiles(new Set(selectedFiles.values())).then(() => {
+            void deleteSelection(selectedFiles).then(() => {
               refreshListing();
               setActionsMenuAnchorEl(null);
             });
           }}
           compact
-          disabled={selectedFiles.size === 0}
+          disabled={!someFilesAreSelected(selectedFiles)}
         />
         <NewMenuItem
           title="Export"

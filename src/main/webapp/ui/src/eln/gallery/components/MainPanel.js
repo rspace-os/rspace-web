@@ -28,7 +28,18 @@ import {
   type Id,
   idToString,
 } from "../useGalleryListing";
-import { useGalleryActions } from "../useGalleryActions";
+import {
+  useGalleryActions,
+  mkSelection,
+  type Selection,
+  clearSelection,
+  idsOfSelectedFiles,
+  someFilesAreSelected,
+  appendSelection,
+  removeFromSelection,
+  isSelected,
+  selectionAsTreeViewModel,
+} from "../useGalleryActions";
 import { doNotAwait } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
@@ -55,7 +66,7 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Slide from "@mui/material/Slide";
 import Stack from "@mui/material/Stack";
-import { observable, runInAction } from "mobx";
+import { runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -173,7 +184,7 @@ type TreeItemContentArgs = {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: string,
-  selectedFiles: Map<string, GalleryFile>,
+  selectedFiles: Selection,
   idMap: Map<string, GalleryFile>,
   refreshListing: () => void,
 |};
@@ -351,7 +362,7 @@ const CustomTreeItem = observer(
     index: number,
     path: $ReadOnlyArray<GalleryFile>,
     section: string,
-    selectedFiles: Map<string, GalleryFile>,
+    selectedFiles: Selection,
     idMap: Map<string, GalleryFile>,
     refreshListing: () => void,
   |}) => {
@@ -386,7 +397,7 @@ const CustomTreeItem = observer(
          * files are to be moved by the drag operation. If it is not included
          * then just move this file.
          */
-        selectedFiles: selectedFiles.has(idToString(file.id))
+        selectedFiles: isSelected(selectedFiles, file)
           ? selectedFiles
           : new Map(),
       },
@@ -508,7 +519,7 @@ const GridView = observer(
     listing:
       | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
-    selectedFiles: Map<string, GalleryFile>,
+    selectedFiles: Selection,
   |}) => {
     const dndContext = useDndContext();
 
@@ -574,7 +585,7 @@ const GridView = observer(
           if (dndContext.active) return;
           if (e.key === "Escape") {
             runInAction(() => {
-              selectedFiles.clear();
+              clearSelection(selectedFiles);
             });
             return;
           }
@@ -618,19 +629,17 @@ const GridView = observer(
           const top = Math.min(y, origin.y);
           const bottom = Math.max(y, origin.y);
 
-          runInAction(() => {
-            selectedFiles.clear();
-            listing.list.forEach((file, i) => {
-              const fileX = i % cols;
-              const fileY = Math.floor(i / cols);
-              if (
-                fileX >= left &&
-                fileX <= right &&
-                fileY >= top &&
-                fileY <= bottom
-              )
-                selectedFiles.set(idToString(file.id), file);
-            });
+          clearSelection(selectedFiles);
+          listing.list.forEach((file, i) => {
+            const fileX = i % cols;
+            const fileY = Math.floor(i / cols);
+            if (
+              fileX >= left &&
+              fileX <= right &&
+              fileY >= top &&
+              fileY <= bottom
+            )
+              appendSelection(selectedFiles, file);
           });
 
           setShiftOrigin(e.shiftKey ? shiftOrigin ?? tabIndexCoord : null);
@@ -645,13 +654,8 @@ const GridView = observer(
            * regains focus this will then run again
            */
           const { x, y } = tabIndexCoord;
-          if (selectedFiles.size === 0)
-            runInAction(() => {
-              selectedFiles.set(
-                idToString(listing.list[y * cols + x].id),
-                listing.list[y * cols + x]
-              );
-            });
+          if (!someFilesAreSelected(selectedFiles))
+            appendSelection(selectedFiles, listing.list[y * cols + x]);
         }}
       >
         {listing.list.map((file, index) => (
@@ -668,7 +672,7 @@ const GridView = observer(
             onBlur={() => {
               setHasFocus(false);
             }}
-            selected={selectedFiles.has(idToString(file.id))}
+            selected={isSelected(selectedFiles, file)}
             file={file}
             key={idToString(file.id)}
             index={index}
@@ -697,31 +701,23 @@ const GridView = observer(
                     coord.y <= Math.max(tappedCoord.y, shiftOrigin.y)
                   );
                 });
-                runInAction(() => {
-                  selectedFiles.clear();
-                  toSelect.forEach((f) => {
-                    selectedFiles.set(idToString(f.id), f);
-                  });
+                clearSelection(selectedFiles);
+                toSelect.forEach((f) => {
+                  appendSelection(selectedFiles, f);
                 });
                 setTabIndexCoord({
                   x: index % cols,
                   y: Math.floor(index / cols),
                 });
               } else if (e.ctrlKey || e.metaKey) {
-                if (selectedFiles.has(idToString(file.id))) {
-                  runInAction(() => {
-                    selectedFiles.delete(idToString(file.id));
-                  });
+                if (isSelected(selectedFiles, file)) {
+                  removeFromSelection(selectedFiles, file);
                 } else {
-                  runInAction(() => {
-                    selectedFiles.set(idToString(file.id), file);
-                  });
+                  appendSelection(selectedFiles, file);
                 }
               } else {
-                runInAction(() => {
-                  selectedFiles.clear();
-                  selectedFiles.set(idToString(file.id), file);
-                });
+                clearSelection(selectedFiles);
+                appendSelection(selectedFiles, file);
                 setShiftOrigin({
                   x: index % cols,
                   y: Math.floor(index / cols),
@@ -1088,7 +1084,7 @@ const TreeView = observer(
     path: $ReadOnlyArray<GalleryFile>,
     selectedSection: string,
     refreshListing: () => void,
-    selectedFiles: Map<string, GalleryFile>,
+    selectedFiles: Selection,
   |}) => {
     const { addAlert } = React.useContext(AlertContext);
     const [expandedItems, setExpandedItems] = React.useState<
@@ -1128,7 +1124,7 @@ const TreeView = observer(
         onExpandedItemsChange={(_event, nodeIds) => {
           setExpandedItems(nodeIds);
         }}
-        selectedItems={[...selectedFiles.keys()]}
+        selectedItems={selectionAsTreeViewModel(selectedFiles)}
         onItemSelectionToggle={(
           event,
           itemId: string | $ReadOnlyArray<string>,
@@ -1171,28 +1167,20 @@ const TreeView = observer(
             return;
           }
           if (event.ctrlKey || event.metaKey) {
-            runInAction(() => {
-              if (selectedFiles.has(itemId)) {
-                MapUtils.get(idMap, itemId).do((file) => {
-                  selectedFiles.delete(idToString(file.id));
-                });
+            MapUtils.get(idMap, itemId).do((file) => {
+              if (isSelected(selectedFiles, file)) {
+                removeFromSelection(selectedFiles, file);
               } else {
-                MapUtils.get(idMap, itemId).do((file) => {
-                  selectedFiles.set(idToString(file.id), file);
-                });
+                appendSelection(selectedFiles, file);
               }
             });
-          } else if (selected) {
-            runInAction(() => {
-              selectedFiles.clear();
-              MapUtils.get(idMap, itemId).do((file) => {
-                selectedFiles.set(idToString(file.id), file);
-              });
-            });
           } else {
-            runInAction(() => {
-              selectedFiles.clear();
-            });
+            clearSelection(selectedFiles);
+            if (selected) {
+              MapUtils.get(idMap, itemId).do((file) => {
+                appendSelection(selectedFiles, file);
+              });
+            }
           }
         }}
       >
@@ -1302,8 +1290,7 @@ function GalleryMainPanel({
   });
   const keyboardSensor = useSensor(KeyboardSensor, {});
 
-  // $FlowExpectedError[prop-missing] Difficult to get this library type right
-  const selectedFiles: Map<string, GalleryFile> = observable.map();
+  const selectedFiles = mkSelection();
 
   return (
     <DialogContent
@@ -1326,13 +1313,10 @@ function GalleryMainPanel({
         sensors={[mouseSensor, touchSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
-          const idsOfSelectedFiles = [
-            ...(event.active?.data.current?.selectedFiles.values() ?? []),
-          ].map(({ id }) => id);
           const idOfFileJustBeingDragged = event.active.id;
           void moveFilesWithIds(
-            idsOfSelectedFiles.length > 0
-              ? idsOfSelectedFiles
+            someFilesAreSelected(selectedFiles)
+              ? idsOfSelectedFiles(selectedFiles)
               : [idOfFileJustBeingDragged]
           )
             .to({
@@ -1428,9 +1412,7 @@ function GalleryMainPanel({
                     onClick={() => {
                       setViewMode("grid");
                       setViewMenuAnchorEl(null);
-                      runInAction(() => {
-                        selectedFiles.clear();
-                      });
+                      clearSelection(selectedFiles);
                     }}
                   />
                   <NewMenuItem
@@ -1442,9 +1424,7 @@ function GalleryMainPanel({
                     onClick={() => {
                       setViewMode("tree");
                       setViewMenuAnchorEl(null);
-                      runInAction(() => {
-                        selectedFiles.clear();
-                      });
+                      clearSelection(selectedFiles);
                     }}
                   />
                 </StyledMenu>

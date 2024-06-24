@@ -7,6 +7,7 @@ import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { type GalleryFile, idToString, type Id } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import { observable, runInAction } from "mobx";
 
 export function useGalleryActions(): {|
   uploadFiles: (
@@ -15,13 +16,13 @@ export function useGalleryActions(): {|
     $ReadOnlyArray<File>
   ) => Promise<void>,
   createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
-  moveFilesWithIds: ($ReadOnlyArray<number>) => {|
+  moveFilesWithIds: ($ReadOnlyArray<GalleryFile["id"]>) => {|
     to: ({|
       destination: {| key: "root" |} | {| key: "folder", folder: GalleryFile |},
       section: string,
     |}) => Promise<void>,
   |},
-  deleteFiles: (Set<GalleryFile>) => Promise<void>,
+  deleteSelection: (Selection) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -151,7 +152,7 @@ export function useGalleryActions(): {|
     }
   }
 
-  function moveFilesWithIds(fileIds: $ReadOnlyArray<number>) {
+  function moveFilesWithIds(fileIds: $ReadOnlyArray<GalleryFile["id"]>) {
     return {
       to: async ({
         destination,
@@ -187,7 +188,7 @@ export function useGalleryActions(): {|
         const formData = new FormData();
         formData.append("target", target);
         fileIds.forEach((fileId) => {
-          formData.append("filesId[]", `${fileId}`);
+          formData.append("filesId[]", idToString(fileId));
         });
         formData.append("mediaType", section);
         try {
@@ -233,9 +234,9 @@ export function useGalleryActions(): {|
     };
   }
 
-  async function deleteFiles(files: Set<GalleryFile>) {
+  async function deleteSelection(sel: Selection) {
     const formData = new FormData();
-    for (const file of files)
+    for (const file of [...sel.values()])
       formData.append("idsToDelete[]", idToString(file.id));
     try {
       const data = await axios.post<FormData, mixed>(
@@ -259,7 +260,7 @@ export function useGalleryActions(): {|
           )
           .orElse(
             mkAlert({
-              message: `Successfully deleted item${files.size > 0 ? "s" : ""}.`,
+              message: `Successfully deleted item${sel.size > 0 ? "s" : ""}.`,
               variant: "success",
             })
           )
@@ -268,7 +269,7 @@ export function useGalleryActions(): {|
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to delete item${files.size > 0 ? "s" : ""}.`,
+          title: `Failed to delete item${sel.size > 0 ? "s" : ""}.`,
           message: e.message,
         })
       );
@@ -276,5 +277,50 @@ export function useGalleryActions(): {|
     }
   }
 
-  return { uploadFiles, createFolder, moveFilesWithIds, deleteFiles };
+  return { uploadFiles, createFolder, moveFilesWithIds, deleteSelection };
+}
+
+export opaque type Selection = Map<string, GalleryFile>;
+
+export function mkSelection(): Selection {
+  // $FlowExpectedError[prop-missing] Difficult to get this library type right
+  return observable.map();
+}
+
+export function idsOfSelectedFiles(
+  sel: Selection
+): $ReadOnlyArray<GalleryFile["id"]> {
+  return [...sel.values()].map(({ id }) => id);
+}
+
+export function someFilesAreSelected(sel: Selection): boolean {
+  return sel.size > 0;
+}
+
+export function clearSelection(sel: Selection): void {
+  runInAction(() => {
+    sel.clear();
+  });
+}
+
+export function appendSelection(sel: Selection, file: GalleryFile): void {
+  runInAction(() => {
+    sel.set(idToString(file.id), file);
+  });
+}
+
+export function removeFromSelection(sel: Selection, file: GalleryFile): void {
+  runInAction(() => {
+    sel.delete(idToString(file.id));
+  });
+}
+
+export function isSelected(sel: Selection, file: GalleryFile): boolean {
+  return sel.has(idToString(file.id));
+}
+
+export function selectionAsTreeViewModel(
+  sel: Selection
+): $ReadOnlyArray<string> {
+  return [...sel.keys()];
 }
