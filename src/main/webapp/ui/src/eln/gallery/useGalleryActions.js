@@ -16,7 +16,7 @@ export function useGalleryActions(): {|
     $ReadOnlyArray<File>
   ) => Promise<void>,
   createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
-  moveFilesWithIds: ($ReadOnlyArray<GalleryFile["id"]>) => {|
+  moveFiles: (Set<GalleryFile>) => {|
     to: ({|
       destination: {| key: "root" |} | {| key: "folder", folder: GalleryFile |},
       section: string,
@@ -152,7 +152,7 @@ export function useGalleryActions(): {|
     }
   }
 
-  function moveFilesWithIds(fileIds: $ReadOnlyArray<GalleryFile["id"]>) {
+  function moveFiles(files: Set<GalleryFile>) {
     return {
       to: async ({
         destination,
@@ -187,9 +187,8 @@ export function useGalleryActions(): {|
               ].join("/")}/`;
         const formData = new FormData();
         formData.append("target", target);
-        fileIds.forEach((fileId) => {
-          formData.append("filesId[]", idToString(fileId));
-        });
+        for (const file of files)
+          formData.append("filesId[]", idToString(file.id));
         formData.append("mediaType", section);
         try {
           const data = await axios.post<FormData, mixed>(
@@ -214,7 +213,7 @@ export function useGalleryActions(): {|
               .orElse(
                 mkAlert({
                   message: `Successfully moved item${
-                    fileIds.length > 0 ? "s" : ""
+                    files.size > 0 ? "s" : ""
                   }.`,
                   variant: "success",
                 })
@@ -224,7 +223,7 @@ export function useGalleryActions(): {|
           addAlert(
             mkAlert({
               variant: "error",
-              title: `Failed to move item${fileIds.length > 0 ? "s" : ""}.`,
+              title: `Failed to move item${files.size > 0 ? "s" : ""}.`,
               message: e.message,
             })
           );
@@ -277,7 +276,7 @@ export function useGalleryActions(): {|
     }
   }
 
-  return { uploadFiles, createFolder, moveFilesWithIds, deleteFiles };
+  return { uploadFiles, createFolder, moveFiles, deleteFiles };
 }
 
 export opaque type Selection = Map<string, GalleryFile>;
@@ -285,12 +284,6 @@ export opaque type Selection = Map<string, GalleryFile>;
 export function mkSelection(): Selection {
   // $FlowExpectedError[prop-missing] Difficult to get this library type right
   return observable.map();
-}
-
-export function idsOfSelectedFiles(
-  sel: Selection
-): $ReadOnlyArray<GalleryFile["id"]> {
-  return [...sel.values()].map(({ id }) => id);
 }
 
 export function someFilesAreSelected(sel: Selection): boolean {

@@ -33,11 +33,11 @@ import {
   mkSelection,
   type Selection,
   clearSelection,
-  idsOfSelectedFiles,
   someFilesAreSelected,
   appendSelection,
   removeFromSelection,
   isSelected,
+  files,
   selectionAsTreeViewModel,
 } from "../useGalleryActions";
 import { doNotAwait } from "../../../util/Util";
@@ -400,6 +400,7 @@ const CustomTreeItem = observer(
         selectedFiles: isSelected(selectedFiles, file)
           ? selectedFiles
           : new Map(),
+        currentFile: file,
       },
     });
     const dndContext = useDndContext();
@@ -800,6 +801,7 @@ const FileCard = styled(
           selectedFiles: selectedFiles.has(idToString(file.id))
             ? selectedFiles
             : new Map(),
+          currentFile: file,
         },
       });
       /*
@@ -1268,7 +1270,7 @@ function GalleryMainPanel({
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
-  const { moveFilesWithIds } = useGalleryActions();
+  const { moveFiles } = useGalleryActions();
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -1313,11 +1315,10 @@ function GalleryMainPanel({
         sensors={[mouseSensor, touchSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
-          const idOfFileJustBeingDragged = event.active.id;
-          void moveFilesWithIds(
-            someFilesAreSelected(selectedFiles)
-              ? idsOfSelectedFiles(selectedFiles)
-              : [idOfFileJustBeingDragged]
+          void moveFiles(
+            isSelected(selectedFiles, event.active.data.current.currentFile)
+              ? files(selectedFiles)
+              : new Set([event.active.data.current.currentFile])
           )
             .to({
               destination: event.over.data.current.destination,
