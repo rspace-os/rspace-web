@@ -7,6 +7,10 @@ import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { type GalleryFile, idToString, type Id } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import {
+  filenameExceptExtension,
+  justFilenameExtension,
+} from "../../util/files";
 
 export function useGalleryActions(): {|
   uploadFiles: (
@@ -22,6 +26,7 @@ export function useGalleryActions(): {|
     |}) => Promise<void>,
   |},
   deleteFiles: (Set<GalleryFile>) => Promise<void>,
+  duplicateFiles: (Set<GalleryFile>) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -275,5 +280,57 @@ export function useGalleryActions(): {|
     }
   }
 
-  return { uploadFiles, createFolder, moveFiles, deleteFiles };
+  async function duplicateFiles(files: Set<GalleryFile>) {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("idToCopy[]", idToString(file.id));
+      formData.append(
+        "newName[]",
+        `${filenameExceptExtension(file.name)}_copy.${justFilenameExtension(
+          file.name
+        )}`
+      );
+    }
+    try {
+      const data = await axios.post<FormData, mixed>(
+        "gallery/ajax/copyGalleries",
+        formData,
+        {
+          headers: {
+            "content-type": "multipart/form-data",
+          },
+        }
+      );
+      addAlert(
+        Parsers.objectPath(["data", "exceptionMessage"], data)
+          .flatMap(Parsers.isString)
+          .map((exceptionMessage) =>
+            mkAlert({
+              title: `Failed to duplicate item.`,
+              message: exceptionMessage,
+              variant: "error",
+            })
+          )
+          .orElse(
+            mkAlert({
+              message: `Successfully duplicated item${
+                files.size > 0 ? "s" : ""
+              }.`,
+              variant: "success",
+            })
+          )
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to duplicate item${files.size > 0 ? "s" : ""}.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
+  return { uploadFiles, createFolder, moveFiles, deleteFiles, duplicateFiles };
 }

@@ -36,7 +36,7 @@ type ActionsMenuArgs = {|
 
 function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
-  const { deleteFiles } = useGalleryActions();
+  const { deleteFiles, duplicateFiles } = useGalleryActions();
   const selection = useGallerySelection();
 
   return (
@@ -62,14 +62,18 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
       >
         <NewMenuItem
           title="Duplicate"
-          subheader=""
+          subheader={selection.isEmpty() ? "Nothing selected." : ""}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<AddToPhotosIcon />}
           onClick={() => {
-            setActionsMenuAnchorEl(null);
+            void duplicateFiles(selection.asSet()).then(() => {
+              refreshListing();
+              setActionsMenuAnchorEl(null);
+            });
           }}
           compact
+          disabled={selection.isEmpty()}
         />
         <NewMenuItem
           title="Move"
