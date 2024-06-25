@@ -14,6 +14,8 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { useTheme } from "@mui/material/styles";
 import LocationField from "../../components/Fields/Location";
+import Box from "@mui/material/Box";
+import GlobalId from "../../../components/GlobalId";
 
 const Wrapper = ({ children }: {| children: Node |}) => {
   const [sectionOpen, setSectionOpen] = React.useState(true);
@@ -61,7 +63,17 @@ function SubsampleDetails({ subsample }: SubsampleDetailsArgs) {
             boxShadow: "none",
           }}
         >
-          <Toolbar variant="dense">{subsample.name}</Toolbar>
+          <Toolbar
+            variant="dense"
+            disableGutters
+            sx={{
+              px: 1.5,
+            }}
+          >
+            {subsample.name}
+            <Box flexGrow={1}></Box>
+            <GlobalId record={subsample} />
+          </Toolbar>
         </AppBar>
         <CardContent>
           <LocationField fieldOwner={subsample} />
