@@ -8,6 +8,7 @@ import Result from "../../util/result";
 import { type GalleryFile, idToString, type Id } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { observable, runInAction } from "mobx";
+import RsSet from "../../util/set";
 
 export function useGalleryActions(): {|
   uploadFiles: (
@@ -279,14 +280,19 @@ export function useGalleryActions(): {|
   return { uploadFiles, createFolder, moveFiles, deleteFiles };
 }
 
-export opaque type Selection = Map<string, GalleryFile>;
+/*
+ * Other modules should not be accessing the context directly, but instead
+ * using the custom hook defined below. By not exporting the type flow will
+ * complain if the context is accessed directly.
+ */
+type Selection = Map<string, GalleryFile>;
 
-export function mkSelection(): Selection {
+function mkSelection(): Selection {
   // $FlowExpectedError[prop-missing] Difficult to get this library type right
   return observable.map();
 }
 
-export opaque type SelectionContextType = {|
+type SelectionContextType = {|
   selection: Selection,
 |};
 
@@ -294,8 +300,9 @@ const DEFAULT_SELECTION_CONTEXT: SelectionContextType = {
   selection: mkSelection(),
 };
 
-export const SelectionContext: Context<SelectionContextType> =
-  React.createContext(DEFAULT_SELECTION_CONTEXT);
+const SelectionContext: Context<SelectionContextType> = React.createContext(
+  DEFAULT_SELECTION_CONTEXT
+);
 
 export const GallerySelection = ({ children }: {| children: Node |}): Node => (
   <SelectionContext.Provider
@@ -313,7 +320,7 @@ export function useGallerySelection(): {|
   append: (GalleryFile) => void,
   remove: (GalleryFile) => void,
   includes: (GalleryFile) => boolean,
-  asSet: () => Set<GalleryFile>,
+  asSet: () => RsSet<GalleryFile>,
   asSetOfIds: () => Set<GalleryFile["id"]>,
   asTreeViewModel: () => $ReadOnlyArray<string>,
 |} {
@@ -338,7 +345,7 @@ export function useGallerySelection(): {|
     includes: (file) => {
       return selection.has(idToString(file.id));
     },
-    asSet: () => new Set(selection.values()),
+    asSet: () => new RsSet(selection.values()),
     asSetOfIds: () => new Set([...selection.values()].map(({ id }) => id)),
     asTreeViewModel: () => [...selection.keys()],
   };

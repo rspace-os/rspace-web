@@ -28,11 +28,7 @@ import {
   type Id,
   idToString,
 } from "../useGalleryListing";
-import {
-  useGalleryActions,
-  useGallerySelection,
-  mkSelection,
-} from "../useGalleryActions";
+import { useGalleryActions, useGallerySelection } from "../useGalleryActions";
 import { doNotAwait } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
@@ -64,6 +60,7 @@ import { useLocalObservable, observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import ActionsMenu from "./ActionsMenu";
+import RsSet from "../../../util/set";
 
 const SELECTED_OR_FOCUS_BLUE = `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`;
 const SELECTED_OR_FOCUS_BORDER = `2px solid ${SELECTED_OR_FOCUS_BLUE}`;
@@ -386,10 +383,9 @@ const CustomTreeItem = observer(
          * files are to be moved by the drag operation. If it is not included
          * then just move this file.
          */
-        selectedFiles: selection.includes(file)
-          ? selection.asSetOfIds()
-          : mkSelection(),
-        currentFile: file,
+        filesBeingMoved: selection.includes(file)
+          ? selection.asSet()
+          : new RsSet([file]),
       },
     });
     const dndContext = useDndContext();
@@ -411,9 +407,10 @@ const CustomTreeItem = observer(
           border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
         };
     const inGroupBeingDraggedStyle: { [string]: string | number } =
-      (dndContext.active?.data.current?.selectedFiles ?? new Set()).has(
-        file.id
-      ) && dndContext.active?.id !== file.id
+      (
+        dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
+      ).hasWithEq(file, (a, b) => a.id === b.id) &&
+      dndContext.active?.id !== file.id
         ? {
             opacity: 0.2,
           }
@@ -776,14 +773,13 @@ const FileCard = styled(
         id: file.id,
         data: {
           /*
-           * If this `file` is one of the selected files  then all of the
+           * If this `file` is one of the selected files then all of the
            * selected files are to be moved by the drag operation. If it is not
            * included then just move this file.
            */
-          selectedFiles: selection.includes(file)
-            ? selection.asSetOfIds()
-            : mkSelection(),
-          currentFile: file,
+          filesBeingMoved: selection.includes(file)
+            ? selection.asSet()
+            : new RsSet([file]),
         },
       });
       /*
@@ -809,9 +805,10 @@ const FileCard = styled(
           }
         : {};
       const inGroupBeingDraggedStyle: { [string]: string | number } =
-        (dndContext.active?.data.current?.selectedFiles ?? new Set()).has(
-          file.id
-        ) && dndContext.active?.id !== file.id
+        (
+          dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
+        ).hasWithEq(file, (a, b) => a.id === b.id) &&
+        dndContext.active?.id !== file.id
           ? {
               opacity: 0.2,
             }
@@ -1294,11 +1291,7 @@ function GalleryMainPanel({
         sensors={[mouseSensor, touchSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
-          void moveFiles(
-            selection.includes(event.active.data.current.currentFile)
-              ? selection.asSet()
-              : new Set([event.active.data.current.currentFile])
-          )
+          void moveFiles(event.active.data.current.filesBeingMoved)
             .to({
               destination: event.over.data.current.destination,
               section: selectedSection,
