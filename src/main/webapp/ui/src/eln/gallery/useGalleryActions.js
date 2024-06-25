@@ -333,8 +333,50 @@ export function useGalleryActions(): {|
     }
   }
 
-  function rename(_file: GalleryFile, _newName: string) {
-    return Promise.resolve();
+  async function rename(file: GalleryFile, newName: string) {
+    const formData = new FormData();
+    formData.append("recordId", idToString(file.id));
+    formData.append(
+      "newName",
+      `${newName}.${justFilenameExtension(file.name)}`
+    );
+    try {
+      const data = await axios.post<FormData, mixed>(
+        "workspace/editor/structuredDocument/ajax/rename",
+        formData,
+        {
+          headers: {
+            "content-type": "multipart/form-data",
+          },
+        }
+      );
+      addAlert(
+        Parsers.objectPath(["data", "exceptionMessage"], data)
+          .flatMap(Parsers.isString)
+          .map((exceptionMessage) =>
+            mkAlert({
+              title: `Failed to rename item.`,
+              message: exceptionMessage,
+              variant: "error",
+            })
+          )
+          .orElse(
+            mkAlert({
+              message: `Successfully renamed item.`,
+              variant: "success",
+            })
+          )
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to rename item.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    }
   }
 
   return {

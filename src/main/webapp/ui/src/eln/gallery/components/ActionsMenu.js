@@ -26,8 +26,9 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
-import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import { match } from "../../../util/Util";
+import Result from "../../../util/result";
 
 const RenameDialog = ({
   open,
@@ -70,12 +71,21 @@ const RenameDialog = ({
           >
             Cancel
           </Button>
-          <SubmitSpinnerButton
-            type="submit"
+          <ValidatingSubmitButton
             loading={false}
-            disabled={false}
-            label="Rename"
-          />
+            onClick={() => {
+              void rename(file, newName).then(() => {
+                onClose();
+              });
+            }}
+            validationResult={
+              newName.length === 0
+                ? Result.Error([new Error("Empty name is not permitted.")])
+                : Result.Ok(null)
+            }
+          >
+            Rename
+          </ValidatingSubmitButton>
         </DialogActions>
       </form>
     </Dialog>
@@ -175,6 +185,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
               onClose={() => {
                 setRenameOpen(false);
                 setActionsMenuAnchorEl(null);
+                refreshListing();
               }}
               file={file}
             />
