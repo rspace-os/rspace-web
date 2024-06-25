@@ -2022,8 +2022,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>researchspace-egnyte</artifactId>
-        <version>0.5.0</version>
+        <artifactId>rspace-egnyte</artifactId>
+        <version>1.0.0</version>
         <exclusions>
           <exclusion>
             <groupId>log4j</groupId>
