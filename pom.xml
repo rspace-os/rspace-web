@@ -1521,8 +1521,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>repository-spi</artifactId>
-        <version>0.9.0</version>
+        <artifactId>rspace-repository-spi</artifactId>
+        <version>1.0.0</version>
         <exclusions>
             <exclusion>
                 <groupId>log4j</groupId>
@@ -1552,10 +1552,14 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>dataverse-rspace-adaptor</artifactId>
-        <version>1.1.0</version>
+        <artifactId>rspace-dataverse-adapter</artifactId>
+        <version>2.0.0</version>
         <exclusions>
-            <exclusion>
+          <exclusion>
+                <groupId>com.github.rspace-os</groupId>
+                <artifactId>repository-spi</artifactId>
+          </exclusion>
+          <exclusion>
                 <groupId>com.github.rspace-os</groupId>
                 <artifactId>rspace-core-util</artifactId>
             </exclusion>
@@ -1887,8 +1891,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>figshare-rspace-adaptor</artifactId>
-        <version>0.22.0</version>
+        <artifactId>rspace-figshare-adapter</artifactId>
+        <version>1.0.0</version>
         <exclusions>
             <exclusion>
                 <groupId>com.github.rspace-os</groupId>
@@ -1910,37 +1914,45 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>dryad-rspace-adapter</artifactId>
-        <version>0.3.0</version>
+        <artifactId>rspace-dryad-adapter</artifactId>
+        <version>1.0.0</version>
         <exclusions>
-            <exclusion>
+          <exclusion>
+                <groupId>com.github.rspace-os</groupId>
+                <artifactId>repository-spi</artifactId>
+          </exclusion>
+          <exclusion>
                 <groupId>com.github.rspace-os</groupId>
                 <artifactId>rspace-core-util</artifactId>
-            </exclusion>
-            <exclusion>
+           </exclusion>
+           <exclusion>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
-            </exclusion>
-            <exclusion>
+           </exclusion>
+           <exclusion>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-            </exclusion>
+           </exclusion>
         </exclusions>
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>zenodo-rspace-adapter</artifactId>
-        <version>0.2.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-      </exclusions>
+        <artifactId>rspace-zenodo-adapter</artifactId>
+        <version>0.3.0</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.github.rspace-os</groupId>
+            <artifactId>repository-spi</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+        </exclusions>
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
