@@ -59,7 +59,7 @@ function NumberOfSubSamples({
 
   const errorMessage = valid
     ? ""
-    : `Should be a positive integer smaller than or equal to ${MAX}.`;
+    : `Must be an integer value of at least ${MIN} and no more than ${MAX}.`;
 
   const withSpecifiedLocations: boolean = // inImaGridContainer
     sample.newSampleSubSampleTargetLocations?.some(
