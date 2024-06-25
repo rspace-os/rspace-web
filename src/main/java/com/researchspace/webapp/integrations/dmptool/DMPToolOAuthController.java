@@ -126,7 +126,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     userConnectionManager.save(conn);
     log.info("Connected DMPTool for user {}", principal.getName());
 
-    return "apps";
+    return "connect/dmptool/connected";
   }
 
   private URL getServerUrl() throws MalformedURLException {
