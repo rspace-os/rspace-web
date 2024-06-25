@@ -17,8 +17,70 @@ import ShareIcon from "@mui/icons-material/Share";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
+import { type GalleryFile } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
+import Dialog from "@mui/material/Dialog";
+import TextField from "@mui/material/TextField";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import { match } from "../../../util/Util";
+
+const RenameDialog = ({
+  open,
+  onClose,
+  file,
+}: {|
+  open: boolean,
+  onClose: () => void,
+  file: GalleryFile,
+|}) => {
+  const [newName, setNewName] = React.useState("");
+  const { rename } = useGalleryActions();
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void rename(file, newName).then(() => {
+            onClose();
+          });
+        }}
+      >
+        <DialogTitle>Rename</DialogTitle>
+        <DialogContent>
+          <DialogContentText variant="body2" sx={{ mb: 2 }}>
+            Please give a new name for <strong>{file.name}</strong>
+          </DialogContentText>
+          <TextField
+            size="small"
+            label="Name"
+            onChange={({ target: { value } }) => setNewName(value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setNewName("");
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+          <SubmitSpinnerButton
+            type="submit"
+            loading={false}
+            disabled={false}
+            label="Rename"
+          />
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+};
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -38,6 +100,8 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
   const { deleteFiles, duplicateFiles } = useGalleryActions();
   const selection = useGallerySelection();
+
+  const [renameOpen, setRenameOpen] = React.useState(false);
 
   return (
     <>
@@ -62,7 +126,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
       >
         <NewMenuItem
           title="Duplicate"
-          subheader={selection.isEmpty() ? "Nothing selected." : ""}
+          subheader={selection.isEmpty ? "Nothing selected." : ""}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<AddToPhotosIcon />}
@@ -73,7 +137,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             });
           }}
           compact
-          disabled={selection.isEmpty()}
+          disabled={selection.isEmpty}
         />
         <NewMenuItem
           title="Move"
@@ -88,18 +152,37 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
         />
         <NewMenuItem
           title="Rename"
-          subheader=""
+          subheader={match<void, string>([
+            [() => selection.isEmpty, "Nothing selected."],
+            [() => selection.size > 1, "Only item may be renamed at once."],
+            [() => true, ""],
+          ])()}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<DriveFileRenameOutlineIcon />}
           onClick={() => {
-            setActionsMenuAnchorEl(null);
+            setRenameOpen(true);
           }}
           compact
+          disabled={selection.size !== 1}
         />
+        {selection
+          .asSet()
+          .only.map((file) => (
+            <RenameDialog
+              key={null}
+              open={renameOpen}
+              onClose={() => {
+                setRenameOpen(false);
+                setActionsMenuAnchorEl(null);
+              }}
+              file={file}
+            />
+          ))
+          .orElse(null)}
         <NewMenuItem
           title="Delete"
-          subheader={selection.isEmpty() ? "Nothing selected." : ""}
+          subheader={selection.isEmpty ? "Nothing selected." : ""}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<DeleteOutlineOutlinedIcon />}
@@ -110,7 +193,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             });
           }}
           compact
-          disabled={selection.isEmpty()}
+          disabled={selection.isEmpty}
         />
         <NewMenuItem
           title="Export"

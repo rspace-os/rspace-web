@@ -27,6 +27,7 @@ export function useGalleryActions(): {|
   |},
   deleteFiles: (Set<GalleryFile>) => Promise<void>,
   duplicateFiles: (Set<GalleryFile>) => Promise<void>,
+  rename: (GalleryFile, string) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -332,5 +333,16 @@ export function useGalleryActions(): {|
     }
   }
 
-  return { uploadFiles, createFolder, moveFiles, deleteFiles, duplicateFiles };
+  function rename(_file: GalleryFile, _newName: string) {
+    return Promise.resolve();
+  }
+
+  return {
+    uploadFiles,
+    createFolder,
+    moveFiles,
+    deleteFiles,
+    duplicateFiles,
+    rename,
+  };
 }

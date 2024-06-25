@@ -48,7 +48,8 @@ export const GallerySelection = ({ children }: {| children: Node |}): Node => (
 );
 
 export function useGallerySelection(): {|
-  isEmpty: () => boolean,
+  isEmpty: boolean,
+  size: number,
   clear: () => void,
   append: (GalleryFile) => void,
   remove: (GalleryFile) => void,
@@ -57,7 +58,8 @@ export function useGallerySelection(): {|
 |} {
   const { selection } = React.useContext(SelectionContext);
   return {
-    isEmpty: () => selection.size === 0,
+    isEmpty: selection.size === 0,
+    size: selection.size,
     clear: () => {
       runInAction(() => {
         selection.clear();
