@@ -1914,8 +1914,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>dryad-rspace-adapter</artifactId>
-        <version>0.3.0</version>
+        <artifactId>rspace-dryad-adapter</artifactId>
+        <version>1.0.0</version>
         <exclusions>
           <exclusion>
                 <groupId>com.github.rspace-os</groupId>
