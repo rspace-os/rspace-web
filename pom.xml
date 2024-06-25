@@ -696,7 +696,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-audit</artifactId>
-        <version>0.13.0</version>
+        <version>0.14.0</version>
         <exclusions>
             <exclusion>
                 <groupId>org.apache.commons</groupId>
@@ -1318,8 +1318,8 @@
 
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>licenseserver-entities</artifactId>
-        <version>0.7.0</version>
+        <artifactId>rspace-license-server-entities</artifactId>
+        <version>0.8.2</version>
         <exclusions>
             <exclusion>
                 <groupId>javax.validation</groupId>
@@ -1337,13 +1337,6 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
             </exclusion>
-            <exclusion>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-            </exclusion><exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
         </exclusions>
     </dependency>
 
@@ -1658,8 +1651,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>external-auth</artifactId>
-        <version>1.1.0</version>
+        <artifactId>rspace-external-auth</artifactId>
+        <version>1.1.1</version>
         <exclusions>
             <exclusion>
               <groupId>log4j</groupId>
@@ -1815,10 +1808,14 @@
         </exclusions>
     </dependency>
     <dependency>
-        <groupId>com.researchspace</groupId>
-        <artifactId>mendeley-api-client</artifactId>
-        <version>0.2.0</version>
+        <groupId>com.github.rspace-os</groupId>
+        <artifactId>rspace-mendeley-client</artifactId>
+        <version>0.3.1</version>
         <exclusions>
+          <exclusion>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+          </exclusion>
           <exclusion>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -2056,8 +2053,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>rest-api-utils</artifactId>
-        <version>1.2.0</version>
+        <artifactId>rspace-rest-api-utils</artifactId>
+        <version>1.3.0</version>
         <exclusions>
             <exclusion>
                 <groupId>com.github.rspace-os</groupId>
@@ -2177,8 +2174,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>evernote</artifactId>
-        <version>1.1.0</version>
+        <artifactId>rspace-evernote-parser</artifactId>
+        <version>1.1.1</version>
         <exclusions>
           <exclusion>
             <groupId>log4j</groupId>
