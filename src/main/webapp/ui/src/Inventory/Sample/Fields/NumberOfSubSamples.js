@@ -7,8 +7,19 @@ import SampleModel, {
   type SubSampleTargetLocation,
 } from "../../../stores/models/SampleModel";
 import FormField from "../../../components/Inputs/FormField";
+import RadioField, {
+  OptionHeading,
+  OptionExplanation,
+} from "../../../components/Inputs/RadioField";
+import { styled } from "@mui/material/styles";
 
-const MIN = 1;
+const NestedFormField = styled(FormField)(({ theme }) => ({
+  marginTop: "0 !important",
+  marginLeft: `${theme.spacing(4)} !important`,
+  width: `calc(100% - ${theme.spacing(4)})`,
+}));
+
+const MIN = 2;
 const MAX = 100;
 
 type NumberOfSubSamplesArgs = {|
@@ -21,7 +32,8 @@ function NumberOfSubSamples({
   sample,
 }: NumberOfSubSamplesArgs): Node {
   const [valid, setValid] = useState(true);
-  const [count, setCount] = useState("1");
+  const [count, setCount] = useState("2");
+  const [type, setType] = useState<"SINGULAR" | "MANY">("SINGULAR");
 
   const handleChange = ({
     target,
@@ -58,24 +70,82 @@ function NumberOfSubSamples({
     sample.beingCreatedInContainer && withSpecifiedLocations;
 
   return (
-    <FormField
-      helperText={errorMessage}
-      label={`Number of ${sample.subSampleAlias.plural}`}
-      error={!valid}
-      value={count}
-      disabled={fixedNumberOfSubSamples}
-      renderInput={(props) => (
-        <NumberField
-          {...props}
-          onChange={handleChange}
-          inputProps={{
-            min: MIN,
-            max: MAX,
-            step: 1,
-          }}
+    <>
+      <FormField
+        label="Type"
+        value={type}
+        doNotAttachIdToLabel
+        asFieldset
+        renderInput={({ id: _id, error: _error, ...props }) => (
+          <RadioField
+            name="type"
+            onChange={({ target: { value } }) => {
+              if (!value) return;
+              setType(value);
+              if (value === "MANY") {
+                sample.setAttributesDirty({
+                  newSampleSubSamplesCount: parseInt(count, 10),
+                });
+              } else {
+                sample.setAttributesDirty({
+                  newSampleSubSamplesCount: 1,
+                });
+              }
+            }}
+            options={[
+              {
+                value: "SINGULAR",
+                label: (
+                  <>
+                    <OptionHeading>Individual Sample</OptionHeading>
+                    <OptionExplanation>
+                      The sample is made up of one subsample, representing the
+                      physical location of the sample. Sample actions are
+                      equivalent to subsample actions.
+                    </OptionExplanation>
+                  </>
+                ),
+              },
+              {
+                value: "MANY",
+                label: (
+                  <>
+                    <OptionHeading>Sample with subsamples</OptionHeading>
+                    <OptionExplanation>
+                      The sample is made up of multiple subsamples, which
+                      represent related physical items originating from the same
+                      batch. Sample actions affect the entire group of
+                      subsamples.
+                    </OptionExplanation>
+                  </>
+                ),
+              },
+            ]}
+            {...props}
+          />
+        )}
+      />
+      {type === "MANY" && (
+        <NestedFormField
+          helperText={errorMessage}
+          label={`Number of ${sample.subSampleAlias.plural}`}
+          error={!valid}
+          value={count}
+          disabled={fixedNumberOfSubSamples}
+          renderInput={(props) => (
+            <NumberField
+              {...props}
+              onChange={handleChange}
+              inputProps={{
+                min: MIN,
+                max: MAX,
+                step: 1,
+              }}
+            />
+          )}
         />
       )}
-    />
+    </>
   );
 }
 
