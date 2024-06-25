@@ -31,6 +31,84 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Quantity", () => {
+  describe("Unit selector", () => {
+    test('When there is only one subsample being created, "per subsample" should not be shown.', () => {
+      fc.assert(
+        fc.property(fc.nat(1000), (quantity) => {
+          const sample = makeMockSample({
+            id: null,
+            quantity: {
+              numericValue: quantity,
+              unitId: 1,
+            },
+          });
+          sample.setAttributes({
+            newSampleSubSamplesCount: 1,
+          });
+          const rootStore = makeMockRootStore({
+            uiStore: {},
+            unitStore: {
+              units: [
+                {
+                  id: 1,
+                  label: "foo",
+                  category: "mass",
+                  description: "foo is mass",
+                },
+              ],
+              unitsOfCategory: () => [],
+            },
+          });
+          const { container } = render(
+            <storesContext.Provider value={rootStore}>
+              <Quantity onErrorStateChange={() => {}} sample={sample} />
+            </storesContext.Provider>
+          );
+          expect(container).not.toHaveTextContent(/per subsample/);
+        })
+      );
+    });
+    test('When there are multiple subsamples being created, "per subsample" should be shown.', () => {
+      fc.assert(
+        fc.property(
+          fc.tuple(fc.nat(1000), fc.nat(100)),
+          ([quantity, count]) => {
+            fc.pre(count >= 2);
+            const sample = makeMockSample({
+              id: null,
+              quantity: {
+                numericValue: quantity,
+                unitId: 1,
+              },
+            });
+            sample.setAttributes({
+              newSampleSubSamplesCount: count,
+            });
+            const rootStore = makeMockRootStore({
+              uiStore: {},
+              unitStore: {
+                units: [
+                  {
+                    id: 1,
+                    label: "foo",
+                    category: "mass",
+                    description: "foo is mass",
+                  },
+                ],
+                unitsOfCategory: () => [],
+              },
+            });
+            const { container } = render(
+              <storesContext.Provider value={rootStore}>
+                <Quantity onErrorStateChange={() => {}} sample={sample} />
+              </storesContext.Provider>
+            );
+            expect(container).toHaveTextContent(/per subsample/);
+          }
+        )
+      );
+    });
+  });
   describe("Helper text should render correctly.", () => {
     test("Whole units of quantity should have zero decimal places.", () => {
       fc.assert(
