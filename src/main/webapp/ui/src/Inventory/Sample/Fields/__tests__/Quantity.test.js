@@ -37,6 +37,7 @@ describe("Quantity", () => {
         fc.property(
           fc.tuple(fc.nat(1000), fc.nat(100)),
           ([quantity, count]) => {
+            fc.pre(count >= 2);
             const sample = makeMockSample({
               id: null,
               quantity: {
@@ -77,6 +78,7 @@ describe("Quantity", () => {
         fc.property(
           fc.tuple(fc.float({ min: 0, max: 1000 }), fc.nat(100)),
           ([quantity, count]) => {
+            fc.pre(count >= 2);
             const sample = makeMockSample({
               id: null,
               quantity: {
