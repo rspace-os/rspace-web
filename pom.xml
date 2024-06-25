@@ -1937,11 +1937,11 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>zenodo-rspace-adapter</artifactId>
-        <version>0.2.0</version>
+        <artifactId>rspace-zenodo-adapter</artifactId>
+        <version>0.3.0</version>
         <exclusions>
           <exclusion>
-            <groupId>com.researchspace</groupId>
+            <groupId>com.github.rspace-os</groupId>
             <artifactId>repository-spi</artifactId>
           </exclusion>
           <exclusion>
