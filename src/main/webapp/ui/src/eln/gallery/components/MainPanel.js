@@ -28,7 +28,8 @@ import {
   type Id,
   idToString,
 } from "../useGalleryListing";
-import { useGalleryActions, useGallerySelection } from "../useGalleryActions";
+import { useGalleryActions } from "../useGalleryActions";
+import { useGallerySelection } from "../useGallerySelection";
 import { doNotAwait } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";

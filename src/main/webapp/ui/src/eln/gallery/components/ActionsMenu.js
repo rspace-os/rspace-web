@@ -17,7 +17,8 @@ import ShareIcon from "@mui/icons-material/Share";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
-import { useGalleryActions, useGallerySelection } from "../useGalleryActions";
+import { useGalleryActions } from "../useGalleryActions";
+import { useGallerySelection } from "../useGallerySelection";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
