@@ -1105,7 +1105,10 @@ const TreeView = observer(
         onExpandedItemsChange={(_event, nodeIds) => {
           setExpandedItems(nodeIds);
         }}
-        selectedItems={selection.asTreeViewModel()}
+        selectedItems={selection
+          .asSet()
+          .map(({ id }) => idToString(id))
+          .toArray()}
         onItemSelectionToggle={(
           event,
           itemId: string | $ReadOnlyArray<string>,
