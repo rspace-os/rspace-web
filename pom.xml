@@ -676,8 +676,8 @@
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
-      <artifactId>snapgene-client</artifactId>
-      <version>0.2.0</version>
+      <artifactId>snapgene-java-client</artifactId>
+      <version>1.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -2251,8 +2251,8 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>snapgene-rspace-client</artifactId>
-        <version>0.3.1</version>
+        <artifactId>rspace-snapgene-adapter</artifactId>
+        <version>1.0.0</version>
         <exclusions>
           <exclusion>
             <groupId>log4j</groupId>
