@@ -1363,7 +1363,7 @@ export default function GalleryMainPanel({
                 />
                 <NewMenuItem
                   title="Tree"
-                  subheader="Drag-and-drop files between folders"
+                  subheader="View and manage folder hierarchy"
                   backgroundColor={COLOR.background}
                   foregroundColor={COLOR.contrastText}
                   avatar={<TreeIcon />}
