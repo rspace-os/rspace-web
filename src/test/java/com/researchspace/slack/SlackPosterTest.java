@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.http.HttpEntity;
@@ -15,11 +16,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+@Ignore("requires correct real secret webhook")
 @RunWith(ConditionalTestRunnerNotSpring.class)
 public class SlackPosterTest {
 
-  public static final String RSPACEDEV_GENERAL_WEBHOOK =
-      "https://hooks.slack.com/services/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";
+  public static final String SLACK_WEBHOOK =
+      "https://hooks.slack.com/services/<secret_webhook>";
 
   @Before
   public void setUp() throws Exception {}
@@ -35,8 +37,8 @@ public class SlackPosterTest {
     String jsonMessage = SlackMessageTest.createAnySlackMessage(converted).toJSON();
 
     URI uri;
-    uri = new URI(RSPACEDEV_GENERAL_WEBHOOK);
-    HttpEntity<String> requestEntity = new HttpEntity<String>(jsonMessage);
+    uri = new URI(SLACK_WEBHOOK);
+    HttpEntity<String> requestEntity = new HttpEntity<>(jsonMessage);
     ResponseEntity<String> resp = template.postForEntity(uri, requestEntity, String.class);
     assertTrue(HttpStatus.OK.equals(resp.getStatusCode()));
   }

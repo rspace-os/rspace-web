@@ -142,7 +142,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     Map<String, String> map = new HashMap<>();
     map.put("SLACK_CHANNEL_NAME", "general");
     map.put("SLACK_TEAM_NAME", "rspacedev");
-    map.put("SLACK_WEBHOOK_URL", SlackPosterTest.RSPACEDEV_GENERAL_WEBHOOK);
+    map.put("SLACK_WEBHOOK_URL", SlackPosterTest.SLACK_WEBHOOK);
     map.put("SLACK_CHANNEL_LABEL", "general");
     map.put("SLACK_USER_ID", "U123");
     map.put("SLACK_TEAM_ID", "T456");

@@ -1,9 +1,15 @@
 # Getting started with RSpace source code
 
-These instructions are for anyone wanting to run RSpace from source code
-on their local machine.
+These instructions are for anyone wanting to run RSpace from source code, on their local machine.
 
 ## Initial Setup
+
+### Recommended hardware
+
+For production setup we recommend a Linux-based server with at least 8Gb RAM. More details: 
+https://documentation.researchspace.com/article/q5dl9e6oz6-system-requirements-for-research-space
+
+For development you should be able to run all the code and tests fine with Linux/MacOS.  
 
 ### Install required software
 -   Install Java JDK17, use OpenJDK rather than Oracle.
@@ -116,14 +122,14 @@ mvn clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
 ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  
 
-### Set up MySQL database
+### Set up MariaDB/MySQL database
 
-#### MySQL initialisation
+#### MariaDB/MySQL initialisation
 
-Take these steps if you do not have MySQL or have a fresh installation of MySQL.
+Take these steps if you do not have MariaDB/MySQL or have a fresh installation of MariaDB/MySQL.
 
 ```bash
-# These steps are specific to Linux, adapt as needed
+# These steps are specific to Linux and MySQL5.7, adapt as needed
 
 # 1. Install the database package (your package manager might be apt, dnf, yum, ...)
 nix-env --install mysql57
@@ -170,25 +176,29 @@ After adding/updating the file and restarting mysql confirm that `SELECT @@sql_m
 #### RSpace table setup
 
 1.  Make sure MariaDB/MySQL is installed and running on your machine.
-2.  Set up an rspacedbuser user and rspace database on your MySQL using this command:
+2.  Set up an 'rspacedbuser' user and 'rspace' database on your MariaDB/MySQL using this command:
 
 ```bash
 mysql -u "root" -p"password" -e "
-  CREATE USER 'rspacedbuser'@'localhost' IDENTIFIED BY 'rspacedbpwd';
+  CREATE USER 'rspacedbuser'@'127.0.0.1' IDENTIFIED BY 'rspacedbpwd';
   CREATE DATABASE rspace collate 'utf8mb4_unicode_ci';
-  GRANT ALL ON rspace.* TO 'rspacedbuser'@'localhost';
+  GRANT ALL ON rspace.* TO 'rspacedbuser'@'127.0.0.1';
 "
 ```
-**NOTE:** on FIRST startup of Rspace with an empty rspace, dont skip the tests else liquibase fails (for unknown reasons),
-i.e. do not have -Dmaven.test.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true
+**NOTE:** on FIRST startup of Rspace with an empty rspace, don't skip the tests else liquibase fails for unknown reasons;
+i.e. do not have `-Dmaven.test.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true`
 in your launch config
+
+**NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands 
+from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`. 
+You will know if running the tests/app gets you db authentication error for user `'rspacedbuser'@'localhost'`
 
 **NOTE:** if you subsequently drop the rspace DB, the rspacedbuser user will stay; do not try to recreate the user.
 
 At the end of this, you should be able to connect to the rspace database from
 your command line. with `bash mysql -urspacedbuser -prspacedbpwd rspace`.
 
-rspace is used for running acceptance tests and the application on localhost.
+'rspace' database is used for running acceptance tests and the application on localhost.
 
 ### Set up RSpace FileStore location
 
