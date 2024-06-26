@@ -114,7 +114,7 @@ mvn clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD
 ```
 
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
-ResearchSpace dev team (check 'Build feature branch' stage script).  
+ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  
 
 ### Set up MySQL database
 
