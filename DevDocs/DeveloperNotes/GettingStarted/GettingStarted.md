@@ -1,9 +1,15 @@
 # Getting started with RSpace source code
 
-These instructions are for anyone wanting to run RSpace from source code
-on their local machine.
+These instructions are for anyone wanting to run RSpace from source code, on their local machine.
 
 ## Initial Setup
+
+### Recommended hardware
+
+For production setup we recommend a Linux-based server with at least 8Gb RAM. More details: 
+https://documentation.researchspace.com/article/q5dl9e6oz6-system-requirements-for-research-space
+
+For development you should be able to run all the code and tests fine with Linux/MacOS.  
 
 ### Install required software
 -   Install Java JDK17, use OpenJDK rather than Oracle.
