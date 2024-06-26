@@ -15,7 +15,8 @@ import InputAdornment from "@mui/material/InputAdornment";
 import { styled } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import AccessibilityTips from "../../../components/AccessibilityTips";
-import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import HelpDocs from "../../../components/Help/HelpDocs";
+import HelpIcon from "@mui/icons-material/Help";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -136,8 +137,18 @@ export default function GalleryAppBar({
             supportsHighContrastMode
           />
         </Box>
-        <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-          <HelpLinkIcon title="Importing from Gallery help" link="#" />
+        <Box ml={1}>
+          <HelpDocs
+            Action={({ onClick, disabled }) => (
+              <IconButtonWithTooltip
+                size="small"
+                onClick={onClick}
+                icon={<HelpIcon />}
+                title="Open Help"
+                disabled={disabled}
+              />
+            )}
+          />
         </Box>
       </Toolbar>
     </AppBar>
