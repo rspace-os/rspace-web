@@ -23,6 +23,7 @@ pipeline {
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor Maven toolchain')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional nightly build configuration')
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
+        booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
         booleanParam(name: 'DOCKER_AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to Docker on AWS - see the README in build/ folder for more details')
         booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run Flow/Jest tests (runs after changes to frontend files by default)')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests (runs on master/develop by default)')
@@ -177,6 +178,7 @@ pipeline {
                         branch 'master'; branch 'develop'
                         expression { return params.FULL_JAVA_TESTS }
                         expression { return params.LIQUIBASE }
+                        expression { return params.AWS_DEPLOY_PROD_RELEASE }
                     }
                 }
             }
@@ -184,7 +186,9 @@ pipeline {
                 echo 'Building feature branch'
                 sh '''
                 ./mvnw clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
-                -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
+                -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO
+                -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR}
+                -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
                 '''
             }
 
@@ -199,9 +203,40 @@ pipeline {
             }
         }
 
-        stage('Deploy feature branch to AWS') {
+        stage ('Build prodRelease-like package') {
             when {
-                expression { return params.AWS_DEPLOY }
+                anyOf {
+                    expression { return params.AWS_DEPLOY_PROD_RELEASE }
+                }
+            }
+            steps {
+                echo "Building prodRelease .war package"
+                 sh '''
+                 ./mvnw clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+                -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
+                -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
+                -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
+                '''
+            }
+
+            post {
+                failure {
+                    notify currentBuild.result
+                    notifySlack('FAILURE', "Master build failed: ${currentBuild.result}")
+                }
+                fixed {
+                    notify currentBuild.result
+                }
+            }
+        }
+
+        stage('Deploy feature/prodRelease branch to AWS') {
+            when {
+                anyOf {
+                    expression { return params.AWS_DEPLOY }
+                    expression { return params.AWS_DEPLOY_PROD_RELEASE }
+                }
                 not {
                     anyOf {
                         branch 'master'; branch 'develop'
