@@ -18,6 +18,7 @@ import Box from "@mui/material/Box";
 import GlobalId from "../../../components/GlobalId";
 import QuantityField from "../../Subsample/Fields/Quantity";
 import Stack from "@mui/material/Stack";
+import Notes from "../../Subsample/Fields/Notes/Notes";
 
 const Wrapper = ({ children }: {| children: Node |}) => {
   const [sectionOpen, setSectionOpen] = React.useState(true);
@@ -85,6 +86,7 @@ function SubsampleDetails({ subsample }: SubsampleDetailsArgs) {
               quantityCategory={subsample.quantityCategory}
               onErrorStateChange={() => {}}
             />
+            <Notes record={subsample} onErrorStateChange={() => {}} />
           </Stack>
         </CardContent>
       </Card>
