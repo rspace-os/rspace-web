@@ -231,7 +231,7 @@ pipeline {
             }
         }
 
-        stage('Deploy feature/prodRelease branch to AWS') {
+        stage('Deploy package to AWS') {
             when {
                 anyOf {
                     expression { return params.AWS_DEPLOY }
@@ -268,7 +268,7 @@ pipeline {
             }
         }
         // currently this requires a feature branch build( to compile the war file correctly for deployment)
-        stage('Deploy FeatureBranch to Docker on AWS') {
+        stage('Deploy package to Docker on AWS') {
             when {
                 expression { return params.DOCKER_AWS_DEPLOY }
                 not {
