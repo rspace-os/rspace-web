@@ -18,9 +18,9 @@ Releasing RSpace as an open-source project is huge step for us and we likely won
 - A good starting point to learn about RSpace, its features, and integrations with third party services is the [documentation](https://documentation.researchspace.com/).
 - Please read our [contributor information](https://github.com/rspace-os/.github/blob/1be658989ec362844d1f8b2ef590f28bbc989a1e/CONTRIBUTING.md) for a general overview on how to contribute to this project.
 - Developer documentation can be found [here](DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md).
-- Information on how to run RSpace via docker can be found in the [rspace-docker repository](https://github.com/rspace-os/rspace-docker)
+- Information on how to run RSpace via docker can be found in the [rspace-docker repository](https://github.com/rspace-os/rspace-docker).
 
 # Contact
-Ways of connecting and communicating with the RSpace open source project can be found on this [wiki page](https://github.com/rspace-os/rspace-web/wiki/Contact)  
+Ways of connecting and communicating with the RSpace open source project can be found on this [wiki page](https://github.com/rspace-os/rspace-web/wiki/Contact).  
 
-For inquiries about Research Space's enterprise solutions, please visit the Research Space website [here](https://www.researchspace.com/pricing)
+For inquiries about Research Space's enterprise solutions, please visit the Research Space website [here](https://www.researchspace.com/pricing).
