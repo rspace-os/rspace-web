@@ -13,7 +13,6 @@ import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutli
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AcUnitIcon from "@mui/icons-material/AcUnit";
-import ShareIcon from "@mui/icons-material/Share";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
@@ -235,18 +234,6 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<CropIcon />}
-          onClick={() => {
-            setActionsMenuAnchorEl(null);
-          }}
-          compact
-          disabled
-        />
-        <NewMenuItem
-          title="Publish"
-          subheader="Only PDFs can be published."
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<ShareIcon />}
           onClick={() => {
             setActionsMenuAnchorEl(null);
           }}
