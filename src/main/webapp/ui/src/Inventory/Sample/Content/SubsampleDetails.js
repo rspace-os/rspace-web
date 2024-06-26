@@ -16,6 +16,8 @@ import { useTheme } from "@mui/material/styles";
 import LocationField from "../../components/Fields/Location";
 import Box from "@mui/material/Box";
 import GlobalId from "../../../components/GlobalId";
+import QuantityField from "../../Subsample/Fields/Quantity";
+import Stack from "@mui/material/Stack";
 
 const Wrapper = ({ children }: {| children: Node |}) => {
   const [sectionOpen, setSectionOpen] = React.useState(true);
@@ -76,7 +78,14 @@ function SubsampleDetails({ subsample }: SubsampleDetailsArgs) {
           </Toolbar>
         </AppBar>
         <CardContent>
-          <LocationField fieldOwner={subsample} />
+          <Stack spacing={2}>
+            <LocationField fieldOwner={subsample} />
+            <QuantityField
+              fieldOwner={subsample}
+              quantityCategory={subsample.quantityCategory}
+              onErrorStateChange={() => {}}
+            />
+          </Stack>
         </CardContent>
       </Card>
     </Wrapper>
