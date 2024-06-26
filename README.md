@@ -21,6 +21,6 @@ Releasing RSpace as an open-source project is huge step for us and we likely won
 - Information on how to run RSpace via docker can be found in the [rspace-docker repository](https://github.com/rspace-os/rspace-docker)
 
 # Contact
-Ways of connecting and communicating with the RSpace open source project can be found [here](https://github.com/rspace-os/rspace-web/wiki/Contact)  
+Ways of connecting and communicating with the RSpace open source project can be found on this [wiki page](https://github.com/rspace-os/rspace-web/wiki/Contact)  
 
-For inquiries about Research Space's enterprise solutions, please visit [here](https://www.researchspace.com/pricing)
+For inquiries about Research Space's enterprise solutions, please visit the Research Space website [here](https://www.researchspace.com/pricing)
