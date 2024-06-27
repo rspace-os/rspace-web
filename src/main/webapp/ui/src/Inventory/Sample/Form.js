@@ -226,7 +226,7 @@ function Form(): Node {
               recordType="sample"
             >
               <SubsampleListing sample={activeResult} />
-              <SubsampleDetails subsample={activeResult.search.activeResult} />
+              <SubsampleDetails search={activeResult.search} />
             </StepperPanel>
           ) : null}
         </>

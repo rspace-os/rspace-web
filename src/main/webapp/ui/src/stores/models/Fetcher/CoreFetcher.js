@@ -216,15 +216,15 @@ export default class CoreFetcher {
     Object.assign(this, params);
   }
 
-  setPage(pageNumber: number): void {
+  async setPage(pageNumber: number): Promise<void> {
     this.pageNumber = pageNumber;
-    void this.reperformCurrentSearch();
+    await this.reperformCurrentSearch();
   }
 
   setOrder(order: Order, orderBy: string): void {
     this.order = order;
     this.orderBy = orderBy;
-    this.setPage(0);
+    void this.setPage(0);
   }
 
   setPageSize(pageSize: number): void {
