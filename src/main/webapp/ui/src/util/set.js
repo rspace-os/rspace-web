@@ -100,6 +100,7 @@ export default class RsSet<A> extends Set<A> {
    */
   get only(): Optional<A> {
     if (this.isEmpty) return Optional.empty();
+    if (this.size > 1) return Optional.empty();
     return Optional.present(this.first);
   }
 

@@ -331,6 +331,7 @@ export function useGalleryActions(): {|
   }
 
   async function rename(file: GalleryFile, newName: string) {
+    if (file.isSystemFolder) return;
     const formData = new FormData();
     formData.append("recordId", idToString(file.id));
     formData.append(

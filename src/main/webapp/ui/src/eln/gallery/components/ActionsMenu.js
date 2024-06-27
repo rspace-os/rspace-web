@@ -26,7 +26,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
-import { match } from "../../../util/Util";
 import Result from "../../../util/result";
 
 const RenameDialog = ({
@@ -128,6 +127,19 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
     return Result.Ok(null);
   };
 
+  const renameAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    return selection
+      .asSet()
+      .only.toResult(() => new Error("Only item may be renamed at once."))
+      .flatMap((file) => {
+        if (file.isSystemFolder)
+          return Result.Error([new Error("Cannot rename system folders.")]);
+        return Result.Ok(null);
+      });
+  };
+
   return (
     <>
       <Button
@@ -179,11 +191,9 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
         />
         <NewMenuItem
           title="Rename"
-          subheader={match<void, string>([
-            [() => selection.isEmpty, "Nothing selected."],
-            [() => selection.size > 1, "Only item may be renamed at once."],
-            [() => true, ""],
-          ])()}
+          subheader={renameAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<DriveFileRenameOutlineIcon />}
@@ -191,7 +201,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             setRenameOpen(true);
           }}
           compact
-          disabled={selection.size !== 1}
+          disabled={renameAllowed().isError}
         />
         {selection
           .asSet()
