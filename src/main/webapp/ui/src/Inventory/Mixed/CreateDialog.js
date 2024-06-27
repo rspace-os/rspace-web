@@ -371,7 +371,7 @@ function CreateInContextDialog({
     }
   );
 
-  function SplitCopiesSelector(): Node {
+  function SplitCopiesSelector({ disabled }: {| disabled: boolean |}): Node {
     const MIN = 2;
     const MAX = 100;
     return (
@@ -400,7 +400,7 @@ function CreateInContextDialog({
           onKeyDown={({ key }) => {
             if (key === "Enter" && validState) void onSubmitHandler();
           }}
-          disabled={false}
+          disabled={disabled}
         />
         {/* FormHelperText used rather than NumberField's helperText prop so that the text is always shown, not only when there's an error. */}
         <FormHelperText error={!validState}>
@@ -486,10 +486,16 @@ function CreateInContextDialog({
               <LocationSelector container={selectedResult} />
             )}
             {selectedResult instanceof SubSampleModel && (
-              <SplitCopiesSelector />
+              <SplitCopiesSelector
+                disabled={createOption !== createActions.SUBSAMPLE[0].name}
+              />
             )}
             {selectedResult instanceof SampleModel &&
-              selectedResult.subSamples.length === 1 && <SplitCopiesSelector />}
+              selectedResult.subSamples.length === 1 && (
+                <SplitCopiesSelector
+                  disabled={createOption !== createActions.SAMPLE[1].name}
+                />
+              )}
             {createActions[selectedResult.type].length === 0 && (
               <NoValue label="No option available." />
             )}
