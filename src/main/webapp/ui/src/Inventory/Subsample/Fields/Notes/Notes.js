@@ -16,7 +16,7 @@ function Notes({ record, onErrorStateChange }: NotesArgs): Node {
   return (
     <FormControl>
       {record.isFieldVisible("notes") && <NotesList record={record} />}
-      {record.isFieldEditable("notes") && record.isFieldVisible("notes") && (
+      {record.isFieldVisible("notes") && (
         <NewNote record={record} onErrorStateChange={onErrorStateChange} />
       )}
     </FormControl>

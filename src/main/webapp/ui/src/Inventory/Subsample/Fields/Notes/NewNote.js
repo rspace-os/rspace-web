@@ -89,6 +89,7 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): Node {
         renderInput={({ error: _error, ...props }) => (
           <TextField onChange={handleChange} name="content" {...props} />
         )}
+        disabled={!record.isFieldEditable("notes")}
       />
       <Typography variant="caption">
         Please note that once created, notes can be neither edited nor deleted.
@@ -96,7 +97,9 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): Node {
       <Button
         style={{ marginTop: "15px" }}
         disableElevation
-        disabled={error || note.content === ""}
+        disabled={
+          !record.isFieldEditable("notes") || error || note.content === ""
+        }
         variant="contained"
         id="add-note"
         data-test-id="add-note-button"
