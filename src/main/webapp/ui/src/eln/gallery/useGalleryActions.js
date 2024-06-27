@@ -7,10 +7,6 @@ import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { type GalleryFile, idToString, type Id } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import {
-  filenameExceptExtension,
-  justFilenameExtension,
-} from "../../util/files";
 
 export function useGalleryActions(): {|
   uploadFiles: (
@@ -287,9 +283,7 @@ export function useGalleryActions(): {|
       formData.append("idToCopy[]", idToString(file.id));
       formData.append(
         "newName[]",
-        `${filenameExceptExtension(file.name)}_copy.${justFilenameExtension(
-          file.name
-        )}`
+        file.transformFilename((name) => name + "_copy")
       );
     }
     try {
@@ -338,7 +332,7 @@ export function useGalleryActions(): {|
     formData.append("recordId", idToString(file.id));
     formData.append(
       "newName",
-      `${newName}.${justFilenameExtension(file.name)}`
+      file.transformFilename(() => newName)
     );
     try {
       const data = await axios.post<FormData, mixed>(
