@@ -4,6 +4,7 @@ import React from "react";
 import axios from "axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
+import RsSet from "../../util/set";
 import Result from "../../util/result";
 import { type GalleryFile, idToString, type Id } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -22,7 +23,7 @@ export function useGalleryActions(): {|
     |}) => Promise<void>,
   |},
   deleteFiles: (Set<GalleryFile>) => Promise<void>,
-  duplicateFiles: (Set<GalleryFile>) => Promise<void>,
+  duplicateFiles: (RsSet<GalleryFile>) => Promise<void>,
   rename: (GalleryFile, string) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
@@ -277,7 +278,8 @@ export function useGalleryActions(): {|
     }
   }
 
-  async function duplicateFiles(files: Set<GalleryFile>) {
+  async function duplicateFiles(files: RsSet<GalleryFile>) {
+    if (files.some((f) => /System Folder/.test(f.type))) return;
     const formData = new FormData();
     for (const file of files) {
       formData.append("idToCopy[]", idToString(file.id));

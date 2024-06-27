@@ -112,6 +112,14 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
 
   const [renameOpen, setRenameOpen] = React.useState(false);
 
+  const duplicateAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    if (selection.asSet().some((f) => /System Folder/.test(f.type)))
+      return Result.Error([new Error("Cannot duplicate system folders.")]);
+    return Result.Ok(null);
+  };
+
   return (
     <>
       <Button
@@ -135,7 +143,9 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
       >
         <NewMenuItem
           title="Duplicate"
-          subheader={selection.isEmpty ? "Nothing selected." : ""}
+          subheader={duplicateAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<AddToPhotosIcon />}
@@ -146,7 +156,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             });
           }}
           compact
-          disabled={selection.isEmpty}
+          disabled={duplicateAllowed().isError}
         />
         <NewMenuItem
           title="Move"
