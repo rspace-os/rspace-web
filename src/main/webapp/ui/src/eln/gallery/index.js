@@ -10,20 +10,21 @@ import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
 import Box from "@mui/material/Box";
-import useGalleryListing, { type GalleryFile } from "./useGalleryListing";
+import { useGalleryListing, type GalleryFile } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import Alerts from "../../Inventory/components/Alerts";
-import * as FetchingData from "../../util/fetchingData";
+import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [selectedSection, setSelectedSection] = React.useState("Images");
-  const { galleryListing, path, clearPath, parentId, refreshListing } =
+  const { galleryListing, path, clearPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
+      path: [],
     });
   const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
     null
@@ -45,7 +46,7 @@ function WholePage() {
           setSelectedSection={setSelectedSection}
           drawerOpen={drawerOpen}
           path={path}
-          parentId={parentId}
+          folderId={folderId}
           refreshListing={refreshListing}
         />
         <Box
@@ -56,21 +57,17 @@ function WholePage() {
             flexGrow: 1,
           }}
         >
-          {FetchingData.getSuccessValue(parentId)
-            .map((pId) => (
-              <MainPanel
-                selectedSection={selectedSection}
-                path={path}
-                clearPath={clearPath}
-                galleryListing={galleryListing}
-                selectedFile={selectedFile}
-                setSelectedFile={setSelectedFile}
-                parentId={pId}
-                refreshListing={refreshListing}
-                key={null}
-              />
-            ))
-            .orElse(null)}
+          <MainPanel
+            selectedSection={selectedSection}
+            path={path}
+            clearPath={clearPath}
+            galleryListing={galleryListing}
+            selectedFile={selectedFile}
+            setSelectedFile={setSelectedFile}
+            folderId={folderId}
+            refreshListing={refreshListing}
+            key={null}
+          />
         </Box>
       </Box>
     </Alerts>
@@ -89,7 +86,9 @@ window.addEventListener("load", () => {
           <StyledEngineProvider injectFirst>
             <CssBaseline />
             <ThemeProvider theme={createAccentedTheme(COLOR)}>
-              <WholePage />
+              <DisableDragAndDropByDefault>
+                <WholePage />
+              </DisableDragAndDropByDefault>
             </ThemeProvider>
           </StyledEngineProvider>
         </ErrorBoundary>
