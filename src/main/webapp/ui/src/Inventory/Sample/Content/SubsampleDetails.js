@@ -19,11 +19,12 @@ import QuantityField from "../../Subsample/Fields/Quantity";
 import Stack from "@mui/material/Stack";
 import Notes from "../../Subsample/Fields/Notes/Notes";
 import MobileStepper from "@mui/material/MobileStepper";
-import Button from "@mui/material/Button";
+import Button, { buttonClasses } from "@mui/material/Button";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import { type Search } from "../../../stores/definitions/Search";
 import { doNotAwait, modulo } from "../../../util/Util";
+import { svgIconClasses } from "@mui/material/SvgIcon";
 
 const CustomStepper = styled(MobileStepper)(({ theme }) => ({
   backgroundColor: theme.palette.record.subSample.lighter,
@@ -34,11 +35,11 @@ const CustomStepper = styled(MobileStepper)(({ theme }) => ({
   color: alpha(darken(theme.palette.record.subSample.bg, 0.5), 0.7),
   fontWeight: "700",
   letterSpacing: "0.03em",
-  "& .MuiButtonBase-root": {
-    "& .MuiSvgIcon-root": {
+  [`& .${buttonClasses.root}`]: {
+    [`& .${svgIconClasses.root}`]: {
       color: theme.palette.record.subSample.bg,
     },
-    "&.Mui-disabled": {
+    [`&.${buttonClasses.disabled}`]: {
       opacity: 0.3,
     },
   },
