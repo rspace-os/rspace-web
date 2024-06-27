@@ -375,39 +375,46 @@ function CreateInContextDialog({
     const MIN = 2;
     const MAX = 100;
     return (
-      <FormControl>
-        <NumberField
-          name="copies"
-          autoFocus
-          value={splitCopies}
-          onChange={({ target }) => {
-            setSplitCopies(parseInt(target.value, 10));
-            setValidState(target.checkValidity() && target.value !== "");
-          }}
-          error={!validState}
-          variant="outlined"
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">Copies</InputAdornment>
-            ),
-          }}
-          inputProps={{
-            min: MIN,
-            max: MAX,
-            step: 1,
-          }}
-          onKeyDown={({ key }) => {
-            if (key === "Enter" && validState) void onSubmitHandler();
-          }}
-          disabled={disabled}
-        />
-        {/* FormHelperText used rather than NumberField's helperText prop so that the text is always shown, not only when there's an error. */}
-        <FormHelperText error={!validState}>
-          {`The total number of subsamples wanted, including the source (min ${MIN}
+      <Box
+        sx={{
+          ml: 3,
+          width: (theme) => `calc(100% - ${theme.spacing(3)})`,
+        }}
+      >
+        <FormControl>
+          <NumberField
+            name="copies"
+            autoFocus
+            value={splitCopies}
+            onChange={({ target }) => {
+              setSplitCopies(parseInt(target.value, 10));
+              setValidState(target.checkValidity() && target.value !== "");
+            }}
+            error={!validState}
+            variant="outlined"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">Copies</InputAdornment>
+              ),
+            }}
+            inputProps={{
+              min: MIN,
+              max: MAX,
+              step: 1,
+            }}
+            onKeyDown={({ key }) => {
+              if (key === "Enter" && validState) void onSubmitHandler();
+            }}
+            disabled={disabled}
+          />
+          {/* FormHelperText used rather than NumberField's helperText prop so that the text is always shown, not only when there's an error. */}
+          <FormHelperText error={!validState}>
+            {`The total number of subsamples wanted, including the source (min ${MIN}
           , max ${MAX})`}
-        </FormHelperText>
-      </FormControl>
+          </FormHelperText>
+        </FormControl>
+      </Box>
     );
   }
 
