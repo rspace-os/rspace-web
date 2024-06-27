@@ -22,7 +22,7 @@ export function useGalleryActions(): {|
       section: string,
     |}) => Promise<void>,
   |},
-  deleteFiles: (Set<GalleryFile>) => Promise<void>,
+  deleteFiles: (RsSet<GalleryFile>) => Promise<void>,
   duplicateFiles: (RsSet<GalleryFile>) => Promise<void>,
   rename: (GalleryFile, string) => Promise<void>,
 |} {
@@ -235,7 +235,8 @@ export function useGalleryActions(): {|
     };
   }
 
-  async function deleteFiles(files: Set<GalleryFile>) {
+  async function deleteFiles(files: RsSet<GalleryFile>) {
+    if (files.some((f) => f.isSystemFolder)) return;
     const formData = new FormData();
     for (const file of files)
       formData.append("idsToDelete[]", idToString(file.id));

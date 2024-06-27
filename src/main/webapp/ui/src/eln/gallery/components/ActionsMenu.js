@@ -120,6 +120,14 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
     return Result.Ok(null);
   };
 
+  const deleteAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    if (selection.asSet().some((f) => f.isSystemFolder))
+      return Result.Error([new Error("Cannot delete system folders.")]);
+    return Result.Ok(null);
+  };
+
   return (
     <>
       <Button
@@ -202,7 +210,9 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
           .orElse(null)}
         <NewMenuItem
           title="Delete"
-          subheader={selection.isEmpty ? "Nothing selected." : ""}
+          subheader={deleteAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<DeleteOutlineOutlinedIcon />}
@@ -213,7 +223,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             });
           }}
           compact
-          disabled={selection.isEmpty}
+          disabled={deleteAllowed().isError}
         />
         <NewMenuItem
           title="Export"
