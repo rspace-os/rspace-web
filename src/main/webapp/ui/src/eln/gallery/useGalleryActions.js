@@ -279,7 +279,7 @@ export function useGalleryActions(): {|
   }
 
   async function duplicateFiles(files: RsSet<GalleryFile>) {
-    if (files.some((f) => /System Folder/.test(f.type))) return;
+    if (files.some((f) => f.isSystemFolder)) return;
     const formData = new FormData();
     for (const file of files) {
       formData.append("idToCopy[]", idToString(file.id));

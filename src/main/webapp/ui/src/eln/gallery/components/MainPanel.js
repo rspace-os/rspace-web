@@ -360,11 +360,11 @@ const CustomTreeItem = observer(
           await uploadFiles([...file.path, file], file.id, files);
           refreshListing();
         }),
-        disabled: !/Folder/.test(file.type),
+        disabled: !file.isFolder,
       });
     const { setNodeRef: setDropRef, isOver } = useDroppable({
       id: file.id,
-      disabled: !/Folder/.test(file.type),
+      disabled: !file.isFolder,
       data: {
         path: file.path,
         destination: { key: "folder", folder: file },
@@ -483,7 +483,7 @@ const CustomTreeItem = observer(
             borderRadius: "4px",
           }}
         >
-          {/Folder/.test(file.type) && (
+          {file.isFolder && (
             <TreeItemContent
               file={file}
               path={path}
@@ -754,11 +754,11 @@ const FileCard = styled(
              * placed inside a folder into which the user cannot currently see
              */
           },
-          disabled: !/Folder/.test(file.type),
+          disabled: !file.isFolder,
         });
       const { setNodeRef: setDropRef, isOver } = useDroppable({
         id: file.id,
-        disabled: !/Folder/.test(file.type),
+        disabled: !file.isFolder,
         data: {
           path: file.path,
           destination: { key: "folder", folder: file },

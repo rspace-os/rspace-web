@@ -236,9 +236,7 @@ export function useGalleryListing({
       isSystemFolder,
       isSnippetFolder: isSystemFolder && /SNIPPETS/.test(name),
       transformFilename: (f) => {
-        if (/Folder/.test(type)) {
-          return f(name);
-        }
+        if (isFolder) return f(name);
         return `${f(filenameExceptExtension(name))}.${justFilenameExtension(
           name
         )}`;

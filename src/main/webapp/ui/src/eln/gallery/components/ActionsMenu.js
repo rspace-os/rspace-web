@@ -115,7 +115,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
   const duplicateAllowed = (): Result<null> => {
     if (selection.isEmpty)
       return Result.Error([new Error("Nothing selected.")]);
-    if (selection.asSet().some((f) => /System Folder/.test(f.type)))
+    if (selection.asSet().some((f) => f.isSystemFolder))
       return Result.Error([new Error("Cannot duplicate system folders.")]);
     return Result.Ok(null);
   };
