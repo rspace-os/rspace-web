@@ -20,8 +20,7 @@ import org.springframework.web.client.RestTemplate;
 @RunWith(ConditionalTestRunnerNotSpring.class)
 public class SlackPosterTest {
 
-  public static final String SLACK_WEBHOOK =
-      "https://hooks.slack.com/services/<secret_webhook>";
+  public static final String SLACK_WEBHOOK = "https://hooks.slack.com/services/<secret_webhook>";
 
   @Before
   public void setUp() throws Exception {}

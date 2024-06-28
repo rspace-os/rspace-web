@@ -185,15 +185,15 @@ mysql -u "root" -p"password" -e "
   GRANT ALL ON rspace.* TO 'rspacedbuser'@'127.0.0.1';
 "
 ```
-**NOTE:** on FIRST startup of Rspace with an empty rspace, don't skip the tests else liquibase fails for unknown reasons;
-i.e. do not have `-Dmaven.test.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true`
-in your launch config
-
-**NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands 
-from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`. 
+**NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands
+from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`.
 You will know if running the tests/app gets you db authentication error for user `'rspacedbuser'@'localhost'`
 
 **NOTE:** if you subsequently drop the rspace DB, the rspacedbuser user will stay; do not try to recreate the user.
+
+**NOTE:** on FIRST startup of Rspace with an empty rspace, don't skip the tests else liquibase fails for unknown reasons;
+i.e. do not have `-Dmaven.test.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true`
+in your launch config
 
 At the end of this, you should be able to connect to the rspace database from
 your command line. with `bash mysql -urspacedbuser -prspacedbpwd rspace`.
