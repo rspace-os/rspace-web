@@ -1760,7 +1760,7 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>rspace-core-model</artifactId>
+        <artifactId>rspace-core-model-rsdev-148</artifactId>
         <version>${rspace-core-model.version}</version>
         <exclusions>
           <exclusion>
@@ -1787,7 +1787,7 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>rspace-core-model</artifactId>
+        <artifactId>rspace-core-model-rsdev-148</artifactId>
         <version>${rspace-core-model.version}</version>
         <scope>test</scope>
         <type>test-jar</type>
