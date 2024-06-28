@@ -12,6 +12,14 @@ import FormField from "../../components/Inputs/FormField";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import Link from "@mui/material/Link";
 import { Optional } from "../../../util/optional";
+import { styled } from "@mui/material/styles";
+import { textFieldClasses } from "@mui/material/TextField";
+
+const CustomFormField = styled(FormField)(() => ({
+  [`& .${textFieldClasses.root}`]: {
+    maxWidth: "264px",
+  },
+}));
 
 type QuantityArgs = {|
   onErrorStateChange: (boolean) => void,
@@ -113,7 +121,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): Node {
   return (
     <>
       {!sample.id && sample.quantity && (
-        <FormField
+        <CustomFormField
           label={`Quantity${
             (sample.newSampleSubSamplesCount ?? 2) > 1
               ? " per " + alias.alias

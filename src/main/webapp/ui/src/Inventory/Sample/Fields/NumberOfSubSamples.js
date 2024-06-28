@@ -12,11 +12,14 @@ import RadioField, {
   OptionExplanation,
 } from "../../../components/Inputs/RadioField";
 import { styled } from "@mui/material/styles";
+import { textFieldClasses } from "@mui/material/TextField";
 
 const NestedFormField = styled(FormField)(({ theme }) => ({
   marginTop: "0 !important",
   marginLeft: `${theme.spacing(4)} !important`,
-  width: `calc(100% - ${theme.spacing(4)})`,
+  [`& .${textFieldClasses.root}`]: {
+    maxWidth: `min(100px, calc(100% - ${theme.spacing(4)}))`,
+  },
 }));
 
 const MIN = 2;
