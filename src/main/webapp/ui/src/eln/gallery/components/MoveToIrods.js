@@ -34,7 +34,7 @@ import Result from "../../../util/result";
 import AccessibilityTips from "../../../components/AccessibilityTips";
 import docLinks from "../../../assets/DocLinks";
 
-const COLOR = {
+export const COLOR = {
   main: {
     hue: 180,
     saturation: 30,

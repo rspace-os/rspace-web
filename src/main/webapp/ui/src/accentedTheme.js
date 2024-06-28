@@ -116,7 +116,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
    */
   const mainBackground = prefersMoreContrast
     ? "rgb(255,255,255)"
-    : `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, 99%)`;
+    : `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, 98%)`;
   /**
    * This may seem pointless to define as its just white, but defining it this
    * way allows us to dynamically apply darken
@@ -142,7 +142,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
   // Interactive elements: text fields in app bar, chips
   const lighterInteractiveColor = prefersMoreContrast
     ? secondaryBackground
-    : `hsl(${accent.main.hue}deg, 30%, 90%)`;
+    : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, 90%)`;
 
   // Links are slightly darker to more closely match surrounding text
   const linkColor = prefersMoreContrast

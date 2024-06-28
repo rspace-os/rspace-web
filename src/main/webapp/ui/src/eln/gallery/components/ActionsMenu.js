@@ -27,7 +27,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
-import MoveToIrods from "./MoveToIrods";
+import MoveToIrods, { COLOR as IRODS_COLOR } from "./MoveToIrods";
 
 const RenameDialog = ({
   open,
@@ -268,8 +268,8 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
           subheader={moveToIrodsAllowed()
             .map(() => "")
             .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
+          backgroundColor={IRODS_COLOR.background}
+          foregroundColor={IRODS_COLOR.contrastText}
           // TODO: iRODS logo
           avatar={<AcUnitIcon />}
           onClick={() => {
