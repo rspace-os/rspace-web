@@ -12,6 +12,7 @@ import AlertContext, {
   type Alert,
 } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import { stableSort } from "../../../util/table";
 
 type Link = {| operation: string, href: string |};
 
@@ -374,9 +375,27 @@ export default function useIrods(
     }
   }
 
+  /*
+   * This is a performance optimisation: we only need to re-fetch the
+   * configured locations when the selection of files has materially changed. If
+   * there is a new array in memory that contains the same Ids then there is no
+   * need to re-fetch, nor if the same array has been re-ordered.
+   */
+  const parsedSelectedIds = Result.all(
+    ...selectedIds.map(Parsers.parseInteger)
+  ).orElseGet(() => {
+    throw new Error("Invalid selected Ids");
+  });
+  const sortedStringOfSelectedIds = JSON.stringify(
+    stableSort(parsedSelectedIds, (a, b) => {
+      if (a > b) return 1;
+      if (a < b) return -1;
+      return 0;
+    })
+  );
   React.useEffect(() => {
     void fetchConfiguredLocations();
-  }, [selectedIds]);
+  }, [sortedStringOfSelectedIds]);
 
   if (loading) return { tag: "loading" };
   if (errorMessage) return { tag: "error", error: errorMessage };

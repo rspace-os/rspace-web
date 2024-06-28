@@ -176,6 +176,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
         MenuListProps={{
           disablePadding: true,
         }}
+        keepMounted
       >
         <NewMenuItem
           title="Duplicate"
