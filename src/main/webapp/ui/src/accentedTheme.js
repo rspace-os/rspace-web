@@ -15,6 +15,7 @@ import { listItemIconClasses } from "@mui/material/ListItemIcon";
 import { paperClasses } from "@mui/material/Paper";
 import { cardActionAreaClasses } from "@mui/material/CardActionArea";
 import { buttonClasses } from "@mui/material/Button";
+import { iconButtonClasses } from "@mui/material/IconButton";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { gridClasses } from "@mui/x-data-grid";
 import { alertTitleClasses } from "@mui/material/AlertTitle";
@@ -189,7 +190,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 },
                 [`& .${svgIconClasses.root}`]: {
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
+                  transition: "all .3s ease",
                 },
+                [`& .${iconButtonClasses.root}.${iconButtonClasses.disabled}`]:
+                  {
+                    [`& .${svgIconClasses.root}`]: {
+                      opacity: 0.5,
+                    },
+                  },
               },
               [`& .${textFieldClasses.root}`]: {
                 background: lighterInteractiveColor,

@@ -16,6 +16,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
+import Analytics from "../../components/Analytics";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -86,9 +87,11 @@ window.addEventListener("load", () => {
           <StyledEngineProvider injectFirst>
             <CssBaseline />
             <ThemeProvider theme={createAccentedTheme(COLOR)}>
-              <DisableDragAndDropByDefault>
-                <WholePage />
-              </DisableDragAndDropByDefault>
+              <Analytics>
+                <DisableDragAndDropByDefault>
+                  <WholePage />
+                </DisableDragAndDropByDefault>
+              </Analytics>
             </ThemeProvider>
           </StyledEngineProvider>
         </ErrorBoundary>
