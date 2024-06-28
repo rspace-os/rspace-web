@@ -41,7 +41,13 @@ const RenameDialog = ({
   const [newName, setNewName] = React.useState("");
   const { rename } = useGalleryActions();
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+      }}
+    >
       <form
         onSubmit={(e) => {
           e.preventDefault();

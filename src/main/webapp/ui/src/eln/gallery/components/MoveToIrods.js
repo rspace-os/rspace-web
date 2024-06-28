@@ -221,7 +221,13 @@ function MoveCopyDialog({
   };
 
   return (
-    <CustomDialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+    <CustomDialog
+      open={dialogOpen}
+      onClose={() => setDialogOpen(false)}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+      }}
+    >
       <AppBar position="relative" open={true}>
         <Toolbar variant="dense">
           <Typography variant="h6" noWrap component="h2">
