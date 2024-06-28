@@ -89,10 +89,16 @@ public class NfsFactory {
           fileSystem.getClientOption(NfsFileSystemOption.SFTP_SERVER_PUBLIC_KEY));
     }
     if (NfsClientType.IRODS.equals(clientType)) {
+      int irodsPort;
+      if (StringUtils.isEmpty(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT))) {
+        irodsPort = 1247;
+      } else {
+        irodsPort = Integer.parseInt(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT));
+      }
       return new IRODSClient(
           new IRODSAccount(
               fileSystem.getUrl(),
-              Integer.parseInt(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT)),
+              irodsPort,
               nfsusername,
               nfspassword,
               fileSystem.getClientOption(NfsFileSystemOption.IRODS_HOME_DIR),
