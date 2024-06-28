@@ -17,6 +17,7 @@ import ArgosMenuItem from "../../eln-dmp-integration/Argos/ArgosMenuItem";
 import DMPOnlineMenuItem from "../../eln-dmp-integration/DMPOnline/DMPOnlineMenuItem";
 import MoveToIrods from "./MoveToIrods";
 import Alerts from "../../components/Alerts/Alerts";
+import CssBaseline from "@mui/material/CssBaseline";
 
 const ButtonWrapper = styled.div`
   button {
@@ -206,6 +207,7 @@ export default function GalleryToolbar(): Node {
 
   return (
     <StyledEngineProvider injectFirst>
+      <CssBaseline />
       <ThemeProvider theme={materialTheme}>
         <BaseToolbar content={Content} />
         <Alerts>

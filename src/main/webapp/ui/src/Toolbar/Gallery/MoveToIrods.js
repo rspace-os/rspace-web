@@ -69,8 +69,7 @@ const CustomDialog = styled(Dialog)(() => ({
     height: "calc(90% - 32px)", // 16px margin above and below dialog
   },
   "& .MuiDialogContent-root": {
-    width: "calc(100% - 32px)",
-    height: "calc(100% - 66px)", // 48px being the height of DialogActions + its own 16px of padding
+    height: "calc(100% - 48px)", // 32px being the height of DialogActions + its own 16px of padding
     overflowY: "auto",
     paddingBottom: 0,
   },
@@ -125,11 +124,24 @@ const ErrorAlert = ({ message }: {| message: string |}) => {
   );
 };
 
-function MoveCopyDialog() {
+type MoveCopyDialogArgs = {|
+  selectedIdsProp?: $ReadOnlyArray<string>,
+  openProp?: boolean,
+|};
+
+function MoveCopyDialog({ selectedIdsProp, openProp }: MoveCopyDialogArgs) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [selectedIds, setSelectedIds] = React.useState<$ReadOnlyArray<string>>(
     []
   );
+
+  React.useEffect(() => {
+    if (typeof openProp !== "undefined") setDialogOpen(openProp);
+  }, [openProp]);
+
+  React.useEffect(() => {
+    if (typeof selectedIdsProp !== "undefined") setSelectedIds(selectedIdsProp);
+  }, [selectedIdsProp]);
 
   const irods = useIrods(selectedIds);
   const [locationsAnchorEl, setLocationsAnchorEl] = React.useState(null);
@@ -423,10 +435,15 @@ function MoveCopyDialog() {
   );
 }
 
-export default function Wrapper(): Node {
+type WrapperArgs = {|
+  selectedIds?: $ReadOnlyArray<string>,
+  open?: boolean,
+|};
+
+export default function Wrapper({ selectedIds, open }: WrapperArgs): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <MoveCopyDialog />
+      <MoveCopyDialog selectedIdsProp={selectedIds} openProp={open} />
     </ThemeProvider>
   );
 }

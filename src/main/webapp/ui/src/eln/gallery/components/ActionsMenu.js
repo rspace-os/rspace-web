@@ -16,7 +16,7 @@ import AcUnitIcon from "@mui/icons-material/AcUnit";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
-import { type GalleryFile } from "../useGalleryListing";
+import { type GalleryFile, idToString } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import Dialog from "@mui/material/Dialog";
@@ -27,6 +27,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
+import MoveToIrods from "../../../Toolbar/Gallery/MoveToIrods";
 
 const RenameDialog = ({
   open,
@@ -110,6 +111,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
   const selection = useGallerySelection();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
+  const [irodsOpen, setIrodsOpen] = React.useState(false);
 
   const duplicateAllowed = (): Result<null> => {
     if (selection.isEmpty)
@@ -254,9 +256,17 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
           // TODO: iRODS logo
           avatar={<AcUnitIcon />}
           onClick={() => {
-            setActionsMenuAnchorEl(null);
+            //setActionsMenuAnchorEl(null);
+            setIrodsOpen(true);
           }}
           compact
+        />
+        <MoveToIrods
+          selectedIds={selection
+            .asSet()
+            .map(({ id }) => idToString(id))
+            .toArray()}
+          open={irodsOpen}
         />
         <NewMenuItem
           title="Edit"
