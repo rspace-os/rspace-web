@@ -102,9 +102,9 @@ function NumberOfSubSamples({
                   <>
                     <OptionHeading>Individual Sample</OptionHeading>
                     <OptionExplanation>
-                      The sample is made up of one subsample, representing the
-                      physical location of the sample. Sample actions are
-                      equivalent to subsample actions.
+                      The sample is made up of <strong>one subsample</strong>,
+                      representing the physical location of the sample. Sample
+                      actions are equivalent to subsample actions.
                     </OptionExplanation>
                   </>
                 ),
@@ -115,10 +115,10 @@ function NumberOfSubSamples({
                   <>
                     <OptionHeading>Sample with subsamples</OptionHeading>
                     <OptionExplanation>
-                      The sample is made up of multiple subsamples, which
-                      represent related physical items originating from the same
-                      batch. Sample actions affect the entire group of
-                      subsamples.
+                      The sample is made up of{" "}
+                      <strong>multiple subsamples</strong>, which represent
+                      related physical items originating from the same batch.
+                      Sample actions affect the entire group of subsamples.
                     </OptionExplanation>
                   </>
                 ),
