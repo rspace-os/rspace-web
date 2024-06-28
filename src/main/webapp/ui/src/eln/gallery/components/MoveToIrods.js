@@ -2,7 +2,7 @@
 
 import React, { type Node } from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
-import createAccentedTheme from "../../accentedTheme";
+import createAccentedTheme from "../../../accentedTheme";
 import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
 import Toolbar from "@mui/material/Toolbar";
@@ -13,26 +13,26 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Box from "@mui/material/Box";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
-import FormField from "../../components/Inputs/FormField";
+import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import FormField from "../../../components/Inputs/FormField";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 import List from "@mui/material/List";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import ChoiceField from "../../components/Inputs/ChoiceField";
+import ChoiceField from "../../../components/Inputs/ChoiceField";
 import TextField from "@mui/material/TextField";
 import { withStyles } from "Styles";
 import Stack from "@mui/material/Stack";
 import useIrods, { type IrodsLocation } from "./useIrods";
 import Alert from "@mui/lab/Alert";
 import AlertTitle from "@mui/lab/AlertTitle";
-import * as FetchingData from "../../util/fetchingData";
-import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
-import Result from "../../util/result";
-import AccessibilityTips from "../../components/AccessibilityTips";
-import docLinks from "../../assets/DocLinks";
+import * as FetchingData from "../../../util/fetchingData";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import Result from "../../../util/result";
+import AccessibilityTips from "../../../components/AccessibilityTips";
+import docLinks from "../../../assets/DocLinks";
 
 const COLOR = {
   main: {

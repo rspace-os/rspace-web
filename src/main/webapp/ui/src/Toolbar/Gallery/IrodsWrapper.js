@@ -1,7 +1,7 @@
 //@flow
 
 import React, { type Node } from "react";
-import MoveToIrods from "./MoveToIrods";
+import MoveToIrods from "../../eln/gallery/components/MoveToIrods";
 
 export default function IrodsWrapper(): Node {
   const [dialogOpen, setDialogOpen] = React.useState(false);

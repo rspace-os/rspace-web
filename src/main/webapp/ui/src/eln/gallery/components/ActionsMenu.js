@@ -27,7 +27,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
-import MoveToIrods from "../../../Toolbar/Gallery/MoveToIrods";
+import MoveToIrods from "./MoveToIrods";
 
 const RenameDialog = ({
   open,
