@@ -264,6 +264,30 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
           compact
         />
         <NewMenuItem
+          title="Edit"
+          subheader="Only images can be edited in place."
+          backgroundColor={COLOR.background}
+          foregroundColor={COLOR.contrastText}
+          avatar={<CropIcon />}
+          onClick={() => {
+            setActionsMenuAnchorEl(null);
+          }}
+          compact
+          disabled
+        />
+        <NewMenuItem
+          title="Share"
+          subheader="Only snippets can be shared."
+          backgroundColor={COLOR.background}
+          foregroundColor={COLOR.contrastText}
+          avatar={<GroupIcon />}
+          onClick={() => {
+            setActionsMenuAnchorEl(null);
+          }}
+          compact
+          disabled
+        />
+        <NewMenuItem
           title="Move to iRODS"
           subheader={moveToIrodsAllowed()
             .map(() => "")
@@ -291,30 +315,6 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
               refreshListing();
             }
           }}
-        />
-        <NewMenuItem
-          title="Edit"
-          subheader="Only images can be edited in place."
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<CropIcon />}
-          onClick={() => {
-            setActionsMenuAnchorEl(null);
-          }}
-          compact
-          disabled
-        />
-        <NewMenuItem
-          title="Share"
-          subheader="Only snippets can be shared."
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<GroupIcon />}
-          onClick={() => {
-            setActionsMenuAnchorEl(null);
-          }}
-          compact
-          disabled
         />
       </StyledMenu>
     </>
