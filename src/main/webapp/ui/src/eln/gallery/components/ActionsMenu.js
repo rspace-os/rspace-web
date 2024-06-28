@@ -256,7 +256,6 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
           // TODO: iRODS logo
           avatar={<AcUnitIcon />}
           onClick={() => {
-            //setActionsMenuAnchorEl(null);
             setIrodsOpen(true);
           }}
           compact
@@ -266,7 +265,14 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             .asSet()
             .map(({ id }) => idToString(id))
             .toArray()}
-          open={irodsOpen}
+          dialogOpen={irodsOpen}
+          setDialogOpen={(newState) => {
+            setIrodsOpen(newState);
+            if (!newState) {
+              setActionsMenuAnchorEl(null);
+              refreshListing();
+            }
+          }}
         />
         <NewMenuItem
           title="Edit"

@@ -125,24 +125,16 @@ const ErrorAlert = ({ message }: {| message: string |}) => {
 };
 
 type MoveCopyDialogArgs = {|
-  selectedIdsProp?: $ReadOnlyArray<string>,
-  openProp?: boolean,
+  selectedIds: $ReadOnlyArray<string>,
+  dialogOpen: boolean,
+  setDialogOpen: (boolean) => void,
 |};
 
-function MoveCopyDialog({ selectedIdsProp, openProp }: MoveCopyDialogArgs) {
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [selectedIds, setSelectedIds] = React.useState<$ReadOnlyArray<string>>(
-    []
-  );
-
-  React.useEffect(() => {
-    if (typeof openProp !== "undefined") setDialogOpen(openProp);
-  }, [openProp]);
-
-  React.useEffect(() => {
-    if (typeof selectedIdsProp !== "undefined") setSelectedIds(selectedIdsProp);
-  }, [selectedIdsProp]);
-
+function MoveCopyDialog({
+  selectedIds,
+  dialogOpen,
+  setDialogOpen,
+}: MoveCopyDialogArgs) {
   const irods = useIrods(selectedIds);
   const [locationsAnchorEl, setLocationsAnchorEl] = React.useState(null);
   const [selectedDestination, setSelectedDestination] =
@@ -189,24 +181,14 @@ function MoveCopyDialog({ selectedIdsProp, openProp }: MoveCopyDialogArgs) {
   }
 
   React.useEffect(() => {
-    const handler = (
-      event: Event & { detail: { ids: Array<string>, ... }, ... }
-    ) => {
-      setSelectedIds(event.detail.ids);
-      /*
-       * selectedDestination is reset because the IrodsLocations are
-       * paramaterised by the files that are being moved. This allows the
-       * RESTful API to adjust the available locations based on the particular
-       * files being moved.
-       */
-      setSelectedDestination(null);
-      setDialogOpen(true);
-    };
-    window.addEventListener("OPEN_IRODS_DIALOG", handler);
-    return () => {
-      window.removeEventListener("OPEN_IRODS_DIALOG", handler);
-    };
-  }, []);
+    /*
+     * selectedDestination is reset because the IrodsLocations are
+     * paramaterised by the files that are being moved. This allows the RESTful
+     * API to adjust the available locations based on the particular files
+     * being moved.
+     */
+    setSelectedDestination(null);
+  }, [selectedIds]);
 
   const onSubmit = () => {
     if (!selectedDestination)
@@ -218,8 +200,6 @@ function MoveCopyDialog({ selectedIdsProp, openProp }: MoveCopyDialogArgs) {
           .then(() => {
             setDialogOpen(false);
             setShowUsernamePasswordForm(false);
-            // eslint-disable-next-line no-undef
-            gallery();
           })
           .finally(() => {
             setOperationInProgress(false);
@@ -232,8 +212,6 @@ function MoveCopyDialog({ selectedIdsProp, openProp }: MoveCopyDialogArgs) {
           .then(() => {
             setDialogOpen(false);
             setShowUsernamePasswordForm(false);
-            // eslint-disable-next-line no-undef
-            gallery();
           })
           .finally(() => {
             setOperationInProgress(false);
@@ -436,14 +414,23 @@ function MoveCopyDialog({ selectedIdsProp, openProp }: MoveCopyDialogArgs) {
 }
 
 type WrapperArgs = {|
-  selectedIds?: $ReadOnlyArray<string>,
-  open?: boolean,
+  selectedIds: $ReadOnlyArray<string>,
+  dialogOpen: boolean,
+  setDialogOpen: (boolean) => void,
 |};
 
-export default function Wrapper({ selectedIds, open }: WrapperArgs): Node {
+export default function Wrapper({
+  selectedIds,
+  dialogOpen,
+  setDialogOpen,
+}: WrapperArgs): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <MoveCopyDialog selectedIdsProp={selectedIds} openProp={open} />
+      <MoveCopyDialog
+        selectedIds={selectedIds}
+        dialogOpen={dialogOpen}
+        setDialogOpen={setDialogOpen}
+      />
     </ThemeProvider>
   );
 }
