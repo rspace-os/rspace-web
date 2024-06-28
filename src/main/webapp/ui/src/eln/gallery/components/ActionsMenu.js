@@ -142,6 +142,14 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
       });
   };
 
+  const moveToIrodsAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    if (selection.asSet().some((f) => f.isSystemFolder))
+      return Result.Error([new Error("Cannot move system folders to iRODS.")]);
+    return Result.Ok(null);
+  };
+
   return (
     <>
       <Button
@@ -250,7 +258,9 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
         />
         <NewMenuItem
           title="Move to iRODS"
-          subheader=""
+          subheader={moveToIrodsAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           // TODO: iRODS logo
@@ -259,6 +269,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             setIrodsOpen(true);
           }}
           compact
+          disabled={moveToIrodsAllowed().isError}
         />
         <MoveToIrods
           selectedIds={selection
