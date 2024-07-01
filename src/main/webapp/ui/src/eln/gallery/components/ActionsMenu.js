@@ -12,7 +12,6 @@ import OpenWithIcon from "@mui/icons-material/OpenWith";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import AcUnitIcon from "@mui/icons-material/AcUnit";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
@@ -29,6 +28,9 @@ import DialogActions from "@mui/material/DialogActions";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import MoveToIrods, { COLOR as IRODS_COLOR } from "./MoveToIrods";
+import IrodsLogo from "./IrodsLogo.svg";
+import SvgIcon from "@mui/material/SvgIcon";
+import Avatar from "@mui/material/Avatar";
 
 const RenameDialog = ({
   open,
@@ -318,8 +320,18 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             .orElseGet(([e]) => e.message)}
           backgroundColor={IRODS_COLOR.background}
           foregroundColor={IRODS_COLOR.contrastText}
-          // TODO: iRODS logo
-          avatar={<AcUnitIcon />}
+          avatar={
+            <Avatar
+              variant="square"
+              sx={{
+                width: 28,
+                height: 28,
+                bgcolor: `hsl(${IRODS_COLOR.main.hue}deg, ${IRODS_COLOR.main.saturation}%, ${IRODS_COLOR.main.lightness}%, 100%)`,
+                border: `4px solid hsl(${IRODS_COLOR.main.hue}deg, ${IRODS_COLOR.main.saturation}%, ${IRODS_COLOR.main.lightness}%, 100%)`,
+              }}
+              src={IrodsLogo}
+            />
+          }
           onClick={() => {
             setIrodsOpen(true);
           }}
