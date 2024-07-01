@@ -100,6 +100,7 @@ const RenameDialog = ({
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
+    minWidth: "212px",
     ...(open
       ? {
           transform: "translate(0px, 4px) !important",
