@@ -17,7 +17,7 @@ export function useGalleryActions(): {|
   createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
   moveFilesWithIds: ($ReadOnlyArray<number>) => {|
     to: ({|
-      target: string,
+      destination: {| key: "root" |} | {| key: "folder", folder: GalleryFile |},
       section: string,
     |}) => Promise<void>,
   |},
@@ -153,12 +153,36 @@ export function useGalleryActions(): {|
   function moveFilesWithIds(fileIds: $ReadOnlyArray<number>) {
     return {
       to: async ({
-        target,
+        destination,
         section,
       }: {|
-        target: string,
+        destination:
+          | {| key: "root" |}
+          | {| key: "folder", folder: GalleryFile |},
         section: string,
       |}) => {
+        if (
+          destination.key === "folder" &&
+          destination.folder.isSnippetFolder
+        ) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Cannot drag files into SNIPPETS folders.",
+              message:
+                "Share them and they will automatically appear in these folders.",
+            })
+          );
+          return;
+        }
+        const target =
+          destination.key === "root"
+            ? `/${section}/`
+            : `/${[
+                section,
+                ...destination.folder.path.map(({ name }) => name),
+                ...[destination.folder.name],
+              ].join("/")}/`;
         const formData = new FormData();
         formData.append("target", target);
         fileIds.forEach((fileId) => {

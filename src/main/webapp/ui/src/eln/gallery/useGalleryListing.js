@@ -21,6 +21,10 @@ export type GalleryFile = {|
   thumbnailUrl: string,
   path: $ReadOnlyArray<GalleryFile>,
   open?: () => void,
+
+  isFolder: boolean,
+  isSystemFolder: boolean,
+  isSnippetFolder: boolean,
 |};
 
 /**
@@ -121,10 +125,12 @@ function generateIconSrc(
   extension: string | null,
   thumbnailId: number | null,
   id: number,
-  modificationDate: number
+  modificationDate: number,
+  isFolder: boolean,
+  isSystemFolder: boolean
 ) {
-  if (/Folder/.test(type)) {
-    if (/System/.test(type)) {
+  if (isFolder) {
+    if (isSystemFolder) {
       if (/snippets/i.test(name)) return "/images/icons/folder-shared.png";
       return "/images/icons/folder-api-inbox.png";
     }
@@ -188,6 +194,8 @@ export function useGalleryListing({
     extension: string | null,
     thumbnailId: number | null
   ): GalleryFile {
+    const isFolder = /Folder/.test(type);
+    const isSystemFolder = /System Folder/.test(type);
     const ret: GalleryFile = {
       id,
       name,
@@ -199,16 +207,21 @@ export function useGalleryListing({
         extension,
         thumbnailId,
         id,
-        modificationDate
+        modificationDate,
+        isFolder,
+        isSystemFolder
       ),
       path,
-      ...(/Folder/.test(type)
+      ...(isFolder
         ? {
             open: () => {
               setPath([...path, ret]);
             },
           }
         : {}),
+      isFolder,
+      isSystemFolder,
+      isSnippetFolder: isSystemFolder && /SNIPPETS/.test(name),
     };
     return ret;
   }

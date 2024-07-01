@@ -233,24 +233,26 @@ const CustomTransition = styled(({ children, in: open, className }) => (
 const Breadcrumb = ({
   label,
   onClick,
-  folderName,
   path,
   selectedSection,
+  folder,
 }: {|
   label: string,
   onClick: () => void,
-  folderName: string,
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: string,
+  folder?: GalleryFile,
 |}) => {
   const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: `/${[selectedSection, ...path.map(({ name }) => name), folderName].join(
-      "/"
-    )}/`,
+    id: `/${[
+      selectedSection,
+      ...path.map(({ name }) => name),
+      folder?.name ?? "",
+    ].join("/")}/`,
     disabled: false,
     data: {
       path,
-      name: folderName,
+      destination: folder ? { key: "folder", folder } : { key: "root" },
     },
   });
   const dropStyle: { [string]: string | number } = isOver
@@ -341,7 +343,7 @@ const CustomTreeItem = ({
     disabled: !/Folder/.test(file.type),
     data: {
       path: file.path,
-      name: file.name,
+      destination: { key: "folder", folder: file },
     },
   });
   const {
@@ -746,7 +748,7 @@ const FileCard = styled(
         disabled: !/Folder/.test(file.type),
         data: {
           path: file.path,
-          name: file.name,
+          destination: { key: "folder", folder: file },
         },
       });
       const {
@@ -1265,13 +1267,7 @@ export default function GalleryMainPanel({
               : [idOfFileJustBeingDragged]
           )
             .to({
-              target: `/${[
-                selectedSection,
-                ...event.over.data.current.path.map(({ name }) => name),
-                ...(event.over.data.current.name === ""
-                  ? []
-                  : [event.over.data.current.name]),
-              ].join("/")}/`,
+              destination: event.over.data.current.destination,
               section: selectedSection,
             })
             .then(() => {
@@ -1316,15 +1312,14 @@ export default function GalleryMainPanel({
                   label={gallerySectionLabel[selectedSection]}
                   onClick={() => clearPath()}
                   path={[]}
-                  folderName=""
                   selectedSection={selectedSection}
                 />
                 {path.map((folder) => (
                   <Breadcrumb
+                    folder={folder}
                     label={folder.name}
                     key={idToString(folder.id)}
                     onClick={() => folder.open?.()}
-                    folderName={folder.name}
                     path={folder.path}
                     selectedSection={selectedSection}
                   />
