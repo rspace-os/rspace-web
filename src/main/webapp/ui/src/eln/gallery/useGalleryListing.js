@@ -197,8 +197,8 @@ export function useGalleryListing({
       return `The folder "${folderName}" is empty.`;
     }
     if (searchTerm !== "")
-      return `There are no root-level ${gallerySectionCollectiveNoun[section]} that match the search term "${searchTerm}".`;
-    return `There are no root-level ${gallerySectionCollectiveNoun[section]}.`;
+      return `There are no top-level ${gallerySectionCollectiveNoun[section]} that match the search term "${searchTerm}".`;
+    return `There are no top-level ${gallerySectionCollectiveNoun[section]}.`;
   }
 
   function mkGalleryFile(
