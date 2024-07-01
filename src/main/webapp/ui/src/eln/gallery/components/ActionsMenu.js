@@ -181,6 +181,12 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
     return Result.Error([new Error("Not yet available.")]);
   };
 
+  const moveAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    return Result.Error([new Error("Not yet available.")]);
+  };
+
   return (
     <>
       <Button
@@ -222,7 +228,9 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
         />
         <NewMenuItem
           title="Move"
-          subheader=""
+          subheader={moveAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<OpenWithIcon />}
@@ -230,6 +238,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             setActionsMenuAnchorEl(null);
           }}
           compact
+          disabled={moveAllowed().isError}
         />
         <NewMenuItem
           title="Rename"
