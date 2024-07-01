@@ -255,6 +255,11 @@ pipeline {
                                 ],
                                 [
                                         $class: 'StringParameterValue',
+                                        name: 'AMI',
+                                        value: 'ami-0bd0e3179d69cc7ac'
+                                ],
+                                [
+                                        $class: 'StringParameterValue',
                                         name: 'WAR',
                                         value: "$WORKSPACE/target/*.war"
                                 ],
