@@ -164,6 +164,14 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
     return Result.Error([new Error("Not yet available.")]);
   };
 
+  const imageEditingAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    if (selection.asSet().some((f) => !f.isImage))
+      return Result.Error([new Error("Only images may be edited.")]);
+    return Result.Error([new Error("Not yet available.")]);
+  };
+
   return (
     <>
       <Button
@@ -273,7 +281,9 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
         />
         <NewMenuItem
           title="Edit"
-          subheader="Only images can be edited in place."
+          subheader={imageEditingAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<CropIcon />}
@@ -281,7 +291,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             setActionsMenuAnchorEl(null);
           }}
           compact
-          disabled
+          disabled={imageEditingAllowed().isError}
         />
         <NewMenuItem
           title="Share"
