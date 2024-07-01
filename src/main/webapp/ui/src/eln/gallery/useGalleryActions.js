@@ -161,6 +161,20 @@ export function useGalleryActions(): {|
           | {| key: "folder", folder: GalleryFile |},
         section: string,
       |}) => {
+        if (
+          destination.key === "folder" &&
+          destination.folder.isSnippetFolder
+        ) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Cannot drag files into SNIPPETS folders.",
+              message:
+                "Share them and they will automatically appear in these folders.",
+            })
+          );
+          return;
+        }
         const target = `/${[
           section,
           ...(destination.key === "folder"
