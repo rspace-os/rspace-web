@@ -245,6 +245,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               overflow: "hidden",
               border: dialogBorder,
               borderRadius: 6,
+              backgroundColor: mainBackground,
             },
           },
         },
