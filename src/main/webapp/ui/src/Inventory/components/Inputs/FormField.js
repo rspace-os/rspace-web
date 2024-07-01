@@ -5,6 +5,7 @@ import BaseFormField, {
   type FormFieldArgs as BaseFormFieldArgs,
 } from "../../../components/Inputs/FormField";
 import { makeStyles } from "tss-react/mui";
+import clsx from "clsx";
 
 /**
  * This component renders form fields specifically used by the main Inventory
@@ -57,5 +58,10 @@ const useStyles = makeStyles()(() => ({
 
 export default function FormField<T>(props: FormFieldArgs<T>): Node {
   const { classes } = useStyles();
-  return <BaseFormField {...props} className={classes.formControl} />;
+  return (
+    <BaseFormField
+      {...props}
+      className={clsx(props.className, classes.formControl)}
+    />
+  );
 }
