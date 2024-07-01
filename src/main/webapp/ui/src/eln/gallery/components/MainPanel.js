@@ -1267,13 +1267,7 @@ export default function GalleryMainPanel({
               : [idOfFileJustBeingDragged]
           )
             .to({
-              target: `/${[
-                selectedSection,
-                ...event.over.data.current.path.map(({ name }) => name),
-                ...(event.over.data.current.destination.key === "root"
-                  ? []
-                  : [event.over.data.current.destination.folder.name]),
-              ].join("/")}/`,
+              destination: event.over.data.current.destination,
               section: selectedSection,
             })
             .then(() => {

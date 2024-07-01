@@ -17,7 +17,7 @@ export function useGalleryActions(): {|
   createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
   moveFilesWithIds: ($ReadOnlyArray<number>) => {|
     to: ({|
-      target: string,
+      destination: {| key: "root" |} | {| key: "folder", folder: GalleryFile |},
       section: string,
     |}) => Promise<void>,
   |},
@@ -153,12 +153,21 @@ export function useGalleryActions(): {|
   function moveFilesWithIds(fileIds: $ReadOnlyArray<number>) {
     return {
       to: async ({
-        target,
+        destination,
         section,
       }: {|
-        target: string,
+        destination:
+          | {| key: "root" |}
+          | {| key: "folder", folder: GalleryFile |},
         section: string,
       |}) => {
+        const target = `/${[
+          section,
+          ...(destination.key === "folder"
+            ? destination.folder.path.map(({ name }) => name)
+            : []),
+          ...(destination.key === "root" ? [] : [destination.folder.name]),
+        ].join("/")}/`;
         const formData = new FormData();
         formData.append("target", target);
         fileIds.forEach((fileId) => {
