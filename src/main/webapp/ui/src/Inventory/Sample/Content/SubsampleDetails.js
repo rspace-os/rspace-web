@@ -11,6 +11,8 @@ import Toolbar from "@mui/material/Toolbar";
 import AppBar from "@mui/material/AppBar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import CardActions from "@mui/material/CardActions";
+import Link from "@mui/material/Link";
 import { styled, useTheme, darken, alpha } from "@mui/material/styles";
 import LocationField from "../../components/Fields/Location";
 import Box from "@mui/material/Box";
@@ -25,6 +27,7 @@ import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import { type Search } from "../../../stores/definitions/Search";
 import { doNotAwait, modulo } from "../../../util/Util";
 import { svgIconClasses } from "@mui/material/SvgIcon";
+import { Link as ReactRouterLink } from "react-router-dom";
 
 const CustomStepper = styled(MobileStepper)(({ theme }) => ({
   backgroundColor: theme.palette.record.subSample.lighter,
@@ -125,6 +128,11 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
               <Notes record={subsample} onErrorStateChange={() => {}} />
             </Stack>
           </CardContent>
+          <CardActions>
+            <Link component={ReactRouterLink} to={subsample.permalinkURL}>
+              See the full details of <strong>{subsample.name}</strong>
+            </Link>
+          </CardActions>
         </Card>
         <CustomStepper
           variant="text"
