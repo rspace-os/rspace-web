@@ -44,10 +44,10 @@ export default (styled(
     padding: 0,
     borderRadius: "2px",
     border: prefersMoreContrast ? "2px solid #000" : "none",
-    backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.12),
+    backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.24),
     transition: "background-color ease-in-out .2s",
     "&:hover": {
-      backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.24),
+      backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.36),
     },
     "& .MuiCardHeader-root": {
       padding: theme.spacing(compact ? 1 : 2),

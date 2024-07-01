@@ -29,8 +29,8 @@ export const gallerySectionCollectiveNoun = {
 export const COLOR = {
   main: {
     hue: 280,
-    saturation: 8,
-    lightness: 70,
+    saturation: 7,
+    lightness: 81,
   },
   darker: {
     hue: 280,
@@ -44,8 +44,8 @@ export const COLOR = {
   },
   background: {
     hue: 280,
-    saturation: 8,
-    lightness: 70,
+    saturation: 7,
+    lightness: 81,
   },
   backgroundContrastText: {
     hue: 280,
