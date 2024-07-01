@@ -175,13 +175,14 @@ export function useGalleryActions(): {|
           );
           return;
         }
-        const target = `/${[
-          section,
-          ...(destination.key === "folder"
-            ? destination.folder.path.map(({ name }) => name)
-            : []),
-          ...(destination.key === "root" ? [] : [destination.folder.name]),
-        ].join("/")}/`;
+        const target =
+          destination.key === "root"
+            ? `/${section}/`
+            : `/${[
+                section,
+                ...destination.folder.path.map(({ name }) => name),
+                ...[destination.folder.name],
+              ].join("/")}/`;
         const formData = new FormData();
         formData.append("target", target);
         fileIds.forEach((fileId) => {
