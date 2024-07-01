@@ -1,5 +1,7 @@
 //@flow
 
+import { COLORS as baseThemeColors } from "../../theme";
+
 export const gallerySectionLabel = {
   Images: "Images",
   Audios: "Audio",
@@ -53,3 +55,6 @@ export const COLOR = {
     lightness: 29,
   },
 };
+
+export const SELECTED_OR_FOCUS_BLUE = `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`;
+export const SELECTED_OR_FOCUS_BORDER = `2px solid ${SELECTED_OR_FOCUS_BLUE}`;
