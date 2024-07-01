@@ -56,6 +56,7 @@ export default function MoveDialog({ open, onClose }: MoveDialogArgs): Node {
                 path={[]}
                 selectedSection="images"
                 refreshListing={refreshListing}
+                filter={(file) => file.isFolder}
               />
             </Box>
           ),

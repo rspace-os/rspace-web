@@ -61,6 +61,7 @@ type TreeItemContentArgs = {|
   section: string,
   idMap: Map<string, GalleryFile>,
   refreshListing: () => void,
+  filter: (GalleryFile) => boolean,
 |};
 
 const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
@@ -70,6 +71,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     section,
     idMap,
     refreshListing,
+    filter,
   }: TreeItemContentArgs): Node => {
     const { galleryListing } = useGalleryListing({
       section,
@@ -95,17 +97,20 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       error: (error) => <>{error}</>,
       success: (listing) =>
         listing.tag === "list"
-          ? listing.list.map((f, i) => (
-              <CustomTreeItem
-                file={f}
-                index={i}
-                path={[...path, file]}
-                section={section}
-                key={idToString(f.id)}
-                idMap={idMap}
-                refreshListing={refreshListing}
-              />
-            ))
+          ? listing.list.map((f, i) =>
+              filter(f) ? (
+                <CustomTreeItem
+                  file={f}
+                  index={i}
+                  path={[...path, file]}
+                  section={section}
+                  key={idToString(f.id)}
+                  idMap={idMap}
+                  refreshListing={refreshListing}
+                  filter={filter}
+                />
+              ) : null
+            )
           : null,
     });
   }
@@ -119,6 +124,7 @@ const CustomTreeItem = observer(
     section,
     idMap,
     refreshListing,
+    filter,
   }: {|
     file: GalleryFile,
     index: number,
@@ -126,6 +132,7 @@ const CustomTreeItem = observer(
     section: string,
     idMap: Map<string, GalleryFile>,
     refreshListing: () => void,
+    filter: (GalleryFile) => boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -265,6 +272,7 @@ const CustomTreeItem = observer(
               section={section}
               idMap={idMap}
               refreshListing={refreshListing}
+              filter={filter}
             />
           )}
         </TreeItem>
@@ -280,6 +288,7 @@ type TreeViewArgs = {|
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: string,
   refreshListing: () => void,
+  filter?: (GalleryFile) => boolean,
 |};
 
 const TreeView = ({
@@ -287,6 +296,7 @@ const TreeView = ({
   path,
   selectedSection,
   refreshListing,
+  filter = () => true,
 }: TreeViewArgs) => {
   const { addAlert } = React.useContext(AlertContext);
   const selection = useGallerySelection();
@@ -390,17 +400,20 @@ const TreeView = ({
         }
       }}
     >
-      {listing.list.map((file, index) => (
-        <CustomTreeItem
-          index={index}
-          file={file}
-          path={path}
-          key={idToString(file.id)}
-          section={selectedSection}
-          idMap={idMap}
-          refreshListing={refreshListing}
-        />
-      ))}
+      {listing.list.map((file, index) =>
+        filter(file) ? (
+          <CustomTreeItem
+            index={index}
+            file={file}
+            path={path}
+            key={idToString(file.id)}
+            section={selectedSection}
+            idMap={idMap}
+            refreshListing={refreshListing}
+            filter={filter}
+          />
+        ) : null
+      )}
     </SimpleTreeView>
   );
 };
