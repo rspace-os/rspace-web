@@ -11,6 +11,10 @@ import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import TreeView from "./TreeView";
+import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
+import * as FetchingData from "../../../util/fetchingData";
 
 type MoveDialogArgs = {|
   open: boolean,
@@ -18,6 +22,13 @@ type MoveDialogArgs = {|
 |};
 
 export default function MoveDialog({ open, onClose }: MoveDialogArgs): Node {
+  const { galleryListing, path, clearPath, folderId, refreshListing } =
+    useGalleryListing({
+      section: "images",
+      searchTerm: "",
+      path: [],
+    });
+
   return (
     <Dialog
       open={open}
@@ -25,46 +36,56 @@ export default function MoveDialog({ open, onClose }: MoveDialogArgs): Node {
       onKeyDown={(e) => {
         e.stopPropagation();
       }}
+      scroll="paper"
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          // do move
-        }}
-      >
-        <DialogTitle>Move</DialogTitle>
-        <DialogContent>
-          <DialogContentText variant="body2" sx={{ mb: 2 }}>
-            Choose a folder, enter a path, or tap the &quot;top-level&quot;
-            button.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <SubmitSpinnerButton
-            onClick={() => {}}
-            disabled={false}
-            loading={false}
-            label="Make top-level"
-          />
-          <Box flexGrow={1}></Box>
-          <Button
-            onClick={() => {
-              onClose();
-            }}
-          >
-            Cancel
-          </Button>
-          <ValidatingSubmitButton
-            loading={false}
-            onClick={() => {
-              // do move
-            }}
-            validationResult={Result.Ok(null)}
-          >
-            Move
-          </ValidatingSubmitButton>
-        </DialogActions>
-      </form>
+      <DialogTitle>Move</DialogTitle>
+      <DialogContent sx={{ overflow: "hidden" }}>
+        <DialogContentText variant="body2">
+          Choose a folder, enter a path, or tap the &quot;top-level&quot;
+          button.
+        </DialogContentText>
+      </DialogContent>
+      <DialogContent sx={{ pt: 0 }}>
+        {FetchingData.match(galleryListing, {
+          loading: () => <></>,
+          error: (error) => <>{error}</>,
+          success: (listing) => (
+            <Box sx={{ overflowY: "auto" }}>
+              <TreeView
+                listing={listing}
+                path={[]}
+                selectedSection="images"
+                refreshListing={refreshListing}
+              />
+            </Box>
+          ),
+        })}
+      </DialogContent>
+      <DialogActions>
+        <SubmitSpinnerButton
+          onClick={() => {}}
+          disabled={false}
+          loading={false}
+          label="Make top-level"
+        />
+        <Box flexGrow={1}></Box>
+        <Button
+          onClick={() => {
+            onClose();
+          }}
+        >
+          Cancel
+        </Button>
+        <ValidatingSubmitButton
+          loading={false}
+          onClick={() => {
+            // do move
+          }}
+          validationResult={Result.Ok(null)}
+        >
+          Move
+        </ValidatingSubmitButton>
+      </DialogActions>
     </Dialog>
   );
 }
