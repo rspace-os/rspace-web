@@ -31,8 +31,14 @@ export default (styled(
   const prefersMoreContrast = window.matchMedia(
     "(prefers-contrast: more)"
   ).matches;
-  const fg = `hsl(${foregroundColor.hue}deg, ${foregroundColor.saturation}%, ${foregroundColor.lightness}%, 100%)`;
-  const bg = `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
+  const fg =
+    typeof foregroundColor === "string"
+      ? foregroundColor
+      : `hsl(${foregroundColor.hue}deg, ${foregroundColor.saturation}%, ${foregroundColor.lightness}%, 100%)`;
+  const bg =
+    typeof backgroundColor === "string"
+      ? backgroundColor
+      : `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
   return {
     margin: theme.spacing(compact ? 0.5 : 1),
     padding: 0,
@@ -73,8 +79,12 @@ export default (styled(
   title: string,
   avatar: Node,
   subheader: string,
-  foregroundColor: {| hue: number, saturation: number, lightness: number |},
-  backgroundColor: {| hue: number, saturation: number, lightness: number |},
+  foregroundColor:
+    | string
+    | {| hue: number, saturation: number, lightness: number |},
+  backgroundColor:
+    | string
+    | {| hue: number, saturation: number, lightness: number |},
   onClick?: () => void,
   onKeyDown?: (KeyboardEvent) => void,
   compact?: boolean,

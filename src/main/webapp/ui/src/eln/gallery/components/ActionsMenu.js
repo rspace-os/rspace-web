@@ -5,7 +5,7 @@ import ChecklistIcon from "@mui/icons-material/Checklist";
 import Button from "@mui/material/Button";
 import { COLOR } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
-import { styled } from "@mui/material/styles";
+import { styled, useTheme, darken, lighten } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
 import NewMenuItem from "./NewMenuItem";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
@@ -20,6 +20,7 @@ import { type GalleryFile, idToString } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import Dialog from "@mui/material/Dialog";
+import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -115,6 +116,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
   const { deleteFiles, duplicateFiles } = useGalleryActions();
   const selection = useGallerySelection();
+  const theme = useTheme();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
@@ -252,23 +254,6 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
           ))
           .orElse(null)}
         <NewMenuItem
-          title="Delete"
-          subheader={deleteAllowed()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<DeleteOutlineOutlinedIcon />}
-          onClick={() => {
-            void deleteFiles(selection.asSet()).then(() => {
-              refreshListing();
-              setActionsMenuAnchorEl(null);
-            });
-          }}
-          compact
-          disabled={deleteAllowed().isError}
-        />
-        <NewMenuItem
           title="Export"
           subheader=""
           backgroundColor={COLOR.background}
@@ -335,6 +320,24 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
               refreshListing();
             }
           }}
+        />
+        <Divider />
+        <NewMenuItem
+          title="Delete"
+          subheader={deleteAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
+          backgroundColor={lighten(theme.palette.error.light, 0.5)}
+          foregroundColor={darken(theme.palette.error.dark, 0.3)}
+          avatar={<DeleteOutlineOutlinedIcon />}
+          onClick={() => {
+            void deleteFiles(selection.asSet()).then(() => {
+              refreshListing();
+              setActionsMenuAnchorEl(null);
+            });
+          }}
+          compact
+          disabled={deleteAllowed().isError}
         />
       </StyledMenu>
     </>

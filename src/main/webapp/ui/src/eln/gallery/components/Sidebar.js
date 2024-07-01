@@ -258,7 +258,7 @@ const DmpMenuSection = () => {
   if (!argosEnabled && !dmponlineEnabled && !dmptoolEnabled) return null;
   return (
     <>
-      <Divider variant="middle" textAlign="left">
+      <Divider textAlign="left">
         DMPs
       </Divider>
       {argosEnabled && <ArgosNewMenuItem />}
