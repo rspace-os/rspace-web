@@ -5,6 +5,12 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import Result from "../../../util/result";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import Box from "@mui/material/Box";
 
 type MoveDialogArgs = {|
   open: boolean,
@@ -33,6 +39,31 @@ export default function MoveDialog({ open, onClose }: MoveDialogArgs): Node {
             button.
           </DialogContentText>
         </DialogContent>
+        <DialogActions>
+          <SubmitSpinnerButton
+            onClick={() => {}}
+            disabled={false}
+            loading={false}
+            label="Make top-level"
+          />
+          <Box flexGrow={1}></Box>
+          <Button
+            onClick={() => {
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+          <ValidatingSubmitButton
+            loading={false}
+            onClick={() => {
+              // do move
+            }}
+            validationResult={Result.Ok(null)}
+          >
+            Move
+          </ValidatingSubmitButton>
+        </DialogActions>
       </form>
     </Dialog>
   );
