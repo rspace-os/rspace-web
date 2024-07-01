@@ -156,6 +156,14 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
     return Result.Ok(null);
   };
 
+  const sharingSnippetsAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    if (selection.asSet().some((f) => !f.isSnippet))
+      return Result.Error([new Error("Only snippets may be shared.")]);
+    return Result.Error([new Error("Not yet available.")]);
+  };
+
   return (
     <>
       <Button
@@ -277,7 +285,9 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
         />
         <NewMenuItem
           title="Share"
-          subheader="Only snippets can be shared."
+          subheader={sharingSnippetsAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<GroupIcon />}
@@ -285,7 +295,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             setActionsMenuAnchorEl(null);
           }}
           compact
-          disabled
+          disabled={sharingSnippetsAllowed().isError}
         />
         <NewMenuItem
           title="Move to iRODS"

@@ -28,6 +28,7 @@ export type GalleryFile = {|
 
   isFolder: boolean,
   isSystemFolder: boolean,
+  isSnippet: boolean,
   isSnippetFolder: boolean,
 
   /*
@@ -234,6 +235,7 @@ export function useGalleryListing({
         : {}),
       isFolder,
       isSystemFolder,
+      isSnippet: /Snippet/.test(type),
       isSnippetFolder: isSystemFolder && /SNIPPETS/.test(name),
       transformFilename: (f) => {
         if (isFolder) return f(name);
