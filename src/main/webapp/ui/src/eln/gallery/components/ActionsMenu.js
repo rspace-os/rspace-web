@@ -175,6 +175,12 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
     return Result.Error([new Error("Not yet available.")]);
   };
 
+  const exportAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    return Result.Error([new Error("Not yet available.")]);
+  };
+
   return (
     <>
       <Button
@@ -256,7 +262,9 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
           .orElse(null)}
         <NewMenuItem
           title="Export"
-          subheader=""
+          subheader={exportAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<FileDownloadIcon />}
@@ -264,6 +272,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             setActionsMenuAnchorEl(null);
           }}
           compact
+          disabled={exportAllowed().isError}
         />
         <NewMenuItem
           title="Edit"
