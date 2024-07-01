@@ -31,6 +31,7 @@ import MoveToIrods, { COLOR as IRODS_COLOR } from "./MoveToIrods";
 import IrodsLogo from "./IrodsLogo.svg";
 import SvgIcon from "@mui/material/SvgIcon";
 import Avatar from "@mui/material/Avatar";
+import MoveDialog from "./MoveDialog";
 
 const RenameDialog = ({
   open,
@@ -122,6 +123,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
   const theme = useTheme();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
+  const [moveOpen, setMoveOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
 
   const duplicateAllowed = (): Result<null> => {
@@ -186,7 +188,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
   const moveAllowed = (): Result<null> => {
     if (selection.isEmpty)
       return Result.Error([new Error("Nothing selected.")]);
-    return Result.Error([new Error("Not yet available.")]);
+    return Result.Ok(null);
   };
 
   return (
@@ -237,10 +239,17 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
           foregroundColor={COLOR.contrastText}
           avatar={<OpenWithIcon />}
           onClick={() => {
-            setActionsMenuAnchorEl(null);
+            setMoveOpen(true);
           }}
           compact
           disabled={moveAllowed().isError}
+        />
+        <MoveDialog
+          open={moveOpen}
+          onClose={() => {
+            setMoveOpen(false);
+            setActionsMenuAnchorEl(null);
+          }}
         />
         <NewMenuItem
           title="Rename"
