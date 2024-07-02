@@ -11,6 +11,10 @@ import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import Grid from "@mui/material/Grid";
 import TreeView from "./TreeView";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
@@ -82,57 +86,79 @@ const MoveDialog = observer(
           })}
         </DialogContent>
         <DialogActions>
-          <SubmitSpinnerButton
-            onClick={() => {
-              void moveFiles(selectedFiles)
-                .to({
-                  destination: rootDestination(),
-                  section,
-                })
-                .then(() => {
-                  refreshListing();
-                  onClose();
-                });
-            }}
-            disabled={false}
-            loading={false}
-            label="Make top-level"
-          />
-          <Box flexGrow={1}></Box>
-          <Button
-            onClick={() => {
-              onClose();
-            }}
-          >
-            Cancel
-          </Button>
-          <ValidatingSubmitButton
-            loading={false}
-            onClick={() => {
-              const folder = selection.asSet().only.orElseGet(() => {
-                throw new Error("More than one folder is selected");
-              });
-              void moveFiles(selectedFiles)
-                .to({
-                  destination: folderDestination(folder),
-                  section,
-                })
-                .then(() => {
-                  refreshListing();
-                  onClose();
-                });
-            }}
-            validationResult={(() => {
-              const files = selection.asSet();
-              if (files.isEmpty)
-                return Result.Error([new Error("No folder is selected.")]);
-              return files.only
-                .toResult(() => new Error("More than one folder is selected."))
-                .map(() => null);
-            })()}
-          >
-            Move
-          </ValidatingSubmitButton>
+          <Grid container spacing={1} direction="column">
+            <Grid item>
+              <TextField
+                fullWidth
+                size="small"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">Path</InputAdornment>
+                  ),
+                }}
+                placeholder="Tap a folder or type a path here"
+              />
+            </Grid>
+            <Grid item>
+              <Stack direction="row" spacing={1}>
+                <SubmitSpinnerButton
+                  onClick={() => {
+                    void moveFiles(selectedFiles)
+                      .to({
+                        destination: rootDestination(),
+                        section,
+                      })
+                      .then(() => {
+                        refreshListing();
+                        onClose();
+                      });
+                  }}
+                  disabled={false}
+                  loading={false}
+                  label="Make top-level"
+                />
+                <Box flexGrow={1}></Box>
+                <Button
+                  onClick={() => {
+                    onClose();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <ValidatingSubmitButton
+                  loading={false}
+                  onClick={() => {
+                    const folder = selection.asSet().only.orElseGet(() => {
+                      throw new Error("More than one folder is selected");
+                    });
+                    void moveFiles(selectedFiles)
+                      .to({
+                        destination: folderDestination(folder),
+                        section,
+                      })
+                      .then(() => {
+                        refreshListing();
+                        onClose();
+                      });
+                  }}
+                  validationResult={(() => {
+                    const files = selection.asSet();
+                    if (files.isEmpty)
+                      return Result.Error([
+                        new Error("No folder is selected."),
+                      ]);
+                    return files.only
+                      .toResult(
+                        () => new Error("More than one folder is selected.")
+                      )
+                      .map(() => null);
+                  })()}
+                >
+                  Move
+                </ValidatingSubmitButton>
+              </Stack>
+            </Grid>
+          </Grid>
         </DialogActions>
       </Dialog>
     );

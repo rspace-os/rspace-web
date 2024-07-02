@@ -434,6 +434,26 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   ),
                 },
               },
+              "&:has(.MuiInputAdornment-positionStart)": {
+                paddingLeft: 0,
+                "& .MuiOutlinedInput-input": {
+                  paddingTop: "5px",
+                  paddingBottom: "5px",
+                },
+              },
+              "& .MuiInputAdornment-root": {
+                height: "100%",
+                paddingLeft: baseTheme.spacing(1),
+                paddingRight: baseTheme.spacing(1),
+                borderRight: accentedBorder,
+                backgroundColor: lighterInteractiveColor,
+                "& .MuiTypography-root": {
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                  fontSize: "0.9rem",
+                  lineHeight: "31px",
+                },
+              },
             },
             notchedOutline: {
               borderColor: accentedBackground,
