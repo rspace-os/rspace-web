@@ -13,7 +13,7 @@ import {
   type GalleryFile,
   idToString,
 } from "../useGalleryListing";
-import { useGalleryActions } from "../useGalleryActions";
+import { useGalleryActions, folderDestination } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import { doNotAwait } from "../../../util/Util";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
@@ -149,7 +149,7 @@ const CustomTreeItem = observer(
       disabled: !file.isFolder,
       data: {
         path: file.path,
-        destination: { key: "folder", folder: file },
+        destination: folderDestination(file),
       },
     });
     const {

@@ -16,7 +16,11 @@ import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { observer } from "mobx-react-lite";
-import { useGalleryActions } from "../useGalleryActions";
+import {
+  useGalleryActions,
+  rootDestination,
+  folderDestination,
+} from "../useGalleryActions";
 import RsSet from "../../../util/set";
 
 type MoveDialogArgs = {|
@@ -81,7 +85,7 @@ const MoveDialog = observer(
             onClick={() => {
               void moveFiles(selectedFiles)
                 .to({
-                  destination: { key: "root" },
+                  destination: rootDestination(),
                   section,
                 })
                 .then(() => {
@@ -109,7 +113,7 @@ const MoveDialog = observer(
               });
               void moveFiles(selectedFiles)
                 .to({
-                  destination: { key: "folder", folder },
+                  destination: folderDestination(folder),
                   section,
                 })
                 .then(() => {

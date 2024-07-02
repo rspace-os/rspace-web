@@ -26,7 +26,11 @@ import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import * as FetchingData from "../../../util/fetchingData";
 import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
-import { useGalleryActions } from "../useGalleryActions";
+import {
+  useGalleryActions,
+  folderDestination,
+  rootDestination,
+} from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import { doNotAwait } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -185,7 +189,7 @@ const Breadcrumb = ({
     disabled: false,
     data: {
       path,
-      destination: folder ? { key: "folder", folder } : { key: "root" },
+      destination: folder ? folderDestination(folder) : rootDestination(),
     },
   });
   const dropStyle: { [string]: string | number } = isOver
@@ -510,7 +514,7 @@ const FileCard = styled(
         disabled: !file.isFolder,
         data: {
           path: file.path,
-          destination: { key: "folder", folder: file },
+          destination: folderDestination(file),
         },
       });
       const {

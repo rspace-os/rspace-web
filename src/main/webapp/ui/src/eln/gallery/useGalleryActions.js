@@ -9,6 +9,18 @@ import Result from "../../util/result";
 import { type GalleryFile, idToString, type Id } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
+export opaque type Destination =
+  | {| key: "root" |}
+  | {| key: "folder", folder: GalleryFile |};
+
+export function rootDestination(): Destination {
+  return { key: "root" };
+}
+
+export function folderDestination(folder: GalleryFile): Destination {
+  return { key: "folder", folder };
+}
+
 export function useGalleryActions(): {|
   uploadFiles: (
     $ReadOnlyArray<GalleryFile>,
@@ -18,7 +30,7 @@ export function useGalleryActions(): {|
   createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
   moveFiles: (Set<GalleryFile>) => {|
     to: ({|
-      destination: {| key: "root" |} | {| key: "folder", folder: GalleryFile |},
+      destination: Destination,
       section: string,
     |}) => Promise<void>,
   |},
