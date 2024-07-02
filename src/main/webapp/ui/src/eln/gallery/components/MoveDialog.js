@@ -122,7 +122,14 @@ const MoveDialog = observer(
                   onClose();
                 });
             }}
-            validationResult={Result.Ok(null)}
+            validationResult={(() => {
+              const files = selection.asSet();
+              if (files.isEmpty)
+                return Result.Error([new Error("No folder is selected.")]);
+              return files.only
+                .toResult(() => new Error("More than one folder is selected."))
+                .map(() => null);
+            })()}
           >
             Move
           </ValidatingSubmitButton>
