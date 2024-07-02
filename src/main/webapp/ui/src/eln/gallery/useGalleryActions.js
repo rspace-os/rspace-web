@@ -208,12 +208,13 @@ export function useGalleryActions(): {|
         section: string,
         path: string
       ): Promise<void> => {
-        const formData = new FormData();
-        formData.append("target", path);
-        for (const file of files)
-          formData.append("filesId[]", idToString(file.id));
-        formData.append("mediaType", section);
         try {
+          if (path === "") throw new Error("Path cannot be empty");
+          const formData = new FormData();
+          formData.append("target", path);
+          for (const file of files)
+            formData.append("filesId[]", idToString(file.id));
+          formData.append("mediaType", section);
           const data = await axios.post<FormData, mixed>(
             "gallery/ajax/moveGalleriesElements",
             formData,
