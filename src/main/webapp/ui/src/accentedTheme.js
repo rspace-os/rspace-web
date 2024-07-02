@@ -24,6 +24,7 @@ import { radioClasses } from "@mui/material/Radio";
 import { chipClasses } from "@mui/material/Chip";
 import { formLabelClasses } from "@mui/material/FormLabel";
 import { inputLabelClasses } from "@mui/material/InputLabel";
+import { inputAdornmentClasses } from "@mui/material/InputAdornment";
 
 /**
  * This theme is used for pages that use the new styling, wherein the page (or
@@ -204,6 +205,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 borderRadius: "3px",
                 [`& .${inputBaseClasses.root}`]: {
                   paddingLeft: baseTheme.spacing(1),
+                  [`&:has(.${inputAdornmentClasses.positionStart})`]: {
+                    paddingLeft: 0,
+                  },
                   [`& .${svgIconClasses.root}`]: {
                     fill: prefersMoreContrast
                       ? "rgb(0,0,0)"
@@ -434,20 +438,20 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   ),
                 },
               },
-              "&:has(.MuiInputAdornment-positionStart)": {
+              [`&:has(.${inputAdornmentClasses.positionStart})`]: {
                 paddingLeft: 0,
-                "& .MuiOutlinedInput-input": {
+                [`& .${outlinedInputClasses.input}`]: {
                   paddingTop: "5px",
                   paddingBottom: "5px",
                 },
               },
-              "& .MuiInputAdornment-root": {
+              [`& .${inputAdornmentClasses.root}`]: {
                 height: "100%",
                 paddingLeft: baseTheme.spacing(1),
                 paddingRight: baseTheme.spacing(1),
                 borderRight: accentedBorder,
                 backgroundColor: lighterInteractiveColor,
-                "& .MuiTypography-root": {
+                [`& .${typographyClasses.root}`]: {
                   textTransform: "uppercase",
                   fontWeight: 700,
                   fontSize: "0.9rem",
