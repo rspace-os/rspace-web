@@ -29,7 +29,6 @@ import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import MoveToIrods, { COLOR as IRODS_COLOR } from "./MoveToIrods";
 import IrodsLogo from "./IrodsLogo.svg";
-import SvgIcon from "@mui/material/SvgIcon";
 import Avatar from "@mui/material/Avatar";
 import MoveDialog from "./MoveDialog";
 
@@ -252,6 +251,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
             setActionsMenuAnchorEl(null);
           }}
           section={section}
+          refreshListing={refreshListing}
         />
         <NewMenuItem
           title="Rename"
