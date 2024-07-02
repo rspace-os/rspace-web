@@ -78,7 +78,17 @@ const MoveDialog = observer(
         </DialogContent>
         <DialogActions>
           <SubmitSpinnerButton
-            onClick={() => {}}
+            onClick={() => {
+              void moveFiles(selectedFiles)
+                .to({
+                  destination: { key: "root" },
+                  section,
+                })
+                .then(() => {
+                  refreshListing();
+                  onClose();
+                });
+            }}
             disabled={false}
             loading={false}
             label="Make top-level"
