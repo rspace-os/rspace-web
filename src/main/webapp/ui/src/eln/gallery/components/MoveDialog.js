@@ -151,15 +151,15 @@ const MoveDialog = observer(
                   }}
                   validationResult={(() => {
                     const files = selection.asSet();
-                    if (files.isEmpty)
+                    if (files.isEmpty && pathString === "")
                       return Result.Error([
                         new Error("No folder is selected."),
                       ]);
-                    return files.only
-                      .toResult(
-                        () => new Error("More than one folder is selected.")
-                      )
-                      .map(() => null);
+                    if (files.size > 1)
+                      return Result.Error([
+                        new Error("More than one folder is selected."),
+                      ]);
+                    return Result.Ok(null);
                   })()}
                 >
                   Move
