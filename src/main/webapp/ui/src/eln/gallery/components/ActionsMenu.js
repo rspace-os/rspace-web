@@ -114,9 +114,10 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 
 type ActionsMenuArgs = {|
   refreshListing: () => void,
+  section: string,
 |};
 
-function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
+function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
   const { deleteFiles, duplicateFiles } = useGalleryActions();
   const selection = useGallerySelection();
@@ -250,6 +251,7 @@ function ActionsMenu({ refreshListing }: ActionsMenuArgs): Node {
             setMoveOpen(false);
             setActionsMenuAnchorEl(null);
           }}
+          section={section}
         />
         <NewMenuItem
           title="Rename"

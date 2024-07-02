@@ -19,12 +19,17 @@ import * as FetchingData from "../../../util/fetchingData";
 type MoveDialogArgs = {|
   open: boolean,
   onClose: () => void,
+  section: string,
 |};
 
-export default function MoveDialog({ open, onClose }: MoveDialogArgs): Node {
+export default function MoveDialog({
+  open,
+  onClose,
+  section,
+}: MoveDialogArgs): Node {
   const { galleryListing, path, clearPath, folderId, refreshListing } =
     useGalleryListing({
-      section: "images",
+      section,
       searchTerm: "",
       path: [],
     });

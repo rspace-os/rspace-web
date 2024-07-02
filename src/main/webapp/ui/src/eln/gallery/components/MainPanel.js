@@ -944,7 +944,10 @@ function GalleryMainPanel({
             </Grid>
             <Grid item sx={{ mt: 0.5 }}>
               <Stack direction="row" spacing={1}>
-                <ActionsMenu refreshListing={refreshListing} />
+                <ActionsMenu
+                  refreshListing={refreshListing}
+                  section={selectedSection}
+                />
                 <Button
                   variant="outlined"
                   size="small"
