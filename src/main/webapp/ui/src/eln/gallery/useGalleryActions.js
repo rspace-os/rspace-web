@@ -33,6 +33,7 @@ export function useGalleryActions(): {|
       destination: Destination,
       section: string,
     |}) => Promise<void>,
+    toDestinationWithPath: (string, string) => Promise<void>,
   |},
   deleteFiles: (RsSet<GalleryFile>) => Promise<void>,
   duplicateFiles: (RsSet<GalleryFile>) => Promise<void>,
@@ -166,7 +167,13 @@ export function useGalleryActions(): {|
     }
   }
 
-  function moveFiles(files: Set<GalleryFile>) {
+  function moveFiles(files: Set<GalleryFile>): {|
+    to: ({|
+      destination: Destination,
+      section: string,
+    |}) => Promise<void>,
+    toDestinationWithPath: (string, string) => Promise<void>,
+  |} {
     return {
       to: async ({
         destination,
@@ -176,7 +183,7 @@ export function useGalleryActions(): {|
           | {| key: "root" |}
           | {| key: "folder", folder: GalleryFile |},
         section: string,
-      |}) => {
+      |}): Promise<void> => {
         if (
           destination.key === "folder" &&
           destination.folder.isSnippetFolder
@@ -191,12 +198,18 @@ export function useGalleryActions(): {|
           );
           return;
         }
-        const target =
+        const path =
           destination.key === "root"
             ? `/${section}/`
             : destination.folder.pathAsString();
+        await moveFiles(files).toDestinationWithPath(section, path);
+      },
+      toDestinationWithPath: async (
+        section: string,
+        path: string
+      ): Promise<void> => {
         const formData = new FormData();
-        formData.append("target", target);
+        formData.append("target", path);
         for (const file of files)
           formData.append("filesId[]", idToString(file.id));
         formData.append("mediaType", section);

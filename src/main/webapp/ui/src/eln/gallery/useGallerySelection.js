@@ -2,14 +2,10 @@
 
 import React, { type Node, type Context } from "react";
 import { type GalleryFile } from "./useGalleryListing";
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { makeObservable, action, observable, computed } from "mobx";
 import RsSet from "../../util/set";
 
 /*
- * Other modules should not be accessing the context directly, but instead
- * using the custom hook defined below. By not exporting the type flow will
- * complain if the context is accessed directly.
- *
  * We use a Map even though the interface exposed by this module is more akin
  * to a Set because we want to be able to check the inclusion of files based on
  * their Id. There are various points in the UI where the particular objects in
@@ -18,56 +14,66 @@ import RsSet from "../../util/set";
  * added to the Selection twice. We can't use RsSet, even though it has
  * `hasWithEq` that would suffice, because it is not observable.
  */
-type Selection = Map<GalleryFile["id"], GalleryFile>;
+class Selection {
+  /*
+   * Mobx does not support ECMA private fields, so we are forced to expose this
+   * property. NOBODY outside of this module should fiddle with this Map.
+   */
+  _state: Map<GalleryFile["id"], GalleryFile>;
 
-export function mkSelection(): Selection {
-  // $FlowExpectedError[prop-missing] Difficult to get this library type right
-  return observable.map();
+  constructor() {
+    makeObservable(this, {
+      _state: observable,
+      isEmpty: computed,
+      size: computed,
+      clear: action,
+      append: action,
+      remove: action,
+    });
+    this._state = new Map<GalleryFile["id"], GalleryFile>();
+  }
+
+  get isEmpty(): boolean {
+    return this._state.size === 0;
+  }
+
+  get size(): number {
+    return this._state.size;
+  }
+
+  clear() {
+    this._state.clear();
+  }
+
+  append(file: GalleryFile) {
+    this._state.set(file.id, file);
+  }
+
+  remove(file: GalleryFile) {
+    this._state.delete(file.id);
+  }
+
+  includes(file: GalleryFile): boolean {
+    return this._state.has(file.id);
+  }
+
+  asSet(): RsSet<GalleryFile> {
+    return new RsSet(this._state.values());
+  }
 }
 
-const DEFAULT_SELECTION_CONTEXT: Selection = mkSelection();
+const DEFAULT_SELECTION_CONTEXT: Selection = new Selection();
 
-export const SelectionContext: Context<Selection> = React.createContext(
+const SelectionContext: Context<Selection> = React.createContext(
   DEFAULT_SELECTION_CONTEXT
 );
 
 export const GallerySelection = ({ children }: {| children: Node |}): Node => (
-  <SelectionContext.Provider value={mkSelection()}>
+  <SelectionContext.Provider value={new Selection()}>
     {children}
   </SelectionContext.Provider>
 );
 
-export function useGallerySelection(): {|
-  isEmpty: boolean,
-  size: number,
-  clear: () => void,
-  append: (GalleryFile) => void,
-  remove: (GalleryFile) => void,
-  includes: (GalleryFile) => boolean,
-  asSet: () => RsSet<GalleryFile>,
-|} {
-  const selection = React.useContext(SelectionContext);
-  return makeAutoObservable({
-    isEmpty: selection.size === 0,
-    size: selection.size,
-    clear: () => {
-      runInAction(() => {
-        selection.clear();
-      });
-    },
-    append: (file) => {
-      runInAction(() => {
-        selection.set(file.id, file);
-      });
-    },
-    remove: (file) => {
-      runInAction(() => {
-        selection.delete(file.id);
-      });
-    },
-    includes: (file) => {
-      return selection.has(file.id);
-    },
-    asSet: () => new RsSet(selection.values()),
-  });
+export function useGallerySelection(): Selection {
+  return React.useContext(SelectionContext);
 }

@@ -21,11 +21,7 @@ import * as FetchingData from "../../../util/fetchingData";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { observer } from "mobx-react-lite";
 import { autorun } from "mobx";
-import {
-  useGalleryActions,
-  rootDestination,
-  folderDestination,
-} from "../useGalleryActions";
+import { useGalleryActions, rootDestination } from "../useGalleryActions";
 import RsSet from "../../../util/set";
 
 type MoveDialogArgs = {|
@@ -104,6 +100,9 @@ const MoveDialog = observer(
             <Grid item>
               <TextField
                 value={pathString}
+                onChange={({ target: { value } }) => {
+                  setPathString(value);
+                }}
                 fullWidth
                 size="small"
                 InputProps={{
@@ -143,14 +142,8 @@ const MoveDialog = observer(
                 <ValidatingSubmitButton
                   loading={false}
                   onClick={() => {
-                    const folder = selection.asSet().only.orElseGet(() => {
-                      throw new Error("More than one folder is selected");
-                    });
                     void moveFiles(selectedFiles)
-                      .to({
-                        destination: folderDestination(folder),
-                        section,
-                      })
+                      .toDestinationWithPath(section, pathString)
                       .then(() => {
                         refreshListing();
                         onClose();
