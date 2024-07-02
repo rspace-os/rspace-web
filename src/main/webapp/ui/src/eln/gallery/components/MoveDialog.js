@@ -74,7 +74,7 @@ const MoveDialog = observer(
                   path={[]}
                   selectedSection="images"
                   refreshListing={refreshListing}
-                  filter={(file) => file.isFolder}
+                  filter={(file) => file.isFolder && !file.isSnippetFolder}
                 />
               </Box>
             ),
