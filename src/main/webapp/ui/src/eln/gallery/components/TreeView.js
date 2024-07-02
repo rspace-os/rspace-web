@@ -314,7 +314,7 @@ const TreeView = ({
     return map;
   });
 
-  if (listing.tag === "empty")
+  if (listing.tag === "empty" || listing.list.filter(filter).length === 0)
     return (
       <div key={listing.reason}>
         <Fade
@@ -326,7 +326,9 @@ const TreeView = ({
           }
         >
           <div>
-            <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
+            <PlaceholderLabel>
+              {listing.reason ?? "There are no folders."}
+            </PlaceholderLabel>
           </div>
         </Fade>
       </div>
