@@ -1,5 +1,8 @@
 define(function() {
 
+    var sysNetFileSysDetUrl;
+    var sysNetfileSysDetAuthPasswd;
+    
     var fileSystemsArray;
     
     function loadNetFileSystemsList() {
@@ -33,6 +36,7 @@ define(function() {
     }
     
     function setFileSystemClientTypeLabels() {
+
         $.each(fileSystemsArray, function(i, fs) {
             if (fs.clientType === 'SAMBA') {
                 fs.clientTypeLabel = 'SMBv1';
@@ -137,7 +141,7 @@ define(function() {
         $('#fileSystemDetailsSftpDirChoiceNo').prop('checked', isSftpClient && !fileSystemRequiresUserDirs(fileSystem));
 
         refreshClientTypeRows();
-
+	
         $('#fileSystemName').val(fileSystem.name || "");
         $('#fileSystemUrl').val(fileSystem.url || "");
         
@@ -268,6 +272,15 @@ define(function() {
     //therefore we hide the choice from non SFTP clients but we also
     //have to give it a value in the UI else the UI framework throws an error on save
     function refreshClientTypeRows() {
+
+	// retrieve default label values from system.properties 
+	if (sysNetFileSysDetUrl === undefined) {
+	    sysNetFileSysDetUrl = $("label[for='fileSystemUrl']").text();
+	}
+	if (sysNetfileSysDetAuthPasswd === undefined) {
+	    sysNetfileSysDetAuthPasswd = $('#fileSystemAuthTypePasswordSpan').text();
+	}
+	
         const isSambaClient = $('#fileSystemClientTypeSamba').prop('checked');
         const isSambaSmbjClient = isSambaClient && $('#fileSystemClientTypeSambaSmbj').prop('checked');
         const isSftpClient = $('#fileSystemClientTypeSftp').prop('checked');
@@ -296,12 +309,14 @@ define(function() {
         if (isSambaClient) {
             $('#fileSystemAuthTypePassword').click();
         }
-        
+
         if (isSambaClient || isSambaSmbjClient) {
             $('#fileSystemUrl')
                 .attr('title', 'Samba server URL should start with smb://')
                 .attr('pattern', '^smb://.*');
 	    $("label[for='fileSystemAuthTypePubKey']").show();
+	    $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
+	    $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
         } else if (isIrodsClient) {
 	    $('#fileSystemAuthTypePassword').click();
 	    $('#fileSystemUrl')
@@ -313,6 +328,8 @@ define(function() {
         } else {
             $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
 	    $("label[for='fileSystemAuthTypePubKey']").show();
+	    $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
+	    $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
         }
     }
 
@@ -323,7 +340,8 @@ define(function() {
         $('#fileSystemPubKeyRegistrationUrl').prop('required', isPubKeyAuth);
     }
     
-    $(document).ready(function() {
+    $(document).ready(function() {	
+	
         $(document).on('click', '#netFileSystemLink', loadNetFileSystemsList);
         $(document).on('click', '.fileSystemDetailsButton', showFileSystemDetails);
         $(document).on('click', '.fileSystemDeleteButton', deleteFileSystem);
