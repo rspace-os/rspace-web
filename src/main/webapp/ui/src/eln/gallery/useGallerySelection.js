@@ -2,7 +2,7 @@
 
 import React, { type Node, type Context } from "react";
 import { type GalleryFile } from "./useGalleryListing";
-import { observable, runInAction } from "mobx";
+import { makeAutoObservable, observable, runInAction } from "mobx";
 import RsSet from "../../util/set";
 
 /*
@@ -20,29 +20,19 @@ import RsSet from "../../util/set";
  */
 type Selection = Map<GalleryFile["id"], GalleryFile>;
 
-function mkSelection(): Selection {
+export function mkSelection(): Selection {
   // $FlowExpectedError[prop-missing] Difficult to get this library type right
   return observable.map();
 }
 
-type SelectionContextType = {|
-  selection: Selection,
-|};
+const DEFAULT_SELECTION_CONTEXT: Selection = mkSelection();
 
-const DEFAULT_SELECTION_CONTEXT: SelectionContextType = {
-  selection: mkSelection(),
-};
-
-const SelectionContext: Context<SelectionContextType> = React.createContext(
+export const SelectionContext: Context<Selection> = React.createContext(
   DEFAULT_SELECTION_CONTEXT
 );
 
 export const GallerySelection = ({ children }: {| children: Node |}): Node => (
-  <SelectionContext.Provider
-    value={{
-      selection: mkSelection(),
-    }}
-  >
+  <SelectionContext.Provider value={mkSelection()}>
     {children}
   </SelectionContext.Provider>
 );
@@ -56,8 +46,8 @@ export function useGallerySelection(): {|
   includes: (GalleryFile) => boolean,
   asSet: () => RsSet<GalleryFile>,
 |} {
-  const { selection } = React.useContext(SelectionContext);
-  return {
+  const selection = React.useContext(SelectionContext);
+  return makeAutoObservable({
     isEmpty: selection.size === 0,
     size: selection.size,
     clear: () => {
@@ -79,5 +69,5 @@ export function useGallerySelection(): {|
       return selection.has(file.id);
     },
     asSet: () => new RsSet(selection.values()),
-  };
+  });
 }

@@ -20,6 +20,7 @@ import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { observer } from "mobx-react-lite";
+import { autorun } from "mobx";
 import {
   useGalleryActions,
   rootDestination,
@@ -50,6 +51,19 @@ const MoveDialog = observer(
     });
     const { moveFiles } = useGalleryActions();
     const selection = useGallerySelection();
+    const [pathString, setPathString] = React.useState("");
+
+    React.useEffect(() => {
+      autorun(() => {
+        selection.asSet().only.do((file) => {
+          setPathString(file.pathAsString());
+        });
+      });
+    }, [selection]);
+
+    React.useEffect(() => {
+      if (!open) setPathString("");
+    }, [open]);
 
     return (
       <Dialog
@@ -76,7 +90,7 @@ const MoveDialog = observer(
                 <TreeView
                   listing={listing}
                   path={[]}
-                  selectedSection="images"
+                  selectedSection={section}
                   refreshListing={refreshListing}
                   filter={(file) => file.isFolder && !file.isSnippetFolder}
                   disableDragAndDrop
@@ -89,6 +103,7 @@ const MoveDialog = observer(
           <Grid container spacing={1} direction="column">
             <Grid item>
               <TextField
+                value={pathString}
                 fullWidth
                 size="small"
                 InputProps={{

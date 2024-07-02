@@ -194,11 +194,7 @@ export function useGalleryActions(): {|
         const target =
           destination.key === "root"
             ? `/${section}/`
-            : `/${[
-                section,
-                ...destination.folder.path.map(({ name }) => name),
-                ...[destination.folder.name],
-              ].join("/")}/`;
+            : destination.folder.pathAsString();
         const formData = new FormData();
         formData.append("target", target);
         for (const file of files)

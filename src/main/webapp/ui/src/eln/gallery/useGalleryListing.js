@@ -23,7 +23,9 @@ export type GalleryFile = {|
   modificationDate: number,
   type: string,
   thumbnailUrl: string,
+
   path: $ReadOnlyArray<GalleryFile>,
+  pathAsString: () => string,
   open?: () => void,
 
   isFolder: boolean,
@@ -227,6 +229,8 @@ export function useGalleryListing({
         isSystemFolder
       ),
       path,
+      pathAsString: () =>
+        `/${[section, ...path.map(({ name }) => name), name].join("/")}/`,
       ...(isFolder
         ? {
             open: () => {
