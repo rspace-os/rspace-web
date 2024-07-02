@@ -62,6 +62,7 @@ type TreeItemContentArgs = {|
   idMap: Map<string, GalleryFile>,
   refreshListing: () => void,
   filter: (GalleryFile) => boolean,
+  disableDragAndDrop?: boolean,
 |};
 
 const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
@@ -72,6 +73,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     idMap,
     refreshListing,
     filter,
+    disableDragAndDrop,
   }: TreeItemContentArgs): Node => {
     const { galleryListing } = useGalleryListing({
       section,
@@ -108,6 +110,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   idMap={idMap}
                   refreshListing={refreshListing}
                   filter={filter}
+                  disableDragAndDrop={disableDragAndDrop}
                 />
               ) : null
             )
@@ -125,6 +128,7 @@ const CustomTreeItem = observer(
     idMap,
     refreshListing,
     filter,
+    disableDragAndDrop,
   }: {|
     file: GalleryFile,
     index: number,
@@ -133,6 +137,7 @@ const CustomTreeItem = observer(
     idMap: Map<string, GalleryFile>,
     refreshListing: () => void,
     filter: (GalleryFile) => boolean,
+    disableDragAndDrop?: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -146,7 +151,7 @@ const CustomTreeItem = observer(
       });
     const { setNodeRef: setDropRef, isOver } = useDroppable({
       id: file.id,
-      disabled: !file.isFolder,
+      disabled: disableDragAndDrop || !file.isFolder,
       data: {
         path: file.path,
         destination: folderDestination(file),
@@ -158,7 +163,7 @@ const CustomTreeItem = observer(
       setNodeRef: setDragRef,
       transform,
     } = useDraggable({
-      disabled: false,
+      disabled: disableDragAndDrop,
       id: file.id,
       data: {
         /*
@@ -273,6 +278,7 @@ const CustomTreeItem = observer(
               idMap={idMap}
               refreshListing={refreshListing}
               filter={filter}
+              disableDragAndDrop={disableDragAndDrop}
             />
           )}
         </TreeItem>
@@ -289,6 +295,7 @@ type TreeViewArgs = {|
   selectedSection: string,
   refreshListing: () => void,
   filter?: (GalleryFile) => boolean,
+  disableDragAndDrop?: boolean,
 |};
 
 const TreeView = ({
@@ -297,6 +304,7 @@ const TreeView = ({
   selectedSection,
   refreshListing,
   filter = () => true,
+  disableDragAndDrop,
 }: TreeViewArgs) => {
   const { addAlert } = React.useContext(AlertContext);
   const selection = useGallerySelection();
@@ -413,6 +421,7 @@ const TreeView = ({
             idMap={idMap}
             refreshListing={refreshListing}
             filter={filter}
+            disableDragAndDrop={disableDragAndDrop}
           />
         ) : null
       )}

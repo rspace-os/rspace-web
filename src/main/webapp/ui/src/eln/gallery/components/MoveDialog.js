@@ -75,6 +75,7 @@ const MoveDialog = observer(
                   selectedSection="images"
                   refreshListing={refreshListing}
                   filter={(file) => file.isFolder && !file.isSnippetFolder}
+                  disableDragAndDrop
                 />
               </Box>
             ),
