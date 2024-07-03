@@ -129,6 +129,7 @@ function GalleryAppBar({
                   setSearchTerm(appliedSearchTerm);
                   setShowTextfield(appliedSearchTerm !== "");
                 },
+                "aria-label": "Search current folder",
               }}
             />
           </form>
