@@ -776,10 +776,15 @@ export default class Search implements SearchInterface {
      * the sample form's subsample listing. As such, we should refresh the
      * activeResult so that the form fields that display the number of
      * subsamples remains correct.
+     *
+     * If the activeResult is itself the subsample being split then we should
+     * refresh it so that the label in the quantity field that displays the
+     * number of siblings is similarly updated.
      */
     if (
       subsample instanceof SubSampleModel &&
-      subsample.sample.globalId === activeResult?.globalId
+      (subsample.sample.globalId === activeResult?.globalId ||
+        subsample.globalId === activeResult?.globalId)
     ) {
       promises.push(activeResult?.fetchAdditionalInfo() ?? Promise.resolve());
     }

@@ -173,6 +173,24 @@ function CreateInContextDialog({
         explanation: "A new Template will be created from the selected Sample.",
         disabled: false,
       },
+      {
+        id: "sa-2",
+        name: "Split",
+        explanation:
+          selectedResult instanceof SampleModel &&
+          selectedResult.subSamples.length === 1 ? (
+            "Split this sample's only subsample into multiple subsamples."
+          ) : (
+            <>
+              Only samples with a single subsample can be split directly. <br />
+              Go to a specific subsample and open its Create dialog to split it.
+            </>
+          ),
+        disabled: !(
+          selectedResult instanceof SampleModel &&
+          selectedResult.subSamples.length === 1
+        ),
+      },
     ],
     SAMPLE_TEMPLATE: [
       {
@@ -298,6 +316,12 @@ function CreateInContextDialog({
       if (createOption === createActions[selectedResult.type][0].name) {
         createStore.setTemplateCreationContext(menuID);
       }
+      if (createOption === createActions[selectedResult.type][1].name) {
+        await searchStore.search.splitRecord(
+          parseInt(splitCopies, 10),
+          selectedResult.subSamples[0]
+        );
+      }
     }
     onClose();
   };
@@ -347,43 +371,50 @@ function CreateInContextDialog({
     }
   );
 
-  function SplitCopiesSelector(): Node {
+  function SplitCopiesSelector({ disabled }: {| disabled: boolean |}): Node {
     const MIN = 2;
     const MAX = 100;
     return (
-      <FormControl>
-        <NumberField
-          name="copies"
-          autoFocus
-          value={splitCopies}
-          onChange={({ target }) => {
-            setSplitCopies(parseInt(target.value, 10));
-            setValidState(target.checkValidity() && target.value !== "");
-          }}
-          error={!validState}
-          variant="outlined"
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">Copies</InputAdornment>
-            ),
-          }}
-          inputProps={{
-            min: MIN,
-            max: MAX,
-            step: 1,
-          }}
-          onKeyDown={({ key }) => {
-            if (key === "Enter" && validState) void onSubmitHandler();
-          }}
-          disabled={false}
-        />
-        {/* FormHelperText used rather than NumberField's helperText prop so that the text is always shown, not only when there's an error. */}
-        <FormHelperText error={!validState}>
-          {`The total number of subsamples wanted, including the source (min ${MIN}
+      <Box
+        sx={{
+          ml: 3,
+          width: (theme) => `calc(100% - ${theme.spacing(3)})`,
+        }}
+      >
+        <FormControl>
+          <NumberField
+            name="copies"
+            autoFocus
+            value={splitCopies}
+            onChange={({ target }) => {
+              setSplitCopies(parseInt(target.value, 10));
+              setValidState(target.checkValidity() && target.value !== "");
+            }}
+            error={!validState}
+            variant="outlined"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">Copies</InputAdornment>
+              ),
+            }}
+            inputProps={{
+              min: MIN,
+              max: MAX,
+              step: 1,
+            }}
+            onKeyDown={({ key }) => {
+              if (key === "Enter" && validState) void onSubmitHandler();
+            }}
+            disabled={disabled}
+          />
+          {/* FormHelperText used rather than NumberField's helperText prop so that the text is always shown, not only when there's an error. */}
+          <FormHelperText error={!validState}>
+            {`The total number of subsamples wanted, including the source (min ${MIN}
           , max ${MAX})`}
-        </FormHelperText>
-      </FormControl>
+          </FormHelperText>
+        </FormControl>
+      </Box>
     );
   }
 
@@ -462,8 +493,16 @@ function CreateInContextDialog({
               <LocationSelector container={selectedResult} />
             )}
             {selectedResult instanceof SubSampleModel && (
-              <SplitCopiesSelector />
+              <SplitCopiesSelector
+                disabled={createOption !== createActions.SUBSAMPLE[0].name}
+              />
             )}
+            {selectedResult instanceof SampleModel &&
+              selectedResult.subSamples.length === 1 && (
+                <SplitCopiesSelector
+                  disabled={createOption !== createActions.SAMPLE[1].name}
+                />
+              )}
             {createActions[selectedResult.type].length === 0 && (
               <NoValue label="No option available." />
             )}

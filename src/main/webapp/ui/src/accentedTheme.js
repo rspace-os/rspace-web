@@ -15,6 +15,7 @@ import { listItemIconClasses } from "@mui/material/ListItemIcon";
 import { paperClasses } from "@mui/material/Paper";
 import { cardActionAreaClasses } from "@mui/material/CardActionArea";
 import { buttonClasses } from "@mui/material/Button";
+import { iconButtonClasses } from "@mui/material/IconButton";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { gridClasses } from "@mui/x-data-grid";
 import { alertTitleClasses } from "@mui/material/AlertTitle";
@@ -152,7 +153,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
    * When interactive elements such as buttons and chips are hovered over,
    * their background and borders should be subtly darkened by this amount.
    */
-  const hoverDarkenCoefficient = 0.1;
+  const hoverDarkenCoefficient = 0.05;
 
   return createTheme(
     mergeThemes(baseTheme, {
@@ -189,7 +190,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 },
                 [`& .${svgIconClasses.root}`]: {
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
+                  transition: "all .3s ease",
                 },
+                [`& .${iconButtonClasses.root}.${iconButtonClasses.disabled}`]:
+                  {
+                    [`& .${svgIconClasses.root}`]: {
+                      opacity: 0.5,
+                    },
+                  },
               },
               [`& .${textFieldClasses.root}`]: {
                 background: lighterInteractiveColor,
@@ -380,6 +388,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               [`&.${buttonClasses.disabled}`]: {
                 backgroundColor: disabledColor,
                 borderColor: disabledColor,
+              },
+            },
+            outlined: {
+              color: linkButtonText,
+              border: accentedBorder,
+              "&:hover": {
+                border: accentedBorder,
+                borderColor: darken(accentedBackground, hoverDarkenCoefficient),
               },
             },
             outlinedPrimary: {
@@ -706,6 +722,57 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   },
                 },
               },
+            },
+          },
+        },
+        MuiTreeItem: {
+          styleOverrides: {
+            root: {
+              marginTop: baseTheme.spacing(0.5),
+            },
+            content: {
+              cursor: "default",
+              backgroundColor: prefersMoreContrast
+                ? "transparent"
+                : darken(secondaryBackground, hoverDarkenCoefficient),
+              border: prefersMoreContrast ? accentedBorder : "none",
+              maxWidth: "fit-content",
+              "&:hover": {
+                backgroundColor: prefersMoreContrast
+                  ? "transparent"
+                  : darken(secondaryBackground, hoverDarkenCoefficient * 2),
+              },
+              "&.Mui-selected": {
+                backgroundColor: accentedBackground,
+                "&.Mui-focused": {
+                  backgroundColor: prefersMoreContrast
+                    ? accentedBackground
+                    : darken(secondaryBackground, hoverDarkenCoefficient * 5),
+                },
+                "& .MuiTreeItem-label": {
+                  color: contrastTextColor,
+                },
+                "& .MuiTreeItem-iconContainer": {
+                  color: contrastTextColor,
+                },
+                "&:hover": {
+                  backgroundColor: prefersMoreContrast
+                    ? accentedBackground
+                    : darken(secondaryBackground, hoverDarkenCoefficient * 6),
+                },
+              },
+            },
+            label: {
+              fontWeight: 500,
+              letterSpacing: "0.01em",
+              color: backgroundContrastTextColor,
+              marginRight: baseTheme.spacing(1),
+            },
+            iconContainer: {
+              color: backgroundContrastTextColor,
+            },
+            groupTransition: {
+              paddingLeft: "calc(2 * var(--TreeView-itemChildrenIndentation))",
             },
           },
         },

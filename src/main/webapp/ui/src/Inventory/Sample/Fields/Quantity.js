@@ -12,6 +12,14 @@ import FormField from "../../components/Inputs/FormField";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import Link from "@mui/material/Link";
 import { Optional } from "../../../util/optional";
+import { styled } from "@mui/material/styles";
+import { textFieldClasses } from "@mui/material/TextField";
+
+const CustomFormField = styled(FormField)(() => ({
+  [`& .${textFieldClasses.root}`]: {
+    maxWidth: "264px",
+  },
+}));
 
 type QuantityArgs = {|
   onErrorStateChange: (boolean) => void,
@@ -74,6 +82,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): Node {
     const count = sample.newSampleSubSamplesCount;
     if (count === null || typeof count === "undefined")
       return Optional.empty<string>();
+    if (count === 1) return Optional.empty<string>();
 
     if (unitStore.units.length) {
       const totalQuantity = sample.quantityValue * count;
@@ -112,8 +121,12 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): Node {
   return (
     <>
       {!sample.id && sample.quantity && (
-        <FormField
-          label={`Quantity per ${alias.alias}`}
+        <CustomFormField
+          label={`Quantity${
+            (sample.newSampleSubSamplesCount ?? 2) > 1
+              ? " per " + alias.alias
+              : ""
+          }`}
           explanation="Quantity units can also be changed by editing templates."
           value={amount}
           error={!valid}
@@ -137,10 +150,12 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): Node {
                       value={sample.quantityUnitId}
                       handleChange={handleChangeQuantityUnit}
                     />
-                    <InputAdornment position="start">
-                      {"per "}
-                      {sample.template ? alias.alias : "subsample"}
-                    </InputAdornment>
+                    {(sample.newSampleSubSamplesCount ?? 2) > 1 && (
+                      <InputAdornment position="start">
+                        {"per "}
+                        {sample.template ? alias.alias : "subsample"}
+                      </InputAdornment>
+                    )}
                   </>
                 ),
               }}

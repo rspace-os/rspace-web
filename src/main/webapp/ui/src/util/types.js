@@ -13,7 +13,8 @@ import Result from "./result";
  * Usage:
  *  const [count, setCount]: UseState<number> = useState(0);
  */
-export type UseState<T> = [T, (((T) => T) | T) => void];
+export type UseStateSetter<T> = (((T) => T) | T) => void;
+export type UseState<T> = [T, UseStateSetter<T>];
 
 /*
  * Geometry
