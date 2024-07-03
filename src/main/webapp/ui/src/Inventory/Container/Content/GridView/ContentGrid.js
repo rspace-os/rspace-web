@@ -42,10 +42,13 @@ const useStyles = makeStyles()((theme) => ({
      * 96-well plate can be shown without needing a horizontal scrollbar but
      * anything larger will, on a typically desktop viewport, require one. On
      * smaller viewports, most grid containers including 96-well plates require
-     * a horizontal scrollbar.
+     * a horizontal scrollbar. The extra 8px is so that any records in the
+     * right-most column with info buttons don't overflow the dimensions of the
+     * table and trigger the scrollbar.
      */
-    minWidth: "100%",
+    minWidth: "calc(100% - 8px)",
     width: "unset",
+    maxWidth: "calc(100% - 8px)",
 
     "& th": {
       maxWidth: 0,
