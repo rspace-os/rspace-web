@@ -98,7 +98,7 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
     </div>
   </Button>
 ))(() => ({
-  color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, ${COLOR.contrastText.lightness}%, 100%)`,
+  color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, 40%, 100%)`,
 }));
 
 const CustomDrawer = styled(Drawer)(({ open }) => ({
@@ -258,9 +258,7 @@ const DmpMenuSection = () => {
   if (!argosEnabled && !dmponlineEnabled && !dmptoolEnabled) return null;
   return (
     <>
-      <Divider textAlign="left">
-        DMPs
-      </Divider>
+      <Divider textAlign="left">DMPs</Divider>
       {argosEnabled && <ArgosNewMenuItem />}
       {dmponlineEnabled && <DMPOnlineNewMenuItem />}
       {dmptoolEnabled && <DMPToolNewMenuItem />}

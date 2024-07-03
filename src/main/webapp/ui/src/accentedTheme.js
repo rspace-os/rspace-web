@@ -95,7 +95,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
 
   const linkButtonText = prefersMoreContrast
     ? "rgb(0,0,0)"
-    : `hsl(${accent.main.hue}deg, 13%, 50%)`;
+    : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, 40%)`;
 
   /**
    * A background colour that can be used behind headers, toolbars, and other
