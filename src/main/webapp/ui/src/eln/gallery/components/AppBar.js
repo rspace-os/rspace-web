@@ -1,6 +1,6 @@
 //@flow
 
-import React, { type Node } from "react";
+import React, { type Node, type ComponentType } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
@@ -17,6 +17,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import AccessibilityTips from "../../../components/AccessibilityTips";
 import HelpDocs from "../../../components/Help/HelpDocs";
 import HelpIcon from "@mui/icons-material/Help";
+import { observer } from "mobx-react-lite";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -24,17 +25,19 @@ const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   width: 20,
 }));
 
-export default function GalleryAppBar({
-  appliedSearchTerm,
-  setAppliedSearchTerm,
-  setDrawerOpen,
-  drawerOpen,
-}: {|
+type GalleryAppBarArgs = {|
   appliedSearchTerm: string,
   setAppliedSearchTerm: (string) => void,
   setDrawerOpen: (boolean) => void,
   drawerOpen: boolean,
-|}): Node {
+|};
+
+function GalleryAppBar({
+  appliedSearchTerm,
+  setAppliedSearchTerm,
+  setDrawerOpen,
+  drawerOpen,
+}: GalleryAppBarArgs): Node {
   const viewport = useViewportDimensions();
   const [showTextfield, setShowTextfield] = React.useState(false);
   const searchTextfield = React.useRef();
@@ -154,3 +157,5 @@ export default function GalleryAppBar({
     </AppBar>
   );
 }
+
+export default (observer(GalleryAppBar): ComponentType<GalleryAppBarArgs>);
