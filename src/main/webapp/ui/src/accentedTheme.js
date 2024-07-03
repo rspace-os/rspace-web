@@ -734,6 +734,11 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             paper: {
               boxShadow: "none",
               border: accentedBorder,
+              ...(window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? {
+                    transition: "none !important",
+                  }
+                : {}),
             },
           },
         },
