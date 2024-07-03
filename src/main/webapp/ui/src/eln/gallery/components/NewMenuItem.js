@@ -24,6 +24,7 @@ type NewMenuItemArgs = {|
   onKeyDown?: (KeyboardEvent) => void,
   compact?: boolean,
   disabled?: boolean,
+  "aria-haspopup"?: "menu" | "dialog",
 
   /*
    * These properties are dynamically added by the MUI Menu parent component
@@ -47,6 +48,7 @@ export default (styled(
         disabled,
         autoFocus,
         tabIndex,
+        "aria-haspopup": ariaHasPopup,
         ...props
       }: NewMenuItemArgs,
       ref
@@ -60,6 +62,7 @@ export default (styled(
         //eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
         tabIndex={tabIndex}
+        aria-haspopup={ariaHasPopup}
       >
         <CardHeader {...props} />
       </MenuItem>

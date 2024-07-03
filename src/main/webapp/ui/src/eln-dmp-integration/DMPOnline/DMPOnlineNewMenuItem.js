@@ -21,6 +21,7 @@ export default function DMPonlineNewMenuItem(): Node {
         onClick={() => {
           setShowDMPDialog(true);
         }}
+        aria-haspopup="dialog"
       />
       <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
     </>

@@ -244,6 +244,7 @@ const NewFolderMenuItem = ({
         //eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
         tabIndex={tabIndex}
+        aria-haspopup="dialog"
       />
     </>
   );

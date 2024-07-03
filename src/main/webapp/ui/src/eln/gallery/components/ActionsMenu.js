@@ -243,6 +243,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
           }}
           compact
           disabled={moveAllowed().isError}
+          aria-haspopup="dialog"
         />
         <MoveDialog
           open={moveOpen}
@@ -266,6 +267,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
           }}
           compact
           disabled={renameAllowed().isError}
+          aria-haspopup="dialog"
         />
         {selection
           .asSet()
@@ -348,6 +350,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
           }}
           compact
           disabled={moveToIrodsAllowed().isError}
+          aria-haspopup="dialog"
         />
         <MoveToIrods
           selectedIds={selection

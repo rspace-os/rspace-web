@@ -33,6 +33,7 @@ export default function DMPToolNewMenuItem(): Node {
         onClick={() => {
           setShowDMPDialog(true);
         }}
+        aria-haspopup="dialog"
       />
       <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
     </>
