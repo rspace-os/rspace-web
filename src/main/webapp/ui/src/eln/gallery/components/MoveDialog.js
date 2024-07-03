@@ -20,7 +20,6 @@ import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { observer } from "mobx-react-lite";
-import { autorun } from "mobx";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";
 import RsSet from "../../../util/set";
 
@@ -46,16 +45,14 @@ const MoveDialog = observer(
       path: [],
     });
     const { moveFiles } = useGalleryActions();
-    const selection = useGallerySelection();
     const [pathString, setPathString] = React.useState("");
-
-    React.useEffect(() => {
-      autorun(() => {
-        selection.asSet().only.do((file) => {
+    const selection = useGallerySelection({
+      onChange: (sel) => {
+        sel.asSet().only.do((file) => {
           setPathString(file.pathAsString());
         });
-      });
-    }, [selection]);
+      },
+    });
 
     React.useEffect(() => {
       if (!open) setPathString("");
