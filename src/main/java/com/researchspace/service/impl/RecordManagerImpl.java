@@ -1047,8 +1047,7 @@ public class RecordManagerImpl implements RecordManager {
 
     if (!hits.isEmpty()) {
       ISearchResults<BaseRecord> rdsx =
-          new SearchResultsImpl<>(
-              hits, paginationCriteria.getPageNumber().intValue(), hits.size());
+          new SearchResultsImpl<>(hits, paginationCriteria.getPageNumber().intValue(), hits.size());
       int totalHits = rdsx.getResults().size();
       return Repaginator.repaginateResults(paginationCriteria, rdsx, totalHits);
     }

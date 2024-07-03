@@ -285,10 +285,7 @@ public class SearchManagerImpl implements SearchManager {
         textSearchDao.getSearchedInventoryResults(searchConfig);
 
     return sampleApiManager.convertToApiInventorySearchResult(
-            foundResults.getTotalHits(),
-            foundResults.getPageNumber(),
-            foundResults.getResults(),
-            user);
+        foundResults.getTotalHits(), foundResults.getPageNumber(), foundResults.getResults(), user);
   }
 
   private String adjustUserSearchQueryForBestResults(String searchQuery) {
