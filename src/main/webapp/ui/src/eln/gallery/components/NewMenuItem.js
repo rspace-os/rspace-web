@@ -1,31 +1,69 @@
 //@flow
 
-import React, { type Node, type ComponentType } from "react";
+import React, {
+  type Node,
+  type ComponentType,
+  type ElementConfig,
+} from "react";
 import { styled } from "@mui/material/styles";
 import MenuItem from "@mui/material/MenuItem";
 import CardHeader from "@mui/material/CardHeader";
 import { alpha } from "@mui/system";
 
+type NewMenuItemArgs = {|
+  title: string,
+  avatar: Node,
+  subheader: string,
+  foregroundColor:
+    | string
+    | {| hue: number, saturation: number, lightness: number |},
+  backgroundColor:
+    | string
+    | {| hue: number, saturation: number, lightness: number |},
+  onClick?: () => void,
+  onKeyDown?: (KeyboardEvent) => void,
+  compact?: boolean,
+  disabled?: boolean,
+
+  /*
+   * These properties are dynamically added by the MUI Menu parent component
+   */
+  autoFocus?: boolean,
+  tabIndex?: number,
+
+  ...ElementConfig<typeof CardHeader>,
+|};
+
 export default (styled(
-  ({
-    foregroundColor: _foregroundColor,
-    backgroundColor: _backgroundColor,
-    compact: _compact,
-    className,
-    onClick,
-    onKeyDown,
-    disabled,
-    ...props
-  }) => (
-    <MenuItem
-      className={className}
-      tabIndex={0}
-      onKeyDown={onKeyDown}
-      onClick={onClick}
-      disabled={disabled}
-    >
-      <CardHeader {...props} />
-    </MenuItem>
+  React.forwardRef(
+    (
+      {
+        foregroundColor: _foregroundColor,
+        backgroundColor: _backgroundColor,
+        compact: _compact,
+        className,
+        onClick,
+        onKeyDown,
+        disabled,
+        autoFocus,
+        tabIndex,
+        ...props
+      }: NewMenuItemArgs,
+      ref
+    ) => (
+      <MenuItem
+        ref={ref}
+        className={className}
+        onKeyDown={onKeyDown}
+        onClick={onClick}
+        disabled={disabled}
+        //eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={autoFocus}
+        tabIndex={tabIndex}
+      >
+        <CardHeader {...props} />
+      </MenuItem>
+    )
   )
 )(({ theme, backgroundColor, foregroundColor, compact }) => {
   const prefersMoreContrast = window.matchMedia(
@@ -75,18 +113,4 @@ export default (styled(
       fontWeight: 500,
     },
   };
-}): ComponentType<{|
-  title: string,
-  avatar: Node,
-  subheader: string,
-  foregroundColor:
-    | string
-    | {| hue: number, saturation: number, lightness: number |},
-  backgroundColor:
-    | string
-    | {| hue: number, saturation: number, lightness: number |},
-  onClick?: () => void,
-  onKeyDown?: (KeyboardEvent) => void,
-  compact?: boolean,
-  disabled?: boolean,
-|}>);
+}): ComponentType<NewMenuItemArgs>);

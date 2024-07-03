@@ -959,6 +959,7 @@ function GalleryMainPanel({
                   onClick={(e) => {
                     setViewMenuAnchorEl(e.target);
                   }}
+                  aria-haspopup="menu"
                 >
                   Views
                 </Button>

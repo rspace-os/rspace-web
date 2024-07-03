@@ -72,6 +72,7 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
     {...props}
     fullWidth
     style={{ minWidth: "unset" }}
+    aria-haspopup="menu"
     startIcon={
       <AddIcon
         style={{
@@ -116,10 +117,18 @@ const UploadMenuItem = ({
   path,
   folderId,
   onUploadComplete,
+  autoFocus,
+  tabIndex,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
   folderId: Id,
   onUploadComplete: () => void,
+
+  /*
+   * These properties are dynamically added by the MUI Menu parent component
+   */
+  autoFocus?: boolean,
+  tabIndex?: number,
 |}) => {
   const { uploadFiles } = useGalleryActions();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
@@ -137,6 +146,9 @@ const UploadMenuItem = ({
         onClick={() => {
           inputRef.current?.click();
         }}
+        //eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={autoFocus}
+        tabIndex={tabIndex}
       />
       <input
         ref={inputRef}
@@ -158,10 +170,18 @@ const NewFolderMenuItem = ({
   path,
   folderId,
   onDialogClose,
+  autoFocus,
+  tabIndex,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
   folderId: Id,
   onDialogClose: (boolean) => void,
+
+  /*
+   * These properties are dynamically added by the MUI Menu parent component
+   */
+  autoFocus?: boolean,
+  tabIndex?: number,
 |}) => {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
@@ -221,6 +241,9 @@ const NewFolderMenuItem = ({
         onClick={() => {
           setOpen(true);
         }}
+        //eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={autoFocus}
+        tabIndex={tabIndex}
       />
     </>
   );
@@ -258,7 +281,9 @@ const DmpMenuSection = () => {
   if (!argosEnabled && !dmponlineEnabled && !dmptoolEnabled) return null;
   return (
     <>
-      <Divider textAlign="left">DMPs</Divider>
+      <Divider textAlign="left" aria-label="DMPs">
+        DMPs
+      </Divider>
       {argosEnabled && <ArgosNewMenuItem />}
       {dmponlineEnabled && <DMPOnlineNewMenuItem />}
       {dmptoolEnabled && <DMPToolNewMenuItem />}
@@ -390,6 +415,7 @@ export default function GallerySidebar({
           MenuListProps={{
             disablePadding: true,
           }}
+          keepMounted
         >
           {FetchingData.getSuccessValue(folderId)
             .map((fId) => (

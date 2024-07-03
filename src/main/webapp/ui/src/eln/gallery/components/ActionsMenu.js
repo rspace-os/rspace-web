@@ -363,7 +363,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
             }
           }}
         />
-        <Divider />
+        <Divider aria-orientation="horizontal" />
         <NewMenuItem
           title="Delete"
           subheader={deleteAllowed()
