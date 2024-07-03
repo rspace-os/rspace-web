@@ -10,6 +10,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ public class ServiceLoggerAspct {
 
   @Value("${slow.transaction.time:1000}")
   private Integer slowTransactionTimeThreshold;
+
+  private final int maxPrintedArgLength = 100;
 
   @Autowired private LicenseService licenseService;
 
@@ -74,10 +77,9 @@ public class ServiceLoggerAspct {
   public Object doAccessCheckAndProfile(ProceedingJoinPoint jp) throws Throwable {
     long start = System.currentTimeMillis();
 
-    // logger = LoggerFactory.getLogger(ServiceLoggerAspct.class);
     String methodName = jp.getSignature().getName();
-
-    log.debug(methodInfo(jp, methodName));
+    String methodInfoStringForLogging = methodInfo(jp, methodName);
+    log.debug(methodInfoStringForLogging);
 
     Object rc = jp.proceed();
     long elapsedTime = System.currentTimeMillis() - start;
@@ -87,22 +89,31 @@ public class ServiceLoggerAspct {
 
     if (elapsedTime > slowTransactionTimeThreshold) {
       log.warn(
-          "Execution time longer than {} ms ({}ms). {}",
+          "Execution time longer than {} ms ({} ms). {}",
           slowTransactionTimeThreshold,
           elapsedTime,
-          methodInfo(jp, methodName));
+          methodInfoStringForLogging);
     }
     return rc;
   }
 
   protected String methodInfo(ProceedingJoinPoint jp, String methodName) {
-    final int maxPrintedArgLength = 100;
-    Object[] args = jp.getArgs();
-    String argString = getTruncatedArgumentString(maxPrintedArgLength, args);
-
+    MethodSignature methodSignature = (MethodSignature) jp.getSignature();
+    if (shouldSkipMethodArgs(methodSignature)) {
+      return String.format(
+          "In method [%s] in class [%s] (args hidden)", methodName, jp.getSignature().getDeclaringTypeName());
+    }
     return String.format(
         "In method [%s] in class [%s] with args: %s",
-        methodName, jp.getSignature().getDeclaringTypeName(), argString);
+        methodName,
+        jp.getSignature().getDeclaringTypeName(),
+        getTruncatedArgumentString(maxPrintedArgLength, jp.getArgs()));
+  }
+
+  private boolean shouldSkipMethodArgs(MethodSignature methodSignature) {
+    IgnoreInServiceLoggerAspct ignoreLoggingAnnotation =
+        methodSignature.getMethod().getAnnotation(IgnoreInServiceLoggerAspct.class);
+    return ignoreLoggingAnnotation != null && ignoreLoggingAnnotation.ignoreAllRequestParams();
   }
 
   protected String getTruncatedArgumentString(final int maxLength, Object[] args) {
