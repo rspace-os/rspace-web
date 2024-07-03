@@ -19,7 +19,6 @@ import TreeView from "./TreeView";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
-import { observer } from "mobx-react-lite";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";
 import RsSet from "../../../util/set";
 
@@ -31,144 +30,140 @@ type MoveDialogArgs = {|
   refreshListing: () => void,
 |};
 
-const MoveDialog = observer(
-  ({
-    open,
-    onClose,
+const MoveDialog = ({
+  open,
+  onClose,
+  section,
+  selectedFiles,
+  refreshListing,
+}: MoveDialogArgs): Node => {
+  const { galleryListing } = useGalleryListing({
     section,
-    selectedFiles,
-    refreshListing,
-  }: MoveDialogArgs): Node => {
-    const { galleryListing } = useGalleryListing({
-      section,
-      searchTerm: "",
-      path: [],
-    });
-    const { moveFiles } = useGalleryActions();
-    const [pathString, setPathString] = React.useState("");
-    const selection = useGallerySelection({
-      onChange: (sel) => {
-        sel.asSet().only.do((file) => {
-          setPathString(file.pathAsString());
-        });
-      },
-    });
+    searchTerm: "",
+    path: [],
+  });
+  const { moveFiles } = useGalleryActions();
+  const [pathString, setPathString] = React.useState("");
+  const selection = useGallerySelection({
+    onChange: (sel) => {
+      sel.asSet().only.do((file) => {
+        setPathString(file.pathAsString());
+      });
+    },
+  });
 
-    React.useEffect(() => {
-      if (!open) setPathString("");
-    }, [open]);
+  React.useEffect(() => {
+    if (!open) setPathString("");
+  }, [open]);
 
-    return (
-      <Dialog
-        open={open}
-        onClose={onClose}
-        onKeyDown={(e) => {
-          e.stopPropagation();
-        }}
-        scroll="paper"
-      >
-        <DialogTitle>Move</DialogTitle>
-        <DialogContent sx={{ overflow: "hidden" }}>
-          <DialogContentText variant="body2">
-            Choose a folder, enter a path, or tap the &quot;top-level&quot;
-            button.
-          </DialogContentText>
-        </DialogContent>
-        <DialogContent sx={{ pt: 0 }}>
-          {FetchingData.match(galleryListing, {
-            loading: () => <></>,
-            error: (error) => <>{error}</>,
-            success: (listing) => (
-              <Box sx={{ overflowY: "auto" }}>
-                <TreeView
-                  listing={listing}
-                  path={[]}
-                  selectedSection={section}
-                  refreshListing={refreshListing}
-                  filter={(file) => file.isFolder && !file.isSnippetFolder}
-                  disableDragAndDrop
-                />
-              </Box>
-            ),
-          })}
-        </DialogContent>
-        <DialogActions>
-          <Grid container spacing={1} direction="column">
-            <Grid item>
-              <TextField
-                value={pathString}
-                onChange={({ target: { value } }) => {
-                  setPathString(value);
-                }}
-                fullWidth
-                size="small"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">Path</InputAdornment>
-                  ),
-                }}
-                placeholder="Tap a folder or type a path here"
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+      }}
+      scroll="paper"
+    >
+      <DialogTitle>Move</DialogTitle>
+      <DialogContent sx={{ overflow: "hidden" }}>
+        <DialogContentText variant="body2">
+          Choose a folder, enter a path, or tap the &quot;top-level&quot;
+          button.
+        </DialogContentText>
+      </DialogContent>
+      <DialogContent sx={{ pt: 0 }}>
+        {FetchingData.match(galleryListing, {
+          loading: () => <></>,
+          error: (error) => <>{error}</>,
+          success: (listing) => (
+            <Box sx={{ overflowY: "auto" }}>
+              <TreeView
+                listing={listing}
+                path={[]}
+                selectedSection={section}
+                refreshListing={refreshListing}
+                filter={(file) => file.isFolder && !file.isSnippetFolder}
+                disableDragAndDrop
               />
-            </Grid>
-            <Grid item>
-              <Stack direction="row" spacing={1}>
-                <SubmitSpinnerButton
-                  onClick={() => {
-                    void moveFiles(selectedFiles)
-                      .to({
-                        destination: rootDestination(),
-                        section,
-                      })
-                      .then(() => {
-                        refreshListing();
-                        onClose();
-                      });
-                  }}
-                  disabled={false}
-                  loading={false}
-                  label="Make top-level"
-                />
-                <Box flexGrow={1}></Box>
-                <Button
-                  onClick={() => {
-                    onClose();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <ValidatingSubmitButton
-                  loading={false}
-                  onClick={() => {
-                    void moveFiles(selectedFiles)
-                      .toDestinationWithPath(section, pathString)
-                      .then(() => {
-                        refreshListing();
-                        onClose();
-                      });
-                  }}
-                  validationResult={(() => {
-                    const files = selection.asSet();
-                    if (files.isEmpty && pathString === "")
-                      return Result.Error([
-                        new Error("No folder is selected."),
-                      ]);
-                    if (files.size > 1)
-                      return Result.Error([
-                        new Error("More than one folder is selected."),
-                      ]);
-                    return Result.Ok(null);
-                  })()}
-                >
-                  Move
-                </ValidatingSubmitButton>
-              </Stack>
-            </Grid>
+            </Box>
+          ),
+        })}
+      </DialogContent>
+      <DialogActions>
+        <Grid container spacing={1} direction="column">
+          <Grid item>
+            <TextField
+              value={pathString}
+              onChange={({ target: { value } }) => {
+                setPathString(value);
+              }}
+              fullWidth
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">Path</InputAdornment>
+                ),
+              }}
+              placeholder="Tap a folder or type a path here"
+            />
           </Grid>
-        </DialogActions>
-      </Dialog>
-    );
-  }
-);
+          <Grid item>
+            <Stack direction="row" spacing={1}>
+              <SubmitSpinnerButton
+                onClick={() => {
+                  void moveFiles(selectedFiles)
+                    .to({
+                      destination: rootDestination(),
+                      section,
+                    })
+                    .then(() => {
+                      refreshListing();
+                      onClose();
+                    });
+                }}
+                disabled={false}
+                loading={false}
+                label="Make top-level"
+              />
+              <Box flexGrow={1}></Box>
+              <Button
+                onClick={() => {
+                  onClose();
+                }}
+              >
+                Cancel
+              </Button>
+              <ValidatingSubmitButton
+                loading={false}
+                onClick={() => {
+                  void moveFiles(selectedFiles)
+                    .toDestinationWithPath(section, pathString)
+                    .then(() => {
+                      refreshListing();
+                      onClose();
+                    });
+                }}
+                validationResult={(() => {
+                  const files = selection.asSet();
+                  if (files.isEmpty && pathString === "")
+                    return Result.Error([new Error("No folder is selected.")]);
+                  if (files.size > 1)
+                    return Result.Error([
+                      new Error("More than one folder is selected."),
+                    ]);
+                  return Result.Ok(null);
+                })()}
+              >
+                Move
+              </ValidatingSubmitButton>
+            </Stack>
+          </Grid>
+        </Grid>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 export default (
   props: $Diff<MoveDialogArgs, {| selectedFiles: mixed |}>
