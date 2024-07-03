@@ -98,7 +98,7 @@ public class SearchManagerImpl implements SearchManager {
      * bypassing Lucene search altogether
      */
     if (input.getFilters().isSomeFilterActive()) {
-      List<BaseRecord> filteredRecords = getRecordFilter(input.getFilters(), user);
+      List<BaseRecord> filteredRecords = getFilteredRecords(input.getFilters(), user);
       if (filteredRecords.isEmpty()) {
         return SearchResultsImpl.emptyResult(input.getPgCrit());
       }
@@ -106,7 +106,6 @@ public class SearchManagerImpl implements SearchManager {
     }
 
     updateSrchConfiguration(input, searchConfig);
-
     return textSearchDao.getSearchedElnResults(searchConfig);
   }
 
@@ -183,7 +182,7 @@ public class SearchManagerImpl implements SearchManager {
     return invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(subject);
   }
 
-  private List<BaseRecord> getRecordFilter(WorkspaceFilters filters, User user) {
+  private List<BaseRecord> getFilteredRecords(WorkspaceFilters filters, User user) {
     return recordManager.getFilteredRecordsList(filters, user);
   }
 
@@ -285,13 +284,11 @@ public class SearchManagerImpl implements SearchManager {
     ISearchResults<? extends InventoryRecord> foundResults =
         textSearchDao.getSearchedInventoryResults(searchConfig);
 
-    ApiInventorySearchResult apiSearchResult =
-        sampleApiManager.convertToApiInventorySearchResult(
+    return sampleApiManager.convertToApiInventorySearchResult(
             foundResults.getTotalHits(),
             foundResults.getPageNumber(),
             foundResults.getResults(),
             user);
-    return apiSearchResult;
   }
 
   private String adjustUserSearchQueryForBestResults(String searchQuery) {

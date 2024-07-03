@@ -208,7 +208,7 @@ public class RecordManagerImpl implements RecordManager {
     RecordCopyResult copy = copy(templateId, newname, user, targetFolderId);
     StructuredDocument createdDoc = (StructuredDocument) copy.getUniqueCopy();
     List<Field> listFields = createdDoc.getFields();
-    createdDoc.setAllFieldsValid(listFields.stream().allMatch(f -> f.isMandatoryStateSatisfied()));
+    createdDoc.setAllFieldsValid(listFields.stream().allMatch(Field::isMandatoryStateSatisfied));
     createdDoc.notifyDelta(
         DeltaType.CREATED_FROM_TEMPLATE, getTemplateCreationDeltaMsg(templateId, copy, createdDoc));
     // now update this so it is not a template
@@ -272,9 +272,7 @@ public class RecordManagerImpl implements RecordManager {
       PaginationCriteria<? extends BaseRecord> pgCrit,
       RecordTypeFilter recordTypefilter) {
     Validate.notNull(pgCrit, "Pagination criteria can't be null!");
-    ISearchResults<BaseRecord> rc =
-        recordDao.getPaginatedChildRecordsOfParentWithFilter(parentId, pgCrit, recordTypefilter);
-    return rc;
+    return recordDao.getPaginatedChildRecordsOfParentWithFilter(parentId, pgCrit, recordTypefilter);
   }
 
   @Override
@@ -331,14 +329,14 @@ public class RecordManagerImpl implements RecordManager {
     }
 
     String recordName = StringUtils.isNotBlank(name) ? name : StructuredDocument.DEFAULT_NAME;
-    StructuredDocument rc = null;
+    StructuredDocument rc;
     if (override == null) {
       rc = recordFactory.createStructuredDocument(recordName, user, form);
     } else {
       rc = recordFactory.createStructuredDocument(recordName, user, form, override);
     }
     List<Field> listFields = rc.getFields();
-    rc.setAllFieldsValid(listFields.stream().allMatch(f -> f.isMandatoryStateSatisfied()));
+    rc.setAllFieldsValid(listFields.stream().allMatch(Field::isMandatoryStateSatisfied));
 
     rc.setIconId(form.getIconId());
     cleanTextFieldsContent(rc);
@@ -407,9 +405,7 @@ public class RecordManagerImpl implements RecordManager {
     if (basicStatus != null) {
       return basicStatus;
     }
-    EditStatus statusAfterEditAttempt =
-        tracker.attemptToEdit(recordId, user, activeUsers, sessionIDProvider);
-    return statusAfterEditAttempt;
+    return tracker.attemptToEdit(recordId, user, activeUsers, sessionIDProvider);
   }
 
   @Override
@@ -436,7 +432,7 @@ public class RecordManagerImpl implements RecordManager {
    * are OK, returns null.
    */
   private EditStatus checkBasicEditStatusForRecordAndUser(Long recordId, User user) {
-    Record record = null;
+    Record record;
     try {
       record = recordDao.get(recordId);
     } catch (DataAccessException e) {
@@ -479,7 +475,7 @@ public class RecordManagerImpl implements RecordManager {
     return user;
   }
 
-  // revision history seems work OK for chem, sketches etc using the
+  // revision history seems work OK for chem, sketches etc. using the
   // revision number in the URL which is added to links when viewing a revision.
   public void forceVersionUpdate(
       Long recordId, DeltaType deltaType, String optionalDeltaMsg, User user) {
@@ -588,7 +584,7 @@ public class RecordManagerImpl implements RecordManager {
     StructuredDocument record = (StructuredDocument) getRecordWithFields(recordId, user);
     StructuredDocument tempRecord = (StructuredDocument) record.getTempRecord();
     if (tempRecord == null) {
-      tempRecord = (StructuredDocument) record.copyNoFields();
+      tempRecord = record.copyNoFields();
       tempRecord.setTemporaryDoc(true);
     }
     Timestamp time = new Timestamp(Calendar.getInstance().getTime().getTime());
@@ -678,7 +674,7 @@ public class RecordManagerImpl implements RecordManager {
       }
     }
     structuredDocument.setAllFieldsValid(
-        listFields.stream().allMatch(f -> f.isMandatoryStateSatisfied()));
+        listFields.stream().allMatch(Field::isMandatoryStateSatisfied));
 
     if (!contentChanged && warningList != null) {
       warningList.addErrorMsg("content.not.changed");
@@ -756,8 +752,7 @@ public class RecordManagerImpl implements RecordManager {
     tracker.unlockRecord(structuredDocument, userEditor, SessionAttributeUtils::getSessionId);
     log.info("unlocked edit mode for document");
 
-    Folder parentFolder = retrieveParentFolder(userName, userEditor, structuredDocument);
-    return parentFolder;
+    return retrieveParentFolder(userName, userEditor, structuredDocument);
   }
 
   private void assertNotEditedByOther(User userEditor, StructuredDocument structuredDocument)
@@ -818,7 +813,6 @@ public class RecordManagerImpl implements RecordManager {
       log.warn("Cannot load the structured document with id={}", docId);
       return null;
     }
-    String newname = templateName;
     List<Field> sdFields = sd.getFields();
 
     Folder templateRoot = folderDao.getTemplateFolderForUser(user);
@@ -827,7 +821,7 @@ public class RecordManagerImpl implements RecordManager {
     }
 
     StructuredDocument template =
-        (StructuredDocument) copy(docId, newname, user, templateRoot.getId()).getCopy(sd);
+        (StructuredDocument) copy(docId, templateName, user, templateRoot.getId()).getCopy(sd);
     if (template == null) {
       log.warn("ERROR: Cannot  copy structured document with id={}", docId);
       return null;
@@ -944,7 +938,7 @@ public class RecordManagerImpl implements RecordManager {
     }
     newname = sanitizeNewRecordName(newname);
     boolean isRecord = isRecord(toRenameId);
-    BaseRecord toSave = null;
+    BaseRecord toSave;
     if (isRecord) {
       toSave = get(toRenameId);
     } else {
@@ -1054,11 +1048,9 @@ public class RecordManagerImpl implements RecordManager {
     if (!hits.isEmpty()) {
       ISearchResults<BaseRecord> rdsx =
           new SearchResultsImpl<>(
-              hits, paginationCriteria.getPageNumber().intValue(), (long) hits.size());
+              hits, paginationCriteria.getPageNumber().intValue(), hits.size());
       int totalHits = rdsx.getResults().size();
-      ISearchResults<BaseRecord> records =
-          Repaginator.repaginateResults(paginationCriteria, rdsx, totalHits);
-      return records;
+      return Repaginator.repaginateResults(paginationCriteria, rdsx, totalHits);
     }
     return SearchResultsImpl.emptyResult(paginationCriteria);
   }
@@ -1097,7 +1089,7 @@ public class RecordManagerImpl implements RecordManager {
 
     if (filters.isMediaFilesFilter()) {
       Set<BaseRecord> mediaFiles = recordDao.getViewableMediaFiles(user);
-      init = addOrRetain(hits, init, mediaFiles);
+      addOrRetain(hits, init, mediaFiles);
 
       String mediaType = filters.getMediaFilesType();
       if (mediaType != null) {
@@ -1139,7 +1131,6 @@ public class RecordManagerImpl implements RecordManager {
       list.retainAll(newRecords);
     } else {
       list.addAll(newRecords);
-      init = true;
     }
     return true;
   }
@@ -1158,25 +1149,21 @@ public class RecordManagerImpl implements RecordManager {
    * Retrieve all viewable documents by specific user (Role).
    *
    * @param subject the user whose viewable records we are retrieving
-   * @param onlyTemplates
-   * @return
    */
   private List<BaseRecord> getViewableRecordsByRole(User subject, boolean onlyTemplates) {
-    List<BaseRecord> result = new ArrayList<>();
-
+    Set<BaseRecord> viewableRecords = new HashSet<>();
     if (subject.hasRole(Role.SYSTEM_ROLE)) {
       /*
        * Role.SYSTEM_ROLE. Get all users in the system and retrieve
        * all the documents/items which SysAdmin can see/read
-       * regardless to the permission.
+       * regardless of the permission.
        */
       List<User> users = userDao.getUsers();
-      Set<BaseRecord> hashSet = new HashSet<>();
+      Set<BaseRecord> allUsersRecords = new HashSet<>();
       for (User u : users) {
-        hashSet.addAll(getViewableRecordsByUser(u, onlyTemplates));
+        allUsersRecords.addAll(getViewableRecordsByUser(u, onlyTemplates));
       }
-      result.addAll(hashSet);
-
+      viewableRecords.addAll(allUsersRecords);
     } else if (subject.hasRole(Role.ADMIN_ROLE)
         || subject.hasRole(Role.PI_ROLE)
         || subject.hasRole(Role.USER_ROLE)) {
@@ -1198,20 +1185,28 @@ public class RecordManagerImpl implements RecordManager {
        *
        */
       List<User> viewableUsers = userDao.getViewableUsersByRole(subject);
-      Set<BaseRecord> recordsToAdd = new HashSet<>();
+
+      // records shared with the subject
+      Set<BaseRecord> subjectsViewableRecords =
+          new HashSet<>(getRecordsSharedWithUser(subject, onlyTemplates, subject));
+
+      // records created by each of the subjects viewable users
       for (User viewableUser : viewableUsers) {
-        recordsToAdd.addAll(getRecordsSharedWithUser(viewableUser, onlyTemplates, subject));
-        recordsToAdd.addAll(getViewableRecordsByUser(viewableUser, onlyTemplates));
+        subjectsViewableRecords.addAll(getViewableRecordsByUser(viewableUser, onlyTemplates));
+        if (viewableUser.hasRole(Role.PI_ROLE)) {
+          // if the subject is a PI of group A, which contains another PI as a group member, they
+          // can only view the docs of the other PI which has been shared with group A (whereas the
+          // subject PI can view ALL records created by a non-PI), so filter the other PIs records
+          // by their permissions to ensure correct visibility
+          subjectsViewableRecords =
+              subjectsViewableRecords.stream()
+                  .filter(br -> permissnUtils.isPermitted(br, PermissionType.READ, subject))
+                  .collect(toCollection(HashSet::new));
+        }
       }
-      result.addAll(recordsToAdd);
+      viewableRecords.addAll(subjectsViewableRecords);
     }
-    // now filter by permission: rspa-2084. We collect into mutable list in case further
-    // modifications are needed to the results.
-    result =
-        result.stream()
-            .filter(br -> permissnUtils.isPermitted(br, PermissionType.READ, subject))
-            .collect(toCollection(() -> new ArrayList<>()));
-    return result;
+    return new ArrayList<>(viewableRecords);
   }
 
   private List<BaseRecord> getRecordsSharedWithUser(User u, boolean onlyTemplates, User subject) {
@@ -1276,8 +1271,7 @@ public class RecordManagerImpl implements RecordManager {
     StructuredDocument document = fieldDao.get(fieldId).getStructuredDocument();
     permissnUtils.assertIsPermitted(
         document, PermissionType.WRITE, user, "copy content into field");
-    String updatedContent = copyMgr.copyElementsInContent(fieldId, document, content, user);
-    return updatedContent;
+    return copyMgr.copyElementsInContent(fieldId, document, content, user);
   }
 
   @Override
