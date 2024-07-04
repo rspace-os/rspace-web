@@ -85,6 +85,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
   const prefersMoreContrast = window.matchMedia(
     "(prefers-contrast: more)"
   ).matches;
+  const prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
 
   // All of these strings are formatted specifically so MUI can parse them and perform its own arithmetic
 
@@ -238,10 +241,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiDialog: {
           defaultProps: {
             TransitionProps: {
-              timeout: window.matchMedia("(prefers-reduced-motion: reduce)")
-                .matches
-                ? 0
-                : 200,
+              timeout: prefersReducedMotion ? 0 : 200,
             },
           },
           styleOverrides: {
@@ -295,8 +295,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiDrawer: {
           styleOverrides: {
             root: {
-              transition: window.matchMedia("(prefers-reduced-motion: reduce)")
-                .matches
+              transition: prefersReducedMotion
                 ? "none !important"
                 : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
               [`& .${listItemButtonClasses.root}`]: {
@@ -342,9 +341,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               [`& .${paperClasses.root}`]: {
                 backgroundColor: secondaryBackground,
                 borderRight: accentedBorder,
-                transition: window.matchMedia(
-                  "(prefers-reduced-motion: reduce)"
-                ).matches
+                transition: prefersReducedMotion
                   ? "none !important"
                   : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
               },
@@ -746,7 +743,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             paper: {
               boxShadow: "none",
               border: accentedBorder,
-              ...(window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ...(prefersReducedMotion
                 ? {
                     transition: "none !important",
                   }
