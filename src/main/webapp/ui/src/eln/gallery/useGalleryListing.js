@@ -8,12 +8,18 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
 import { gallerySectionCollectiveNoun } from "./common";
 
+export opaque type Id = number;
+export function idToString(id: Id): string {
+  return `${id}`;
+}
+
 export type GalleryFile = {|
-  id: number,
+  id: Id,
   name: string,
   modificationDate: number,
   type: string,
   thumbnailUrl: string,
+  path: $ReadOnlyArray<GalleryFile>,
   open?: () => void,
 |};
 
@@ -134,12 +140,14 @@ function generateIconSrc(
   return getIconPathForExtension(extension);
 }
 
-export default function useGalleryListing({
+export function useGalleryListing({
   section,
   searchTerm,
+  path: defaultPath,
 }: {|
   section: string,
   searchTerm: string,
+  path?: $ReadOnlyArray<GalleryFile>,
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
@@ -148,17 +156,17 @@ export default function useGalleryListing({
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
-  parentId: FetchingData.Fetched<number>,
+  folderId: FetchingData.Fetched<Id>,
 |} {
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
-  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
-  const [parentId, setParentId] = React.useState<Result<number>>(
-    Result.Error([])
+  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
+    defaultPath ?? []
   );
+  const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([]));
 
   function emptyReason(): string {
     if (path.length > 0) {
@@ -193,6 +201,7 @@ export default function useGalleryListing({
         id,
         modificationDate
       ),
+      path,
       ...(/Folder/.test(type)
         ? {
             open: () => {
@@ -228,6 +237,7 @@ export default function useGalleryListing({
           .flatMap(Parsers.isNotNull)
           .flatMap(Parsers.getValueWithKey("parentId"))
           .flatMap(Parsers.isNumber)
+          .map((x) => x) // possibly a bug in Flow
       );
 
       setGalleryListing(
@@ -307,7 +317,7 @@ export default function useGalleryListing({
   }, [searchTerm, path]);
 
   React.useEffect(() => {
-    setPath([]);
+    setPath(defaultPath ?? []);
   }, [section]);
 
   if (loading)
@@ -315,7 +325,7 @@ export default function useGalleryListing({
       galleryListing: { tag: "loading" },
       path: [],
       clearPath: () => {},
-      parentId: { tag: "loading" },
+      folderId: { tag: "loading" },
       refreshListing: () => {},
     };
 
@@ -329,7 +339,7 @@ export default function useGalleryListing({
     },
     path,
     clearPath: () => setPath([]),
-    parentId: parentId
+    folderId: parentId
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: () => {

@@ -84,9 +84,10 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
     return result;
   }
 
-  byte[] getPdfBytes(DMPToolDMP dmp, String accessToken)
+  protected String getJson(DMPToolDMP dmp, String accessToken)
       throws URISyntaxException, MalformedURLException {
-    return this.dmpToolClient.getPdfBytes(dmp, accessToken);
+    String json = this.dmpToolClient.getJson(dmp, accessToken);
+    return sanitizeDMPLinks(json);
   }
 
   @Override
@@ -114,8 +115,26 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
     if (!optConn.isPresent()) {
       return noAccessTokenFailure(DMPToolDMP.class);
     }
-    var apiDMPlan = getPlanById(dmpId, optConn.get().getAccessToken());
+    DMPToolDMP apiDMPlan = getPlanById(dmpId, optConn.get().getAccessToken());
+    apiDMPlan = sanitizeDMPLinks(apiDMPlan);
     return new ServiceOperationResult<>(apiDMPlan, true);
+  }
+
+  public DMPToolDMP sanitizeDMPLinks(DMPToolDMP apiDMPlan) {
+    String url = apiDMPlan.getLinks().get("get");
+    StringBuilder sanitizedHost =
+        new StringBuilder("://").append(dmpToolClient.getApiUrlBase().getHost()).append("/");
+    if (url != null) {
+      url = url.replace("://https/", sanitizedHost);
+      apiDMPlan.getLinks().put("get", url);
+    }
+    return apiDMPlan;
+  }
+
+  public String sanitizeDMPLinks(String json) {
+    StringBuilder sanitizedHost =
+        new StringBuilder("://").append(dmpToolClient.getApiUrlBase().getHost()).append("/");
+    return json.replace("://https/", sanitizedHost);
   }
 
   @Override
@@ -144,24 +163,23 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   }
 
   @Override
-  public DMPUser doPdfDownload(DMPToolDMP dmp, String title, String accessToken)
+  public DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
       throws URISyntaxException, IOException {
     User user = userManager.getAuthenticatedUserInSession();
     if (!assertIsNewDMP(dmp, user)) {
       return null;
     }
-    byte[] pdfBytes = getPdfBytes(dmp, accessToken);
-    return saveDMPPdf(dmp, title, user, pdfBytes);
+    return saveJsonDMP(dmp, title, user, getJson(dmp, accessToken));
   }
 
   @Override
-  public ServiceOperationResult<DMPUser> doPdfDownload(DMPToolDMP dmp, String title, User user)
+  public ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
       throws URISyntaxException, IOException {
     Optional<UserConnection> optConn = getUserConnection(user.getUsername());
     if (!optConn.isPresent()) {
       return noAccessTokenFailure(DMPUser.class);
     } else {
-      DMPUser created = doPdfDownload(dmp, title, optConn.get().getAccessToken());
+      DMPUser created = doJsonDownload(dmp, title, optConn.get().getAccessToken());
       if (created != null) {
         return new ServiceOperationResult<>(created, true);
       } else {
