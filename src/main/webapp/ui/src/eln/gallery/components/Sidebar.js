@@ -126,12 +126,14 @@ const UploadMenuItem = ({
   path,
   folderId,
   onUploadComplete,
+  onCancel,
   autoFocus,
   tabIndex,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
   folderId: Id,
   onUploadComplete: () => void,
+  onCancel: () => void,
 
   /*
    * These properties are dynamically added by the MUI Menu parent component
@@ -141,6 +143,18 @@ const UploadMenuItem = ({
 |}) => {
   const { uploadFiles } = useGalleryActions();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  /*
+   * This is necessary because React does not yet support the new cancel event
+   * https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/cancel_event
+   * https://github.com/facebook/react/issues/27858
+   */
+  React.useEffect(() => {
+    const input = inputRef.current;
+    input?.addEventListener("cancel", onCancel);
+    return () => input?.removeEventListener("cancel", onCancel);
+  }, [inputRef, onCancel]);
+
   return (
     <>
       <NewMenuItem
@@ -259,7 +273,11 @@ const NewFolderMenuItem = ({
   );
 };
 
-const DmpMenuSection = () => {
+type DmpMenuSectionArgs = {|
+  onDialogClose: () => void,
+|};
+
+const DmpMenuSection = ({ onDialogClose }: DmpMenuSectionArgs) => {
   const [argosEnabled, setArgosEnabled] = React.useState(false);
   const [dmponlineEnabled, setDmponlineEnabled] = React.useState(false);
   const [dmptoolEnabled, setDmptoolEnabled] = React.useState(false);
@@ -294,9 +312,11 @@ const DmpMenuSection = () => {
       <Divider textAlign="left" aria-label="DMPs">
         DMPs
       </Divider>
-      {argosEnabled && <ArgosNewMenuItem />}
-      {dmponlineEnabled && <DMPOnlineNewMenuItem />}
-      {dmptoolEnabled && <DMPToolNewMenuItem />}
+      {argosEnabled && <ArgosNewMenuItem onDialogClose={onDialogClose} />}
+      {dmponlineEnabled && (
+        <DMPOnlineNewMenuItem onDialogClose={onDialogClose} />
+      )}
+      {dmptoolEnabled && <DMPToolNewMenuItem onDialogClose={onDialogClose} />}
     </>
   );
 };
@@ -417,7 +437,7 @@ const Sidebar = ({
       anchor="left"
       variant={viewport.isViewportSmall ? "temporary" : "permanent"}
       onClose={() => {
-        setDrawerOpen(false);
+        setDrawerOpen(!viewport.isViewportSmall);
       }}
       aria-label="gallery sections drawer"
     >
@@ -429,7 +449,10 @@ const Sidebar = ({
         <StyledMenu
           open={Boolean(newMenuAnchorEl)}
           anchorEl={newMenuAnchorEl}
-          onClose={() => setNewMenuAnchorEl(null)}
+          onClose={() => {
+            setDrawerOpen(!viewport.isViewportSmall);
+            setNewMenuAnchorEl(null);
+          }}
           MenuListProps={{
             disablePadding: true,
           }}
@@ -444,6 +467,11 @@ const Sidebar = ({
                 onUploadComplete={() => {
                   refreshListing();
                   setNewMenuAnchorEl(null);
+                  setDrawerOpen(!viewport.isViewportSmall);
+                }}
+                onCancel={() => {
+                  setNewMenuAnchorEl(null);
+                  setDrawerOpen(!viewport.isViewportSmall);
                 }}
               />
             ))
@@ -457,11 +485,17 @@ const Sidebar = ({
                 onDialogClose={(success) => {
                   if (success) refreshListing();
                   setNewMenuAnchorEl(null);
+                  setDrawerOpen(!viewport.isViewportSmall);
                 }}
               />
             ))
             .orElse(null)}
-          <DmpMenuSection />
+          <DmpMenuSection
+            onDialogClose={() => {
+              setNewMenuAnchorEl(null);
+              setDrawerOpen(!viewport.isViewportSmall);
+            }}
+          />
         </StyledMenu>
       </Box>
       <Divider />
@@ -487,6 +521,7 @@ const Sidebar = ({
             selected={selectedSection === "Images"}
             onClick={(event) => {
               setSelectedSection("Images");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -500,6 +535,7 @@ const Sidebar = ({
             selected={selectedSection === "Audios"}
             onClick={(event) => {
               setSelectedSection("Audios");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -513,6 +549,7 @@ const Sidebar = ({
             selected={selectedSection === "Videos"}
             onClick={(event) => {
               setSelectedSection("Videos");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -526,6 +563,7 @@ const Sidebar = ({
             selected={selectedSection === "Documents"}
             onClick={(event) => {
               setSelectedSection("Documents");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -539,6 +577,7 @@ const Sidebar = ({
             selected={selectedSection === "Chemistry"}
             onClick={(event) => {
               setSelectedSection("Chemistry");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -552,6 +591,7 @@ const Sidebar = ({
             selected={selectedSection === "DMPs"}
             onClick={(event) => {
               setSelectedSection("DMPs");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -565,6 +605,7 @@ const Sidebar = ({
             selected={selectedSection === "Snippets"}
             onClick={(event) => {
               setSelectedSection("Snippets");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -578,6 +619,7 @@ const Sidebar = ({
             selected={selectedSection === "Miscellaneous"}
             onClick={(event) => {
               setSelectedSection("Miscellaneous");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -594,6 +636,7 @@ const Sidebar = ({
             selected={selectedSection === "PdfDocuments"}
             onClick={(event) => {
               setSelectedSection("PdfDocuments");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />

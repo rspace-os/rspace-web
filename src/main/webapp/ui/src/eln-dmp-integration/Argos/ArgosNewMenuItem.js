@@ -7,7 +7,13 @@ import ArgosIcon from "../../eln/apps/icons/Argos.svg";
 import { COLOR } from "../../eln/apps/integrations/Argos";
 import CardMedia from "@mui/material/CardMedia";
 
-export default function ArgosNewMenuItem(): Node {
+type ArgosNewMenuItemArgs = {|
+  onDialogClose: () => void,
+|};
+
+export default function ArgosNewMenuItem({
+  onDialogClose,
+}: ArgosNewMenuItemArgs): Node {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
@@ -23,7 +29,13 @@ export default function ArgosNewMenuItem(): Node {
         }}
         aria-haspopup="dialog"
       />
-      <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
+      <DMPDialog
+        open={showDMPDialog}
+        setOpen={(b) => {
+          setShowDMPDialog(b);
+          if (!b) onDialogClose();
+        }}
+      />
     </>
   );
 }

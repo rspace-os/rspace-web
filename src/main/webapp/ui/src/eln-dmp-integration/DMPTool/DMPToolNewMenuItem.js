@@ -9,7 +9,13 @@ import CardMedia from "@mui/material/CardMedia";
 import axios from "axios";
 import { mapNullable } from "../../util/Util";
 
-export default function DMPToolNewMenuItem(): Node {
+type DMPToolNewMenuItemArgs = {|
+  onDialogClose: () => void,
+|};
+
+export default function DMPToolNewMenuItem({
+  onDialogClose,
+}: DMPToolNewMenuItemArgs): Node {
   const [DMPHost, setDMPHost] = React.useState<?string>();
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
@@ -35,7 +41,13 @@ export default function DMPToolNewMenuItem(): Node {
         }}
         aria-haspopup="dialog"
       />
-      <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
+      <DMPDialog
+        open={showDMPDialog}
+        setOpen={(b) => {
+          setShowDMPDialog(b);
+          onDialogClose();
+        }}
+      />
     </>
   );
 }

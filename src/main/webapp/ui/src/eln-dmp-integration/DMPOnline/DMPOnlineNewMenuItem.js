@@ -7,7 +7,13 @@ import DMPonlineIcon from "../../eln/apps/icons/dmponline.svg";
 import { COLOR } from "../../eln/apps/integrations/DMPonline";
 import CardMedia from "@mui/material/CardMedia";
 
-export default function DMPonlineNewMenuItem(): Node {
+type DMPonlineNewMenuItemArgs = {|
+  onDialogClose: () => void,
+|};
+
+export default function DMPonlineNewMenuItem({
+  onDialogClose,
+}: DMPonlineNewMenuItemArgs): Node {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
@@ -23,7 +29,13 @@ export default function DMPonlineNewMenuItem(): Node {
         }}
         aria-haspopup="dialog"
       />
-      <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
+      <DMPDialog
+        open={showDMPDialog}
+        setOpen={(b) => {
+          setShowDMPDialog(b);
+          onDialogClose();
+        }}
+      />
     </>
   );
 }
