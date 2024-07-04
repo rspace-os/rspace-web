@@ -58,6 +58,9 @@ const MoveDialog = ({
     if (!open) setPathString("");
   }, [open]);
 
+  const [topLevelLoading, setTopLevelLoading] = React.useState(false);
+  const [submitLoading, setSubmitLoading] = React.useState(false);
+
   return (
     <Dialog
       open={open}
@@ -115,18 +118,20 @@ const MoveDialog = ({
             <Stack direction="row" spacing={1}>
               <SubmitSpinnerButton
                 onClick={() => {
+                  setTopLevelLoading(true);
                   void moveFiles(selectedFiles)
                     .to({
                       destination: rootDestination(),
                       section,
                     })
                     .then(() => {
+                      setTopLevelLoading(false);
                       refreshListing();
                       onClose();
                     });
                 }}
-                disabled={false}
-                loading={false}
+                disabled={topLevelLoading}
+                loading={topLevelLoading}
                 label="Make top-level"
               />
               <Box flexGrow={1}></Box>
@@ -138,11 +143,13 @@ const MoveDialog = ({
                 Cancel
               </Button>
               <ValidatingSubmitButton
-                loading={false}
+                loading={submitLoading}
                 onClick={() => {
+                  setSubmitLoading(true);
                   void moveFiles(selectedFiles)
                     .toDestinationWithPath(section, pathString)
                     .then(() => {
+                      setSubmitLoading(false);
                       refreshListing();
                       onClose();
                     });
