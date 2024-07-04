@@ -292,7 +292,6 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiDrawer: {
           styleOverrides: {
             root: {
-              backgroundColor: secondaryBackground,
               [`& .${listItemButtonClasses.root}`]: {
                 paddingLeft: baseTheme.spacing(3),
                 border: "none",
@@ -334,6 +333,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 },
               },
               [`& .${paperClasses.root}`]: {
+                backgroundColor: secondaryBackground,
                 borderRight: accentedBorder,
               },
             },

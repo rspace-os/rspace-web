@@ -47,6 +47,7 @@ function WholePage() {
           selectedSection={selectedSection}
           setSelectedSection={setSelectedSection}
           drawerOpen={drawerOpen}
+          setDrawerOpen={setDrawerOpen}
           path={path}
           folderId={folderId}
           refreshListing={refreshListing}

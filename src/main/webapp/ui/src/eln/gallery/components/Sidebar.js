@@ -1,6 +1,6 @@
 //@flow
 
-import React, { type Node } from "react";
+import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import { styled } from "@mui/material/styles";
@@ -47,6 +47,8 @@ import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
 import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabIndex";
+import useViewportDimensions from "../../../util/useViewportDimensions";
+import { observer } from "mobx-react-lite";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -102,14 +104,22 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
   color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, 40%, 100%)`,
 }));
 
-const CustomDrawer = styled(Drawer)(({ open }) => ({
-  width: open ? "200px" : "64px",
+const CustomDrawer = styled(Drawer)(({ open, theme }) => ({
+  [theme.breakpoints.up("sm")]: {
+    width: open ? "200px" : "64px",
+  },
+  [theme.breakpoints.down("sm")]: {
+    width: open ? "200px" : "200px",
+  },
   transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "none"
+    ? "none !important"
     : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
   "& .MuiPaper-root": {
     position: "relative",
     overflowX: "hidden",
+    transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "none !important"
+      : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
   },
 }));
 
@@ -372,24 +382,29 @@ const DrawerTab = styled(
   },
 }));
 
-export default function GallerySidebar({
-  selectedSection,
-  setSelectedSection,
-  drawerOpen,
-  path,
-  folderId,
-  refreshListing,
-}: {|
+type SidebarArgs = {|
   selectedSection: string,
   setSelectedSection: (string) => void,
   drawerOpen: boolean,
+  setDrawerOpen: (boolean) => void,
   path: $ReadOnlyArray<GalleryFile>,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
-|}): Node {
+|};
+
+const Sidebar = ({
+  selectedSection,
+  setSelectedSection,
+  drawerOpen,
+  setDrawerOpen,
+  path,
+  folderId,
+  refreshListing,
+}: SidebarArgs): Node => {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
+  const viewport = useViewportDimensions();
 
   const { getTabIndex, getRef, eventHandlers } = useVerticalRovingTabIndex<
     typeof ListItemButton
@@ -401,7 +416,10 @@ export default function GallerySidebar({
     <CustomDrawer
       open={drawerOpen}
       anchor="left"
-      variant="permanent"
+      variant={viewport.isViewportSmall ? "temporary" : "permanent"}
+      onClose={() => {
+        setDrawerOpen(false);
+      }}
       aria-label="gallery sections drawer"
     >
       <Box width="100%" p={1.5}>
@@ -584,4 +602,6 @@ export default function GallerySidebar({
       </Box>
     </CustomDrawer>
   );
-}
+};
+
+export default (observer(Sidebar): ComponentType<SidebarArgs>);
