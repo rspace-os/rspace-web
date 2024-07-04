@@ -167,10 +167,14 @@ export function useGalleryListing({
   section,
   searchTerm,
   path: defaultPath,
+  sortOrder,
+  orderBy,
 }: {|
   section: string,
   searchTerm: string,
   path?: $ReadOnlyArray<GalleryFile>,
+  sortOrder: "DESC" | "ASC",
+  orderBy: "name" | "modificationDate",
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
@@ -264,8 +268,8 @@ export function useGalleryListing({
             path.length > 0 ? `${path[path.length - 1].id}` : "0",
           name: searchTerm,
           pageNumber: "0",
-          sortOrder: "DESC",
-          orderBy: "",
+          sortOrder,
+          orderBy,
         }),
       });
 
@@ -354,7 +358,7 @@ export function useGalleryListing({
 
   React.useEffect(() => {
     void getGalleryFiles();
-  }, [searchTerm, path]);
+  }, [searchTerm, path, sortOrder, orderBy]);
 
   React.useEffect(() => {
     setPath(defaultPath ?? []);

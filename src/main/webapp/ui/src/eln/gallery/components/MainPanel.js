@@ -32,7 +32,7 @@ import {
   rootDestination,
 } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
-import { doNotAwait } from "../../../util/Util";
+import { doNotAwait, match } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
   useDroppable,
@@ -61,6 +61,10 @@ import RsSet from "../../../util/set";
 import TreeView from "./TreeView";
 import { COLORS as baseThemeColors } from "../../../theme";
 import PlaceholderLabel from "./PlaceholderLabel";
+import SwapVertIcon from "@mui/icons-material/SwapVert";
+import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -817,6 +821,10 @@ type GalleryMainPanelArgs = {|
   setSelectedFile: (null | GalleryFile) => void,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
+  sortOrder: "DESC" | "ASC",
+  orderBy: "name" | "modificationDate",
+  setSortOrder: ("DESC" | "ASC") => void,
+  setOrderBy: ("name" | "modificationDate") => void,
 |};
 
 function GalleryMainPanel({
@@ -826,6 +834,10 @@ function GalleryMainPanel({
   galleryListing,
   folderId,
   refreshListing,
+  sortOrder,
+  orderBy,
+  setSortOrder,
+  setOrderBy,
 }: GalleryMainPanelArgs): Node {
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
@@ -841,6 +853,7 @@ function GalleryMainPanel({
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
+  const [sortMenuAnchorEl, setSortMenuAnchorEl] = React.useState(null);
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
 
@@ -948,6 +961,111 @@ function GalleryMainPanel({
             </Grid>
             <Grid item sx={{ mt: 0.5 }}>
               <Stack direction="row" spacing={1}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<SwapVertIcon />}
+                  onClick={(e) => {
+                    setSortMenuAnchorEl(e.target);
+                  }}
+                  aria-haspopup="menu"
+                >
+                  Sort
+                </Button>
+                <StyledMenu
+                  open={Boolean(sortMenuAnchorEl)}
+                  anchorEl={sortMenuAnchorEl}
+                  onClose={() => setSortMenuAnchorEl(null)}
+                  MenuListProps={{
+                    disablePadding: true,
+                  }}
+                >
+                  <NewMenuItem
+                    title={`Name${match<void, string>([
+                      [() => orderBy !== "name", ""],
+                      [() => sortOrder === "ASC", " (Sorted from A to Z)"],
+                      [() => sortOrder === "DESC", " (Sorted from Z to A)"],
+                    ])()}`}
+                    subheader={match<void, string>([
+                      [() => orderBy !== "name", "Tap to sort from A to Z"],
+                      [() => sortOrder === "ASC", "Tap to sort from Z to A"],
+                      [() => sortOrder === "DESC", "Tap to sort from A to Z"],
+                    ])()}
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={match<void, Node>([
+                      [
+                        () => orderBy !== "name",
+                        <HorizontalRuleIcon key={null} />,
+                      ],
+                      [
+                        () => sortOrder === "ASC",
+                        <ArrowDownwardIcon key={null} />,
+                      ],
+                      [
+                        () => sortOrder === "DESC",
+                        <ArrowUpwardIcon key={null} />,
+                      ],
+                    ])()}
+                    onClick={() => {
+                      setSortMenuAnchorEl(null);
+                      if (orderBy === "name") {
+                        if (sortOrder === "ASC") {
+                          setSortOrder("DESC");
+                        } else {
+                          setSortOrder("ASC");
+                        }
+                      } else {
+                        setOrderBy("name");
+                        setSortOrder("ASC");
+                      }
+                    }}
+                  />
+                  <NewMenuItem
+                    title={`Modification Date${match<void, string>([
+                      [() => orderBy !== "modificationDate", ""],
+                      [() => sortOrder === "ASC", " (Sorted oldest first)"],
+                      [() => sortOrder === "DESC", " (Sorted newest first)"],
+                    ])()}`}
+                    subheader={match<void, string>([
+                      [
+                        () => orderBy !== "modificationDate",
+                        "Tap to sort oldest first",
+                      ],
+                      [() => sortOrder === "ASC", "Tap to sort newest first"],
+                      [() => sortOrder === "DESC", "Tap to sort oldest first"],
+                    ])()}
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={match<void, Node>([
+                      [
+                        () => orderBy !== "modificationDate",
+                        <HorizontalRuleIcon key={null} />,
+                      ],
+                      [
+                        () => sortOrder === "ASC",
+                        <ArrowDownwardIcon key={null} />,
+                      ],
+                      [
+                        () => sortOrder === "DESC",
+                        <ArrowUpwardIcon key={null} />,
+                      ],
+                    ])()}
+                    onClick={() => {
+                      setSortMenuAnchorEl(null);
+                      if (orderBy === "modificationDate") {
+                        if (sortOrder === "ASC") {
+                          setSortOrder("DESC");
+                        } else {
+                          setSortOrder("ASC");
+                        }
+                      } else {
+                        setOrderBy("modificationDate");
+                        setSortOrder("ASC");
+                      }
+                    }}
+                  />
+                </StyledMenu>
                 <ActionsMenu
                   refreshListing={refreshListing}
                   section={selectedSection}
@@ -1014,6 +1132,8 @@ function GalleryMainPanel({
                     path={path}
                     selectedSection={selectedSection}
                     refreshListing={refreshListing}
+                    sortOrder={sortOrder}
+                    orderBy={orderBy}
                   />
                 ),
               })}

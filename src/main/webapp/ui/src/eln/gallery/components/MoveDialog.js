@@ -43,6 +43,8 @@ const MoveDialog = ({
     section,
     searchTerm: "",
     path: [],
+    orderBy: "name",
+    sortOrder: "ASC",
   });
   const { moveFiles } = useGalleryActions();
   const [pathString, setPathString] = React.useState("");
@@ -91,6 +93,8 @@ const MoveDialog = ({
                 refreshListing={refreshListing}
                 filter={(file) => file.isFolder && !file.isSnippetFolder}
                 disableDragAndDrop
+                sortOrder="ASC"
+                orderBy="name"
               />
             </Box>
           ),
