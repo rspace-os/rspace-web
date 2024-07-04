@@ -139,6 +139,7 @@ function GalleryAppBar({
             elementType="dialog"
             supportsReducedMotion
             supportsHighContrastMode
+            supports2xZoom
           />
         </Box>
         <Box ml={1}>
