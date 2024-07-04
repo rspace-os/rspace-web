@@ -292,6 +292,10 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiDrawer: {
           styleOverrides: {
             root: {
+              transition: window.matchMedia("(prefers-reduced-motion: reduce)")
+                .matches
+                ? "none !important"
+                : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
               [`& .${listItemButtonClasses.root}`]: {
                 paddingLeft: baseTheme.spacing(3),
                 border: "none",
@@ -335,6 +339,11 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               [`& .${paperClasses.root}`]: {
                 backgroundColor: secondaryBackground,
                 borderRight: accentedBorder,
+                transition: window.matchMedia(
+                  "(prefers-reduced-motion: reduce)"
+                ).matches
+                  ? "none !important"
+                  : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
               },
             },
           },

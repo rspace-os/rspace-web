@@ -111,15 +111,9 @@ const CustomDrawer = styled(Drawer)(({ open, theme }) => ({
   [theme.breakpoints.down("sm")]: {
     width: open ? "200px" : "200px",
   },
-  transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "none !important"
-    : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
   "& .MuiPaper-root": {
     position: "relative",
     overflowX: "hidden",
-    transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "none !important"
-      : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
   },
 }));
 
