@@ -251,6 +251,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               borderRadius: 6,
               backgroundColor: mainBackground,
             },
+            paperFullScreen: {
+              borderRadius: 0,
+            },
           },
         },
         MuiDialogContent: {

@@ -21,6 +21,7 @@ import * as FetchingData from "../../../util/fetchingData";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";
 import RsSet from "../../../util/set";
+import useViewportDimensions from "../../../util/useViewportDimensions";
 
 type MoveDialogArgs = {|
   open: boolean,
@@ -37,6 +38,7 @@ const MoveDialog = ({
   selectedFiles,
   refreshListing,
 }: MoveDialogArgs): Node => {
+  const viewport = useViewportDimensions();
   const { galleryListing } = useGalleryListing({
     section,
     searchTerm: "",
@@ -64,9 +66,10 @@ const MoveDialog = ({
         e.stopPropagation();
       }}
       scroll="paper"
+      fullScreen={viewport.isViewportVerySmall}
     >
       <DialogTitle>Move</DialogTitle>
-      <DialogContent sx={{ overflow: "hidden" }}>
+      <DialogContent sx={{ overflow: "hidden", flexGrow: 0 }}>
         <DialogContentText variant="body2">
           Choose a folder, enter a path, or tap the &quot;top-level&quot;
           button.
