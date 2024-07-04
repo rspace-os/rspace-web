@@ -101,6 +101,7 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
     </div>
   </Button>
 ))(() => ({
+  overflowX: "hidden",
   color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, 40%, 100%)`,
 }));
 
@@ -112,8 +113,12 @@ const CustomDrawer = styled(Drawer)(({ open, theme }) => ({
     width: open ? "200px" : "200px",
   },
   "& .MuiPaper-root": {
+    /*
+     * We set this position so that the drawer does not float above the AppBar
+     * and so that the active tab indicator can slide up and down relative to
+     * this bounding box.
+     */
     position: "relative",
-    overflowX: "hidden",
   },
 }));
 
