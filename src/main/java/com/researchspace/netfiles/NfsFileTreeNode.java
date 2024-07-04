@@ -17,6 +17,7 @@ public class NfsFileTreeNode {
   private String nodePath; /* a path to be saved as user folder */
   private String logicPath; /* nfsFileStoreId:relativePath */
   private String fileDate; /* date displayed to user */
+  private String fileMetadata; /* metadata displayed to user if any */
   private String fileSize = "0";
 
   private Long nfsId;
@@ -77,6 +78,14 @@ public class NfsFileTreeNode {
 
   public void setFileDate(String fileDate) {
     this.fileDate = fileDate;
+  }
+
+  public String getFileMetadata() {
+    return fileMetadata;
+  }
+
+  public void setFileMetadata(String fileMetadata) {
+    this.fileMetadata = fileMetadata;
   }
 
   public NfsFileTreeOrderType getOrderType() {
