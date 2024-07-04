@@ -49,6 +49,7 @@ import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
 import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabIndex";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { observer } from "mobx-react-lite";
+import { autorun } from "mobx";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -424,6 +425,12 @@ const Sidebar = ({
     React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
   const viewport = useViewportDimensions();
+
+  React.useEffect(() => {
+    autorun(() => {
+      setDrawerOpen(!viewport.isViewportSmall);
+    });
+  }, [viewport]);
 
   const { getTabIndex, getRef, eventHandlers } = useVerticalRovingTabIndex<
     typeof ListItemButton
