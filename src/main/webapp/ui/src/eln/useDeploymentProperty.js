@@ -73,8 +73,13 @@ export function useDeploymentProperty(
   const [value, setValue] = React.useState<FetchingData.Fetched<mixed>>({
     tag: "loading",
   });
+  const map = React.useContext(DeploymentPropertyContext);
 
   React.useEffect(() => {
+    if (map.has(name)) {
+      setValue({ tag: "success", value: map.get(name) });
+      return;
+    }
     void (async () => {
       try {
         const { data } = await axios.get<mixed>(
@@ -82,6 +87,7 @@ export function useDeploymentProperty(
           { params: new URLSearchParams({ name }) }
         );
         setValue({ tag: "success", value: data });
+        map.set(name, data);
       } catch (error) {
         setValue({ tag: "error", error: error.message });
       }
@@ -94,3 +100,17 @@ export function useDeploymentProperty(
 
   return value;
 }
+
+/**
+ * This context acts as a cache for the fetched deployment properties so that
+ * they need not be fetched more than once each per page load. If the same
+ * deployment property is used in multiple component, or in a single component
+ * is that un-mounted and re-mounted, then only the first call to
+ * useDeploymentProperty will trigger a network call.
+ *
+ * This context is not exported, and is only used in the custom hook above.
+ * There is not need to instantiate it with the
+ * DeploymentPropertyContext.Provider component; the default value of an empty
+ * Map suffices as a page-wide cache.
+ */
+const DeploymentPropertyContext = React.createContext(new Map<string, mixed>());
