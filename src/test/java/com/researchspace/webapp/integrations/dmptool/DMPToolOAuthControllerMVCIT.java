@@ -251,7 +251,7 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
     createInitAndLoginAnyUser();
     DMPUser dmpUser =
         dmpToolProvider.doJsonDownload(dmp, "A title", clientCredentialToken.getAccessToken());
-    assertEquals("A title.pdf", dmpUser.getDmpDownloadPdf().getName());
+    assertEquals("A title.json", dmpUser.getDmpDownloadPdf().getName());
     int finalDocCount = getCountOfEntityTable("EcatDocumentFile").intValue();
     assertEquals(initialDocCount + 1, finalDocCount);
     assertEquals(initialDMPUserCount + 1, getCountOfEntityTable("DMPUser"));
@@ -264,7 +264,7 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
 
     // create another user and token, this can be saved
     RSpaceTestUtils.logout();
-    User other = createInitAndLoginAnyUser();
+    createInitAndLoginAnyUser();
     dmpUser2 =
         dmpToolProvider.doJsonDownload(dmp, "A title", clientCredentialToken.getAccessToken());
     assertNotNull(dmpUser2);
