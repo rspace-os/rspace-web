@@ -83,6 +83,8 @@ import Badge from "@mui/material/Badge";
 import docLinks from "../../../assets/DocLinks";
 import createAccentedTheme from "../../../accentedTheme";
 import UserAliasIcon from "@mui/icons-material/ContactEmergency";
+import { useDeploymentProperty } from "../../useDeploymentProperty";
+import * as Parsers from "../../../util/parsers";
 
 const Panel = ({
   anchorEl,
@@ -646,10 +648,20 @@ const DeleteAction = ({
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [username, setUsername] = React.useState("");
+  const canDelete = useDeploymentProperty("sysadmin.delete.user");
 
-  const allowedToDelete: Result<User> = selectedUser.mapError(
-    () => new Error("Only one user can be deleted at a time.")
-  );
+  const allowedToDelete: Result<User> = FetchingData.getSuccessValue(canDelete)
+    .flatMap(Parsers.isBoolean)
+    .flatMap(Parsers.isTrue)
+    .mapError(
+      () =>
+        new Error('The deployment property "sysadmin.delete.user" is false.')
+    )
+    .flatMap(() =>
+      selectedUser.mapError(
+        () => new Error("Only one user can be deleted at a time.")
+      )
+    );
 
   return (
     <>
