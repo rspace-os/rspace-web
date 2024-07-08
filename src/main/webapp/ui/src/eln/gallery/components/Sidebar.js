@@ -428,7 +428,7 @@ const Sidebar = ({
 
   React.useEffect(() => {
     autorun(() => {
-      setDrawerOpen(!viewport.isViewportSmall);
+      if(viewport.isViewportSmall) setDrawerOpen(false);
     });
   }, [viewport]);
 
@@ -444,7 +444,7 @@ const Sidebar = ({
       anchor="left"
       variant={viewport.isViewportSmall ? "temporary" : "permanent"}
       onClose={() => {
-        setDrawerOpen(!viewport.isViewportSmall);
+        if(viewport.isViewportSmall) setDrawerOpen(false);
       }}
       aria-label="gallery sections drawer"
     >
@@ -457,7 +457,7 @@ const Sidebar = ({
           open={Boolean(newMenuAnchorEl)}
           anchorEl={newMenuAnchorEl}
           onClose={() => {
-            setDrawerOpen(!viewport.isViewportSmall);
+            if(viewport.isViewportSmall) setDrawerOpen(false);
             setNewMenuAnchorEl(null);
           }}
           MenuListProps={{
@@ -474,11 +474,11 @@ const Sidebar = ({
                 onUploadComplete={() => {
                   refreshListing();
                   setNewMenuAnchorEl(null);
-                  setDrawerOpen(!viewport.isViewportSmall);
+                  if(viewport.isViewportSmall) setDrawerOpen(false);
                 }}
                 onCancel={() => {
                   setNewMenuAnchorEl(null);
-                  setDrawerOpen(!viewport.isViewportSmall);
+                  if(viewport.isViewportSmall) setDrawerOpen(false);
                 }}
               />
             ))
@@ -492,7 +492,7 @@ const Sidebar = ({
                 onDialogClose={(success) => {
                   if (success) refreshListing();
                   setNewMenuAnchorEl(null);
-                  setDrawerOpen(!viewport.isViewportSmall);
+                  if(viewport.isViewportSmall) setDrawerOpen(false);
                 }}
               />
             ))
@@ -500,7 +500,7 @@ const Sidebar = ({
           <DmpMenuSection
             onDialogClose={() => {
               setNewMenuAnchorEl(null);
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
             }}
           />
         </StyledMenu>
@@ -528,7 +528,7 @@ const Sidebar = ({
             selected={selectedSection === "Images"}
             onClick={(event) => {
               setSelectedSection("Images");
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -542,7 +542,7 @@ const Sidebar = ({
             selected={selectedSection === "Audios"}
             onClick={(event) => {
               setSelectedSection("Audios");
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -556,7 +556,7 @@ const Sidebar = ({
             selected={selectedSection === "Videos"}
             onClick={(event) => {
               setSelectedSection("Videos");
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -570,7 +570,7 @@ const Sidebar = ({
             selected={selectedSection === "Documents"}
             onClick={(event) => {
               setSelectedSection("Documents");
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -584,7 +584,7 @@ const Sidebar = ({
             selected={selectedSection === "Chemistry"}
             onClick={(event) => {
               setSelectedSection("Chemistry");
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -598,7 +598,7 @@ const Sidebar = ({
             selected={selectedSection === "DMPs"}
             onClick={(event) => {
               setSelectedSection("DMPs");
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -612,7 +612,7 @@ const Sidebar = ({
             selected={selectedSection === "Snippets"}
             onClick={(event) => {
               setSelectedSection("Snippets");
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -626,7 +626,7 @@ const Sidebar = ({
             selected={selectedSection === "Miscellaneous"}
             onClick={(event) => {
               setSelectedSection("Miscellaneous");
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -643,7 +643,7 @@ const Sidebar = ({
             selected={selectedSection === "PdfDocuments"}
             onClick={(event) => {
               setSelectedSection("PdfDocuments");
-              setDrawerOpen(!viewport.isViewportSmall);
+              if(viewport.isViewportSmall) setDrawerOpen(false);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
