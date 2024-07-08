@@ -74,17 +74,49 @@ const Path = styled(({ className, section, path }) => {
   const str = ArrayUtils.last(path)
     .map((folder) => folder.pathAsString())
     .orElse(`/${section}/`);
+  const [hasFocus, setHasFocus] = React.useState(false);
   return (
-    <TextField
-      className={className}
-      value={str}
-      onChange={() => {}}
-      fullWidth
-      size="small"
-      InputProps={{
-        startAdornment: <InputAdornment position="start">Path</InputAdornment>,
-      }}
-    />
+    <>
+      <TextField
+        className={className}
+        value={hasFocus ? str : ""}
+        onChange={() => {}}
+        fullWidth
+        size="small"
+        onFocus={() => {
+          setHasFocus(true);
+        }}
+        onBlur={() => {
+          setHasFocus(false);
+        }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">Path</InputAdornment>
+          ),
+        }}
+      />
+      {!hasFocus && (
+        <Stack
+          direction="row"
+          spacing={0.25}
+          sx={{
+            position: "absolute",
+            top: "8px",
+            left: "75px",
+          }}
+        >
+          <span>/</span>
+          <span>{section}</span>
+          {path.map((f) => (
+            <>
+              <span>/</span>
+              <span>{f.name}</span>
+            </>
+          ))}
+          <span>/</span>
+        </Stack>
+      )}
+    </>
   );
 })(() => ({
   "& input": {
@@ -1141,7 +1173,7 @@ function GalleryMainPanel({
              * 1 to each of buttons so that when they are on their own row
              * above, they each take up 1/3 of the row.
              */}
-            <Grid item flexGrow={99999}>
+            <Grid item flexGrow={99999} sx={{ position: "relative" }}>
               <Path section={selectedSection} path={path} />
             </Grid>
           </Grid>
