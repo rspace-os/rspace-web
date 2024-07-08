@@ -211,14 +211,18 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   [`&:has(.${inputAdornmentClasses.positionStart})`]: {
                     paddingLeft: 0,
                   },
-                  [`& .${svgIconClasses.root}`]: {
-                    fill: prefersMoreContrast
-                      ? "rgb(0,0,0)"
-                      : contrastTextColor,
+                  [`& .${inputAdornmentClasses.root}`]: {
+                    paddingLeft: baseTheme.spacing(1),
+                    paddingRight: baseTheme.spacing(1),
+                    [`& .${svgIconClasses.root}`]: {
+                      fill: prefersMoreContrast
+                        ? "rgb(0,0,0)"
+                        : contrastTextColor,
+                    },
                   },
                   "& input": {
                     padding: baseTheme.spacing(0.5),
-                    paddingLeft: 0,
+                    paddingLeft: baseTheme.spacing(1),
                     color: prefersMoreContrast
                       ? "rgb(0,0,0)"
                       : contrastTextColor,
@@ -452,19 +456,20 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 [`& .${outlinedInputClasses.input}`]: {
                   paddingTop: "5px",
                   paddingBottom: "5px",
+                  paddingLeft: baseTheme.spacing(1.5),
                 },
               },
               [`& .${inputAdornmentClasses.root}`]: {
                 height: "100%",
-                paddingLeft: baseTheme.spacing(1),
-                paddingRight: baseTheme.spacing(1),
+                paddingLeft: baseTheme.spacing(1.5),
+                paddingRight: baseTheme.spacing(1.5),
                 borderRight: accentedBorder,
-                backgroundColor: lighterInteractiveColor,
+                marginRight: 0,
                 [`& .${typographyClasses.root}`]: {
                   textTransform: "uppercase",
                   fontWeight: 700,
-                  fontSize: "0.9rem",
-                  lineHeight: "31px",
+                  fontSize: "0.8125rem",
+                  lineHeight: "20px",
                 },
               },
             },

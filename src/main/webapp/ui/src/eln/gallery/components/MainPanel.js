@@ -86,22 +86,9 @@ const Path = styled(({ className, section, path }) => {
       }}
     />
   );
-})(({ theme }) => ({
-  "& .MuiOutlinedInput-root": {
-    "& .MuiInputAdornment-root": {
-      paddingLeft: theme.spacing(1.5),
-      paddingRight: theme.spacing(1.5),
-      backgroundColor: "unset",
-      marginRight: 0,
-      "& .MuiTypography-root": {
-        lineHeight: "20px",
-        fontSize: "0.8125rem",
-      },
-    },
-  },
+})(() => ({
   "& input": {
     height: "21px",
-    paddingLeft: theme.spacing(1.5),
   },
 }));
 
