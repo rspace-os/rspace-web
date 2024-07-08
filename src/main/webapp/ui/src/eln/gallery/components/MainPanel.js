@@ -980,6 +980,50 @@ function GalleryMainPanel({
                 <Button
                   variant="outlined"
                   size="small"
+                  startIcon={<TreeIcon />}
+                  onClick={(e) => {
+                    setViewMenuAnchorEl(e.target);
+                  }}
+                  aria-haspopup="menu"
+                >
+                  Views
+                </Button>
+                <StyledMenu
+                  open={Boolean(viewMenuAnchorEl)}
+                  anchorEl={viewMenuAnchorEl}
+                  onClose={() => setViewMenuAnchorEl(null)}
+                  MenuListProps={{
+                    disablePadding: true,
+                  }}
+                >
+                  <NewMenuItem
+                    title="Grid"
+                    subheader="Browse by thumbnail previews"
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={<GridIcon />}
+                    onClick={() => {
+                      setViewMode("grid");
+                      setViewMenuAnchorEl(null);
+                      selection.clear();
+                    }}
+                  />
+                  <NewMenuItem
+                    title="Tree"
+                    subheader="View and manage folder hierarchy"
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={<TreeIcon />}
+                    onClick={() => {
+                      setViewMode("tree");
+                      setViewMenuAnchorEl(null);
+                      selection.clear();
+                    }}
+                  />
+                </StyledMenu>
+                <Button
+                  variant="outlined"
+                  size="small"
                   startIcon={<SwapVertIcon />}
                   onClick={(e) => {
                     setSortMenuAnchorEl(e.target);
@@ -1086,50 +1130,6 @@ function GalleryMainPanel({
                   refreshListing={refreshListing}
                   section={selectedSection}
                 />
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<TreeIcon />}
-                  onClick={(e) => {
-                    setViewMenuAnchorEl(e.target);
-                  }}
-                  aria-haspopup="menu"
-                >
-                  Views
-                </Button>
-                <StyledMenu
-                  open={Boolean(viewMenuAnchorEl)}
-                  anchorEl={viewMenuAnchorEl}
-                  onClose={() => setViewMenuAnchorEl(null)}
-                  MenuListProps={{
-                    disablePadding: true,
-                  }}
-                >
-                  <NewMenuItem
-                    title="Grid"
-                    subheader="Browse by thumbnail previews"
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={<GridIcon />}
-                    onClick={() => {
-                      setViewMode("grid");
-                      setViewMenuAnchorEl(null);
-                      selection.clear();
-                    }}
-                  />
-                  <NewMenuItem
-                    title="Tree"
-                    subheader="View and manage folder hierarchy"
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={<TreeIcon />}
-                    onClick={() => {
-                      setViewMode("tree");
-                      setViewMenuAnchorEl(null);
-                      selection.clear();
-                    }}
-                  />
-                </StyledMenu>
               </Stack>
             </Grid>
             <Grid item flexGrow={1}>
