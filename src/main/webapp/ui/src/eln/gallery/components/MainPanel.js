@@ -70,6 +70,57 @@ import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 
+const BreadcrumbLink = ({
+  folder,
+  section,
+}: {|
+  folder?: GalleryFile,
+  section: string,
+|}) => {
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `/${[
+      section,
+      ...(folder?.path.map(({ name }) => name) ?? []),
+      folder?.name ?? "",
+    ].join("/")}/`,
+    disabled: false,
+    data: {
+      path: folder?.path ?? [],
+      destination: folder ? folderDestination(folder) : rootDestination(),
+    },
+  });
+  const dndContext = useDndContext();
+  const dndInProgress = Boolean(dndContext.active);
+  const dropStyle: { [string]: string | number } = isOver
+    ? {
+        border: SELECTED_OR_FOCUS_BORDER,
+      }
+    : dndInProgress
+    ? {
+        border: "2px solid white",
+        borderWidth: "2px",
+        animation: "drop 2s linear infinite",
+      }
+    : {
+        border: "2px solid transparent",
+      };
+  return (
+    <span
+      ref={(node) => {
+        setDropRef(node);
+      }}
+      style={{
+        ...dropStyle,
+        borderRadius: "6px",
+        paddingLeft: "1px",
+        paddingRight: "1px",
+      }}
+    >
+      {folder?.name ?? section}
+    </span>
+  );
+};
+
 const Path = styled(({ className, section, path }) => {
   const str = ArrayUtils.last(path)
     .map((folder) => folder.pathAsString())
@@ -104,7 +155,7 @@ const Path = styled(({ className, section, path }) => {
           style={{
             width: "calc(100% - 85px)",
             position: "absolute",
-            top: "8px",
+            top: "5px",
             right: "10px",
             overflow: "hidden",
           }}
@@ -119,15 +170,15 @@ const Path = styled(({ className, section, path }) => {
               paddingBottom: "50px",
             }}
           >
-            <span>/</span>
-            <span>{section}</span>
+            <span style={{ marginTop: "2px" }}>/</span>
+            <BreadcrumbLink section={section} />
             {path.map((f) => (
               <>
-                <span>/</span>
-                <span>{f.name}</span>
+                <span style={{ marginTop: "2px" }}>/</span>
+                <BreadcrumbLink folder={f} section={section} />
               </>
             ))}
-            <span>/</span>
+            <span style={{ marginTop: "2px" }}>/</span>
           </Stack>
         </div>
       )}
