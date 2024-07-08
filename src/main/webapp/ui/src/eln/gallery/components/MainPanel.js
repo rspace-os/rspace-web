@@ -972,10 +972,11 @@ function GalleryMainPanel({
             container
             direction="row"
             alignItems="flex-start"
-            spacing={1}
+            spacing={0.5}
+            sx={{ mt: 0 }}
           >
-            <Grid item sx={{ mt: 0.5 }}>
-              <Stack direction="row" spacing={1}>
+            <Grid item>
+              <Stack direction="row" spacing={0.5}>
                 <Button
                   variant="outlined"
                   size="small"
@@ -1131,7 +1132,7 @@ function GalleryMainPanel({
                 </StyledMenu>
               </Stack>
             </Grid>
-            <Grid item sx={{ mt: 0.5 }} flexGrow={1}>
+            <Grid item flexGrow={1}>
               <Path section={selectedSection} path={path} />
             </Grid>
           </Grid>
