@@ -1,6 +1,6 @@
 //@flow
 
-import React, { type Node } from "react";
+import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import { styled } from "@mui/material/styles";
@@ -47,6 +47,9 @@ import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
 import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabIndex";
+import useViewportDimensions from "../../../util/useViewportDimensions";
+import { observer } from "mobx-react-lite";
+import { autorun } from "mobx";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -72,6 +75,7 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
     {...props}
     fullWidth
     style={{ minWidth: "unset" }}
+    aria-haspopup="menu"
     startIcon={
       <AddIcon
         style={{
@@ -98,17 +102,24 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
     </div>
   </Button>
 ))(() => ({
-  color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, ${COLOR.contrastText.lightness}%, 100%)`,
+  overflowX: "hidden",
+  color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, 40%, 100%)`,
 }));
 
-const CustomDrawer = styled(Drawer)(({ open }) => ({
-  width: open ? "200px" : "64px",
-  transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "none"
-    : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
+const CustomDrawer = styled(Drawer)(({ open, theme }) => ({
+  [theme.breakpoints.up("sm")]: {
+    width: open ? "200px" : "64px",
+  },
+  [theme.breakpoints.down("sm")]: {
+    width: open ? "200px" : "200px",
+  },
   "& .MuiPaper-root": {
+    /*
+     * We set this position so that the drawer does not float above the AppBar
+     * and so that the active tab indicator can slide up and down relative to
+     * this bounding box.
+     */
     position: "relative",
-    overflowX: "hidden",
   },
 }));
 
@@ -116,13 +127,35 @@ const UploadMenuItem = ({
   path,
   folderId,
   onUploadComplete,
+  onCancel,
+  autoFocus,
+  tabIndex,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
   folderId: Id,
   onUploadComplete: () => void,
+  onCancel: () => void,
+
+  /*
+   * These properties are dynamically added by the MUI Menu parent component
+   */
+  autoFocus?: boolean,
+  tabIndex?: number,
 |}) => {
   const { uploadFiles } = useGalleryActions();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  /*
+   * This is necessary because React does not yet support the new cancel event
+   * https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/cancel_event
+   * https://github.com/facebook/react/issues/27858
+   */
+  React.useEffect(() => {
+    const input = inputRef.current;
+    input?.addEventListener("cancel", onCancel);
+    return () => input?.removeEventListener("cancel", onCancel);
+  }, [inputRef, onCancel]);
+
   return (
     <>
       <NewMenuItem
@@ -137,6 +170,9 @@ const UploadMenuItem = ({
         onClick={() => {
           inputRef.current?.click();
         }}
+        //eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={autoFocus}
+        tabIndex={tabIndex}
       />
       <input
         ref={inputRef}
@@ -158,10 +194,18 @@ const NewFolderMenuItem = ({
   path,
   folderId,
   onDialogClose,
+  autoFocus,
+  tabIndex,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
   folderId: Id,
   onDialogClose: (boolean) => void,
+
+  /*
+   * These properties are dynamically added by the MUI Menu parent component
+   */
+  autoFocus?: boolean,
+  tabIndex?: number,
 |}) => {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
@@ -221,12 +265,20 @@ const NewFolderMenuItem = ({
         onClick={() => {
           setOpen(true);
         }}
+        //eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={autoFocus}
+        tabIndex={tabIndex}
+        aria-haspopup="dialog"
       />
     </>
   );
 };
 
-const DmpMenuSection = () => {
+type DmpMenuSectionArgs = {|
+  onDialogClose: () => void,
+|};
+
+const DmpMenuSection = ({ onDialogClose }: DmpMenuSectionArgs) => {
   const [argosEnabled, setArgosEnabled] = React.useState(false);
   const [dmponlineEnabled, setDmponlineEnabled] = React.useState(false);
   const [dmptoolEnabled, setDmptoolEnabled] = React.useState(false);
@@ -258,12 +310,14 @@ const DmpMenuSection = () => {
   if (!argosEnabled && !dmponlineEnabled && !dmptoolEnabled) return null;
   return (
     <>
-      <Divider variant="middle" textAlign="left">
+      <Divider textAlign="left" aria-label="DMPs">
         DMPs
       </Divider>
-      {argosEnabled && <ArgosNewMenuItem />}
-      {dmponlineEnabled && <DMPOnlineNewMenuItem />}
-      {dmptoolEnabled && <DMPToolNewMenuItem />}
+      {argosEnabled && <ArgosNewMenuItem onDialogClose={onDialogClose} />}
+      {dmponlineEnabled && (
+        <DMPOnlineNewMenuItem onDialogClose={onDialogClose} />
+      )}
+      {dmptoolEnabled && <DMPToolNewMenuItem onDialogClose={onDialogClose} />}
     </>
   );
 };
@@ -348,24 +402,35 @@ const DrawerTab = styled(
   },
 }));
 
-export default function GallerySidebar({
-  selectedSection,
-  setSelectedSection,
-  drawerOpen,
-  path,
-  folderId,
-  refreshListing,
-}: {|
+type SidebarArgs = {|
   selectedSection: string,
   setSelectedSection: (string) => void,
   drawerOpen: boolean,
+  setDrawerOpen: (boolean) => void,
   path: $ReadOnlyArray<GalleryFile>,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
-|}): Node {
+|};
+
+const Sidebar = ({
+  selectedSection,
+  setSelectedSection,
+  drawerOpen,
+  setDrawerOpen,
+  path,
+  folderId,
+  refreshListing,
+}: SidebarArgs): Node => {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
+  const viewport = useViewportDimensions();
+
+  React.useEffect(() => {
+    autorun(() => {
+      setDrawerOpen(!viewport.isViewportSmall);
+    });
+  }, [viewport]);
 
   const { getTabIndex, getRef, eventHandlers } = useVerticalRovingTabIndex<
     typeof ListItemButton
@@ -377,7 +442,10 @@ export default function GallerySidebar({
     <CustomDrawer
       open={drawerOpen}
       anchor="left"
-      variant="permanent"
+      variant={viewport.isViewportSmall ? "temporary" : "permanent"}
+      onClose={() => {
+        setDrawerOpen(!viewport.isViewportSmall);
+      }}
       aria-label="gallery sections drawer"
     >
       <Box width="100%" p={1.5}>
@@ -388,10 +456,14 @@ export default function GallerySidebar({
         <StyledMenu
           open={Boolean(newMenuAnchorEl)}
           anchorEl={newMenuAnchorEl}
-          onClose={() => setNewMenuAnchorEl(null)}
+          onClose={() => {
+            setDrawerOpen(!viewport.isViewportSmall);
+            setNewMenuAnchorEl(null);
+          }}
           MenuListProps={{
             disablePadding: true,
           }}
+          keepMounted
         >
           {FetchingData.getSuccessValue(folderId)
             .map((fId) => (
@@ -402,6 +474,11 @@ export default function GallerySidebar({
                 onUploadComplete={() => {
                   refreshListing();
                   setNewMenuAnchorEl(null);
+                  setDrawerOpen(!viewport.isViewportSmall);
+                }}
+                onCancel={() => {
+                  setNewMenuAnchorEl(null);
+                  setDrawerOpen(!viewport.isViewportSmall);
                 }}
               />
             ))
@@ -415,11 +492,17 @@ export default function GallerySidebar({
                 onDialogClose={(success) => {
                   if (success) refreshListing();
                   setNewMenuAnchorEl(null);
+                  setDrawerOpen(!viewport.isViewportSmall);
                 }}
               />
             ))
             .orElse(null)}
-          <DmpMenuSection />
+          <DmpMenuSection
+            onDialogClose={() => {
+              setNewMenuAnchorEl(null);
+              setDrawerOpen(!viewport.isViewportSmall);
+            }}
+          />
         </StyledMenu>
       </Box>
       <Divider />
@@ -445,6 +528,7 @@ export default function GallerySidebar({
             selected={selectedSection === "Images"}
             onClick={(event) => {
               setSelectedSection("Images");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -458,6 +542,7 @@ export default function GallerySidebar({
             selected={selectedSection === "Audios"}
             onClick={(event) => {
               setSelectedSection("Audios");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -471,6 +556,7 @@ export default function GallerySidebar({
             selected={selectedSection === "Videos"}
             onClick={(event) => {
               setSelectedSection("Videos");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -484,6 +570,7 @@ export default function GallerySidebar({
             selected={selectedSection === "Documents"}
             onClick={(event) => {
               setSelectedSection("Documents");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -497,6 +584,7 @@ export default function GallerySidebar({
             selected={selectedSection === "Chemistry"}
             onClick={(event) => {
               setSelectedSection("Chemistry");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -510,6 +598,7 @@ export default function GallerySidebar({
             selected={selectedSection === "DMPs"}
             onClick={(event) => {
               setSelectedSection("DMPs");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -523,6 +612,7 @@ export default function GallerySidebar({
             selected={selectedSection === "Snippets"}
             onClick={(event) => {
               setSelectedSection("Snippets");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -536,6 +626,7 @@ export default function GallerySidebar({
             selected={selectedSection === "Miscellaneous"}
             onClick={(event) => {
               setSelectedSection("Miscellaneous");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -552,6 +643,7 @@ export default function GallerySidebar({
             selected={selectedSection === "PdfDocuments"}
             onClick={(event) => {
               setSelectedSection("PdfDocuments");
+              setDrawerOpen(!viewport.isViewportSmall);
               setSelectedIndicatorOffset(event.currentTarget.offsetTop);
             }}
           />
@@ -559,4 +651,6 @@ export default function GallerySidebar({
       </Box>
     </CustomDrawer>
   );
-}
+};
+
+export default (observer(Sidebar): ComponentType<SidebarArgs>);

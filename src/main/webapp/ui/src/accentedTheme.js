@@ -24,6 +24,7 @@ import { radioClasses } from "@mui/material/Radio";
 import { chipClasses } from "@mui/material/Chip";
 import { formLabelClasses } from "@mui/material/FormLabel";
 import { inputLabelClasses } from "@mui/material/InputLabel";
+import { inputAdornmentClasses } from "@mui/material/InputAdornment";
 
 /**
  * This theme is used for pages that use the new styling, wherein the page (or
@@ -84,6 +85,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
   const prefersMoreContrast = window.matchMedia(
     "(prefers-contrast: more)"
   ).matches;
+  const prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
 
   // All of these strings are formatted specifically so MUI can parse them and perform its own arithmetic
 
@@ -94,7 +98,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
 
   const linkButtonText = prefersMoreContrast
     ? "rgb(0,0,0)"
-    : `hsl(${accent.main.hue}deg, 13%, 50%)`;
+    : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, 40%)`;
 
   /**
    * A background colour that can be used behind headers, toolbars, and other
@@ -116,7 +120,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
    */
   const mainBackground = prefersMoreContrast
     ? "rgb(255,255,255)"
-    : `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, 99%)`;
+    : `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, 98%)`;
   /**
    * This may seem pointless to define as its just white, but defining it this
    * way allows us to dynamically apply darken
@@ -142,7 +146,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
   // Interactive elements: text fields in app bar, chips
   const lighterInteractiveColor = prefersMoreContrast
     ? secondaryBackground
-    : `hsl(${accent.main.hue}deg, 30%, 90%)`;
+    : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, 90%)`;
 
   // Links are slightly darker to more closely match surrounding text
   const linkColor = prefersMoreContrast
@@ -204,6 +208,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 borderRadius: "3px",
                 [`& .${inputBaseClasses.root}`]: {
                   paddingLeft: baseTheme.spacing(1),
+                  [`&:has(.${inputAdornmentClasses.positionStart})`]: {
+                    paddingLeft: 0,
+                  },
                   [`& .${svgIconClasses.root}`]: {
                     fill: prefersMoreContrast
                       ? "rgb(0,0,0)"
@@ -234,10 +241,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiDialog: {
           defaultProps: {
             TransitionProps: {
-              timeout: window.matchMedia("(prefers-reduced-motion: reduce)")
-                .matches
-                ? 0
-                : 200,
+              timeout: prefersReducedMotion ? 0 : 200,
             },
           },
           styleOverrides: {
@@ -245,6 +249,10 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               overflow: "hidden",
               border: dialogBorder,
               borderRadius: 6,
+              backgroundColor: mainBackground,
+            },
+            paperFullScreen: {
+              borderRadius: 0,
             },
           },
         },
@@ -287,7 +295,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiDrawer: {
           styleOverrides: {
             root: {
-              backgroundColor: secondaryBackground,
+              transition: prefersReducedMotion
+                ? "none !important"
+                : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
               [`& .${listItemButtonClasses.root}`]: {
                 paddingLeft: baseTheme.spacing(3),
                 border: "none",
@@ -329,7 +339,11 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 },
               },
               [`& .${paperClasses.root}`]: {
+                backgroundColor: secondaryBackground,
                 borderRight: accentedBorder,
+                transition: prefersReducedMotion
+                  ? "none !important"
+                  : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
               },
             },
           },
@@ -431,6 +445,26 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                     accentedBackground,
                     hoverDarkenCoefficient
                   ),
+                },
+              },
+              [`&:has(.${inputAdornmentClasses.positionStart})`]: {
+                paddingLeft: 0,
+                [`& .${outlinedInputClasses.input}`]: {
+                  paddingTop: "5px",
+                  paddingBottom: "5px",
+                },
+              },
+              [`& .${inputAdornmentClasses.root}`]: {
+                height: "100%",
+                paddingLeft: baseTheme.spacing(1),
+                paddingRight: baseTheme.spacing(1),
+                borderRight: accentedBorder,
+                backgroundColor: lighterInteractiveColor,
+                [`& .${typographyClasses.root}`]: {
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                  fontSize: "0.9rem",
+                  lineHeight: "31px",
                 },
               },
             },
@@ -709,6 +743,11 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             paper: {
               boxShadow: "none",
               border: accentedBorder,
+              ...(prefersReducedMotion
+                ? {
+                    transition: "none !important",
+                  }
+                : {}),
             },
           },
         },

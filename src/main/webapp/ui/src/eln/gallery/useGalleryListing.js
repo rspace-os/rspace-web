@@ -7,6 +7,10 @@ import * as Parsers from "../../util/parsers";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
 import { gallerySectionCollectiveNoun } from "./common";
+import {
+  filenameExceptExtension,
+  justFilenameExtension,
+} from "../../util/files";
 
 export opaque type Id = number;
 export function idToString(id: Id): string {
@@ -19,12 +23,25 @@ export type GalleryFile = {|
   modificationDate: number,
   type: string,
   thumbnailUrl: string,
+
   path: $ReadOnlyArray<GalleryFile>,
+  pathAsString: () => string,
   open?: () => void,
 
   isFolder: boolean,
   isSystemFolder: boolean,
+  isImage: boolean,
+  isSnippet: boolean,
   isSnippetFolder: boolean,
+
+  /*
+   * There are various places in the UI where the user applies some
+   * transformation to the name of either a folder or file. Mainly the rename
+   * action, but also when duplicating and in other places too. This method
+   * allows the call to generate a new file name by applying a transformation
+   * to the name before the extension, leaving the extension in place.
+   */
+  transformFilename: ((string) => string) => string,
 |};
 
 /**
@@ -182,8 +199,8 @@ export function useGalleryListing({
       return `The folder "${folderName}" is empty.`;
     }
     if (searchTerm !== "")
-      return `There are no root-level ${gallerySectionCollectiveNoun[section]} that match the search term "${searchTerm}".`;
-    return `There are no root-level ${gallerySectionCollectiveNoun[section]}.`;
+      return `There are no top-level ${gallerySectionCollectiveNoun[section]} that match the search term "${searchTerm}".`;
+    return `There are no top-level ${gallerySectionCollectiveNoun[section]}.`;
   }
 
   function mkGalleryFile(
@@ -212,6 +229,8 @@ export function useGalleryListing({
         isSystemFolder
       ),
       path,
+      pathAsString: () =>
+        `/${[section, ...path.map(({ name }) => name), name].join("/")}/`,
       ...(isFolder
         ? {
             open: () => {
@@ -221,7 +240,15 @@ export function useGalleryListing({
         : {}),
       isFolder,
       isSystemFolder,
+      isImage: /Image/.test(type),
+      isSnippet: /Snippet/.test(type),
       isSnippetFolder: isSystemFolder && /SNIPPETS/.test(name),
+      transformFilename: (f) => {
+        if (isFolder) return f(name);
+        return `${f(filenameExceptExtension(name))}.${justFilenameExtension(
+          name
+        )}`;
+      },
     };
     return ret;
   }

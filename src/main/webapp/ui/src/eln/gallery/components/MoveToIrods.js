@@ -2,7 +2,7 @@
 
 import React, { type Node } from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
-import createAccentedTheme from "../../accentedTheme";
+import createAccentedTheme from "../../../accentedTheme";
 import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
 import Toolbar from "@mui/material/Toolbar";
@@ -13,28 +13,28 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Box from "@mui/material/Box";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
-import FormField from "../../components/Inputs/FormField";
+import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import FormField from "../../../components/Inputs/FormField";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 import List from "@mui/material/List";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import ChoiceField from "../../components/Inputs/ChoiceField";
+import ChoiceField from "../../../components/Inputs/ChoiceField";
 import TextField from "@mui/material/TextField";
 import { withStyles } from "Styles";
 import Stack from "@mui/material/Stack";
 import useIrods, { type IrodsLocation } from "./useIrods";
 import Alert from "@mui/lab/Alert";
 import AlertTitle from "@mui/lab/AlertTitle";
-import * as FetchingData from "../../util/fetchingData";
-import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
-import Result from "../../util/result";
-import AccessibilityTips from "../../components/AccessibilityTips";
-import docLinks from "../../assets/DocLinks";
+import * as FetchingData from "../../../util/fetchingData";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import Result from "../../../util/result";
+import AccessibilityTips from "../../../components/AccessibilityTips";
+import docLinks from "../../../assets/DocLinks";
 
-const COLOR = {
+export const COLOR = {
   main: {
     hue: 180,
     saturation: 30,
@@ -69,8 +69,7 @@ const CustomDialog = styled(Dialog)(() => ({
     height: "calc(90% - 32px)", // 16px margin above and below dialog
   },
   "& .MuiDialogContent-root": {
-    width: "calc(100% - 32px)",
-    height: "calc(100% - 66px)", // 48px being the height of DialogActions + its own 16px of padding
+    height: "calc(100% - 48px)", // 32px being the height of DialogActions + its own 16px of padding
     overflowY: "auto",
     paddingBottom: 0,
   },
@@ -125,12 +124,17 @@ const ErrorAlert = ({ message }: {| message: string |}) => {
   );
 };
 
-function MoveCopyDialog() {
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [selectedIds, setSelectedIds] = React.useState<$ReadOnlyArray<string>>(
-    []
-  );
+type MoveCopyDialogArgs = {|
+  selectedIds: $ReadOnlyArray<string>,
+  dialogOpen: boolean,
+  setDialogOpen: (boolean) => void,
+|};
 
+function MoveCopyDialog({
+  selectedIds,
+  dialogOpen,
+  setDialogOpen,
+}: MoveCopyDialogArgs) {
   const irods = useIrods(selectedIds);
   const [locationsAnchorEl, setLocationsAnchorEl] = React.useState(null);
   const [selectedDestination, setSelectedDestination] =
@@ -177,24 +181,14 @@ function MoveCopyDialog() {
   }
 
   React.useEffect(() => {
-    const handler = (
-      event: Event & { detail: { ids: Array<string>, ... }, ... }
-    ) => {
-      setSelectedIds(event.detail.ids);
-      /*
-       * selectedDestination is reset because the IrodsLocations are
-       * paramaterised by the files that are being moved. This allows the
-       * RESTful API to adjust the available locations based on the particular
-       * files being moved.
-       */
-      setSelectedDestination(null);
-      setDialogOpen(true);
-    };
-    window.addEventListener("OPEN_IRODS_DIALOG", handler);
-    return () => {
-      window.removeEventListener("OPEN_IRODS_DIALOG", handler);
-    };
-  }, []);
+    /*
+     * selectedDestination is reset because the IrodsLocations are
+     * paramaterised by the files that are being moved. This allows the RESTful
+     * API to adjust the available locations based on the particular files
+     * being moved.
+     */
+    setSelectedDestination(null);
+  }, [selectedIds]);
 
   const onSubmit = () => {
     if (!selectedDestination)
@@ -206,8 +200,6 @@ function MoveCopyDialog() {
           .then(() => {
             setDialogOpen(false);
             setShowUsernamePasswordForm(false);
-            // eslint-disable-next-line no-undef
-            gallery();
           })
           .finally(() => {
             setOperationInProgress(false);
@@ -220,8 +212,6 @@ function MoveCopyDialog() {
           .then(() => {
             setDialogOpen(false);
             setShowUsernamePasswordForm(false);
-            // eslint-disable-next-line no-undef
-            gallery();
           })
           .finally(() => {
             setOperationInProgress(false);
@@ -231,7 +221,13 @@ function MoveCopyDialog() {
   };
 
   return (
-    <CustomDialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+    <CustomDialog
+      open={dialogOpen}
+      onClose={() => setDialogOpen(false)}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+      }}
+    >
       <AppBar position="relative" open={true}>
         <Toolbar variant="dense">
           <Typography variant="h6" noWrap component="h2">
@@ -423,10 +419,24 @@ function MoveCopyDialog() {
   );
 }
 
-export default function Wrapper(): Node {
+type WrapperArgs = {|
+  selectedIds: $ReadOnlyArray<string>,
+  dialogOpen: boolean,
+  setDialogOpen: (boolean) => void,
+|};
+
+export default function Wrapper({
+  selectedIds,
+  dialogOpen,
+  setDialogOpen,
+}: WrapperArgs): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <MoveCopyDialog />
+      <MoveCopyDialog
+        selectedIds={selectedIds}
+        dialogOpen={dialogOpen}
+        setDialogOpen={setDialogOpen}
+      />
     </ThemeProvider>
   );
 }
