@@ -3,9 +3,9 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider, styled, lighten } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
-import { COLOR } from "./common";
+import { COLOR, SELECTED_OR_FOCUS_BLUE } from "./common";
 import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
@@ -19,7 +19,7 @@ import { DisableDragAndDropByDefault } from "../../components/useFileImportDragA
 import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
 
-function WholePage() {
+const WholePage = styled(() => {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [orderBy, setOrderBy] = React.useState("name");
   const [sortOrder, setSortOrder] = React.useState("ASC");
@@ -83,7 +83,19 @@ function WholePage() {
       </Box>
     </Alerts>
   );
-}
+})(() => ({
+  "@keyframes drop": {
+    "0%": {
+      borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
+    },
+    "50%": {
+      borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.8),
+    },
+    "100%": {
+      borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
+    },
+  },
+}));
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");

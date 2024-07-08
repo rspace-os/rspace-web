@@ -189,6 +189,7 @@ const CustomTreeItem = observer(
       },
     });
     const dndContext = useDndContext();
+    const dndInProgress = Boolean(dndContext.active);
 
     const dragStyle: { [string]: string | number } = transform
       ? {
@@ -202,6 +203,11 @@ const CustomTreeItem = observer(
     const dropStyle: { [string]: string | number } = isOver
       ? {
           border: SELECTED_OR_FOCUS_BORDER,
+        }
+      : dndInProgress && file.isFolder
+      ? {
+          border: "2px solid white",
+          animation: "drop 2s linear infinite",
         }
       : {
           border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,

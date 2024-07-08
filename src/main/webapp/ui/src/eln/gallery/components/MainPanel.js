@@ -197,12 +197,20 @@ const Breadcrumb = ({
       destination: folder ? folderDestination(folder) : rootDestination(),
     },
   });
+  const dndContext = useDndContext();
+  const dndInProgress = Boolean(dndContext.active);
   const dropStyle: { [string]: string | number } = isOver
     ? {
         border: SELECTED_OR_FOCUS_BORDER,
       }
-    : {
+    : dndInProgress
+    ? {
         border: "2px solid white",
+        borderWidth: "2px",
+        animation: "drop 2s linear infinite",
+      }
+    : {
+        border: "2px solid transparent",
       };
 
   return (
@@ -548,6 +556,7 @@ const FileCard = styled(
       delete attributes.role;
 
       const dndContext = useDndContext();
+      const dndInProgress = Boolean(dndContext.active);
 
       const dragStyle: { [string]: string | number } = transform
         ? {
@@ -560,6 +569,13 @@ const FileCard = styled(
       const dropStyle: { [string]: string | number } = isOver
         ? {
             borderColor: SELECTED_OR_FOCUS_BLUE,
+          }
+        : dndInProgress && file.isFolder
+        ? {
+            border: "2px solid white",
+            borderWidth: "2px",
+            borderRadius: "8px",
+            animation: "drop 2s linear infinite",
           }
         : {};
       const inGroupBeingDraggedStyle: { [string]: string | number } =
