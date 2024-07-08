@@ -66,6 +66,44 @@ import SwapVertIcon from "@mui/icons-material/SwapVert";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+
+const Path = styled(({ className, section, path }) => {
+  const str = ArrayUtils.last(path)
+    .map((folder) => folder.pathAsString())
+    .orElse(`/${section}/`);
+  return (
+    <TextField
+      className={className}
+      value={str}
+      onChange={() => {}}
+      fullWidth
+      size="small"
+      InputProps={{
+        startAdornment: <InputAdornment position="start">Path</InputAdornment>,
+      }}
+    />
+  );
+})(({ theme }) => ({
+  "& .MuiOutlinedInput-root": {
+    "& .MuiInputAdornment-root": {
+      paddingLeft: theme.spacing(1.5),
+      paddingRight: theme.spacing(1.5),
+      backgroundColor: "unset",
+      marginRight: 0,
+      "& .MuiTypography-root": {
+        lineHeight: "20px",
+        fontSize: "0.8125rem",
+      },
+    },
+  },
+  "& input": {
+    height: "21px",
+    paddingLeft: theme.spacing(1.5),
+  },
+}));
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -946,34 +984,9 @@ function GalleryMainPanel({
             item
             container
             direction="row"
-            justifyContent="space-between"
             alignItems="flex-start"
-            flexWrap="nowrap"
+            spacing={1}
           >
-            <Grid item>
-              <CustomBreadcrumbs
-                separator="›"
-                aria-label="breadcrumb"
-                sx={{ mt: 0.5 }}
-              >
-                <Breadcrumb
-                  label={gallerySectionLabel[selectedSection]}
-                  onClick={() => clearPath()}
-                  path={[]}
-                  selectedSection={selectedSection}
-                />
-                {path.map((folder) => (
-                  <Breadcrumb
-                    folder={folder}
-                    label={folder.name}
-                    key={idToString(folder.id)}
-                    onClick={() => folder.open?.()}
-                    path={folder.path}
-                    selectedSection={selectedSection}
-                  />
-                ))}
-              </CustomBreadcrumbs>
-            </Grid>
             <Grid item sx={{ mt: 0.5 }}>
               <Stack direction="row" spacing={1}>
                 <Button
@@ -1130,6 +1143,9 @@ function GalleryMainPanel({
                   />
                 </StyledMenu>
               </Stack>
+            </Grid>
+            <Grid item sx={{ mt: 0.5 }} flexGrow={1}>
+              <Path section={selectedSection} path={path} />
             </Grid>
           </Grid>
           <Grid
