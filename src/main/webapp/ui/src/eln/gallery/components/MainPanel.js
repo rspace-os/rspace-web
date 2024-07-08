@@ -69,6 +69,8 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import Link from "@mui/material/Link";
+import { Link as ReactRouterLink } from "react-router-dom";
 
 const BreadcrumbLink = ({
   folder,
@@ -105,7 +107,9 @@ const BreadcrumbLink = ({
         border: "2px solid transparent",
       };
   return (
-    <span
+    <Link
+      component={ReactRouterLink}
+      to={""}
       ref={(node) => {
         setDropRef(node);
       }}
@@ -117,7 +121,7 @@ const BreadcrumbLink = ({
       }}
     >
       {folder?.name ?? section}
-    </span>
+    </Link>
   );
 };
 

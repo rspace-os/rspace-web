@@ -18,6 +18,7 @@ import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
+import { BrowserRouter } from "react-router-dom";
 
 const WholePage = styled(() => {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -106,18 +107,20 @@ window.addEventListener("load", () => {
     root.render(
       <React.StrictMode>
         <ErrorBoundary>
-          <StyledEngineProvider injectFirst>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(COLOR)}>
-              <Analytics>
-                <DisableDragAndDropByDefault>
-                  <GallerySelection>
-                    <WholePage />
-                  </GallerySelection>
-                </DisableDragAndDropByDefault>
-              </Analytics>
-            </ThemeProvider>
-          </StyledEngineProvider>
+          <BrowserRouter>
+            <StyledEngineProvider injectFirst>
+              <CssBaseline />
+              <ThemeProvider theme={createAccentedTheme(COLOR)}>
+                <Analytics>
+                  <DisableDragAndDropByDefault>
+                    <GallerySelection>
+                      <WholePage />
+                    </GallerySelection>
+                  </DisableDragAndDropByDefault>
+                </Analytics>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </BrowserRouter>
         </ErrorBoundary>
       </React.StrictMode>
     );
