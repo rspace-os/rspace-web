@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import TextField from "../../../../components/Inputs/TextField";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import FormField from "../../../../components/Inputs/FormField";
+import Stack from "@mui/material/Stack";
 
 const emptyNote = {
   content: "",
@@ -91,24 +92,31 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): Node {
         )}
         disabled={!record.isFieldEditable("notes")}
       />
-      <Typography variant="caption">
-        Please note that once created, notes can be neither edited nor deleted.
-      </Typography>
-      <Button
-        style={{ marginTop: "15px" }}
-        disableElevation
-        disabled={
-          !record.isFieldEditable("notes") || error || note.content === ""
-        }
-        variant="contained"
-        id="add-note"
-        data-test-id="add-note-button"
-        aria-label="Add new note"
-        onClick={createNote}
-        color="primary"
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
       >
-        Create note
-      </Button>
+        <Typography variant="caption">
+          Please note that once created, notes can be neither edited nor
+          deleted.
+        </Typography>
+        <Button
+          style={{ minWidth: "unset", whiteSpace: "nowrap" }}
+          disableElevation
+          disabled={
+            !record.isFieldEditable("notes") || error || note.content === ""
+          }
+          variant="contained"
+          id="add-note"
+          data-test-id="add-note-button"
+          aria-label="Add new note"
+          onClick={createNote}
+          color="primary"
+        >
+          Create note
+        </Button>
+      </Stack>
     </>
   );
 }

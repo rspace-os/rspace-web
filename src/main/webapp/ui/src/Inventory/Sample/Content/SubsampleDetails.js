@@ -28,6 +28,7 @@ import { type Search } from "../../../stores/definitions/Search";
 import { doNotAwait, modulo } from "../../../util/Util";
 import { svgIconClasses } from "@mui/material/SvgIcon";
 import { Link as ReactRouterLink } from "react-router-dom";
+import Typography from "@mui/material/Typography";
 
 const CustomStepper = styled(MobileStepper)(({ theme }) => ({
   backgroundColor: theme.palette.record.subSample.lighter,
@@ -129,9 +130,11 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
             </Stack>
           </CardContent>
           <CardActions>
-            <Link component={ReactRouterLink} to={subsample.permalinkURL}>
-              See the full details of <strong>{subsample.name}</strong>
-            </Link>
+            <Typography align="center" sx={{ width: "100%" }}>
+              <Link component={ReactRouterLink} to={subsample.permalinkURL}>
+                See full details of <strong>{subsample.name}</strong>
+              </Link>
+            </Typography>
           </CardActions>
         </Card>
         <CustomStepper
