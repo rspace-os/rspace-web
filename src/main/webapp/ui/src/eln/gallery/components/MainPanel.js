@@ -95,26 +95,41 @@ const Path = styled(({ className, section, path }) => {
           ),
         }}
       />
+      {/*
+       * These two divs create a horizonally scrolling box without a scrollbar,
+       * mimicing the standard behaviour of a text field.
+       */}
       {!hasFocus && (
-        <Stack
-          direction="row"
-          spacing={0.25}
-          sx={{
+        <div
+          style={{
+            width: "calc(100% - 85px)",
             position: "absolute",
             top: "8px",
-            left: "75px",
+            right: "10px",
+            overflow: "hidden",
           }}
         >
-          <span>/</span>
-          <span>{section}</span>
-          {path.map((f) => (
-            <>
-              <span>/</span>
-              <span>{f.name}</span>
-            </>
-          ))}
-          <span>/</span>
-        </Stack>
+          <Stack
+            direction="row"
+            spacing={0.25}
+            sx={{
+              whiteSpace: "nowrap",
+              overflowX: "auto",
+              marginBottom: "-50px",
+              paddingBottom: "50px",
+            }}
+          >
+            <span>/</span>
+            <span>{section}</span>
+            {path.map((f) => (
+              <>
+                <span>/</span>
+                <span>{f.name}</span>
+              </>
+            ))}
+            <span>/</span>
+          </Stack>
+        </div>
       )}
     </>
   );
