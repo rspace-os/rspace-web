@@ -21,12 +21,16 @@ import { GallerySelection } from "./useGallerySelection";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
+  const [orderBy, setOrderBy] = React.useState("name");
+  const [sortOrder, setSortOrder] = React.useState("ASC");
   const [selectedSection, setSelectedSection] = React.useState("Images");
   const { galleryListing, path, clearPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
       path: [],
+      orderBy,
+      sortOrder,
     });
   const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
     null
@@ -71,6 +75,10 @@ function WholePage() {
               folderId={folderId}
               refreshListing={refreshListing}
               key={null}
+              sortOrder={sortOrder}
+              orderBy={orderBy}
+              setSortOrder={setSortOrder}
+              setOrderBy={setOrderBy}
             />
           </GallerySelection>
         </Box>
