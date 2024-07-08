@@ -975,7 +975,7 @@ function GalleryMainPanel({
             spacing={0.5}
             sx={{ mt: 0 }}
           >
-            <Grid item>
+            <Grid item flexGrow={1}>
               <Stack direction="row" spacing={0.5}>
                 <Button
                   variant="outlined"
@@ -985,6 +985,7 @@ function GalleryMainPanel({
                     setViewMenuAnchorEl(e.target);
                   }}
                   aria-haspopup="menu"
+                  sx={{ flexGrow: 1 }}
                 >
                   Views
                 </Button>
@@ -1029,6 +1030,7 @@ function GalleryMainPanel({
                     setSortMenuAnchorEl(e.target);
                   }}
                   aria-haspopup="menu"
+                  sx={{ flexGrow: 1 }}
                 >
                   Sort
                 </Button>
@@ -1132,7 +1134,14 @@ function GalleryMainPanel({
                 />
               </Stack>
             </Grid>
-            <Grid item flexGrow={1}>
+            {/*
+             * We use an arbitrarily large number here so that when the buttons
+             * and path field are rendered on the same row, the path field
+             * takes up as much space as possible. We still apply a flexGrow of
+             * 1 to each of buttons so that when they are on their own row
+             * above, they each take up 1/3 of the row.
+             */}
+            <Grid item flexGrow={99999}>
               <Path section={selectedSection} path={path} />
             </Grid>
           </Grid>
