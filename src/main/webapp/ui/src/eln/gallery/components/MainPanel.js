@@ -132,6 +132,7 @@ const Path = styled(({ className, section, path }) => {
     .map((folder) => folder.pathAsString())
     .orElse(`/${section}/`);
   const [hasFocus, setHasFocus] = React.useState(false);
+  const textFieldRef = React.useRef();
   return (
     <>
       <TextField
@@ -145,6 +146,9 @@ const Path = styled(({ className, section, path }) => {
         }}
         onBlur={() => {
           setHasFocus(false);
+        }}
+        inputProps={{
+          ref: textFieldRef,
         }}
         InputProps={{
           startAdornment: (
@@ -167,6 +171,9 @@ const Path = styled(({ className, section, path }) => {
           }}
         >
           <Stack
+            onClick={() => {
+              textFieldRef.current?.focus();
+            }}
             direction="row"
             spacing={0.25}
             sx={{
@@ -174,6 +181,7 @@ const Path = styled(({ className, section, path }) => {
               overflowX: "auto",
               marginBottom: "-50px",
               paddingBottom: "50px",
+              cursor: "text",
             }}
           >
             <BreadcrumbLink section={section} />
