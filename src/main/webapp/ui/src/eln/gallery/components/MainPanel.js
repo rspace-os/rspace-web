@@ -118,6 +118,8 @@ const BreadcrumbLink = ({
         borderRadius: "6px",
         paddingLeft: "1px",
         paddingRight: "1px",
+        paddingTop: "1px",
+        fontSize: "0.885rem",
       }}
     >
       {folder?.name ?? section}
@@ -174,15 +176,13 @@ const Path = styled(({ className, section, path }) => {
               paddingBottom: "50px",
             }}
           >
-            <span style={{ marginTop: "2px" }}>/</span>
             <BreadcrumbLink section={section} />
             {path.map((f) => (
               <>
-                <span style={{ marginTop: "2px" }}>/</span>
+                <span>›</span>
                 <BreadcrumbLink folder={f} section={section} />
               </>
             ))}
-            <span style={{ marginTop: "2px" }}>/</span>
           </Stack>
         </div>
       )}
