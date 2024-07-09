@@ -369,7 +369,7 @@ export function useGalleryListing({
   if (loading)
     return {
       galleryListing: { tag: "loading" },
-      path: [],
+      path,
       clearPath: () => {},
       folderId: { tag: "loading" },
       refreshListing: () => {},
