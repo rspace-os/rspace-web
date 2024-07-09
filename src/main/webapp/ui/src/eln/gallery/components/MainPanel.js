@@ -1,6 +1,11 @@
 //@flow
 
-import React, { type Node, type ComponentType } from "react";
+import React, {
+  type Node,
+  type ComponentType,
+  type Ref,
+  type ElementConfig,
+} from "react";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -10,7 +15,7 @@ import {
   COLOR,
   SELECTED_OR_FOCUS_BORDER,
   SELECTED_OR_FOCUS_BLUE,
-  type GallerySection
+  type GallerySection,
 } from "../common";
 import { styled } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
@@ -65,74 +70,88 @@ import * as ArrayUtils from "../../../util/ArrayUtils";
 import Link from "@mui/material/Link";
 import { Link as ReactRouterLink } from "react-router-dom";
 
-const BreadcrumbLink = ({
-  folder,
-  section,
-  clearPath,
-}: {|
-  folder?: GalleryFile,
-  section: string,
-  clearPath: () => void,
-|}) => {
-  const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: `/${[
+const BreadcrumbLink = React.forwardRef<
+  ElementConfig<typeof Link>,
+  null | typeof Link
+>(
+  (
+    {
+      folder,
       section,
-      ...(folder?.path.map(({ name }) => name) ?? []),
-      folder?.name ?? "",
-    ].join("/")}/`,
-    disabled: false,
-    data: {
-      path: folder?.path ?? [],
-      destination: folder ? folderDestination(folder) : rootDestination(),
-    },
-  });
-  const dndContext = useDndContext();
-  const dndInProgress = Boolean(dndContext.active);
-  const dropStyle: { [string]: string | number } = isOver
-    ? {
-        border: SELECTED_OR_FOCUS_BORDER,
-      }
-    : dndInProgress
-    ? {
-        border: "2px solid white",
-        borderWidth: "2px",
-        animation: "drop 2s linear infinite",
-      }
-    : {
-        border: "2px solid transparent",
-      };
-  return (
-    <Link
-      component={ReactRouterLink}
-      to={""}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        (folder?.open ?? clearPath)();
-      }}
-      ref={(node) => {
-        setDropRef(node);
-      }}
-      style={{
-        ...dropStyle,
-        borderRadius: "6px",
-        paddingLeft: "1px",
-        paddingRight: "1px",
-        paddingTop: "1px",
-        fontSize: "0.885rem",
-      }}
-    >
-      {folder?.name ?? section}
-    </Link>
-  );
-};
+      clearPath,
+    }: {|
+      folder?: GalleryFile,
+      section: string,
+      clearPath: () => void,
+    |},
+    ref:
+      | { -current: null | Ref<typeof Link> }
+      | ((null | Ref<typeof Link>) => mixed)
+  ) => {
+    const { setNodeRef: setDropRef, isOver } = useDroppable({
+      id: `/${[
+        section,
+        ...(folder?.path.map(({ name }) => name) ?? []),
+        folder?.name ?? "",
+      ].join("/")}/`,
+      disabled: false,
+      data: {
+        path: folder?.path ?? [],
+        destination: folder ? folderDestination(folder) : rootDestination(),
+      },
+    });
+    const dndContext = useDndContext();
+    const dndInProgress = Boolean(dndContext.active);
+    const dropStyle: { [string]: string | number } = isOver
+      ? {
+          border: SELECTED_OR_FOCUS_BORDER,
+        }
+      : dndInProgress
+      ? {
+          border: "2px solid white",
+          borderWidth: "2px",
+          animation: "drop 2s linear infinite",
+        }
+      : {
+          border: "2px solid transparent",
+        };
+    return (
+      <Link
+        component={ReactRouterLink}
+        to={""}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          (folder?.open ?? clearPath)();
+        }}
+        ref={(node) => {
+          setDropRef(node);
+          if (typeof ref === "function") ref(node);
+          else ref.current = node;
+        }}
+        style={{
+          ...dropStyle,
+          borderRadius: "6px",
+          paddingLeft: "1px",
+          paddingRight: "1px",
+          paddingTop: "1px",
+          fontSize: "0.885rem",
+        }}
+      >
+        {folder?.name ?? section}
+      </Link>
+    );
+  }
+);
 
 const Path = styled(({ className, section, path, clearPath }) => {
   const str = ArrayUtils.last(path)
     .map((folder) => folder.pathAsString())
     .orElse(`/${section}/`);
   const [hasFocus, setHasFocus] = React.useState(false);
-  const textFieldRef = React.useRef();
+  const textFieldRef = React.useRef(null);
+  const sectionLink = React.useRef(null);
+
   return (
     <>
       <TextField
@@ -146,6 +165,18 @@ const Path = styled(({ className, section, path, clearPath }) => {
         }}
         onBlur={() => {
           setHasFocus(false);
+        }}
+        onKeyDown={(e) => {
+          /*
+           * This ensures keyboard users can tab through both the textfield
+           * for copying the path and the links.
+           */
+          if (e.key === "Tab" && !e.shiftKey) {
+            setHasFocus(false);
+            setTimeout(() => {
+              sectionLink.current?.focus();
+            }, 0);
+          }
         }}
         inputProps={{
           ref: textFieldRef,
@@ -184,7 +215,11 @@ const Path = styled(({ className, section, path, clearPath }) => {
               cursor: "text",
             }}
           >
-            <BreadcrumbLink section={section} clearPath={clearPath} />
+            <BreadcrumbLink
+              section={section}
+              clearPath={clearPath}
+              ref={sectionLink}
+            />
             {path.map((f) => (
               <>
                 <span>›</span>
@@ -192,6 +227,7 @@ const Path = styled(({ className, section, path, clearPath }) => {
                   folder={f}
                   section={section}
                   clearPath={clearPath}
+                  ref={null}
                 />
               </>
             ))}
