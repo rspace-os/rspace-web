@@ -75,9 +75,11 @@ import { Link as ReactRouterLink } from "react-router-dom";
 const BreadcrumbLink = ({
   folder,
   section,
+  clearPath,
 }: {|
   folder?: GalleryFile,
   section: string,
+  clearPath: () => void,
 |}) => {
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `/${[
@@ -110,6 +112,11 @@ const BreadcrumbLink = ({
     <Link
       component={ReactRouterLink}
       to={""}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        (folder?.open ?? clearPath)();
+      }}
       ref={(node) => {
         setDropRef(node);
       }}
@@ -127,7 +134,7 @@ const BreadcrumbLink = ({
   );
 };
 
-const Path = styled(({ className, section, path }) => {
+const Path = styled(({ className, section, path, clearPath }) => {
   const str = ArrayUtils.last(path)
     .map((folder) => folder.pathAsString())
     .orElse(`/${section}/`);
@@ -184,11 +191,15 @@ const Path = styled(({ className, section, path }) => {
               cursor: "text",
             }}
           >
-            <BreadcrumbLink section={section} />
+            <BreadcrumbLink section={section} clearPath={clearPath} />
             {path.map((f) => (
               <>
                 <span>›</span>
-                <BreadcrumbLink folder={f} section={section} />
+                <BreadcrumbLink
+                  folder={f}
+                  section={section}
+                  clearPath={clearPath}
+                />
               </>
             ))}
           </Stack>
@@ -1252,7 +1263,11 @@ function GalleryMainPanel({
              * above, they each take up 1/3 of the row.
              */}
             <Grid item flexGrow={99999} sx={{ position: "relative" }}>
-              <Path section={selectedSection} path={path} />
+              <Path
+                section={selectedSection}
+                path={path}
+                clearPath={clearPath}
+              />
             </Grid>
           </Grid>
           <Grid
