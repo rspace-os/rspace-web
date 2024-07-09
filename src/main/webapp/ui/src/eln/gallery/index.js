@@ -18,13 +18,27 @@ import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
-import { BrowserRouter } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import { Routes, Route } from "react-router";
 
 const WholePage = styled(() => {
+  const [searchParams] = useSearchParams();
+  const [selectedSection, setSelectedSection] = React.useState(
+    searchParams.get("mediaType") ?? "Images"
+  );
+  React.useEffect(() => {
+    const mediaType = searchParams.get("mediaType");
+    if (mediaType) setSelectedSection(mediaType);
+  }, [searchParams]);
+
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [orderBy, setOrderBy] = React.useState("name");
   const [sortOrder, setSortOrder] = React.useState("ASC");
-  const [selectedSection, setSelectedSection] = React.useState("Images");
   const { galleryListing, path, clearPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
@@ -113,9 +127,20 @@ window.addEventListener("load", () => {
               <ThemeProvider theme={createAccentedTheme(COLOR)}>
                 <Analytics>
                   <DisableDragAndDropByDefault>
-                    <GallerySelection>
-                      <WholePage />
-                    </GallerySelection>
+                    <Routes>
+                      <Route
+                        path="/newGallery"
+                        element={
+                          <GallerySelection>
+                            <WholePage />
+                          </GallerySelection>
+                        }
+                      />
+                      <Route
+                        path="*"
+                        element={<Navigate to="/newGallery" replace />}
+                      />
+                    </Routes>
                   </DisableDragAndDropByDefault>
                 </Analytics>
               </ThemeProvider>
