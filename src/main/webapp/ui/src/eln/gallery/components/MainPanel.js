@@ -1,16 +1,9 @@
 //@flow
 
-import React, {
-  type Node,
-  Children,
-  type ElementConfig,
-  type ComponentType,
-} from "react";
+import React, { type Node, type ComponentType } from "react";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
-import Breadcrumbs from "@mui/material/Breadcrumbs";
-import Chip from "@mui/material/Chip";
 import Fade from "@mui/material/Fade";
 import {
   gallerySectionLabel,
@@ -317,98 +310,6 @@ const ImportDropzone = styled(
     color: "inherit",
   },
 }));
-
-const Breadcrumb = ({
-  label,
-  onClick,
-  path,
-  selectedSection,
-  folder,
-}: {|
-  label: string,
-  onClick: () => void,
-  path: $ReadOnlyArray<GalleryFile>,
-  selectedSection: string,
-  folder?: GalleryFile,
-|}) => {
-  const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: `/${[
-      selectedSection,
-      ...path.map(({ name }) => name),
-      folder?.name ?? "",
-    ].join("/")}/`,
-    disabled: false,
-    data: {
-      path,
-      destination: folder ? folderDestination(folder) : rootDestination(),
-    },
-  });
-  const dndContext = useDndContext();
-  const dndInProgress = Boolean(dndContext.active);
-  const dropStyle: { [string]: string | number } = isOver
-    ? {
-        border: SELECTED_OR_FOCUS_BORDER,
-      }
-    : dndInProgress
-    ? {
-        border: "2px solid white",
-        borderWidth: "2px",
-        animation: "drop 2s linear infinite",
-      }
-    : {
-        border: "2px solid transparent",
-      };
-
-  return (
-    <Chip
-      ref={(node) => {
-        setDropRef(node);
-      }}
-      style={{
-        ...dropStyle,
-      }}
-      size="small"
-      clickable
-      label={label}
-      onClick={onClick}
-      sx={{ mt: 0.5 }}
-    />
-  );
-};
-
-const CustomBreadcrumbs = ({
-  children,
-  ...props
-}: ElementConfig<typeof Breadcrumbs>) => {
-  const [open, setOpen] = React.useState(false);
-  let contents = Children.toArray<typeof Breadcrumb | typeof Chip>(children);
-  if (!open && contents.length > 2) {
-    contents = [
-      contents[0],
-      <Chip
-        size="small"
-        clickable
-        label="..."
-        sx={{ mt: 0.5 }}
-        key="..."
-        onMouseEnter={() => {
-          setOpen(true);
-        }}
-      />,
-      contents[contents.length - 1],
-    ];
-  }
-  return (
-    <Breadcrumbs
-      {...props}
-      onMouseLeave={() => {
-        setOpen(false);
-      }}
-    >
-      {contents}
-    </Breadcrumbs>
-  );
-};
 
 const GridView = observer(
   ({
