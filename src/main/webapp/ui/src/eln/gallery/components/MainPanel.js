@@ -69,6 +69,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import Link from "@mui/material/Link";
 import { Link as ReactRouterLink } from "react-router-dom";
+import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabIndex";
 
 const BreadcrumbLink = React.forwardRef<
   ElementConfig<typeof Link>,
@@ -79,12 +80,15 @@ const BreadcrumbLink = React.forwardRef<
       folder,
       section,
       clearPath,
+      tabIndex,
     }: {|
       folder?: GalleryFile,
       section: string,
       clearPath: () => void,
+      tabIndex: number,
     |},
     ref:
+      | null
       | { -current: null | Ref<typeof Link> }
       | ((null | Ref<typeof Link>) => mixed)
   ) => {
@@ -126,6 +130,7 @@ const BreadcrumbLink = React.forwardRef<
         }}
         ref={(node) => {
           setDropRef(node);
+          if (!ref) return;
           if (typeof ref === "function") ref(node);
           else ref.current = node;
         }}
@@ -137,6 +142,7 @@ const BreadcrumbLink = React.forwardRef<
           paddingTop: "1px",
           fontSize: "0.885rem",
         }}
+        tabIndex={tabIndex}
       >
         {folder?.name ?? section}
       </Link>
@@ -151,9 +157,20 @@ const Path = styled(({ className, section, path, clearPath }) => {
   const [hasFocus, setHasFocus] = React.useState(false);
   const textFieldRef = React.useRef(null);
   const sectionLink = React.useRef(null);
+  const {
+    eventHandlers: { onFocus, onBlur, onKeyDown },
+    getTabIndex,
+    getRef,
+  } = useVerticalRovingTabIndex<typeof Link>({ max: path.length });
 
   return (
-    <>
+    <div
+      onBlur={onBlur}
+      onFocus={onFocus}
+      onKeyDown={(e) => {
+        onKeyDown(e);
+      }}
+    >
       <TextField
         className={className}
         value={hasFocus ? str : ""}
@@ -172,6 +189,7 @@ const Path = styled(({ className, section, path, clearPath }) => {
            * for copying the path and the links.
            */
           if (e.key === "Tab" && !e.shiftKey) {
+            e.stopPropagation();
             setHasFocus(false);
             setTimeout(() => {
               sectionLink.current?.focus();
@@ -218,23 +236,25 @@ const Path = styled(({ className, section, path, clearPath }) => {
             <BreadcrumbLink
               section={section}
               clearPath={clearPath}
-              ref={sectionLink}
+              ref={getRef(0)}
+              tabIndex={getTabIndex(0)}
             />
-            {path.map((f) => (
+            {path.map((f, i) => (
               <>
                 <span>›</span>
                 <BreadcrumbLink
                   folder={f}
                   section={section}
                   clearPath={clearPath}
-                  ref={null}
+                  ref={getRef(i + 1)}
+                  tabIndex={getTabIndex(i + 1)}
                 />
               </>
             ))}
           </Stack>
         </div>
       )}
-    </>
+    </div>
   );
 })(() => ({
   "& input": {
