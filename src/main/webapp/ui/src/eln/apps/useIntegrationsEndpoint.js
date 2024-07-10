@@ -550,6 +550,7 @@ const encodeIntegrationState = <I: Integration>(
         // $FlowExpectedError[incompatible-type]
         // $FlowExpectedError[incompatible-use]
         ...data.credentials["box.api.enabled"]
+          // $FlowExpectedError[incompatible-use]
           .map((token) => ({
             ["box.api.enabled"]: token,
           }))
@@ -744,6 +745,7 @@ const encodeIntegrationState = <I: Integration>(
         // $FlowExpectedError[prop-missing]
         // $FlowExpectedError[incompatible-use]
         ...data.credentials["googledrive.linking.enabled"]
+          // $FlowExpectedError[incompatible-use]
           .map((enabled) => ({
             ["googledrive.linking.enabled"]: enabled,
           }))
