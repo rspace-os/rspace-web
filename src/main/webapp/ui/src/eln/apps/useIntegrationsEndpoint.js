@@ -546,7 +546,6 @@ const encodeIntegrationState = <I: Integration>(
         })).orElse({
           BOX_LINK_TYPE: "",
         }),
-        // $FlowExpectedError[prop-missing]
         // $FlowExpectedError[incompatible-type]
         // $FlowExpectedError[incompatible-use]
         ...data.credentials["box.api.enabled"]
@@ -742,7 +741,6 @@ const encodeIntegrationState = <I: Integration>(
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
-        // $FlowExpectedError[prop-missing]
         // $FlowExpectedError[incompatible-use]
         ...data.credentials["googledrive.linking.enabled"]
           // $FlowExpectedError[incompatible-use]
