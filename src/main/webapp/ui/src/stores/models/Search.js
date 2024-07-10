@@ -315,9 +315,10 @@ export default class Search implements SearchInterface {
   }
 
   async cleanBatchEditing() {
-    await Promise.all(
-      this.batchEditingRecords?.map((r) => r.setEditing(false, true, true)) ??
-        []
+    await Promise.all<Array<Promise<void>>>(
+      this.batchEditingRecords?.toArray().map(async (r) => {
+        await r.setEditing(false, true, true);
+      }) ?? []
     );
     this.disableBatchEditing();
   }
@@ -340,8 +341,7 @@ export default class Search implements SearchInterface {
     return this.editLoading === "batch" && !this.batchEditingRecords;
   }
 
-  get batchEditingRecordsByType():
-    | null
+  get batchEditingRecordsByType(): | null
     | {| type: "container", records: RsSet<ContainerModel> |}
     | {| type: "sample", records: RsSet<SampleModel> |}
     | {| type: "subSample", records: RsSet<SubSampleModel> |}
