@@ -14,9 +14,7 @@
     "plugin:ft-flow/recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
-    "plugin:prettier/recommended",
     "plugin:jsx-a11y/recommended",
-    "prettier"
   ],
   "plugins": ["react", "ft-flow", "testing-library", "jest-dom", "jsx-a11y"],
   "settings": {

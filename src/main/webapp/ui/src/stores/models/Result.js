@@ -50,7 +50,6 @@ import React, { type Node } from "react";
 import {
   type HasEditableFields,
   type HasUneditableFields,
-  type OptionalString,
 } from "../definitions/Editable";
 import { type Factory } from "../definitions/Factory";
 import { type Attachment } from "../definitions/Attachment";
@@ -890,8 +889,7 @@ export default class Result
   }
 
   // to be implemented by the classes that extend this abtract one (and can be created inside a container)
-  get inContainerParams():
-    | ?ContainerInContainerParams
+  get inContainerParams(): | ?ContainerInContainerParams
     | ?SampleInContainerParams {
     return null;
   }
@@ -1699,8 +1697,8 @@ export default class Result
     throw new Error("Abstract computed property; not implemented.");
   }
 
-  get noValueLabel(): $ObjMap<ResultEditableFields, OptionalString> &
-    $ObjMap<ResultUneditableFields, OptionalString> {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof ResultEditableFields]: ?string} & {[key in keyof ResultUneditableFields]: ?string} {
     return {
       name: null,
       description: null,

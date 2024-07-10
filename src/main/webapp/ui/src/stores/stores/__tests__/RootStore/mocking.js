@@ -13,9 +13,8 @@ import ImportStore from "../../ImportStore";
 import ImageStore from "../../ImageStore";
 import MaterialsStore from "../../MaterialsStore";
 
-type SimplifyType = (mixed) => {};
-
-export type MockStores = Partial<$ObjMap<StoreContainer, SimplifyType>>;
+//eslint-disable-next-line no-unused-vars
+export type MockStores = Partial<{[key in keyof StoreContainer]: { ... }}>;
 
 export const makeMockRootStore = (mockData: ?MockStores): StoreContainer => ({
   // $FlowExpectedError[incompatible-cast] Pretend its an AuthStore
