@@ -721,7 +721,7 @@ export default class Result
               this.globalId ?? "UNKNOWN"
             } failed`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -764,7 +764,7 @@ export default class Result
           mkAlert({
             title: `Something went wrong while checking the lock for "${this.name}"`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -967,7 +967,7 @@ export default class Result
               this.globalId ?? "UNKNOWN"
             }.`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -1022,7 +1022,7 @@ export default class Result
           mkAlert({
             title: "Could not save changes to attachments.",
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -1069,7 +1069,7 @@ export default class Result
           mkAlert({
             title: `Something went wrong and the ${this.recordType} was not saved.`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -1121,7 +1121,7 @@ export default class Result
           mkAlert({
             title: "Could not save changes to attachments.",
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -1167,7 +1167,7 @@ export default class Result
           mkAlert({
             title: `Something went wrong and the ${this.recordType} was not saved.`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -1337,7 +1337,7 @@ export default class Result
       }
     } catch (error) {
       // in case of errors like 404 the server provides a specific response message that we want to display
-      const serverErrorResponse = error?.response.data;
+      const serverErrorResponse = error.response.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `The Identifier could not be created.`,
@@ -1387,7 +1387,7 @@ export default class Result
         }
       }
     } catch (error) {
-      const serverErrorResponse = error?.response.data;
+      const serverErrorResponse = error.response.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `The Identifier draft could not be deleted.`,

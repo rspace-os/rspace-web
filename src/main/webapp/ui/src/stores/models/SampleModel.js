@@ -686,7 +686,7 @@ export default class SampleModel
         mkAlert({
           title: "Updating sample to latest template failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );

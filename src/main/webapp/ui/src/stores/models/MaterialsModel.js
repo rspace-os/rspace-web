@@ -553,7 +553,7 @@ export class ListOfMaterials {
         elnFieldId: this.elnFieldId,
       });
     } catch (error) {
-      const serverErrorResponse = error?.response?.data;
+      const serverErrorResponse = error.response?.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `Something went wrong while updating ${this.name}`,
@@ -613,7 +613,7 @@ export class ListOfMaterials {
         elnFieldId: this.elnFieldId,
       });
     } catch (error) {
-      const serverErrorResponse = error?.response?.data;
+      const serverErrorResponse = error.response?.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `Something went wrong while updating ${this.name}`,
@@ -677,7 +677,7 @@ export class ListOfMaterials {
         mkAlert({
           title: `Something went wrong while deleting ${this.name}`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -745,7 +745,7 @@ export class ListOfMaterials {
         elnFieldId: this.elnFieldId,
       });
     } catch (error) {
-      const serverErrorResponse = error?.response?.data;
+      const serverErrorResponse = error.response?.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `Something went wrong while exporting ${this.name}`,

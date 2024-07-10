@@ -464,7 +464,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Sending to trash failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -587,7 +587,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Restore failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -698,7 +698,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Duplication failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -752,7 +752,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Splitting subsample failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
           duration: 8000,
         })
@@ -856,7 +856,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Transfer failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -945,9 +945,9 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: `Template creation failed.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
-          details: error?.response?.data.errors.map((e) => ({
+          details: error.response?.data.errors.map((e) => ({
             title: e,
             variant: "error",
           })),
@@ -1019,7 +1019,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: `Data export failed.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -1399,7 +1399,7 @@ export default class Search implements SearchInterface {
             mkAlert({
               title: "Update failed.",
               message:
-                error?.response?.data.message ??
+                error.response?.data.message ??
                 error.message ??
                 "Unknown reason.",
               variant: "error",

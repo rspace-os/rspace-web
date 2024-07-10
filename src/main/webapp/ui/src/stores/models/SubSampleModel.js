@@ -296,7 +296,7 @@ export default class SubSampleModel
         mkAlert({
           title: "Creating note failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
           duration: 8000,
         })
