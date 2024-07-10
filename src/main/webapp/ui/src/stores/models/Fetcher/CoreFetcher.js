@@ -407,7 +407,6 @@ export default class CoreFetcher {
     ).reduce(
       (acc, [k, v]) => ({
         ...acc,
-        // $FlowExpectedError[prop-missing] can access this by index
         // $FlowExpectedError[invalid-computed-prop]
         [k]: acc[k] || this[k] || v,
       }),
