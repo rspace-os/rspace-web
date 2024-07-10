@@ -1,6 +1,6 @@
 // @flow
 
-import ContextMenu from "./ContextMenu";
+import ContextMenu, { type ContextMenuArgs } from "./ContextMenu";
 import ContextMenuButton from "./ContextMenuButton";
 import ContextMenuSplitButton from "./ContextMenuSplitButton";
 import Divider from "@mui/material/Divider";
@@ -11,6 +11,7 @@ import GridItem from "./ContextMenuGridItem";
 import { makeStyles } from "tss-react/mui";
 import Result from "../../../stores/models/Result";
 import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 
 const useStyles = makeStyles()(() => ({
   mainContainer: {
@@ -25,18 +26,37 @@ const useStyles = makeStyles()(() => ({
 }));
 
 type ExtendedContextMenuArgs = {|
-  prefixActions: Array<{|
-    key: string,
-    icon: Node,
-    label: string,
-    disabledHelp: string,
-    variant: string,
-  |}>,
-  selectedResults: Array<Result>,
-  onSelectOptions: SplitButtonOption,
+  prefixActions: Array<
+    | {|
+        disabledHelp: string,
+        icon: Node,
+        key: string,
+        options: Array<SplitButtonOption>,
+      |}
+    | {|
+        disabledHelp: string,
+        icon: Node,
+        key: string,
+        label: string,
+        variant?: string,
+        onClick?: (Event) => void,
+        active?: boolean,
+      |}
+  >,
+  selectedResults: Array<InventoryRecord>,
+  onSelectOptions?: Array<SplitButtonOption>,
   menuID: string,
-  basketSearch: boolean,
-  ...$Rest<ExtendedContextMenuArgs, {}>,
+  basketSearch?: boolean,
+  ...$Rest<
+    ContextMenuArgs,
+    {|
+      selectedResults: Array<InventoryRecord>,
+      menuID: string,
+      onSelectOptions?: Array<SplitButtonOption>,
+      basketSearch: boolean,
+      paddingTop: boolean,
+    |}
+  >,
 |};
 
 function ExtendedContextMenu({
@@ -67,7 +87,9 @@ function ExtendedContextMenu({
                     icon: Node,
                     key: string,
                     label: string,
-                    variant: string,
+                    variant?: string,
+                    onClick?: (Event) => void,
+                    active?: boolean,
                   |}
             ) => (
               <GridItem key={action.key}>
@@ -93,7 +115,8 @@ function ExtendedContextMenu({
               selectedResults={selectedResults}
               menuID={menuID}
               onSelectOptions={onSelectOptions}
-              basketSearch={basketSearch}
+              basketSearch={basketSearch ?? false}
+              paddingTop={false}
               {...rest}
             />
           </Grid>

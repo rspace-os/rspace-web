@@ -49,8 +49,8 @@ type Buttons = Array<{
   ref: {| current: ?HTMLElement |},
 }>;
 
-type ContextMenuArgs = {|
-  selectedResults?: Array<InventoryRecord>,
+export type ContextMenuArgs = {|
+  selectedResults: Array<InventoryRecord>,
   forceDisabled?: string,
   onSelectOptions?: Array<SplitButtonOption>,
   menuID: string,

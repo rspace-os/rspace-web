@@ -14,16 +14,14 @@ const useStyles = makeStyles()(() => ({
 }));
 
 type ContextDialogArgs = {|
-  classes: { ... },
   children: Node,
-  ...$Rest<ContextDialogArgs, {| classes: mixed |}>,
+  open: boolean,
+  onClose: () => void,
+  maxWidth?: "xs" | "sm" | "lg",
+  fullWidth?: boolean,
 |};
 
-export default function ContextDialog({
-  classes: _classes,
-  children,
-  ...props
-}: ContextDialogArgs): Node {
+export default function ContextDialog({ children, open, onClose, maxWidth, fullWidth }: ContextDialogArgs): Node {
   const { uiStore } = useStores();
   const { classes } = useStyles();
 
@@ -31,9 +29,11 @@ export default function ContextDialog({
     <Dialog
       classes={{
         paper: uiStore.isTouchDevice ? classes.dialog : null,
-        ..._classes,
       }}
-      {...props}
+      open={open}
+      onClose={onClose}
+      maxWidth={maxWidth}
+      fullWidth={fullWidth}
     >
       {children}
     </Dialog>

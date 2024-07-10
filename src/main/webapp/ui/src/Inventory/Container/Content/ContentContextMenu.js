@@ -104,7 +104,6 @@ function ContentContextMenu(): Node {
           <SelectAllIcon />
         </Badge>
       ),
-      label: "",
       disabledHelp: "",
     },
   ];
