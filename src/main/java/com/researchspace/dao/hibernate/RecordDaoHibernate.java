@@ -299,7 +299,7 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   }
 
   @Override
-  public Set<BaseRecord> getViewableRecordsForUser(User user) {
+  public Set<BaseRecord> getViewableRecordsForUsers(List<User> users) {
     String[] exclude =
         new String[] {
           RecordType.SYSTEM.toString(),
@@ -310,28 +310,29 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
           RecordType.SNIPPET.toString(),
           RecordType.MEDIA_FILE.toString()
         };
-    return getViewableRecords(user, null, exclude, BaseRecord.class);
+    return getViewableRecords(users, null, exclude, BaseRecord.class);
   }
 
   @Override
-  public Set<BaseRecord> getViewableTemplatesForUser(User user) {
+  public Set<BaseRecord> getViewableTemplatesForUsers(List<User> users) {
     String[] limitTo = new String[] {RecordType.TEMPLATE.toString()};
     String[] exclude = new String[] {RecordType.FOLDER.toString()};
-    return getViewableRecords(user, limitTo, exclude, StructuredDocument.class);
+    return getViewableRecords(users, limitTo, exclude, StructuredDocument.class);
   }
 
   @Override
-  public Set<BaseRecord> getViewableMediaFiles(User user) {
+  public Set<BaseRecord> getViewableMediaFiles(List<User> users) {
     String[] limitTo = new String[] {RecordType.MEDIA_FILE.toString()};
-    return getViewableRecords(user, limitTo, null, EcatMediaFile.class);
+    return getViewableRecords(users, limitTo, null, EcatMediaFile.class);
   }
 
   @SuppressWarnings("unchecked")
   private <T extends BaseRecord> Set<BaseRecord> getViewableRecords(
-      User user, String[] limitToTypes, String[] excludeTypes, Class<T> clazz) {
+      List<User> users, String[] limitToTypes, String[] excludeTypes, Class<T> clazz) {
     Session session = sessionFactory.getCurrentSession();
     Criteria query = session.createCriteria(clazz, "record");
-    query.createAlias("record.owner", OWNER_FIELD).add(Restrictions.eq("owner.id", user.getId()));
+    Set<Long> userIds = users.stream().map(User::getId).collect(Collectors.toSet());
+    query.createAlias("record.owner", OWNER_FIELD).add(Restrictions.in("owner.id", userIds));
     query.add(Restrictions.eq(DELETED, false));
     query.add(
         Restrictions.not(

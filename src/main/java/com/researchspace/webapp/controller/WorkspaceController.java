@@ -1165,7 +1165,8 @@ public class WorkspaceController extends BaseController {
   public AjaxReturnObject<List<RecordInformation>> getUsersOwnTemplates() {
 
     User user = userManager.getAuthenticatedUserInSession();
-    List<BaseRecord> viewableTemplates = new ArrayList<>(recordManager.getViewableTemplates(user));
+    List<BaseRecord> viewableTemplates =
+        new ArrayList<>(recordManager.getViewableTemplates(List.of(user)));
     // rspac-2073
     List<RecordInformation> templates = processResults(viewableTemplates);
     return new AjaxReturnObject<>(templates, null);

@@ -21,7 +21,6 @@ import com.axiope.search.WorkspaceSearchInputValidator;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
-import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.TextSearchDao;
 import com.researchspace.model.Group;
@@ -92,19 +91,6 @@ public class SearchManagerImpl implements SearchManager {
 
     List<User> userFilter = getUserFilter(user);
     SearchConfig searchConfig = createWorkspaceSearchCfg(user, userFilter);
-    /*
-     * Apply filtered records to the search. If the shared filter is activated and
-     * filtered records list is empty, then we return an empty set of results,
-     * bypassing Lucene search altogether
-     */
-    if (input.getFilters().isSomeFilterActive()) {
-      List<BaseRecord> filteredRecords = getFilteredRecords(input.getFilters(), user);
-      if (filteredRecords.isEmpty()) {
-        return SearchResultsImpl.emptyResult(input.getPgCrit());
-      }
-      searchConfig.setRecordFilterList(filteredRecords);
-    }
-
     updateSrchConfiguration(input, searchConfig);
     return textSearchDao.getSearchedElnResults(searchConfig);
   }
@@ -131,8 +117,7 @@ public class SearchManagerImpl implements SearchManager {
       searchConfig.setSearchStrategy(IFullTextSearcher.ADVANCED_LUCENE_SEARCH_STRATEGY);
       searchConfig.setOptions(input.getSrchOptions());
       searchConfig.setTerms(input.getSrchTerms());
-    } else if (!input.isAdvancedSearch()
-        && input.getSrchOptions()[0].equalsIgnoreCase(ALL_SEARCH_OPTION)) {
+    } else if (input.getSrchOptions()[0].equalsIgnoreCase(ALL_SEARCH_OPTION)) {
       searchConfig.setSearchStrategy(ALL_LUCENE_SEARCH_STRATEGY);
     } else {
       searchConfig.setSearchStrategy(SINGLE_LUCENE_SEARCH_STRATEGY);

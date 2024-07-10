@@ -51,7 +51,7 @@ public class WorkspaceControllerPlainJunit {
   @Test
   public void viewMyTemplatesOrderedMyModificationDesc() throws InterruptedException {
     Set<BaseRecord> rawResults = generateResults();
-    when(recordMgr.getViewableTemplates(anyUser)).thenReturn(rawResults);
+    when(recordMgr.getViewableTemplates(List.of(anyUser))).thenReturn(rawResults);
     mockAuthenticatedUserInSession();
     List<RecordInformation> results = workspaceCtrller.getUsersOwnTemplates().getData();
     assertTemplateOrdering(results);

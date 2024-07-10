@@ -1087,7 +1087,7 @@ public class RecordManagerImpl implements RecordManager {
     }
 
     if (filters.isMediaFilesFilter()) {
-      Set<BaseRecord> mediaFiles = recordDao.getViewableMediaFiles(user);
+      Set<BaseRecord> mediaFiles = recordDao.getViewableMediaFiles(List.of(user));
       addOrRetain(hits, init, mediaFiles);
 
       String mediaType = filters.getMediaFilesType();
@@ -1158,10 +1158,8 @@ public class RecordManagerImpl implements RecordManager {
        * regardless of the permission.
        */
       List<User> users = userDao.getUsers();
-      Set<BaseRecord> allUsersRecords = new HashSet<>();
-      for (User u : users) {
-        allUsersRecords.addAll(getViewableRecordsByUser(u, onlyTemplates));
-      }
+      Set<BaseRecord> allUsersRecords =
+          new HashSet<>(getViewableRecordsByUsers(users, onlyTemplates));
       viewableRecords.addAll(allUsersRecords);
     } else if (subject.hasRole(Role.ADMIN_ROLE)
         || subject.hasRole(Role.PI_ROLE)
@@ -1189,9 +1187,11 @@ public class RecordManagerImpl implements RecordManager {
       Set<BaseRecord> subjectsViewableRecords =
           new HashSet<>(getRecordsSharedWithUser(subject, onlyTemplates, subject));
 
-      // records created by each of the subjects viewable users
+      // records created by each of the subjects viewable users TODO: can this be simplified with
+      // the permissions check?
       for (User viewableUser : viewableUsers) {
-        subjectsViewableRecords.addAll(getViewableRecordsByUser(viewableUser, onlyTemplates));
+        subjectsViewableRecords.addAll(
+            getViewableRecordsByUsers(List.of(viewableUser), onlyTemplates));
         if (viewableUser.hasRole(Role.PI_ROLE)) {
           // if the subject is a PI of group A, which contains another PI as a group member, they
           // can only view the docs of the other PI which has been shared with group A (whereas the
@@ -1216,16 +1216,16 @@ public class RecordManagerImpl implements RecordManager {
         recordGroupSharingDao.getSharedRecordsWithUser(u), PermissionType.READ, subject);
   }
 
-  private Set<BaseRecord> getViewableRecordsByUser(User u, boolean onlyTemplates) {
+  private Set<BaseRecord> getViewableRecordsByUsers(List<User> users, boolean onlyTemplates) {
     if (onlyTemplates) {
-      return recordDao.getViewableTemplatesForUser(u);
+      return recordDao.getViewableTemplatesForUsers(users);
     }
-    return recordDao.getViewableRecordsForUser(u);
+    return recordDao.getViewableRecordsForUsers(users);
   }
 
   @Override
-  public Set<BaseRecord> getViewableTemplates(User user) {
-    return recordDao.getViewableTemplatesForUser(user);
+  public Set<BaseRecord> getViewableTemplates(List<User> users) {
+    return recordDao.getViewableTemplatesForUsers(users);
   }
 
   @Override

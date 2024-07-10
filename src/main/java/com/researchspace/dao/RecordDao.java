@@ -23,7 +23,6 @@ public interface RecordDao extends GenericDao<Record, Long> {
    *
    * @param parentId - The Id of the record whose child records we need to retrieve.
    * @param pgCrit Pagination Criteria
-   * @param recordTypefilter
    * @return An {@link ISearchResults} object.
    */
   ISearchResults<BaseRecord> getPaginatedChildRecordsOfParentWithFilter(
@@ -35,9 +34,6 @@ public interface RecordDao extends GenericDao<Record, Long> {
    * Retrieves a list of ids of all the visible, non-deleted, normal (i.e., not templates)
    * structured documents belonging to a parent folder id. The ids are all ordered by creation date
    * ascending, i.e., oldest entries first.
-   *
-   * @param parentId
-   * @return
    */
   List<Long> getNotebookContentsExcludeFolders(Long parentId);
 
@@ -46,7 +42,6 @@ public interface RecordDao extends GenericDao<Record, Long> {
    *
    * @param users A collection of users to order
    * @param pgCrit PAgination criteria for sorting purposes
-   * @return
    */
   Map<String, DatabaseUsageByUserGroupByResult> getTotalRecordsForUsers(
       Collection<User> users, PaginationCriteria<User> pgCrit);
@@ -60,12 +55,7 @@ public interface RecordDao extends GenericDao<Record, Long> {
   Map<String, DatabaseUsageByUserGroupByResult> getTotalRecordsForUsers(
       PaginationCriteria<User> pgCrit);
 
-  /**
-   * Gets record in the database related with field
-   *
-   * @param fieldId
-   * @return
-   */
+  /** Gets record in the database related with field */
   BaseRecord getRecordFromFieldId(long fieldId);
 
   Long getCountOfUsersWithRecords();
@@ -91,40 +81,26 @@ public interface RecordDao extends GenericDao<Record, Long> {
    */
   List<RSpaceDocView> getRecordViewsById(Set<Long> dbids);
 
-  /**
-   * Get records by id, from a list of Ids.
-   *
-   * @param dbids
-   * @return
-   */
+  /** Get records by id, from a list of Ids. */
   List<Record> getRecordsById(List<Long> dbids);
 
   /**
-   * Gets all viewable records belonging to the user. This method does <em>not</em> return items
-   * belonging to other users.
-   *
-   * @param user
-   * @return
+   * Gets all viewable records belonging to the list of users. This method does <em>not</em> return
+   * items belonging to other users.
    */
-  Set<BaseRecord> getViewableRecordsForUser(User user);
+  Set<BaseRecord> getViewableRecordsForUsers(List<User> users);
 
   /**
-   * Gets all viewable templates belonging to the user. This method does <em>not</em> return items
+   * Gets all viewable templates belonging to the list of users. This method does <em>not</em> return items
    * belonging to other users.
-   *
-   * @param user
-   * @return
    */
-  Set<BaseRecord> getViewableTemplatesForUser(User user);
+  Set<BaseRecord> getViewableTemplatesForUsers(List<User> users);
 
   /**
-   * Gets all viewable media files belonging to the user. This method does <em>not</em> return items
+   * Gets all viewable media files belonging to the list of users. This method does <em>not</em> return items
    * belonging to other users.
-   *
-   * @param user
-   * @return
    */
-  Set<BaseRecord> getViewableMediaFiles(User user);
+  Set<BaseRecord> getViewableMediaFiles(List<User> users);
 
   /** Tests if BaseRecord with id is a Record or not */
   boolean isRecord(Long id);
@@ -144,8 +120,6 @@ public interface RecordDao extends GenericDao<Record, Long> {
    * If <code>admin</code> is linked to a community, gets all tags in documents created by users of
    * that community. Otherwise, returns an empty set.
    *
-   * @param admin
-   * @param tagSearch
    * @return A list of docTag values (these may contain multiple individual tags)
    */
   List<String> getTagsMetaDataForRecordsVisibleByCommunityAdmin(User admin, String tagSearch);
@@ -155,7 +129,6 @@ public interface RecordDao extends GenericDao<Record, Long> {
   /**
    * Gets some metadata of Documents that link to a media file
    *
-   * @param mediaFileId
    * @return a possibly empty but non-null List
    */
   List<RecordInformation> getInfosOfDocumentsLinkedToMediaFile(Long mediaFileId);
@@ -166,43 +139,24 @@ public interface RecordDao extends GenericDao<Record, Long> {
    * RSPAC-1735) in the same transaction, whereby hibernate occasionally does not issue an SQL
    * 'delete from RecordToFolder' from old folder <em>In general use RecordManager#move to move
    * items around </em>
-   *
-   * @param toUpdate
-   * @param newFolderId
-   * @return
    */
   int updateRecordToFolder(RecordToFolder toUpdate, Long newFolderId);
 
-  /**
-   * Get the ids of not-deleted notebooks belonging to the user
-   *
-   * @param user
-   * @return
-   */
+  /** Get the ids of not-deleted notebooks belonging to the user */
   List<Long> getAllNotebookIdsOwnedByUser(User user);
 
   /**
    * Gets ids of all not-deleted StructuredDocuments that are in notebooks, where both the documents
    * and notebooks are owned by the user
-   *
-   * @param user
-   * @return
    */
   List<Long> getAllDocumentIdsInNotebooksForUser(User user);
 
-  /**
-   * Gets the ids of all not-deleted Structured Documents owned by the user.
-   *
-   * @param user
-   * @return
-   */
+  /** Gets the ids of all not-deleted Structured Documents owned by the user. */
   List<Long> getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(User user);
 
   /**
    * Gets not-deleted document count for a user, based on filter.
    *
-   * @param recordTypes
-   * @param user
    * @return the number of documents owned by the user, of the specified types
    */
   Long getRecordCountForUser(RecordTypeFilter recordTypes, User user);

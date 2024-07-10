@@ -567,7 +567,7 @@ public interface RecordManager {
    * @param user
    * @return
    */
-  Set<BaseRecord> getViewableTemplates(User user);
+  Set<BaseRecord> getViewableTemplates(List<User> users);
 
   /**
    * Retrieves an {@link EcatImage} directly. Loading of the underlying thumbnail/working image is
