@@ -171,6 +171,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case ZENODO_APP_NAME:
         setSingleUserToken(info, user, ZENODO_APP_NAME, ZENODO_USER_TOKEN);
         return;
+      case DIGITAL_COMMONS_DATA_APP_NAME:
+        setSingleUserToken(
+            info, user, DIGITAL_COMMONS_DATA_APP_NAME, DIGITAL_COMMONS_DATA_USER_TOKEN);
+        return;
       default:
     }
   }
@@ -319,6 +323,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (ZENODO_APP_NAME.equals(newInfo.getName())) {
       saveNewUserConnectionForSingleOptionApp(
           newInfo.getOptions().get(ZENODO_USER_TOKEN).toString(), user, ZENODO_APP_NAME);
+    } else if (DIGITAL_COMMONS_DATA_APP_NAME.equals(newInfo.getName())) {
+      saveNewUserConnectionForSingleOptionApp(
+          newInfo.getOptions().get(DIGITAL_COMMONS_DATA_USER_TOKEN).toString(),
+          user,
+          DIGITAL_COMMONS_DATA_APP_NAME);
     } else if (JOVE_APP_NAME.equals(newInfo.getName())) {
       /**
        * Jove doesnt currently fit well into our existing integration handler, so we just get the
@@ -418,6 +427,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case PYRAT_APP_NAME:
       case JOVE_APP_NAME:
       case DMPONLINE_APP_NAME:
+      case DIGITAL_COMMONS_DATA_APP_NAME:
         return true;
     }
     return false;

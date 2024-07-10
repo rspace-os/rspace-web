@@ -27,6 +27,7 @@ import com.researchspace.service.RepositoryFactory;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.controller.repositories.DigitalCommonsDataUIConnectionConfig;
 import com.researchspace.webapp.controller.repositories.DryadUIConnectionConfig;
 import com.researchspace.webapp.controller.repositories.FigshareUIConnectionConfig;
 import com.researchspace.webapp.controller.repositories.RSDataverseConnectionConfig;
@@ -131,6 +132,10 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
       ZenodoUIConnectionConfig zenodoUIConnectionConfig =
           new ZenodoUIConnectionConfig(userConnectionManager, subject, this.propertyHolder);
       repoCfg = repoCfgFactory.createRepositoryConfigFromAppCfg(zenodoUIConnectionConfig, subject);
+    } else if (app.getName().equalsIgnoreCase(App.APP_DIGITAL_COMMONS_DATA)) {
+      DigitalCommonsDataUIConnectionConfig dcdUIConnectionConfig =
+          new DigitalCommonsDataUIConnectionConfig(userConnectionManager, subject, this.propertyHolder);
+      repoCfg = repoCfgFactory.createRepositoryConfigFromAppCfg(dcdUIConnectionConfig, subject);
     } else {
       throw new IllegalArgumentException("Unknown or unconfigured repository: " + app.getName());
     }
