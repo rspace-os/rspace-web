@@ -734,7 +734,6 @@ export default class Result
       );
       throw new Error(
         `Error relinquishing control of ${this.globalId ?? "UNKNOWN"}`,
-        // $FlowExpectedError[extra-arg] Flow does not recognise this arg
         { cause: error }
       );
     }
@@ -774,7 +773,6 @@ export default class Result
 
       console.error(`Error checking lock for ${globalId}`, error);
 
-      // $FlowExpectedError[extra-arg] Flow does not recognise this arg
       throw new Error(`Error checking lock for ${globalId}`, {
         cause: error,
       });
@@ -980,7 +978,6 @@ export default class Result
       );
       throw new Error(
         `Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`,
-        // $FlowExpectedError[extra-arg] Flow doesn't recognise second arg
         { cause: error }
       );
     } finally {
