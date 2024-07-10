@@ -6,6 +6,7 @@ import React, {
   useRef,
   type Node,
   type ComponentType,
+  type RefObject,
 } from "react";
 import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
@@ -46,7 +47,7 @@ const useStyles = makeStyles()((theme, { paddingTop }) => ({
 
 type Buttons = Array<{
   inOverflow: boolean,
-  ref: {| current: ?HTMLElement |},
+  ref: RefObject<?HTMLElement>,
 }>;
 
 export type ContextMenuArgs = {|
