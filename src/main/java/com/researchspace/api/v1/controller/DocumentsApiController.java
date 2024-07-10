@@ -144,7 +144,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
      * Converting search results to ApiSearchResult
      */
     ApiDocumentSearchResult searchResult = new ApiDocumentSearchResult();
-    List<ApiDocumentInfo> info = new ArrayList<ApiDocumentInfo>();
+    List<ApiDocumentInfo> info = new ArrayList<>();
     convertISearchResults(
         pgCrit,
         srchConfig,

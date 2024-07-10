@@ -166,6 +166,12 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
                 .filter(BaseRecord::isStructuredDocument)
                 .collect(Collectors.toList());
       }
+      if (srchConfig.getFilters().isTemplatesFilter()) {
+        hibernateBaseRecordList =
+            hibernateBaseRecordList.stream()
+                .filter(BaseRecord::isTemplate)
+                .collect(Collectors.toList());
+      }
     }
 
     Optional<String> fullTextOption = srchConfig.getFullTextOption();

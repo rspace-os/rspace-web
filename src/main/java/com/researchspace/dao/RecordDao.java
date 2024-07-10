@@ -91,14 +91,14 @@ public interface RecordDao extends GenericDao<Record, Long> {
   Set<BaseRecord> getViewableRecordsForUsers(List<User> users);
 
   /**
-   * Gets all viewable templates belonging to the list of users. This method does <em>not</em> return items
-   * belonging to other users.
+   * Gets all viewable templates belonging to the list of users. This method does <em>not</em>
+   * return items belonging to other users.
    */
   Set<BaseRecord> getViewableTemplatesForUsers(List<User> users);
 
   /**
-   * Gets all viewable media files belonging to the list of users. This method does <em>not</em> return items
-   * belonging to other users.
+   * Gets all viewable media files belonging to the list of users. This method does <em>not</em>
+   * return items belonging to other users.
    */
   Set<BaseRecord> getViewableMediaFiles(List<User> users);
 

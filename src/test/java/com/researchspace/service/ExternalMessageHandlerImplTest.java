@@ -10,7 +10,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
-import com.researchspace.slack.SlackPosterTest;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.HashMap;
@@ -159,5 +158,4 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     map.put("MSTEAMS_WEBHOOK_URL", msTeamsTestWebhookUrl);
     return map;
   }
-
 }
