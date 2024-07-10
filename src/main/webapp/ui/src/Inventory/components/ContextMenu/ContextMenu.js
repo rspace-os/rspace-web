@@ -163,6 +163,7 @@ function ContextMenu({
             <Grid container>
               {actions("button").map((action, i) =>
                 !action.hidden ? (
+                  // $FlowExpectedError[prop-missing]
                   <GridItem key={action.component.key}>
                     <Box ref={buttons[i].ref}>{action.component}</Box>
                   </GridItem>
