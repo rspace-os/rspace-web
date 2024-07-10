@@ -51,7 +51,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
-import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabIndex";
+import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { observer } from "mobx-react-lite";
 import { autorun } from "mobx";
@@ -456,11 +456,10 @@ const Sidebar = ({
     });
   }, [viewport]);
 
-  const { getTabIndex, getRef, eventHandlers } = useVerticalRovingTabIndex<
-    typeof ListItemButton
-  >({
-    max: 8,
-  });
+  const { getTabIndex, getRef, eventHandlers } =
+    useOneDimensionalRovingTabIndex<typeof ListItemButton>({
+      max: 8,
+    });
 
   return (
     <CustomDrawer

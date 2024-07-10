@@ -69,7 +69,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import Link from "@mui/material/Link";
 import { Link as ReactRouterLink } from "react-router-dom";
-import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabIndex";
+import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
 
 const BreadcrumbLink = React.forwardRef<
   ElementConfig<typeof Link>,
@@ -161,7 +161,10 @@ const Path = styled(({ className, section, path, clearPath }) => {
     eventHandlers: { onFocus, onBlur, onKeyDown },
     getTabIndex,
     getRef,
-  } = useVerticalRovingTabIndex<typeof Link>({ max: path.length });
+  } = useOneDimensionalRovingTabIndex<typeof Link>({
+    max: path.length,
+    direction: "row",
+  });
 
   return (
     <div

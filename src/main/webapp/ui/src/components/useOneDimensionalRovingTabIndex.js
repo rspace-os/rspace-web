@@ -12,10 +12,11 @@ import { modulo } from "../util/Util";
  * than tabbing through them all.
  *
  * This custom hook provides an abstraction over implementing a roving tab
- * index for a vertical list of elements, so that the up and down arrow keys
- * provide navigation between the elements in the list. Tab and shift-tab move
- * the user's focus out of the list, and when they return the focus resumes on
- * the last element in the list that had focus.
+ * index for a one-dimensional list of elements, so that either the up and down
+ * arrow keys provide navigation between the elements in the list, or the left
+ * and right arrow keys dow. Tab and shift-tab move the user's focus out of the
+ * list, and when they return the focus resumes on the last element in the list
+ * that had focus.
  *
  * There are two parts to how this custom hook is to be used:
  *
@@ -31,14 +32,22 @@ import { modulo } from "../util/Util";
  *  - https://www.w3.org/WAI/ARIA/apg/patterns/radio/examples/radio/
  *  - https://www.youtube.com/watch?v=uCIC2LNt0bk
  */
-export default function useVerticalRovingTabIndex<RefComponent: HTMLElement>({
+export default function useOneDimensionalRovingTabIndex<
+  RefComponent: HTMLElement
+>({
   max,
+  direction = "column",
 }: {|
   /**
    * The index of the last element of the vertical list, where the indexing is
    * 0-based.
    */
   max: number,
+
+  /**
+   * The dimension in which the elements of the list are laid out. Defaults to "column"
+   */
+  direction?: "row" | "column",
 |}): {|
   /**
    * The set of the event handlers that must be attached to the container
@@ -92,9 +101,13 @@ export default function useVerticalRovingTabIndex<RefComponent: HTMLElement>({
      * By using modulo rather than min and max the user's focus wraps around
      * when reaching the end.
      */
-    if (e.key === "ArrowUp") {
+    if (e.key === "ArrowUp" && direction === "column") {
       setRovingTabIndex(modulo(rovingTabIndex - 1, max + 1));
-    } else if (e.key === "ArrowDown") {
+    } else if (e.key === "ArrowDown" && direction === "column") {
+      setRovingTabIndex(modulo(rovingTabIndex + 1, max + 1));
+    } else if (e.key === "ArrowLeft" && direction === "row") {
+      setRovingTabIndex(modulo(rovingTabIndex - 1, max + 1));
+    } else if (e.key === "ArrowRight" && direction === "row") {
       setRovingTabIndex(modulo(rovingTabIndex + 1, max + 1));
     }
   }
