@@ -117,6 +117,22 @@ type CreateInContextDialogArgs = {|
   menuID: $Values<typeof menuIDs>,
 |};
 
+function isContainer(c: mixed): %checks {
+  return c instanceof ContainerModel;
+}
+
+function isSample(s: mixed): %checks {
+  return s instanceof SampleModel && !(s instanceof TemplateModel);
+}
+
+function isTemplate(t: mixed): %checks {
+  return t instanceof TemplateModel;
+}
+
+function isSubsample(s: mixed): %checks {
+  return s instanceof SubSampleModel;
+}
+
 function CreateInContextDialog({
   open,
   onClose,
@@ -132,20 +148,18 @@ function CreateInContextDialog({
   const { classes } = useStyles();
 
   const gridContainer: boolean =
-    selectedResult instanceof ContainerModel && selectedResult.cType === "GRID";
+    isContainer(selectedResult) && selectedResult.cType === "GRID";
 
   const imageContainer: boolean =
-    selectedResult instanceof ContainerModel &&
-    selectedResult.cType === "IMAGE";
+    isContainer(selectedResult) && selectedResult.cType === "IMAGE";
 
   const imaGridContainer: boolean = imageContainer || gridContainer;
 
   const canStoreContainers = (): boolean =>
-    selectedResult instanceof ContainerModel &&
-    selectedResult.canStoreContainers;
+    isContainer(selectedResult) && selectedResult.canStoreContainers;
 
   const canStoreSamples = (): boolean =>
-    selectedResult instanceof ContainerModel && selectedResult.canStoreSamples;
+    isContainer(selectedResult) && selectedResult.canStoreSamples;
 
   const createActions = {
     CONTAINER: [
@@ -177,8 +191,7 @@ function CreateInContextDialog({
         id: "sa-2",
         name: "Split",
         explanation:
-          selectedResult instanceof SampleModel &&
-          selectedResult.subSamples.length === 1 ? (
+          isSample(selectedResult) && selectedResult.subSamples.length === 1 ? (
             "Split this sample's only subsample into multiple subsamples."
           ) : (
             <>
@@ -187,8 +200,7 @@ function CreateInContextDialog({
             </>
           ),
         disabled: !(
-          selectedResult instanceof SampleModel &&
-          selectedResult.subSamples.length === 1
+          isSample(selectedResult) && selectedResult.subSamples.length === 1
         ),
       },
     ],
@@ -224,7 +236,7 @@ function CreateInContextDialog({
   >([]);
 
   async function setLocations() {
-    if (selectedResult instanceof ContainerModel) {
+    if (isContainer(selectedResult)) {
       /* in some cases (e.g. mobile) locations have not been fetched yet */
       if (!selectedResult.infoLoaded)
         (await selectedResult.fetchAdditionalInfo(): void);
@@ -254,7 +266,7 @@ function CreateInContextDialog({
    */
   useEffect(() => {
     if (
-      selectedResult instanceof ContainerModel &&
+      isContainer(selectedResult) &&
       imaGridContainer &&
       !selectedResult.isFull
     ) {
@@ -264,7 +276,7 @@ function CreateInContextDialog({
 
   // handler could be moved to createStore or other model as an action (as an improvement)
   const onSubmitHandler = async (): Promise<void> => {
-    if (selectedResult instanceof ContainerModel) {
+    if (isContainer(selectedResult)) {
       // handle cases for 3 cTypes
       const parentContainers = [selectedResult];
       let parentLocation: ParentLocation = {};
@@ -294,7 +306,7 @@ function CreateInContextDialog({
       if (createOption === createActions[selectedResult.type][1].name)
         await searchStore.createNewSample(newItemParams);
     }
-    if (selectedResult instanceof SubSampleModel) {
+    if (isSubsample(selectedResult)) {
       if (createOption === createActions[selectedResult.type][0].name) {
         await searchStore.search.splitRecord(
           parseInt(splitCopies, 10),
@@ -302,17 +314,13 @@ function CreateInContextDialog({
         );
       }
     }
-    /* check for TemplateModel before SampleModel check */
-    if (selectedResult instanceof TemplateModel) {
+    if (isTemplate(selectedResult)) {
       if (createOption === createActions[selectedResult.type][0].name) {
         const newSample: SampleModel = await searchStore.createNewSample();
         await newSample.setTemplate(selectedResult);
       }
     }
-    if (
-      selectedResult instanceof SampleModel &&
-      !(selectedResult instanceof TemplateModel)
-    ) {
+    if (isSample(selectedResult)) {
       if (createOption === createActions[selectedResult.type][0].name) {
         createStore.setTemplateCreationContext(menuID);
       }
@@ -341,7 +349,7 @@ function CreateInContextDialog({
           }
         >
           {/* list container does not require location selection */}
-          {selectedResult instanceof ContainerModel &&
+          {isContainer(selectedResult) &&
           imaGridContainer &&
           availableLocations.length > 0 ? (
             <>
@@ -489,15 +497,15 @@ function CreateInContextDialog({
                 </Grid>
               </RadioGroup>
             </FormControl>
-            {selectedResult instanceof ContainerModel && (
+            {isContainer(selectedResult) && (
               <LocationSelector container={selectedResult} />
             )}
-            {selectedResult instanceof SubSampleModel && (
+            {isSubsample(selectedResult) && (
               <SplitCopiesSelector
                 disabled={createOption !== createActions.SUBSAMPLE[0].name}
               />
             )}
-            {selectedResult instanceof SampleModel &&
+            {isSample(selectedResult) &&
               selectedResult.subSamples.length === 1 && (
                 <SplitCopiesSelector
                   disabled={createOption !== createActions.SAMPLE[1].name}

@@ -35,6 +35,7 @@ export default class RsSet<A> extends Set<A> {
       isEmpty: computed,
       first: computed,
       last: computed,
+      only: computed,
     });
   }
 
@@ -91,6 +92,16 @@ export default class RsSet<A> extends Set<A> {
    */
   get last(): A {
     return [...this][this.size - 1];
+  }
+
+  /**
+   * If the set contains just one element, then return it wrapped in
+   * Optional.present.
+   */
+  get only(): Optional<A> {
+    if (this.isEmpty) return Optional.empty();
+    if (this.size > 1) return Optional.empty();
+    return Optional.present(this.first);
   }
 
   /*
@@ -247,14 +258,14 @@ export default class RsSet<A> extends Set<A> {
    */
   unionWithEq(s: RsSet<A>, eq: (A, A) => boolean): RsSet<A> {
     const result = new RsSet<A>();
-    outerA: for (let elementOfThis of this) {
-      for (let alreadyAdded of result) {
+    outerA: for (const elementOfThis of this) {
+      for (const alreadyAdded of result) {
         if (eq(elementOfThis, alreadyAdded)) continue outerA;
       }
       result.add(elementOfThis);
     }
-    outerB: for (let elementOfS of s) {
-      for (let alreadyAdded of result) {
+    outerB: for (const elementOfS of s) {
+      for (const alreadyAdded of result) {
         if (eq(elementOfS, alreadyAdded)) continue outerB;
       }
       result.add(elementOfS);
@@ -264,8 +275,8 @@ export default class RsSet<A> extends Set<A> {
 
   subtractWithEq(s: RsSet<A>, eq: (A, A) => boolean): RsSet<A> {
     const result = new RsSet<A>();
-    outer: for (let elementOfThis of this) {
-      for (let elementOfS of s) {
+    outer: for (const elementOfThis of this) {
+      for (const elementOfS of s) {
         if (eq(elementOfThis, elementOfS)) continue outer;
       }
       result.add(elementOfThis);
@@ -378,15 +389,15 @@ export const flattenWithIntersectionWithEq = <A>(
   const allElements = flattenWithUnion(setOfSets);
   const intersection = new RsSet<A>();
 
-  allElementsLoop: for (let element of allElements) {
+  allElementsLoop: for (const element of allElements) {
     // check if `element` is already in `ret`
-    for (let alreadyAdded of intersection) {
+    for (const alreadyAdded of intersection) {
       if (eqFunc(alreadyAdded, element)) continue allElementsLoop;
     }
 
     // check if `element` is in all `setOfSets`
-    eachSetLoop: for (let set of setOfSets) {
-      for (let elem of set) {
+    eachSetLoop: for (const set of setOfSets) {
+      for (const elem of set) {
         if (eqFunc(elem, element)) {
           // if in this set, then check next set
           continue eachSetLoop;

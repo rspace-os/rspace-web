@@ -1,32 +1,39 @@
 //@flow
 
-import React, { type Node, Children, type ElementConfig } from "react";
+import React, {
+  type Node,
+  Children,
+  type ElementConfig,
+  type ComponentType,
+} from "react";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
 import Fade from "@mui/material/Fade";
-import { gallerySectionLabel, COLOR } from "../common";
+import {
+  gallerySectionLabel,
+  COLOR,
+  SELECTED_OR_FOCUS_BORDER,
+  SELECTED_OR_FOCUS_BLUE,
+} from "../common";
 import { styled } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
-import { COLORS as baseThemeColors } from "../../../theme";
 import * as FetchingData from "../../../util/fetchingData";
+import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
 import {
-  useGalleryListing,
-  type GalleryFile,
-  type Id,
-  idToString,
-} from "../useGalleryListing";
-import { useGalleryActions } from "../useGalleryActions";
-import { doNotAwait } from "../../../util/Util";
+  useGalleryActions,
+  folderDestination,
+  rootDestination,
+} from "../useGalleryActions";
+import { useGallerySelection } from "../useGallerySelection";
+import { doNotAwait, match } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import {
   useDroppable,
   useDraggable,
@@ -41,20 +48,23 @@ import Button from "@mui/material/Button";
 import GridIcon from "@mui/icons-material/ViewCompact";
 import TreeIcon from "@mui/icons-material/AccountTree";
 import Menu from "@mui/material/Menu";
-import Box from "@mui/material/Box";
 import NewMenuItem from "./NewMenuItem";
-import Collapse from "@mui/material/Collapse";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Slide from "@mui/material/Slide";
-import { observable, runInAction } from "mobx";
-import { useLocalObservable, observer } from "mobx-react-lite";
+import Stack from "@mui/material/Stack";
+import { observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-
-const SELECTED_OR_FOCUS_BLUE = `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`;
-const SELECTED_OR_FOCUS_BORDER = `2px solid ${SELECTED_OR_FOCUS_BLUE}`;
+import ActionsMenu from "./ActionsMenu";
+import RsSet from "../../../util/set";
+import TreeView from "./TreeView";
+import { COLORS as baseThemeColors } from "../../../theme";
+import PlaceholderLabel from "./PlaceholderLabel";
+import SwapVertIcon from "@mui/icons-material/SwapVert";
+import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -161,75 +171,6 @@ const ImportDropzone = styled(
   },
 }));
 
-const TreeItemContent = ({
-  path,
-  file,
-  section,
-  draggingIds,
-  refreshListing,
-}: {|
-  file: GalleryFile,
-  path: $ReadOnlyArray<GalleryFile>,
-  section: string,
-  draggingIds: $ReadOnlyArray<string>,
-  refreshListing: () => void,
-|}): Node => {
-  const { galleryListing } = useGalleryListing({
-    section,
-    searchTerm: "",
-    path: [...path, file],
-  });
-  return FetchingData.match(galleryListing, {
-    /*
-     * nothing is shown whilst loading otherwise the UI ends up being quite
-     * janky when there ends up being nothing in the folder
-     */
-    loading: () => null,
-    error: (error) => <>{error}</>,
-    success: (listing) =>
-      listing.tag === "list"
-        ? listing.list.map((f, i) => (
-            <CustomTreeItem
-              file={f}
-              index={i}
-              path={[...path, file]}
-              section={section}
-              key={idToString(f.id)}
-              draggingIds={draggingIds}
-              refreshListing={refreshListing}
-            />
-          ))
-        : null,
-  });
-};
-
-const CustomTransition = styled(({ children, in: open, className }) => (
-  <div className={className}>
-    <Collapse
-      in={open}
-      timeout={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200
-      }
-    >
-      {children}
-    </Collapse>
-  </div>
-))(({ in: open }) => ({
-  "& .MuiCollapse-wrapperInner > .MuiBox-root": {
-    transform:
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
-        ? "none"
-        : "translateX(-10px) !important",
-    opacity:
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
-        ? 1
-        : "0 !important",
-    transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "none"
-      : "all .2s ease",
-  },
-}));
-
 const Breadcrumb = ({
   label,
   onClick,
@@ -252,7 +193,7 @@ const Breadcrumb = ({
     disabled: false,
     data: {
       path,
-      destination: folder ? { key: "folder", folder } : { key: "root" },
+      destination: folder ? folderDestination(folder) : rootDestination(),
     },
   });
   const dropStyle: { [string]: string | number } = isOver
@@ -314,158 +255,6 @@ const CustomBreadcrumbs = ({
   );
 };
 
-const CustomTreeItem = ({
-  file,
-  index,
-  path,
-  section,
-  draggingIds,
-  refreshListing,
-}: {|
-  file: GalleryFile,
-  index: number,
-  path: $ReadOnlyArray<GalleryFile>,
-  section: string,
-  draggingIds: $ReadOnlyArray<string>,
-  refreshListing: () => void,
-|}) => {
-  const { uploadFiles } = useGalleryActions();
-  const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
-    useFileImportDropZone({
-      onDrop: doNotAwait(async (files) => {
-        await uploadFiles([...file.path, file], file.id, files);
-        refreshListing();
-      }),
-      disabled: !/Folder/.test(file.type),
-    });
-  const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: file.id,
-    disabled: !/Folder/.test(file.type),
-    data: {
-      path: file.path,
-      destination: { key: "folder", folder: file },
-    },
-  });
-  const {
-    attributes,
-    listeners,
-    setNodeRef: setDragRef,
-    transform,
-  } = useDraggable({
-    disabled: false,
-    id: file.id,
-    data: {
-      /*
-       * If this `file` is one of the selected files (i.e. is in
-       * `draggingIds`) then all of the selected files are to be moved by the
-       * drag operation. If it is not included then just move this file.
-       */
-      draggingIds: draggingIds.includes(idToString(file.id)) ? draggingIds : [],
-    },
-  });
-  const dndContext = useDndContext();
-
-  const dragStyle: { [string]: string | number } = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
-        zIndex: 1, // just needs to be rendered above Nodes later in the DOM
-        position: "relative",
-        boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
-        maxWidth: "max-content",
-      }
-    : {};
-  const dropStyle: { [string]: string | number } = isOver
-    ? {
-        border: SELECTED_OR_FOCUS_BORDER,
-      }
-    : {
-        border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-      };
-  const inGroupBeingDraggedStyle: { [string]: string | number } =
-    (dndContext.active?.data.current?.draggingIds ?? []).includes(
-      idToString(file.id)
-    ) && dndContext.active?.id !== file.id
-      ? {
-          opacity: 0.2,
-        }
-      : {};
-  const fileUploadDropping: { [string]: string | number } = over
-    ? {
-        border: SELECTED_OR_FOCUS_BORDER,
-      }
-    : {};
-
-  return (
-    <Box
-      sx={{
-        transitionDelay: `${(index + 1) * 0.04}s !important`,
-      }}
-    >
-      <TreeItem
-        itemId={idToString(file.id)}
-        label={
-          <Box
-            sx={{ display: "flex", pointerEvents: "none", userSelect: "none" }}
-          >
-            <Avatar
-              src={file.thumbnailUrl}
-              imgProps={{
-                role: "presentation",
-              }}
-              variant="rounded"
-              sx={{
-                width: "24px",
-                height: "24px",
-                aspectRatio: "1 / 1",
-                fontSize: "5em",
-                margin: "2px 12px 2px 8px",
-                background: "white",
-              }}
-            >
-              <FileIcon fontSize="inherit" />
-            </Avatar>
-            {file.name}
-          </Box>
-        }
-        slots={{ groupTransition: CustomTransition }}
-        /*
-         * These are for dragging files from outside the browser
-         */
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onDragEnter={onDragEnter}
-        onDragLeave={onDragLeave}
-        /*
-         * These are for dragging files between folders within the gallery
-         */
-        ref={(node) => {
-          setDropRef(node);
-          setDragRef(node);
-        }}
-        {...listeners}
-        {...attributes}
-        style={{
-          ...dragStyle,
-          ...dropStyle,
-          ...inGroupBeingDraggedStyle,
-          ...fileUploadDropping,
-          borderRadius: "4px",
-        }}
-      >
-        {/Folder/.test(file.type) && (
-          <TreeItemContent
-            file={file}
-            path={path}
-            section={section}
-            draggingIds={draggingIds}
-            refreshListing={refreshListing}
-          />
-        )}
-      </TreeItem>
-    </Box>
-  );
-};
-
 const GridView = observer(
   ({
     listing,
@@ -475,9 +264,7 @@ const GridView = observer(
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
   |}) => {
     const dndContext = useDndContext();
-
-    // $FlowExpectedError[prop-missing] Difficult to get this library type right
-    const selectedFiles = useLocalObservable(() => observable.set([]));
+    const selection = useGallerySelection();
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
@@ -540,9 +327,7 @@ const GridView = observer(
         onKeyDown={(e) => {
           if (dndContext.active) return;
           if (e.key === "Escape") {
-            runInAction(() => {
-              selectedFiles.clear();
-            });
+            selection.clear();
             return;
           }
           const newCoord: {
@@ -585,19 +370,17 @@ const GridView = observer(
           const top = Math.min(y, origin.y);
           const bottom = Math.max(y, origin.y);
 
-          runInAction(() => {
-            selectedFiles.clear();
-            listing.list.forEach(({ id }, i) => {
-              const fileX = i % cols;
-              const fileY = Math.floor(i / cols);
-              if (
-                fileX >= left &&
-                fileX <= right &&
-                fileY >= top &&
-                fileY <= bottom
-              )
-                selectedFiles.add(id);
-            });
+          selection.clear();
+          listing.list.forEach((file, i) => {
+            const fileX = i % cols;
+            const fileY = Math.floor(i / cols);
+            if (
+              fileX >= left &&
+              fileX <= right &&
+              fileY >= top &&
+              fileY <= bottom
+            )
+              selection.append(file);
           });
 
           setShiftOrigin(e.shiftKey ? shiftOrigin ?? tabIndexCoord : null);
@@ -612,10 +395,7 @@ const GridView = observer(
            * regains focus this will then run again
            */
           const { x, y } = tabIndexCoord;
-          if (selectedFiles.size === 0)
-            runInAction(() => {
-              selectedFiles.add(listing.list[y * cols + x].id);
-            });
+          if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
         }}
       >
         {listing.list.map((file, index) => (
@@ -632,7 +412,7 @@ const GridView = observer(
             onBlur={() => {
               setHasFocus(false);
             }}
-            selected={selectedFiles.has(file.id)}
+            selected={selection.includes(file)}
             file={file}
             key={idToString(file.id)}
             index={index}
@@ -661,31 +441,23 @@ const GridView = observer(
                     coord.y <= Math.max(tappedCoord.y, shiftOrigin.y)
                   );
                 });
-                runInAction(() => {
-                  selectedFiles.clear();
-                  toSelect.forEach(({ id }) => {
-                    selectedFiles.add(id);
-                  });
+                selection.clear();
+                toSelect.forEach((f) => {
+                  selection.append(f);
                 });
                 setTabIndexCoord({
                   x: index % cols,
                   y: Math.floor(index / cols),
                 });
               } else if (e.ctrlKey || e.metaKey) {
-                if (selectedFiles.has(file.id)) {
-                  runInAction(() => {
-                    selectedFiles.delete(file.id);
-                  });
+                if (selection.includes(file)) {
+                  selection.remove(file);
                 } else {
-                  runInAction(() => {
-                    selectedFiles.add(file.id);
-                  });
+                  selection.append(file);
                 }
               } else {
-                runInAction(() => {
-                  selectedFiles.clear();
-                  selectedFiles.add(file.id);
-                });
+                selection.clear();
+                selection.append(file);
                 setShiftOrigin({
                   x: index % cols,
                   y: Math.floor(index / cols),
@@ -696,7 +468,6 @@ const GridView = observer(
                 });
               }
             }}
-            draggingIds={[...selectedFiles]}
           />
         ))}
       </Grid>
@@ -714,7 +485,6 @@ const FileCard = styled(
         selected,
         index,
         onClick,
-        draggingIds,
         tabIndex,
         onFocus,
         onBlur,
@@ -724,7 +494,6 @@ const FileCard = styled(
         selected: boolean,
         index: number,
         onClick: (Event) => void,
-        draggingIds: $ReadOnlyArray<string>,
         tabIndex: number,
         onFocus: () => void,
         onBlur: () => void,
@@ -732,6 +501,7 @@ const FileCard = styled(
       ref
     ) => {
       const { uploadFiles } = useGalleryActions();
+      const selection = useGallerySelection();
       const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
         useFileImportDropZone({
           onDrop: (files) => {
@@ -741,14 +511,14 @@ const FileCard = styled(
              * placed inside a folder into which the user cannot currently see
              */
           },
-          disabled: !/Folder/.test(file.type),
+          disabled: !file.isFolder,
         });
       const { setNodeRef: setDropRef, isOver } = useDroppable({
         id: file.id,
-        disabled: !/Folder/.test(file.type),
+        disabled: !file.isFolder,
         data: {
           path: file.path,
-          destination: { key: "folder", folder: file },
+          destination: folderDestination(file),
         },
       });
       const {
@@ -761,11 +531,13 @@ const FileCard = styled(
         id: file.id,
         data: {
           /*
-           * If this `file` is one of the selected files (i.e. is in
-           * `draggingIds`) then all of the selected files are to be moved by the
-           * drag operation. If it is not included then just move this file.
+           * If this `file` is one of the selected files then all of the
+           * selected files are to be moved by the drag operation. If it is not
+           * included then just move this file.
            */
-          draggingIds: draggingIds.includes(file.id) ? draggingIds : [],
+          filesBeingMoved: selection.includes(file)
+            ? selection.asSet()
+            : new RsSet([file]),
         },
       });
       /*
@@ -791,9 +563,10 @@ const FileCard = styled(
           }
         : {};
       const inGroupBeingDraggedStyle: { [string]: string | number } =
-        (dndContext.active?.data.current?.draggingIds ?? []).includes(
-          file.id
-        ) && dndContext.active?.id !== file.id
+        (
+          dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
+        ).hasWithEq(file, (a, b) => a.id === b.id) &&
+        dndContext.active?.id !== file.id
           ? {
               opacity: 0.2,
             }
@@ -1036,159 +809,7 @@ const FileCard = styled(
     : `hsl(${COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
 }));
 
-const TreeView = ({
-  listing,
-  path,
-  selectedSection,
-  refreshListing,
-}: {|
-  listing:
-    | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
-  path: $ReadOnlyArray<GalleryFile>,
-  selectedSection: string,
-  refreshListing: () => void,
-|}) => {
-  const { addAlert } = React.useContext(AlertContext);
-  const [selectedNodes, setSelectedNodes] = React.useState<
-    $ReadOnlyArray<string>
-  >([]);
-  const [expandedItems, setExpandedItems] = React.useState<
-    $ReadOnlyArray<GalleryFile["id"]>
-  >([]);
-
-  if (listing.tag === "empty")
-    return (
-      <div key={listing.reason}>
-        <Fade
-          in={true}
-          timeout={
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              ? 0
-              : 300
-          }
-        >
-          <div>
-            <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
-          </div>
-        </Fade>
-      </div>
-    );
-  return (
-    <SimpleTreeView
-      expandedItems={expandedItems}
-      onExpandedItemsChange={(_event, nodeIds) => {
-        setExpandedItems(nodeIds);
-      }}
-      selectedItems={selectedNodes}
-      onItemSelectionToggle={(
-        event,
-        itemId: string | $ReadOnlyArray<string>,
-        selected
-      ) => {
-        /*
-         * If there are multiple files selected and the user taps any file
-         * (already selected or not) then this function is called twice: first
-         * with `itemId` as an array of all of the selected nodes with
-         * `selected` set to false, followed by `itemId` as a string value and
-         * `selected` set to true. The idea being, that you can first clear the
-         * data structure being passed as `selectedItems` and then add back the
-         * singular selected item. However, because we wish to handle ctrl/meta
-         * keys, we ignore this first invocation and instead just consider
-         * whether the tapped file is already selected or not to toggle its
-         * state. As such, we can ignore the first invocation where `itemId` is
-         * an array.
-         */
-        if (Array.isArray(itemId)) return;
-        /*
-         * It's not possible for us to support shift-clicking in tree view
-         * because there's no data structure we can query to find a range of
-         * adjacent nodes. There's simply no way for us to get the itemIds of
-         * the nodes between two selected nodes; even more so if the user were
-         * to attempt to select nodes are different levels of the hierarchy.
-         * SimpleTreeView does have a multiSelect mode but attempting to use it
-         * just results in console errors.
-         */
-        if (event.shiftKey) {
-          if (selected) {
-            addAlert(
-              mkAlert({
-                title: "Shift selection is not supported in tree view.",
-                message:
-                  "Either use command/ctrl to select each in turn, or use grid view.",
-                variant: "warning",
-              })
-            );
-          }
-          return;
-        }
-        if (event.ctrlKey || event.metaKey) {
-          if (selectedNodes.includes(itemId)) {
-            setSelectedNodes(selectedNodes.filter((x) => x !== itemId));
-          } else {
-            setSelectedNodes([...selectedNodes, itemId]);
-          }
-        } else if (selected) {
-          setSelectedNodes([itemId]);
-        } else {
-          setSelectedNodes([]);
-        }
-      }}
-    >
-      {listing.list.map((file, index) => (
-        <CustomTreeItem
-          index={index}
-          file={file}
-          path={path}
-          key={idToString(file.id)}
-          section={selectedSection}
-          draggingIds={selectedNodes}
-          refreshListing={refreshListing}
-        />
-      ))}
-    </SimpleTreeView>
-  );
-};
-
-const PlaceholderLabel = styled(({ children, className }) => (
-  <Grid container className={className}>
-    <Grid
-      item
-      sx={{
-        p: 1,
-        pt: 2,
-        pr: 5,
-      }}
-    >
-      {children}
-    </Grid>
-  </Grid>
-))(() => ({
-  justifyContent: "stretch",
-  alignItems: "stretch",
-  height: "100%",
-  "& > *": {
-    fontSize: "2rem",
-    fontWeight: 700,
-    color: window.matchMedia("(prefers-contrast: more)").matches
-      ? "black"
-      : "hsl(190deg, 20%, 29%, 37%)",
-    flexGrow: 1,
-    textAlign: "center",
-
-    overflowWrap: "anywhere",
-    overflow: "hidden",
-  },
-}));
-
-export default function GalleryMainPanel({
-  selectedSection,
-  path,
-  clearPath,
-  galleryListing,
-  folderId,
-  refreshListing,
-}: {|
+type GalleryMainPanelArgs = {|
   selectedSection: string,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
@@ -1200,7 +821,24 @@ export default function GalleryMainPanel({
   setSelectedFile: (null | GalleryFile) => void,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
-|}): Node {
+  sortOrder: "DESC" | "ASC",
+  orderBy: "name" | "modificationDate",
+  setSortOrder: ("DESC" | "ASC") => void,
+  setOrderBy: ("name" | "modificationDate") => void,
+|};
+
+function GalleryMainPanel({
+  selectedSection,
+  path,
+  clearPath,
+  galleryListing,
+  folderId,
+  refreshListing,
+  sortOrder,
+  orderBy,
+  setSortOrder,
+  setOrderBy,
+}: GalleryMainPanelArgs): Node {
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
       onDrop: () => {
@@ -1215,7 +853,9 @@ export default function GalleryMainPanel({
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("grid");
-  const { moveFilesWithIds } = useGalleryActions();
+  const [sortMenuAnchorEl, setSortMenuAnchorEl] = React.useState(null);
+  const { moveFiles } = useGalleryActions();
+  const selection = useGallerySelection();
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -1258,14 +898,7 @@ export default function GalleryMainPanel({
         sensors={[mouseSensor, touchSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
-          const idsOfSelectedFiles =
-            event.active?.data.current?.draggingIds ?? [];
-          const idOfFileJustBeingDragged = event.active.id;
-          void moveFilesWithIds(
-            idsOfSelectedFiles.length > 0
-              ? idsOfSelectedFiles
-              : [idOfFileJustBeingDragged]
-          )
+          void moveFiles(event.active.data.current.filesBeingMoved)
             .to({
               destination: event.over.data.current.destination,
               section: selectedSection,
@@ -1327,47 +960,161 @@ export default function GalleryMainPanel({
               </CustomBreadcrumbs>
             </Grid>
             <Grid item sx={{ mt: 0.5 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<TreeIcon />}
-                onClick={(e) => {
-                  setViewMenuAnchorEl(e.target);
-                }}
-              >
-                Views
-              </Button>
-              <StyledMenu
-                open={Boolean(viewMenuAnchorEl)}
-                anchorEl={viewMenuAnchorEl}
-                onClose={() => setViewMenuAnchorEl(null)}
-                MenuListProps={{
-                  disablePadding: true,
-                }}
-              >
-                <NewMenuItem
-                  title="Grid"
-                  subheader="Browse by thumbnail previews"
-                  backgroundColor={COLOR.background}
-                  foregroundColor={COLOR.contrastText}
-                  avatar={<GridIcon />}
-                  onClick={() => {
-                    setViewMode("grid");
-                    setViewMenuAnchorEl(null);
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<SwapVertIcon />}
+                  onClick={(e) => {
+                    setSortMenuAnchorEl(e.target);
                   }}
-                />
-                <NewMenuItem
-                  title="Tree"
-                  subheader="View and manage folder hierarchy"
-                  backgroundColor={COLOR.background}
-                  foregroundColor={COLOR.contrastText}
-                  avatar={<TreeIcon />}
-                  onClick={() => {
-                    setViewMode("tree");
-                    setViewMenuAnchorEl(null);
+                  aria-haspopup="menu"
+                >
+                  Sort
+                </Button>
+                <StyledMenu
+                  open={Boolean(sortMenuAnchorEl)}
+                  anchorEl={sortMenuAnchorEl}
+                  onClose={() => setSortMenuAnchorEl(null)}
+                  MenuListProps={{
+                    disablePadding: true,
                   }}
+                >
+                  <NewMenuItem
+                    title={`Name${match<void, string>([
+                      [() => orderBy !== "name", ""],
+                      [() => sortOrder === "ASC", " (Sorted from A to Z)"],
+                      [() => sortOrder === "DESC", " (Sorted from Z to A)"],
+                    ])()}`}
+                    subheader={match<void, string>([
+                      [() => orderBy !== "name", "Tap to sort from A to Z"],
+                      [() => sortOrder === "ASC", "Tap to sort from Z to A"],
+                      [() => sortOrder === "DESC", "Tap to sort from A to Z"],
+                    ])()}
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={match<void, Node>([
+                      [
+                        () => orderBy !== "name",
+                        <HorizontalRuleIcon key={null} />,
+                      ],
+                      [
+                        () => sortOrder === "ASC",
+                        <ArrowDownwardIcon key={null} />,
+                      ],
+                      [
+                        () => sortOrder === "DESC",
+                        <ArrowUpwardIcon key={null} />,
+                      ],
+                    ])()}
+                    onClick={() => {
+                      setSortMenuAnchorEl(null);
+                      if (orderBy === "name") {
+                        if (sortOrder === "ASC") {
+                          setSortOrder("DESC");
+                        } else {
+                          setSortOrder("ASC");
+                        }
+                      } else {
+                        setOrderBy("name");
+                        setSortOrder("ASC");
+                      }
+                    }}
+                  />
+                  <NewMenuItem
+                    title={`Modification Date${match<void, string>([
+                      [() => orderBy !== "modificationDate", ""],
+                      [() => sortOrder === "ASC", " (Sorted oldest first)"],
+                      [() => sortOrder === "DESC", " (Sorted newest first)"],
+                    ])()}`}
+                    subheader={match<void, string>([
+                      [
+                        () => orderBy !== "modificationDate",
+                        "Tap to sort oldest first",
+                      ],
+                      [() => sortOrder === "ASC", "Tap to sort newest first"],
+                      [() => sortOrder === "DESC", "Tap to sort oldest first"],
+                    ])()}
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={match<void, Node>([
+                      [
+                        () => orderBy !== "modificationDate",
+                        <HorizontalRuleIcon key={null} />,
+                      ],
+                      [
+                        () => sortOrder === "ASC",
+                        <ArrowDownwardIcon key={null} />,
+                      ],
+                      [
+                        () => sortOrder === "DESC",
+                        <ArrowUpwardIcon key={null} />,
+                      ],
+                    ])()}
+                    onClick={() => {
+                      setSortMenuAnchorEl(null);
+                      if (orderBy === "modificationDate") {
+                        if (sortOrder === "ASC") {
+                          setSortOrder("DESC");
+                        } else {
+                          setSortOrder("ASC");
+                        }
+                      } else {
+                        setOrderBy("modificationDate");
+                        setSortOrder("ASC");
+                      }
+                    }}
+                  />
+                </StyledMenu>
+                <ActionsMenu
+                  refreshListing={refreshListing}
+                  section={selectedSection}
                 />
-              </StyledMenu>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<TreeIcon />}
+                  onClick={(e) => {
+                    setViewMenuAnchorEl(e.target);
+                  }}
+                  aria-haspopup="menu"
+                >
+                  Views
+                </Button>
+                <StyledMenu
+                  open={Boolean(viewMenuAnchorEl)}
+                  anchorEl={viewMenuAnchorEl}
+                  onClose={() => setViewMenuAnchorEl(null)}
+                  MenuListProps={{
+                    disablePadding: true,
+                  }}
+                >
+                  <NewMenuItem
+                    title="Grid"
+                    subheader="Browse by thumbnail previews"
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={<GridIcon />}
+                    onClick={() => {
+                      setViewMode("grid");
+                      setViewMenuAnchorEl(null);
+                      selection.clear();
+                    }}
+                  />
+                  <NewMenuItem
+                    title="Tree"
+                    subheader="View and manage folder hierarchy"
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={<TreeIcon />}
+                    onClick={() => {
+                      setViewMode("tree");
+                      setViewMenuAnchorEl(null);
+                      selection.clear();
+                    }}
+                  />
+                </StyledMenu>
+              </Stack>
             </Grid>
           </Grid>
           <Grid
@@ -1385,6 +1132,8 @@ export default function GalleryMainPanel({
                     path={path}
                     selectedSection={selectedSection}
                     refreshListing={refreshListing}
+                    sortOrder={sortOrder}
+                    orderBy={orderBy}
                   />
                 ),
               })}
@@ -1407,3 +1156,7 @@ export default function GalleryMainPanel({
     </DialogContent>
   );
 }
+
+export default (observer(
+  GalleryMainPanel
+): ComponentType<GalleryMainPanelArgs>);

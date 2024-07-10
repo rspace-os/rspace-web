@@ -4,9 +4,22 @@ import React from "react";
 import axios from "axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
+import RsSet from "../../util/set";
 import Result from "../../util/result";
 import { type GalleryFile, idToString, type Id } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+
+export opaque type Destination =
+  | {| key: "root" |}
+  | {| key: "folder", folder: GalleryFile |};
+
+export function rootDestination(): Destination {
+  return { key: "root" };
+}
+
+export function folderDestination(folder: GalleryFile): Destination {
+  return { key: "folder", folder };
+}
 
 export function useGalleryActions(): {|
   uploadFiles: (
@@ -15,12 +28,16 @@ export function useGalleryActions(): {|
     $ReadOnlyArray<File>
   ) => Promise<void>,
   createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
-  moveFilesWithIds: ($ReadOnlyArray<number>) => {|
+  moveFiles: (Set<GalleryFile>) => {|
     to: ({|
-      destination: {| key: "root" |} | {| key: "folder", folder: GalleryFile |},
+      destination: Destination,
       section: string,
     |}) => Promise<void>,
+    toDestinationWithPath: (string, string) => Promise<void>,
   |},
+  deleteFiles: (RsSet<GalleryFile>) => Promise<void>,
+  duplicateFiles: (RsSet<GalleryFile>) => Promise<void>,
+  rename: (GalleryFile, string) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -150,7 +167,13 @@ export function useGalleryActions(): {|
     }
   }
 
-  function moveFilesWithIds(fileIds: $ReadOnlyArray<number>) {
+  function moveFiles(files: Set<GalleryFile>): {|
+    to: ({|
+      destination: Destination,
+      section: string,
+    |}) => Promise<void>,
+    toDestinationWithPath: (string, string) => Promise<void>,
+  |} {
     return {
       to: async ({
         destination,
@@ -160,7 +183,7 @@ export function useGalleryActions(): {|
           | {| key: "root" |}
           | {| key: "folder", folder: GalleryFile |},
         section: string,
-      |}) => {
+      |}): Promise<void> => {
         if (
           destination.key === "folder" &&
           destination.folder.isSnippetFolder
@@ -175,21 +198,23 @@ export function useGalleryActions(): {|
           );
           return;
         }
-        const target =
+        const path =
           destination.key === "root"
             ? `/${section}/`
-            : `/${[
-                section,
-                ...destination.folder.path.map(({ name }) => name),
-                ...[destination.folder.name],
-              ].join("/")}/`;
-        const formData = new FormData();
-        formData.append("target", target);
-        fileIds.forEach((fileId) => {
-          formData.append("filesId[]", `${fileId}`);
-        });
-        formData.append("mediaType", section);
+            : destination.folder.pathAsString();
+        await moveFiles(files).toDestinationWithPath(section, path);
+      },
+      toDestinationWithPath: async (
+        section: string,
+        path: string
+      ): Promise<void> => {
         try {
+          if (path === "") throw new Error("Path cannot be empty");
+          const formData = new FormData();
+          formData.append("target", path);
+          for (const file of files)
+            formData.append("filesId[]", idToString(file.id));
+          formData.append("mediaType", section);
           const data = await axios.post<FormData, mixed>(
             "gallery/ajax/moveGalleriesElements",
             formData,
@@ -212,7 +237,7 @@ export function useGalleryActions(): {|
               .orElse(
                 mkAlert({
                   message: `Successfully moved item${
-                    fileIds.length > 0 ? "s" : ""
+                    files.size > 0 ? "s" : ""
                   }.`,
                   variant: "success",
                 })
@@ -222,7 +247,7 @@ export function useGalleryActions(): {|
           addAlert(
             mkAlert({
               variant: "error",
-              title: `Failed to move item${fileIds.length > 0 ? "s" : ""}.`,
+              title: `Failed to move item${files.size > 0 ? "s" : ""}.`,
               message: e.message,
             })
           );
@@ -232,5 +257,154 @@ export function useGalleryActions(): {|
     };
   }
 
-  return { uploadFiles, createFolder, moveFilesWithIds };
+  async function deleteFiles(files: RsSet<GalleryFile>) {
+    if (files.some((f) => f.isSystemFolder)) return;
+    const formData = new FormData();
+    for (const file of files)
+      formData.append("idsToDelete[]", idToString(file.id));
+    try {
+      const data = await axios.post<FormData, mixed>(
+        "gallery/ajax/deleteElementFromGallery",
+        formData,
+        {
+          headers: {
+            "content-type": "multipart/form-data",
+          },
+        }
+      );
+      addAlert(
+        Parsers.objectPath(["data", "exceptionMessage"], data)
+          .flatMap(Parsers.isString)
+          .map((exceptionMessage) =>
+            mkAlert({
+              title: `Failed to delete item.`,
+              message: exceptionMessage,
+              variant: "error",
+            })
+          )
+          .orElse(
+            mkAlert({
+              message: `Successfully deleted item${files.size > 0 ? "s" : ""}.`,
+              variant: "success",
+            })
+          )
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to delete item${files.size > 0 ? "s" : ""}.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
+  async function duplicateFiles(files: RsSet<GalleryFile>) {
+    if (files.some((f) => f.isSystemFolder)) return;
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("idToCopy[]", idToString(file.id));
+      formData.append(
+        "newName[]",
+        file.transformFilename((name) => name + "_copy")
+      );
+    }
+    try {
+      const data = await axios.post<FormData, mixed>(
+        "gallery/ajax/copyGalleries",
+        formData,
+        {
+          headers: {
+            "content-type": "multipart/form-data",
+          },
+        }
+      );
+      addAlert(
+        Parsers.objectPath(["data", "exceptionMessage"], data)
+          .flatMap(Parsers.isString)
+          .map((exceptionMessage) =>
+            mkAlert({
+              title: `Failed to duplicate item.`,
+              message: exceptionMessage,
+              variant: "error",
+            })
+          )
+          .orElse(
+            mkAlert({
+              message: `Successfully duplicated item${
+                files.size > 0 ? "s" : ""
+              }.`,
+              variant: "success",
+            })
+          )
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to duplicate item${files.size > 0 ? "s" : ""}.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
+  async function rename(file: GalleryFile, newName: string) {
+    if (file.isSystemFolder) return;
+    const formData = new FormData();
+    formData.append("recordId", idToString(file.id));
+    formData.append(
+      "newName",
+      file.transformFilename(() => newName)
+    );
+    try {
+      const data = await axios.post<FormData, mixed>(
+        "workspace/editor/structuredDocument/ajax/rename",
+        formData,
+        {
+          headers: {
+            "content-type": "multipart/form-data",
+          },
+        }
+      );
+      addAlert(
+        Parsers.objectPath(["data", "exceptionMessage"], data)
+          .flatMap(Parsers.isString)
+          .map((exceptionMessage) =>
+            mkAlert({
+              title: `Failed to rename item.`,
+              message: exceptionMessage,
+              variant: "error",
+            })
+          )
+          .orElse(
+            mkAlert({
+              message: `Successfully renamed item.`,
+              variant: "success",
+            })
+          )
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to rename item.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
+  return {
+    uploadFiles,
+    createFolder,
+    moveFiles,
+    deleteFiles,
+    duplicateFiles,
+    rename,
+  };
 }

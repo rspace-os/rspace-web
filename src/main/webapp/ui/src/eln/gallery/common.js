@@ -1,5 +1,7 @@
 //@flow
 
+import { COLORS as baseThemeColors } from "../../theme";
+
 export const gallerySectionLabel = {
   Images: "Images",
   Audios: "Audio",
@@ -28,28 +30,31 @@ export const gallerySectionCollectiveNoun = {
 
 export const COLOR = {
   main: {
-    hue: 190,
-    saturation: 30,
-    lightness: 80,
+    hue: 280,
+    saturation: 7,
+    lightness: 81,
   },
   darker: {
-    hue: 190,
-    saturation: 30,
-    lightness: 32,
+    hue: 280,
+    saturation: 8,
+    lightness: 22,
   },
   contrastText: {
-    hue: 190,
-    saturation: 20,
-    lightness: 29,
+    hue: 280,
+    saturation: 8,
+    lightness: 19,
   },
   background: {
-    hue: 190,
-    saturation: 30,
-    lightness: 80,
+    hue: 280,
+    saturation: 7,
+    lightness: 81,
   },
   backgroundContrastText: {
-    hue: 190,
-    saturation: 20,
+    hue: 280,
+    saturation: 4,
     lightness: 29,
   },
 };
+
+export const SELECTED_OR_FOCUS_BLUE = `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`;
+export const SELECTED_OR_FOCUS_BORDER = `2px solid ${SELECTED_OR_FOCUS_BLUE}`;

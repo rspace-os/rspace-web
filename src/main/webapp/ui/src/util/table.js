@@ -26,7 +26,10 @@ function desc(a: { ... }, b: { ... }, orderBy: string): -1 | 0 | 1 {
  * but not so for older browsers. For more information, see
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#sort_stability
  */
-function stableSort<T>(array: Array<T>, cmp: (T, T) => -1 | 0 | 1): Array<T> {
+function stableSort<T>(
+  array: $ReadOnlyArray<T>,
+  cmp: (T, T) => -1 | 0 | 1
+): Array<T> {
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = cmp(a[0], b[0]);

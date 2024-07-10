@@ -17,15 +17,20 @@ import useViewportDimensions from "../../util/useViewportDimensions";
 import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
+import { GallerySelection } from "./useGallerySelection";
 
 function WholePage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
+  const [orderBy, setOrderBy] = React.useState("name");
+  const [sortOrder, setSortOrder] = React.useState("ASC");
   const [selectedSection, setSelectedSection] = React.useState("Images");
   const { galleryListing, path, clearPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
       path: [],
+      orderBy,
+      sortOrder,
     });
   const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
     null
@@ -46,6 +51,7 @@ function WholePage() {
           selectedSection={selectedSection}
           setSelectedSection={setSelectedSection}
           drawerOpen={drawerOpen}
+          setDrawerOpen={setDrawerOpen}
           path={path}
           folderId={folderId}
           refreshListing={refreshListing}
@@ -58,17 +64,23 @@ function WholePage() {
             flexGrow: 1,
           }}
         >
-          <MainPanel
-            selectedSection={selectedSection}
-            path={path}
-            clearPath={clearPath}
-            galleryListing={galleryListing}
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
-            folderId={folderId}
-            refreshListing={refreshListing}
-            key={null}
-          />
+          <GallerySelection>
+            <MainPanel
+              selectedSection={selectedSection}
+              path={path}
+              clearPath={clearPath}
+              galleryListing={galleryListing}
+              selectedFile={selectedFile}
+              setSelectedFile={setSelectedFile}
+              folderId={folderId}
+              refreshListing={refreshListing}
+              key={null}
+              sortOrder={sortOrder}
+              orderBy={orderBy}
+              setSortOrder={setSortOrder}
+              setOrderBy={setOrderBy}
+            />
+          </GallerySelection>
         </Box>
       </Box>
     </Alerts>

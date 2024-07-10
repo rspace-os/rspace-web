@@ -26,6 +26,7 @@ const StyledPopover = styled(
 type AccessibilityTipsArgs = {|
   supportsHighContrastMode?: boolean,
   supportsReducedMotion?: boolean,
+  supports2xZoom?: boolean,
   elementType: "dialog" | "panel" | "page",
 |};
 
@@ -48,6 +49,7 @@ type AccessibilityTipsArgs = {|
 export default function AccessibilityTips({
   supportsHighContrastMode,
   supportsReducedMotion,
+  supports2xZoom,
   elementType,
 }: AccessibilityTipsArgs): Node {
   const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
@@ -159,6 +161,30 @@ export default function AccessibilityTips({
               ,{" "}
               <Link href="https://support.google.com/accessibility/android/answer/11183305">
                 Android
+              </Link>
+            </Alert>
+          )}
+          {supports2xZoom && (
+            <Alert severity="info" elevation={0} aria-label="Tip">
+              <AlertTitle>
+                This {elementType} supports up to 200% zoom magnification.
+              </AlertTitle>
+              To enable, adjust your browser&apos;s settings:
+              <br />
+              <Link href="https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop">
+                Chrome
+              </Link>
+              ,{" "}
+              <Link href="https://support.apple.com/en-gb/guide/safari/ibrw1068/mac">
+                Safari
+              </Link>
+              ,{" "}
+              <Link href="https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a">
+                Edge
+              </Link>
+              ,{" "}
+              <Link href="https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages">
+                Firefox
               </Link>
             </Alert>
           )}
