@@ -100,6 +100,7 @@ export default function AllBarcodeScanner({
         mkAlert({
           title: "Unable to start camera with Barcode Detector.",
           message:
+            // $FlowExpectedError[cannot-resolve-name]
             e instanceof DOMException
               ? "Permission to use camera was denied. Please reset camera permission and try again."
               : e.message,
