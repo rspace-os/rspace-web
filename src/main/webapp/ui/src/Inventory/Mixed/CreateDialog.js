@@ -121,15 +121,15 @@ function isContainer(c: mixed): c is ContainerModel {
   return c instanceof ContainerModel;
 }
 
-function isSample(s: mixed): %checks {
+function isSample(s: mixed): s is SampleModel {
   return s instanceof SampleModel && !(s instanceof TemplateModel);
 }
 
-function isTemplate(t: mixed): %checks {
+function isTemplate(t: mixed): t is TemplateModel {
   return t instanceof TemplateModel;
 }
 
-function isSubsample(s: mixed): %checks {
+function isSubsample(s: mixed): s is SubSampleModel {
   return s instanceof SubSampleModel;
 }
 
