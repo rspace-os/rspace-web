@@ -27,10 +27,13 @@ import com.researchspace.service.RepositoryFactory;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.controller.repositories.DigitalCommonsDataUIConnectionConfig;
 import com.researchspace.webapp.controller.repositories.DryadUIConnectionConfig;
 import com.researchspace.webapp.controller.repositories.FigshareUIConnectionConfig;
 import com.researchspace.webapp.controller.repositories.RSDataverseConnectionConfig;
+import com.researchspace.webapp.controller.repositories.RSpaceRepoConnectionConfig;
 import com.researchspace.webapp.controller.repositories.ZenodoUIConnectionConfig;
+import com.researchspace.webapp.integrations.digitalcommonsdata.DigitalCommonsDataController;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -45,6 +48,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
 
   @Autowired private IPropertyHolder propertyHolder;
+  @Autowired private DigitalCommonsDataController digitalCommonsDataController;
 
   private @Autowired UserManager userManager;
   private @Autowired RepositoryFactory repoFactory;
@@ -113,28 +117,25 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
 
   private RepositoryConfig getRepoConnectionInfo(
       Optional<AppConfigElementSet> cfg, App app, User subject) throws MalformedURLException {
-    RepositoryConfig repoCfg = null;
+    RSpaceRepoConnectionConfig uiConnectionConfig;
     if (cfg.isPresent() && app.getName().equals(App.APP_DATAVERSE)) {
-      repoCfg =
-          repoCfgFactory.createRepositoryConfigFromAppCfg(
-              new RSDataverseConnectionConfig(cfg.get()), subject);
+      uiConnectionConfig = new RSDataverseConnectionConfig(cfg.get());
     } else if (app.getName().equalsIgnoreCase(App.APP_FIGSHARE)) {
-      FigshareUIConnectionConfig figshareUIConnectionConfig =
-          new FigshareUIConnectionConfig(userConnectionManager, subject);
-      repoCfg =
-          repoCfgFactory.createRepositoryConfigFromAppCfg(figshareUIConnectionConfig, subject);
+      uiConnectionConfig = new FigshareUIConnectionConfig(userConnectionManager, subject);
     } else if (app.getName().equalsIgnoreCase(App.APP_DRYAD)) {
-      DryadUIConnectionConfig dryadUIConnectionConfig =
+      uiConnectionConfig =
           new DryadUIConnectionConfig(userConnectionManager, subject, this.propertyHolder);
-      repoCfg = repoCfgFactory.createRepositoryConfigFromAppCfg(dryadUIConnectionConfig, subject);
     } else if (app.getName().equalsIgnoreCase(App.APP_ZENODO)) {
-      ZenodoUIConnectionConfig zenodoUIConnectionConfig =
+      uiConnectionConfig =
           new ZenodoUIConnectionConfig(userConnectionManager, subject, this.propertyHolder);
-      repoCfg = repoCfgFactory.createRepositoryConfigFromAppCfg(zenodoUIConnectionConfig, subject);
+    } else if (app.getName().equalsIgnoreCase(App.APP_DIGITAL_COMMONS_DATA)) {
+      uiConnectionConfig =
+          new DigitalCommonsDataUIConnectionConfig(
+              digitalCommonsDataController, userConnectionManager, subject, this.propertyHolder);
     } else {
       throw new IllegalArgumentException("Unknown or unconfigured repository: " + app.getName());
     }
-    return repoCfg;
+    return repoCfgFactory.createRepositoryConfigFromAppCfg(uiConnectionConfig, subject);
   }
 
   protected void checkConnectionState(App app, User subject) {
@@ -222,6 +223,21 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     checkConnectionState(appCfg.getApp(), userManager.getAuthenticatedUserInSession());
     ZenodoUIConnectionConfig cfg =
         new ZenodoUIConnectionConfig(userConnectionManager, user, propertyHolder);
+    RepositoryConfig repoConnectionInfo =
+        repoCfgFactory.createRepositoryConfigFromAppCfg(cfg, user);
+    return getRepositoryConfiguration(appCfg.getApp(), repoConnectionInfo);
+  }
+
+  @Override
+  public RepoUIConfigInfo getDigitalCommonsDataRepoUIConfigInfo(User user)
+      throws MalformedURLException {
+    UserAppConfig appCfg =
+        userAppConfigMgr.getByAppName(
+            getAppNameFromIntegrationName(IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME), user);
+    checkConnectionState(appCfg.getApp(), userManager.getAuthenticatedUserInSession());
+    DigitalCommonsDataUIConnectionConfig cfg =
+        new DigitalCommonsDataUIConnectionConfig(
+            digitalCommonsDataController, userConnectionManager, user, propertyHolder);
     RepositoryConfig repoConnectionInfo =
         repoCfgFactory.createRepositoryConfigFromAppCfg(cfg, user);
     return getRepositoryConfiguration(appCfg.getApp(), repoConnectionInfo);

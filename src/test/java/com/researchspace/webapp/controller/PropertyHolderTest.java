@@ -44,4 +44,11 @@ public class PropertyHolderTest {
     holder.setBannerImagePath("");
     assertEquals("unknown", holder.getBannerImageName());
   }
+
+  @Test
+  public void testGetDigitalCommonsDataProperties() {
+    holder.setDigitalCommonsDataBaseUrl("https://baseurl.com");
+
+    assertEquals("https://baseurl.com", holder.getDigitalCommonsDataBaseUrl());
+  }
 }

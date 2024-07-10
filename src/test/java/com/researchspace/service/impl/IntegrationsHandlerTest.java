@@ -1,6 +1,8 @@
-package com.researchspace.service;
+package com.researchspace.service.impl;
 
 import static com.researchspace.model.system.SystemPropertyTestFactory.createPermissionEnumSystemProperty;
+import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
 import static com.researchspace.service.IntegrationsHandler.ONBOARDING_APP_NAME;
@@ -10,6 +12,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -20,22 +23,30 @@ import com.researchspace.model.UserPreference;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.dto.IntegrationInfo;
+import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyTestFactory;
 import com.researchspace.model.system.SystemPropertyValue;
-import com.researchspace.service.impl.IntegrationsHandlerImpl;
+import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.UserAppConfigManager;
+import com.researchspace.service.UserConnectionManager;
+import com.researchspace.service.UserManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -48,14 +59,17 @@ public class IntegrationsHandlerTest {
   @Mock private SystemPropertyPermissionManager systemPropertyPermissionUtils;
   @Mock private UserAppConfigManager appCfgMgr;
   @Mock private CommunityServiceManager communityMgr;
+  @Mock private UserConnectionManager userConnectionManager;
   @InjectMocks private IntegrationsHandlerImpl handler;
 
   private User subject;
 
   @Before
   public void setup() {
+    MockitoAnnotations.openMocks(this);
     subject = TestFactory.createAnyUser("any");
     when(communityMgr.listCommunitiesForUser(eq(subject.getId()))).thenReturn(new ArrayList<>());
+    handler.setUserConnectionManager(userConnectionManager);
   }
 
   @Test
@@ -286,6 +300,29 @@ public class IntegrationsHandlerTest {
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
     assertEquals(0, options.size());
+  }
+
+  @Test
+  public void getDigitalCommonsDataOptions() {
+    String DIGITAL_COMMONS_DATA_AVAILABLE = "digitalCommonsData.available";
+    SystemPropertyValue digitalCommonsDataAvailable =
+        getSystemPropertyValueAllowed(DIGITAL_COMMONS_DATA_AVAILABLE);
+
+    UserConnection userConn = new UserConnection();
+    userConn.setAccessToken("<ACCESS_TOKEN>");
+
+    when(sysPropMgr.findByName(DIGITAL_COMMONS_DATA_AVAILABLE))
+        .thenReturn(digitalCommonsDataAvailable);
+    when(userConnectionManager.findByUserNameProviderName(
+            anyString(), eq(DIGITAL_COMMONS_DATA_APP_NAME)))
+        .thenReturn(Optional.of(userConn));
+
+    IntegrationInfo info = handler.getIntegration(subject, DIGITAL_COMMONS_DATA_APP_NAME);
+    assertEquals(DIGITAL_COMMONS_DATA_APP_NAME, info.getName());
+    Map<String, Object> options = info.getOptions();
+    assertNotNull(options);
+    assertEquals(1, options.size());
+    assertEquals(options.get(DIGITAL_COMMONS_DATA_USER_TOKEN), "<ACCESS_TOKEN>");
   }
 
   private SystemPropertyValue getSystemPropertyValueAllowed(String propertyName) {

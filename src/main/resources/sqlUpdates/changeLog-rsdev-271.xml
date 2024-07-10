@@ -1,0 +1,47 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- DigitalCommonsData integration -->
+    <changeSet id="2024-07-29a" context="run,dev-test" author="nico">
+        <comment>Create a new system properties for DigitalCommonsData</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="ALLOWED"/>
+            <column name="name" type="STRING" value="digitalCommonsData.available"/>
+            <column name="type" type="NUMERIC" value="3"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id" type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name ='digitalCommonsData.available')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value="DENIED"/>
+            <column name="property_id" type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='digitalCommonsData.available')"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2024-07-29b" context="run,dev-test" author="nico">
+        <comment>Create a new app - DigitalCommonsData</comment>
+        <insert tableName="App">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="label" type="STRING" value="Digital Commons Data" />
+            <column name="name" type="STRING" value="app.digitalCommonsData" />
+            <column name="defaultEnabled" type="BOOLEAN" valueBoolean="true" />
+        </insert>
+    </changeSet>
+
+    <changeSet id="2024-07-29c" context="run,dev-test" author="nico">
+        <comment>Increase column space</comment>
+        <modifyDataType columnName="accessToken" newDataType="varchar(2048)" tableName="UserConnection" />
+        <modifyDataType columnName="refreshToken" newDataType="varchar(2048)" tableName="UserConnection" />
+        <modifyDataType columnName="secret" newDataType="varchar(2048)" tableName="UserConnection" />
+    </changeSet>
+
+</databaseChangeLog>
