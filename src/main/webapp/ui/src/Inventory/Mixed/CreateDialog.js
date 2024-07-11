@@ -121,7 +121,7 @@ function isContainer(c: mixed): c is ContainerModel {
   return c instanceof ContainerModel;
 }
 
-function isSample(s: mixed): s is SampleModel {
+function isSample(s: mixed): implies s is SampleModel {
   return s instanceof SampleModel && !(s instanceof TemplateModel);
 }
 
