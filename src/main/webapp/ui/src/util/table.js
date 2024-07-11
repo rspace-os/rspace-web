@@ -7,10 +7,12 @@ import { type Order } from "./types";
 import { type Column } from "@mui/x-data-grid";
 import { type Node } from "react";
 
-function desc(a: { ... }, b: { ... }, orderBy: string): -1 | 0 | 1 {
+function desc<T: string, U>(a: {[T]: U}, b: {[T]: U}, orderBy: T): -1 | 0 | 1 {
+  // $FlowExpectedError[invalid-compare]
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
+  // $FlowExpectedError[invalid-compare]
   if (b[orderBy] > a[orderBy]) {
     return 1;
   }

@@ -1192,6 +1192,7 @@ export default class Import {
       mappings: this.mappingsByRecordType,
       resetMappings: () => this.resetMappingsByRecordType(),
     };
+    // $FlowExpectedError[invalid-computed-prop]
     return byType[prop];
   }
 
