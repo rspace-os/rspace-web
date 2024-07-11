@@ -61,7 +61,8 @@ declare module "@mui/x-data-grid" {
     ColumnNames: string,
     Id: mixed,
     ToolbarProps: { ... },
-    Value: mixed
+    Value: mixed,
+    SortableColumnNames: ColumnNames,
   >({|
     rows: $ReadOnlyArray<Row>,
     columns: $ReadOnlyArray<Column<Row>>,
@@ -80,13 +81,12 @@ declare module "@mui/x-data-grid" {
     rowCount?: number,
     paginationModel?: {| pageSize: number, page: number |},
     pageSizeOptions?: $ReadOnlyArray<
-      number | {| value: number, label: string |}
-    >,
+      number | {| value: number, label: string |}>,
     onPaginationModelChange?: ({| pageSize: number, page: number |}) => void,
     sortingMode?: "server",
-    sortModel?: Array<{| field: string, sort: "asc" | "desc" |}>,
+    sortModel?: $ReadOnlyArray<{| field: SortableColumnNames, sort: "asc" | "desc" |}>,
     onSortModelChange?: (
-      Array<{| field: string, sort: "asc" | "desc" |}>
+      $ReadOnlyArray<{| field: SortableColumnNames, sort: "asc" | "desc" |}>
     ) => void,
     slots?: {|
       toolbar?: (ToolbarProps) => Node,
