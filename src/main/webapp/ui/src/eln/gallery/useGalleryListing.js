@@ -120,7 +120,7 @@ function getIconPathForExtension(extension: string) {
   if (dnaFiles.includes(ext)) return "/images/icons/dna-file.svg";
   if (iconOfSameName.includes(ext)) return `/images/icons/${ext}.png`;
   return (
-    {
+    ({
       htm: "/images/icons/html.png",
       html: "/images/icons/html.png",
       ppt: "/images/icons/powerpoint.png",
@@ -128,7 +128,7 @@ function getIconPathForExtension(extension: string) {
       txt: "/images/icons/txt.png",
       text: "/images/icons/txt.png",
       md: "/images/icons/txt.png",
-    }[ext] ?? "/images/icons/unknownDocument.png"
+    }: {[string]: string})[ext] ?? "/images/icons/unknownDocument.png"
   );
 }
 
