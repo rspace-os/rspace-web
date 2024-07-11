@@ -21,7 +21,13 @@ type ContextDialogArgs = {|
   fullWidth?: boolean,
 |};
 
-export default function ContextDialog({ children, open, onClose, maxWidth, fullWidth }: ContextDialogArgs): Node {
+export default function ContextDialog({
+  children,
+  open,
+  onClose,
+  maxWidth,
+  fullWidth,
+}: ContextDialogArgs): Node {
   const { uiStore } = useStores();
   const { classes } = useStyles();
 
