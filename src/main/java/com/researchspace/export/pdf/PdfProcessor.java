@@ -103,7 +103,7 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
     renderer.setDocumentFromString(html);
     renderer.layout();
     try (FileOutputStream out = new FileOutputStream(tempExportFile)) {
-      renderer.createPDF(out);
+      renderer.createPDF(out, true, config.getStartPage());
     }
     return renderer.getWriter().getPageNumber();
   }
