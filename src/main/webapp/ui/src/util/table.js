@@ -127,6 +127,7 @@ const DataGridColumn = {
   newColumnWithFieldName<Row: { ... }, Field: string>(
     // Also acts as the unique identifier for the column
     field: Field,
+    // $FlowExpectedError[invalid-computed-prop]
     rest: ColumnProps<Row, Row[Field]>
   ): Column<Row> {
     return {
