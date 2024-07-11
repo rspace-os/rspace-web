@@ -118,7 +118,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     initialiseContentWithEmptyContent(newUser);
 
     Folder root = initialiseContentWithExampleContent(newUser);
-    assertTrue(root.getChildren().size() > 0);
+    assertFalse(root.getChildren().isEmpty());
 
     logoutAndLoginAs(newUser);
 
@@ -205,7 +205,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     initialiseContentWithEmptyContent(newUser);
 
     Folder root = initialiseContentWithExampleContent(newUser);
-    assertTrue(root.getChildren().size() > 0);
+    assertTrue(!root.getChildren().isEmpty());
 
     logoutAndLoginAs(newUser);
 
@@ -268,7 +268,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
    * Document). EcatCommentItem is not retrieved by search when we set a user filter on the search.
    */
   @Test
-  public void testSearchCommentText() throws IOException, ParseException {
+  public void testSearchCommentText() throws IOException {
     setupRandomUser();
     StructuredDocument sd =
         createBasicDocumentInRootFolderWithText(
@@ -283,7 +283,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void testSearchByGlobalIdInFullText() throws IOException, ParseException {
+  public void testSearchByGlobalIdInFullText() throws IOException {
     setupRandomPIUser();
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(user, "<p> any text</p>");
     flushToSearchIndices();
@@ -304,9 +304,6 @@ public class SearchManagerTest extends SearchSpringTestBase {
     flushToSearchIndices();
 
     WorkspaceListingConfig cfg = createSimpleFullTextSearchCfg("qwerty");
-    // List<Term> termList = FullTextSearcher.getTermList();
-    // LuceneSrchCfg lucenecfg = new LuceneSrchCfg(termList, user);
-    // lucenecfg.setPaginationCriteria(pg);
     ISearchResults<BaseRecord> results = searchMgr.searchWorkspaceRecords(cfg, user);
     assertNotNull(results);
     assertTrue(results.getResults().contains(sd));
@@ -368,7 +365,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
   @Test
   public void testMultipleHitsInMultipleCategoriesAreCoalescedIntoSingleResult()
-      throws IOException, ParseException {
+      throws IOException {
 
     setupRandomPIUser();
     final String content = "qwerty" + getRandomName(5);
@@ -394,7 +391,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void testMultipleHitsOnSameDocument() throws IOException, ParseException {
+  public void testMultipleHitsOnSameDocument() throws IOException {
     setupRandomPIUser();
     final String random = getRandomName(10);
 
@@ -533,7 +530,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void testMultipleHitsOnDifferentDocuments() throws IOException, ParseException {
+  public void testMultipleHitsOnDifferentDocuments() throws IOException {
     final int n = 10;
     setupRandomPIUser();
     final String random = getRandomName(n);
@@ -567,7 +564,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void testSearchStringField() throws IOException, ParseException {
+  public void testSearchStringField() throws IOException {
     setupRandomPIUser();
     Folder root = user.getRootFolder();
     RSForm rs = formMgr.create(user);
@@ -588,7 +585,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void testGetSearchTagResults() throws IOException, ParseException {
+  public void testGetSearchTagResults() throws IOException {
     setupRandomPIUser();
     Folder root = user.getRootFolder();
     StructuredDocument doc = recordMgr.createBasicDocument(root.getId(), user);
@@ -631,10 +628,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
    * version) that can help debug the tests
    *
    * @see <a href="http://code.google.com/p/luke/downloads/list">this thing</a>
-   * @throws Exception
    */
   @Test
-  public void testGetFullTextSrch() throws IOException, ParseException {
+  public void testGetFullTextSearch() throws IOException {
     setupRandomPIUser();
     createBasicDocumentInRootFolderWithText(
         user, " <p style='x'>lapwing INCENP-25 the, bearded tit, avocet, lapwing</p>");
@@ -722,10 +718,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
   /**
    * Test to compare the results on the advanced search and the simple search.
    *
-   * @throws Exception
    */
   @Test
-  public void testAdvancedSrchNativeLucene() throws IOException, ParseException {
+  public void testAdvancedSearchNativeLucene() throws IOException {
     setupRandomPIUser();
     createBasicDocumentInRootFolderWithText(
         user, " <p style='x'>lapwing INCENP-25 the ,bearded tit ,avocet, lapwing</p>");
@@ -773,10 +768,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
    * Test about advanced search results. Searching on different fields to retrieve the right
    * information
    *
-   * @throws Exception
    */
   @Test
-  public void testAdvancedSrchMultipleTerm() throws IOException, ParseException {
+  public void testAdvancedSearchMultipleTerm() throws IOException {
     setupRandomPIUser();
     Folder root = user.getRootFolder();
     StructuredDocument doc = recordMgr.createBasicDocument(root.getId(), user);
@@ -957,12 +951,10 @@ public class SearchManagerTest extends SearchSpringTestBase {
    * Tests if files modified on one day, but created on another can be found using creation date
    * search and modification date search.
    *
-   * @throws ParseException
-   * @throws IOException
    */
   @Test
   public void testModificationResultsCanBeDifferentFromCreation()
-      throws IOException, ParseException {
+      throws IOException {
 
     String dCreation =
         ZonedDateTime.now(ZoneOffset.UTC).minusDays(3).format(DateTimeFormatter.ISO_INSTANT);
@@ -1014,7 +1006,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
    * Test about advanced search results. Searching on single field to retrieve the right information
    */
   @Test
-  public void testAdvancedSrchSingleTerm() throws IOException, ParseException {
+  public void testAdvancedSearchSingleTerm() throws IOException {
     setupRandomPIUser();
     Folder root = user.getRootFolder();
     StructuredDocument doc = recordMgr.createBasicDocument(root.getId(), user);
@@ -1102,7 +1094,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
    * Test about advanced search results. Creating multiple folders and records and searching them.
    */
   @Test
-  public void testAdvancedSrchMultipleFolders() throws Exception {
+  public void testAdvancedSearchMultipleFolders() throws Exception {
     final int numFolders = IPagination.DEFAULT_RESULTS_PERPAGE, numRecords = 4;
     final int recordsPerPage = IPagination.DEFAULT_RESULTS_PERPAGE;
 
@@ -1224,10 +1216,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
   /**
    * Test about advanced search and simple search by owner.
    *
-   * @throws Exception
    */
   @Test
-  public void testSearchByOwner() throws IOException, ParseException {
+  public void testSearchByOwner() throws IOException {
     setupRandomPIUser();
     flushToSearchIndices();
 
@@ -1304,7 +1295,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void testSearchByOwnerPermissions() throws IOException, ParseException {
+  public void testSearchByOwnerPermissions() throws IOException {
     setupRandomPIUser();
     flushToSearchIndices();
 
@@ -1320,15 +1311,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
     }
   }
 
-  /**
-   * @throws IOException
-   * @throws ParseException
-   * @throws IllegalAddChildOperation
-   * @throws DocumentAlreadyEditedException
-   */
   @Test
   public void testDeletedRecordsAreNotReturnedInSearchResults()
-      throws IOException, ParseException, IllegalAddChildOperation, DocumentAlreadyEditedException {
+      throws IOException, IllegalAddChildOperation, DocumentAlreadyEditedException {
 
     setupRandomPIUser();
     final String searchTerm = "sametext";
@@ -1347,7 +1332,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void testSearchIsFiltered() throws IOException, ParseException {
+  public void testSearchIsFiltered() throws Exception {
     final int n10 = 10;
     setupRandomPIUser();
     final String searchTerm = "sametext";
@@ -1371,7 +1356,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
   @Test
   public void testPICanGetSearchResultsFromGroupMemberRecords()
-      throws IllegalAddChildOperation, InterruptedException, IOException, ParseException {
+      throws IllegalAddChildOperation, IOException {
     setupRandomPIUser();
     // setup a group with a pi(user) and aa default member('other')
     User other = createAndSaveUserIfNotExists("other");
@@ -1455,13 +1440,6 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
   /**
    * Test to filter the searched results by shared with a specific user.
-   *
-   * <p>Reference: https://researchspace.atlassian.net/browse/RSPAC-527
-   *
-   * @throws IllegalAddChildOperation
-   * @throws InterruptedException
-   * @throws IOException
-   * @throws ParseException
    */
   @Test
   public void testSharedRecordsWithUser() throws IllegalAddChildOperation, IOException {
@@ -1520,12 +1498,6 @@ public class SearchManagerTest extends SearchSpringTestBase {
   /**
    * Test to filter the searched results by favorites.
    *
-   * <p>Reference: https://researchspace.atlassian.net/browse/RSPAC-526
-   *
-   * @throws IllegalAddChildOperation
-   * @throws InterruptedException
-   * @throws IOException
-   * @throws ParseException
    */
   @Test
   public void testSearchedFavoritesRecords() throws IllegalAddChildOperation, IOException {
@@ -1612,15 +1584,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
   /**
    * Test to filter the searched results by viewable items by default user.
-   *
-   * <p>Reference: https://researchspace.atlassian.net/browse/RSPAC-589
-   *
-   * @throws IOException
-   * @throws ParseException
    */
   @Test
-  public void testSearchedAllViewableRecordsByUser() throws IOException, ParseException {
-
+  public void testSearchedAllViewableRecordsByUser() throws IOException {
     User user = createAndSaveUserIfNotExists("user");
     String randomText = getRandomName(10);
 
@@ -1645,14 +1611,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
   /**
    * Test to filter the searched results by viewable items by pi user.
    *
-   * <p>Reference: https://researchspace.atlassian.net/browse/RSPAC-589
-   *
-   * @throws IOException
-   * @throws ParseException
    */
   @Test
   public void testSearchedAllViewableRecordsByPIUser() throws IOException {
-
     final int n = 10;
     String randomText = getRandomName(n);
 
@@ -1690,7 +1651,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
   @Test
   public void testSearchSharedRecordsLabGroup()
-      throws IllegalAddChildOperation, InterruptedException, IOException, ParseException {
+      throws IllegalAddChildOperation, IOException {
 
     final int n = 10;
     String random = getRandomName(n);
@@ -1749,7 +1710,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
 
   @Test
   public void testSearchSharedRecordsCollaborationGroup()
-      throws IllegalAddChildOperation, IOException, ParseException {
+      throws IllegalAddChildOperation, IOException {
 
     final int n = 10;
     String random1 = getRandomName(n);
@@ -1991,7 +1952,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
             < 0);
   }
 
-  @Test
+
   /**
    * Test consists of: Creating 2 forms: 'Example form' (and 4 documents from it), 'Another form'
    * (with 2 documents from it) Searching by 'Example form' global id should result in 4 documents
@@ -1999,8 +1960,8 @@ public class SearchManagerTest extends SearchSpringTestBase {
    * documents created from the updated form Searching by original global id and updated global id
    * should both return 4 + 5 documents
    *
-   * @throws Exception
    */
+  @Test
   public void testFormSearchByGlobalId() throws Exception {
     final int length = 10;
     final int numFolders = 0, numRecordsAnother = 3, numRecords = 4, numRecordsUpdated = 5;
@@ -2041,7 +2002,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     RSForm formToEdit = formMgr.getForEditing(form.getId(), user, anySessionTracker());
     assertTrue(formToEdit.isTemporary());
     StringFieldDTO<StringFieldForm> dto =
-        new StringFieldDTO<StringFieldForm>("New String Field", "no", "abc");
+        new StringFieldDTO<>("New String Field", "no", "abc");
     formMgr.createFieldForm(dto, formToEdit.getId(), user);
 
     // Update the form
@@ -2186,7 +2147,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void invSampleSearchHandlesDeleted() throws Exception {
+  public void invSampleSearchHandlesDeleted() {
     // create two samples named "mySample"
     User u = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample1 = createBasicSampleForUser(u);
@@ -2225,7 +2186,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void invSampleSearchHandlesBaskets() throws Exception {
+  public void invSampleSearchHandlesBaskets() {
 
     // create basic sample with subsample
     User u = createInitAndLoginAnyUser();
@@ -2313,7 +2274,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     result = searchMgr.searchInventoryWithSimpleQuery("mysample", null, null, null, null, pg, u);
     assertEquals(1, result.getRecords().size());
     assertEquals(2, result.getTotalHits().intValue());
-    assertEquals(sample2.getGlobalId(), result.getRecords().get(0).getGlobalId().toString());
+    assertEquals(sample2.getGlobalId(), result.getRecords().get(0).getGlobalId());
 
     // one result for "test2" (from tag)
     result = searchMgr.searchInventoryWithSimpleQuery("test2", null, null, null, null, null, u);
@@ -2627,7 +2588,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void inventorySearchWhitelistPermissions() throws Exception {
+  public void inventorySearchWhitelistPermissions() {
     User u1 = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
     User u2 = createAndSaveUserIfNotExists(getRandomAlphabeticString("u2"));
     User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
@@ -2640,13 +2601,11 @@ public class SearchManagerTest extends SearchSpringTestBase {
     addUsersToGroup(pi, group2, u2);
 
     // lets create samples with default access for user1 and user2
-    ApiSampleWithFullSubSamples u1Sample =
-        createBasicSampleForUser(u1, "u1's inventorySearchTestSample");
+    createBasicSampleForUser(u1, "u1's inventorySearchTestSample");
     ApiSampleWithFullSubSamples u2Sample =
         createBasicSampleForUser(u2, "u2's inventorySearchTestSample");
     // for pi, let's create a sample visible only to group2
-    ApiSampleWithFullSubSamples piSample =
-        createBasicSampleForUser(pi, "pi's inventorySearchTestSample", "pi ss", List.of(group2));
+    createBasicSampleForUser(pi, "pi's inventorySearchTestSample", "pi ss", List.of(group2));
 
     flushToSearchIndices();
 
@@ -2830,7 +2789,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void inventorySearchForLimitedAndPublicView() throws Exception {
+  public void inventorySearchForLimitedAndPublicView() {
 
     // create two users in a group
     User u1 = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
@@ -2868,7 +2827,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     containerUpdate.getBarcodes().get(0).setNewBarcodeRequest(true);
     containerApiMgr.updateApiContainer(containerUpdate, pi);
 
-    GlobalIdentifier piGroupContainerOid = new GlobalIdentifier(piGroupContainer.getGlobalId());
+    new GlobalIdentifier(piGroupContainer.getGlobalId());
     GlobalIdentifier piPrivateContainerOid = new GlobalIdentifier(piPrivateContainer.getGlobalId());
     GlobalIdentifier piPrivateSampleOid = new GlobalIdentifier(piPrivateSample.getGlobalId());
     GlobalIdentifier piPrivateSubSampleOid = new GlobalIdentifier(piPrivateSubSample.getGlobalId());

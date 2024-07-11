@@ -167,10 +167,6 @@ public class SearchManagerImpl implements SearchManager {
     return invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(subject);
   }
 
-  private List<BaseRecord> getFilteredRecords(WorkspaceFilters filters, User user) {
-    return recordManager.getFilteredRecordsList(filters, user);
-  }
-
   @Override
   public ISearchResults<BaseRecord> searchUserRecordsWithSimpleQuery(
       User user, String searchQuery, Integer maxResults) throws IOException {

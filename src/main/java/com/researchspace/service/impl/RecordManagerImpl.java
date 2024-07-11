@@ -1088,7 +1088,7 @@ public class RecordManagerImpl implements RecordManager {
 
     if (filters.isMediaFilesFilter()) {
       Set<BaseRecord> mediaFiles = recordDao.getViewableMediaFiles(List.of(user));
-      addOrRetain(hits, init, mediaFiles);
+      init = addOrRetain(hits, init, mediaFiles);
 
       String mediaType = filters.getMediaFilesType();
       if (mediaType != null) {
@@ -1187,8 +1187,7 @@ public class RecordManagerImpl implements RecordManager {
       Set<BaseRecord> subjectsViewableRecords =
           new HashSet<>(getRecordsSharedWithUser(subject, onlyTemplates, subject));
 
-      // records created by each of the subjects viewable users TODO: can this be simplified with
-      // the permissions check?
+      // records created by each of the subjects viewable users
       for (User viewableUser : viewableUsers) {
         subjectsViewableRecords.addAll(
             getViewableRecordsByUsers(List.of(viewableUser), onlyTemplates));
