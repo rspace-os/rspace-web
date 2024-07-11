@@ -15,7 +15,7 @@ import { areSameTag } from "../definitions/Tag";
 
 export type BatchName = {|
   common: string,
-  suffix: string,
+  suffix: "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED",
 |};
 
 /*
