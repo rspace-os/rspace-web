@@ -58,6 +58,7 @@ const MultipleInputHandler = ({
       : {
           value: field.key === "Dates" ? new Date() : "",
           ...(field.options ? { type: field.options[0].value } : null),
+          // $FlowExpectedError[invalid-computed-prop]
           ...(subFieldsForNew[field.key] ?? null),
         };
   };
