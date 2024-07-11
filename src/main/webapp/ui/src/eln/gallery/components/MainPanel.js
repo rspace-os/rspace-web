@@ -17,6 +17,7 @@ import {
   COLOR,
   SELECTED_OR_FOCUS_BORDER,
   SELECTED_OR_FOCUS_BLUE,
+  type GallerySection
 } from "../common";
 import { styled } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
@@ -259,8 +260,7 @@ const GridView = observer(
   ({
     listing,
   }: {|
-    listing:
-      | {| tag: "empty", reason: string |}
+    listing: | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
   |}) => {
     const dndContext = useDndContext();
@@ -810,13 +810,12 @@ const FileCard = styled(
 }));
 
 type GalleryMainPanelArgs = {|
-  selectedSection: string,
+  selectedSection: GallerySection,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
-  >,
+    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}>,
   selectedFile: null | GalleryFile,
   setSelectedFile: (null | GalleryFile) => void,
   folderId: FetchingData.Fetched<Id>,

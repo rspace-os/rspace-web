@@ -6,7 +6,7 @@ import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
-import { gallerySectionCollectiveNoun } from "./common";
+import { gallerySectionCollectiveNoun, type GallerySection } from "./common";
 import {
   filenameExceptExtension,
   justFilenameExtension,
@@ -170,7 +170,7 @@ export function useGalleryListing({
   sortOrder,
   orderBy,
 }: {|
-  section: string,
+  section: GallerySection,
   searchTerm: string,
   path?: $ReadOnlyArray<GalleryFile>,
   sortOrder: "DESC" | "ASC",
@@ -178,8 +178,7 @@ export function useGalleryListing({
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
-  >,
+    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}>,
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
