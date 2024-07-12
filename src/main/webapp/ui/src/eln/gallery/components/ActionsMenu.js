@@ -216,7 +216,6 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
         onClick={(e) => {
           setActionsMenuAnchorEl(e.target);
         }}
-        sx={{ flexGrow: 1 }}
       >
         Actions
       </Button>

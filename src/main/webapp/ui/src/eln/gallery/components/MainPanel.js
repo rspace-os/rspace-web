@@ -70,6 +70,7 @@ import * as ArrayUtils from "../../../util/ArrayUtils";
 import Link from "@mui/material/Link";
 import { Link as ReactRouterLink } from "react-router-dom";
 import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
+import Box from "@mui/material/Box";
 
 const BreadcrumbLink = React.forwardRef<
   ElementConfig<typeof Link>,
@@ -173,6 +174,7 @@ const Path = styled(({ className, section, path, clearPath }) => {
       onKeyDown={(e) => {
         onKeyDown(e);
       }}
+      style={{ position: "relative" }}
     >
       <TextField
         className={className}
@@ -215,9 +217,9 @@ const Path = styled(({ className, section, path, clearPath }) => {
       {!hasFocus && (
         <div
           style={{
-            width: "calc(100% - 85px)",
+            width: "calc(100% - 75px)",
             position: "absolute",
-            top: "5px",
+            top: "2px",
             right: "10px",
             overflow: "hidden",
           }}
@@ -1048,15 +1050,13 @@ function GalleryMainPanel({
               </Fade>
             </Typography>
           </Grid>
-          <Grid
-            item
-            container
-            direction="row"
-            alignItems="flex-start"
-            spacing={0.5}
-            sx={{ mt: 0 }}
-          >
-            <Grid item flexGrow={1}>
+          <Grid item sx={{ marginTop: 0.5 }}>
+            <Stack spacing={0.5}>
+              <Path
+                section={selectedSection}
+                path={path}
+                clearPath={clearPath}
+              />
               <Stack direction="row" spacing={0.5}>
                 <Button
                   variant="outlined"
@@ -1066,7 +1066,6 @@ function GalleryMainPanel({
                     setViewMenuAnchorEl(e.target);
                   }}
                   aria-haspopup="menu"
-                  sx={{ flexGrow: 1 }}
                 >
                   Views
                 </Button>
@@ -1111,7 +1110,6 @@ function GalleryMainPanel({
                     setSortMenuAnchorEl(e.target);
                   }}
                   aria-haspopup="menu"
-                  sx={{ flexGrow: 1 }}
                 >
                   Sort
                 </Button>
@@ -1209,26 +1207,13 @@ function GalleryMainPanel({
                     }}
                   />
                 </StyledMenu>
+                <Box sx={{ flexGrow: 1 }}></Box>
                 <ActionsMenu
                   refreshListing={refreshListing}
                   section={selectedSection}
                 />
               </Stack>
-            </Grid>
-            {/*
-             * We use an arbitrarily large number here so that when the buttons
-             * and path field are rendered on the same row, the path field
-             * takes up as much space as possible. We still apply a flexGrow of
-             * 1 to each of buttons so that when they are on their own row
-             * above, they each take up 1/3 of the row.
-             */}
-            <Grid item flexGrow={99999} sx={{ position: "relative" }}>
-              <Path
-                section={selectedSection}
-                path={path}
-                clearPath={clearPath}
-              />
-            </Grid>
+            </Stack>
           </Grid>
           <Grid
             item
