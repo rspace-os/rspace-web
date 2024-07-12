@@ -1055,7 +1055,7 @@ function GalleryMainPanel({
                 path={path}
                 clearPath={clearPath}
               />
-              <Stack direction="row" spacing={0.5}>
+              <Stack direction="row" spacing={0.5} alignItems="center">
                 <ActionsMenu
                   refreshListing={refreshListing}
                   section={selectedSection}

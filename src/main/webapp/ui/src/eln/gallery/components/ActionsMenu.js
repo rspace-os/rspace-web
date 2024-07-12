@@ -30,6 +30,7 @@ import Result from "../../../util/result";
 import MoveToIrods, { COLOR as IRODS_COLOR } from "./MoveToIrods";
 import IrodsLogo from "./IrodsLogo.svg";
 import Avatar from "@mui/material/Avatar";
+import Typography from "@mui/material/Typography";
 import MoveDialog from "./MoveDialog";
 
 const RenameDialog = ({
@@ -419,6 +420,22 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
           disabled={deleteAllowed().isError}
         />
       </StyledMenu>
+      <Typography
+        variant="body2"
+        sx={{
+          p: 0,
+          pl: 1,
+          fontWeight: 500,
+          display: { xs: "none", sm: "initial" },
+          ...(selection.isEmpty
+            ? {
+                color: "grey",
+              }
+            : {}),
+        }}
+      >
+        {selection.label}
+      </Typography>
     </>
   );
 }

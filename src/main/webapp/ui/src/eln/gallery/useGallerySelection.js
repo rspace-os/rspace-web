@@ -26,6 +26,7 @@ class Selection {
       _state: observable,
       isEmpty: computed,
       size: computed,
+      label: computed,
       clear: action,
       append: action,
       remove: action,
@@ -59,6 +60,20 @@ class Selection {
 
   asSet(): RsSet<GalleryFile> {
     return new RsSet(this._state.values());
+  }
+
+  get label(): string {
+    if (this.isEmpty) return "No selection";
+    const folderCount = this.asSet().filter((f) => f.isFolder).size;
+    const fileCount = this.size - folderCount;
+    return [
+      fileCount > 0 ? `${fileCount} file${fileCount > 1 ? "s" : ""}` : "",
+      fileCount > 0 && folderCount > 0 ? ", " : "",
+      folderCount > 0
+        ? `${folderCount} folder${folderCount > 1 ? "s" : ""}`
+        : "",
+      " selected",
+    ].join("");
   }
 }
 
