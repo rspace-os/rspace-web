@@ -3,7 +3,6 @@ package com.researchspace.service.impl;
 import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUMENT_EDITED;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang.StringUtils.abbreviate;
 import static org.apache.commons.lang.StringUtils.trim;
 
@@ -1157,14 +1156,14 @@ public class RecordManagerImpl implements RecordManager {
        * all the documents/items which SysAdmin can see/read
        * regardless of the permission.
        */
-      Set<Long> userIds = userDao.getUsers().stream().map(User::getId).collect(Collectors.toSet());
+      Set<Long> allUserIds =
+          userDao.getUsers().stream().map(User::getId).collect(Collectors.toSet());
       Set<BaseRecord> allUsersRecords =
-          new HashSet<>(getViewableRecordsByUsers(userIds, onlyTemplates));
+          new HashSet<>(getViewableRecordsByUsers(allUserIds, onlyTemplates));
       viewableRecords.addAll(allUsersRecords);
     } else if (subject.hasRole(Role.ADMIN_ROLE)
         || subject.hasRole(Role.PI_ROLE)
         || subject.hasRole(Role.USER_ROLE)) {
-
       /*
        * userDao.getViewableUsersByRole(user):
        *
@@ -1182,26 +1181,25 @@ public class RecordManagerImpl implements RecordManager {
        *
        */
       List<User> viewableUsers = userDao.getViewableUsersByRole(subject);
+      Set<Long> viewableUserIds =
+          viewableUsers.stream().map(User::getId).collect(Collectors.toSet());
 
       // records shared with the subject
       Set<BaseRecord> subjectsViewableRecords =
           new HashSet<>(getRecordsSharedWithUser(subject, onlyTemplates, subject));
+      // add records created by each of the subjects viewable users
+      subjectsViewableRecords.addAll(getViewableRecordsByUsers(viewableUserIds, onlyTemplates));
 
-      // records created by each of the subjects viewable users
-      for (User viewableUser : viewableUsers) {
-        subjectsViewableRecords.addAll(
-            getViewableRecordsByUsers(Set.of(viewableUser.getId()), onlyTemplates));
-        if (viewableUser.hasRole(Role.PI_ROLE)) {
-          // if the subject is a PI of group A, which contains another PI as a group member, they
-          // can only view the docs of the other PI which has been shared with group A (whereas the
-          // subject PI can view ALL records created by a non-PI), so filter the other PIs records
-          // by their permissions to ensure correct visibility
-          subjectsViewableRecords =
-              subjectsViewableRecords.stream()
-                  .filter(br -> permissnUtils.isPermitted(br, PermissionType.READ, subject))
-                  .collect(toCollection(HashSet::new));
-        }
-      }
+      // Remove any records the subject is not permitted to see. Using PI role check as a
+      // short-circuit to avoid unnecessary permissions check.
+      // Handles case where the subject is a PI of group A, which contains another PI as a group
+      // member, they can only view the docs of the other PI which has been shared with group A
+      // (whereas the subject PI can view ALL records created by a non-PI), so filter the other PIs
+      // records by their permissions to ensure correct visibility.
+      subjectsViewableRecords.removeIf(
+          r ->
+              r.getOwner().hasRole(Role.PI_ROLE)
+                  && !permissnUtils.isPermitted(r, PermissionType.READ, subject));
       viewableRecords.addAll(subjectsViewableRecords);
     }
     return new ArrayList<>(viewableRecords);
