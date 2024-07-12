@@ -1058,6 +1058,11 @@ function GalleryMainPanel({
                 clearPath={clearPath}
               />
               <Stack direction="row" spacing={0.5}>
+                <ActionsMenu
+                  refreshListing={refreshListing}
+                  section={selectedSection}
+                />
+                <Box sx={{ flexGrow: 1 }}></Box>
                 <Button
                   variant="outlined"
                   size="small"
@@ -1207,11 +1212,6 @@ function GalleryMainPanel({
                     }}
                   />
                 </StyledMenu>
-                <Box sx={{ flexGrow: 1 }}></Box>
-                <ActionsMenu
-                  refreshListing={refreshListing}
-                  section={selectedSection}
-                />
               </Stack>
             </Stack>
           </Grid>
