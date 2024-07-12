@@ -65,7 +65,6 @@ import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import Link from "@mui/material/Link";
 import { Link as ReactRouterLink } from "react-router-dom";
@@ -203,11 +202,10 @@ const Path = styled(({ className, section, path, clearPath }) => {
         }}
         inputProps={{
           ref: textFieldRef,
-        }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">Path</InputAdornment>
-          ),
+          style: {
+            paddingTop: "5px",
+            paddingBottom: "5px",
+          },
         }}
       />
       {/*
@@ -217,10 +215,10 @@ const Path = styled(({ className, section, path, clearPath }) => {
       {!hasFocus && (
         <div
           style={{
-            width: "calc(100% - 75px)",
+            width: "calc(100% - 16px)",
             position: "absolute",
             top: "2px",
-            right: "10px",
+            right: "8px",
             overflow: "hidden",
           }}
         >
