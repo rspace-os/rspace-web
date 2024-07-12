@@ -309,7 +309,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
           avatar={<FileDownloadIcon />}
           onClick={() => {
             selection.asSet().only.do((file) => {
-              window.open("/Streamfile/" + file.id);
+              window.open(file.downloadHref);
             });
             setActionsMenuAnchorEl(null);
           }}

@@ -27,6 +27,7 @@ export type GalleryFile = {|
   path: $ReadOnlyArray<GalleryFile>,
   pathAsString: () => string,
   open?: () => void,
+  downloadHref?: string,
 
   isFolder: boolean,
   isSystemFolder: boolean,
@@ -241,7 +242,9 @@ export function useGalleryListing({
               setPath([...path, ret]);
             },
           }
-        : {}),
+        : {
+            downloadHref: `/Streamfile/${idToString(id)}`,
+          }),
       isFolder,
       isSystemFolder,
       isImage: /Image/.test(type),
