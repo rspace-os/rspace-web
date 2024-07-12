@@ -43,12 +43,18 @@ export default function SampleField<
                     );
                 }}
               >
-                There {sample.subSamplesCount === 2 ? "is" : "are"}{" "}
-                {sample.subSamplesCount - 1} other{" "}
-                {sample.subSamplesCount === 2
-                  ? sample.subSampleAlias.alias
-                  : sample.subSampleAlias.plural}
-                .
+                {sample.subSamplesCount === 1 ? (
+                  `The parent sample only has one ${sample.subSampleAlias.alias}.`
+                ) : (
+                  <>
+                    There {sample.subSamplesCount === 2 ? "is" : "are"}{" "}
+                    {sample.subSamplesCount - 1} other{" "}
+                    {sample.subSamplesCount === 2
+                      ? sample.subSampleAlias.alias
+                      : sample.subSampleAlias.plural}
+                    .
+                  </>
+                )}
               </Link>
             </Typography>
           )}
