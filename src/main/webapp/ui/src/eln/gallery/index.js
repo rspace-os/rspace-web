@@ -64,23 +64,21 @@ function WholePage() {
             flexGrow: 1,
           }}
         >
-          <GallerySelection>
-            <MainPanel
-              selectedSection={selectedSection}
-              path={path}
-              clearPath={clearPath}
-              galleryListing={galleryListing}
-              selectedFile={selectedFile}
-              setSelectedFile={setSelectedFile}
-              folderId={folderId}
-              refreshListing={refreshListing}
-              key={null}
-              sortOrder={sortOrder}
-              orderBy={orderBy}
-              setSortOrder={setSortOrder}
-              setOrderBy={setOrderBy}
-            />
-          </GallerySelection>
+          <MainPanel
+            selectedSection={selectedSection}
+            path={path}
+            clearPath={clearPath}
+            galleryListing={galleryListing}
+            selectedFile={selectedFile}
+            setSelectedFile={setSelectedFile}
+            folderId={folderId}
+            refreshListing={refreshListing}
+            key={null}
+            sortOrder={sortOrder}
+            orderBy={orderBy}
+            setSortOrder={setSortOrder}
+            setOrderBy={setOrderBy}
+          />
         </Box>
       </Box>
     </Alerts>
@@ -101,7 +99,9 @@ window.addEventListener("load", () => {
             <ThemeProvider theme={createAccentedTheme(COLOR)}>
               <Analytics>
                 <DisableDragAndDropByDefault>
-                  <WholePage />
+                  <GallerySelection>
+                    <WholePage />
+                  </GallerySelection>
                 </DisableDragAndDropByDefault>
               </Analytics>
             </ThemeProvider>
