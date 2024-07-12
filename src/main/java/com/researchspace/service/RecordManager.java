@@ -561,13 +561,8 @@ public interface RecordManager {
    */
   List<BaseRecord> getFilteredRecordsList(WorkspaceFilters filters, User user);
 
-  /**
-   * Returns user's own templates.
-   *
-   * @param user
-   * @return
-   */
-  Set<BaseRecord> getViewableTemplates(List<User> users);
+  /** Returns user's own templates. */
+  Set<BaseRecord> getViewableTemplates(Set<Long> users);
 
   /**
    * Retrieves an {@link EcatImage} directly. Loading of the underlying thumbnail/working image is

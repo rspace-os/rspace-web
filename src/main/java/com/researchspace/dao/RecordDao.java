@@ -85,22 +85,22 @@ public interface RecordDao extends GenericDao<Record, Long> {
   List<Record> getRecordsById(List<Long> dbids);
 
   /**
-   * Gets all viewable records belonging to the list of users. This method does <em>not</em> return
+   * Gets all viewable records belonging to the set of users. This method does <em>not</em> return
    * items belonging to other users.
    */
-  Set<BaseRecord> getViewableRecordsForUsers(List<User> users);
+  Set<BaseRecord> getViewableRecordsForUsers(Set<Long> userIds);
 
   /**
-   * Gets all viewable templates belonging to the list of users. This method does <em>not</em>
-   * return items belonging to other users.
+   * Gets all viewable templates belonging to the set of users. This method does <em>not</em> return
+   * items belonging to other users.
    */
-  Set<BaseRecord> getViewableTemplatesForUsers(List<User> users);
+  Set<BaseRecord> getViewableTemplatesForUsers(Set<Long> userIds);
 
   /**
-   * Gets all viewable media files belonging to the list of users. This method does <em>not</em>
+   * Gets all viewable media files belonging to the set of users. This method does <em>not</em>
    * return items belonging to other users.
    */
-  Set<BaseRecord> getViewableMediaFiles(List<User> users);
+  Set<BaseRecord> getViewableMediaFiles(Set<Long> userIds);
 
   /** Tests if BaseRecord with id is a Record or not */
   boolean isRecord(Long id);

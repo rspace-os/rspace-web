@@ -715,10 +715,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals(1, results.getTotalHits().intValue());
   }
 
-  /**
-   * Test to compare the results on the advanced search and the simple search.
-   *
-   */
+  /** Test to compare the results on the advanced search and the simple search. */
   @Test
   public void testAdvancedSearchNativeLucene() throws IOException {
     setupRandomPIUser();
@@ -767,7 +764,6 @@ public class SearchManagerTest extends SearchSpringTestBase {
   /**
    * Test about advanced search results. Searching on different fields to retrieve the right
    * information
-   *
    */
   @Test
   public void testAdvancedSearchMultipleTerm() throws IOException {
@@ -950,11 +946,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
   /**
    * Tests if files modified on one day, but created on another can be found using creation date
    * search and modification date search.
-   *
    */
   @Test
-  public void testModificationResultsCanBeDifferentFromCreation()
-      throws IOException {
+  public void testModificationResultsCanBeDifferentFromCreation() throws IOException {
 
     String dCreation =
         ZonedDateTime.now(ZoneOffset.UTC).minusDays(3).format(DateTimeFormatter.ISO_INSTANT);
@@ -1213,10 +1207,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     return dFrom + ";" + dTo;
   }
 
-  /**
-   * Test about advanced search and simple search by owner.
-   *
-   */
+  /** Test about advanced search and simple search by owner. */
   @Test
   public void testSearchByOwner() throws IOException {
     setupRandomPIUser();
@@ -1438,9 +1429,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals(sd, results3.getResults().get(0));
   }
 
-  /**
-   * Test to filter the searched results by shared with a specific user.
-   */
+  /** Test to filter the searched results by shared with a specific user. */
   @Test
   public void testSharedRecordsWithUser() throws IllegalAddChildOperation, IOException {
 
@@ -1495,10 +1484,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals(sd, results3.getResults().get(0));
   }
 
-  /**
-   * Test to filter the searched results by favorites.
-   *
-   */
+  /** Test to filter the searched results by favorites. */
   @Test
   public void testSearchedFavoritesRecords() throws IllegalAddChildOperation, IOException {
 
@@ -1582,9 +1568,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals(template.getId(), results3.getFirstResult().getId());
   }
 
-  /**
-   * Test to filter the searched results by viewable items by default user.
-   */
+  /** Test to filter the searched results by viewable items by default user. */
   @Test
   public void testSearchedAllViewableRecordsByUser() throws IOException {
     User user = createAndSaveUserIfNotExists("user");
@@ -1608,10 +1592,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals(1, results.getTotalHits().longValue());
   }
 
-  /**
-   * Test to filter the searched results by viewable items by pi user.
-   *
-   */
+  /** Test to filter the searched results by viewable items by pi user. */
   @Test
   public void testSearchedAllViewableRecordsByPIUser() throws IOException {
     final int n = 10;
@@ -1650,8 +1631,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void testSearchSharedRecordsLabGroup()
-      throws IllegalAddChildOperation, IOException {
+  public void testSearchSharedRecordsLabGroup() throws IllegalAddChildOperation, IOException {
 
     final int n = 10;
     String random = getRandomName(n);
@@ -1952,14 +1932,12 @@ public class SearchManagerTest extends SearchSpringTestBase {
             < 0);
   }
 
-
   /**
    * Test consists of: Creating 2 forms: 'Example form' (and 4 documents from it), 'Another form'
    * (with 2 documents from it) Searching by 'Example form' global id should result in 4 documents
    * Updating 'Example form' with a new field (it gets assigned a new global id) Adding 5 more
    * documents created from the updated form Searching by original global id and updated global id
    * should both return 4 + 5 documents
-   *
    */
   @Test
   public void testFormSearchByGlobalId() throws Exception {
@@ -2001,8 +1979,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     // Modify the form
     RSForm formToEdit = formMgr.getForEditing(form.getId(), user, anySessionTracker());
     assertTrue(formToEdit.isTemporary());
-    StringFieldDTO<StringFieldForm> dto =
-        new StringFieldDTO<>("New String Field", "no", "abc");
+    StringFieldDTO<StringFieldForm> dto = new StringFieldDTO<>("New String Field", "no", "abc");
     formMgr.createFieldForm(dto, formToEdit.getId(), user);
 
     // Update the form
