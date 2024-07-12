@@ -3,7 +3,7 @@
 import { createTheme } from "@mui/material";
 import baseTheme from "./theme";
 import { mergeThemes } from "./util/styles";
-import { darken, alpha } from "@mui/system";
+import { darken, alpha, lighten } from "@mui/system";
 import { toolbarClasses } from "@mui/material/Toolbar";
 import { typographyClasses } from "@mui/material/Typography";
 import { svgIconClasses } from "@mui/material/SvgIcon";
@@ -94,11 +94,17 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
   const mainAccentColor = prefersMoreContrast
     ? "rgb(0,0,0)"
     : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%)`;
-  const disabledColor = `hsl(${accent.main.hue}deg, 10%, 86%)`;
+  const disabledColor = lighten(
+    `hsl(${accent.main.hue}deg, 10%, ${accent.main.lightness}%)`,
+    0.5
+  );
 
   const linkButtonText = prefersMoreContrast
     ? "rgb(0,0,0)"
-    : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, 40%)`;
+    : darken(
+        `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%)`,
+        0.5
+      );
 
   /**
    * A background colour that can be used behind headers, toolbars, and other

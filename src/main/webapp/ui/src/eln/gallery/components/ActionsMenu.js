@@ -209,8 +209,10 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
   return (
     <>
       <Button
-        variant="outlined"
+        variant="contained"
+        color="primary"
         size="small"
+        disabled={selection.isEmpty}
         aria-haspopup="menu"
         startIcon={<ChecklistIcon />}
         onClick={(e) => {
