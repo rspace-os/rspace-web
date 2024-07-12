@@ -147,7 +147,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
       return Result.Error([new Error("Nothing selected.")]);
     return selection
       .asSet()
-      .only.toResult(() => new Error("Only item may be renamed at once."))
+      .only.toResult(() => new Error("Only one item may be renamed at once."))
       .flatMap((file) => {
         if (file.isSystemFolder)
           return Result.Error([new Error("Cannot rename system folders.")]);
@@ -183,6 +183,21 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
     if (selection.isEmpty)
       return Result.Error([new Error("Nothing selected.")]);
     return Result.Error([new Error("Not yet available.")]);
+  };
+
+  const downloadAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    return selection
+      .asSet()
+      .only.toResult(
+        () => new Error("Only one item may be downloaded at once.")
+      )
+      .flatMap((file) => {
+        if (file.isFolder)
+          return Result.Error([new Error("Cannot download folders.")]);
+        return Result.Ok(null);
+      });
   };
 
   const moveAllowed = (): Result<null> => {
@@ -284,6 +299,23 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
             />
           ))
           .orElse(null)}
+        <NewMenuItem
+          title="Download"
+          subheader={downloadAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
+          backgroundColor={COLOR.background}
+          foregroundColor={COLOR.contrastText}
+          avatar={<FileDownloadIcon />}
+          onClick={() => {
+            selection.asSet().only.do((file) => {
+              window.open("/Streamfile/" + file.id);
+            });
+            setActionsMenuAnchorEl(null);
+          }}
+          compact
+          disabled={downloadAllowed().isError}
+        />
         <NewMenuItem
           title="Export"
           subheader={exportAllowed()
