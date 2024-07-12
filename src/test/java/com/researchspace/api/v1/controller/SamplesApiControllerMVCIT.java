@@ -866,11 +866,11 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     MvcResult deleteResult =
         mockMvc
             .perform(createBuilderForDelete(apiKey, "/samples/{id}", anyUser, basicSample.getId()))
-            .andExpect(status().is4xxClientError())
+            .andExpect(status().is2xxSuccessful())
             .andReturn();
-    ApiError deleteError = getErrorFromJsonResponseBody(deleteResult, ApiError.class);
-    assertApiErrorContainsMessage(
-        deleteError, "has 1 subsample(s) currently stored inside containers");
+    ApiSample sampleCannotBeDeleted = getFromJsonResponseBody(deleteResult, ApiSample.class);
+    assertFalse(sampleCannotBeDeleted.getCanBeDeleted());
+    assertEquals(1, sampleCannotBeDeleted.getSubSamplesIntoContainer().size());
     verifyAuditAction(AuditAction.DELETE, 0);
 
     // delete sample with forceDelete=true
