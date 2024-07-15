@@ -13,7 +13,6 @@ import com.researchspace.dmptool.client.DMPToolClientImpl;
 import com.researchspace.dmptool.model.DMPList;
 import com.researchspace.dmptool.model.DMPPlanScope;
 import com.researchspace.dmptool.model.DMPToolDMP;
-import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;

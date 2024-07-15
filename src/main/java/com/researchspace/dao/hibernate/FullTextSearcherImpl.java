@@ -12,6 +12,8 @@ import com.axiope.search.SearchUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.DAOUtils;
+import com.researchspace.dao.RecordGroupSharingDao;
+import com.researchspace.dao.RecordUserFavoritesDao;
 import com.researchspace.model.EcatCommentItem;
 import com.researchspace.model.IFieldLinkableElement;
 import com.researchspace.model.PaginationCriteria;
@@ -31,6 +33,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.search.impl.LuceneSearchTermListFactory;
 import com.researchspace.search.impl.LuceneSrchCfg;
 import com.researchspace.search.impl.PostTextSearchResultFilterer;
+import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.inventory.BarcodeApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
@@ -62,13 +65,35 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  private @Autowired DAOUtils daoUtils;
-  private @Autowired IPermissionUtils permUtils;
-  private @Autowired InventoryPermissionUtils invPermUtils;
-  private @Autowired SessionFactory sessionFactory;
-  private @Autowired LuceneSearchTermListFactory termListFactory;
-  private @Autowired IFileSearcher searcher;
+  private final DAOUtils daoUtils;
+  private final IPermissionUtils permissionUtils;
+  private final InventoryPermissionUtils inventoryPermissionUtils;
+  private final SessionFactory sessionFactory;
+  private final LuceneSearchTermListFactory termListFactory;
+  private final IFileSearcher fileSearcher;
+  private final RecordUserFavoritesDao recordUserFavoritesDao;
+  private final RecordGroupSharingDao recordGroupSharingDao;
 
+  public FullTextSearcherImpl(
+      DAOUtils daoUtils,
+      IPermissionUtils permissionUtils,
+      InventoryPermissionUtils inventoryPermissionUtils,
+      SessionFactory sessionFactory,
+      LuceneSearchTermListFactory termListFactory,
+      IFileSearcher fileSearcher,
+      RecordUserFavoritesDao recordUserFavoritesDao,
+      RecordGroupSharingDao recordGroupSharingDao) {
+    this.daoUtils = daoUtils;
+    this.permissionUtils = permissionUtils;
+    this.inventoryPermissionUtils = inventoryPermissionUtils;
+    this.sessionFactory = sessionFactory;
+    this.termListFactory = termListFactory;
+    this.fileSearcher = fileSearcher;
+    this.recordUserFavoritesDao = recordUserFavoritesDao;
+    this.recordGroupSharingDao = recordGroupSharingDao;
+  }
+
+  private final RSQueryBuilder queryBuilder = new RSQueryBuilder();
   private BaseRecordAdaptable baseRecordAdapter;
 
   @Override
@@ -76,18 +101,16 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     this.baseRecordAdapter = baseRecordAdapter;
   }
 
-  private RSQueryBuilder queryBuilder = new RSQueryBuilder();
-
   @SuppressWarnings("unchecked")
   @Override
-  public ISearchResults<BaseRecord> getSearchedElnRecords(SearchConfig srchConfigInput)
+  public ISearchResults<BaseRecord> getSearchedElnRecords(SearchConfig searchConfig)
       throws SearchQueryParseException {
 
-    LuceneSrchCfg srchConfig = new LuceneSrchCfg(srchConfigInput, termListFactory);
+    LuceneSrchCfg luceneSearchConfig = new LuceneSrchCfg(searchConfig, termListFactory);
     List<BaseRecord> hits;
     try {
-      List<IFieldLinkableElement> hibList = getElnHibernateList(srchConfig);
-      hits = filterAndSortQueryList(hibList, srchConfig);
+      List<IFieldLinkableElement> hibList = getElnHibernateList(luceneSearchConfig);
+      hits = filterAndSortQueryList(hibList, luceneSearchConfig);
 
     } catch (Exception e) {
       log.error("Error in getting the Lucene query list", e);
@@ -95,26 +118,21 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     }
     if (hits.isEmpty()) {
       return SearchResultsImpl.emptyResult(
-          (PaginationCriteria<BaseRecord>) srchConfig.getPaginationCriteria());
+          (PaginationCriteria<BaseRecord>) luceneSearchConfig.getPaginationCriteria());
     }
 
-    ISearchResults<BaseRecord> rdsx =
+    ISearchResults<BaseRecord> recordHits =
         new SearchResultsImpl<>(
-            hits, srchConfig.getPaginationCriteria().getPageNumber().intValue(), hits.size());
-    ISearchResults<BaseRecord> records = repaginateResults(srchConfig, rdsx);
+            hits,
+            luceneSearchConfig.getPaginationCriteria().getPageNumber().intValue(),
+            hits.size());
+    ISearchResults<BaseRecord> records = repaginateResults(luceneSearchConfig, recordHits);
     // Just unproxy if need be at the end once we have final result.
-    for (int i = 0; i < records.getResults().size(); i++) {
-      records.getResults().set(i, daoUtils.initializeAndUnproxy(records.getResults().get(i)));
-    }
+    records.getResults().replaceAll(daoUtils::initializeAndUnproxy);
     return records;
   }
 
-  /**
-   * Paginate the results.
-   *
-   * @param srchConfig
-   * @param srchResults
-   */
+  /** Paginate the results. */
   <T> ISearchResults<T> repaginateResults(LuceneSrchCfg srchConfig, ISearchResults<T> srchResults) {
 
     PaginationCriteria<?> pgCrit = srchConfig.getPaginationCriteria();
@@ -129,14 +147,10 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
         totalHits);
 
     List<T> sub = SearchUtils.repaginateResults(srchResults.getResults(), pageSize, startPage);
-    return new SearchResultsImpl<T>(sub, startPage, totalHits, pageSize);
+    return new SearchResultsImpl<>(sub, startPage, totalHits, pageSize);
   }
 
-  /**
-   * Does final filtering on results retrieved by Lucene
-   *
-   * @throws IOException
-   */
+  /** Does final filtering on results retrieved by Lucene */
   @SuppressWarnings("unchecked")
   private List<BaseRecord> filterAndSortQueryList(
       List<IFieldLinkableElement> hits, LuceneSrchCfg srchConfig) throws IOException {
@@ -147,13 +161,36 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       hibernateBaseRecordList =
           new PostTextSearchResultFilterer(filterResultsByPermission(srchConfig, hits), srchConfig)
               .filterAll();
+      if (srchConfig.getFilters().isDocumentsFilter()) {
+        hibernateBaseRecordList =
+            hibernateBaseRecordList.stream()
+                .filter(BaseRecord::isStructuredDocument)
+                .collect(Collectors.toList());
+      }
+      if (srchConfig.getFilters().isOntologiesFilter()) {
+        hibernateBaseRecordList =
+            hibernateBaseRecordList.stream()
+                .filter(
+                    br ->
+                        br.isStructuredDocument()
+                            && br.asStrucDoc()
+                                .getFormName()
+                                .equals(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME))
+                .collect(Collectors.toList());
+      }
+      if (srchConfig.getFilters().isTemplatesFilter()) {
+        hibernateBaseRecordList =
+            hibernateBaseRecordList.stream()
+                .filter(BaseRecord::isTemplate)
+                .collect(Collectors.toList());
+      }
     }
 
-    Optional<String> hasFTOption = srchConfig.getFullTextOption();
-    if (hasFTOption.isPresent()
+    Optional<String> fullTextOption = srchConfig.getFullTextOption();
+    if (fullTextOption.isPresent()
         && !srchConfig.isNotebookFilter()
         && !srchConfig.getFilters().isSomeFilterActive()) {
-      List<BaseRecord> attachmentList = getAttachmentList(srchConfig, hasFTOption.get());
+      List<BaseRecord> attachmentList = getAttachmentList(srchConfig, fullTextOption.get());
       if (!attachmentList.isEmpty()) {
         attachmentBaseRecordList =
             new PostTextSearchResultFilterer(
@@ -166,6 +203,19 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     resultList.addAll(hibernateBaseRecordList);
     resultList.addAll(attachmentBaseRecordList);
 
+    if (srchConfig.getFilters().isSharedFilter()) {
+      List<BaseRecord> sharedRecords =
+          recordGroupSharingDao.getSharedRecordsWithUser(srchConfig.getAuthenticatedUser());
+      resultList.retainAll(sharedRecords);
+    }
+
+    if (srchConfig.getFilters().isFavoritesFilter()) {
+      List<BaseRecord> userFavourites =
+          recordUserFavoritesDao.getFavoriteRecordsByUser(
+              srchConfig.getAuthenticatedUser().getId());
+      resultList.retainAll(userFavourites);
+    }
+
     // When we retrieve only results from LuceneFTsearchIndices.
     // We don't need order the results.
     if (!hibernateBaseRecordList.isEmpty()) {
@@ -177,12 +227,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     return resultList;
   }
 
-  /**
-   * Filter textFieldHits list checking if authenticated user has "READ" permission.
-   *
-   * @param srchConfig
-   * @param textFieldHits
-   */
+  /** Filter textFieldHits list checking if authenticated user has "READ" permission. */
   private List<BaseRecord> filterResultsByPermission(
       LuceneSrchCfg srchConfig, List<? extends IFieldLinkableElement> textFieldHits) {
 
@@ -191,7 +236,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
 
     for (IFieldLinkableElement field : textFieldHits) {
       Optional<BaseRecord> owningRecordOpt = baseRecordAdapter.getAsBaseRecord(field);
-      if (!owningRecordOpt.isPresent()) {
+      if (owningRecordOpt.isEmpty()) {
         log.warn("Couldn't adapt null result to BaseRecord");
         continue;
       }
@@ -199,7 +244,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       BaseRecord owningRecord = owningRecordOpt.get();
       Long baseRecordId = owningRecord.getId();
       if (!sids.contains(baseRecordId)
-          && permUtils.isPermitted(
+          && permissionUtils.isPermitted(
               owningRecord, PermissionType.READ, srchConfig.getAuthenticatedUser())) {
         filtered.add(owningRecord);
         sids.add(owningRecord.getId());
@@ -212,7 +257,6 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   /**
    * Search through ELN records.
    *
-   * @param srchConfig
    * @return List<IFieldLinkableElement> found elements
    */
   @SuppressWarnings("unchecked")
@@ -229,30 +273,19 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
         new Class[] {BaseRecord.class, StructuredDocument.class, EcatCommentItem.class};
     FullTextQuery hibQuery = fssn.createFullTextQuery(query, resultClasses);
     hibQuery.setMaxResults(srchConfig.getMaxResults());
-    List<IFieldLinkableElement> hits = hibQuery.list();
 
-    return hits;
+    return (List<IFieldLinkableElement>) hibQuery.list();
   }
 
-  /**
-   * Returns Full Text Session
-   *
-   * @return
-   */
+  /** Returns Full Text Session */
   private FullTextSession getFullTextSession() {
     Session ssnx = sessionFactory.getCurrentSession();
-    FullTextSession fssn = Search.getFullTextSession(ssnx);
-    return fssn;
+    return Search.getFullTextSession(ssnx);
   }
 
   /**
    * Searching content in Ecat Documents File (pdf, docs,...). The result is included in the full
    * text search.
-   *
-   * @param term
-   * @return
-   * @throws IOException
-   * @throws Exception
    */
   private List<BaseRecord> getAttachmentList(LuceneSrchCfg config, String term) throws IOException {
     return getAttachmentList(config, term, false);
@@ -267,7 +300,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
 
     PaginationCriteria<BaseRecord> workspacePgCrit =
         (PaginationCriteria<BaseRecord>) config.getPaginationCriteria();
-    return searcher
+    return fileSearcher
         .searchContents(term, workspacePgCrit, config.getAuthenticatedUser())
         .getResults();
   }
@@ -343,8 +376,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
             finalHits,
             srchConfig.getPaginationCriteria().getPageNumber().intValue(),
             finalHits.size());
-    ISearchResults<InventoryRecord> paginatedRecords = repaginateResults(srchConfig, searchResults);
-    return paginatedRecords;
+    return repaginateResults(srchConfig, searchResults);
   }
 
   @Autowired private InventoryRecordRetriever invRecRetriever;
@@ -438,15 +470,12 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   }
 
   private boolean isMatchingTemplateOption(InventoryRecord record, InventorySearchType searchType) {
-    boolean isTemplate = record.isSample() ? ((Sample) record).isTemplate() : false;
+    boolean isTemplate = record.isSample() && ((Sample) record).isTemplate();
     if (isTemplate
         && !(searchType == InventorySearchType.ALL || searchType == InventorySearchType.TEMPLATE)) {
       return false;
     }
-    if (!isTemplate && searchType == InventorySearchType.TEMPLATE) {
-      return false;
-    }
-    return true;
+    return isTemplate || searchType != InventorySearchType.TEMPLATE;
   }
 
   private boolean isNotOwnedByDefaultTemplatesOwnerOrTemplate(
@@ -461,7 +490,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   }
 
   private boolean canCurrentUserReadInvRec(InventoryRecord rec, User authenticatedUser) {
-    return invPermUtils.canUserReadInventoryRecord(rec, authenticatedUser);
+    return inventoryPermissionUtils.canUserReadInventoryRecord(rec, authenticatedUser);
   }
 
   private List<InventoryRecord> limitToRecordsWithGlobalId(

@@ -101,7 +101,8 @@ public class ServiceLoggerAspct {
     MethodSignature methodSignature = (MethodSignature) jp.getSignature();
     if (shouldSkipMethodArgs(methodSignature)) {
       return String.format(
-          "In method [%s] in class [%s] (args hidden)", methodName, jp.getSignature().getDeclaringTypeName());
+          "In method [%s] in class [%s] (args hidden)",
+          methodName, jp.getSignature().getDeclaringTypeName());
     }
     return String.format(
         "In method [%s] in class [%s] with args: %s",

@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.ConditionalTestRunnerNotSpring;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.session.SessionTimeZoneUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -74,6 +73,4 @@ public class SlackPosterTest extends SpringTransactionalTest {
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     System.err.println(resp);
   }
-
-
 }
