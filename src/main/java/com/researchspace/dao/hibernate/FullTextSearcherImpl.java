@@ -33,6 +33,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.search.impl.LuceneSearchTermListFactory;
 import com.researchspace.search.impl.LuceneSrchCfg;
 import com.researchspace.search.impl.PostTextSearchResultFilterer;
+import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.inventory.BarcodeApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
@@ -164,6 +165,17 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
         hibernateBaseRecordList =
             hibernateBaseRecordList.stream()
                 .filter(BaseRecord::isStructuredDocument)
+                .collect(Collectors.toList());
+      }
+      if (srchConfig.getFilters().isOntologiesFilter()) {
+        hibernateBaseRecordList =
+            hibernateBaseRecordList.stream()
+                .filter(
+                    br ->
+                        br.isStructuredDocument()
+                            && br.asStrucDoc()
+                                .getFormName()
+                                .equals(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME))
                 .collect(Collectors.toList());
       }
       if (srchConfig.getFilters().isTemplatesFilter()) {
