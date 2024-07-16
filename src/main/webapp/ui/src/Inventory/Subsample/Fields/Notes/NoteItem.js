@@ -12,11 +12,12 @@ import Typography from "@mui/material/Typography";
 
 type NoteItemArgs = {|
   note: Note,
+  divider?: boolean,
 |};
 
-export default function NoteItem({ note }: NoteItemArgs): Node {
+export default function NoteItem({ note, divider = true }: NoteItemArgs): Node {
   return (
-    <ListItem alignItems="flex-start" divider>
+    <ListItem alignItems="flex-start" divider={divider}>
       <ListItemText
         disableTypography
         primary={
