@@ -31,15 +31,15 @@ export default class DynamicFetcher
     this.pageSize = DYNAMIC_PAGE_SIZE;
   }
 
-  setPage(pageNumber: number) {
+  async setPage(pageNumber: number): Promise<void> {
     this.pageNumber = pageNumber;
-    void this.search(null, (results: Array<InventoryRecord>) =>
+    await this.search(null, (results: Array<InventoryRecord>) =>
       pageNumber === 0 ? this.setResults(results) : this.addResults([], results)
     );
   }
 
   dynamicSearch() {
-    this.setPage(this.pageNumber + 1);
+    void this.setPage(this.pageNumber + 1);
   }
 
   get nextDynamicPageSize(): number {

@@ -1162,8 +1162,8 @@ export default class Search implements SearchInterface {
     this.performSearch();
   }
 
-  setPage(pageNumber: number) {
-    this.fetcher.setPage(pageNumber);
+  async setPage(pageNumber: number) {
+    await this.fetcher.setPage(pageNumber);
   }
 
   setOwner(user: ?Person, doSearch: ?boolean = true) {
