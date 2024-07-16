@@ -7,7 +7,6 @@ import * as ArrayUtils from "../../util/ArrayUtils";
 import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
 import { truncateIsoTimestamp } from "../../util/conversions";
 import {
-  type OptionalString,
   type HasEditableFields,
 } from "../definitions/Editable";
 import { PersistedBarcode } from "./Barcode";
@@ -16,7 +15,7 @@ import { areSameTag } from "../definitions/Tag";
 
 export type BatchName = {|
   common: string,
-  suffix: string,
+  suffix: "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED",
 |};
 
 /*
@@ -141,9 +140,8 @@ export default class ResultCollection<ResultSubtype: Result> {
     return this.records.every((r) => r.isFieldEditable(fieldName));
   }
 
-  get noValueLabel(): {
-    ...$ObjMap<ResultCollectionEditableFields, OptionalString>,
-  } {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof ResultCollectionEditableFields]: ?string} {
     const currentNames = new RsSet(this.records.map((r) => r.name));
     const currentDescriptions = new RsSet(
       this.records.map((r) => r.description)
@@ -271,9 +269,8 @@ export class MixedResultCollection
     return super.fieldValues;
   }
 
-  get noValueLabel(): {
-    ...$ObjMap<ResultCollectionEditableFields, OptionalString>,
-  } {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof ResultCollectionEditableFields]: ?string} {
     return super.noValueLabel;
   }
 

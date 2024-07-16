@@ -117,19 +117,19 @@ type CreateInContextDialogArgs = {|
   menuID: $Values<typeof menuIDs>,
 |};
 
-function isContainer(c: mixed): %checks {
+function isContainer(c: mixed): c is ContainerModel {
   return c instanceof ContainerModel;
 }
 
-function isSample(s: mixed): %checks {
+function isSample(s: mixed): implies s is SampleModel {
   return s instanceof SampleModel && !(s instanceof TemplateModel);
 }
 
-function isTemplate(t: mixed): %checks {
+function isTemplate(t: mixed): t is TemplateModel {
   return t instanceof TemplateModel;
 }
 
-function isSubsample(s: mixed): %checks {
+function isSubsample(s: mixed): s is SubSampleModel {
   return s instanceof SubSampleModel;
 }
 
@@ -241,13 +241,15 @@ function CreateInContextDialog({
       if (!selectedResult.infoLoaded)
         (await selectedResult.fetchAdditionalInfo(): void);
 
-      const allLocationsMapped = selectedResult.locations.map(
+      if (!selectedResult.locations) throw new Error("Impossible: Container's locations will have been fetched");
+      const locations = selectedResult.locations;
+      const allLocationsMapped: Array<[ number, boolean ]> = locations.map(
         (loc: Location, i: number) => [i + 1, loc.hasContent]
       );
       setAllContainerLocations(allLocationsMapped);
       /* locations without content */
       const available = allLocationsMapped.filter(
-        (loc: [number, Location]) => !loc[1]
+        (loc: [number, boolean]) => !loc[1]
       );
       setAvailableLocations(available);
 
@@ -257,7 +259,7 @@ function CreateInContextDialog({
 
       /* highlight starting location */
       if (createStore.creationContext)
-        selectedResult.locations[startingLocation - 1].toggleSelected(true);
+        locations[startingLocation - 1].toggleSelected(true);
     }
   }
 
@@ -280,21 +282,22 @@ function CreateInContextDialog({
       // handle cases for 3 cTypes
       const parentContainers = [selectedResult];
       let parentLocation: ParentLocation = {};
+      if (!selectedResult.locations) throw new Error("Impossible: Container's locations will have been fetched");
+      const locations = selectedResult.locations;
       if (gridContainer) {
         parentLocation = {
           coordX:
-            selectedResult.locations[createStore.targetLocationIdentifier - 1]
+            locations[createStore.targetLocationIdentifier - 1]
               .coordX,
           coordY:
-            selectedResult.locations[createStore.targetLocationIdentifier - 1]
+            locations[createStore.targetLocationIdentifier - 1]
               .coordY,
         };
       }
       if (imageContainer) {
-        parentLocation = {
-          id: selectedResult.locations[createStore.targetLocationIdentifier - 1]
-            .id,
-        };
+        const id = locations[createStore.targetLocationIdentifier - 1].id;
+        if (!id) throw new Error("Impossible: Location will have id");
+        parentLocation = { id, };
       }
 
       const newItemParams: NewInContainerParams = {
@@ -357,7 +360,9 @@ function CreateInContextDialog({
                 id="location-selector"
                 value={createStore.targetLocationIdentifier}
                 onChange={({ target: { value } }) => {
-                  selectedResult.locations[value - 1].selectOnlyThis();
+                  if (!selectedResult.locations) throw new Error("Impossible: Container's locations will have been fetched");
+                  const locations = selectedResult.locations;
+                  locations[value - 1].selectOnlyThis();
                   createStore.setTargetLocationIdentifier(
                     allContainerLocations[value - 1][0]
                   );

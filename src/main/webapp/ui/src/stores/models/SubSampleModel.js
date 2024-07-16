@@ -8,7 +8,6 @@ import RsSet from "../../util/set";
 import {
   type HasEditableFields,
   type HasUneditableFields,
-  type OptionalString,
 } from "../definitions/Editable";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type RecordDetails } from "../definitions/Record";
@@ -296,7 +295,7 @@ export default class SubSampleModel
         mkAlert({
           title: "Creating note failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
           duration: 8000,
         })
@@ -425,8 +424,8 @@ export default class SubSampleModel
     return true;
   }
 
-  get noValueLabel(): $ObjMap<SubSampleEditableFields, OptionalString> &
-    $ObjMap<SubSampleUneditableFields, OptionalString> {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof SubSampleEditableFields]: ?string} & {[key in keyof SubSampleUneditableFields]: ?string} {
     return {
       ...super.noValueLabel,
       quantity: null,
@@ -494,9 +493,8 @@ export class SubSampleCollection
     };
   }
 
-  get noValueLabel(): {
-    ...$ObjMap<BatchSubSampleEditableFields, OptionalString>,
-  } {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof BatchSubSampleEditableFields]: ?string} {
     const currentQuanities = new RsSet(
       this.records.map((r) => getValue(r.quantity))
     );

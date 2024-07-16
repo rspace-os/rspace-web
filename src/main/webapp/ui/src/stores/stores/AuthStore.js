@@ -141,7 +141,7 @@ export default class AuthStore {
         mkAlert({
           title: `Could not get System Settings.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -168,7 +168,7 @@ export default class AuthStore {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: `Could not update System Settings.`,
-          message: error?.response?.data.message ?? "Unknown reason.",
+          message: error.response?.data.message ?? "Unknown reason.",
           variant: "error",
         })
       );

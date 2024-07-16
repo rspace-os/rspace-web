@@ -363,10 +363,10 @@ export default class CoreFetcher {
         mkAlert({
           title: `Could not perform search.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
           details:
-            error?.response?.data.errors.map((error) => ({
+            error.response?.data.errors.map((error) => ({
               title: error,
               variant: "error",
             })) ?? [],
@@ -407,7 +407,6 @@ export default class CoreFetcher {
     ).reduce(
       (acc, [k, v]) => ({
         ...acc,
-        // $FlowExpectedError[prop-missing] can access this by index
         // $FlowExpectedError[invalid-computed-prop]
         [k]: acc[k] || this[k] || v,
       }),

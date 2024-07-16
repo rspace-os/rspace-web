@@ -117,7 +117,7 @@ export interface HasEditableFields<Fields> {
    * field will result in the default string being shown and any implementation
    * choosing not to support this option MUST return an empty object.
    */
-  +noValueLabel: { ...$ObjMap<Fields, OptionalString>, ... };
+  +noValueLabel: {[ key in keyof Fields]: ?string};
 }
 
 /*
@@ -139,5 +139,5 @@ export interface HasUneditableFields<Fields> {
    * field will result in the default string being shown and any implementation
    * choosing not to support this option MUST return an empty object.
    */
-  +noValueLabel: { ...$ObjMap<Fields, OptionalString>, ... };
+  +noValueLabel: {[ key in keyof Fields]: ?string};
 }

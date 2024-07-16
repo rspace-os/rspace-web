@@ -29,6 +29,7 @@
       {
         "regenerator": true
       }
-    ]
+    ],
+    ["babel-plugin-syntax-hermes-parser"]
   ]
 }

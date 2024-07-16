@@ -270,8 +270,8 @@ export default function ExportFileStore({
       )
     );
 
-    const isFile = (link: MixedLink): %checks => link.type === "file";
-    const isFolder = (link: MixedLink): %checks => link.type === "folder";
+    const isFile = (link: MixedLink): link is FileLink => link.type === "file";
+    const isFolder = (link: MixedLink): link is FolderLink => link.type === "folder";
 
     // FileSystem is bundled with each link for further filtering
     const links: RsSet<{ fs: FileSystem, link: MixedLink }> = flattenWithUnion(

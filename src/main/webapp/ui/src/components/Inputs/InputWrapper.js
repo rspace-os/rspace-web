@@ -39,7 +39,7 @@ function InputWrapper({
    * that the information about whether it is a string or not is preserved by
    * the type checker. See flow docs on `%checks`.
    */
-  function showCharacterCount(mightBeString: ?mixed): %checks {
+  function showCharacterCount(mightBeString: ?mixed): implies mightBeString is string {
     return (
       !disabled &&
       typeof maxLength === "number" &&

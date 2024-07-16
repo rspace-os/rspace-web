@@ -1416,7 +1416,16 @@ export const UsersPage = (): Node => {
     $ReadOnlyArray<UserId>
   >([]);
   const [sortModel, setSortModel] = React.useState<
-    Array<{| field: string, sort: "asc" | "desc" |}>
+    $ReadOnlyArray<{| field: | "username"
+      | "usage"
+      | "documents"
+      | "lastLogin"
+      | "created"
+      | "name"
+      | "firstName"
+      | "lastName"
+      | "email"
+    , sort: "asc" | "desc" |}>
   >([]);
   const [groupsAnchorEl, setGroupsAnchorEl] = React.useState(null);
   const [groupsList, setGroupsList] = React.useState<Array<string>>([]);
@@ -1835,7 +1844,7 @@ export const UsersPage = (): Node => {
                       }}
                       sortingMode="server"
                       sortModel={sortModel}
-                      onSortModelChange={(newSortModel) => {
+                      onSortModelChange={(newSortModel: typeof sortModel) => {
                         FetchingData.match(userListing, {
                           loading: () => {},
                           error: () => {},

@@ -2,6 +2,18 @@
 
 import { COLORS as baseThemeColors } from "../../theme";
 
+export type GallerySection = 
+  | "Images"
+  | "Audios"
+  | "Videos"
+  | "Documents"
+  | "Chemistry"
+  | "DMPs"
+  | "NetworkFiles"
+  | "Snippets"
+  | "Miscellaneous"
+  | "PdfDocuments"
+
 export const gallerySectionLabel = {
   Images: "Images",
   Audios: "Audio",

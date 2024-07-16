@@ -157,7 +157,7 @@ const EditAction: ComponentType<EditActionArgs> = forwardRef(
             mkAlert({
               title: "Could not load edit mode.",
               message: !(e instanceof AggregateError)
-                ? e?.response?.data.message ?? e.message ?? "Unknown reason."
+                ? e.response?.data.message ?? e.message ?? "Unknown reason."
                 : "Expand for more details.",
               variant: "error",
               details:
