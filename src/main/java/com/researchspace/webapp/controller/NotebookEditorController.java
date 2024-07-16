@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAllowBioOntologies;
+import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
 
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.Group;
@@ -151,9 +152,7 @@ public class NotebookEditorController extends BaseController {
     model.addAttribute("workspaceFolderId", bcrumb.getParentFolderId());
     model.addAttribute("pioEnabled", isProtocolsIOEnabled(user));
     model.addAttribute("isPublished", notebook.isPublished());
-
-    model.addAttribute(
-        "enforce_ontologies", user.getGroups().stream().anyMatch(Group::isEnforceOntologies));
+    model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));
 
     return new ModelAndView("notebookEditor/notebookEditor", model.asMap());
