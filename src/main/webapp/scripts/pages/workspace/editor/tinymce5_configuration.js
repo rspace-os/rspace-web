@@ -243,6 +243,12 @@ var tinymcesetup = {
 
 	// 'mention' plugin comes from https://github.com/StevenDevooght/tinyMCE-mention
 	mentions: {
+		items: Infinity,
+
+		renderDropdown: function() {
+			return '<ul class="rte-autocomplete dropdown-menu mentions-list-wrapper"></ul>';
+		},
+
 		// get the items to be shown in the pop up box
 		source(query, process, delimiter) {
 			let id = $('.rs-global-id a:not(.recordInfoIcon)').text().replace(/\D/g, '');
