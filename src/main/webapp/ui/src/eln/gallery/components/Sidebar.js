@@ -428,7 +428,7 @@ const Sidebar = ({
 
   React.useEffect(() => {
     autorun(() => {
-      if(viewport.isViewportSmall) setDrawerOpen(false);
+      if (viewport.isViewportSmall) setDrawerOpen(false);
     });
   }, [viewport]);
 
@@ -444,7 +444,7 @@ const Sidebar = ({
       anchor="left"
       variant={viewport.isViewportSmall ? "temporary" : "permanent"}
       onClose={() => {
-        if(viewport.isViewportSmall) setDrawerOpen(false);
+        if (viewport.isViewportSmall) setDrawerOpen(false);
       }}
       aria-label="gallery sections drawer"
     >
@@ -457,7 +457,7 @@ const Sidebar = ({
           open={Boolean(newMenuAnchorEl)}
           anchorEl={newMenuAnchorEl}
           onClose={() => {
-            if(viewport.isViewportSmall) setDrawerOpen(false);
+            if (viewport.isViewportSmall) setDrawerOpen(false);
             setNewMenuAnchorEl(null);
           }}
           MenuListProps={{
@@ -474,11 +474,11 @@ const Sidebar = ({
                 onUploadComplete={() => {
                   refreshListing();
                   setNewMenuAnchorEl(null);
-                  if(viewport.isViewportSmall) setDrawerOpen(false);
+                  if (viewport.isViewportSmall) setDrawerOpen(false);
                 }}
                 onCancel={() => {
                   setNewMenuAnchorEl(null);
-                  if(viewport.isViewportSmall) setDrawerOpen(false);
+                  if (viewport.isViewportSmall) setDrawerOpen(false);
                 }}
               />
             ))
@@ -492,7 +492,7 @@ const Sidebar = ({
                 onDialogClose={(success) => {
                   if (success) refreshListing();
                   setNewMenuAnchorEl(null);
-                  if(viewport.isViewportSmall) setDrawerOpen(false);
+                  if (viewport.isViewportSmall) setDrawerOpen(false);
                 }}
               />
             ))
@@ -500,7 +500,7 @@ const Sidebar = ({
           <DmpMenuSection
             onDialogClose={() => {
               setNewMenuAnchorEl(null);
-              if(viewport.isViewportSmall) setDrawerOpen(false);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
             }}
           />
         </StyledMenu>
@@ -517,137 +517,139 @@ const Sidebar = ({
         <SelectedDrawerTabIndicator
           verticalPosition={selectedIndicatorOffset}
         />
-        <List sx={{ position: "static" }} role="navigation">
-          <DrawerTab
-            label={gallerySectionLabel.Images}
-            icon={<FaIcon icon="image" />}
-            index={0}
-            tabIndex={getTabIndex(0)}
-            ref={getRef(0)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Images"}
-            onClick={(event) => {
-              setSelectedSection("Images");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Audios}
-            icon={<FaIcon icon="volume-low" />}
-            index={1}
-            tabIndex={getTabIndex(1)}
-            ref={getRef(1)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Audios"}
-            onClick={(event) => {
-              setSelectedSection("Audios");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Videos}
-            icon={<FaIcon icon="film" />}
-            index={2}
-            tabIndex={getTabIndex(2)}
-            ref={getRef(2)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Videos"}
-            onClick={(event) => {
-              setSelectedSection("Videos");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Documents}
-            icon={<FaIcon icon="file" />}
-            index={3}
-            tabIndex={getTabIndex(3)}
-            ref={getRef(3)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Documents"}
-            onClick={(event) => {
-              setSelectedSection("Documents");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Chemistry}
-            icon={<ChemistryIcon />}
-            index={4}
-            tabIndex={getTabIndex(4)}
-            ref={getRef(4)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Chemistry"}
-            onClick={(event) => {
-              setSelectedSection("Chemistry");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.DMPs}
-            icon={<FaIcon icon="file-invoice" />}
-            index={5}
-            tabIndex={getTabIndex(5)}
-            ref={getRef(5)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "DMPs"}
-            onClick={(event) => {
-              setSelectedSection("DMPs");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Snippets}
-            icon={<FaIcon icon="fa-regular fa-note-sticky" />}
-            index={6}
-            tabIndex={getTabIndex(6)}
-            ref={getRef(6)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Snippets"}
-            onClick={(event) => {
-              setSelectedSection("Snippets");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Miscellaneous}
-            icon={<FaIcon icon="shapes" />}
-            index={7}
-            tabIndex={getTabIndex(7)}
-            ref={getRef(7)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Miscellaneous"}
-            onClick={(event) => {
-              setSelectedSection("Miscellaneous");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-        </List>
-        <Divider />
-        <List sx={{ position: "static" }} role="navigation">
-          <DrawerTab
-            label={gallerySectionLabel.PdfDocuments}
-            icon={<FaIcon icon="fa-circle-down" />}
-            index={8}
-            tabIndex={getTabIndex(8)}
-            ref={getRef(8)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "PdfDocuments"}
-            onClick={(event) => {
-              setSelectedSection("PdfDocuments");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-        </List>
+        <div role="navigation">
+          <List sx={{ position: "static" }}>
+            <DrawerTab
+              label={gallerySectionLabel.Images}
+              icon={<FaIcon icon="image" />}
+              index={0}
+              tabIndex={getTabIndex(0)}
+              ref={getRef(0)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Images"}
+              onClick={(event) => {
+                setSelectedSection("Images");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Audios}
+              icon={<FaIcon icon="volume-low" />}
+              index={1}
+              tabIndex={getTabIndex(1)}
+              ref={getRef(1)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Audios"}
+              onClick={(event) => {
+                setSelectedSection("Audios");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Videos}
+              icon={<FaIcon icon="film" />}
+              index={2}
+              tabIndex={getTabIndex(2)}
+              ref={getRef(2)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Videos"}
+              onClick={(event) => {
+                setSelectedSection("Videos");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Documents}
+              icon={<FaIcon icon="file" />}
+              index={3}
+              tabIndex={getTabIndex(3)}
+              ref={getRef(3)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Documents"}
+              onClick={(event) => {
+                setSelectedSection("Documents");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Chemistry}
+              icon={<ChemistryIcon />}
+              index={4}
+              tabIndex={getTabIndex(4)}
+              ref={getRef(4)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Chemistry"}
+              onClick={(event) => {
+                setSelectedSection("Chemistry");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.DMPs}
+              icon={<FaIcon icon="file-invoice" />}
+              index={5}
+              tabIndex={getTabIndex(5)}
+              ref={getRef(5)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "DMPs"}
+              onClick={(event) => {
+                setSelectedSection("DMPs");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Snippets}
+              icon={<FaIcon icon="fa-regular fa-note-sticky" />}
+              index={6}
+              tabIndex={getTabIndex(6)}
+              ref={getRef(6)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Snippets"}
+              onClick={(event) => {
+                setSelectedSection("Snippets");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Miscellaneous}
+              icon={<FaIcon icon="shapes" />}
+              index={7}
+              tabIndex={getTabIndex(7)}
+              ref={getRef(7)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Miscellaneous"}
+              onClick={(event) => {
+                setSelectedSection("Miscellaneous");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+          </List>
+          <Divider />
+          <List sx={{ position: "static" }}>
+            <DrawerTab
+              label={gallerySectionLabel.PdfDocuments}
+              icon={<FaIcon icon="fa-circle-down" />}
+              index={8}
+              tabIndex={getTabIndex(8)}
+              ref={getRef(8)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "PdfDocuments"}
+              onClick={(event) => {
+                setSelectedSection("PdfDocuments");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+          </List>
+        </div>
       </Box>
     </CustomDrawer>
   );
