@@ -21,15 +21,9 @@ function NotesList({ record }: NotesListArgs): Node {
   if (record.notes.length === 0) return null;
 
   return (
-    <List disablePadding>
-      {firstNote && <NoteItem divider key={0} note={firstNote} />}
-      {secondNote && (
-        <NoteItem
-          divider={restOfNotes.length === 0}
-          key={1}
-          note={secondNote}
-        />
-      )}
+    <List disablePadding sx={{ mt: 1 }}>
+      {firstNote && <NoteItem key={0} note={firstNote} />}
+      {secondNote && <NoteItem key={1} note={secondNote} />}
       {restOfNotes.length > 0 && (
         <Divider textAlign="center" sx={{ backgroundColor: "white" }}>
           <Button
@@ -44,7 +38,7 @@ function NotesList({ record }: NotesListArgs): Node {
       )}
       <Collapse in={open}>
         {restOfNotes.toReversed().map((note, i) => (
-          <NoteItem divider key={i + 2} note={note} />
+          <NoteItem key={i + 2} note={note} />
         ))}
       </Collapse>
     </List>
