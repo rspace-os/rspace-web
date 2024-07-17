@@ -40,7 +40,7 @@ function CommonActions({ editableObject }: CommonActionsArgs): Node {
         size="medium"
         onClick={() => {
           void uiStore.confirmDiscardAnyChanges().then(() => {
-            editableObject.cancel();
+            void editableObject.cancel();
           });
         }}
         disabled={editableObject.loading}
