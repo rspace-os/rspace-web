@@ -374,7 +374,8 @@ const GridView = observer(
   ({
     listing,
   }: {|
-    listing: | {| tag: "empty", reason: string |}
+    listing:
+      | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
   |}) => {
     const dndContext = useDndContext();
@@ -937,7 +938,8 @@ type GalleryMainPanelArgs = {|
   clearPath: () => void,
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}>,
+    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
+  >,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
   sortOrder: "DESC" | "ASC",

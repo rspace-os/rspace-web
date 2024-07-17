@@ -129,7 +129,7 @@ function getIconPathForExtension(extension: string) {
       txt: "/images/icons/txt.png",
       text: "/images/icons/txt.png",
       md: "/images/icons/txt.png",
-    }: {[string]: string})[ext] ?? "/images/icons/unknownDocument.png"
+    }: { [string]: string })[ext] ?? "/images/icons/unknownDocument.png"
   );
 }
 
@@ -179,7 +179,8 @@ export function useGalleryListing({
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}>,
+    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
+  >,
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
