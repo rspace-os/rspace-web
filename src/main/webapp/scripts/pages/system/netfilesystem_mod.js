@@ -301,8 +301,18 @@ define(function() {
             $('#fileSystemUrl')
                 .attr('title', 'Samba server URL should start with smb://')
                 .attr('pattern', '^smb://.*');
+	    $("label[for='fileSystemAuthTypePubKey']").show();
+        } else if (isIrodsClient) {
+	    $('#fileSystemAuthTypePassword').click();
+	    $('#fileSystemUrl')
+		.removeAttr('pattern')
+		.attr('title', 'iRODS hostname or IP without protocol');
+	    $("label[for='fileSystemUrl']").text('iRODS Host');
+	    $("label[for='fileSystemAuthTypePubKey']").hide();
+	    $('#fileSystemAuthTypePasswordSpan').text('Native');
         } else {
-            $('#fileSystemUrl').removeAttr('title').removeAttr('pattern')
+            $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
+	    $("label[for='fileSystemAuthTypePubKey']").show();
         }
     }
 

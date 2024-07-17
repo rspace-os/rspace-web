@@ -123,12 +123,12 @@
             <tr class="fileSystemDetailsIrodsZoneRow">
                <td><label for="fileSystemIrodsZone">
                    <spring:message code="system.netfilesystem.details.client.irods.zone" /></label></td>
-               <td><input id="fileSystemIrodsZone" type="text" style="width: 20em" /></td>
+               <td><input id="fileSystemIrodsZone" type="text" style="width: 20em" required/></td>
             </tr>
             <tr class="fileSystemDetailsIrodsHomeDirRow">
                <td><label for="fileSystemIrodsHomeDir">
                    <spring:message code="system.netfilesystem.details.client.irods.homedir" /></label></td>
-               <td><input id="fileSystemIrodsHomeDir" type="text" style="width: 20em" /></td>
+               <td><input id="fileSystemIrodsHomeDir" type="text" style="width: 20em" required/></td>
             </tr>
             <tr class="fileSystemDetailsIrodsPortRow">
                 <td><label for="fileSystemIrodsPort">
@@ -152,8 +152,8 @@
                 <td><label><spring:message code="system.netfilesystem.details.auth" /></label></td>
                 <td>
                     <label><input type="radio" id="fileSystemAuthTypePassword" name="fileSystemAuthType" value="PASSWORD" required>
-                        <spring:message code="system.netfilesystem.details.auth.password" /></label>
-                    <label><input type="radio" id="fileSystemAuthTypePubKey" name="fileSystemAuthType" value="PUBKEY">
+                        <span id="fileSystemAuthTypePasswordSpan"><spring:message code="system.netfilesystem.details.auth.password" /></span></label>
+                    <label for="fileSystemAuthTypePubKey"><input type="radio" id="fileSystemAuthTypePubKey" name="fileSystemAuthType" value="PUBKEY">
                         <spring:message code="system.netfilesystem.details.auth.pubkey" /></label>
                 </td>
             </tr>
