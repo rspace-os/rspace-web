@@ -22,12 +22,18 @@ function NotesList({ record }: NotesListArgs): Node {
 
   return (
     <List disablePadding>
+      {firstNote && <NoteItem divider key={0} note={firstNote} />}
+      {secondNote && <NoteItem divider={restOfNotes.length === 0} key={1} note={secondNote} />}
       {restOfNotes.length > 0 && (
-        <Divider textAlign="center" sx={{ backgroundColor: "white" }}>
+        <Divider textAlign="center" sx={{ backgroundColor: "white", height: 0 }}>
           <Button
             size="small"
             onClick={() => {
               setOpen(!open);
+            }}
+            sx={{
+	            transform: "translateY(-16px)",
+              zIndex: "1",
             }}
           >
             {open ? "Show fewer" : "Show more"}
@@ -39,8 +45,6 @@ function NotesList({ record }: NotesListArgs): Node {
           <NoteItem divider key={i + 2} note={note} />
         ))}
       </Collapse>
-      {secondNote && <NoteItem divider key={1} note={secondNote} />}
-      {firstNote && <NoteItem divider key={0} note={firstNote} />}
     </List>
   );
 }

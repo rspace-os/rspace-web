@@ -22,10 +22,10 @@ function Notes({
   return (
     <FormControl>
       {!hideLabel && <FormLabel>Notes</FormLabel>}
-      {record.isFieldVisible("notes") && <NotesList record={record} />}
-      {record.isFieldVisible("notes") && (
+      {record.isFieldEditable("notes") && record.isFieldVisible("notes") && (
         <NewNote record={record} onErrorStateChange={onErrorStateChange} />
       )}
+      {record.isFieldVisible("notes") && <NotesList record={record} />}
     </FormControl>
   );
 }
