@@ -18,7 +18,7 @@ type NoteItemArgs = {|
 
 const CustomListItem = styled(ListItem)(({ theme }) => ({
   borderLeft: `4px solid ${theme.palette.record.subSample.bg}`,
-  backgroundColor: theme.palette.record.subSample.lighter,
+  backgroundColor: theme.palette.hover.tableRow,
   color: darken(theme.palette.record.subSample.bg, 0.9),
   padding: theme.spacing(0, 1),
   marginBottom: theme.spacing(1),
