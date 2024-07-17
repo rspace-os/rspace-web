@@ -1,7 +1,6 @@
 /** RSpace Inventory API Access your RSpace Inventory programmatically. */
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -63,7 +62,6 @@ import org.springframework.web.util.UriComponentsBuilder;
   "subSamples",
   "_links"
 })
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ApiSampleWithFullSubSamples extends ApiSampleWithoutSubSamples {
 
   @JsonProperty("subSamples")
