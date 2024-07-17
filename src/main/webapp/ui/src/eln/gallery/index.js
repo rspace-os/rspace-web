@@ -5,7 +5,12 @@ import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { ThemeProvider, styled, lighten } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
-import { COLOR, SELECTED_OR_FOCUS_BLUE } from "./common";
+import {
+  COLOR,
+  SELECTED_OR_FOCUS_BLUE,
+  parseGallerySectionFromUrlSearchParams,
+  GALLERY_SECTION,
+} from "./common";
 import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
@@ -18,22 +23,20 @@ import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
-import {
-  BrowserRouter,
-  Navigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom";
+import { BrowserRouter, Navigate, useSearchParams } from "react-router-dom";
 import { Routes, Route } from "react-router";
 
 const WholePage = styled(() => {
   const [searchParams] = useSearchParams();
   const [selectedSection, setSelectedSection] = React.useState(
-    searchParams.get("mediaType") ?? "Images"
+    parseGallerySectionFromUrlSearchParams(searchParams).orElse(
+      GALLERY_SECTION.IMAGES
+    )
   );
   React.useEffect(() => {
-    const mediaType = searchParams.get("mediaType");
-    if (mediaType) setSelectedSection(mediaType);
+    parseGallerySectionFromUrlSearchParams(searchParams).do((mediaType) => {
+      setSelectedSection(mediaType);
+    });
   }, [searchParams]);
 
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
