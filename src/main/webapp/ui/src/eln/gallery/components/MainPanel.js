@@ -938,8 +938,6 @@ type GalleryMainPanelArgs = {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
     | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}>,
-  selectedFile: null | GalleryFile,
-  setSelectedFile: (null | GalleryFile) => void,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
   sortOrder: "DESC" | "ASC",

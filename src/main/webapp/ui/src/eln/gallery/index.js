@@ -50,9 +50,6 @@ const WholePage = styled(() => {
       orderBy,
       sortOrder,
     });
-  const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
-    null
-  );
   const viewport = useViewportDimensions();
   const [drawerOpen, setDrawerOpen] = React.useState(!viewport.isViewportSmall);
 
@@ -87,8 +84,6 @@ const WholePage = styled(() => {
             path={path}
             clearPath={clearPath}
             galleryListing={galleryListing}
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
             folderId={folderId}
             refreshListing={refreshListing}
             key={null}
