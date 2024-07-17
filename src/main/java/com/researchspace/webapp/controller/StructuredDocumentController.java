@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.RSPACTAGS_FORSL__;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAllowBioOntologies;
+import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
 import static com.researchspace.session.SessionAttributeUtils.BATCH_WORDIMPORT_PROGRESS;
 import static java.lang.String.format;
 import static org.apache.commons.io.FilenameUtils.getExtension;
@@ -578,10 +579,8 @@ public class StructuredDocumentController extends BaseController {
     boolean inventoryEnabled = systemPropertyMgr.isPropertyAllowed(user, "inventory.available");
     model.addAttribute("dmpEnabled", isDMPEnabled(user));
     model.addAttribute("inventoryAvailable", inventoryEnabled);
-    boolean ontologiesEnforced = user.getGroups().stream().anyMatch(Group::isEnforceOntologies);
-    model.addAttribute("enforce_ontologies", ontologiesEnforced);
+    model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));
-    log.debug("enforce_ontologies: " + ontologiesEnforced);
     String view =
         msTeamsDocView
             ? STRUCTURED_DOCUMENT_MS_TEAMS_SIMPLE_VIEW_NAME
@@ -1178,6 +1177,9 @@ public class StructuredDocumentController extends BaseController {
     }
     model.addAttribute(
         "clientUISettingsPref", getUserPreferenceValue(user, Preference.UI_CLIENT_SETTINGS));
+    model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
+    model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));
+
     return new ModelAndView(STRUCTURED_DOCUMENT_EDITOR_VIEW_NAME);
   }
 

@@ -317,11 +317,14 @@ export function useUserListing(): {|
           >("/system/ajax/removeUserAccount/", {
             userId: id,
           });
-          if (typeof data.error !== "undefined") {
-            throw new Error(data.error.errorMessages[0]);
-          } else {
-            refreshListing();
-          }
+          Parsers.isObject(data)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+            .flatMap(Parsers.isString)
+            .do((exceptionMessage) => {
+              throw new Error(exceptionMessage);
+            });
+          refreshListing();
         } catch (error) {
           if (error.response?.data?.message) {
             const message = error.response.data.message;

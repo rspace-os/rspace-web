@@ -19,8 +19,8 @@
 <script src="<c:url value='/scripts/pages/messaging/notifications.js'/>"></script>
 <script src="<c:url value='/scripts/pages/messaging/messages.js'/>"></script>
 <script>
-const enforceOntologies = ${enforce_ontologies};
-const allowBioOntologies = ${allow_bioOntologies};
+  const enforceOntologies = "${enforce_ontologies}" === "true";
+  const allowBioOntologies = "${allow_bioOntologies}"  === "true";
 </script>
 <div class="mainDocumentView">
   <axt:fileTreeBrowser />

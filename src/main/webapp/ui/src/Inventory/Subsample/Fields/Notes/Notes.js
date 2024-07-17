@@ -6,17 +6,24 @@ import NotesList from "./NotesList";
 import NewNote from "./NewNote";
 import FormControl from "../../../../components/Inputs/FormControl";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
+import FormLabel from "@mui/material/FormLabel";
 
 type NotesArgs = {|
   record: SubSampleModel,
   onErrorStateChange: (boolean) => void,
+  hideLabel?: boolean,
 |};
 
-function Notes({ record, onErrorStateChange }: NotesArgs): Node {
+function Notes({
+  record,
+  onErrorStateChange,
+  hideLabel = false,
+}: NotesArgs): Node {
   return (
     <FormControl>
+      {!hideLabel && <FormLabel>Notes</FormLabel>}
       {record.isFieldVisible("notes") && <NotesList record={record} />}
-      {record.isFieldEditable("notes") && record.isFieldVisible("notes") && (
+      {record.isFieldVisible("notes") && (
         <NewNote record={record} onErrorStateChange={onErrorStateChange} />
       )}
     </FormControl>

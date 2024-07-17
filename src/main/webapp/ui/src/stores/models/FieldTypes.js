@@ -82,7 +82,7 @@ export const fieldTypeToApiString = (fieldType: FieldType): string => {
 };
 
 export const apiStringToFieldType = (apiString: string): FieldType => {
-  const map = {
+  const map: {[string]: symbol} = {
     choice: FieldTypes.choice,
     date: FieldTypes.date,
     number: FieldTypes.number,

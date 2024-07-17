@@ -92,14 +92,12 @@ const useStyles = makeStyles()(() => ({
 function getLinkToOmero(item: OmeroItem, omero_web_url: string) {
   if (item.type !== "plateAcquisition") {
     return omero_web_url + "webclient/?show=" + item.type + "-" + item.id;
-  } else {
-    if (!item.fake) {
-      //fake plate acquisitions use the plate ID
-      return omero_web_url + "webclient/?show=acquisition-" + item.id;
-    } else {
-      return omero_web_url + "webclient/?show=plate-" + item.id;
-    }
   }
+  if (!item.fake) {
+    //fake plate acquisitions use the plate ID
+    return omero_web_url + "webclient/?show=acquisition-" + item.id;
+  }
+  return omero_web_url + "webclient/?show=plate-" + item.id;
 }
 
 /**
@@ -389,6 +387,7 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                             <>
                               {item.imageGridDetails.map((wellList) =>
                                 wellList.map((wells) => (
+                                  // $FlowExpectedError[prop-missing]
                                   <div key={wells[0].props["data-testid"]}>
                                     {wells}
                                   </div>

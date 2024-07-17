@@ -94,6 +94,9 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${jove.api.url}")
   private String joveApiUrl;
 
+  @Value("${sysadmin.delete.user}")
+  private String sysadminDeleteUser;
+
   /**
    * Service to return the value of property stored in the deployment.properties file. Uses a
    * whitelist strategy to only return properties that should be exposed.
@@ -105,8 +108,7 @@ public class DeploymentPropertiesController extends BaseController {
   @GetMapping("/ajax/property")
   @IgnoreInLoggingInterceptor(ignoreAll = true)
   @ResponseBody
-  public String getPropertyValue(
-      @RequestParam(value = "name", required = true) String propertyName) {
+  public String getPropertyValue(@RequestParam(value = "name") String propertyName) {
     // managed props e.g. for RSPAC-861
     List<SystemPropertyValue> dbProperties = sysPropertyMgr.getAllSysadminProperties();
     for (SystemPropertyValue spv : dbProperties) {
@@ -161,6 +163,8 @@ public class DeploymentPropertiesController extends BaseController {
         return googleDriveClientId;
       case "aspose.enabled":
         return String.valueOf(isAsposeEnabled());
+      case "sysadmin.delete.user":
+        return sysadminDeleteUser;
       default:
         throw new IllegalArgumentException("No property available for name: " + propertyName);
     }

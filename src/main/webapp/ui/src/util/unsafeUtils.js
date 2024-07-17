@@ -9,6 +9,7 @@
 export const pick =
   (...props: Array<string>): ((any) => any) =>
   (o: { ... }): { ... } =>
+    // $FlowExpectedError[invalid-computed-prop]
     props.reduce((a, e) => ({ ...a, [e]: o[e] }), {});
 
 // navigate tree of JSON objects using a period-delimited string
@@ -21,7 +22,9 @@ export const traverseObjectTree = (
   let o = obj;
   const path = prop.split(".");
   for (let i = 0; i < path.length; i++) {
+    // $FlowExpectedError[invalid-computed-prop]
     if (typeof obj[path[i]] === "undefined") return defval;
+    // $FlowExpectedError[invalid-computed-prop]
     o = o[path[i]];
   }
   return obj;

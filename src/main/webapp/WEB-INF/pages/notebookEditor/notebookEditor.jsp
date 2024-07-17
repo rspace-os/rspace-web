@@ -27,8 +27,8 @@
         </c:if>
       </rst:hasDeploymentProperty>
       <script>
-      const enforceOntologies = ${enforce_ontologies};
-      const allowBioOntologies = ${allow_bioOntologies};
+        const enforceOntologies = "${enforce_ontologies}" === "true";
+        const allowBioOntologies = "${allow_bioOntologies}"  === "true";
       </script>
       <!-- Has a hidden input field with template name. '.createDocument' => the action URL will be updated when the displayed folder is refreshed  -->
       <form id='createPopularSD' class="createDocument" method='POST' action="${createFromTemplateURL}"></form>

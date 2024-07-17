@@ -24,7 +24,6 @@ import {
 import {
   type HasEditableFields,
   type HasUneditableFields,
-  type OptionalString,
 } from "../definitions/Editable";
 import {
   type InventoryRecord,
@@ -555,8 +554,7 @@ export default class ContainerModel
     | {|
         id: number,
         deleteLocationRequest: boolean,
-      |}
-  > {
+      |}> {
     const locationModelToObject = pick("id", "coordX", "coordY");
 
     const locations = this.locations;
@@ -1064,8 +1062,8 @@ export default class ContainerModel
     return true;
   }
 
-  get noValueLabel(): $ObjMap<ContainerEditableFields, OptionalString> &
-    $ObjMap<ContainerUneditableFields, OptionalString> {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof ContainerEditableFields]: ?string} & {[key in keyof ContainerUneditableFields]: ?string} {
     return {
       ...super.noValueLabel,
       location: null,
@@ -1144,9 +1142,8 @@ export class ContainerCollection
     return super.fieldValues;
   }
 
-  get noValueLabel(): {
-    ...$ObjMap<BatchContainerEditableFields, OptionalString>,
-  } {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof BatchContainerEditableFields]: ?string} {
     return super.noValueLabel;
   }
 

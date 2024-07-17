@@ -46,7 +46,7 @@ export default class CacheFetcher
     // do nothing; status filter is not allowed in grid and image view
   }
 
-  setPage(pageNumber: number): void {
+  async setPage(pageNumber: number): Promise<void> {
     this.pageNumber = pageNumber;
   }
 

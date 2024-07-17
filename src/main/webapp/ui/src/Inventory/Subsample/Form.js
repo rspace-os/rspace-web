@@ -270,6 +270,7 @@ const NotesSection = observer(
           onErrorStateChange={(value) =>
             setFormSectionError(formSectionError, "notes", value)
           }
+          hideLabel
         />
       </StepperPanel>
     );

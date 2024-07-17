@@ -2,7 +2,7 @@
 
 import React, { type Node, type ComponentType } from "react";
 import Fade from "@mui/material/Fade";
-import { COLOR, SELECTED_OR_FOCUS_BORDER } from "../common";
+import { COLOR, SELECTED_OR_FOCUS_BORDER, type GallerySection } from "../common";
 import { styled } from "@mui/material/styles";
 import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
@@ -58,7 +58,7 @@ const CustomTransition = styled(({ children, in: open, className }) => (
 type TreeItemContentArgs = {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
-  section: string,
+  section: GallerySection,
   idMap: Map<string, GalleryFile>,
   refreshListing: () => void,
   filter: (GalleryFile) => boolean,
@@ -143,7 +143,7 @@ const CustomTreeItem = observer(
     file: GalleryFile,
     index: number,
     path: $ReadOnlyArray<GalleryFile>,
-    section: string,
+    section: GallerySection,
     idMap: Map<string, GalleryFile>,
     refreshListing: () => void,
     filter: (GalleryFile) => boolean,
@@ -302,11 +302,10 @@ const CustomTreeItem = observer(
 );
 
 type TreeViewArgs = {|
-  listing:
-    | {| tag: "empty", reason: string |}
+  listing: | {| tag: "empty", reason: string |}
     | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
   path: $ReadOnlyArray<GalleryFile>,
-  selectedSection: string,
+  selectedSection: GallerySection,
   refreshListing: () => void,
   filter?: (GalleryFile) => boolean,
   disableDragAndDrop?: boolean,

@@ -31,7 +31,7 @@ describe("action: setBench", () => {
           Promise.resolve({ data: { containers: [] } })
         );
 
-      search.setPage(1);
+      void search.setPage(1);
       expect(querySpy).toHaveBeenCalledTimes(1);
       expect(querySpy).toHaveBeenCalledWith(
         "containers",

@@ -3,7 +3,7 @@
 import React, { type Node, type ComponentType } from "react";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import Button from "@mui/material/Button";
-import { COLOR } from "../common";
+import { COLOR, type GallerySection } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import { styled, useTheme, darken, lighten } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
@@ -113,7 +113,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 
 type ActionsMenuArgs = {|
   refreshListing: () => void,
-  section: string,
+  section: GallerySection,
 |};
 
 function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
