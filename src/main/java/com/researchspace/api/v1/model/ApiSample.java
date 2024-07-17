@@ -1,8 +1,8 @@
 /** RSpace Inventory API Access your RSpace Inventory programmatically. */
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
@@ -58,20 +58,19 @@ import org.springframework.web.util.UriComponentsBuilder;
   "fields",
   "extraFields",
   "subSamples",
-  "subSamplesIntoContainer",
+  "subSamplesInContainer",
   "_links"
 })
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ApiSample extends ApiSampleWithoutSubSamples {
 
   @JsonProperty("subSamples")
   private List<ApiSubSampleInfo> subSamples = new LinkedList<>();
 
-  @JsonProperty("subSamplesIntoContainer")
-  private List<ApiSubSampleInfo> subSamplesIntoContainer = new LinkedList<>();
+  @JsonProperty(value = "subSamplesInContainer", access = Access.READ_ONLY)
+  private List<ApiSubSampleInfo> subSamplesInContainer = new LinkedList<>();
 
-  /* this will be `true` only when `subSamplesIntoContainer` is null or empty */
-  @JsonProperty("canBeDeleted")
+  /* this will be `true` only when `subSamplesInContainer` is null or empty */
+  @JsonProperty(value = "canBeDeleted", access = Access.READ_ONLY)
   private Boolean canBeDeleted;
 
   public ApiSample(Sample sample) {
@@ -81,10 +80,10 @@ public class ApiSample extends ApiSampleWithoutSubSamples {
       ApiSubSampleInfo subSampInfo = new ApiSubSampleInfo(subSample);
       this.subSamples.add(subSampInfo);
       if (subSample.isStoredInContainer()) {
-        this.subSamplesIntoContainer.add(subSampInfo);
+        this.subSamplesInContainer.add(subSampInfo);
       }
     }
-    this.canBeDeleted = this.subSamplesIntoContainer.isEmpty();
+    this.canBeDeleted = this.subSamplesInContainer.isEmpty();
   }
 
   @Override

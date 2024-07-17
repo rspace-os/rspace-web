@@ -870,7 +870,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiSample sampleCannotBeDeleted = getFromJsonResponseBody(deleteResult, ApiSample.class);
     assertFalse(sampleCannotBeDeleted.getCanBeDeleted());
-    assertEquals(1, sampleCannotBeDeleted.getSubSamplesIntoContainer().size());
+    assertEquals(1, sampleCannotBeDeleted.getSubSamplesInContainer().size());
     verifyAuditAction(AuditAction.DELETE, 0);
 
     // delete sample with forceDelete=true

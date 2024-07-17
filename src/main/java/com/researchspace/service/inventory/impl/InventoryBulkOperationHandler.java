@@ -117,7 +117,6 @@ public class InventoryBulkOperationHandler {
           }
           ApiInventoryRecordInfo operationResult = operation.apply(recInfo, user);
           if (operationResult != null) {
-            /* manage Sample deletion */
             if (operationResult.getClass().isInstance(ApiSample.class)) {
               ApiSample apiSample = (ApiSample) operationResult;
               if (!apiSample.getCanBeDeleted()) {
@@ -126,8 +125,7 @@ public class InventoryBulkOperationHandler {
                         HttpStatus.NOT_ACCEPTABLE,
                         ApiErrorCodes.CONSTRAINT_VIOLATION.getCode(),
                         "Errors detected : 1",
-                        "The Sample had got at least one active Subsample(s) located in a"
-                            + " container");
+                        "The Sample has at least one Subsample located inside a container");
                 result.addErrorWithRecord(operationResult, err);
                 continue;
               }

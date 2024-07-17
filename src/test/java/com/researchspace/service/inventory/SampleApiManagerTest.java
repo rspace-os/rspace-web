@@ -582,7 +582,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // try deleting without forceDelete flag
     ApiSample apiSample = sampleApiMgr.markSampleAsDeleted(newSample.getId(), false, testUser);
     assertFalse(apiSample.getCanBeDeleted());
-    assertEquals(1, apiSample.getSubSamplesIntoContainer().size());
+    assertEquals(1, apiSample.getSubSamplesInContainer().size());
     listContainer = containerApiMgr.getApiContainerById(listContainer.getId(), testUser);
     assertEquals(1, listContainer.getContentSummary().getTotalCount());
     Mockito.verify(mockPublisher, Mockito.never())
