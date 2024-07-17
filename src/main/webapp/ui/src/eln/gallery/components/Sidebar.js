@@ -4,7 +4,7 @@ import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import { styled } from "@mui/material/styles";
-import { COLOR, gallerySectionLabel } from "../common";
+import { COLOR, gallerySectionLabel, type GallerySection } from "../common";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItem from "@mui/material/ListItem";
@@ -407,7 +407,7 @@ const DrawerTab = styled(
 }));
 
 type SidebarArgs = {|
-  selectedSection: string,
+  selectedSection: GallerySection,
   setSelectedSection: (string) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,
@@ -423,6 +423,7 @@ const offsets = {
   Documents: 137,
   Chemistry: 180,
   DMPs: 223,
+  NetworkFiles: null,
   Snippets: 266,
   Miscellaneous: 309,
   PdfDocuments: 372,
