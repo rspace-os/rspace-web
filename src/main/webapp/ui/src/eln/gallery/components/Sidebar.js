@@ -4,7 +4,12 @@ import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import { styled } from "@mui/material/styles";
-import { COLOR, gallerySectionLabel, type GallerySection } from "../common";
+import {
+  COLOR,
+  gallerySectionLabel,
+  type GallerySection,
+  GALLERY_SECTION,
+} from "../common";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItem from "@mui/material/ListItem";
@@ -417,16 +422,16 @@ type SidebarArgs = {|
 |};
 
 const offsets = {
-  Images: 8,
-  Audios: 51,
-  Videos: 94,
-  Documents: 137,
-  Chemistry: 180,
-  DMPs: 223,
-  NetworkFiles: null,
-  Snippets: 266,
-  Miscellaneous: 309,
-  PdfDocuments: 372,
+  [GALLERY_SECTION.IMAGES]: 8,
+  [GALLERY_SECTION.AUDIOS]: 51,
+  [GALLERY_SECTION.VIDEOS]: 94,
+  [GALLERY_SECTION.DOCUMENTS]: 137,
+  [GALLERY_SECTION.CHEMISTRY]: 180,
+  [GALLERY_SECTION.DMPS]: 223,
+  [GALLERY_SECTION.NETWORKFILES]: null,
+  [GALLERY_SECTION.SNIPPETS]: 266,
+  [GALLERY_SECTION.MISCELLANEOUS]: 309,
+  [GALLERY_SECTION.PDFDOCUMENTS]: 372,
 };
 
 const Sidebar = ({
