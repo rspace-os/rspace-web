@@ -509,6 +509,12 @@ export default class Search implements SearchInterface {
       // e.g. sample's quantity may have changed
       this.refetchActiveResult(deletedGlobalIds);
     }
+
+    if (searchStore.activeResult instanceof ContainerModel) {
+      const cont = searchStore.activeResult;
+      if (cont.state === "preview") await cont.fetchAdditionalInfo();
+      cont.refreshAssociatedSearch();
+    }
   }
 
   offerToDeleteNowEmptySamples(deletedRecords: Array<InventoryRecord>) {
