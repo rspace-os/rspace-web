@@ -11,6 +11,7 @@ import {
   filenameExceptExtension,
   justFilenameExtension,
 } from "../../util/files";
+import { useGallerySelection } from "./useGallerySelection";
 
 export opaque type Id = number;
 export function idToString(id: Id): string {
@@ -195,6 +196,7 @@ export function useGalleryListing({
     defaultPath ?? []
   );
   const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([]));
+  const selection = useGallerySelection();
 
   function emptyReason(): string {
     if (path.length > 0) {
@@ -261,6 +263,7 @@ export function useGalleryListing({
   }
 
   async function getGalleryFiles(): Promise<void> {
+    selection.clear();
     setGalleryListing([]);
     setLoading(true);
     try {
