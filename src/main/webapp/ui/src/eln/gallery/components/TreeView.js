@@ -2,7 +2,11 @@
 
 import React, { type Node, type ComponentType } from "react";
 import Fade from "@mui/material/Fade";
-import { COLOR, SELECTED_OR_FOCUS_BORDER, type GallerySection } from "../common";
+import {
+  COLOR,
+  SELECTED_OR_FOCUS_BORDER,
+  type GallerySection,
+} from "../common";
 import { styled } from "@mui/material/styles";
 import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
@@ -189,12 +193,13 @@ const CustomTreeItem = observer(
       },
     });
     const dndContext = useDndContext();
+    const dndInProgress = Boolean(dndContext.active);
 
     const dragStyle: { [string]: string | number } = transform
       ? {
           transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
-          zIndex: 1, // just needs to be rendered above Nodes later in the DOM
-          position: "relative",
+          zIndex: 1400, // Above the sidebar
+          position: "fixed",
           boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
           maxWidth: "max-content",
         }
@@ -202,6 +207,11 @@ const CustomTreeItem = observer(
     const dropStyle: { [string]: string | number } = isOver
       ? {
           border: SELECTED_OR_FOCUS_BORDER,
+        }
+      : dndInProgress && file.isFolder
+      ? {
+          border: "2px solid white",
+          animation: "drop 2s linear infinite",
         }
       : {
           border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
@@ -360,6 +370,7 @@ const TreeView = ({
     );
   return (
     <SimpleTreeView
+      sx={{ maxWidth: `calc(100% - 200px)` }}
       expandedItems={expandedItems}
       onExpandedItemsChange={(_event, nodeIds) => {
         setExpandedItems(nodeIds);

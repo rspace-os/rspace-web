@@ -3,9 +3,14 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider, styled, lighten } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
-import { COLOR } from "./common";
+import {
+  COLOR,
+  SELECTED_OR_FOCUS_BLUE,
+  parseGallerySectionFromUrlSearchParams,
+  GALLERY_SECTION,
+} from "./common";
 import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
@@ -18,12 +23,25 @@ import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
+import { BrowserRouter, Navigate, useSearchParams } from "react-router-dom";
+import { Routes, Route } from "react-router";
 
-function WholePage() {
+const WholePage = styled(() => {
+  const [searchParams] = useSearchParams();
+  const [selectedSection, setSelectedSection] = React.useState(
+    parseGallerySectionFromUrlSearchParams(searchParams).orElse(
+      GALLERY_SECTION.IMAGES
+    )
+  );
+  React.useEffect(() => {
+    parseGallerySectionFromUrlSearchParams(searchParams).do((mediaType) => {
+      setSelectedSection(mediaType);
+    });
+  }, [searchParams]);
+
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [orderBy, setOrderBy] = React.useState("name");
   const [sortOrder, setSortOrder] = React.useState("ASC");
-  const [selectedSection, setSelectedSection] = React.useState("Images");
   const { galleryListing, path, clearPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
@@ -32,9 +50,6 @@ function WholePage() {
       orderBy,
       sortOrder,
     });
-  const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
-    null
-  );
   const viewport = useViewportDimensions();
   const [drawerOpen, setDrawerOpen] = React.useState(!viewport.isViewportSmall);
 
@@ -69,8 +84,6 @@ function WholePage() {
             path={path}
             clearPath={clearPath}
             galleryListing={galleryListing}
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
             folderId={folderId}
             refreshListing={refreshListing}
             key={null}
@@ -83,7 +96,19 @@ function WholePage() {
       </Box>
     </Alerts>
   );
-}
+})(() => ({
+  "@keyframes drop": {
+    "0%": {
+      borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
+    },
+    "50%": {
+      borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.8),
+    },
+    "100%": {
+      borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
+    },
+  },
+}));
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
@@ -94,18 +119,31 @@ window.addEventListener("load", () => {
     root.render(
       <React.StrictMode>
         <ErrorBoundary>
-          <StyledEngineProvider injectFirst>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(COLOR)}>
-              <Analytics>
-                <DisableDragAndDropByDefault>
-                  <GallerySelection>
-                    <WholePage />
-                  </GallerySelection>
-                </DisableDragAndDropByDefault>
-              </Analytics>
-            </ThemeProvider>
-          </StyledEngineProvider>
+          <BrowserRouter>
+            <StyledEngineProvider injectFirst>
+              <CssBaseline />
+              <ThemeProvider theme={createAccentedTheme(COLOR)}>
+                <Analytics>
+                  <DisableDragAndDropByDefault>
+                    <Routes>
+                      <Route
+                        path="/newGallery"
+                        element={
+                          <GallerySelection>
+                            <WholePage />
+                          </GallerySelection>
+                        }
+                      />
+                      <Route
+                        path="*"
+                        element={<Navigate to="/newGallery" replace />}
+                      />
+                    </Routes>
+                  </DisableDragAndDropByDefault>
+                </Analytics>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </BrowserRouter>
         </ErrorBoundary>
       </React.StrictMode>
     );

@@ -1,8 +1,10 @@
 //@flow
 
 import { COLORS as baseThemeColors } from "../../theme";
+import Result from "../../util/result";
+import * as Parsers from "../../util/parsers";
 
-export type GallerySection = 
+export type GallerySection =
   | "Images"
   | "Audios"
   | "Videos"
@@ -12,7 +14,41 @@ export type GallerySection =
   | "NetworkFiles"
   | "Snippets"
   | "Miscellaneous"
-  | "PdfDocuments"
+  | "PdfDocuments";
+
+export const GALLERY_SECTION = {
+  IMAGES: "Images",
+  AUDIOS: "Audios",
+  VIDEOS: "Videos",
+  DOCUMENTS: "Documents",
+  CHEMISTRY: "Chemistry",
+  DMPS: "DMPs",
+  NETWORKFILES: "NetworkFiles",
+  SNIPPETS: "Snippets",
+  MISCELLANEOUS: "Miscellaneous",
+  PDFDOCUMENTS: "PdfDocuments",
+};
+
+export const parseGallerySectionFromUrlSearchParams = (
+  searchParams: URLSearchParams
+): Result<GallerySection> =>
+  Result.fromNullable(
+    searchParams.get("mediaType"),
+    new Error("No search parameter with name 'mediaType'")
+  ).flatMap((mediaType) =>
+    Result.first(
+      Parsers.parseString(GALLERY_SECTION.IMAGES, mediaType),
+      Parsers.parseString(GALLERY_SECTION.AUDIOS, mediaType),
+      Parsers.parseString(GALLERY_SECTION.VIDEOS, mediaType),
+      Parsers.parseString(GALLERY_SECTION.DOCUMENTS, mediaType),
+      Parsers.parseString(GALLERY_SECTION.CHEMISTRY, mediaType),
+      Parsers.parseString(GALLERY_SECTION.DMPS, mediaType),
+      Parsers.parseString(GALLERY_SECTION.NETWORKFILES, mediaType),
+      Parsers.parseString(GALLERY_SECTION.SNIPPETS, mediaType),
+      Parsers.parseString(GALLERY_SECTION.MISCELLANEOUS, mediaType),
+      Parsers.parseString(GALLERY_SECTION.PDFDOCUMENTS, mediaType)
+    )
+  );
 
 export const gallerySectionLabel = {
   Images: "Images",

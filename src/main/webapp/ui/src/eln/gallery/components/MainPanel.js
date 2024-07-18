@@ -2,22 +2,20 @@
 
 import React, {
   type Node,
-  Children,
-  type ElementConfig,
   type ComponentType,
+  type Ref,
+  type ElementConfig,
 } from "react";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
-import Breadcrumbs from "@mui/material/Breadcrumbs";
-import Chip from "@mui/material/Chip";
 import Fade from "@mui/material/Fade";
 import {
   gallerySectionLabel,
   COLOR,
   SELECTED_OR_FOCUS_BORDER,
   SELECTED_OR_FOCUS_BLUE,
-  type GallerySection
+  type GallerySection,
 } from "../common";
 import { styled } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
@@ -66,6 +64,249 @@ import SwapVertIcon from "@mui/icons-material/SwapVert";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import TextField from "@mui/material/TextField";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+import Link from "@mui/material/Link";
+import { Link as ReactRouterLink } from "react-router-dom";
+import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
+import Box from "@mui/material/Box";
+import Fab from "@mui/material/Fab";
+
+const DragCancelFab = () => {
+  const dndContext = useDndContext();
+  const dndInProgress = Boolean(dndContext.active);
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: "cancel",
+    disabled: false,
+    data: null,
+  });
+  const dropStyle: { [string]: string | number } = isOver
+    ? {
+        border: SELECTED_OR_FOCUS_BORDER,
+      }
+    : {
+        border: "2px solid white",
+        animation: "drop 2s linear infinite",
+      };
+  return (
+    <>
+      {dndInProgress && (
+        <div
+          style={{
+            position: "fixed",
+            right: "16px",
+            bottom: "16px",
+          }}
+        >
+          <Fab
+            variant="extended"
+            color="primary"
+            ref={(node) => {
+              setDropRef(node);
+            }}
+            style={dropStyle}
+          >
+            Cancel
+          </Fab>
+        </div>
+      )}
+    </>
+  );
+};
+
+const BreadcrumbLink = React.forwardRef<
+  ElementConfig<typeof Link>,
+  null | typeof Link
+>(
+  (
+    {
+      folder,
+      section,
+      clearPath,
+      tabIndex,
+    }: {|
+      folder?: GalleryFile,
+      section: string,
+      clearPath: () => void,
+      tabIndex: number,
+    |},
+    ref:
+      | null
+      | { -current: null | Ref<typeof Link> }
+      | ((null | Ref<typeof Link>) => mixed)
+  ) => {
+    const { setNodeRef: setDropRef, isOver } = useDroppable({
+      id: `/${[
+        section,
+        ...(folder?.path.map(({ name }) => name) ?? []),
+        folder?.name ?? "",
+      ].join("/")}/`,
+      disabled: false,
+      data: {
+        path: folder?.path ?? [],
+        destination: folder ? folderDestination(folder) : rootDestination(),
+      },
+    });
+    const dndContext = useDndContext();
+    const dndInProgress = Boolean(dndContext.active);
+    const dropStyle: { [string]: string | number } = isOver
+      ? {
+          border: SELECTED_OR_FOCUS_BORDER,
+        }
+      : dndInProgress
+      ? {
+          border: "2px solid white",
+          borderWidth: "2px",
+          animation: "drop 2s linear infinite",
+        }
+      : {
+          border: "2px solid transparent",
+        };
+    return (
+      <Link
+        component={ReactRouterLink}
+        to={""}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          (folder?.open ?? clearPath)();
+        }}
+        ref={(node) => {
+          setDropRef(node);
+          if (!ref) return;
+          if (typeof ref === "function") ref(node);
+          else ref.current = node;
+        }}
+        style={{
+          ...dropStyle,
+          borderRadius: "6px",
+          paddingLeft: "1px",
+          paddingRight: "1px",
+          paddingTop: "1px",
+          fontSize: "0.885rem",
+        }}
+        tabIndex={tabIndex}
+      >
+        {folder?.name ?? section}
+      </Link>
+    );
+  }
+);
+
+const Path = styled(({ className, section, path, clearPath }) => {
+  const str = ArrayUtils.last(path)
+    .map((folder) => folder.pathAsString())
+    .orElse(`/${section}/`);
+  const [hasFocus, setHasFocus] = React.useState(false);
+  const textFieldRef = React.useRef(null);
+  const sectionLink = React.useRef(null);
+  const {
+    eventHandlers: { onFocus, onBlur, onKeyDown },
+    getTabIndex,
+    getRef,
+  } = useOneDimensionalRovingTabIndex<typeof Link>({
+    max: path.length,
+    direction: "row",
+  });
+
+  return (
+    <div
+      onBlur={onBlur}
+      onFocus={onFocus}
+      onKeyDown={(e) => {
+        onKeyDown(e);
+      }}
+      style={{ position: "relative" }}
+    >
+      <TextField
+        className={className}
+        value={hasFocus ? str : ""}
+        onChange={() => {}}
+        fullWidth
+        size="small"
+        onFocus={() => {
+          setHasFocus(true);
+        }}
+        onBlur={() => {
+          setHasFocus(false);
+        }}
+        onKeyDown={(e) => {
+          /*
+           * This ensures keyboard users can tab through both the textfield
+           * for copying the path and the links.
+           */
+          if (e.key === "Tab" && !e.shiftKey) {
+            e.stopPropagation();
+            setHasFocus(false);
+            setTimeout(() => {
+              sectionLink.current?.focus();
+            }, 0);
+          }
+        }}
+        inputProps={{
+          ref: textFieldRef,
+          style: {
+            paddingTop: "5px",
+            paddingBottom: "5px",
+          },
+        }}
+      />
+      {/*
+       * These two divs create a horizonally scrolling box without a scrollbar,
+       * mimicing the standard behaviour of a text field.
+       */}
+      {!hasFocus && (
+        <div
+          style={{
+            width: "calc(100% - 16px)",
+            position: "absolute",
+            top: "2px",
+            right: "8px",
+            overflow: "hidden",
+          }}
+        >
+          <Stack
+            onClick={() => {
+              textFieldRef.current?.focus();
+            }}
+            direction="row"
+            spacing={0.25}
+            sx={{
+              whiteSpace: "nowrap",
+              overflowX: "auto",
+              marginBottom: "-50px",
+              paddingBottom: "50px",
+              cursor: "text",
+            }}
+          >
+            <BreadcrumbLink
+              section={section}
+              clearPath={clearPath}
+              ref={getRef(0)}
+              tabIndex={getTabIndex(0)}
+            />
+            {path.map((f, i) => (
+              <>
+                <span>›</span>
+                <BreadcrumbLink
+                  folder={f}
+                  section={section}
+                  clearPath={clearPath}
+                  ref={getRef(i + 1)}
+                  tabIndex={getTabIndex(i + 1)}
+                />
+              </>
+            ))}
+          </Stack>
+        </div>
+      )}
+    </div>
+  );
+})(() => ({
+  "& input": {
+    height: "21px",
+  },
+}));
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -172,95 +413,12 @@ const ImportDropzone = styled(
   },
 }));
 
-const Breadcrumb = ({
-  label,
-  onClick,
-  path,
-  selectedSection,
-  folder,
-}: {|
-  label: string,
-  onClick: () => void,
-  path: $ReadOnlyArray<GalleryFile>,
-  selectedSection: string,
-  folder?: GalleryFile,
-|}) => {
-  const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: `/${[
-      selectedSection,
-      ...path.map(({ name }) => name),
-      folder?.name ?? "",
-    ].join("/")}/`,
-    disabled: false,
-    data: {
-      path,
-      destination: folder ? folderDestination(folder) : rootDestination(),
-    },
-  });
-  const dropStyle: { [string]: string | number } = isOver
-    ? {
-        border: SELECTED_OR_FOCUS_BORDER,
-      }
-    : {
-        border: "2px solid white",
-      };
-
-  return (
-    <Chip
-      ref={(node) => {
-        setDropRef(node);
-      }}
-      style={{
-        ...dropStyle,
-      }}
-      size="small"
-      clickable
-      label={label}
-      onClick={onClick}
-      sx={{ mt: 0.5 }}
-    />
-  );
-};
-
-const CustomBreadcrumbs = ({
-  children,
-  ...props
-}: ElementConfig<typeof Breadcrumbs>) => {
-  const [open, setOpen] = React.useState(false);
-  let contents = Children.toArray<typeof Breadcrumb | typeof Chip>(children);
-  if (!open && contents.length > 2) {
-    contents = [
-      contents[0],
-      <Chip
-        size="small"
-        clickable
-        label="..."
-        sx={{ mt: 0.5 }}
-        key="..."
-        onMouseEnter={() => {
-          setOpen(true);
-        }}
-      />,
-      contents[contents.length - 1],
-    ];
-  }
-  return (
-    <Breadcrumbs
-      {...props}
-      onMouseLeave={() => {
-        setOpen(false);
-      }}
-    >
-      {contents}
-    </Breadcrumbs>
-  );
-};
-
 const GridView = observer(
   ({
     listing,
   }: {|
-    listing: | {| tag: "empty", reason: string |}
+    listing:
+      | {| tag: "empty", reason: string |}
       | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
   |}) => {
     const dndContext = useDndContext();
@@ -548,18 +706,26 @@ const FileCard = styled(
       delete attributes.role;
 
       const dndContext = useDndContext();
+      const dndInProgress = Boolean(dndContext.active);
 
       const dragStyle: { [string]: string | number } = transform
         ? {
             transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
-            zIndex: 1, // just needs to be rendered above Nodes later in the DOM
-            position: "relative",
+            zIndex: 1400, // Above the sidebar
+            position: "fixed",
             boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
           }
         : {};
       const dropStyle: { [string]: string | number } = isOver
         ? {
             borderColor: SELECTED_OR_FOCUS_BLUE,
+          }
+        : dndInProgress && file.isFolder
+        ? {
+            border: "2px solid white",
+            borderWidth: "2px",
+            borderRadius: "8px",
+            animation: "drop 2s linear infinite",
           }
         : {};
       const inGroupBeingDraggedStyle: { [string]: string | number } =
@@ -815,9 +981,8 @@ type GalleryMainPanelArgs = {|
   clearPath: () => void,
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}>,
-  selectedFile: null | GalleryFile,
-  setSelectedFile: (null | GalleryFile) => void,
+    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
+  >,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
   sortOrder: "DESC" | "ASC",
@@ -926,40 +1091,63 @@ function GalleryMainPanel({
               </Fade>
             </Typography>
           </Grid>
-          <Grid
-            item
-            container
-            direction="row"
-            justifyContent="space-between"
-            alignItems="flex-start"
-            flexWrap="nowrap"
-          >
-            <Grid item>
-              <CustomBreadcrumbs
-                separator="›"
-                aria-label="breadcrumb"
-                sx={{ mt: 0.5 }}
-              >
-                <Breadcrumb
-                  label={gallerySectionLabel[selectedSection]}
-                  onClick={() => clearPath()}
-                  path={[]}
-                  selectedSection={selectedSection}
+          <Grid item sx={{ marginTop: 0.5 }}>
+            <Stack spacing={0.5}>
+              <Path
+                section={selectedSection}
+                path={path}
+                clearPath={clearPath}
+              />
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <ActionsMenu
+                  refreshListing={refreshListing}
+                  section={selectedSection}
                 />
-                {path.map((folder) => (
-                  <Breadcrumb
-                    folder={folder}
-                    label={folder.name}
-                    key={idToString(folder.id)}
-                    onClick={() => folder.open?.()}
-                    path={folder.path}
-                    selectedSection={selectedSection}
+                <Box sx={{ flexGrow: 1 }}></Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<TreeIcon />}
+                  onClick={(e) => {
+                    setViewMenuAnchorEl(e.target);
+                  }}
+                  aria-haspopup="menu"
+                >
+                  Views
+                </Button>
+                <StyledMenu
+                  open={Boolean(viewMenuAnchorEl)}
+                  anchorEl={viewMenuAnchorEl}
+                  onClose={() => setViewMenuAnchorEl(null)}
+                  MenuListProps={{
+                    disablePadding: true,
+                  }}
+                >
+                  <NewMenuItem
+                    title="Grid"
+                    subheader="Browse by thumbnail previews"
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={<GridIcon />}
+                    onClick={() => {
+                      setViewMode("grid");
+                      setViewMenuAnchorEl(null);
+                      selection.clear();
+                    }}
                   />
-                ))}
-              </CustomBreadcrumbs>
-            </Grid>
-            <Grid item sx={{ mt: 0.5 }}>
-              <Stack direction="row" spacing={1}>
+                  <NewMenuItem
+                    title="Tree"
+                    subheader="View and manage folder hierarchy"
+                    backgroundColor={COLOR.background}
+                    foregroundColor={COLOR.contrastText}
+                    avatar={<TreeIcon />}
+                    onClick={() => {
+                      setViewMode("tree");
+                      setViewMenuAnchorEl(null);
+                      selection.clear();
+                    }}
+                  />
+                </StyledMenu>
                 <Button
                   variant="outlined"
                   size="small"
@@ -1065,56 +1253,8 @@ function GalleryMainPanel({
                     }}
                   />
                 </StyledMenu>
-                <ActionsMenu
-                  refreshListing={refreshListing}
-                  section={selectedSection}
-                />
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<TreeIcon />}
-                  onClick={(e) => {
-                    setViewMenuAnchorEl(e.target);
-                  }}
-                  aria-haspopup="menu"
-                >
-                  Views
-                </Button>
-                <StyledMenu
-                  open={Boolean(viewMenuAnchorEl)}
-                  anchorEl={viewMenuAnchorEl}
-                  onClose={() => setViewMenuAnchorEl(null)}
-                  MenuListProps={{
-                    disablePadding: true,
-                  }}
-                >
-                  <NewMenuItem
-                    title="Grid"
-                    subheader="Browse by thumbnail previews"
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={<GridIcon />}
-                    onClick={() => {
-                      setViewMode("grid");
-                      setViewMenuAnchorEl(null);
-                      selection.clear();
-                    }}
-                  />
-                  <NewMenuItem
-                    title="Tree"
-                    subheader="View and manage folder hierarchy"
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={<TreeIcon />}
-                    onClick={() => {
-                      setViewMode("tree");
-                      setViewMenuAnchorEl(null);
-                      selection.clear();
-                    }}
-                  />
-                </StyledMenu>
               </Stack>
-            </Grid>
+            </Stack>
           </Grid>
           <Grid
             item
@@ -1151,6 +1291,7 @@ function GalleryMainPanel({
             refreshListing={refreshListing}
           />
         </Slide>
+        <DragCancelFab />
       </DndContext>
     </DialogContent>
   );

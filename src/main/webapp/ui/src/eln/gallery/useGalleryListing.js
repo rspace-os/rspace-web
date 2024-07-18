@@ -11,6 +11,7 @@ import {
   filenameExceptExtension,
   justFilenameExtension,
 } from "../../util/files";
+import { useGallerySelection } from "./useGallerySelection";
 
 export opaque type Id = number;
 export function idToString(id: Id): string {
@@ -129,7 +130,7 @@ function getIconPathForExtension(extension: string) {
       txt: "/images/icons/txt.png",
       text: "/images/icons/txt.png",
       md: "/images/icons/txt.png",
-    }: {[string]: string})[ext] ?? "/images/icons/unknownDocument.png"
+    }: { [string]: string })[ext] ?? "/images/icons/unknownDocument.png"
   );
 }
 
@@ -179,7 +180,8 @@ export function useGalleryListing({
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}>,
+    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
+  >,
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
@@ -194,6 +196,7 @@ export function useGalleryListing({
     defaultPath ?? []
   );
   const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([]));
+  const selection = useGallerySelection();
 
   function emptyReason(): string {
     if (path.length > 0) {
@@ -260,6 +263,7 @@ export function useGalleryListing({
   }
 
   async function getGalleryFiles(): Promise<void> {
+    selection.clear();
     setGalleryListing([]);
     setLoading(true);
     try {
@@ -369,7 +373,7 @@ export function useGalleryListing({
   if (loading)
     return {
       galleryListing: { tag: "loading" },
-      path: [],
+      path,
       clearPath: () => {},
       folderId: { tag: "loading" },
       refreshListing: () => {},
