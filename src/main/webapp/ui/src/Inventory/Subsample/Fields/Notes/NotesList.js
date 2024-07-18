@@ -37,7 +37,7 @@ function NotesList({ record }: NotesListArgs): Node {
         </Divider>
       )}
       <Collapse in={open}>
-        {restOfNotes.toReversed().map((note, i) => (
+        {restOfNotes.map((note, i) => (
           <NoteItem key={i + 2} note={note} />
         ))}
       </Collapse>
