@@ -6,6 +6,7 @@ import NewMenuItem from "../../eln/gallery/components/NewMenuItem";
 import DMPonlineIcon from "../../eln/apps/icons/dmponline.svg";
 import { COLOR } from "../../eln/apps/integrations/DMPonline";
 import CardMedia from "@mui/material/CardMedia";
+import EventBoundary from "../../components/EventBoundary";
 
 type DMPonlineNewMenuItemArgs = {|
   onDialogClose: () => void,
@@ -29,13 +30,15 @@ export default function DMPonlineNewMenuItem({
         }}
         aria-haspopup="dialog"
       />
-      <DMPDialog
-        open={showDMPDialog}
-        setOpen={(b) => {
-          setShowDMPDialog(b);
-          onDialogClose();
-        }}
-      />
+      <EventBoundary>
+        <DMPDialog
+          open={showDMPDialog}
+          setOpen={(b) => {
+            setShowDMPDialog(b);
+            onDialogClose();
+          }}
+        />
+      </EventBoundary>
     </>
   );
 }

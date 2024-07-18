@@ -50,6 +50,7 @@ import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabI
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { observer } from "mobx-react-lite";
 import { autorun } from "mobx";
+import EventBoundary from "../../../components/EventBoundary";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -212,50 +213,52 @@ const NewFolderMenuItem = ({
   const { createFolder } = useGalleryActions();
   return (
     <>
-      <Dialog
-        open={open}
-        onClose={() => {
-          setOpen(false);
-        }}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void createFolder(path, folderId, name).then(() => {
-              onDialogClose(true);
-            });
+      <EventBoundary>
+        <Dialog
+          open={open}
+          onClose={() => {
+            setOpen(false);
           }}
         >
-          <DialogTitle>New Folder</DialogTitle>
-          <DialogContent>
-            <DialogContentText variant="body2" sx={{ mb: 2 }}>
-              Please give the new folder a name.
-            </DialogContentText>
-            <TextField
-              size="small"
-              label="Name"
-              onChange={({ target: { value } }) => setName(value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => {
-                setName("");
-                setOpen(false);
-                onDialogClose(false);
-              }}
-            >
-              Cancel
-            </Button>
-            <SubmitSpinnerButton
-              type="submit"
-              loading={false}
-              disabled={false}
-              label="Create"
-            />
-          </DialogActions>
-        </form>
-      </Dialog>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void createFolder(path, folderId, name).then(() => {
+                onDialogClose(true);
+              });
+            }}
+          >
+            <DialogTitle>New Folder</DialogTitle>
+            <DialogContent>
+              <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                Please give the new folder a name.
+              </DialogContentText>
+              <TextField
+                size="small"
+                label="Name"
+                onChange={({ target: { value } }) => setName(value)}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => {
+                  setName("");
+                  setOpen(false);
+                  onDialogClose(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <SubmitSpinnerButton
+                type="submit"
+                loading={false}
+                disabled={false}
+                label="Create"
+              />
+            </DialogActions>
+          </form>
+        </Dialog>
+      </EventBoundary>
       <NewMenuItem
         title="New Folder"
         avatar={<CreateNewFolderIcon />}

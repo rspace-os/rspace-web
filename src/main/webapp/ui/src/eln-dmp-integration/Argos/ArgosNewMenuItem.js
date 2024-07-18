@@ -6,6 +6,7 @@ import NewMenuItem from "../../eln/gallery/components/NewMenuItem";
 import ArgosIcon from "../../eln/apps/icons/Argos.svg";
 import { COLOR } from "../../eln/apps/integrations/Argos";
 import CardMedia from "@mui/material/CardMedia";
+import EventBoundary from "../../components/EventBoundary";
 
 type ArgosNewMenuItemArgs = {|
   onDialogClose: () => void,
@@ -29,13 +30,15 @@ export default function ArgosNewMenuItem({
         }}
         aria-haspopup="dialog"
       />
-      <DMPDialog
-        open={showDMPDialog}
-        setOpen={(b) => {
-          setShowDMPDialog(b);
-          if (!b) onDialogClose();
-        }}
-      />
+      <EventBoundary>
+        <DMPDialog
+          open={showDMPDialog}
+          setOpen={(b) => {
+            setShowDMPDialog(b);
+            if (!b) onDialogClose();
+          }}
+        />
+      </EventBoundary>
     </>
   );
 }
