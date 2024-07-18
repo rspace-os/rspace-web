@@ -1,6 +1,6 @@
 //@flow
 
-import React from "react";
+import React, { type Node } from "react";
 
 /**
  * All of the DOM events that happen inside of a dialog shouldn't propagate
@@ -8,7 +8,7 @@ import React from "react";
  * providing keyboard navigation. See ../../../../QuirksOfMaterialUi.md, secion
  * "Dialogs inside Menus", for more information.
  */
-export default ({ children }: { children: Node }) => (
+export default ({ children }: { children: Node }): Node => (
   /*
    * The eslint suppression is required because `div`s should not ordinarilly
    * have event handlers as they cannot be focussed. However, in this case, we
