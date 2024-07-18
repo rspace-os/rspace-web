@@ -25,7 +25,7 @@ function NotesList({ record }: NotesListArgs): Node {
       {firstNote && <NoteItem key={0} note={firstNote} />}
       {secondNote && <NoteItem key={1} note={secondNote} />}
       {restOfNotes.length > 0 && (
-        <Divider textAlign="center" sx={{ backgroundColor: "white" }}>
+        <Divider textAlign="center" sx={{ backgroundColor: "white", mb: 1 }}>
           <Button
             size="small"
             onClick={() => {
