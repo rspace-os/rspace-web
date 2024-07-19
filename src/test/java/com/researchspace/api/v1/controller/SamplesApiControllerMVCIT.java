@@ -844,10 +844,12 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiContainer basicContainer = createBasicContainerForUser(anyUser);
     assertFalse(basicSample.getSubSamples().isEmpty());
     ApiSubSample subSample = basicSample.getSubSamples().get(0);
+    assertFalse(subSample.isStoredInContainer());
     verifyAuditAction(AuditAction.CREATE, 3);
 
     // move subsample to container
     moveSubSampleIntoListContainer(subSample.getId(), basicContainer.getId(), anyUser);
+    assertTrue(subSample.isStoredInContainer());
     verifyAuditAction(AuditAction.MOVE, 1);
 
     // verify subsample in container
@@ -870,7 +872,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiSample sampleCannotBeDeleted = getFromJsonResponseBody(deleteResult, ApiSample.class);
     assertFalse(sampleCannotBeDeleted.getCanBeDeleted());
-    assertEquals(1, sampleCannotBeDeleted.getSubSamplesInContainer().size());
+    assertTrue(sampleCannotBeDeleted.getSubSamples().get(0).isStoredInContainer());
     verifyAuditAction(AuditAction.DELETE, 0);
 
     // delete sample with forceDelete=true

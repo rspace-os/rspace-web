@@ -436,7 +436,7 @@ export default class Search implements SearchInterface {
               record: {
                 type: string,
                 canBeDeleted?: boolean,
-                subSamplesInContainer: $ReadOnlyArray<
+                subSamples: $ReadOnlyArray<
                   $Diff<SubSampleAttrs, { sample: mixed }>
                 >,
                 ...
@@ -476,8 +476,7 @@ export default class Search implements SearchInterface {
       if (samplesThatCouldNotBeDeleted.length > 0) {
         const subsamplesThatPreventedSampleDeletion =
           samplesThatCouldNotBeDeleted.flatMap((s) =>
-            s.subSamplesInContainer.map((ss) => [s, ss])
-          );
+            s.subSamples.map((ss) => [s, ss]));
         uiStore.addAlert(
           mkAlert({
             variant: "error",

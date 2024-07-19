@@ -2,11 +2,10 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -58,19 +57,14 @@ import org.springframework.web.util.UriComponentsBuilder;
   "fields",
   "extraFields",
   "subSamples",
-  "subSamplesInContainer",
   "_links"
 })
 public class ApiSample extends ApiSampleWithoutSubSamples {
 
   @JsonProperty("subSamples")
-  private List<ApiSubSampleInfo> subSamples = new LinkedList<>();
+  private List<ApiSubSampleInfo> subSamples = new ArrayList<>();
 
-  @JsonProperty(value = "subSamplesInContainer", access = Access.READ_ONLY)
-  private List<ApiSubSampleInfo> subSamplesInContainer = new LinkedList<>();
-
-  /* this will be `true` only when `subSamplesInContainer` is null or empty */
-  @JsonProperty(value = "canBeDeleted", access = Access.READ_ONLY)
+  @JsonProperty(value = "canBeDeleted")
   private Boolean canBeDeleted;
 
   public ApiSample(Sample sample) {
@@ -78,12 +72,9 @@ public class ApiSample extends ApiSampleWithoutSubSamples {
 
     for (SubSample subSample : sample.getActiveSubSamples()) {
       ApiSubSampleInfo subSampInfo = new ApiSubSampleInfo(subSample);
-      this.subSamples.add(subSampInfo);
-      if (subSample.isStoredInContainer()) {
-        this.subSamplesInContainer.add(subSampInfo);
-      }
+      subSamples.add(subSampInfo);
     }
-    this.canBeDeleted = this.subSamplesInContainer.isEmpty();
+    canBeDeleted = subSamples.stream().noneMatch(ApiSubSampleInfo::isStoredInContainer);
   }
 
   @Override

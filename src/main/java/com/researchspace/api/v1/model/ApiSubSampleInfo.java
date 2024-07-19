@@ -50,6 +50,7 @@ import org.springframework.web.util.UriComponentsBuilder;
   "lastMoveDate",
   "revisionId",
   "deletedOnSampleDeletion",
+  "storedInContainer",
   "_links"
 })
 public class ApiSubSampleInfo extends ApiInventoryRecordInfo {
@@ -75,6 +76,9 @@ public class ApiSubSampleInfo extends ApiInventoryRecordInfo {
   @JsonProperty("deletedOnSampleDeletion")
   private boolean deletedOnSampleDeletion;
 
+  @JsonProperty("storedInContainer")
+  private boolean storedInContainer;
+
   /** default constructor used by jackson deserializer */
   public ApiSubSampleInfo() {
     setType(ApiInventoryRecordType.SUBSAMPLE);
@@ -94,6 +98,7 @@ public class ApiSubSampleInfo extends ApiInventoryRecordInfo {
       setLastMoveDateMillis(Date.from(subSample.getLastMoveDate()).getTime());
     }
     setDeletedOnSampleDeletion(subSample.isDeletedOnSampleDeletion());
+    setStoredInContainer(subSample.isStoredInContainer());
   }
 
   protected void addImageLinksFromParentSample(
