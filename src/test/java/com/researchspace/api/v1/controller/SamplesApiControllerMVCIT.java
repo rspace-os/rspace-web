@@ -848,7 +848,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     verifyAuditAction(AuditAction.CREATE, 3);
 
     // move subsample to container
-    moveSubSampleIntoListContainer(subSample.getId(), basicContainer.getId(), anyUser);
+    subSample = moveSubSampleIntoListContainer(subSample.getId(), basicContainer.getId(), anyUser);
     assertTrue(subSample.isStoredInContainer());
     verifyAuditAction(AuditAction.MOVE, 1);
 
