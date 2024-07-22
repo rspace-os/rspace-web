@@ -17,7 +17,7 @@ export type PdfExportDetails = {|
   provenance: boolean,
   comments: boolean,
   annotations: boolean,
-  pageName: boolean,
+  restartPageNumberPerDoc: boolean,
   pageSize: PageSize,
   defaultPageSize: PageSize,
   dateType: "EXP" | "NEW" | "UPD",
@@ -49,7 +49,7 @@ const checkboxes = {
   comments: "Include comments",
   annotations: "Include image annotations",
   includeFieldLastModifiedDate: "Include last modified dates for fields",
-  pageName: "Restart page numbering for each document",
+  restartPageNumberPerDoc: "Restart page numbering for each document",
   includeFooter: "Insert date footer at file end only",
 };
 

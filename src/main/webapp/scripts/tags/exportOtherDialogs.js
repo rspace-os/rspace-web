@@ -42,7 +42,7 @@ function _setUpPdfDialog() {
                 var comments = $('#pdf_a1cmmnt').is(':checked') ;
                 var includeFieldLastModifiedDate = $('#pdf_a1IncludeFieldLastModifiedDate').is(':checked') ;
                 var annotations = $('#pdf_a1annotated').is(':checked');
-                var pageName = $('#pdf_a1pagenbr').is(':checked') ;
+                var restartPageNumberPerDoc = $('#pdf_a1pagenbr').is(':checked') ;
                 var pageSize = $('#pdf_a1size').val();
                 var dateType = $('#pdf_a1date').val();
                 var includeFooter = $('#pdf_a1footer').is(':checked') ;
@@ -60,7 +60,7 @@ function _setUpPdfDialog() {
                     provenance : provenance,
                     comments: comments,
                     annotations: annotations,
-                    pageName : pageName,
+                    restartPageNumberPerDoc : restartPageNumberPerDoc,
                     pageSize : pageSize,
                     dateType: dateType,
                     includeFooter : includeFooter,
