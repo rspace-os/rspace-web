@@ -431,21 +431,72 @@ export default class Search implements SearchInterface {
         ApiService.bulk<
           mixed,
           {
-            results: Array<{ error: { errors: Array<string> }, record: any }>,
+            results: Array<{
+              error: { errors: Array<string> },
+              record: {
+                type: string,
+                canBeDeleted?: boolean,
+                subSamples: $ReadOnlyArray<{
+                  storedInContainer: boolean,
+                  ...$Diff<SubSampleAttrs, { sample: mixed }>,
+                  ...
+                }>,
+                ...
+              },
+            }>,
             errorCount: number,
           }
         >(prepareRecordsForBulkApi(records), "DELETE", false)
       );
 
-      const factory = this.factory.newFactory();
-      const successfullyDeleted = data.results
-        .filter(({ error }) => !error)
-        .map(({ record }) => {
-          const newRecord = factory.newRecord(record);
-          newRecord.populateFromJson(factory, record);
-          return newRecord;
-        });
+      /*
+       * We treat samples different to other record types because when a sample
+       * is deleted, each of its subsamples must be deleted too. If the
+       * subsamples are currently inside containers then the user is presented
+       * with an error detailing these subsamples and where to find them.
+       */
+      const samplesThatCouldNotBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
+      const samplesThatCouldBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && canBeDeleted);
 
+      const factory = this.factory.newFactory();
+      const successfullyDeleted = [
+        ...data.results
+          .filter(({ record: { type } }) => type !== "SAMPLE")
+          .filter(({ error }) => !error)
+          .map(({ record }) => record),
+        ...samplesThatCouldBeDeleted,
+      ].map((record) => {
+        const newRecord = factory.newRecord(record);
+        newRecord.populateFromJson(factory, record);
+        return newRecord;
+      });
+
+      if (samplesThatCouldNotBeDeleted.length > 0) {
+        const subsamplesThatPreventedSampleDeletion =
+          samplesThatCouldNotBeDeleted
+            .flatMap((s) => s.subSamples.map((ss) => [s, ss]))
+            .filter(([, ss]) => ss.storedInContainer);
+        uiStore.addAlert(
+          mkAlert({
+            variant: "error",
+            title:
+              "Some of the samples could not be trashed because the subsamples are in containers.",
+            message: "Please move them to the trash first.",
+            details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
+              title: `Could not trash "${ss.name ?? "UNKNOWN"}"`,
+              variant: "error",
+              record: factory.newRecord({
+                ...ss,
+                sample: s,
+              }),
+            })),
+          })
+        );
+      }
       handleDetailedErrors(
         data.errorCount,
         ArrayUtils.zipWith(data.results, records, (d, r) => ({
@@ -455,7 +506,8 @@ export default class Search implements SearchInterface {
         "sending to trash",
         (erroredRecords) => this.deleteRecords(erroredRecords)
       );
-      handleDetailedSuccesses(successfullyDeleted, "trashed");
+      if (successfullyDeleted.length > 0)
+        handleDetailedSuccesses(successfullyDeleted, "trashed");
       this.offerToDeleteNowEmptySamples(successfullyDeleted);
 
       await this.updateStateAfterDelete(new RsSet(successfullyDeleted));

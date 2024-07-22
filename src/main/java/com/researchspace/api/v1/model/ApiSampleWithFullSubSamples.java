@@ -35,6 +35,7 @@ import org.springframework.web.util.UriComponentsBuilder;
   "lastModified",
   "modifiedBy",
   "modifiedByFullName",
+  "canBeDeleted",
   "deleted",
   "deletedDate",
   "iconId",
@@ -66,6 +67,9 @@ public class ApiSampleWithFullSubSamples extends ApiSampleWithoutSubSamples {
   @JsonProperty("subSamples")
   private List<ApiSubSample> subSamples = new ArrayList<>();
 
+  @JsonProperty(value = "canBeDeleted")
+  private Boolean canBeDeleted;
+
   @JsonProperty(value = "newSampleSubSamplesCount", access = Access.WRITE_ONLY)
   private Integer newSampleSubSamplesCount;
 
@@ -90,6 +94,7 @@ public class ApiSampleWithFullSubSamples extends ApiSampleWithoutSubSamples {
     for (SubSample subSample : sample.getActiveSubSamples()) {
       subSamples.add(new ApiSubSample(subSample));
     }
+    canBeDeleted = subSamples.stream().noneMatch(ApiSubSample::isStoredInContainer);
   }
 
   /** to simplify creation of a valid sample (must have name). */
