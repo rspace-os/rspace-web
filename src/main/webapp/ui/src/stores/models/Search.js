@@ -315,9 +315,10 @@ export default class Search implements SearchInterface {
   }
 
   async cleanBatchEditing() {
-    await Promise.all(
-      this.batchEditingRecords?.map((r) => r.setEditing(false, true, true)) ??
-        []
+    await Promise.all<Array<Promise<void>>>(
+      this.batchEditingRecords?.toArray().map(async (r) => {
+        await r.setEditing(false, true, true);
+      }) ?? []
     );
     this.disableBatchEditing();
   }
@@ -340,8 +341,7 @@ export default class Search implements SearchInterface {
     return this.editLoading === "batch" && !this.batchEditingRecords;
   }
 
-  get batchEditingRecordsByType():
-    | null
+  get batchEditingRecordsByType(): | null
     | {| type: "container", records: RsSet<ContainerModel> |}
     | {| type: "sample", records: RsSet<SampleModel> |}
     | {| type: "subSample", records: RsSet<SubSampleModel> |}
@@ -464,7 +464,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Sending to trash failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -508,6 +508,12 @@ export default class Search implements SearchInterface {
     } else {
       // e.g. sample's quantity may have changed
       this.refetchActiveResult(deletedGlobalIds);
+    }
+
+    if (searchStore.activeResult instanceof ContainerModel) {
+      const cont = searchStore.activeResult;
+      if (cont.state === "preview") await cont.fetchAdditionalInfo();
+      cont.refreshAssociatedSearch();
     }
   }
 
@@ -587,7 +593,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Restore failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -698,7 +704,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Duplication failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -752,7 +758,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Splitting subsample failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
           duration: 8000,
         })
@@ -856,7 +862,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Transfer failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -945,9 +951,9 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: `Template creation failed.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
-          details: error?.response?.data.errors.map((e) => ({
+          details: error.response?.data.errors.map((e) => ({
             title: e,
             variant: "error",
           })),
@@ -1019,7 +1025,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: `Data export failed.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -1162,8 +1168,8 @@ export default class Search implements SearchInterface {
     this.performSearch();
   }
 
-  setPage(pageNumber: number) {
-    this.fetcher.setPage(pageNumber);
+  async setPage(pageNumber: number) {
+    await this.fetcher.setPage(pageNumber);
   }
 
   setOwner(user: ?Person, doSearch: ?boolean = true) {
@@ -1399,7 +1405,7 @@ export default class Search implements SearchInterface {
             mkAlert({
               title: "Update failed.",
               message:
-                error?.response?.data.message ??
+                error.response?.data.message ??
                 error.message ??
                 "Unknown reason.",
               variant: "error",

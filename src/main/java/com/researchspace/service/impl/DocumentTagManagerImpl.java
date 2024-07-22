@@ -451,6 +451,10 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
             .allMatch(Group::isAllowBioOntologies));
   }
 
+  public static boolean anyGroupEnforcesOntologies(User user) {
+    return user.getGroups().stream().anyMatch(Group::isEnforceOntologies);
+  }
+
   private List<Long> extractIDsOfFilesFilteringForBeingSharedWithUsersGroup(
       List<BaseRecord> ontologyDocumentsVisibleForUser, User subject) {
     List<Long> ontologySharedWithUserAndOneOfUsersGroups = new ArrayList<>();

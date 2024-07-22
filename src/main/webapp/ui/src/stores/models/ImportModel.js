@@ -1079,7 +1079,7 @@ export default class Import {
         this.setTemplateName(DEFAULT_NEW_TEMPLATE_NAME);
       }
     } catch (error) {
-      const gatewayTimeout = error?.response?.status === 504;
+      const gatewayTimeout = error.response?.status === 504;
       this.state.transitionTo("nameSelected");
       uiStore.addAlert(
         mkAlert({
@@ -1087,9 +1087,7 @@ export default class Import {
             ? "Something went wrong but the import may have completed."
             : "Something went wrong and some records were not imported.",
           message:
-            error?.response?.data.message ??
-            error?.message ??
-            "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: gatewayTimeout ? "warning" : "error",
         })
       );
@@ -1194,6 +1192,7 @@ export default class Import {
       mappings: this.mappingsByRecordType,
       resetMappings: () => this.resetMappingsByRecordType(),
     };
+    // $FlowExpectedError[invalid-computed-prop]
     return byType[prop];
   }
 

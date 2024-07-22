@@ -3,7 +3,7 @@
 import { createTheme } from "@mui/material";
 import baseTheme from "./theme";
 import { mergeThemes } from "./util/styles";
-import { darken, alpha } from "@mui/system";
+import { darken, alpha, lighten } from "@mui/system";
 import { toolbarClasses } from "@mui/material/Toolbar";
 import { typographyClasses } from "@mui/material/Typography";
 import { svgIconClasses } from "@mui/material/SvgIcon";
@@ -94,11 +94,17 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
   const mainAccentColor = prefersMoreContrast
     ? "rgb(0,0,0)"
     : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%)`;
-  const disabledColor = `hsl(${accent.main.hue}deg, 10%, 86%)`;
+  const disabledColor = lighten(
+    `hsl(${accent.main.hue}deg, 10%, ${accent.main.lightness}%)`,
+    0.5
+  );
 
   const linkButtonText = prefersMoreContrast
     ? "rgb(0,0,0)"
-    : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, 40%)`;
+    : darken(
+        `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%)`,
+        0.5
+      );
 
   /**
    * A background colour that can be used behind headers, toolbars, and other
@@ -211,14 +217,18 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   [`&:has(.${inputAdornmentClasses.positionStart})`]: {
                     paddingLeft: 0,
                   },
-                  [`& .${svgIconClasses.root}`]: {
-                    fill: prefersMoreContrast
-                      ? "rgb(0,0,0)"
-                      : contrastTextColor,
+                  [`& .${inputAdornmentClasses.root}`]: {
+                    paddingLeft: baseTheme.spacing(1),
+                    paddingRight: baseTheme.spacing(1),
+                    [`& .${svgIconClasses.root}`]: {
+                      fill: prefersMoreContrast
+                        ? "rgb(0,0,0)"
+                        : contrastTextColor,
+                    },
                   },
                   "& input": {
                     padding: baseTheme.spacing(0.5),
-                    paddingLeft: 0,
+                    paddingLeft: baseTheme.spacing(1),
                     color: prefersMoreContrast
                       ? "rgb(0,0,0)"
                       : contrastTextColor,
@@ -452,19 +462,20 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 [`& .${outlinedInputClasses.input}`]: {
                   paddingTop: "5px",
                   paddingBottom: "5px",
+                  paddingLeft: baseTheme.spacing(1.5),
                 },
               },
               [`& .${inputAdornmentClasses.root}`]: {
                 height: "100%",
-                paddingLeft: baseTheme.spacing(1),
-                paddingRight: baseTheme.spacing(1),
+                paddingLeft: baseTheme.spacing(1.5),
+                paddingRight: baseTheme.spacing(1.5),
                 borderRight: accentedBorder,
-                backgroundColor: lighterInteractiveColor,
+                marginRight: 0,
                 [`& .${typographyClasses.root}`]: {
                   textTransform: "uppercase",
                   fontWeight: 700,
-                  fontSize: "0.9rem",
-                  lineHeight: "31px",
+                  fontSize: "0.8125rem",
+                  lineHeight: "20px",
                 },
               },
             },

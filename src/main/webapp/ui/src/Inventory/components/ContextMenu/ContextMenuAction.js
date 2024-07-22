@@ -9,29 +9,7 @@ import ContextMenuSplitButton, {
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import { StyledMenuItem } from "../../../components/StyledMenu";
-
-/*
- * All of the DOM events that happen inside of a context menu action, such as
- * events within a dialog, shouln't propagate outside as the context menu will
- * take them to be events that it should respond to by providing keyboard
- * navigation. See ../../../../QuirksOfMaterialUi.md, secion
- * "Dialogs inside Menus", for more information.
- */
-const EventBoundary = ({ children }: { children: Node }) => (
-  <div
-    onKeyDown={(e) => {
-      e.stopPropagation();
-    }}
-    onMouseDown={(e) => {
-      e.stopPropagation();
-    }}
-    onClick={(e) => {
-      e.stopPropagation();
-    }}
-  >
-    {children}
-  </div>
-);
+import EventBoundary from "../../../components/EventBoundary";
 
 export type ContextMenuRenderOptions = "button" | "menuitem";
 

@@ -6,11 +6,12 @@ import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
-import { gallerySectionCollectiveNoun } from "./common";
+import { gallerySectionCollectiveNoun, type GallerySection } from "./common";
 import {
   filenameExceptExtension,
   justFilenameExtension,
 } from "../../util/files";
+import { useGallerySelection } from "./useGallerySelection";
 
 export opaque type Id = number;
 export function idToString(id: Id): string {
@@ -27,6 +28,7 @@ export type GalleryFile = {|
   path: $ReadOnlyArray<GalleryFile>,
   pathAsString: () => string,
   open?: () => void,
+  downloadHref?: string,
 
   isFolder: boolean,
   isSystemFolder: boolean,
@@ -120,7 +122,7 @@ function getIconPathForExtension(extension: string) {
   if (dnaFiles.includes(ext)) return "/images/icons/dna-file.svg";
   if (iconOfSameName.includes(ext)) return `/images/icons/${ext}.png`;
   return (
-    {
+    ({
       htm: "/images/icons/html.png",
       html: "/images/icons/html.png",
       ppt: "/images/icons/powerpoint.png",
@@ -128,7 +130,7 @@ function getIconPathForExtension(extension: string) {
       txt: "/images/icons/txt.png",
       text: "/images/icons/txt.png",
       md: "/images/icons/txt.png",
-    }[ext] ?? "/images/icons/unknownDocument.png"
+    }: { [string]: string })[ext] ?? "/images/icons/unknownDocument.png"
   );
 }
 
@@ -170,7 +172,7 @@ export function useGalleryListing({
   sortOrder,
   orderBy,
 }: {|
-  section: string,
+  section: GallerySection,
   searchTerm: string,
   path?: $ReadOnlyArray<GalleryFile>,
   sortOrder: "DESC" | "ASC",
@@ -194,6 +196,7 @@ export function useGalleryListing({
     defaultPath ?? []
   );
   const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([]));
+  const selection = useGallerySelection();
 
   function emptyReason(): string {
     if (path.length > 0) {
@@ -241,7 +244,9 @@ export function useGalleryListing({
               setPath([...path, ret]);
             },
           }
-        : {}),
+        : {
+            downloadHref: `/Streamfile/${idToString(id)}`,
+          }),
       isFolder,
       isSystemFolder,
       isImage: /Image/.test(type),
@@ -258,6 +263,7 @@ export function useGalleryListing({
   }
 
   async function getGalleryFiles(): Promise<void> {
+    selection.clear();
     setGalleryListing([]);
     setLoading(true);
     try {
@@ -367,7 +373,7 @@ export function useGalleryListing({
   if (loading)
     return {
       galleryListing: { tag: "loading" },
-      path: [],
+      path,
       clearPath: () => {},
       folderId: { tag: "loading" },
       refreshListing: () => {},

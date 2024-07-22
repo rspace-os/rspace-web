@@ -12,7 +12,6 @@ import { type AdjustableTableRowOptions } from "../definitions/Tables";
 import {
   type HasEditableFields,
   type HasUneditableFields,
-  type OptionalString,
 } from "../definitions/Editable";
 
 export type Quantity = {
@@ -114,11 +113,8 @@ export default class RecordWithQuantity
     };
   }
 
-  get noValueLabel(): $ObjMap<
-    RecordWithQuantityEditableFields,
-    OptionalString
-  > &
-    $ObjMap<RecordWithQuantityUneditableFields, OptionalString> {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof RecordWithQuantityEditableFields]: ?string} & {[key in keyof RecordWithQuantityUneditableFields]: ?string} {
     return {
       ...super.noValueLabel,
       quantity: null,

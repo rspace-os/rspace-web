@@ -25,8 +25,6 @@ declare module "fast-check" {
    * For more info, see https://fast-check.dev/docs/core-blocks/arbitraries/
    */
 
-  declare type MakeArbitrary = <A>(A) => Arbitrary<A>;
-
   declare type Size = "xsmall" | "small" | "medium" | "large" | "xlarge";
 
   // Boolean
@@ -136,7 +134,7 @@ declare module "fast-check" {
     Arbitrary<A>,
     Arbitrary<B>
   ): Arbitrary<{ [A]: B }>;
-  declare function record<A: {}>($ObjMap<A, MakeArbitrary>): Arbitrary<A>;
+  declare function record<A: {}>({[keyA in keyof A]: Arbitrary<A[keyA]>}): Arbitrary<A>;
   declare function anything(): Arbitrary<mixed>;
 
   // Function Combinators

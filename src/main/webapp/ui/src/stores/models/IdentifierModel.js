@@ -504,7 +504,7 @@ export default class IdentifierModel implements Identifier {
       }
     } catch (error) {
       // in case of errors like 422 the server provides a specific response message that we want to display
-      const serverErrorResponse = error?.response?.data;
+      const serverErrorResponse = error.response?.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `The identifier could not be published.`,
@@ -556,7 +556,7 @@ export default class IdentifierModel implements Identifier {
         );
       }
     } catch (error) {
-      const serverErrorResponse = error?.response.data;
+      const serverErrorResponse = error.response.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `The identifier could not be retracted.`,
@@ -601,7 +601,7 @@ export default class IdentifierModel implements Identifier {
         >(`/identifiers/${id}/retract`, {});
         this.updateState(response.data.state);
       } catch (error) {
-        const serverErrorResponse = error?.response.data;
+        const serverErrorResponse = error.response.data;
         getRootStore().uiStore.addAlert(
           mkAlert({
             title: `The identifier could not be republished.`,
@@ -655,7 +655,7 @@ export default class IdentifierModel implements Identifier {
          * publish step could fail. Should that happen, the identifier will be left in a registered
          * state and the user will need to manually re-trigger a publish step.
          */
-        const serverErrorResponse = error?.response?.data;
+        const serverErrorResponse = error.response?.data;
         getRootStore().uiStore.addAlert(
           mkAlert({
             title: `The identifier could not be republished.`,

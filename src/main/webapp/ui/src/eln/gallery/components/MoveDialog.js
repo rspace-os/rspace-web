@@ -22,11 +22,12 @@ import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";
 import RsSet from "../../../util/set";
 import useViewportDimensions from "../../../util/useViewportDimensions";
+import { type GallerySection } from "../common";
 
 type MoveDialogArgs = {|
   open: boolean,
   onClose: () => void,
-  section: string,
+  section: GallerySection,
   selectedFiles: RsSet<GalleryFile>,
   refreshListing: () => void,
 |};

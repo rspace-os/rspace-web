@@ -33,16 +33,19 @@ export const COLORS = {
 
 export type Theme = {|
   palette: {
-    primary: {|
+    primary: {
       ...Color,
       placeholderText: string,
-    |},
-    secondary: {|
+      ...
+    },
+    secondary: {
       ...Color,
-    |},
-    tertiary: {|
+      ...
+    },
+    tertiary: {
       ...Color,
-    |},
+      ...
+    },
     background: Color,
     hover: {|
       tableRow: string,

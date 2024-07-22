@@ -7,6 +7,6 @@ declare module "posthog-js/react" {
   declare function usePostHog(): {|
     capture: (name: string, properties?: { ... }) => void,
   |};
-  declare function PostHogProvider({ client: Posthog}): Node;
+  declare function PostHogProvider({| client: Posthog, children: Node |}): Node;
 
 }

@@ -1,11 +1,11 @@
 //@flow
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import React, { type Node } from "react";
+import React, { type Node, type ElementProps } from "react";
 import TableSortLabel from "@mui/material/TableSortLabel";
 
 type CustomTableSortLabelArgs = {|
-  ...$Rest<CustomTableSortLabelArgs, { IconComponent: Node }>,
+  ...$Rest<ElementProps<typeof TableSortLabel>, { IconComponent: Node }>,
 |};
 
 export default function CustomTableSortLabel(

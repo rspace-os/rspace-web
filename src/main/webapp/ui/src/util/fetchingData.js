@@ -35,7 +35,6 @@ export function map<A, B>(fetched: Fetched<A>, func: (A) => B): Fetched<B> {
 export function getSuccessValue<A>(fetched: Fetched<A>): Result<A> {
   if (fetched.tag === "loading") return Result.Error([new Error("loading")]);
   if (fetched.tag === "error")
-    // $FlowExpectedError[extra-arg] Flow does not supprt cause parameter
     return Result.Error([new Error("error", { cause: fetched.error })]);
   return Result.Ok(fetched.value);
 }

@@ -440,7 +440,7 @@ export default class TemplateModel extends SampleModel implements Template {
         mkAlert({
           title: "Updating samples to latest template version failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );

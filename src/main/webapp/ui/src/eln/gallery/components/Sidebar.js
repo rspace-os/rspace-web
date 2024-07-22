@@ -4,7 +4,12 @@ import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import { styled } from "@mui/material/styles";
-import { COLOR, gallerySectionLabel } from "../common";
+import {
+  COLOR,
+  gallerySectionLabel,
+  type GallerySection,
+  GALLERY_SECTION,
+} from "../common";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItem from "@mui/material/ListItem";
@@ -46,10 +51,12 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
-import useVerticalRovingTabIndex from "../../../components/useVerticalRovingTabIndex";
+import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { observer } from "mobx-react-lite";
 import { autorun } from "mobx";
+import EventBoundary from "../../../components/EventBoundary";
+import { useSearchParams } from "react-router-dom";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -212,50 +219,52 @@ const NewFolderMenuItem = ({
   const { createFolder } = useGalleryActions();
   return (
     <>
-      <Dialog
-        open={open}
-        onClose={() => {
-          setOpen(false);
-        }}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void createFolder(path, folderId, name).then(() => {
-              onDialogClose(true);
-            });
+      <EventBoundary>
+        <Dialog
+          open={open}
+          onClose={() => {
+            setOpen(false);
           }}
         >
-          <DialogTitle>New Folder</DialogTitle>
-          <DialogContent>
-            <DialogContentText variant="body2" sx={{ mb: 2 }}>
-              Please give the new folder a name.
-            </DialogContentText>
-            <TextField
-              size="small"
-              label="Name"
-              onChange={({ target: { value } }) => setName(value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => {
-                setName("");
-                setOpen(false);
-                onDialogClose(false);
-              }}
-            >
-              Cancel
-            </Button>
-            <SubmitSpinnerButton
-              type="submit"
-              loading={false}
-              disabled={false}
-              label="Create"
-            />
-          </DialogActions>
-        </form>
-      </Dialog>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void createFolder(path, folderId, name).then(() => {
+                onDialogClose(true);
+              });
+            }}
+          >
+            <DialogTitle>New Folder</DialogTitle>
+            <DialogContent>
+              <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                Please give the new folder a name.
+              </DialogContentText>
+              <TextField
+                size="small"
+                label="Name"
+                onChange={({ target: { value } }) => setName(value)}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => {
+                  setName("");
+                  setOpen(false);
+                  onDialogClose(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <SubmitSpinnerButton
+                type="submit"
+                loading={false}
+                disabled={false}
+                label="Create"
+              />
+            </DialogActions>
+          </form>
+        </Dialog>
+      </EventBoundary>
       <NewMenuItem
         title="New Folder"
         avatar={<CreateNewFolderIcon />}
@@ -403,7 +412,7 @@ const DrawerTab = styled(
 }));
 
 type SidebarArgs = {|
-  selectedSection: string,
+  selectedSection: GallerySection,
   setSelectedSection: (string) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,
@@ -411,6 +420,19 @@ type SidebarArgs = {|
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
 |};
+
+const offsets = {
+  [GALLERY_SECTION.IMAGES]: 8,
+  [GALLERY_SECTION.AUDIOS]: 51,
+  [GALLERY_SECTION.VIDEOS]: 94,
+  [GALLERY_SECTION.DOCUMENTS]: 137,
+  [GALLERY_SECTION.CHEMISTRY]: 180,
+  [GALLERY_SECTION.DMPS]: 223,
+  [GALLERY_SECTION.NETWORKFILES]: null,
+  [GALLERY_SECTION.SNIPPETS]: 266,
+  [GALLERY_SECTION.MISCELLANEOUS]: 309,
+  [GALLERY_SECTION.PDFDOCUMENTS]: 372,
+};
 
 const Sidebar = ({
   selectedSection,
@@ -421,22 +443,23 @@ const Sidebar = ({
   folderId,
   refreshListing,
 }: SidebarArgs): Node => {
-  const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
-    React.useState(8);
+  const [, setSearchParams] = useSearchParams();
+  const [selectedIndicatorOffset, setSelectedIndicatorOffset] = React.useState(
+    offsets[selectedSection] ?? 8
+  );
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
   const viewport = useViewportDimensions();
 
   React.useEffect(() => {
     autorun(() => {
-      if(viewport.isViewportSmall) setDrawerOpen(false);
+      if (viewport.isViewportSmall) setDrawerOpen(false);
     });
   }, [viewport]);
 
-  const { getTabIndex, getRef, eventHandlers } = useVerticalRovingTabIndex<
-    typeof ListItemButton
-  >({
-    max: 8,
-  });
+  const { getTabIndex, getRef, eventHandlers } =
+    useOneDimensionalRovingTabIndex<typeof ListItemButton>({
+      max: 8,
+    });
 
   return (
     <CustomDrawer
@@ -444,7 +467,7 @@ const Sidebar = ({
       anchor="left"
       variant={viewport.isViewportSmall ? "temporary" : "permanent"}
       onClose={() => {
-        if(viewport.isViewportSmall) setDrawerOpen(false);
+        if (viewport.isViewportSmall) setDrawerOpen(false);
       }}
       aria-label="gallery sections drawer"
     >
@@ -457,7 +480,7 @@ const Sidebar = ({
           open={Boolean(newMenuAnchorEl)}
           anchorEl={newMenuAnchorEl}
           onClose={() => {
-            if(viewport.isViewportSmall) setDrawerOpen(false);
+            if (viewport.isViewportSmall) setDrawerOpen(false);
             setNewMenuAnchorEl(null);
           }}
           MenuListProps={{
@@ -474,11 +497,11 @@ const Sidebar = ({
                 onUploadComplete={() => {
                   refreshListing();
                   setNewMenuAnchorEl(null);
-                  if(viewport.isViewportSmall) setDrawerOpen(false);
+                  if (viewport.isViewportSmall) setDrawerOpen(false);
                 }}
                 onCancel={() => {
                   setNewMenuAnchorEl(null);
-                  if(viewport.isViewportSmall) setDrawerOpen(false);
+                  if (viewport.isViewportSmall) setDrawerOpen(false);
                 }}
               />
             ))
@@ -492,7 +515,7 @@ const Sidebar = ({
                 onDialogClose={(success) => {
                   if (success) refreshListing();
                   setNewMenuAnchorEl(null);
-                  if(viewport.isViewportSmall) setDrawerOpen(false);
+                  if (viewport.isViewportSmall) setDrawerOpen(false);
                 }}
               />
             ))
@@ -500,7 +523,7 @@ const Sidebar = ({
           <DmpMenuSection
             onDialogClose={() => {
               setNewMenuAnchorEl(null);
-              if(viewport.isViewportSmall) setDrawerOpen(false);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
             }}
           />
         </StyledMenu>
@@ -517,137 +540,139 @@ const Sidebar = ({
         <SelectedDrawerTabIndicator
           verticalPosition={selectedIndicatorOffset}
         />
-        <List sx={{ position: "static" }} role="navigation">
-          <DrawerTab
-            label={gallerySectionLabel.Images}
-            icon={<FaIcon icon="image" />}
-            index={0}
-            tabIndex={getTabIndex(0)}
-            ref={getRef(0)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Images"}
-            onClick={(event) => {
-              setSelectedSection("Images");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Audios}
-            icon={<FaIcon icon="volume-low" />}
-            index={1}
-            tabIndex={getTabIndex(1)}
-            ref={getRef(1)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Audios"}
-            onClick={(event) => {
-              setSelectedSection("Audios");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Videos}
-            icon={<FaIcon icon="film" />}
-            index={2}
-            tabIndex={getTabIndex(2)}
-            ref={getRef(2)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Videos"}
-            onClick={(event) => {
-              setSelectedSection("Videos");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Documents}
-            icon={<FaIcon icon="file" />}
-            index={3}
-            tabIndex={getTabIndex(3)}
-            ref={getRef(3)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Documents"}
-            onClick={(event) => {
-              setSelectedSection("Documents");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Chemistry}
-            icon={<ChemistryIcon />}
-            index={4}
-            tabIndex={getTabIndex(4)}
-            ref={getRef(4)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Chemistry"}
-            onClick={(event) => {
-              setSelectedSection("Chemistry");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.DMPs}
-            icon={<FaIcon icon="file-invoice" />}
-            index={5}
-            tabIndex={getTabIndex(5)}
-            ref={getRef(5)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "DMPs"}
-            onClick={(event) => {
-              setSelectedSection("DMPs");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Snippets}
-            icon={<FaIcon icon="fa-regular fa-note-sticky" />}
-            index={6}
-            tabIndex={getTabIndex(6)}
-            ref={getRef(6)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Snippets"}
-            onClick={(event) => {
-              setSelectedSection("Snippets");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-          <DrawerTab
-            label={gallerySectionLabel.Miscellaneous}
-            icon={<FaIcon icon="shapes" />}
-            index={7}
-            tabIndex={getTabIndex(7)}
-            ref={getRef(7)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "Miscellaneous"}
-            onClick={(event) => {
-              setSelectedSection("Miscellaneous");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-        </List>
-        <Divider />
-        <List sx={{ position: "static" }} role="navigation">
-          <DrawerTab
-            label={gallerySectionLabel.PdfDocuments}
-            icon={<FaIcon icon="fa-circle-down" />}
-            index={8}
-            tabIndex={getTabIndex(8)}
-            ref={getRef(8)}
-            drawerOpen={drawerOpen}
-            selected={selectedSection === "PdfDocuments"}
-            onClick={(event) => {
-              setSelectedSection("PdfDocuments");
-              if(viewport.isViewportSmall) setDrawerOpen(false);
-              setSelectedIndicatorOffset(event.currentTarget.offsetTop);
-            }}
-          />
-        </List>
+        <div role="navigation">
+          <List sx={{ position: "static" }}>
+            <DrawerTab
+              label={gallerySectionLabel.Images}
+              icon={<FaIcon icon="image" />}
+              index={0}
+              tabIndex={getTabIndex(0)}
+              ref={getRef(0)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Images"}
+              onClick={(event) => {
+                setSearchParams({ mediaType: "Images" });
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Audios}
+              icon={<FaIcon icon="volume-low" />}
+              index={1}
+              tabIndex={getTabIndex(1)}
+              ref={getRef(1)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Audios"}
+              onClick={(event) => {
+                setSearchParams({ mediaType: "Audios" });
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Videos}
+              icon={<FaIcon icon="film" />}
+              index={2}
+              tabIndex={getTabIndex(2)}
+              ref={getRef(2)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Videos"}
+              onClick={(event) => {
+                setSearchParams({ mediaType: "Videos" });
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Documents}
+              icon={<FaIcon icon="file" />}
+              index={3}
+              tabIndex={getTabIndex(3)}
+              ref={getRef(3)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Documents"}
+              onClick={(event) => {
+                setSearchParams({ mediaType: "Documents" });
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Chemistry}
+              icon={<ChemistryIcon />}
+              index={4}
+              tabIndex={getTabIndex(4)}
+              ref={getRef(4)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Chemistry"}
+              onClick={(event) => {
+                setSearchParams({ mediaType: "Chemistry" });
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.DMPs}
+              icon={<FaIcon icon="file-invoice" />}
+              index={5}
+              tabIndex={getTabIndex(5)}
+              ref={getRef(5)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "DMPs"}
+              onClick={(event) => {
+                setSearchParams({ mediaType: "DMPs" });
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Snippets}
+              icon={<FaIcon icon="fa-regular fa-note-sticky" />}
+              index={6}
+              tabIndex={getTabIndex(6)}
+              ref={getRef(6)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Snippets"}
+              onClick={(event) => {
+                setSearchParams({ mediaType: "Snippets" });
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.Miscellaneous}
+              icon={<FaIcon icon="shapes" />}
+              index={7}
+              tabIndex={getTabIndex(7)}
+              ref={getRef(7)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "Miscellaneous"}
+              onClick={(event) => {
+                setSearchParams({ mediaType: "Miscellaneous" });
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+          </List>
+          <Divider />
+          <List sx={{ position: "static" }}>
+            <DrawerTab
+              label={gallerySectionLabel.PdfDocuments}
+              icon={<FaIcon icon="fa-circle-down" />}
+              index={8}
+              tabIndex={getTabIndex(8)}
+              ref={getRef(8)}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "PdfDocuments"}
+              onClick={(event) => {
+                setSearchParams({ mediaType: "PdfDocuments" });
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
+              }}
+            />
+          </List>
+        </div>
       </Box>
     </CustomDrawer>
   );

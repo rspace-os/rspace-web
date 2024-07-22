@@ -29,6 +29,8 @@
         <pattern>*/public/inventory/**</pattern>
         <pattern>/apps</pattern>
         <pattern>/newGallery</pattern>
+        <pattern>/newGallery*</pattern>
+        <pattern>/newGallery/**</pattern>
     </excludes>
     <decorator name="public" page="externalPages.jsp">
         <pattern>*/signup*</pattern>

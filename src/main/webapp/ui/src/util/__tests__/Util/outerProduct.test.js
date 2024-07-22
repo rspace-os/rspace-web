@@ -14,6 +14,7 @@ describe("outerProduct", () => {
       fc.property(
         fc
           // reasonable max length is necessary to not cause memory usage issues
+          // $FlowExpectedError[incompatible-call] Might be a way of getting this to work, but not worth the effort
           .tuple(fc.nat(10), fc.oneof(...monoids))
           .chain(([length, [valueGenerator, booleanFunction]]) =>
             // $FlowExpectedError[incompatible-call] Might be a way of getting this to work, but not worth the effort

@@ -95,7 +95,7 @@ const minimum: ArbitraryMonoid<number> = fc.tuple(
 );
 
 export const monoids: Array<
-  ArbitraryMonoid<number> & ArbitraryMonoid<boolean> & ArbitraryMonoid<string>
+  ArbitraryMonoid<number> | ArbitraryMonoid<boolean> | ArbitraryMonoid<string>
 > = [
   addition,
   multiplication,

@@ -65,7 +65,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
   };
 
   const handleChangePage = (newPage: number) => {
-    search.setPage(newPage);
+    void search.setPage(newPage);
   };
 
   const toggleAll = () => {

@@ -238,7 +238,6 @@ export default function useIrods(
         } catch (e) {
           console.error(e);
           const errorMsg = parseOperationError(e).orElseGet(([error]) => {
-            // $FlowExpectedError[extra-arg] Flow doesn't support cause
             throw new Error("Could not parse error object", { cause: error });
           });
           addAlert(
@@ -269,7 +268,6 @@ export default function useIrods(
         } catch (e) {
           console.error(e);
           const errorMsg = parseOperationError(e).orElseGet(([error]) => {
-            // $FlowExpectedError[extra-arg] Flow doesn't support cause
             throw new Error("Could not parse error object", { cause: error });
           });
           addAlert(

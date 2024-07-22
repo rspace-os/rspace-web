@@ -44,6 +44,15 @@ export default function TimeField({
               renderInput={(params) => (
                 <TextField
                   {...params}
+                  /*
+                   * error state is handled by the FormField that this
+                   * component is rendered within. We do not want to use the
+                   * error handling built into the TimePicker as it cannot
+                   * handle our custom validation logic that includes things
+                   * like checking if the field is mandatory and if not then
+                   * allowing empty value.
+                   */
+                  error={false}
                   style={{
                     maxWidth: "10em",
                   }}

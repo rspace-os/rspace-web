@@ -20,7 +20,7 @@ import Result from "./result";
  *    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
  */
 export function getHeader(
-  response: { headers: { ... }, ... },
+  response: { headers: {[string]: string}, ... },
   headerName: string
 ): Result<string> {
   if (typeof response.headers[headerName] === "undefined")

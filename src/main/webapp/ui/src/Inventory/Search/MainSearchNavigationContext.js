@@ -38,7 +38,7 @@ export default function MainSearchNavigationContext({
         mkAlert({
           title: "Search failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
           isInfinite: true,
         })

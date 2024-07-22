@@ -3,7 +3,7 @@
 import React, { type Node, type ComponentType } from "react";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import Button from "@mui/material/Button";
-import { COLOR } from "../common";
+import { COLOR, type GallerySection } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import { styled, useTheme, darken, lighten } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
@@ -30,6 +30,7 @@ import Result from "../../../util/result";
 import MoveToIrods, { COLOR as IRODS_COLOR } from "./MoveToIrods";
 import IrodsLogo from "./IrodsLogo.svg";
 import Avatar from "@mui/material/Avatar";
+import Typography from "@mui/material/Typography";
 import MoveDialog from "./MoveDialog";
 
 const RenameDialog = ({
@@ -113,7 +114,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 
 type ActionsMenuArgs = {|
   refreshListing: () => void,
-  section: string,
+  section: GallerySection,
 |};
 
 function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
@@ -147,7 +148,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
       return Result.Error([new Error("Nothing selected.")]);
     return selection
       .asSet()
-      .only.toResult(() => new Error("Only item may be renamed at once."))
+      .only.toResult(() => new Error("Only one item may be renamed at once."))
       .flatMap((file) => {
         if (file.isSystemFolder)
           return Result.Error([new Error("Cannot rename system folders.")]);
@@ -185,6 +186,21 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
     return Result.Error([new Error("Not yet available.")]);
   };
 
+  const downloadAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    return selection
+      .asSet()
+      .only.toResult(
+        () => new Error("Only one item may be downloaded at once.")
+      )
+      .flatMap((file) => {
+        if (file.isFolder)
+          return Result.Error([new Error("Cannot download folders.")]);
+        return Result.Ok(null);
+      });
+  };
+
   const moveAllowed = (): Result<null> => {
     if (selection.isEmpty)
       return Result.Error([new Error("Nothing selected.")]);
@@ -194,8 +210,10 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
   return (
     <>
       <Button
-        variant="outlined"
+        variant="contained"
+        color="primary"
         size="small"
+        disabled={selection.isEmpty}
         aria-haspopup="menu"
         startIcon={<ChecklistIcon />}
         onClick={(e) => {
@@ -284,6 +302,23 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
             />
           ))
           .orElse(null)}
+        <NewMenuItem
+          title="Download"
+          subheader={downloadAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
+          backgroundColor={COLOR.background}
+          foregroundColor={COLOR.contrastText}
+          avatar={<FileDownloadIcon />}
+          onClick={() => {
+            selection.asSet().only.do((file) => {
+              window.open(file.downloadHref);
+            });
+            setActionsMenuAnchorEl(null);
+          }}
+          compact
+          disabled={downloadAllowed().isError}
+        />
         <NewMenuItem
           title="Export"
           subheader={exportAllowed()
@@ -385,6 +420,22 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
           disabled={deleteAllowed().isError}
         />
       </StyledMenu>
+      <Typography
+        variant="body2"
+        sx={{
+          p: 0,
+          pl: 1,
+          fontWeight: 500,
+          display: { xs: "none", sm: "initial" },
+          ...(selection.isEmpty
+            ? {
+                color: "grey",
+              }
+            : {}),
+        }}
+      >
+        {selection.label}
+      </Typography>
     </>
   );
 }

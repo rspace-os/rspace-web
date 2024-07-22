@@ -283,7 +283,7 @@ export default class MoveStore {
         mkAlert({
           title: "Move failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );

@@ -212,7 +212,7 @@ export interface CoreFetcher {
    */
   pageNumber: number;
   pageSize: number;
-  setPage(number): void;
+  setPage(number): Promise<void>;
   setPageSize(number): void;
 
   /*
@@ -364,7 +364,7 @@ export interface Search {
    * pagination) and reperform the search.
    */
   setPageSize(number): void;
-  setPage(number): void;
+  setPage(number): Promise<void>;
 
   /*
    * The UI MAY provide a mechanism to select multiple search results that can
