@@ -7,10 +7,10 @@
   <artifactId>researchspace</artifactId>
   <groupId>com.github.rspace-os</groupId>
   <packaging>war</packaging>
-
-  <version>2.0.1-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
+  <version>2.1.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
   <name>ResearchSpace</name>
   <url>http://www.researchspace.com</url>
+
   <parent>
     <artifactId>rspace-parent</artifactId>
     <groupId>com.github.rspace-os</groupId>
@@ -44,6 +44,7 @@
       </snapshots>
     </repository>
   </repositories>
+
   <build>
     <defaultGoal>install</defaultGoal>
     <finalName>${artifactName}</finalName>
@@ -690,7 +691,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-audit</artifactId>
-        <version>0.14.0</version>
+        <version>0.14.1</version>
         <exclusions>
             <exclusion>
                 <groupId>org.apache.commons</groupId>
@@ -1737,7 +1738,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-core-util</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -3031,7 +3032,7 @@
     <jstl.version>1.1.2</jstl.version>
     <lucene.version>5.5.5</lucene.version>
     <netty.version>4.1.63.Final</netty.version>
-    <rspace-core-model.version>2.1.0-SNAPSHOT</rspace-core-model.version>
+    <rspace-core-model.version>2.1.0</rspace-core-model.version>
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
