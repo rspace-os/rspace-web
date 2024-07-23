@@ -1,6 +1,7 @@
 package com.researchspace.export.pdf;
 
 import static com.researchspace.testutils.RSpaceTestUtils.loadTextResourceFromPdfDir;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
@@ -9,7 +10,6 @@ import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.testutils.TestRunnerController;
 import java.io.File;
 import java.io.IOException;
@@ -26,12 +26,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class PdfProcessorTest {
-  @Mock private UserExternalIdResolver externalIdResolver;
-
-  @Mock private HTMLUnicodeFontProcesser htmlUnicodeFontProcesser;
-
-  @Mock private HtmlImageResolver htmlImageResolver;
-
   @Mock private PdfHtmlGenerator pdfHtmlGenerator;
 
   @InjectMocks private PdfProcessor pdfProcessor;
@@ -85,6 +79,12 @@ public class PdfProcessorTest {
 
   @Test
   public void concatenatesFiles() throws Exception {
+    String output = concatTwoDocuments();
+    assertTrue(output.contains("This is document 1."));
+    assertTrue(output.contains("This is document 2."));
+  }
+
+  private String concatTwoDocuments() throws Exception {
     // create 2 pdf docs then concatenate and verify the output doc contains the 2 inputs
     String doc1Html = loadTextResourceFromPdfDir("doc1.html");
     ExportProcesserInput exportProcesserInput1 =
@@ -105,10 +105,25 @@ public class PdfProcessorTest {
 
     List<File> filesToConcatenate = List.of(pdfDoc1, pdfDoc2);
     pdfProcessor.concatenateExportedFilesIntoOne(outputFile, filesToConcatenate, config);
-    String output = readPdfContent(outputFile);
+    return readPdfContent(outputFile);
+  }
 
-    assertTrue(output.contains("This is document 1."));
-    assertTrue(output.contains("This is document 2."));
+  @Test
+  public void testPageNumbersRestartedEachDoc() throws Exception {
+    concatTwoDocuments();
+
+    // config has start page reset to 0 i.e. next doc would begin at page 1, which is the default
+    assertEquals(0, config.getStartPage());
+  }
+
+  @Test
+  public void testPageNumbersContiguous() throws Exception {
+    config.setRestartPageNumberPerDoc(false);
+    concatTwoDocuments();
+
+    // config has start page as page 3 i.e. next doc would begin at page 4, since the config
+    // property to restart the page number on each doc is set to false
+    assertEquals(3, config.getStartPage());
   }
 
   private String readPdfContent(File outFile) throws IOException {

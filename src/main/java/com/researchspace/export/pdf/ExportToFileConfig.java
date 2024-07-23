@@ -47,7 +47,7 @@ public class ExportToFileConfig implements StructuredDocumentHTMLViewConfig, IEx
   private boolean provenance = true;
   private boolean comments = true;
   private boolean annotations = true;
-  private boolean pageName = true;
+  private boolean restartPageNumberPerDoc = true;
   private boolean includeFieldLastModifiedDate = true;
 
   @NotNull private ExportPageSize pageSize = ExportPageSize.A4;
@@ -67,11 +67,7 @@ public class ExportToFileConfig implements StructuredDocumentHTMLViewConfig, IEx
     return exportScope;
   }
 
-  /**
-   * A name() String of an {@link ExportFormat} enum
-   *
-   * @param exportFormat
-   */
+  /** A name() String of an {@link ExportFormat} enum */
   public void setExportFormat(String exportFormat) {
     this.exportFormat = ExportFormat.valueOf(exportFormat);
   }
@@ -110,8 +106,8 @@ public class ExportToFileConfig implements StructuredDocumentHTMLViewConfig, IEx
         + comments
         + ", annotations="
         + annotations
-        + ", pageName="
-        + pageName
+        + ", restartPageNumberPerDoc="
+        + restartPageNumberPerDoc
         + ", pageSize="
         + pageSize
         + ", dateType="
