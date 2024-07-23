@@ -1,7 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
-import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
@@ -34,6 +33,7 @@ import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSeriesHelper2;
 import com.researchspace.model.inventory.SubSample;
@@ -594,43 +594,31 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
     try {
       dbSample = getIfExists(dbSample.getId());
       if (!dbSample.isDeleted()) {
-        /* first try deleting undeleted subsamples */
-        if (!forceDelete) {
-          long ssInContainersCount =
-              dbSample.getActiveSubSamples().stream()
-                  .filter(
-                      ss ->
-                          ss.getParentContainer() != null
-                              && !ContainerType.WORKBENCH.equals(
-                                  ss.getParentContainer().getContainerType()))
-                  .count();
-          if (ssInContainersCount > 0) {
-            throw new ApiRuntimeException(
-                "sample.deletion.failure.subsamples.in.containers",
-                dbSample.getGlobalIdentifier(),
-                ssInContainersCount);
-          }
-        }
-        dbSample
-            .getActiveSubSamples()
-            .forEach(ss -> subSampleMgr.markSubSampleAsDeleted(ss.getId(), user, true));
-        dbSample.refreshActiveSubSamples();
-        dbSample.recalculateTotalQuantity();
+        long ssInContainersCount =
+            dbSample.getActiveSubSamples().stream()
+                .filter(MovableInventoryRecord::isStoredInContainer)
+                .count();
+        if (forceDelete || ssInContainersCount == 0) {
+          dbSample
+              .getActiveSubSamples()
+              .forEach(ss -> subSampleMgr.markSubSampleAsDeleted(ss.getId(), user, true));
+          dbSample.refreshActiveSubSamples();
+          dbSample.recalculateTotalQuantity();
 
-        /* then delete the sample */
-        dbSample.setRecordDeleted(true);
-        dbSample = sampleDao.save(dbSample);
-        publisher.publishEvent(new InventoryDeleteEvent(dbSample, user));
+          /* then delete the sample */
+          dbSample.setRecordDeleted(true);
+          dbSample = sampleDao.save(dbSample);
+          publisher.publishEvent(new InventoryDeleteEvent(dbSample, user));
+        }
       }
     } finally {
       if (temporaryLock) {
         unlockItemAfterEdit(dbSample, user);
       }
     }
-
-    ApiSample deleted = getOutgoingApiSample(dbSample, user);
-    updateOntologyOnRecordChanges(deleted, user);
-    return deleted;
+    ApiSample apiSampleResult = getOutgoingApiSample(dbSample, user);
+    updateOntologyOnRecordChanges(apiSampleResult, user);
+    return apiSampleResult;
   }
 
   @Override

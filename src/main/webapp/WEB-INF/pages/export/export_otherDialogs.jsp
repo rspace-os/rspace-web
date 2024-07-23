@@ -21,7 +21,7 @@
         <td><input id="pdf_a1IncludeFieldLastModifiedDate" type="checkbox" name="includeFieldLastModifiedDate" checked></input></td>
     </tr>
     <tr><td><fmt:message key="dialogs.pdfArchiving.label.numbering"/></td>
-        <td><input id="pdf_a1pagenbr" type="checkbox" name="pagename" checked></input></td>
+        <td><input id="pdf_a1pagenbr" type="checkbox" name="restartPageNumberPerDoc" checked></input></td>
     </tr>
     <tr><td><fmt:message key="dialogs.pdfArchiving.label.pageFormat"/></td>
         <td><select id="pdf_a1size" name="pagesize">    

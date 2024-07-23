@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.axiope.search.SearchUtils;
 import com.researchspace.Constants;
-import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
@@ -581,13 +580,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(initialSampleCountIncludingDeleted + 1, afterCreationSampleCountIncludingDeleted);
 
     // try deleting without forceDelete flag
-    ApiRuntimeException are =
-        assertThrows(
-            ApiRuntimeException.class,
-            () -> sampleApiMgr.markSampleAsDeleted(newSample.getId(), false, testUser));
-    assertEquals("sample.deletion.failure.subsamples.in.containers", are.getErrorCode());
-    assertEquals(newSample.getGlobalId(), are.getArgs()[0]);
-    assertEquals(1L, are.getArgs()[1]);
+    ApiSample apiSample = sampleApiMgr.markSampleAsDeleted(newSample.getId(), false, testUser);
+    assertFalse(apiSample.getCanBeDeleted());
+    assertTrue(apiSample.getSubSamples().get(0).isStoredInContainer());
     listContainer = containerApiMgr.getApiContainerById(listContainer.getId(), testUser);
     assertEquals(1, listContainer.getContentSummary().getTotalCount());
     Mockito.verify(mockPublisher, Mockito.never())

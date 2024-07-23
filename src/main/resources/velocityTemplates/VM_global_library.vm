@@ -103,15 +103,15 @@
 ## and linking to a site that resolves the IP address.
 #macro(emailSourceIpFooter $ipAddress )
 <div style="font-size:80%">
-#emailSourceIpFooter_content1($ipAddress) <a href="http://www.ip-adress.com/ip_tracer/$ipAddress">ip-adress.com</a>.
+#emailSourceIpFooter_content1($ipAddress) <a href="https://ip-lookup.net/index.php?ip=$ipAddress">ip-lookup.net</a>.
 </div>
 #end
 
 #macro(emailSourceIpFooter_Plaintext $ipAddress )
-#emailSourceIpFooter_content1($ipAddress) http://www.ip-adress.com/ip_tracer/$ipAddress
+#emailSourceIpFooter_content1($ipAddress) https://ip-lookup.net/index.php?ip=$ipAddress
 #end
 
-http://www.ip-adress.com/ip_tracer/${ipAddress}
+https://ip-lookup.net/index.php?ip=${ipAddress}
 
 
 #macro(emailSourceIpFooter_content1 $ipAddress )

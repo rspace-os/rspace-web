@@ -536,7 +536,7 @@ let pdfConfig = {
   provenance: true,
   comments: true,
   annotations: true,
-  pageName: true,
+        restartPageNumberPerDoc: true,
   pageSize: "A4",
   defaultPageSize: "A4",
   dateType: "EXP",
