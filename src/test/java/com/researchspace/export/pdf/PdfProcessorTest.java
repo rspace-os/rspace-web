@@ -10,6 +10,7 @@ import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.testutils.TestRunnerController;
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +27,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class PdfProcessorTest {
+  @Mock private UserExternalIdResolver externalIdResolver;
+
+  @Mock private HTMLUnicodeFontProcesser htmlUnicodeFontProcesser;
+
+  @Mock private HtmlImageResolver htmlImageResolver;
+
   @Mock private PdfHtmlGenerator pdfHtmlGenerator;
 
   @InjectMocks private PdfProcessor pdfProcessor;
