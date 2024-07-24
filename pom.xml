@@ -1519,7 +1519,7 @@
         <exclusions>
           <exclusion>
                 <groupId>com.github.rspace-os</groupId>
-                <artifactId>repository-spi</artifactId>
+                <artifactId>rspace-repository-spi</artifactId>
           </exclusion>
           <exclusion>
                 <groupId>com.github.rspace-os</groupId>
@@ -1885,7 +1885,7 @@
         <exclusions>
           <exclusion>
                 <groupId>com.github.rspace-os</groupId>
-                <artifactId>repository-spi</artifactId>
+                <artifactId>rspace-repository-spi</artifactId>
           </exclusion>
           <exclusion>
                 <groupId>com.github.rspace-os</groupId>
