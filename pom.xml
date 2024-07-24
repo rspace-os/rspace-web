@@ -1767,19 +1767,12 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-mendeley-client</artifactId>
-        <version>0.3.1</version>
+        <version>0.3.2</version>
         <exclusions>
-          <exclusion>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-core</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-          </exclusion><exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
+            <exclusion>
+              <groupId>org.springframework</groupId>
+              <artifactId>spring-core</artifactId>
+            </exclusion>
             <exclusion>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-web</artifactId>
@@ -1811,10 +1804,6 @@
             <exclusion>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
