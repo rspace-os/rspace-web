@@ -1865,19 +1865,11 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-zenodo-adapter</artifactId>
-        <version>0.3.0</version>
+        <version>0.3.1</version>
         <exclusions>
           <exclusion>
             <groupId>com.github.rspace-os</groupId>
             <artifactId>repository-spi</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
         </exclusions>
     </dependency>
