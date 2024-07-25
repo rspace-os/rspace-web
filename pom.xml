@@ -672,7 +672,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>snapgene-java-client</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.1</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -2155,16 +2155,8 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>rspace-snapgene-adapter</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
         <exclusions>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-          </exclusion>
           <exclusion>
               <groupId>com.github.rspace-os</groupId>
               <artifactId>rspace-core-util</artifactId>
@@ -2178,16 +2170,12 @@
               <artifactId>spring-web</artifactId>
           </exclusion>
           <exclusion>
-              <groupId>org.slf4j</groupId>
-              <artifactId>slf4j-api</artifactId>
-          </exclusion>
-          <exclusion>
-              <groupId>commons-io</groupId>
-              <artifactId>commons-io</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
           </exclusion>
           <exclusion>
             <groupId>com.github.rspace-os</groupId>
-            <artifactId>rest-api-utils</artifactId>
+            <artifactId>rspace-rest-api-utils</artifactId>
           </exclusion>
         </exclusions>
     </dependency>
