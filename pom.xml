@@ -9,7 +9,7 @@
   <packaging>war</packaging>
   <version>2.1.0</version><!-- appVersionID don't remove this comment it identifies this version -->
   <name>ResearchSpace</name>
-  <url>http://www.researchspace.com</url>
+  <url>https://www.researchspace.com</url>
 
   <parent>
     <artifactId>rspace-parent</artifactId>
