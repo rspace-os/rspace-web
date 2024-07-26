@@ -4,8 +4,6 @@
 <script src="https://accounts.google.com/gsi/client?onload=onLoad" async defer></script>
 <script async defer src="https://apis.google.com/js/api.js"></script>
 
-<%-- todo do we need gapi loaded separateyl --%>
-
 <script type="text/javascript">
   function removeInventoryAuthOnRunAs() {
     window.sessionStorage.removeItem("id_token");
