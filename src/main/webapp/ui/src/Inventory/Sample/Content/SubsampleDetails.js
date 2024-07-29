@@ -76,6 +76,7 @@ type SubsampleDetailsArgs = {|
 
 function SubsampleDetails({ search }: SubsampleDetailsArgs) {
   const theme = useTheme();
+  const cardId = React.useId();
 
   const subsample = search.activeResult;
   if (subsample === null || typeof subsample === "undefined")
@@ -91,6 +92,9 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
     <Wrapper>
       <>
         <Card
+          role="region"
+          aria-label="Subsample details"
+          id={cardId}
           variant="outlined"
           sx={{
             border: `2px solid ${theme.palette.record.subSample.bg}`,
@@ -146,6 +150,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
           position="static"
           nextButton={
             <Button
+              aria-controls={cardId}
               size="small"
               onClick={doNotAwait(async () => {
                 if (index + 1 > search.filteredResults.length - 1)
@@ -166,6 +171,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
           }
           backButton={
             <Button
+              aria-controls={cardId}
               size="small"
               onClick={doNotAwait(async () => {
                 if (index === 0)
