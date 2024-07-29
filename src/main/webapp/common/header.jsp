@@ -1,8 +1,14 @@
 <%@ include file="/common/taglibs.jsp"%>
 <meta name="google-signin-client_id" content="731959816562-p2igqsv375nta4bd0g3c3tkq5r90kpg5.apps.googleusercontent.com">
-<script src="<c:url value='/scripts/pages/signup/google-signin.js'/>"></script>
-<script src="https://accounts.google.com/gsi/client?onload=onLoad" async defer></script>
-<script async defer src="https://apis.google.com/js/api.js"></script>
+<c:if test="${isGoogleDriveAppEnabled}">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+</c:if>
+
+<rst:hasDeploymentProperty name="cloud" value="true">
+  <script src="<c:url value='/scripts/pages/signup/google-signin.js'/>"></script>
+  <script src="https://accounts.google.com/gsi/client?onload=onLoad" async defer></script>
+</rst:hasDeploymentProperty>
 
 <script type="text/javascript">
   function removeInventoryAuthOnRunAs() {
