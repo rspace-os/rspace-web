@@ -58,41 +58,10 @@ Current location of the codebase is https://github.com/rspace-os/rspace-web
 It's best to use a Git client to download and update source code.
 Alternatively, for one-off installation, you can download project directly from the page as a zip package.
 
-#### Download required non-public RSpace dependencies (temporary solution before official open-source version)
+#### (only if running RSpace version < 2.1.0) Download required non-public RSpace dependencies 
 
-Not all of RSpace dependencies are yet publicly available, you need to download an additional package
-of dependencies for your release from https://github.com/rspace-os/rspace-web/releases page. 
-
-The .zip archive contains folder `rspace_os_local_dependencies` with dependencies from com.researchspace and com.github.rspace-os namespace.
-The archive need to be unpacked into location that maven will be able to read from, e.g. into your `.m2` folder.
-Note this location, as it will be required in next step.
-
-#### Configuring local repository for required non-public RSpace dependencies (temporary solution before official open-source version)
-
-In your `.m2` home folder create a file called `settings.xml` (if it's not there yet) and insert this content.
-E.g. on a Mac this would be in `Users/myusername/.m2/settings.xml`.
-If you already have a `settings.xml`, add the 'profile' or 'profiles' tag from the fragment above into your file, and save it.
-
-```xml
-<settings>
-  <profiles>
-    <profile>
-      <id>rspacelocalrepo</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <repositories>
-        <repository>
-          <id>rspace-os-local-dependencies-repo</id>
-          <url>file://path-to-unzipped-dependencies-folder>/rspace_os_local_dependencies</url>
-        </repository>
-      </repositories>
-    </profile>
-  </profiles>
-</settings>
-```
-
-Then update repository url in the fragment above so it point to the `rspace_os_local_dependencies` folder you unzipped before. 
+This is no longer needed for RSpace 2.1.0 version (or later), but if you're trying to run an older version, check the historical revision of this document,
+which describes how to download and install an additional package of dependencies from https://github.com/rspace-os/rspace-web/releases page. 
 
 #### Sanity check
 
