@@ -11,6 +11,7 @@ import Argos from "./integrations/Argos";
 import Box from "./integrations/Box";
 import Clustermarket from "./integrations/Clustermarket";
 import Dataverse from "./integrations/Dataverse";
+import DigitalCommonsData from "./integrations/DigitalCommonsData";
 import DMPonline from "./integrations/DMPonline";
 import DMPTool from "./integrations/DMPTool";
 import Dropbox from "./integrations/Dropbox";
@@ -336,6 +337,12 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
         <Dataverse
           integrationState={integrationStates.DATAVERSE}
           update={dataverseUpdate}
+        />
+      )}
+      {integrationStates.DIGITAL_COMMONS_DATA.mode === mode && (
+        <DigitalCommonsData
+          integrationState={integrationStates.DIGITAL_COMMONS_DATA}
+          update={() => {}}
         />
       )}
       {integrationStates.DMPONLINE.mode === mode && (

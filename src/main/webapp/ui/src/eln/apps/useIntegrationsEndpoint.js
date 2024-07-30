@@ -71,6 +71,9 @@ export type IntegrationStates = {|
       |}>
     >
   >,
+  DIGITAL_COMMONS_DATA: IntegrationState<{|
+    ACCESS_TOKEN: Optional<string>,
+  |}>,
   DMPONLINE: IntegrationState<{||}>,
   DMPTOOL: IntegrationState<{|
     ACCESS_TOKEN: Optional<string>,
@@ -271,6 +274,18 @@ function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
               : Optional.empty()
           )
         : [],
+  };
+}
+
+function decodeDigitalCommonsData(
+  data: FetchedState
+): IntegrationStates["DIGITAL_COMMONS_DATA"] {
+  return {
+    // TODO
+    mode: "DISABLED",
+    credentials: {
+      ACCESS_TOKEN: Optional.empty(),
+    },
   };
 }
 
@@ -497,6 +512,7 @@ function decodeIntegrationStates(data: {
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),
     DATAVERSE: decodeDataverse(data.DATAVERSE),
+    DIGITAL_COMMONS_DATA: decodeDigitalCommonsData(data.DIGITAL_COMMONS_DATA),
     DMPONLINE: decodeDmponline(data.DMPONLINE),
     DMPTOOL: decodeDmpTool(data.DMPTOOL),
     DROPBOX: decodeDropbox(data.DROPBOX),
@@ -616,6 +632,19 @@ const encodeIntegrationState = <I: Integration>(
           creds
         )
       ),
+    };
+  }
+  if (integration === "DIGITAL_COMMONS_DATA") {
+    return {
+      name: "DIGITAL_COMMONS_DATA",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      // $FlowExpectedError[prop-missing]
+      // $FlowExpectedError[incompatible-type]
+      // $FlowExpectedError[incompatible-use]
+      options: data.credentials.ACCESS_TOKEN.map((token) => ({
+        ACCESS_TOKEN: token,
+      })).orElse({}),
     };
   }
   if (integration === "DMPONLINE") {
@@ -1040,6 +1069,8 @@ export function useIntegrationsEndpoint(): {|
               return decodeClustermarket(responseData.data);
             case "DATAVERSE":
               return decodeDataverse(responseData.data);
+            case "DIGITAL_COMMONS_DATA":
+              return decodeDigitalCommonsData(responseData.data);
             case "DMPONLINE":
               return decodeDmponline(responseData.data);
             case "DMPTOOL":
@@ -1140,6 +1171,8 @@ export function useIntegrationsEndpoint(): {|
           return decodeClustermarket(response.data.data);
         case "DATAVERSE":
           return decodeDataverse(response.data.data);
+        case "DIGITAL_COMMONS_DATA":
+          return decodeDigitalCommonsData(response.data.data);
         case "DMPONLINE":
           return decodeDmponline(response.data.data);
         case "DMPTOOL":
