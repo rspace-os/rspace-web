@@ -14,12 +14,6 @@
 
 <input type="hidden" name="from" value="<c:out value=" ${param.from}" />" />
 
-<%-- commenting as seems unused (mk - 22/09/16) --%>
-<%-- <c:if test="${cookieLogin == 'true'}"> --%>
-<%-- 	<form:hidden path="password" /> --%>
-<%-- 	<form:hidden path="confirmPassword" /> --%>
-<%-- </c:if> --%>
-
 <c:if test="${empty user.version}">
 	<input type="hidden" name="encryptPass" value="true" />
 </c:if>
@@ -305,7 +299,7 @@
 <div class="bootstrap-custom-flat">
 	<div class="col-xs-9" style="padding: 0px">
 		<hr />
-		<c:if test="${canEdit}">
+		<c:if test="${canEdit and !sessionScope['rs.IS_RUN_AS']}">
 			<div class="api-menu__header col-xs-12">
 				<fmt:message key="user.apikey.label" />
 			</div>

@@ -500,6 +500,11 @@ function renderApiKeyMenu(serverResponse) {
 }
 
 function initApiKeyDisplay () {
+
+  if ($('#apiKeyInfo').size() == 0) {
+    return; // fragment not displayed
+  }
+
   function updateApiKeyMenu() {
     $.get('/userform/ajax/apiKeyInfo')
      .then(renderApiKeyMenu);

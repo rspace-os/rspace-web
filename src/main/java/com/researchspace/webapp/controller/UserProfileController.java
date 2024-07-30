@@ -105,6 +105,8 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -748,6 +750,10 @@ public class UserProfileController extends BaseController {
 
   @GetMapping("/ajax/apiKeyInfo")
   public @ResponseBody AjaxReturnObject<ApiInfo> getApiKeyInfo() {
+    if (SecurityUtils.getSubject().isRunAs()) {
+      throw new AuthorizationException(
+          "apiKey cannot be accessed when 'operating' as another user");
+    }
     User user = userManager.getAuthenticatedUserInSession();
     Optional<UserApiKey> optKey = apiKeyMgr.getKeyForUser(user);
     ApiInfo rc = new ApiInfo();
@@ -761,6 +767,7 @@ public class UserProfileController extends BaseController {
     if (!available.isSucceeded()) {
       rc.setMessage(available.getEntity());
     }
+    SECURITY_LOG.info("User [{}] asked to see their apiKey", user.getUsername());
     return new AjaxReturnObject<>(rc, null);
   }
 
