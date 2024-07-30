@@ -581,6 +581,10 @@ public class StructuredDocumentController extends BaseController {
     model.addAttribute("inventoryAvailable", inventoryEnabled);
     model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));
+
+    boolean isGoogleDriveAppEnabled =
+        integrationsHandler.getIntegration(user, "GOOGLEDRIVE").isEnabled();
+    model.addAttribute("isGoogleDriveAppEnabled", isGoogleDriveAppEnabled);
     String view =
         msTeamsDocView
             ? STRUCTURED_DOCUMENT_MS_TEAMS_SIMPLE_VIEW_NAME

@@ -26,8 +26,8 @@ var isInSearch = false; //This is used to keep track and reapply filters when so
 var gdDeveloperKey = '';
 // The Client ID obtained from the Google Developers Console. Replace with your own Client ID.
 var gdClientId = "";
-// Scope to use to access user's photos.
-var gdScope = ['https://www.googleapis.com/auth/drive'];
+// Scope to use to access user's files.
+var gdScope = 'https://www.googleapis.com/auth/drive'
 var gdPickerApiLoaded = false;
 var gdOauthToken;
 
@@ -1695,8 +1695,7 @@ function appriseNoConnection(provider) {
 }
 
 function onGoogleDriveAPILoad() {
-  // gapi.load('auth', {'callback': onAuthApiLoad});
-  gapi.load('auth', {});
+  gapi.load('auth2', {});
   gapi.load('picker', { 'callback': onGoogleDrivePickerApiLoad });
 }
 
