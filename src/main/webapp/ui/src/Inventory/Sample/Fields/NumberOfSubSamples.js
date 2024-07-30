@@ -117,7 +117,7 @@ function NumberOfSubSamples({
                     <OptionExplanation>
                       The sample is made up of{" "}
                       <strong>multiple subsamples</strong>, which represent
-                      related physical items originating from the same batch.
+                      related physical items originating from the same source.
                       Sample actions affect the entire group of subsamples.
                     </OptionExplanation>
                   </>
