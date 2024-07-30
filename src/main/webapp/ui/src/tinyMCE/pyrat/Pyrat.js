@@ -477,6 +477,7 @@ parent.tinymce.activeEditor.on("pyrat-insert", function () {
 function createTinyMceTable() {
   let pyratTable = document.createElement("table");
   pyratTable.setAttribute("data-tableSource", "pyrat");
+  pyratTable.style = "font-size: 0.7em";
 
   let tableHeader = document.createElement("tr");
   VISIBLE_HEADER_CELLS.forEach((cell) => {
