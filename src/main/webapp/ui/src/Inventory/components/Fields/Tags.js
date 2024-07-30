@@ -9,7 +9,6 @@ import Grid from "@mui/material/Grid";
 import TagListing from "../../../components/Tags/TagListing";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import NavigateContext from "../../../stores/contexts/Navigate";
-import useStores from "../../../stores/use-stores";
 import BatchFormField from "../Inputs/BatchFormField";
 
 const MAX_TOTAL = 8000;
@@ -24,7 +23,6 @@ function Tags<
 >({ fieldOwner }: {| fieldOwner: FieldOwner |}): Node {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
-  const { uiStore } = useStores();
 
   const errorMessage = () => {
     if (
@@ -61,7 +59,6 @@ function Tags<
         <TagListing
           onClick={(tag) => {
             navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
-            uiStore.setVisiblePanel("left");
           }}
           tags={fieldOwner.fieldValues.tags}
           {...(fieldOwner.isFieldEditable("tags")

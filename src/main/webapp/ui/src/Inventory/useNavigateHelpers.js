@@ -19,7 +19,6 @@ export default function useNavigateHelpers(): {|
     navigateToSearch: (destination) => {
       const params = searchStore.fetcher.generateNewQuery(destination);
       navigate(`/inventory/search?${params.toString()}`);
-      uiStore.setVisiblePanel("left");
       /*
        * Once the navigation is complete, setActiveResult may be called in
        * SearchRouter. Doing so before navigation has completed would result in

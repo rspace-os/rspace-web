@@ -14,7 +14,6 @@ import UserDetails from "../../Inventory/components/UserDetails";
 import RecordLocation from "../../Inventory/components/RecordLocation";
 import TagListing from "../Tags/TagListing";
 import NavigateContext from "../../stores/contexts/Navigate";
-import useStores from "../../stores/use-stores";
 
 type AdjustableCellArgs<T: AdjustableTableRowLabel> = {|
   dataSource: AdjustableTableRow<T>,
@@ -27,7 +26,6 @@ function AdjustableCell<T: AdjustableTableRowLabel>({
 }: AdjustableCellArgs<T>): Node {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
-  const { uiStore } = useStores();
 
   const selectedContent = (
     dataSource.adjustableTableOptions().get(selectedOption) ??
@@ -49,7 +47,6 @@ function AdjustableCell<T: AdjustableTableRowLabel>({
       <TagListing
         onClick={(tag) => {
           navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
-          uiStore.setVisiblePanel("left");
         }}
         tags={cellContent.data}
         size="small"

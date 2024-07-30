@@ -74,6 +74,7 @@ export default function MainSearchNavigationContext({
         void doSearch(
           new URLSearchParams(url.match(/\/inventory\/search\?(.*)/)?.[1])
         );
+        uiStore.setVisiblePanel("left");
         /*
          * We also invoke the parent NavigationContext to propagate the
          * navigation up, until it reaches the root NavigationContext which

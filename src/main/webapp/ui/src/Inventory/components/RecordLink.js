@@ -101,7 +101,7 @@ type TopLinkArgs = {|
 export const TopLink: ComponentType<TopLinkArgs> = observer(
   ({ overflow = false }: TopLinkArgs): Node => {
     const { classes } = useStyles();
-    const { searchStore, trackingStore, uiStore } = useStores();
+    const { searchStore, trackingStore } = useStores();
     const { useNavigate } = useContext(NavigateContext);
     const navigate = useNavigate();
 
@@ -114,7 +114,6 @@ export const TopLink: ComponentType<TopLinkArgs> = observer(
       e.stopPropagation();
       navigate(containersRoot);
       trackingStore.trackEvent("BreadcrumbClicked");
-      uiStore.setVisiblePanel("left");
     };
 
     return (

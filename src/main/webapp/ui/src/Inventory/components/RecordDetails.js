@@ -140,7 +140,6 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): Node {
                           navigate(
                             `/inventory/search?query=l: (tags:"${tag.value}")`
                           );
-                          uiStore.setVisiblePanel("left");
                         }}
                         tags={record.recordDetails.tags}
                         size="small"
