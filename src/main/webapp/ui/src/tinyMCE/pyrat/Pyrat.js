@@ -51,7 +51,7 @@ function Pyrat() {
   const pyratUrl = useDeploymentProperty("pyrat.url");
   useEffect(() => {
     FetchingData.getSuccessValue(pyratUrl).do((p) => {
-      PYRAT_URL = new URL(p);
+      PYRAT_URL = p;
     });
   }, [pyratUrl]);
 
@@ -488,12 +488,16 @@ function createTinyMceTable() {
   const pyratTable = document.createElement("table");
   pyratTable.setAttribute("data-tableSource", "pyrat");
 
+  if (!PYRAT_URL) throw new Error("PYRAT_URL is not known");
+
+  const link = PYRAT_URL.slice(0, PYRAT_URL.lastIndexOf("/api/"));
+
   const linkRow = document.createElement("tr");
   const linkCell = document.createElement("th");
   linkCell.appendChild(document.createTextNode("Imported from "));
   const anchor = document.createElement("a");
-  anchor.href = PYRAT_URL?.origin ?? "";
-  anchor.appendChild(document.createTextNode(PYRAT_URL?.origin ?? ""));
+  anchor.href = link;
+  anchor.appendChild(document.createTextNode(link));
   anchor.setAttribute("rel", "noreferrer");
   linkCell.appendChild(anchor);
   linkCell.appendChild(document.createTextNode(" on "));
