@@ -5,7 +5,7 @@ import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import DMPToolIcon from "../icons/dmptool.svg";
+import DcdIcon from "../icons/dcd.svg";
 import { useDmptoolEndpoint } from "../useDmptoolEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
@@ -15,9 +15,9 @@ type DigitalCommonsDataArgs = {|
 |};
 
 export const COLOR = {
-  hue: 23,
-  saturation: 95,
-  lightness: 57,
+  hue: 26,
+  saturation: 100,
+  lightness: 50,
 };
 
 /*
@@ -55,7 +55,7 @@ function DigitalCommonsData({
         name="Digital Commons Data"
         integrationState={integrationState}
         explanatoryText="Create Data Management Plans for your research through a guided web-based tool with templates."
-        image={DMPToolIcon}
+        image={DcdIcon}
         color={COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
