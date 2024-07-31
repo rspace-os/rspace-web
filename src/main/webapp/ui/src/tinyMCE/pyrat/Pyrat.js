@@ -499,6 +499,7 @@ function createTinyMceTable() {
   linkCell.appendChild(document.createTextNode(" on "));
   linkCell.appendChild(document.createTextNode(new Date().toDateString()));
   linkCell.setAttribute("colspan", VISIBLE_HEADER_CELLS.length);
+  linkCell.style = "font-weight: 400";
   linkRow.appendChild(linkCell);
   pyratTable.appendChild(linkRow);
 
