@@ -103,6 +103,19 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
     [update]
   );
 
+  const digitalCommonsDataUpdate = React.useCallback(
+    (newState: IntegrationStates["DIGITAL_COMMONS_DATA"]) => {
+      void runInAction(async () => {
+        integrationStates.DIGITAL_COMMONS_DATA = await update(
+          "DIGITAL_COMMONS_DATA",
+          newState
+        );
+      });
+    },
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [update]
+  );
+
   const dmponlineUpdate = React.useCallback(
     (newState: IntegrationStates["DMPONLINE"]) => {
       void runInAction(async () => {
@@ -342,7 +355,7 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
       {integrationStates.DIGITAL_COMMONS_DATA.mode === mode && (
         <DigitalCommonsData
           integrationState={integrationStates.DIGITAL_COMMONS_DATA}
-          update={() => {}}
+          update={digitalCommonsDataUpdate}
         />
       )}
       {integrationStates.DMPONLINE.mode === mode && (
