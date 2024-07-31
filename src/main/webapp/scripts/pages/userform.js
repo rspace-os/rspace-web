@@ -521,7 +521,6 @@ function initApiKeyDisplay () {
 
   $(document).on("click", "#apiKeyRegenerateBtn", function(e) {
     e.preventDefault();
-    e.stopPropagation();
 
 	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {  
       	if (response.data) {
@@ -532,7 +531,9 @@ function initApiKeyDisplay () {
 	  });
   });
   
-  $(document).on("click", "#apiKeyRevokeBtn", function(e) { 
+  $(document).on("click", "#apiKeyRevokeBtn", function(e) {
+    e.preventDefault();
+
     $.post('/userform/ajax/apiKey', {"_method":"DELETE"}, function (intDeleted){
       if (intDeleted > 0) {
         RS.defaultConfirm("Key deleted");

@@ -773,7 +773,7 @@ public class UserProfileController extends BaseController {
           "API key details cannot be accessed when 'operating' as another user");
     }
     User user = userManager.getAuthenticatedUserInSession();
-    SECURITY_LOG.info("User [{}] asked to see their apiKey", user.getUsername());
+    SECURITY_LOG.info("User [{}] asked to see their API key", user.getUsername());
 
     Optional<UserApiKey> optKey = apiKeyMgr.getKeyForUser(user);
     if (!optKey.isPresent()) {
