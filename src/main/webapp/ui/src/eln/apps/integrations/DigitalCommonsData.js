@@ -54,27 +54,27 @@ function DigitalCommonsData({
       <IntegrationCard
         name="Digital Commons Data"
         integrationState={integrationState}
-        explanatoryText="Create Data Management Plans for your research through a guided web-based tool with templates."
+        explanatoryText="Export datasets to the data repository, with persistent unique identifiers to enable referencing and citation."
         image={DcdIcon}
         color={COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
-        helpLinkText="DMPTool integration docs"
-        website="dmptool.org"
-        docLink="dmptool"
-        usageText="You can import Data Management Plans (DMPs) from DMPTool into RSpace, and associate DMPs with repository exports. Exporting from RSpace automatically updates the DMP in DMPTool with a DOI of the repository deposit."
+        helpLinkText="Digital Commons Data integration docs"
+        website="elsevier.digitalcommonsdata.com"
+        docLink="dcd"
+        usageText="You can export your files and data directly from RSpace to Digital Commons Data."
         setupSection={
           <>
             <ol>
               <li>
-                Click on Connect to authorise RSpace to access your DMPTool
-                account.
+                Click on Connect to authorise RSpace to access your Digital
+                Commons Data account.
               </li>
               <li>Enable the integration.</li>
               <li>
-                You can now import a DMP when in the Gallery, and associate a
-                DMP with data when in the export dialog.
+                Digital Commons Data will now be available as an option in the
+                export dialog.
               </li>
             </ol>
             {connected ? (
