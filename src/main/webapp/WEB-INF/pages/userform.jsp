@@ -299,7 +299,7 @@
 <div class="bootstrap-custom-flat">
 	<div class="col-xs-9" style="padding: 0px">
 		<hr />
-		<c:if test="${canEdit and !sessionScope['rs.IS_RUN_AS']}">
+		<c:if test="${canEdit}">
 			<div class="api-menu__header col-xs-12">
 				<fmt:message key="user.apikey.label" />
 			</div>
@@ -561,14 +561,14 @@
 <script type="text/template" id="apiKeyDetailsTemplate">
 	{{#enabled}}
     <div class="api-menu__key col-xs-8">
-      {{#key}}
-        <strong>Key</strong>: <span id="api-menu__keyValue">{{key}}</span>
+      {{#revokable}}
+        <strong>Key</strong>: <span id="api-menu__keyValue"> ... </span>
           <a href="#" id="api-menu__showKey" onclick="return false;">Show Key</a>
           <a href="#" id="api-menu__hideKey" onclick="return false;">Hide Key</a>
-      {{/key}}
-      {{^key}}
+      {{/revokable}}
+      {{^revokable}}
         <strong>Key</strong>: Empty.
-      {{/key}}
+      {{/revokable}}
 
       <br />
       See <a href="/public/apiDocs" target="_blank">API Documentation</a>.

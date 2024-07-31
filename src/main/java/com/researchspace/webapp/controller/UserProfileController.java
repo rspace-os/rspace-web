@@ -699,7 +699,7 @@ public class UserProfileController extends BaseController {
 
   @PostMapping("/ajax/apiKey")
   @IgnoreInLoggingInterceptor(ignoreRequestParams = "password")
-  public @ResponseBody AjaxReturnObject<ApiInfo> generateApiKey(
+  public @ResponseBody AjaxReturnObject<ApiKeyInfo> generateApiKey(
       @RequestParam("password") String pwd) {
     if (isEmpty(pwd)) {
       return new AjaxReturnObject<>(
@@ -714,7 +714,8 @@ public class UserProfileController extends BaseController {
 
     UserApiKey apiKey = apiKeyMgr.createKeyForUser(user);
     SECURITY_LOG.info("User {} created new API key", user.getUsername());
-    return new AjaxReturnObject<>(new ApiInfo(apiKey.getApiKey(), true, true, true, "", 0L), null);
+    return new AjaxReturnObject<>(
+        new ApiKeyInfo(apiKey.getApiKey(), true, true, true, "", 0L), null);
   }
 
   @DeleteMapping("/ajax/apiKey")
@@ -728,7 +729,7 @@ public class UserProfileController extends BaseController {
   @Data
   @AllArgsConstructor
   @NoArgsConstructor
-  public static class ApiInfo {
+  public static class ApiKeyInfo {
     /** The actual API key */
     private String key = null;
 
@@ -748,17 +749,12 @@ public class UserProfileController extends BaseController {
     private long age;
   }
 
-  @GetMapping("/ajax/apiKeyInfo")
-  public @ResponseBody AjaxReturnObject<ApiInfo> getApiKeyInfo() {
-    if (SecurityUtils.getSubject().isRunAs()) {
-      throw new AuthorizationException(
-          "apiKey cannot be accessed when 'operating' as another user");
-    }
+  @GetMapping("/ajax/apiKeyDisplayInfo")
+  public @ResponseBody AjaxReturnObject<ApiKeyInfo> getApiKeyDisplayInfo() {
     User user = userManager.getAuthenticatedUserInSession();
     Optional<UserApiKey> optKey = apiKeyMgr.getKeyForUser(user);
-    ApiInfo rc = new ApiInfo();
+    ApiKeyInfo rc = new ApiKeyInfo();
     if (optKey.isPresent()) {
-      rc.setKey(optKey.get().getApiKey());
       rc.setRevokable(true);
       rc.setAge(calculateAge(optKey.get()));
     }
@@ -767,8 +763,23 @@ public class UserProfileController extends BaseController {
     if (!available.isSucceeded()) {
       rc.setMessage(available.getEntity());
     }
-    SECURITY_LOG.info("User [{}] asked to see their apiKey", user.getUsername());
     return new AjaxReturnObject<>(rc, null);
+  }
+
+  @GetMapping("/ajax/apiKeyValue")
+  public @ResponseBody AjaxReturnObject<String> getApiKeyValue() {
+    if (SecurityUtils.getSubject().isRunAs()) {
+      throw new AuthorizationException(
+          "API key details cannot be accessed when 'operating' as another user");
+    }
+    User user = userManager.getAuthenticatedUserInSession();
+    SECURITY_LOG.info("User [{}] asked to see their apiKey", user.getUsername());
+
+    Optional<UserApiKey> optKey = apiKeyMgr.getKeyForUser(user);
+    if (!optKey.isPresent()) {
+      return new AjaxReturnObject<>(null, ErrorList.of("API key is not set"));
+    }
+    return new AjaxReturnObject<>(optKey.get().getApiKey(), null);
   }
 
   /** Shows a list of created OAuth apps on the user's profile page */

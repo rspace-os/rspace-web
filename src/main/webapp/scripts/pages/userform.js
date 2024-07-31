@@ -389,7 +389,7 @@ function initPwdConfirmDlg () {
           var jqxhr = $.post('/userform/ajax/apiKey', {"password":pwd})
                        .done(function(data) {
                            showRSApiKey = true;
-                           renderApiKeyMenu(data); 
+                           renderApiKeyMenu(data);
                        })
                        .fail(function() {
                           RS.ajaxFailed("Creating a new API key", false, jqxhr);
@@ -495,21 +495,30 @@ function renderApiKeyMenu(serverResponse) {
   var keyInfoData = serverResponse.data;
   var htmlData = Mustache.render(apiKeyInfoTemplate, keyInfoData);
   $apiKeyInfo.html(htmlData);
+  if (keyInfoData.key) {
+    $('#api-menu__keyValue').text(keyInfoData.key);
+  }
+  $('#api-menu__keyValue, #api-menu__hideKey').toggle(showRSApiKey);
+  $('#api-menu__showKey').toggle(!showRSApiKey);
+}
+
+function showApiKeyValue(serverResponse) {
+  if (!serverResponse.data) {
+    apprise(getValidationErrorString(serverResponse.errorMsg));
+    return;
+  }
+  $('#api-menu__keyValue').text(serverResponse.data);
   $('#api-menu__keyValue, #api-menu__hideKey').toggle(showRSApiKey);
   $('#api-menu__showKey').toggle(!showRSApiKey);
 }
 
 function initApiKeyDisplay () {
 
-  if ($('#apiKeyInfo').size() == 0) {
-    return; // fragment not displayed
+  function updateApiKeyMenu() {
+    $.get('/userform/ajax/apiKeyDisplayInfo')
+     .then(renderApiKeyMenu);
   }
 
-  function updateApiKeyMenu() {
-    $.get('/userform/ajax/apiKeyInfo')
-     .then(renderApiKeyMenu);
-  }  
-  
   $(document).on("click", "#apiKeyRegenerateBtn", function(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -535,8 +544,13 @@ function initApiKeyDisplay () {
   });
   
   $(document).on("click", "#api-menu__showKey, #api-menu__hideKey", function() {
-	  showRSApiKey = !showRSApiKey;
-	  updateApiKeyMenu();
+    showRSApiKey = !showRSApiKey;
+    if (showRSApiKey) {
+      $.get('/userform/ajax/apiKeyValue')
+        .then(showApiKeyValue);
+    }
+    $('#api-menu__keyValue, #api-menu__hideKey').toggle(showRSApiKey);
+    $('#api-menu__showKey').toggle(!showRSApiKey);
   });
 
   updateApiKeyMenu();

@@ -53,7 +53,7 @@ import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestGroup;
-import com.researchspace.webapp.controller.UserProfileController.ApiInfo;
+import com.researchspace.webapp.controller.UserProfileController.ApiKeyInfo;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Date;
@@ -616,13 +616,22 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     User user = createAndSaveUser(CoreTestUtils.getRandomName(8));
     logoutAndLoginAs(user);
     mockPrincipal = new MockPrincipal(user.getUsername());
-    MvcResult result =
-        mockMvc.perform(get("/userform/ajax/apiKeyInfo").principal(mockPrincipal)).andReturn();
-    ApiInfo info = getFromJsonAjaxReturnObject(result, UserProfileController.ApiInfo.class);
+
+    // check responses before key is generated
+    MvcResult noKeyDetails =
+        mockMvc
+            .perform(get("/userform/ajax/apiKeyDisplayInfo").principal(mockPrincipal))
+            .andReturn();
+    ApiKeyInfo info = getFromJsonAjaxReturnObject(noKeyDetails, ApiKeyInfo.class);
     assertNull(info.getKey());
     assertTrue(info.isRegenerable());
     assertFalse(info.isRevokable());
+    noKeyDetails =
+        mockMvc.perform(get("/userform/ajax/apiKeyValue").principal(mockPrincipal)).andReturn();
+    ErrorList el = getErrorListFromAjaxReturnObject(noKeyDetails);
+    assertEquals("API key is not set", el.getAllErrorMessagesAsStringsSeparatedBy(""));
 
+    // create new API key
     MvcResult createdKey =
         mockMvc
             .perform(
@@ -630,25 +639,40 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
                     .principal(mockPrincipal)
                     .param("password", TESTPASSWD))
             .andReturn();
-    ApiInfo created = getFromJsonAjaxReturnObject(createdKey, UserProfileController.ApiInfo.class);
+    ApiKeyInfo created = getFromJsonAjaxReturnObject(createdKey, ApiKeyInfo.class);
     assertNotNull(created.getKey());
     assertTrue(created.isRegenerable());
     assertTrue(created.isRevokable());
 
+    // retrieve details on created key
+    MvcResult retrievedKeyDetails =
+        mockMvc
+            .perform(get("/userform/ajax/apiKeyDisplayInfo").principal(mockPrincipal))
+            .andReturn();
+    info = getFromJsonAjaxReturnObject(retrievedKeyDetails, ApiKeyInfo.class);
+    assertNull(info.getKey()); // key not included in display info
+    assertTrue(info.isRegenerable());
+    assertTrue(info.isRevokable());
+    retrievedKeyDetails =
+        mockMvc.perform(get("/userform/ajax/apiKeyValue").principal(mockPrincipal)).andReturn();
+    String retrievedApiKey = getFromJsonAjaxReturnObject(retrievedKeyDetails, String.class);
+    assertEquals(created.getKey(), retrievedApiKey);
+
+    // delete key
     MvcResult deletedKey =
         mockMvc.perform(delete("/userform/ajax/apiKey").principal(mockPrincipal)).andReturn();
     Long revoked = Long.parseLong(deletedKey.getResponse().getContentAsString());
     assertTrue(revoked >= 1);
 
+    // error scenario - no password when generating the key
     MvcResult noPwd =
         mockMvc
             .perform(post("/userform/ajax/apiKey").principal(mockPrincipal).param("password", ""))
-
-            // .andExpect(status().is4xxClientError())
             .andReturn();
-    ErrorList el = getErrorListFromAjaxReturnObject(noPwd);
+    el = getErrorListFromAjaxReturnObject(noPwd);
     assertTrue(el.hasErrorMessages());
 
+    // error scenario - wrong password when generating the key
     MvcResult wrongPwd =
         mockMvc
             .perform(
