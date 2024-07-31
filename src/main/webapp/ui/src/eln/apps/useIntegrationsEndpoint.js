@@ -282,7 +282,7 @@ function decodeDigitalCommonsData(
 ): IntegrationStates["DIGITAL_COMMONS_DATA"] {
   return {
     // TODO
-    mode: "DISABLED",
+    mode: "ENABLED",
     credentials: {
       ACCESS_TOKEN: Optional.empty(),
     },
