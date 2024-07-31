@@ -6,7 +6,7 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
 import DcdIcon from "../icons/dcd.svg";
-import { useDmptoolEndpoint } from "../useDmptoolEndpoint";
+import { useDigitalCommonsDataEndpoint } from "../useDigitalCommonsDataEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 type DigitalCommonsDataArgs = {|
@@ -28,7 +28,7 @@ function DigitalCommonsData({
   update,
 }: DigitalCommonsDataArgs): Node {
   const { addAlert } = React.useContext(AlertContext);
-  const { disconnect } = useDmptoolEndpoint();
+  const { disconnect } = useDigitalCommonsDataEndpoint();
   const [connected, setConnected] = React.useState(
     integrationState.credentials.ACCESS_TOKEN.isPresent()
   );
@@ -39,13 +39,13 @@ function DigitalCommonsData({
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to DMPTool.",
+          message: "Successfully connected to Digital Commons Data.",
         })
       );
     };
-    window.addEventListener("DMPTOOL_CONNECTED", f);
+    window.addEventListener("DIGITALCOMMONSDATA_CONNECTED", f);
     return () => {
-      window.removeEventListener("DMPTOOL_CONNECTED", f);
+      window.removeEventListener("DIGITALCOMMONSDATA_CONNECTED", f);
     };
   }, []);
 
@@ -93,8 +93,8 @@ function DigitalCommonsData({
               </form>
             ) : (
               <form
-                action="/apps/dmptool/connect"
-                method="POST"
+                action="/apps/digitalcommonsdata/connect"
+                method="GET"
                 target="_blank"
                 rel="opener"
               >
