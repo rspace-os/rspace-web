@@ -106,7 +106,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -769,8 +768,8 @@ public class UserProfileController extends BaseController {
   @GetMapping("/ajax/apiKeyValue")
   public @ResponseBody AjaxReturnObject<String> getApiKeyValue() {
     if (SecurityUtils.getSubject().isRunAs()) {
-      throw new AuthorizationException(
-          "API key details cannot be accessed when 'operating' as another user");
+      return new AjaxReturnObject<>(
+          null, ErrorList.of("API key value cannot be accessed when 'operating as' another user"));
     }
     User user = userManager.getAuthenticatedUserInSession();
     SECURITY_LOG.info("User [{}] asked to see their API key", user.getUsername());

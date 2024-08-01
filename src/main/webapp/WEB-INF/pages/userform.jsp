@@ -562,7 +562,7 @@
 	{{#enabled}}
     <div class="api-menu__key col-xs-8">
       {{#revokable}}
-        <strong>Key</strong>: <span id="api-menu__keyValue"> ... </span>
+        <strong>Key</strong>: <span id="api-menu__keyValue"> &lt;hidden&gt; </span>
           <a href="#" id="api-menu__showKey" onclick="return false;">Show Key</a>
           <a href="#" id="api-menu__hideKey" onclick="return false;">Hide Key</a>
       {{/revokable}}
