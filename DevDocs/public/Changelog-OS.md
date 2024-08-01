@@ -4,6 +4,16 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog 
 
+## 2.1.1 2024-08-01
+
+### ELN Features
+
+- RSDEV-258 reactivated Google Drive integration
+- RSDEV-301, RSDEV-302 enhancements to table inserted with PyRAT integration 
+
+### ELN Bugfix
+- it should no longer be possible for sysadmin to see user's API key (https://github.com/rspace-os/rspace-web/issues/73)
+
 # 2.1.0 2024-07-26
 
 ### ELN Features
