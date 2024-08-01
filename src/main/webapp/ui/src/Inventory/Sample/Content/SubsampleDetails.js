@@ -29,6 +29,7 @@ import { doNotAwait, modulo } from "../../../util/Util";
 import { svgIconClasses } from "@mui/material/SvgIcon";
 import { Link as ReactRouterLink } from "react-router-dom";
 import Typography from "@mui/material/Typography";
+import ImageField from "../../components/Fields/Image";
 
 const CustomStepper = styled(MobileStepper)(({ theme }) => ({
   backgroundColor: theme.palette.record.subSample.lighter,
@@ -152,6 +153,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
           <CardContent>
             <Stack spacing={2}>
               <LocationField fieldOwner={subsample} />
+              <ImageField fieldOwner={subsample} />
               <QuantityField
                 fieldOwner={subsample}
                 quantityCategory={subsample.quantityCategory}
