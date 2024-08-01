@@ -102,8 +102,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
      * they would end up viewing the first result of the previous page and
      * not the last result of that previous page which is what they intend.
      */
-    if (search.filteredResults.length > 0 && !processingCardNav)
-      void search.setActiveResult(search.filteredResults[0]);
+    if (!processingCardNav) void search.setActiveResult();
   }, [search.filteredResults]);
 
   const subsample = search.activeResult;
