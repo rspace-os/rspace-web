@@ -281,8 +281,8 @@ function decodeDigitalCommonsData(
   data: FetchedState
 ): IntegrationStates["DIGITAL_COMMONS_DATA"] {
   return {
+    mode: parseState(data),
     // TODO
-    mode: "ENABLED",
     credentials: {
       ACCESS_TOKEN: Optional.empty(),
     },
