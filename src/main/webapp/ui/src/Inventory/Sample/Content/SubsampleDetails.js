@@ -30,6 +30,7 @@ import { svgIconClasses } from "@mui/material/SvgIcon";
 import { Link as ReactRouterLink } from "react-router-dom";
 import Typography from "@mui/material/Typography";
 import ImageField from "../../components/Fields/Image";
+import Description from "../../components/Fields/Description";
 
 const CustomStepper = styled(MobileStepper)(({ theme }) => ({
   backgroundColor: theme.palette.record.subSample.lighter,
@@ -157,6 +158,10 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
               <QuantityField
                 fieldOwner={subsample}
                 quantityCategory={subsample.quantityCategory}
+                onErrorStateChange={() => {}}
+              />
+              <Description
+                fieldOwner={subsample}
                 onErrorStateChange={() => {}}
               />
               <Notes record={subsample} onErrorStateChange={() => {}} />
