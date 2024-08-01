@@ -94,7 +94,7 @@ function DigitalCommonsData({
             ) : (
               <form
                 action="/apps/digitalcommonsdata/connect"
-                method="GET"
+                method="POST"
                 target="_blank"
                 rel="opener"
               >
