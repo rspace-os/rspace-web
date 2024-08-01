@@ -43,9 +43,9 @@ function DigitalCommonsData({
         })
       );
     };
-    window.addEventListener("DIGITALCOMMONSDATA_CONNECTED", f);
+    window.addEventListener("DIGITAL_COMMONS_DATA_CONNECTED", f);
     return () => {
-      window.removeEventListener("DIGITALCOMMONSDATA_CONNECTED", f);
+      window.removeEventListener("DIGITAL_COMMONS_DATA_CONNECTED", f);
     };
   }, []);
 
