@@ -31,6 +31,8 @@ import { Link as ReactRouterLink } from "react-router-dom";
 import Typography from "@mui/material/Typography";
 import ImageField from "../../components/Fields/Image";
 import Description from "../../components/Fields/Description";
+import BarcodesField from "../../components/Fields/Barcodes/FormField";
+import FormField from "../../components/Inputs/FormField";
 
 const CustomStepper = styled(MobileStepper)(({ theme }) => ({
   backgroundColor: theme.palette.record.subSample.lighter,
@@ -163,6 +165,17 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
               <Description
                 fieldOwner={subsample}
                 onErrorStateChange={() => {}}
+              />
+              <FormField
+                label="Barcodes"
+                value={null}
+                renderInput={() => (
+                  <BarcodesField
+                    fieldOwner={subsample}
+                    factory={subsample.factory}
+                    connectedItem={subsample}
+                  />
+                )}
               />
               <Notes record={subsample} onErrorStateChange={() => {}} />
             </Stack>
