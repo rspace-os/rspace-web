@@ -309,7 +309,9 @@ const SearchControls = ({
     <Grid container direction="column" spacing={1}>
       <Grid item container direction="row" spacing={1}>
         <Grid item>
-          <Typography variant="subtitle2">Search filters:</Typography>
+          <Typography variant="subtitle2" component="h4">
+            Search filters:
+          </Typography>
         </Grid>
         <CustomChip
           name="Label"
