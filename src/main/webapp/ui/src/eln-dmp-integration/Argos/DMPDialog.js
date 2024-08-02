@@ -464,7 +464,7 @@ const useStyles = makeStyles()(() => ({
   barWrapper: {
     display: "flex",
     alignSelf: "center",
-    width: "95%",
+    width: "100%",
     flexDirection: "column",
     alignItems: "center",
   },
@@ -541,7 +541,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           direction="column"
           spacing={2}
           flexWrap="nowrap"
-          height="100%"
+          // this is so that just the table is scrollable
+          height="calc(100% + 16px)"
         >
           <Grid item>
             <Typography variant="h3">Import a DMP into the Gallery</Typography>

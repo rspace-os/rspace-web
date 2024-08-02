@@ -830,6 +830,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             toolbar: {
               background: mainBackground,
               color: backgroundContrastTextColor,
+              minHeight: "unset !important",
             },
           },
         },
