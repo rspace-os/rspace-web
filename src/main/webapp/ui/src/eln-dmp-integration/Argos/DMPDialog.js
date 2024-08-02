@@ -67,8 +67,8 @@ const COLOR = {
   },
   background: {
     hue: 179,
-    saturation: 40,
-    lightness: 70,
+    saturation: 25,
+    lightness: 71,
   },
   backgroundContrastText: {
     hue: 179,
