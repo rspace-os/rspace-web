@@ -12,7 +12,6 @@ import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import DMPTable from "./DMPTable";
 import { withStyles } from "Styles";
@@ -40,6 +39,13 @@ import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "../../components/ValidatingSubmitButton";
+import Toolbar from "@mui/material/Toolbar";
+import AppBar from "@mui/material/AppBar";
+import AccessibilityTips from "../../components/AccessibilityTips";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import Box from "@mui/material/Box";
+import docLinks from "../../assets/DocLinks";
+import Link from "@mui/material/Link";
 
 const CustomTablePagination = withStyles<
   ElementProps<typeof TablePagination>,
@@ -412,14 +418,16 @@ const CustomDialog = withStyles<
 
     // this is to ensure the picker has enough height even when list is empty
     minHeight: "86vh",
+
+    // this is so that the hights of the dialog's content of constrained and scrollbars appear
+    height: fullScreen ? "100%" : "calc(90% - 32px)",
   },
 }))(Dialog);
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(() => ({
   contentWrapper: {
     overscrollBehavior: "contain",
     WebkitOverflowScrolling: "unset",
-    paddingTop: theme.spacing(0.25),
   },
   barWrapper: {
     display: "flex",
@@ -481,11 +489,43 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   return (
     <>
-      <DialogTitle className={classes.dialogTitle}>
-        Data Management Plans (DMPs) from Argos
-      </DialogTitle>
+      <AppBar position="relative" open={true}>
+        <Toolbar variant="dense">
+          <Typography variant="h6" noWrap component="h2">
+            Argos
+          </Typography>
+          <Box flexGrow={1}></Box>
+          <Box ml={1}>
+            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
+          </Box>
+          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
+            <HelpLinkIcon title="Argos help" link={docLinks.argos} />
+          </Box>
+        </Toolbar>
+      </AppBar>
       <DialogContent className={classes.contentWrapper}>
-        <Grid container direction="column" spacing={1}>
+        <Grid
+          container
+          direction="column"
+          spacing={2}
+          flexWrap="nowrap"
+          height="100%"
+        >
+          <Grid item>
+            <Typography variant="h3">Import a DMP into the Gallery</Typography>
+          </Grid>
+          <Grid item>
+            <Typography variant="body2">
+              Importing a DMP will make it available to view and reference
+              within RSpace.
+            </Typography>
+            <Typography variant="body2">
+              See{" "}
+              <Link href="https://argos.openaire.eu">argos.openaire.eu</Link>{" "}
+              and our <Link href={docLinks.argos}>Argos integration docs</Link>{" "}
+              for more.
+            </Typography>
+          </Grid>
           <Grid item>
             <SearchControls
               setDMPs={setDMPs}
@@ -497,7 +537,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               setPage={setPage}
             />
           </Grid>
-          <Grid item>
+          <Grid item sx={{ overflowY: "auto" }}>
             <DMPTable
               plans={fetching ? [] : DMPs}
               selectedPlan={selectedPlan}
