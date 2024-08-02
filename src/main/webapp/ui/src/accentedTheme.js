@@ -675,14 +675,6 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
           },
         },
-        MuiTablePagination: {
-          styleOverrides: {
-            toolbar: {
-              background: mainBackground,
-              color: backgroundContrastTextColor,
-            },
-          },
-        },
         MuiChip: {
           styleOverrides: {
             root: {
@@ -823,6 +815,21 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
             groupTransition: {
               paddingLeft: "calc(2 * var(--TreeView-itemChildrenIndentation))",
+            },
+          },
+        },
+        MuiTableCell: {
+          styleOverrides: {
+            root: {
+              color: backgroundContrastTextColor,
+            },
+          },
+        },
+        MuiTablePagination: {
+          styleOverrides: {
+            toolbar: {
+              background: mainBackground,
+              color: backgroundContrastTextColor,
             },
           },
         },

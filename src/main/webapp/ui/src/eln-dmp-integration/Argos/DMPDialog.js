@@ -46,6 +46,36 @@ import HelpLinkIcon from "../../components/HelpLinkIcon";
 import Box from "@mui/material/Box";
 import docLinks from "../../assets/DocLinks";
 import Link from "@mui/material/Link";
+import createAccentedTheme from "../../accentedTheme";
+import { ThemeProvider } from "@mui/material/styles";
+
+const COLOR = {
+  main: {
+    hue: 179,
+    saturation: 46,
+    lightness: 70,
+  },
+  darker: {
+    hue: 179,
+    saturation: 93,
+    lightness: 33,
+  },
+  contrastText: {
+    hue: 179,
+    saturation: 35,
+    lightness: 26,
+  },
+  background: {
+    hue: 179,
+    saturation: 40,
+    lightness: 70,
+  },
+  backgroundContrastText: {
+    hue: 179,
+    saturation: 11,
+    lightness: 24,
+  },
+};
 
 const CustomTablePagination = withStyles<
   ElementProps<typeof TablePagination>,
@@ -632,21 +662,23 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <Portal>
-      <DialogBoundary>
-        <CustomDialog
-          onClose={() => {
-            setOpen(false);
-          }}
-          open={open}
-          maxWidth="lg"
-          fullWidth
-          fullScreen={isViewportSmall}
-        >
-          <DMPDialogContent setOpen={setOpen} />
-        </CustomDialog>
-      </DialogBoundary>
-    </Portal>
+    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <Portal>
+        <DialogBoundary>
+          <CustomDialog
+            onClose={() => {
+              setOpen(false);
+            }}
+            open={open}
+            maxWidth="lg"
+            fullWidth
+            fullScreen={isViewportSmall}
+          >
+            <DMPDialogContent setOpen={setOpen} />
+          </CustomDialog>
+        </DialogBoundary>
+      </Portal>
+    </ThemeProvider>
   );
 }
 
