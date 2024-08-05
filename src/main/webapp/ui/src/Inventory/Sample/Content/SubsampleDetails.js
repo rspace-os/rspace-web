@@ -78,6 +78,33 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
   const theme = useTheme();
   const cardId = React.useId();
 
+  /*
+   * Below the details card are two buttons that allow the user to enumerate
+   * through the subsamples. This state variable is true whilst the onClick
+   * handlers for those buttons are doing their processing. This includes not
+   * just updating search.activeResult but also fetching the previous/next
+   * page of results if the activeResult is currently the first/last result
+   * in the page and the previous/next button has been tapped, respectively.
+   */
+  const [processingCardNav, setProcessingCardNav] = React.useState(false);
+
+  /*
+   * If the search results have changed, then we want to update
+   * search.activeResult, and consequently the subsamples whose details we
+   * are showing, so that we don't end up showing the details of a subsample
+   * that is no longer visible in the table of results.
+   */
+  React.useEffect(() => {
+    /*
+     * We don't change the activeResult if processingCardNav is true
+     * because otherwise when the user is currently viewing the details
+     * of the first subsample in the page and presses the previous button,
+     * they would end up viewing the first result of the previous page and
+     * not the last result of that previous page which is what they intend.
+     */
+    if (!processingCardNav) void search.setActiveResult();
+  }, [search.filteredResults]);
+
   const subsample = search.activeResult;
   if (subsample === null || typeof subsample === "undefined")
     return <Wrapper>No subsamples</Wrapper>;
@@ -153,11 +180,18 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
               aria-controls={cardId}
               size="small"
               onClick={doNotAwait(async () => {
-                if (index + 1 > search.filteredResults.length - 1)
-                  await search.setPage(search.fetcher.pageNumber + 1);
-                await search.setActiveResult(
-                  search.filteredResults[(index + 1) % search.fetcher.pageSize]
-                );
+                setProcessingCardNav(true);
+                try {
+                  if (index + 1 > search.filteredResults.length - 1)
+                    await search.setPage(search.fetcher.pageNumber + 1);
+                  await search.setActiveResult(
+                    search.filteredResults[
+                      (index + 1) % search.fetcher.pageSize
+                    ]
+                  );
+                } finally {
+                  setProcessingCardNav(false);
+                }
               })}
               disabled={
                 index +
@@ -174,13 +208,18 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
               aria-controls={cardId}
               size="small"
               onClick={doNotAwait(async () => {
-                if (index === 0)
-                  await search.setPage(search.fetcher.pageNumber - 1);
-                await search.setActiveResult(
-                  search.filteredResults[
-                    modulo(index - 1, search.fetcher.pageSize)
-                  ]
-                );
+                setProcessingCardNav(true);
+                try {
+                  if (index === 0)
+                    await search.setPage(search.fetcher.pageNumber - 1);
+                  await search.setActiveResult(
+                    search.filteredResults[
+                      modulo(index - 1, search.fetcher.pageSize)
+                    ]
+                  );
+                } finally {
+                  setProcessingCardNav(false);
+                }
               })}
               disabled={
                 index + search.fetcher.pageSize * search.fetcher.pageNumber ===
