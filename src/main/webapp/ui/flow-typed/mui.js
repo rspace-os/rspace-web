@@ -112,6 +112,10 @@ declare module "@mui/x-data-grid" {
       toolbar?: ToolbarProps,
       panel?: { ... },
     |},
+    localeText?: {|
+      // https://github.com/mui/mui-x/blob/v7.12.0/packages/x-data-grid/src/constants/localeTextConstants.ts
+      noRowsLabel?: string,
+    |},
   |}): Node;
 
   declare export function GridToolbarContainer({|

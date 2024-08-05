@@ -640,6 +640,9 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               slots={{
                 pagination: null,
               }}
+              localeText={{
+                noRowsLabel: "No DMPs",
+              }}
               loading={fetching}
               getRowId={(row) => row.id}
               onRowSelectionModelChange={(
