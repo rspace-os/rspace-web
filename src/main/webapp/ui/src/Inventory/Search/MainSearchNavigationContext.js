@@ -80,7 +80,6 @@ export default function MainSearchNavigationContext({
         void doSearch(
           new URLSearchParams(url.match(/\/inventory\/search\?(.*)/)?.[1])
         );
-        if (modifyVisiblePanel) uiStore.setVisiblePanel("left");
         /*
          * We also invoke the parent NavigationContext to propagate the
          * navigation up, until it reaches the root NavigationContext which
@@ -88,7 +87,7 @@ export default function MainSearchNavigationContext({
          * open that URL in a new window as the user has been navigated in this
          * browser window by updating the search paramters.
          */
-        navigate(url, { skipToParentContext: false });
+        navigate(url, { skipToParentContext: false, modifyVisiblePanel });
       } else {
         /*
          * For all other URLs, including all other Inventory URLs such as the
@@ -102,7 +101,7 @@ export default function MainSearchNavigationContext({
          * continue to pass the skipToParentContext parameter making this
          * context completely transparent to all contexts below when set.
          */
-        navigate(url, { skipToParentContext });
+        navigate(url, { skipToParentContext, modifyVisiblePanel });
       }
     };
 
