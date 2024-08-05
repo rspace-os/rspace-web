@@ -92,7 +92,6 @@ function RecordsImport(): Node {
   };
 
   const recordType = importData?.recordType;
-  console.log(importStore);
   const isSamplesImport = importData?.isSamplesImport;
 
   const loadedFileByRecordType = importData?.byRecordType("file");
