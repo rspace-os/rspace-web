@@ -21,7 +21,7 @@ export default function NavigationContext({
   const navigate = useNavigate();
   const { uiStore } = useStores();
   const newUseNavigate = () => (url: string) => {
-    if (/import/.test(url)) {
+    if (/^\/inventory\/import/.test(url)) {
       navigate(url);
     } else {
       /*
