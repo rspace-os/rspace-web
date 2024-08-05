@@ -48,6 +48,7 @@ import Link from "@mui/material/Link";
 import createAccentedTheme from "../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
 import { DataGrid } from "@mui/x-data-grid";
+import Radio from "@mui/material/Radio";
 
 const COLOR = {
   main: {
@@ -478,7 +479,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   const [DMPs, setDMPs]: UseState<Array<PlanSummary>> = useState([]);
   const [totalCount, setTotalCount]: UseState<number> = useState(0);
-  const [selectedPlan, setSelectedPlan]: UseState<?PlanSummary> = useState();
+  const [selectedPlan, setSelectedPlan]: UseState<?PlanSummary> =
+    useState(null);
   const [pageSize, setPageSize]: UseState<number> = useState(10);
   const [page, setPage]: UseState<number> = useState(0);
 
@@ -575,6 +577,22 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           <Grid item sx={{ overflowY: "auto" }}>
             <DataGrid
               columns={[
+                {
+                  field: "radio",
+                  headerName: "Select",
+                  renderCell: (params: { row: PlanSummary, ... }) => (
+                    <Radio
+                      color="primary"
+                      value={selectedPlan?.id === params.row.id}
+                      checked={selectedPlan?.id === params.row.id}
+                      inputProps={{ "aria-label": "Plan selection" }}
+                    />
+                  ),
+                  hideable: false,
+                  width: 60,
+                  flex: 0,
+                  disableColumnMenu: true,
+                },
                 DataGridColumn.newColumnWithFieldName<PlanSummary, _>("label", {
                   headerName: "Label",
                   flex: 1,
@@ -628,6 +646,14 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                 pagination: null,
               }}
               loading={fetching}
+              getRowId={(row) => row.id}
+              onRowSelectionModelChange={(
+                newSelection: $ReadOnlyArray<PlanSummary["id"]>
+              ) => {
+                if (newSelection[0]) {
+                  setSelectedPlan(DMPs.find((d) => d.id === newSelection[0]));
+                }
+              }}
             />
             {(fetching || !DMPs[0]) && (
               <Typography
