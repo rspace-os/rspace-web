@@ -153,7 +153,8 @@ function _Stepper({
             navigate(
               generateUrlFromCoreFetcherArgs(
                 activeResult.showNewlyCreatedRecordSearchParams
-              )
+              ),
+              { modifyVisiblePanel: false }
             );
           })}
         />
