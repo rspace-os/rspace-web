@@ -13,7 +13,6 @@ import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
-import DMPTable from "./DMPTable";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
@@ -31,7 +30,7 @@ import Popover from "@mui/material/Popover";
 import Chip from "@mui/material/Chip";
 import { importPlan } from "./ImportIntoGallery";
 import TablePagination from "@mui/material/TablePagination";
-import { paginationOptions } from "../../util/table";
+import { paginationOptions, DataGridColumn } from "../../util/table";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import Portal from "@mui/material/Portal";
@@ -48,6 +47,7 @@ import docLinks from "../../assets/DocLinks";
 import Link from "@mui/material/Link";
 import createAccentedTheme from "../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
+import { DataGrid } from "@mui/x-data-grid";
 
 const COLOR = {
   main: {
@@ -307,12 +307,14 @@ const SearchControls = ({
 
   return (
     <Grid container direction="column" spacing={1}>
-      <Grid item container direction="row" spacing={1}>
-        <Grid item>
-          <Typography variant="subtitle2" component="h4">
-            Search filters:
-          </Typography>
-        </Grid>
+      <Grid
+        item
+        container
+        direction="row"
+        spacing={1}
+        role="group"
+        aria-label="Search filters"
+      >
         <CustomChip
           name="Label"
           value={appliedSearchParameters.like}
@@ -485,7 +487,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   const handleImport = async () => {
     if (!selectedPlan) throw new Error("No plan is selected.");
-    const selectedPlanId: string = selectedPlan.getIdAsString();
+    const selectedPlanId: string = `${selectedPlan.id}`;
     setImporting(true);
     try {
       await importPlan(selectedPlan);
@@ -571,10 +573,61 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
             />
           </Grid>
           <Grid item sx={{ overflowY: "auto" }}>
-            <DMPTable
-              plans={fetching ? [] : DMPs}
-              selectedPlan={selectedPlan}
-              setSelectedPlan={setSelectedPlan}
+            <DataGrid
+              columns={[
+                DataGridColumn.newColumnWithFieldName<PlanSummary, _>("label", {
+                  headerName: "Label",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithFieldName("id", {
+                  headerName: "Id",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithFieldName("grant", {
+                  headerName: "Grant",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithValueGetter(
+                  "createdAt",
+                  (params: { row: PlanSummary, ... }) =>
+                    new Date(params.row.createdAt).toLocaleString(),
+                  {
+                    headerName: "Created At",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+                DataGridColumn.newColumnWithValueGetter(
+                  "modifiedAt",
+                  (params: { row: PlanSummary, ... }) =>
+                    new Date(params.row.modifiedAt).toLocaleString(),
+                  {
+                    headerName: "Modified At",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+              ]}
+              rows={fetching ? [] : DMPs}
+              initialState={{
+                columns: {
+                  columnVisibilityModel: {
+                    grant: false,
+                    createdAt: false,
+                    modifiedAt: false,
+                  },
+                },
+              }}
+              density="compact"
+              disableColumnFilter
+              hideFooter
+              slots={{
+                pagination: null,
+              }}
+              loading={fetching}
             />
             {(fetching || !DMPs[0]) && (
               <Typography

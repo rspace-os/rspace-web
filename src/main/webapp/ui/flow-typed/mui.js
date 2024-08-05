@@ -85,6 +85,7 @@ declare module "@mui/x-data-grid" {
     rowSelectionModel?: $ReadOnlyArray<Id>,
     onRowSelectionModelChange?: ($ReadOnlyArray<Id>) => void,
     hideFooterSelectedRowCount?: boolean,
+    hideFooter?: boolean,
     paginationMode?: "server" | "client",
     rowCount?: number,
     paginationModel?: {| pageSize: number, page: number |},
@@ -98,6 +99,7 @@ declare module "@mui/x-data-grid" {
     ) => void,
     slots?: {|
       toolbar?: (ToolbarProps) => Node,
+      pagination?: null,
     |},
     className?: string,
     classes?: {||},
