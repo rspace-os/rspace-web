@@ -443,15 +443,13 @@ const CustomDialog = withStyles<
 >((theme, { fullScreen }) => ({
   paper: {
     overflow: "hidden",
-
-    // this is to avoid intercom help button
-    maxHeight: fullScreen ? "unset" : "86vh",
-
-    // this is to ensure the picker has enough height even when list is empty
-    minHeight: "86vh",
+    margin: theme.spacing(3),
+    maxHeight: "unset",
+    minHeight: "unset",
 
     // this is so that the hights of the dialog's content of constrained and scrollbars appear
-    height: fullScreen ? "100%" : "calc(90% - 32px)",
+    // 24px margin above and below, 3px border above and below
+    height: fullScreen ? "100%" : "calc(100% - 54px)",
   },
 }))(Dialog);
 
