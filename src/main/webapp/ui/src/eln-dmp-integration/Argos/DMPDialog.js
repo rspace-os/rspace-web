@@ -569,7 +569,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               setPage={setPage}
             />
           </Grid>
-          <Grid item sx={{ overflowY: "auto" }}>
+          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
             <DataGrid
               columns={[
                 {
@@ -650,16 +650,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                 }
               }}
             />
-            {(fetching || !DMPs[0]) && (
-              <Typography
-                component="div"
-                variant="body2"
-                color="textPrimary"
-                align="center"
-              >
-                {fetching ? "Fetching DMPs..." : "No items to display"}
-              </Typography>
-            )}
           </Grid>
         </Grid>
       </DialogContent>
