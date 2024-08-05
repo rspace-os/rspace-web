@@ -443,13 +443,13 @@ const CustomDialog = withStyles<
 >((theme, { fullScreen }) => ({
   paper: {
     overflow: "hidden",
-    margin: theme.spacing(3),
+    margin: theme.spacing(2.625),
     maxHeight: "unset",
     minHeight: "unset",
 
     // this is so that the hights of the dialog's content of constrained and scrollbars appear
     // 24px margin above and below, 3px border above and below
-    height: fullScreen ? "100%" : "calc(100% - 54px)",
+    height: fullScreen ? "100%" : "calc(100% - 48px)",
   },
 }))(Dialog);
 
