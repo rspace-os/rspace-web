@@ -285,9 +285,13 @@ const NewFolderMenuItem = ({
 
 type DmpMenuSectionArgs = {|
   onDialogClose: () => void,
+  showDmpPanel: () => void,
 |};
 
-const DmpMenuSection = ({ onDialogClose }: DmpMenuSectionArgs) => {
+const DmpMenuSection = ({
+  onDialogClose,
+  showDmpPanel,
+}: DmpMenuSectionArgs) => {
   const [argosEnabled, setArgosEnabled] = React.useState(false);
   const [dmponlineEnabled, setDmponlineEnabled] = React.useState(false);
   const [dmptoolEnabled, setDmptoolEnabled] = React.useState(false);
@@ -314,6 +318,16 @@ const DmpMenuSection = ({ onDialogClose }: DmpMenuSectionArgs) => {
       .catch((e) =>
         console.error("Cannot establish if DMPTool app is enabled", e)
       );
+  }, []);
+
+  React.useEffect(() => {
+    /*
+     * This is to maintain backwards compatibility with the old Gallery. It
+     * exposes a global function `gallery` to updates the current listing of
+     * files. Once we no longer need to maintain backwards compatibility, we
+     * could pass `showDmpPanel` down into each DMPDialog component.
+     */
+    window.gallery = showDmpPanel;
   }, []);
 
   if (!argosEnabled && !dmponlineEnabled && !dmptoolEnabled) return null;
@@ -413,7 +427,6 @@ const DrawerTab = styled(
 
 type SidebarArgs = {|
   selectedSection: GallerySection,
-  setSelectedSection: (string) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,
   path: $ReadOnlyArray<GalleryFile>,
@@ -436,7 +449,6 @@ const offsets = {
 
 const Sidebar = ({
   selectedSection,
-  setSelectedSection,
   drawerOpen,
   setDrawerOpen,
   path,
@@ -486,7 +498,6 @@ const Sidebar = ({
           MenuListProps={{
             disablePadding: true,
           }}
-          keepMounted
         >
           {FetchingData.getSuccessValue(folderId)
             .map((fId) => (
@@ -524,6 +535,13 @@ const Sidebar = ({
             onDialogClose={() => {
               setNewMenuAnchorEl(null);
               if (viewport.isViewportSmall) setDrawerOpen(false);
+            }}
+            showDmpPanel={() => {
+              if (selectedSection === "DMPs") {
+                refreshListing();
+              } else {
+                setSearchParams({ mediaType: "DMPs" });
+              }
             }}
           />
         </StyledMenu>
