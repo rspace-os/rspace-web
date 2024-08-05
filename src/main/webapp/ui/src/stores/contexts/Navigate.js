@@ -37,8 +37,24 @@ type NavigateContextType = {|
    *    search and the parent context manages the page-wide search. This
    *    parameter gives the component within the inner search the option of
    *    triggering a page-wide search.
+   *
+   *
+   *  `modifyVisiblePanel`, when passed as true or not passed at all, will
+   *  allow the navigation context's to manipulate the currently visible of a
+   *  multi-panel page. If it is passed as false then the currently visible
+   *  panel should not change.
+   *
+   *    By defaulting to true, whenever the user navigates around they are
+   *    returned to the left panel, where they can see the result of their
+   *    navigation on the set of search results. However, there are occassions
+   *    where the search results should change but the right panel should
+   *    remain or become visible as it is the main focus of the user's
+   *    attention.
    */
-  useNavigate: () => (URL, opts?: {| skipToParentContext?: boolean |}) => void,
+  useNavigate: () => (
+    URL,
+    opts?: {| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+  ) => void,
 
   /*
    *  A function that returns an object that represents the current search

@@ -31,9 +31,14 @@ export default function NavigationContext({
   const parentNavigate = parentUseNavigate();
 
   const useNavigate =
-    () => (url: string, opts: ?{| skipToParentContext?: boolean |}) => {
+    () =>
+    (
+      url: string,
+      opts: ?{| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+    ) => {
       const { skipToParentContext = false } = opts ?? {
         skipToParentContext: false,
+        modifyVisiblePanel: true,
       };
       /* Navigation to search pages are changes to the right panel's search */
       if (/^\/inventory\/search/.test(url) && !skipToParentContext) {

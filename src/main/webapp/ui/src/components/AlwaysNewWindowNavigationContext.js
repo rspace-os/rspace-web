@@ -18,7 +18,11 @@ export default function AlwaysNewWindowNavigationContext({
   children,
 }: AlwaysNewWindowNavigationContextArgs): Node {
   const useNavigate =
-    () => (url: string, _opts?: {| skipToParentContext?: boolean |}) => {
+    () =>
+    (
+      url: string,
+      _opts?: {| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+    ) => {
       /**
        * This navigation context is designed to be a root context and thus
        * ignores the skipToParentContext argument

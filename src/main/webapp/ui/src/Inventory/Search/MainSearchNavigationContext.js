@@ -61,10 +61,16 @@ export default function MainSearchNavigationContext({
   };
 
   const newUseNavigate =
-    () => (url: string, opts: ?{| skipToParentContext?: boolean |}) => {
-      const { skipToParentContext = false } = opts ?? {
-        skipToParentContext: false,
-      };
+    () =>
+    (
+      url: string,
+      opts: ?{| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+    ) => {
+      const { skipToParentContext = false, modifyVisiblePanel = true } =
+        opts ?? {
+          skipToParentContext: false,
+          modifyVisiblePanel: true,
+        };
       if (/^\/inventory\/search/.test(url) && !skipToParentContext) {
         /*
          * If the navigation is to another part of the Inventory search page,
@@ -74,7 +80,7 @@ export default function MainSearchNavigationContext({
         void doSearch(
           new URLSearchParams(url.match(/\/inventory\/search\?(.*)/)?.[1])
         );
-        uiStore.setVisiblePanel("left");
+        if (modifyVisiblePanel) uiStore.setVisiblePanel("left");
         /*
          * We also invoke the parent NavigationContext to propagate the
          * navigation up, until it reaches the root NavigationContext which
