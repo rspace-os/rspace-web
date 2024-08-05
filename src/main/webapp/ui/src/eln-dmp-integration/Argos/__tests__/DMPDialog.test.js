@@ -3,6 +3,7 @@
  */
 //@flow
 /* eslint-env jest */
+import "../../../../__mocks__/matchMedia.js";
 import React from "react";
 import {
   cleanup,
@@ -67,7 +68,7 @@ describe("DMPDialog", () => {
     });
 
     expect(
-      await within(screen.getByRole("table")).findTableCell({
+      await within(screen.getByRole("grid")).findTableCell({
         columnHeading: "Label",
         rowIndex: 0,
       })
@@ -90,7 +91,7 @@ describe("DMPDialog", () => {
     await act(async () => {
       (
         await within(
-          await within(screen.getByRole("table")).findTableCell({
+          await within(screen.getByRole("grid")).findTableCell({
             columnHeading: "Select",
             rowIndex: 0,
           })
