@@ -116,21 +116,6 @@ function DigitalCommonsDataRepo({
           value={description}
         />
       </Grid>
-      <Grid item xs={12} mt={1}>
-        <Tags
-          fieldOwner={{
-            fieldValues: { tags },
-            setFieldsDirty: ({ tags }: { tags?: Array<Tag> }) => {
-              if (tags) onTagsChange({ target: { value: tags } });
-            },
-            setFieldEditable: () => {},
-            noValueLabel: { tags: null },
-            isFieldEditable: () => true,
-            canChooseWhichToEdit: false,
-          }}
-          loading={fetchingTags}
-        />
-      </Grid>
     </Grid>
   );
 }
