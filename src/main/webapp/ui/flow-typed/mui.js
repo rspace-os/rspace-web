@@ -82,9 +82,11 @@ declare module "@mui/x-data-grid" {
     disableColumnFilter?: boolean,
     density?: "compact" | "standard" | "comfortable",
     getRowId?: (Row) => Id,
+    getRowHeight?: () => "auto" | number | null,
     rowSelectionModel?: $ReadOnlyArray<Id>,
     onRowSelectionModelChange?: ($ReadOnlyArray<Id>) => void,
     hideFooterSelectedRowCount?: boolean,
+    hideFooter?: boolean,
     paginationMode?: "server" | "client",
     rowCount?: number,
     paginationModel?: {| pageSize: number, page: number |},
@@ -98,6 +100,7 @@ declare module "@mui/x-data-grid" {
     ) => void,
     slots?: {|
       toolbar?: (ToolbarProps) => Node,
+      pagination?: null,
     |},
     className?: string,
     classes?: {||},
@@ -109,6 +112,10 @@ declare module "@mui/x-data-grid" {
     componentsProps?: {|
       toolbar?: ToolbarProps,
       panel?: { ... },
+    |},
+    localeText?: {|
+      // https://github.com/mui/mui-x/blob/v7.12.0/packages/x-data-grid/src/constants/localeTextConstants.ts
+      noRowsLabel?: string,
     |},
   |}): Node;
 

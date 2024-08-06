@@ -12,9 +12,7 @@ import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
-import DMPTable from "./DMPTable";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
@@ -32,7 +30,7 @@ import Popover from "@mui/material/Popover";
 import Chip from "@mui/material/Chip";
 import { importPlan } from "./ImportIntoGallery";
 import TablePagination from "@mui/material/TablePagination";
-import { paginationOptions } from "../../util/table";
+import { paginationOptions, DataGridColumn } from "../../util/table";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import Portal from "@mui/material/Portal";
@@ -40,6 +38,45 @@ import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "../../components/ValidatingSubmitButton";
+import Toolbar from "@mui/material/Toolbar";
+import AppBar from "@mui/material/AppBar";
+import AccessibilityTips from "../../components/AccessibilityTips";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import Box from "@mui/material/Box";
+import docLinks from "../../assets/DocLinks";
+import Link from "@mui/material/Link";
+import createAccentedTheme from "../../accentedTheme";
+import { ThemeProvider } from "@mui/material/styles";
+import { DataGrid } from "@mui/x-data-grid";
+import Radio from "@mui/material/Radio";
+
+const COLOR = {
+  main: {
+    hue: 179,
+    saturation: 46,
+    lightness: 70,
+  },
+  darker: {
+    hue: 179,
+    saturation: 93,
+    lightness: 33,
+  },
+  contrastText: {
+    hue: 179,
+    saturation: 35,
+    lightness: 26,
+  },
+  background: {
+    hue: 179,
+    saturation: 25,
+    lightness: 71,
+  },
+  backgroundContrastText: {
+    hue: 179,
+    saturation: 11,
+    lightness: 24,
+  },
+};
 
 const CustomTablePagination = withStyles<
   ElementProps<typeof TablePagination>,
@@ -208,16 +245,14 @@ const SearchControls = ({
 }: SearchControlsArgs) => {
   const { addAlert } = useContext(AlertContext);
   const [searchParameters, setSearchParameters]: UseState<
-    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>
-  > = useState({
+    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>> = useState({
     like: null,
     grantsLike: null,
     fundersLike: null,
     collaboratorsLike: null,
   });
   const [appliedSearchParameters, setAppliedSearchParameters]: UseState<
-    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>
-  > = useState({
+    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>> = useState({
     like: null,
     grantsLike: null,
     fundersLike: null,
@@ -226,8 +261,7 @@ const SearchControls = ({
   const modifySearchParameters = (
     newSearchParameters: $Diff<
       SearchParameters,
-      { page: mixed, pageSize: mixed }
-    >
+      { page: mixed, pageSize: mixed }>
   ) => {
     setSearchParameters(newSearchParameters);
     setPage(0);
@@ -236,8 +270,7 @@ const SearchControls = ({
   const getDMPs = async (
     newSearchParameters: $Diff<
       SearchParameters,
-      { page: mixed, pageSize: mixed }
-    >
+      { page: mixed, pageSize: mixed }>
   ) => {
     setFetching(true);
     setDMPs([]);
@@ -271,10 +304,14 @@ const SearchControls = ({
 
   return (
     <Grid container direction="column" spacing={1}>
-      <Grid item container direction="row" spacing={1}>
-        <Grid item>
-          <Typography variant="subtitle2">Search filters:</Typography>
-        </Grid>
+      <Grid
+        item
+        container
+        direction="row"
+        spacing={1}
+        role="group"
+        aria-label="Search filters"
+      >
         <CustomChip
           name="Label"
           value={appliedSearchParameters.like}
@@ -406,25 +443,25 @@ const CustomDialog = withStyles<
 >((theme, { fullScreen }) => ({
   paper: {
     overflow: "hidden",
+    margin: theme.spacing(2.625),
+    maxHeight: "unset",
+    minHeight: "unset",
 
-    // this is to avoid intercom help button
-    maxHeight: fullScreen ? "unset" : "86vh",
-
-    // this is to ensure the picker has enough height even when list is empty
-    minHeight: "86vh",
+    // this is so that the hights of the dialog's content of constrained and scrollbars appear
+    // 24px margin above and below, 3px border above and below
+    height: fullScreen ? "100%" : "calc(100% - 48px)",
   },
 }))(Dialog);
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(() => ({
   contentWrapper: {
     overscrollBehavior: "contain",
     WebkitOverflowScrolling: "unset",
-    paddingTop: theme.spacing(0.25),
   },
   barWrapper: {
     display: "flex",
     alignSelf: "center",
-    width: "95%",
+    width: "100%",
     flexDirection: "column",
     alignItems: "center",
   },
@@ -436,7 +473,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   const [DMPs, setDMPs]: UseState<Array<PlanSummary>> = useState([]);
   const [totalCount, setTotalCount]: UseState<number> = useState(0);
-  const [selectedPlan, setSelectedPlan]: UseState<?PlanSummary> = useState();
+  const [selectedPlan, setSelectedPlan]: UseState<?PlanSummary> =
+    useState(null);
   const [pageSize, setPageSize]: UseState<number> = useState(10);
   const [page, setPage]: UseState<number> = useState(0);
 
@@ -445,7 +483,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   const handleImport = async () => {
     if (!selectedPlan) throw new Error("No plan is selected.");
-    const selectedPlanId: string = selectedPlan.getIdAsString();
+    const selectedPlanId: string = `${selectedPlan.id}`;
     setImporting(true);
     try {
       await importPlan(selectedPlan);
@@ -464,7 +502,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
        * close the dialog.
        */
       setSelectedPlan(null);
-    } catch {
+    } catch (e:mixed) {
+      console.error(e);
       addAlert(
         mkAlert({
           title: "Import failed.",
@@ -481,11 +520,44 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   return (
     <>
-      <DialogTitle className={classes.dialogTitle}>
-        Data Management Plans (DMPs) from Argos
-      </DialogTitle>
+      <AppBar position="relative" open={true}>
+        <Toolbar variant="dense">
+          <Typography variant="h6" noWrap component="h2">
+            Argos
+          </Typography>
+          <Box flexGrow={1}></Box>
+          <Box ml={1}>
+            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
+          </Box>
+          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
+            <HelpLinkIcon title="Argos help" link={docLinks.argos} />
+          </Box>
+        </Toolbar>
+      </AppBar>
       <DialogContent className={classes.contentWrapper}>
-        <Grid container direction="column" spacing={1}>
+        <Grid
+          container
+          direction="column"
+          spacing={2}
+          flexWrap="nowrap"
+          // this is so that just the table is scrollable
+          height="calc(100% + 16px)"
+        >
+          <Grid item>
+            <Typography variant="h3">Import a DMP into the Gallery</Typography>
+          </Grid>
+          <Grid item>
+            <Typography variant="body2">
+              Importing a DMP will make it available to view and reference
+              within RSpace.
+            </Typography>
+            <Typography variant="body2">
+              See{" "}
+              <Link href="https://argos.openaire.eu">argos.openaire.eu</Link>{" "}
+              and our <Link href={docLinks.argos}>Argos integration docs</Link>{" "}
+              for more.
+            </Typography>
+          </Grid>
           <Grid item>
             <SearchControls
               setDMPs={setDMPs}
@@ -497,22 +569,92 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               setPage={setPage}
             />
           </Grid>
-          <Grid item>
-            <DMPTable
-              plans={fetching ? [] : DMPs}
-              selectedPlan={selectedPlan}
-              setSelectedPlan={setSelectedPlan}
+          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
+            <DataGrid
+              columns={[
+                {
+                  field: "radio",
+                  headerName: "Select",
+                  renderCell: (params: { row: PlanSummary, ... }) => (
+                    <Radio
+                      color="primary"
+                      value={selectedPlan?.id === params.row.id}
+                      checked={selectedPlan?.id === params.row.id}
+                      inputProps={{ "aria-label": "Plan selection" }}
+                    />
+                  ),
+                  hideable: false,
+                  width: 60,
+                  flex: 0,
+                  disableColumnMenu: true,
+                  sortable: false,
+                },
+                DataGridColumn.newColumnWithFieldName<PlanSummary, _>("label", {
+                  headerName: "Label",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithFieldName("id", {
+                  headerName: "Id",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithFieldName("grant", {
+                  headerName: "Grant",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithValueGetter(
+                  "createdAt",
+                  (params: { row: PlanSummary, ... }) =>
+                    new Date(params.row.createdAt).toLocaleString(),
+                  {
+                    headerName: "Created At",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+                DataGridColumn.newColumnWithValueGetter(
+                  "modifiedAt",
+                  (params: { row: PlanSummary, ... }) =>
+                    new Date(params.row.modifiedAt).toLocaleString(),
+                  {
+                    headerName: "Modified At",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+              ]}
+              rows={fetching ? [] : DMPs}
+              initialState={{
+                columns: {
+                  columnVisibilityModel: {
+                    grant: false,
+                    createdAt: false,
+                    modifiedAt: false,
+                  },
+                },
+              }}
+              density="compact"
+              disableColumnFilter
+              hideFooter
+              slots={{
+                pagination: null,
+              }}
+              localeText={{
+                noRowsLabel: "No DMPs",
+              }}
+              loading={fetching}
+              getRowId={(row) => row.id}
+              onRowSelectionModelChange={(
+                newSelection: $ReadOnlyArray<PlanSummary["id"]>
+              ) => {
+                if (newSelection[0]) {
+                  setSelectedPlan(DMPs.find((d) => d.id === newSelection[0]));
+                }
+              }}
+              getRowHeight={() => "auto"}
             />
-            {(fetching || !DMPs[0]) && (
-              <Typography
-                component="div"
-                variant="body2"
-                color="textPrimary"
-                align="center"
-              >
-                {fetching ? "Fetching DMPs..." : "No items to display"}
-              </Typography>
-            )}
           </Grid>
         </Grid>
       </DialogContent>
@@ -592,21 +734,23 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <Portal>
-      <DialogBoundary>
-        <CustomDialog
-          onClose={() => {
-            setOpen(false);
-          }}
-          open={open}
-          maxWidth="lg"
-          fullWidth
-          fullScreen={isViewportSmall}
-        >
-          <DMPDialogContent setOpen={setOpen} />
-        </CustomDialog>
-      </DialogBoundary>
-    </Portal>
+    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <Portal>
+        <DialogBoundary>
+          <CustomDialog
+            onClose={() => {
+              setOpen(false);
+            }}
+            open={open}
+            maxWidth="lg"
+            fullWidth
+            fullScreen={isViewportSmall}
+          >
+            <DMPDialogContent setOpen={setOpen} />
+          </CustomDialog>
+        </DialogBoundary>
+      </Portal>
+    </ThemeProvider>
   );
 }
 

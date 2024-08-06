@@ -285,9 +285,13 @@ const NewFolderMenuItem = ({
 
 type DmpMenuSectionArgs = {|
   onDialogClose: () => void,
+  showDmpPanel: () => void,
 |};
 
-const DmpMenuSection = ({ onDialogClose }: DmpMenuSectionArgs) => {
+const DmpMenuSection = ({
+  onDialogClose,
+  showDmpPanel,
+}: DmpMenuSectionArgs) => {
   const [argosEnabled, setArgosEnabled] = React.useState(false);
   const [dmponlineEnabled, setDmponlineEnabled] = React.useState(false);
   const [dmptoolEnabled, setDmptoolEnabled] = React.useState(false);
@@ -314,6 +318,16 @@ const DmpMenuSection = ({ onDialogClose }: DmpMenuSectionArgs) => {
       .catch((e) =>
         console.error("Cannot establish if DMPTool app is enabled", e)
       );
+  }, []);
+
+  React.useEffect(() => {
+    /*
+     * This is to maintain backwards compatibility with the old Gallery. It
+     * exposes a global function `gallery` to updates the current listing of
+     * files. Once we no longer need to maintain backwards compatibility, we
+     * could pass `showDmpPanel` down into each DMPDialog component.
+     */
+    window.gallery = showDmpPanel;
   }, []);
 
   if (!argosEnabled && !dmponlineEnabled && !dmptoolEnabled) return null;
@@ -413,7 +427,6 @@ const DrawerTab = styled(
 
 type SidebarArgs = {|
   selectedSection: GallerySection,
-  setSelectedSection: (string) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,
   path: $ReadOnlyArray<GalleryFile>,
@@ -421,22 +434,8 @@ type SidebarArgs = {|
   refreshListing: () => void,
 |};
 
-const offsets = {
-  [GALLERY_SECTION.IMAGES]: 8,
-  [GALLERY_SECTION.AUDIOS]: 51,
-  [GALLERY_SECTION.VIDEOS]: 94,
-  [GALLERY_SECTION.DOCUMENTS]: 137,
-  [GALLERY_SECTION.CHEMISTRY]: 180,
-  [GALLERY_SECTION.DMPS]: 223,
-  [GALLERY_SECTION.NETWORKFILES]: null,
-  [GALLERY_SECTION.SNIPPETS]: 266,
-  [GALLERY_SECTION.MISCELLANEOUS]: 309,
-  [GALLERY_SECTION.PDFDOCUMENTS]: 372,
-};
-
 const Sidebar = ({
   selectedSection,
-  setSelectedSection,
   drawerOpen,
   setDrawerOpen,
   path,
@@ -444,11 +443,30 @@ const Sidebar = ({
   refreshListing,
 }: SidebarArgs): Node => {
   const [, setSearchParams] = useSearchParams();
-  const [selectedIndicatorOffset, setSelectedIndicatorOffset] = React.useState(
-    offsets[selectedSection] ?? 8
-  );
+  const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
+    React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
   const viewport = useViewportDimensions();
+
+  const sectionRefs = React.useRef({
+    [GALLERY_SECTION.IMAGES]: null,
+    [GALLERY_SECTION.AUDIOS]: null,
+    [GALLERY_SECTION.VIDEOS]: null,
+    [GALLERY_SECTION.DOCUMENTS]: null,
+    [GALLERY_SECTION.CHEMISTRY]: null,
+    [GALLERY_SECTION.DMPS]: null,
+    [GALLERY_SECTION.NETWORKFILES]: null,
+    [GALLERY_SECTION.SNIPPETS]: null,
+    [GALLERY_SECTION.MISCELLANEOUS]: null,
+    [GALLERY_SECTION.PDFDOCUMENTS]: null,
+  });
+
+  React.useEffect(() => {
+    if (sectionRefs.current && sectionRefs.current[selectedSection])
+      setSelectedIndicatorOffset(
+        sectionRefs.current[selectedSection].offsetTop
+      );
+  }, [selectedSection]);
 
   React.useEffect(() => {
     autorun(() => {
@@ -486,7 +504,6 @@ const Sidebar = ({
           MenuListProps={{
             disablePadding: true,
           }}
-          keepMounted
         >
           {FetchingData.getSuccessValue(folderId)
             .map((fId) => (
@@ -525,6 +542,13 @@ const Sidebar = ({
               setNewMenuAnchorEl(null);
               if (viewport.isViewportSmall) setDrawerOpen(false);
             }}
+            showDmpPanel={() => {
+              if (selectedSection === "DMPs") {
+                refreshListing();
+              } else {
+                setSearchParams({ mediaType: "DMPs" });
+              }
+            }}
           />
         </StyledMenu>
       </Box>
@@ -547,13 +571,16 @@ const Sidebar = ({
               icon={<FaIcon icon="image" />}
               index={0}
               tabIndex={getTabIndex(0)}
-              ref={getRef(0)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.IMAGES] = node;
+                const ref = getRef(0);
+                if (ref) ref.current = node;
+              }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Images"}
-              onClick={(event) => {
+              onClick={() => {
                 setSearchParams({ mediaType: "Images" });
                 if (viewport.isViewportSmall) setDrawerOpen(false);
-                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
               }}
             />
             <DrawerTab
@@ -561,13 +588,16 @@ const Sidebar = ({
               icon={<FaIcon icon="volume-low" />}
               index={1}
               tabIndex={getTabIndex(1)}
-              ref={getRef(1)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.AUDIOS] = node;
+                const ref = getRef(1);
+                if (ref) ref.current = node;
+              }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Audios"}
-              onClick={(event) => {
+              onClick={() => {
                 setSearchParams({ mediaType: "Audios" });
                 if (viewport.isViewportSmall) setDrawerOpen(false);
-                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
               }}
             />
             <DrawerTab
@@ -575,13 +605,16 @@ const Sidebar = ({
               icon={<FaIcon icon="film" />}
               index={2}
               tabIndex={getTabIndex(2)}
-              ref={getRef(2)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.VIDEOS] = node;
+                const ref = getRef(2);
+                if (ref) ref.current = node;
+              }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Videos"}
-              onClick={(event) => {
+              onClick={() => {
                 setSearchParams({ mediaType: "Videos" });
                 if (viewport.isViewportSmall) setDrawerOpen(false);
-                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
               }}
             />
             <DrawerTab
@@ -589,13 +622,16 @@ const Sidebar = ({
               icon={<FaIcon icon="file" />}
               index={3}
               tabIndex={getTabIndex(3)}
-              ref={getRef(3)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.DOCUMENTS] = node;
+                const ref = getRef(3);
+                if (ref) ref.current = node;
+              }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Documents"}
-              onClick={(event) => {
+              onClick={() => {
                 setSearchParams({ mediaType: "Documents" });
                 if (viewport.isViewportSmall) setDrawerOpen(false);
-                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
               }}
             />
             <DrawerTab
@@ -603,13 +639,16 @@ const Sidebar = ({
               icon={<ChemistryIcon />}
               index={4}
               tabIndex={getTabIndex(4)}
-              ref={getRef(4)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.CHEMISTRY] = node;
+                const ref = getRef(4);
+                if (ref) ref.current = node;
+              }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Chemistry"}
-              onClick={(event) => {
+              onClick={() => {
                 setSearchParams({ mediaType: "Chemistry" });
                 if (viewport.isViewportSmall) setDrawerOpen(false);
-                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
               }}
             />
             <DrawerTab
@@ -617,13 +656,16 @@ const Sidebar = ({
               icon={<FaIcon icon="file-invoice" />}
               index={5}
               tabIndex={getTabIndex(5)}
-              ref={getRef(5)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.DMPS] = node;
+                const ref = getRef(5);
+                if (ref) ref.current = node;
+              }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "DMPs"}
-              onClick={(event) => {
+              onClick={() => {
                 setSearchParams({ mediaType: "DMPs" });
                 if (viewport.isViewportSmall) setDrawerOpen(false);
-                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
               }}
             />
             <DrawerTab
@@ -631,13 +673,16 @@ const Sidebar = ({
               icon={<FaIcon icon="fa-regular fa-note-sticky" />}
               index={6}
               tabIndex={getTabIndex(6)}
-              ref={getRef(6)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.SNIPPETS] = node;
+                const ref = getRef(6);
+                if (ref) ref.current = node;
+              }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Snippets"}
-              onClick={(event) => {
+              onClick={() => {
                 setSearchParams({ mediaType: "Snippets" });
                 if (viewport.isViewportSmall) setDrawerOpen(false);
-                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
               }}
             />
             <DrawerTab
@@ -645,13 +690,16 @@ const Sidebar = ({
               icon={<FaIcon icon="shapes" />}
               index={7}
               tabIndex={getTabIndex(7)}
-              ref={getRef(7)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.MISCELLANEOUS] = node;
+                const ref = getRef(7);
+                if (ref) ref.current = node;
+              }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "Miscellaneous"}
-              onClick={(event) => {
+              onClick={() => {
                 setSearchParams({ mediaType: "Miscellaneous" });
                 if (viewport.isViewportSmall) setDrawerOpen(false);
-                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
               }}
             />
           </List>
@@ -662,13 +710,16 @@ const Sidebar = ({
               icon={<FaIcon icon="fa-circle-down" />}
               index={8}
               tabIndex={getTabIndex(8)}
-              ref={getRef(8)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.PDFDOCUMENTS] = node;
+                const ref = getRef(8);
+                if (ref) ref.current = node;
+              }}
               drawerOpen={drawerOpen}
               selected={selectedSection === "PdfDocuments"}
-              onClick={(event) => {
+              onClick={() => {
                 setSearchParams({ mediaType: "PdfDocuments" });
                 if (viewport.isViewportSmall) setDrawerOpen(false);
-                setSelectedIndicatorOffset(event.currentTarget.offsetTop);
               }}
             />
           </List>

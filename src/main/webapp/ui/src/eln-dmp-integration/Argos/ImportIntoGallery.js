@@ -9,7 +9,7 @@ import { type PlanSummary } from "./PlanSummary";
  */
 
 export async function importPlan(plan: PlanSummary): Promise<void> {
-  const id: string = plan.getIdAsString();
+  const id: string = `${plan.id}`;
   await axios.post<void, void>(`/apps/argos/importPlan/${id}`);
   // eslint-disable-next-line no-undef
   gallery();

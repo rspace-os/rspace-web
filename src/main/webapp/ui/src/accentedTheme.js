@@ -675,14 +675,6 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
           },
         },
-        MuiTablePagination: {
-          styleOverrides: {
-            toolbar: {
-              background: mainBackground,
-              color: backgroundContrastTextColor,
-            },
-          },
-        },
         MuiChip: {
           styleOverrides: {
             root: {
@@ -690,6 +682,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               fontWeight: 500,
               letterSpacing: "0.03em",
               color: backgroundContrastTextColor,
+              [`&.${chipClasses.filled}`]: {
+                backgroundColor: `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, ${accent.background.lightness}%, 60%)`,
+                [`& .${chipClasses.deleteIcon}`]: {
+                  color: contrastTextColor,
+                },
+              },
               [`&.${chipClasses.filled}${chipClasses.clickable}`]: {
                 backgroundColor: lighterInteractiveColor,
                 color: linkColor,
@@ -823,6 +821,22 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
             groupTransition: {
               paddingLeft: "calc(2 * var(--TreeView-itemChildrenIndentation))",
+            },
+          },
+        },
+        MuiTableCell: {
+          styleOverrides: {
+            root: {
+              color: backgroundContrastTextColor,
+            },
+          },
+        },
+        MuiTablePagination: {
+          styleOverrides: {
+            toolbar: {
+              background: mainBackground,
+              color: backgroundContrastTextColor,
+              minHeight: "unset !important",
             },
           },
         },
