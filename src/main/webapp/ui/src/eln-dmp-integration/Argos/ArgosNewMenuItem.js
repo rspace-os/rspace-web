@@ -20,7 +20,7 @@ export default function ArgosNewMenuItem({
   return (
     <>
       <NewMenuItem
-        title="ARGOS"
+        title="Argos"
         avatar={<CardMedia image={ArgosIcon} />}
         backgroundColor={COLOR}
         foregroundColor={{ ...COLOR, lightness: 28 }}
