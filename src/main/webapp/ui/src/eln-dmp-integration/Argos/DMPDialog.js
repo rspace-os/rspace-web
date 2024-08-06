@@ -587,6 +587,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   width: 60,
                   flex: 0,
                   disableColumnMenu: true,
+                  sortable: false,
                 },
                 DataGridColumn.newColumnWithFieldName<PlanSummary, _>("label", {
                   headerName: "Label",
