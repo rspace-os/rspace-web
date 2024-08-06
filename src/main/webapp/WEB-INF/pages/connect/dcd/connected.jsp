@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
-<title>You are connected to DMPTool</title>
+<title>You are connected to Digital Commons Data</title>
 <script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 </head>
 
