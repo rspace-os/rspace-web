@@ -14,6 +14,7 @@ import DryadRepo from "./repositories/DryadRepo";
 import FigshareRepo from "./repositories/FigshareRepo";
 import DataverseRepo from "./repositories/DataverseRepo";
 import ZenodoRepo from "./repositories/ZenodoRepo";
+import DigitalCommonsDataRepo from "./repositories/DigitalCommonsDataRepo";
 import Alert from "@mui/material/Alert";
 import { type Validator } from "../util/Validator";
 import {
@@ -429,6 +430,19 @@ function ExportRepo({
               }}
             />
           </>
+        )}
+        {repo.repoName === "app.digital_commons_data" && (
+          <DigitalCommonsDataRepo
+            handleChange={handleChange}
+            updatePeople={updatePeople}
+            inputValidations={state.inputValidations}
+            submitAttempt={state.submitAttempt}
+            title={state.title}
+            description={state.description}
+            tags={state.tags}
+            fetchingTags={fetchingTags}
+            onTagsChange={({ target: { value } }) => {}}
+          />
         )}
       </Grid>
     </Grid>
