@@ -653,6 +653,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   setSelectedPlan(DMPs.find((d) => d.id === newSelection[0]));
                 }
               }}
+              getRowHeight={() => "auto"}
             />
           </Grid>
         </Grid>
