@@ -94,6 +94,8 @@ function FormatChoice({
               return { repoCfg: -1, ...repo };
             if (repo.displayName === "Dryad") return { repoCfg: -1, ...repo };
             if (repo.displayName === "Zenodo") return { repoCfg: -1, ...repo };
+            if (repo.displayName === "Digital Commons Data")
+              return { repoCfg: -1, ...repo };
 
             const keys = Object.keys(repo.options);
             if (keys.length) {
