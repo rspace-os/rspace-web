@@ -14,7 +14,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
 import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
 import Typography from "@mui/material/Typography";
@@ -49,6 +48,7 @@ import createAccentedTheme from "../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
 import { DataGrid } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
+import Stack from "@mui/material/Stack";
 
 const COLOR = {
   main: {
@@ -443,7 +443,7 @@ const CustomDialog = withStyles<
 >((theme, { fullScreen }) => ({
   paper: {
     overflow: "hidden",
-    margin: theme.spacing(2.625),
+    margin: fullScreen ? 0 : theme.spacing(2.625),
     maxHeight: "unset",
     minHeight: "unset",
 
@@ -453,23 +453,9 @@ const CustomDialog = withStyles<
   },
 }))(Dialog);
 
-const useStyles = makeStyles()(() => ({
-  contentWrapper: {
-    overscrollBehavior: "contain",
-    WebkitOverflowScrolling: "unset",
-  },
-  barWrapper: {
-    display: "flex",
-    alignSelf: "center",
-    width: "100%",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  fullWidth: { width: "100%" },
-}));
-
 function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   const { addAlert } = useContext(AlertContext);
+  const { isViewportSmall } = useViewportDimensions();
 
   const [DMPs, setDMPs]: UseState<Array<PlanSummary>> = useState([]);
   const [totalCount, setTotalCount]: UseState<number> = useState(0);
@@ -502,7 +488,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
        * close the dialog.
        */
       setSelectedPlan(null);
-    } catch (e:mixed) {
+    } catch (e) {
       console.error(e);
       addAlert(
         mkAlert({
@@ -515,8 +501,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
       setImporting(false);
     }
   };
-
-  const { classes } = useStyles();
 
   return (
     <>
@@ -534,7 +518,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Box>
         </Toolbar>
       </AppBar>
-      <DialogContent className={classes.contentWrapper}>
+      <DialogContent>
         <Grid
           container
           direction="column"
@@ -629,6 +613,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               initialState={{
                 columns: {
                   columnVisibilityModel: {
+                    id: !isViewportSmall,
                     grant: false,
                     createdAt: false,
                     modifiedAt: false,
@@ -658,7 +643,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Grid>
         </Grid>
       </DialogContent>
-      <DialogActions className={classes.barWrapper}>
+      <DialogActions>
         <Grid container direction="row" spacing={1}>
           <Grid item>
             <CustomTablePagination
@@ -685,24 +670,23 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               }}
             />
           </Grid>
-          <Grid item sx={{ flexGrow: "1" }}></Grid>
-          <Grid item>
-            <Button onClick={() => setOpen(false)} disabled={importing}>
-              {selectedPlan ? "Cancel" : "Close"}
-            </Button>
-          </Grid>
-          <Grid item>
-            <ValidatingSubmitButton
-              onClick={() => {
-                void handleImport();
-              }}
-              validationResult={
-                !selectedPlan ? IsInvalid("No DMP selected.") : IsValid()
-              }
-              loading={importing}
-            >
-              Import
-            </ValidatingSubmitButton>
+          <Grid item sx={{ ml: "auto" }}>
+            <Stack direction="row" spacing={1}>
+              <Button onClick={() => setOpen(false)} disabled={importing}>
+                {selectedPlan ? "Cancel" : "Close"}
+              </Button>
+              <ValidatingSubmitButton
+                onClick={() => {
+                  void handleImport();
+                }}
+                validationResult={
+                  !selectedPlan ? IsInvalid("No DMP selected.") : IsValid()
+                }
+                loading={importing}
+              >
+                Import
+              </ValidatingSubmitButton>
+            </Stack>
           </Grid>
         </Grid>
       </DialogActions>
