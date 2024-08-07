@@ -91,12 +91,7 @@ const CustomDialog = withStyles<
 }))(Dialog);
 
 const useStyles = makeStyles()((theme) => ({
-  contentWrapper: {
-    overscrollBehavior: "contain",
-    WebkitOverflowScrolling: "unset",
-  },
   fullWidth: { width: "100%" },
-  sideSpaced: { marginRight: theme.spacing(1), marginLeft: theme.spacing(1) },
   warningRow: {
     display: "flex",
     flexDirection: "row",
@@ -107,9 +102,6 @@ const useStyles = makeStyles()((theme) => ({
   },
   warningMessage: { marginRight: "3vw" },
   warningRed: { color: theme.palette.warningRed },
-  dialogTitle: {
-    paddingBottom: theme.spacing(0.5),
-  },
 }));
 
 export type Plan = {
@@ -259,7 +251,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Box>
         </Toolbar>
       </AppBar>
-      <DialogContent className={classes.contentWrapper}>
+      <DialogContent>
         <Grid
           container
           direction="column"
@@ -406,11 +398,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
         <Grid container direction="row" spacing={1}>
           <Grid item sx={{ ml: "auto" }}>
             <Stack direction="row" spacing={1}>
-              <Button
-                className={classes.sideSpaced}
-                onClick={() => setOpen(false)}
-                disabled={importing}
-              >
+              <Button onClick={() => setOpen(false)} disabled={importing}>
                 {selectedPlan ? "Cancel" : "Close"}
               </Button>
               <ValidatingSubmitButton
