@@ -128,7 +128,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                 title: "Fetch failed.",
                 message: r.data.error?.errorMessages[0] ?? "Could not get DMPs",
                 variant: "error",
-                isInfinite: false,
               })
             );
           }
