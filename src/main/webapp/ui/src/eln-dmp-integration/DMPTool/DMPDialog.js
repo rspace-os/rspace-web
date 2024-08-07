@@ -15,10 +15,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
 import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
-import clsx from "clsx";
-import WarningIcon from "@mui/icons-material/Warning";
 import Typography from "@mui/material/Typography";
 import axios from "axios";
 import { type UseState } from "../../util/types";
@@ -90,20 +87,6 @@ const CustomDialog = withStyles<
   },
 }))(Dialog);
 
-const useStyles = makeStyles()((theme) => ({
-  fullWidth: { width: "100%" },
-  warningRow: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    fontSize: "13px",
-    marginTop: theme.spacing(0.5),
-  },
-  warningMessage: { marginRight: "3vw" },
-  warningRed: { color: theme.palette.warningRed },
-}));
-
 export type Plan = {
   id: number,
   title: string,
@@ -111,22 +94,6 @@ export type Plan = {
   modified: string,
   created: string,
 };
-
-const WarningBar = observer(() => {
-  const { classes } = useStyles();
-  return (
-    <div
-      className={clsx(
-        classes.warningRow,
-        classes.fullWidth,
-        classes.warningRed
-      )}
-    >
-      <WarningIcon />
-      <span className={classes.warningMessage}>Warning text</span>
-    </div>
-  );
-});
 
 function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   const { addAlert } = useContext(AlertContext);
@@ -223,10 +190,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
       setImporting(false);
     }
   };
-
-  const { classes } = useStyles();
-
-  const showWarning = false; // intentionally left, may be used later
 
   function statusText() {
     if (errorFetching) return Optional.present(errorFetching);
@@ -393,7 +356,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Grid>
         </Grid>
       </DialogContent>
-      {showWarning && <WarningBar />}
       <DialogActions>
         <Grid container direction="row" spacing={1}>
           <Grid item sx={{ ml: "auto" }}>
