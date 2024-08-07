@@ -237,7 +237,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               more.
             </Typography>
           </Grid>
-          <Grid item xs={12}>
+          <Grid item>
             <ScopeField getDMPs={getDMPs} />
             <DataGrid
               columns={[
