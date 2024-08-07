@@ -34,7 +34,7 @@ export default function ScopeField({ getDMPs }: ScopeFieldArgs): Node {
   };
 
   return (
-    <Grid container spacing={2} sx={{ mb: 1 }}>
+    <Grid container direction="row" spacing={2}>
       <Grid item>
         <RadioField
           value={currentScope}

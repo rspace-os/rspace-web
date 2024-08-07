@@ -232,6 +232,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Grid>
           <Grid item>
             <ScopeField getDMPs={getDMPs} />
+          </Grid>
+          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
             <DataGrid
               columns={[
                 {
