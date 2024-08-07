@@ -13,7 +13,6 @@ import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import DMPTable from "./DMPTable";
 import { withStyles } from "Styles";
@@ -35,6 +34,13 @@ import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "../../components/ValidatingSubmitButton";
+import Link from "@mui/material/Link";
+import Toolbar from "@mui/material/Toolbar";
+import AppBar from "@mui/material/AppBar";
+import docLinks from "../../assets/DocLinks";
+import Box from "@mui/material/Box";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import AccessibilityTips from "../../components/AccessibilityTips";
 
 const COLOR = {
   main: {
@@ -70,12 +76,13 @@ const CustomDialog = withStyles<
 >((theme, { fullScreen }) => ({
   paper: {
     overflow: "hidden",
+    margin: fullScreen ? 0 : theme.spacing(2.625),
+    maxHeight: "unset",
+    minHeight: "unset",
 
-    // this is to avoid intercom help button
-    maxHeight: fullScreen ? "unset" : "86vh",
-
-    // this is to ensure the picker has enough height even when list is empty
-    minHeight: "86vh",
+    // this is so that the hights of the dialog's content of constrained and scrollbars appear
+    // 24px margin above and below, 3px border above and below
+    height: fullScreen ? "100%" : "calc(100% - 48px)",
   },
 }))(Dialog);
 
@@ -243,11 +250,43 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   return (
     <>
-      <DialogTitle className={classes.dialogTitle}>
-        Data Management Plans (DMPs) from DMPTool
-      </DialogTitle>
+      <AppBar position="relative" open={true}>
+        <Toolbar variant="dense">
+          <Typography variant="h6" noWrap component="h2">
+            DMPTool
+          </Typography>
+          <Box flexGrow={1}></Box>
+          <Box ml={1}>
+            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
+          </Box>
+          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
+            <HelpLinkIcon title="DMPTool help" link={docLinks.dmptool} />
+          </Box>
+        </Toolbar>
+      </AppBar>
       <DialogContent className={classes.contentWrapper}>
-        <Grid container>
+        <Grid
+          container
+          direction="column"
+          spacing={2}
+          flexWrap="nowrap"
+          // this is so that just the table is scrollable
+          height="calc(100% + 16px)"
+        >
+          <Grid item>
+            <Typography variant="h3">Import a DMP into the Gallery</Typography>
+          </Grid>
+          <Grid item>
+            <Typography variant="body2">
+              Importing a DMP will make it available to view and reference
+              within RSpace.
+            </Typography>
+            <Typography variant="body2">
+              See <Link href="https://dmptool.org">dmptool.org</Link> and our{" "}
+              <Link href={docLinks.dmptool}>DMPTool integration docs</Link> for
+              more.
+            </Typography>
+          </Grid>
           <Grid item xs={12}>
             <ScopeField getDMPs={getDMPs} />
             <DMPTable
