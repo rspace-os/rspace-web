@@ -191,13 +191,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
     }
   };
 
-  function statusText() {
-    if (errorFetching) return Optional.present(errorFetching);
-    if (fetching) return Optional.present("Fetching DMPs...");
-    if (DMPs.length === 0) return Optional.present("No items to display");
-    return Optional.empty<string>();
-  }
-
   return (
     <>
       <AppBar position="relative" open={true}>
@@ -340,19 +333,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               }}
               getRowHeight={() => "auto"}
             />
-            {statusText()
-              .map((sText) => (
-                <Typography
-                  key={null}
-                  component="div"
-                  variant="body2"
-                  color="textPrimary"
-                  align="center"
-                >
-                  {sText}
-                </Typography>
-              ))
-              .orElse(null)}
           </Grid>
         </Grid>
       </DialogContent>
