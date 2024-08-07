@@ -29,10 +29,40 @@ import { Optional } from "../../util/optional";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import Portal from "@mui/material/Portal";
+import createAccentedTheme from "../../accentedTheme";
+import { ThemeProvider } from "@mui/material/styles";
 import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "../../components/ValidatingSubmitButton";
+
+const COLOR = {
+  main: {
+    hue: 208,
+    saturation: 46,
+    lightness: 70,
+  },
+  darker: {
+    hue: 208,
+    saturation: 93,
+    lightness: 33,
+  },
+  contrastText: {
+    hue: 208,
+    saturation: 35,
+    lightness: 26,
+  },
+  background: {
+    hue: 208,
+    saturation: 25,
+    lightness: 71,
+  },
+  backgroundContrastText: {
+    hue: 208,
+    saturation: 11,
+    lightness: 24,
+  },
+};
 
 const CustomDialog = withStyles<
   {| fullScreen: boolean, ...ElementProps<typeof Dialog> |},
@@ -295,21 +325,23 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <Portal>
-      <DialogBoundary>
-        <CustomDialog
-          onClose={() => {
-            setOpen(false);
-          }}
-          open={open}
-          maxWidth="lg"
-          fullWidth
-          fullScreen={isViewportSmall}
-        >
-          <DMPDialogContent setOpen={setOpen} />
-        </CustomDialog>
-      </DialogBoundary>
-    </Portal>
+    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <Portal>
+        <DialogBoundary>
+          <CustomDialog
+            onClose={() => {
+              setOpen(false);
+            }}
+            open={open}
+            maxWidth="lg"
+            fullWidth
+            fullScreen={isViewportSmall}
+          >
+            <DMPDialogContent setOpen={setOpen} />
+          </CustomDialog>
+        </DialogBoundary>
+      </Portal>
+    </ThemeProvider>
   );
 }
 
