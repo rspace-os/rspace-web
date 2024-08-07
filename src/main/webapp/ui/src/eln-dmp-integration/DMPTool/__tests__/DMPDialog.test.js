@@ -41,7 +41,7 @@ describe("DMPDialog", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("No items to display")).toBeVisible();
+      expect(screen.getByText("No DMPs")).toBeVisible();
     });
   });
 
@@ -89,7 +89,7 @@ describe("DMPDialog", () => {
     await sleep(2000);
 
     await waitFor(() => {
-      expect(screen.getByText("very mine")).toBeVisible();
+      expect(screen.getByText("mine")).toBeVisible();
     });
   });
 });
