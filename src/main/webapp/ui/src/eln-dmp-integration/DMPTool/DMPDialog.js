@@ -39,6 +39,7 @@ import Toolbar from "@mui/material/Toolbar";
 import AppBar from "@mui/material/AppBar";
 import docLinks from "../../assets/DocLinks";
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import AccessibilityTips from "../../components/AccessibilityTips";
 
@@ -91,20 +92,8 @@ const useStyles = makeStyles()((theme) => ({
     overscrollBehavior: "contain",
     WebkitOverflowScrolling: "unset",
   },
-  barWrapper: {
-    display: "flex",
-    alignSelf: "center",
-    width: "95%",
-    flexDirection: "column",
-    alignItems: "center",
-  },
   fullWidth: { width: "100%" },
   sideSpaced: { marginRight: theme.spacing(1), marginLeft: theme.spacing(1) },
-  flexEndRow: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
   warningRow: {
     display: "flex",
     flexDirection: "row",
@@ -311,29 +300,31 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
         </Grid>
       </DialogContent>
       {showWarning && <WarningBar />}
-      <DialogActions className={clsx(classes.barWrapper)}>
-        <div className={clsx(classes.flexEndRow, classes.fullWidth)}>
-          <div>
-            <Button
-              className={classes.sideSpaced}
-              onClick={() => setOpen(false)}
-              disabled={importing}
-            >
-              {selectedPlan ? "Cancel" : "Close"}
-            </Button>
-            <ValidatingSubmitButton
-              onClick={() => {
-                void handleImport();
-              }}
-              validationResult={
-                !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
-              }
-              loading={importing}
-            >
-              Import
-            </ValidatingSubmitButton>
-          </div>
-        </div>
+      <DialogActions>
+        <Grid container direction="row" spacing={1}>
+          <Grid item sx={{ ml: "auto" }}>
+            <Stack direction="row" spacing={1}>
+              <Button
+                className={classes.sideSpaced}
+                onClick={() => setOpen(false)}
+                disabled={importing}
+              >
+                {selectedPlan ? "Cancel" : "Close"}
+              </Button>
+              <ValidatingSubmitButton
+                onClick={() => {
+                  void handleImport();
+                }}
+                validationResult={
+                  !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
+                }
+                loading={importing}
+              >
+                Import
+              </ValidatingSubmitButton>
+            </Stack>
+          </Grid>
+        </Grid>
       </DialogActions>
     </>
   );
