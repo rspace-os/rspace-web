@@ -62,6 +62,7 @@ declare module "@mui/x-data-grid" {
     sortable?: boolean,
     headerClassName?: string,
     disableExport?: boolean,
+    display?: "text" | "flex",
   |};
 
   declare export function DataGrid<

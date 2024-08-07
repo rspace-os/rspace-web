@@ -14,7 +14,6 @@ import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
-import DMPTable from "./DMPTable";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
@@ -42,6 +41,10 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import AccessibilityTips from "../../components/AccessibilityTips";
+import { DataGrid } from "@mui/x-data-grid";
+import { DataGridColumn } from "../../util/table";
+import Radio from "@mui/material/Radio";
+import DOMPurify from "dompurify";
 
 const COLOR = {
   main: {
@@ -113,6 +116,8 @@ export type Plan = {
   id: number,
   title: string,
   description: string,
+  modified: string,
+  created: string,
 };
 
 const WarningBar = observer(() => {
@@ -133,6 +138,7 @@ const WarningBar = observer(() => {
 
 function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   const { addAlert } = useContext(AlertContext);
+  const { isViewportSmall } = useViewportDimensions();
 
   const [DMPs, setDMPs] = useState(([]: Array<Plan>));
   const [selectedPlan, setSelectedPlan]: UseState<?Plan> = useState();
@@ -278,10 +284,106 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Grid>
           <Grid item xs={12}>
             <ScopeField getDMPs={getDMPs} />
-            <DMPTable
-              plans={fetching ? [] : DMPs}
-              selectedPlan={selectedPlan}
-              setSelectedPlan={setSelectedPlan}
+            <DataGrid
+              columns={[
+                {
+                  field: "radio",
+                  headerName: "Select",
+                  renderCell: (params: { row: Plan, ... }) => (
+                    <Radio
+                      color="primary"
+                      value={selectedPlan?.id === params.row.id}
+                      checked={selectedPlan?.id === params.row.id}
+                      inputProps={{ "aria-label": "Plan selection" }}
+                    />
+                  ),
+                  hideable: false,
+                  width: 60,
+                  flex: 0,
+                  disableColumnMenu: true,
+                  sortable: false,
+                },
+                DataGridColumn.newColumnWithFieldName<Plan, _>("title", {
+                  headerName: "Title",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithFieldName("id", {
+                  headerName: "Id",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithFieldName("description", {
+                  renderCell: (params: { row: Plan, ... }) => {
+                    const sanitized = DOMPurify.sanitize(
+                      params.row.description
+                    );
+                    return (
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: `${sanitized.substring(0, 200)} ${
+                            sanitized.length > 200 ? "..." : ""
+                          }`,
+                        }}
+                      ></span>
+                    );
+                  },
+                  headerName: "Description",
+                  display: "flex",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithValueGetter(
+                  "created",
+                  (params: { row: Plan, ... }) =>
+                    new Date(params.row.created).toLocaleString(),
+                  {
+                    headerName: "Created At",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+                DataGridColumn.newColumnWithValueGetter(
+                  "modified",
+                  (params: { row: Plan, ... }) =>
+                    new Date(params.row.modified).toLocaleString(),
+                  {
+                    headerName: "Modified At",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+              ]}
+              rows={fetching ? [] : DMPs}
+              initialState={{
+                columns: {
+                  columnVisibilityModel: {
+                    id: !isViewportSmall,
+                    description: false,
+                    created: false,
+                    modified: false,
+                  },
+                },
+              }}
+              density="compact"
+              disableColumnFilter
+              hideFooter
+              slots={{
+                pagination: null,
+              }}
+              localeText={{
+                noRowsLabel: "No DMPs",
+              }}
+              loading={fetching}
+              getRowId={(row) => row.id}
+              onRowSelectionModelChange={(
+                newSelection: $ReadOnlyArray<Plan["id"]>
+              ) => {
+                if (newSelection[0]) {
+                  setSelectedPlan(DMPs.find((d) => d.id === newSelection[0]));
+                }
+              }}
+              getRowHeight={() => "auto"}
             />
             {statusText()
               .map((sText) => (
