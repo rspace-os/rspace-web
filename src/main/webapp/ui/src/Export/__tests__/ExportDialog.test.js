@@ -19,9 +19,9 @@ import fc from "fast-check";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan";
-import CREATE_FULL_EXPORT_PLAN from "./createFullExportPlan";
 import each from "jest-each";
 import { type UseState } from "../../util/types";
+import Alerts from "../../components/Alerts/Alerts";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -100,11 +100,13 @@ function renderExportDialog({
       setOpen(o);
     };
     return (
-      <ExportDialog
-        exportSelection={selection}
-        open={open}
-        allowFileStores={allowFileStores ?? false}
-      />
+      <Alerts>
+        <ExportDialog
+          exportSelection={selection}
+          open={open}
+          allowFileStores={allowFileStores ?? false}
+        />
+      </Alerts>
     );
   };
   render(<Wrapper />);
