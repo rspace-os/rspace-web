@@ -62,6 +62,7 @@ declare module "@mui/x-data-grid" {
     sortable?: boolean,
     headerClassName?: string,
     disableExport?: boolean,
+    display?: "text" | "flex",
   |};
 
   declare export function DataGrid<
@@ -117,6 +118,7 @@ declare module "@mui/x-data-grid" {
       // https://github.com/mui/mui-x/blob/v7.12.0/packages/x-data-grid/src/constants/localeTextConstants.ts
       noRowsLabel?: string,
     |},
+    onCellKeyDown?: (Row, KeyboardEvent) => void,
   |}): Node;
 
   declare export function GridToolbarContainer({|

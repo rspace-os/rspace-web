@@ -639,6 +639,12 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                 }
               }}
               getRowHeight={() => "auto"}
+              onCellKeyDown={({ id }, e) => {
+                if (e.key === " " || e.key === "Enter") {
+                  setSelectedPlan(DMPs.find((d) => d.id === id));
+                  e.stopPropagation();
+                }
+              }}
             />
           </Grid>
         </Grid>

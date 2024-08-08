@@ -119,6 +119,7 @@ type ColumnProps<Row: { ... }, Value> = {|
   sortable?: boolean,
   headerClassName?: string,
   disableExport?: boolean,
+  display?: "text" | "flex",
 |};
 
 const DataGridColumn = {
