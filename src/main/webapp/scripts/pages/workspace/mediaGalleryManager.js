@@ -27,7 +27,7 @@ var gdDeveloperKey = '';
 // The Client ID obtained from the Google Developers Console. Replace with your own Client ID.
 var gdClientId = "";
 // Scope to use to access user's files.
-var gdScope = 'https://www.googleapis.com/auth/drive'
+var gdScope = 'https://www.googleapis.com/auth/drive.file'
 var gdPickerApiLoaded = false;
 var gdOauthToken;
 
