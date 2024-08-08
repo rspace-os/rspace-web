@@ -27,7 +27,7 @@ const WORD_ERRORS = [
   "Word export is only available for a single document, and you have selected more than one.",
   "Word export is only available for a single document, and you've selected a folder.",
   "Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
-  "All selected items are attachments - there are no RSpace documents to export.",
+  "All selected items are attachments — there are no RSpace documents to export.",
 ];
 
 type FormatChoiceArgs = {|
