@@ -2,9 +2,9 @@
 
 import React, { useContext, type Node, type ComponentType } from "react";
 import { observer } from "mobx-react-lite";
-import TableSortLabel from "../TableSortLabel";
-import SearchContext from "../../stores/contexts/Search";
-import { type AdjustableTableRowLabel } from "../../stores/definitions/Tables";
+import TableSortLabel from "../../../components/TableSortLabel";
+import SearchContext from "../../../stores/contexts/Search";
+import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 
 export type SortProperty = {
   key: string,

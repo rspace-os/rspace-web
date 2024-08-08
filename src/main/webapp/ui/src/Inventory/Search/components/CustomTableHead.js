@@ -11,10 +11,10 @@ import SearchContext from "../../../stores/contexts/Search";
 import SelectAllIcon from "@mui/icons-material/SelectAll";
 import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import { menuIDs } from "../../../util/menuIDs";
-import AdjustableHeadCell from "../../../components/Tables/AdjustableHeadCell";
+import AdjustableHeadCell from "../../components/Tables/AdjustableHeadCell";
 import SortableProperty, {
   type SortProperty,
-} from "../../../components/Tables/SortableProperty";
+} from "../../components/Tables/SortableProperty";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import { sortProperties, isSortable } from "../../../stores/models/Result";
 import * as ArrayUtils from "../../../util/ArrayUtils";

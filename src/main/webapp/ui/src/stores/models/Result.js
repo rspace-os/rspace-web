@@ -63,7 +63,7 @@ import {
   noProgress,
   type Progress,
 } from "../../util/progress";
-import { type SortProperty } from "../../components/Tables/SortableProperty";
+import { type SortProperty } from "../../Inventory/components/Tables/SortableProperty";
 import {
   type Identifier,
   type IdentifierAttrs,

@@ -16,7 +16,7 @@ import SearchContext from "../../../stores/contexts/Search";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import { sortProperties } from "../../../stores/models/Result";
 import DropdownButton from "../../../components/DropdownButton";
-import { type SortProperty } from "../../../components/Tables/SortableProperty";
+import { type SortProperty } from "../../components/Tables/SortableProperty";
 
 const useStyles = makeStyles()((theme, { disabled }) => ({
   icon: {

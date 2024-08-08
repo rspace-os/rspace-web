@@ -13,7 +13,7 @@ import { makeStyles } from "tss-react/mui";
 import NameWithBadge from "../../components/NameWithBadge";
 import clsx from "clsx";
 import { globalStyles } from "../../../theme";
-import AdjustableCell from "../../../components/Tables/AdjustableCell";
+import AdjustableCell from "../../components/Tables/AdjustableCell";
 import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { UserCancelledAction } from "../../../util/error";
