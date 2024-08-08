@@ -33,6 +33,8 @@ import { type Person, type Repo } from "./repositories/common";
 import { lift3 } from "../util/optional";
 import { type Tag } from "./repositories/Tags";
 import * as ArrayUtils from "../util/ArrayUtils";
+import * as Parsers from "../util/parsers";
+import Result from "../util/result";
 import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
 
 const DEFAULT_REPO_CONFIG = {
@@ -283,25 +285,36 @@ function ExportDialog({
       nfsConfig: { ...state.nfsConfig },
     };
     return axios
-      .post<typeof data, {| data: Array<string> |}>(url, data)
+      .post<typeof data, mixed>(url, data)
       .then((response) =>
-        // parse the tag strings and only keep those with metadata
-        ArrayUtils.mapOptional(
-          (tag) =>
-            lift3(
-              (vocabulary, uri, version) => ({
-                value: tag.value,
-                vocabulary,
-                uri,
-                version,
-              }),
-              tag.vocabulary,
-              tag.uri,
-              tag.version
-            ),
-          parseEncodedTags(response.data.data.flatMap((str) => str.split(",")))
-        )
+        Parsers.isObject(response)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("data"))
+          .flatMap(Parsers.isArray)
+          .flatMap((data) => Result.all(...data.map(Parsers.isString)))
+          .map((data) =>
+            // parse the tag strings and only keep those with metadata
+            ArrayUtils.mapOptional(
+              (tag) =>
+                lift3(
+                  (vocabulary, uri, version) => ({
+                    value: tag.value,
+                    vocabulary,
+                    uri,
+                    version,
+                  }),
+                  tag.vocabulary,
+                  tag.uri,
+                  tag.version
+                ),
+              parseEncodedTags(data.flatMap((str) => str.split(",")))
+            )
+          )
+          .orElse<Array<Tag>>([])
       )
+      .catch(() => {
+        return ([]: Array<Tag>);
+      })
       .finally(() => {
         runInAction(() => {
           state.loading = false;
