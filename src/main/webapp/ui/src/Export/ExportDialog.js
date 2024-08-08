@@ -35,6 +35,7 @@ import Result from "../util/result";
 import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
 import Divider from "@mui/material/Divider";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
+import useViewportDimensions from "../util/useViewportDimensions";
 
 const DEFAULT_REPO_CONFIG = {
   repoChoice: 0,
@@ -138,6 +139,7 @@ function ExportDialog({
   allowFileStores,
 }: ExportDialogArgs): Node {
   const { addAlert } = React.useContext(AlertContext);
+  const { isViewportSmall } = useViewportDimensions();
 
   const [state, setState] = useState<typeof DEFAULT_STATE>(
     observable(DEFAULT_STATE)
@@ -401,6 +403,7 @@ function ExportDialog({
             fullWidth={true}
             maxWidth="sm"
             onClose={handleClose}
+            fullScreen={isViewportSmall}
           >
             <DialogTitle data-test-id="modalTitle">
               {activePane.title}
