@@ -8,8 +8,7 @@ import Button from "@mui/material/Button";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import Dialog from "@mui/material/Dialog";
-import IconButton from "@mui/material/IconButton";
-import CloseIcon from "@mui/icons-material/Close";
+import DialogActions from "@mui/material/DialogActions";
 import MobileStepper from "@mui/material/MobileStepper";
 import axios from "axios";
 import FormatChoice, { type ArchiveType } from "./FormatChoice";
@@ -36,6 +35,7 @@ import * as ArrayUtils from "../util/ArrayUtils";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
 import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
+import Divider from "@mui/material/Divider";
 
 const DEFAULT_REPO_CONFIG = {
   repoChoice: 0,
@@ -410,17 +410,14 @@ function ExportDialog({
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
         <Confirm>
-          <Dialog open={state.open} fullWidth={true} maxWidth="sm">
+          <Dialog
+            open={state.open}
+            fullWidth={true}
+            maxWidth="sm"
+            onClose={handleClose}
+          >
             <DialogTitle data-test-id="modalTitle">
               {activePane.title}
-              <IconButton
-                aria-label="Close"
-                data-test-id="closeModal"
-                style={styles.closeButton}
-                onClick={handleClose}
-              >
-                <CloseIcon />
-              </IconButton>
             </DialogTitle>
             <DialogContent>
               {activePane.key === "FormatChoice" && (
@@ -471,31 +468,44 @@ function ExportDialog({
               )}
             </DialogContent>
             <LoadingFade loading={state.loading} />
-            <MobileStepper
-              steps={numberOfPanes(firstPane)}
-              position="static"
-              activeStep={getIndexOfPane(firstPane, activePane)}
-              backButton={
-                <Button
-                  size="small"
-                  data-test-id="createGroupBackButton"
-                  onClick={handleBack}
-                  disabled={!activePane.prev}
-                >
-                  Back
-                </Button>
-              }
-              nextButton={
-                <Button
-                  size="small"
-                  data-test-id="createGroupNextButton"
-                  onClick={() => handleNext()}
-                  disabled={state.exportConfig.archiveType === ""}
-                >
-                  {activePane.next ? "Next" : "Export"}
-                </Button>
-              }
-            />
+            <DialogActions>
+              <Button size="small" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Divider orientation="vertical" sx={{ height: "2em" }} />
+              <MobileStepper
+                sx={{
+                  m: -1,
+                  ml: "0 !important",
+                  flexGrow: 1,
+                  background: "transparent",
+                  pl: 0,
+                }}
+                steps={numberOfPanes(firstPane)}
+                position="static"
+                activeStep={getIndexOfPane(firstPane, activePane)}
+                backButton={
+                  <Button
+                    size="small"
+                    data-test-id="createGroupBackButton"
+                    onClick={handleBack}
+                    disabled={!activePane.prev}
+                  >
+                    Back
+                  </Button>
+                }
+                nextButton={
+                  <Button
+                    size="small"
+                    data-test-id="createGroupNextButton"
+                    onClick={() => handleNext()}
+                    disabled={state.exportConfig.archiveType === ""}
+                  >
+                    {activePane.next ? "Next" : "Export"}
+                  </Button>
+                }
+              />
+            </DialogActions>
           </Dialog>
           <Snackbar
             anchorOrigin={{
