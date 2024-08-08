@@ -3,6 +3,7 @@
 import ExportDialog from "./ExportDialog";
 import { createRoot } from "react-dom/client";
 import React from "react";
+import Alerts from "../components/Alerts/Alerts";
 
 /*
  * This module initialises the ExportDialog react component within the
@@ -16,16 +17,18 @@ import React from "react";
 const domContainer = document.getElementById("exportModal");
 const root = createRoot(domContainer);
 root.render(
-  <ExportDialog
-    exportSelection={{
-      type: "selection",
-      exportTypes: [],
-      exportNames: [],
-      exportIds: [],
-    }}
-    open={false}
-    allowFileStores={RS.netFileStoresExportEnabled}
-  />
+  <Alerts>
+    <ExportDialog
+      exportSelection={{
+        type: "selection",
+        exportTypes: [],
+        exportNames: [],
+        exportIds: [],
+      }}
+      open={false}
+      allowFileStores={RS.netFileStoresExportEnabled}
+    />
+  </Alerts>
 );
 
 RS.exportModal = {
@@ -55,11 +58,13 @@ RS.exportModal = {
       exportIds: exportSelection.exportIds || [],
     };
     root.render(
-      <ExportDialog
-        exportSelection={adjustedSelection}
-        open={true}
-        allowFileStores={RS.netFileStoresExportEnabled}
-      />
+      <Alerts>
+        <ExportDialog
+          exportSelection={adjustedSelection}
+          open={true}
+          allowFileStores={RS.netFileStoresExportEnabled}
+        />
+      </Alerts>
     );
   },
 };

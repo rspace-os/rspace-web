@@ -6,6 +6,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import axios from "axios";
 import { type ExportSelection } from "./ExportDialog";
 import { type Validator } from "../util/Validator";
@@ -15,6 +16,10 @@ import { Optional } from "../util/optional";
 import { useDeploymentProperty } from "../eln/useDeploymentProperty";
 import * as FetchingData from "../util/fetchingData";
 import * as Parsers from "../util/parsers";
+import {
+  OptionHeading,
+  OptionExplanation,
+} from "../components/Inputs/RadioField";
 
 export type ArchiveType = "pdf" | "doc" | "xml" | "html" | "eln";
 
@@ -22,7 +27,7 @@ const WORD_ERRORS = [
   "Word export is only available for a single document, and you have selected more than one.",
   "Word export is only available for a single document, and you've selected a folder.",
   "Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
-  "All selected items are attachments - there are no RSpace documents to export.",
+  "All selected items are attachments — there are no RSpace documents to export.",
 ];
 
 type FormatChoiceArgs = {|
@@ -117,7 +122,7 @@ function FormatChoice({
     let allMedia = false;
     let isSystem = false;
     // $FlowExpectedError[cannot-resolve-name] Global variable
-    let isGallery = typeof isGalleryPage !== "undefined" && isGalleryPage;
+    const isGallery = typeof isGalleryPage !== "undefined" && isGalleryPage;
 
     if (exportSelection.type === "selection") {
       // if all are media, there's nothing to export in this format: RSpac1333
@@ -143,7 +148,7 @@ function FormatChoice({
       exportSelection.type === "selection" &&
       exportSelection.exportIds.length === 1
     ) {
-      let selectedType = exportSelection.exportTypes[0];
+      const selectedType = exportSelection.exportTypes[0];
       if (selectedType.indexOf("FOLDER") >= 0) {
         disabledBecauseFolder = true;
       } else if (selectedType === "NOTEBOOK") {
@@ -158,7 +163,7 @@ function FormatChoice({
       );
     }
 
-    let wordExportAllowed =
+    const wordExportAllowed =
       !disabledBecauseMultiple &&
       !disabledBecauseFolder &&
       !disabledBecauseNotebook &&
@@ -202,74 +207,96 @@ function FormatChoice({
         value={archiveType}
         onChange={handleChange}
       >
-        <FormControlLabel
-          value="html"
-          control={<Radio data-test-id="zip-html" color="primary" />}
-          label={
-            <span>
-              <strong>.ZIP bundle containing .HTML files</strong> - Exported
-              data, notebooks and attached files can be accessed offline with a
-              browser
-            </span>
-          }
-        />
-        <FormControlLabel
-          value="xml"
-          control={<Radio data-test-id="zip-xml" color="primary" />}
-          label={
-            <span>
-              <strong>.ZIP bundle containing .XML files</strong> - Exported data
-              is machine readable. Good for archiving, or transferring data from
-              one RSpace server or user to another
-            </span>
-          }
-        />
-        <FormControlLabel
-          value="pdf"
-          disabled={!pdfAvailable}
-          control={<Radio data-test-id="pdf" color="primary" />}
-          label={
-            pdfAvailable ? (
-              <span>
-                <strong>PDF file</strong> - A read-only version of your RSpace
-                documents will be placed in the &apos;Exports&apos; area of the
-                Gallery
-              </span>
-            ) : (
-              "All selected items are attachments - there are no RSpace documents to export."
-            )
-          }
-        />
-        <FormControlLabel
-          value="eln"
-          control={<Radio data-test-id="zip-eln" color="primary" />}
-          label={
-            <span>
-              <strong>RO-Crate</strong> - an XML bundle with an RO-Crate
-              metadata file, zipped into a .eln archive
-            </span>
-          }
-        />
-        {FetchingData.getSuccessValue(asposeEnabled)
-          .flatMap(Parsers.isBoolean)
-          .orElse(false) && (
+        <Stack spacing={2}>
           <FormControlLabel
-            value="doc"
-            disabled={!wordAvailable}
-            control={<Radio data-test-id="doc" color="primary" />}
+            value="html"
+            control={<Radio data-test-id="zip-html" color="primary" />}
             label={
-              wordAvailable ? (
-                <span>
-                  <strong>.DOC file</strong> - MS Word version of your RSpace
-                  documents will be placed in the &apos;Exports&apos; area of the
-                  Gallery
-                </span>
-              ) : (
-                wordAvailabilityMessage
-              )
+              <>
+                <OptionHeading>
+                  .ZIP bundle containing .HTML files
+                </OptionHeading>
+                <OptionExplanation>
+                  Exported data, notebooks and attached files can be accessed
+                  offline with a browser.
+                </OptionExplanation>
+              </>
             }
           />
-        )}
+          <FormControlLabel
+            value="xml"
+            control={<Radio data-test-id="zip-xml" color="primary" />}
+            label={
+              <>
+                <OptionHeading>.ZIP bundle containing .XML files</OptionHeading>
+                <OptionExplanation>
+                  Exported data is machine readable. Good for archiving, or
+                  transferring data from one RSpace server or user to another.
+                </OptionExplanation>
+              </>
+            }
+          />
+          <FormControlLabel
+            value="pdf"
+            disabled={!pdfAvailable}
+            control={<Radio data-test-id="pdf" color="primary" />}
+            label={
+              <>
+                <OptionHeading>PDF file</OptionHeading>
+                <OptionExplanation>
+                  {pdfAvailable ? (
+                    <>
+                      A read-only version of your RSpace documents will be
+                      placed in the &apos;Exports&apos; area of the Gallery
+                    </>
+                  ) : (
+                    <>
+                      All selected items are attachments &mdash; there are no
+                      RSpace documents to export.
+                    </>
+                  )}
+                </OptionExplanation>
+              </>
+            }
+          />
+          <FormControlLabel
+            value="eln"
+            control={<Radio data-test-id="zip-eln" color="primary" />}
+            label={
+              <>
+                <OptionHeading>RO-Crate</OptionHeading>
+                <OptionExplanation>
+                  An XML bundle with an RO-Crate metadata file, zipped into a
+                  .eln archive.
+                </OptionExplanation>
+              </>
+            }
+          />
+          {FetchingData.getSuccessValue(asposeEnabled)
+            .flatMap(Parsers.isBoolean)
+            .orElse(false) && (
+            <FormControlLabel
+              value="doc"
+              disabled={!wordAvailable}
+              control={<Radio data-test-id="doc" color="primary" />}
+              label={
+                <>
+                  <OptionHeading>.DOC file</OptionHeading>
+                  <OptionExplanation>
+                    {wordAvailable ? (
+                      <>
+                        MS Word version of your RSpace documents will be placed
+                        in the &apos;Exports&apos; area of the Gallery.
+                      </>
+                    ) : (
+                      wordAvailabilityMessage
+                    )}
+                  </OptionExplanation>
+                </>
+              }
+            />
+          )}
+        </Stack>
       </RadioGroup>
 
       <h3 style={{ marginTop: "20px" }}>Choose additional destinations</h3>

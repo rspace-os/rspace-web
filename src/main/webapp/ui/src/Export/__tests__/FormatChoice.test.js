@@ -202,7 +202,7 @@ describe("FormatChoice", () => {
 
       expect(
         screen.getByRole("radio", {
-          name: "Word export is only available for a single document, and you have selected more than one.",
+          name: ".DOC file Word export is only available for a single document, and you have selected more than one.",
         })
       ).toBeDisabled();
     });
@@ -234,7 +234,7 @@ describe("FormatChoice", () => {
 
       expect(
         screen.getByRole("radio", {
-          name: "Word export is only available for a single document, and you've selected a folder.",
+          name: ".DOC file Word export is only available for a single document, and you've selected a folder.",
         })
       ).toBeDisabled();
     });
@@ -266,7 +266,7 @@ describe("FormatChoice", () => {
 
       expect(
         screen.getByRole("radio", {
-          name: "Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
+          name: ".DOC file Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
         })
       ).toBeDisabled();
     });
@@ -298,9 +298,8 @@ describe("FormatChoice", () => {
 
       expect(
         screen.getAllByRole("radio", {
-          name: "All selected items are attachments - there are no RSpace documents to export.",
-          // selecting second such radio because first will be for .pdf export
-        })[1]
+          name: ".DOC file All selected items are attachments — there are no RSpace documents to export.",
+        })[0]
       ).toBeDisabled();
     });
   });
@@ -329,7 +328,7 @@ describe("FormatChoice", () => {
 
       expect(
         screen.getAllByRole("radio", {
-          name: "All selected items are attachments - there are no RSpace documents to export.",
+          name: "PDF file All selected items are attachments — there are no RSpace documents to export.",
           // selecting first such radio because second will be for .doc export
         })[0]
       ).toBeDisabled();
