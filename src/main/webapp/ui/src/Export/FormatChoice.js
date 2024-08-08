@@ -122,7 +122,7 @@ function FormatChoice({
     let allMedia = false;
     let isSystem = false;
     // $FlowExpectedError[cannot-resolve-name] Global variable
-    let isGallery = typeof isGalleryPage !== "undefined" && isGalleryPage;
+    const isGallery = typeof isGalleryPage !== "undefined" && isGalleryPage;
 
     if (exportSelection.type === "selection") {
       // if all are media, there's nothing to export in this format: RSpac1333
@@ -148,7 +148,7 @@ function FormatChoice({
       exportSelection.type === "selection" &&
       exportSelection.exportIds.length === 1
     ) {
-      let selectedType = exportSelection.exportTypes[0];
+      const selectedType = exportSelection.exportTypes[0];
       if (selectedType.indexOf("FOLDER") >= 0) {
         disabledBecauseFolder = true;
       } else if (selectedType === "NOTEBOOK") {
@@ -163,7 +163,7 @@ function FormatChoice({
       );
     }
 
-    let wordExportAllowed =
+    const wordExportAllowed =
       !disabledBecauseMultiple &&
       !disabledBecauseFolder &&
       !disabledBecauseNotebook &&
