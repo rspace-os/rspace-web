@@ -16,8 +16,6 @@ import FormatSpecificOptions from "./FormatSpecificOptions";
 import ExportRepo from "./ExportRepo";
 import ExportFileStore from "./ExportFileStore";
 import LoadingFade from "../components/LoadingFade";
-import Snackbar from "@mui/material/Snackbar";
-import SnackbarContent from "@mui/material/SnackbarContent";
 import Confirm from "../components/ConfirmContextDialog";
 import { runInAction, action, observable } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -36,6 +34,7 @@ import * as Parsers from "../util/parsers";
 import Result from "../util/result";
 import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
 import Divider from "@mui/material/Divider";
+import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 
 const DEFAULT_REPO_CONFIG = {
   repoChoice: 0,
@@ -65,7 +64,6 @@ type ExportConfig = {|
 const DEFAULT_STATE = {
   open: false,
   loading: false,
-  exportSubmitToast: false,
   exportSubmitResponse: "",
   exportSelection: ({
     type: "selection",
@@ -139,6 +137,8 @@ function ExportDialog({
   exportSelection,
   allowFileStores,
 }: ExportDialogArgs): Node {
+  const { addAlert } = React.useContext(AlertContext);
+
   const [state, setState] = useState<typeof DEFAULT_STATE>(
     observable(DEFAULT_STATE)
   );
@@ -258,8 +258,15 @@ function ExportDialog({
         setState(
           observable({
             ...DEFAULT_STATE,
-            exportSubmitToast: true,
-            exportSubmitResponse: response.data,
+          })
+        );
+        addAlert(
+          mkAlert({
+            variant:
+              response.data.indexOf("Please contact") > -1
+                ? "error"
+                : "success",
+            message: response.data,
           })
         );
       })
@@ -385,27 +392,6 @@ function ExportDialog({
     });
   };
 
-  const closeToast = () => {
-    runInAction(() => {
-      state.exportSubmitToast = false;
-    });
-  };
-
-  const styles = {
-    closeButton: {
-      position: "absolute",
-      right: 0,
-      top: 0,
-      width: "auto",
-    },
-    toastSuccess: {
-      backgroundColor: "#4CAF50",
-    },
-    toastFailure: {
-      backgroundColor: "#e51c23",
-    },
-  };
-
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
@@ -507,25 +493,6 @@ function ExportDialog({
               />
             </DialogActions>
           </Dialog>
-          <Snackbar
-            anchorOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            open={state.exportSubmitToast}
-            autoHideDuration={6000}
-            onClose={closeToast}
-          >
-            <SnackbarContent
-              onClose={closeToast}
-              message={state.exportSubmitResponse}
-              style={
-                state.exportSubmitResponse.indexOf("Please contact") > -1
-                  ? styles.toastFailure
-                  : styles.toastSuccess
-              }
-            />
-          </Snackbar>
         </Confirm>
       </ThemeProvider>
     </StyledEngineProvider>
