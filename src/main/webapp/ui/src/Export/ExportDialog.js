@@ -208,7 +208,7 @@ function ExportDialog({
         docConfig.pageSize = format;
         docConfig.defaultPageSize = format;
       })
-      .catch(function (error) {
+      .catch((error) => {
         console.log(error);
       });
   }, []);
@@ -263,7 +263,7 @@ function ExportDialog({
           })
         );
       })
-      .catch(function (error) {
+      .catch((error) => {
         console.log(error);
       });
   };
@@ -553,13 +553,13 @@ const xmlConfig = {
   allVersions: false,
 };
 
-let pdfConfig = {
+const pdfConfig = {
   exportFormat: "PDF",
   exportName: "",
   provenance: true,
   comments: true,
   annotations: true,
-        restartPageNumberPerDoc: true,
+  restartPageNumberPerDoc: true,
   pageSize: "A4",
   defaultPageSize: "A4",
   dateType: "EXP",
@@ -568,7 +568,7 @@ let pdfConfig = {
   includeFieldLastModifiedDate: true,
 };
 
-let docConfig = {
+const docConfig = {
   exportFormat: "WORD",
   exportName: "",
   pageSize: "A4",
