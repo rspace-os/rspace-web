@@ -32,6 +32,8 @@ import IrodsLogo from "./IrodsLogo.svg";
 import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 import MoveDialog from "./MoveDialog";
+import ExportDialog from "../../../Export/ExportDialog";
+import EventBoundary from "../../../components/EventBoundary";
 
 const RenameDialog = ({
   open,
@@ -126,6 +128,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
+  const [exportOpen, setExportOpen] = React.useState(false);
 
   const duplicateAllowed = (): Result<null> => {
     if (selection.isEmpty)
@@ -183,7 +186,7 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
   const exportAllowed = (): Result<null> => {
     if (selection.isEmpty)
       return Result.Error([new Error("Nothing selected.")]);
-    return Result.Error([new Error("Not yet available.")]);
+    return Result.Ok(null);
   };
 
   const downloadAllowed = (): Result<null> => {
@@ -328,11 +331,36 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
           foregroundColor={COLOR.contrastText}
           avatar={<FileDownloadIcon />}
           onClick={() => {
-            setActionsMenuAnchorEl(null);
+            setExportOpen(true);
           }}
           compact
           disabled={exportAllowed().isError}
         />
+        <EventBoundary>
+          <ExportDialog
+            open={exportOpen}
+            onClose={() => {
+              setExportOpen(false);
+              setActionsMenuAnchorEl(null);
+            }}
+            exportSelection={{
+              type: "selection",
+              exportTypes: selection
+                .asSet()
+                .map(() => "MEDIA_FILE")
+                .toArray(),
+              exportNames: selection
+                .asSet()
+                .map(({ name }) => name)
+                .toArray(),
+              exportIds: selection
+                .asSet()
+                .map(({ id }) => idToString(id))
+                .toArray(),
+            }}
+            allowFileStores={false}
+          />
+        </EventBoundary>
         <NewMenuItem
           title="Edit"
           subheader={imageEditingAllowed()
