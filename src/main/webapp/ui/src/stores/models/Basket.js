@@ -80,7 +80,6 @@ export default class BasketModel implements Basket {
     try {
       this.setLoading(true);
       if (this.id) {
-        await this.getItems();
         const basketItemIds = this.items.map((i) => i.globalId);
         const itemsToAdd = itemIds.filter(
           (itemId) => !basketItemIds.includes(itemId)
@@ -125,7 +124,7 @@ export default class BasketModel implements Basket {
       uiStore.addAlert(
         mkAlert({
           title: "Error adding items to Basket.",
-          message: e.message || "",
+          message: e.response?.data.message ?? e.message ?? "",
           variant: "error",
         })
       );
