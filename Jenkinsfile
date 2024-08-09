@@ -249,7 +249,7 @@ pipeline {
                                 [
                                         $class: 'StringParameterValue',
                                         name: 'AMI',
-                                        value: 'ami-0bd0e3179d69cc7ac'
+                                        value: 'ami-0c22dc4d7b4e2fb3f'
                                 ],
                                 [
                                         $class: 'StringParameterValue',
