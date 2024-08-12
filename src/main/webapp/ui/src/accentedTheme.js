@@ -631,6 +631,10 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             root: {
               borderBottom: accentedBorder,
             },
+            vertical: {
+              borderBottom: "none",
+              borderRight: accentedBorder,
+            },
             withChildren: {
               borderBottom: "none",
               marginTop: baseTheme.spacing(-0.5),

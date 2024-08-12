@@ -72,6 +72,7 @@ import useOneDimensionalRovingTabIndex from "../../../components/useOneDimension
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
+import Divider from "@mui/material/Divider";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -1098,197 +1099,207 @@ function GalleryMainPanel({
             </Typography>
           </Grid>
           <Grid item sx={{ marginTop: 0.5 }}>
-            <Stack spacing={0.5}>
-              <Path
-                section={selectedSection}
-                path={path}
-                clearPath={clearPath}
-              />
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <ActionsMenu
-                  refreshListing={refreshListing}
-                  section={selectedSection}
-                  folderId={folderId}
-                />
-                <Box sx={{ flexGrow: 1 }}></Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<TreeIcon />}
-                  onClick={(e) => {
-                    setViewMenuAnchorEl(e.target);
-                  }}
-                  aria-haspopup="menu"
-                >
-                  Views
-                </Button>
-                <StyledMenu
-                  open={Boolean(viewMenuAnchorEl)}
-                  anchorEl={viewMenuAnchorEl}
-                  onClose={() => setViewMenuAnchorEl(null)}
-                  MenuListProps={{
-                    disablePadding: true,
-                  }}
-                >
-                  <NewMenuItem
-                    title="Grid"
-                    subheader="Browse by thumbnail previews"
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={<GridIcon />}
-                    onClick={() => {
-                      setViewMode("grid");
-                      setViewMenuAnchorEl(null);
-                      selection.clear();
-                    }}
-                  />
-                  <NewMenuItem
-                    title="Tree"
-                    subheader="View and manage folder hierarchy"
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={<TreeIcon />}
-                    onClick={() => {
-                      setViewMode("tree");
-                      setViewMenuAnchorEl(null);
-                      selection.clear();
-                    }}
-                  />
-                </StyledMenu>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<SwapVertIcon />}
-                  onClick={(e) => {
-                    setSortMenuAnchorEl(e.target);
-                  }}
-                  aria-haspopup="menu"
-                >
-                  Sort
-                </Button>
-                <StyledMenu
-                  open={Boolean(sortMenuAnchorEl)}
-                  anchorEl={sortMenuAnchorEl}
-                  onClose={() => setSortMenuAnchorEl(null)}
-                  MenuListProps={{
-                    disablePadding: true,
-                  }}
-                >
-                  <NewMenuItem
-                    title={`Name${match<void, string>([
-                      [() => orderBy !== "name", ""],
-                      [() => sortOrder === "ASC", " (Sorted from A to Z)"],
-                      [() => sortOrder === "DESC", " (Sorted from Z to A)"],
-                    ])()}`}
-                    subheader={match<void, string>([
-                      [() => orderBy !== "name", "Tap to sort from A to Z"],
-                      [() => sortOrder === "ASC", "Tap to sort from Z to A"],
-                      [() => sortOrder === "DESC", "Tap to sort from A to Z"],
-                    ])()}
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={match<void, Node>([
-                      [
-                        () => orderBy !== "name",
-                        <HorizontalRuleIcon key={null} />,
-                      ],
-                      [
-                        () => sortOrder === "ASC",
-                        <ArrowDownwardIcon key={null} />,
-                      ],
-                      [
-                        () => sortOrder === "DESC",
-                        <ArrowUpwardIcon key={null} />,
-                      ],
-                    ])()}
-                    onClick={() => {
-                      setSortMenuAnchorEl(null);
-                      if (orderBy === "name") {
-                        if (sortOrder === "ASC") {
-                          setSortOrder("DESC");
-                        } else {
-                          setSortOrder("ASC");
-                        }
-                      } else {
-                        setOrderBy("name");
-                        setSortOrder("ASC");
-                      }
-                    }}
-                  />
-                  <NewMenuItem
-                    title={`Modification Date${match<void, string>([
-                      [() => orderBy !== "modificationDate", ""],
-                      [() => sortOrder === "ASC", " (Sorted oldest first)"],
-                      [() => sortOrder === "DESC", " (Sorted newest first)"],
-                    ])()}`}
-                    subheader={match<void, string>([
-                      [
-                        () => orderBy !== "modificationDate",
-                        "Tap to sort oldest first",
-                      ],
-                      [() => sortOrder === "ASC", "Tap to sort newest first"],
-                      [() => sortOrder === "DESC", "Tap to sort oldest first"],
-                    ])()}
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={match<void, Node>([
-                      [
-                        () => orderBy !== "modificationDate",
-                        <HorizontalRuleIcon key={null} />,
-                      ],
-                      [
-                        () => sortOrder === "ASC",
-                        <ArrowDownwardIcon key={null} />,
-                      ],
-                      [
-                        () => sortOrder === "DESC",
-                        <ArrowUpwardIcon key={null} />,
-                      ],
-                    ])()}
-                    onClick={() => {
-                      setSortMenuAnchorEl(null);
-                      if (orderBy === "modificationDate") {
-                        if (sortOrder === "ASC") {
-                          setSortOrder("DESC");
-                        } else {
-                          setSortOrder("ASC");
-                        }
-                      } else {
-                        setOrderBy("modificationDate");
-                        setSortOrder("ASC");
-                      }
-                    }}
-                  />
-                </StyledMenu>
-              </Stack>
-            </Stack>
+            <Path section={selectedSection} path={path} clearPath={clearPath} />
           </Grid>
           <Grid
             item
-            sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}
-            flexGrow={1}
+            container
+            direction="row"
+            sx={{ marginTop: 0.5 }}
+            flexWrap="nowrap"
+            flexGrow="1"
           >
-            {viewMode === "tree" &&
-              FetchingData.match(galleryListing, {
-                loading: () => <></>,
-                error: (error) => <>{error}</>,
-                success: (listing) => (
-                  <TreeView
-                    listing={listing}
-                    path={path}
-                    selectedSection={selectedSection}
+            <Grid item container direction="column" md={8} lg={9} xl={10}>
+              <Grid item>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <ActionsMenu
                     refreshListing={refreshListing}
-                    sortOrder={sortOrder}
-                    orderBy={orderBy}
+                    section={selectedSection}
+                    folderId={folderId}
                   />
-                ),
-              })}
-            {viewMode === "grid" &&
-              FetchingData.match(galleryListing, {
-                loading: () => <></>,
-                error: (error) => <>{error}</>,
-                success: (listing) => <GridView listing={listing} />,
-              })}
+                  <Box sx={{ flexGrow: 1 }}></Box>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<TreeIcon />}
+                    onClick={(e) => {
+                      setViewMenuAnchorEl(e.target);
+                    }}
+                    aria-haspopup="menu"
+                  >
+                    Views
+                  </Button>
+                  <StyledMenu
+                    open={Boolean(viewMenuAnchorEl)}
+                    anchorEl={viewMenuAnchorEl}
+                    onClose={() => setViewMenuAnchorEl(null)}
+                    MenuListProps={{
+                      disablePadding: true,
+                    }}
+                  >
+                    <NewMenuItem
+                      title="Grid"
+                      subheader="Browse by thumbnail previews"
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={<GridIcon />}
+                      onClick={() => {
+                        setViewMode("grid");
+                        setViewMenuAnchorEl(null);
+                        selection.clear();
+                      }}
+                    />
+                    <NewMenuItem
+                      title="Tree"
+                      subheader="View and manage folder hierarchy"
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={<TreeIcon />}
+                      onClick={() => {
+                        setViewMode("tree");
+                        setViewMenuAnchorEl(null);
+                        selection.clear();
+                      }}
+                    />
+                  </StyledMenu>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<SwapVertIcon />}
+                    onClick={(e) => {
+                      setSortMenuAnchorEl(e.target);
+                    }}
+                    aria-haspopup="menu"
+                  >
+                    Sort
+                  </Button>
+                  <StyledMenu
+                    open={Boolean(sortMenuAnchorEl)}
+                    anchorEl={sortMenuAnchorEl}
+                    onClose={() => setSortMenuAnchorEl(null)}
+                    MenuListProps={{
+                      disablePadding: true,
+                    }}
+                  >
+                    <NewMenuItem
+                      title={`Name${match<void, string>([
+                        [() => orderBy !== "name", ""],
+                        [() => sortOrder === "ASC", " (Sorted from A to Z)"],
+                        [() => sortOrder === "DESC", " (Sorted from Z to A)"],
+                      ])()}`}
+                      subheader={match<void, string>([
+                        [() => orderBy !== "name", "Tap to sort from A to Z"],
+                        [() => sortOrder === "ASC", "Tap to sort from Z to A"],
+                        [() => sortOrder === "DESC", "Tap to sort from A to Z"],
+                      ])()}
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={match<void, Node>([
+                        [
+                          () => orderBy !== "name",
+                          <HorizontalRuleIcon key={null} />,
+                        ],
+                        [
+                          () => sortOrder === "ASC",
+                          <ArrowDownwardIcon key={null} />,
+                        ],
+                        [
+                          () => sortOrder === "DESC",
+                          <ArrowUpwardIcon key={null} />,
+                        ],
+                      ])()}
+                      onClick={() => {
+                        setSortMenuAnchorEl(null);
+                        if (orderBy === "name") {
+                          if (sortOrder === "ASC") {
+                            setSortOrder("DESC");
+                          } else {
+                            setSortOrder("ASC");
+                          }
+                        } else {
+                          setOrderBy("name");
+                          setSortOrder("ASC");
+                        }
+                      }}
+                    />
+                    <NewMenuItem
+                      title={`Modification Date${match<void, string>([
+                        [() => orderBy !== "modificationDate", ""],
+                        [() => sortOrder === "ASC", " (Sorted oldest first)"],
+                        [() => sortOrder === "DESC", " (Sorted newest first)"],
+                      ])()}`}
+                      subheader={match<void, string>([
+                        [
+                          () => orderBy !== "modificationDate",
+                          "Tap to sort oldest first",
+                        ],
+                        [() => sortOrder === "ASC", "Tap to sort newest first"],
+                        [
+                          () => sortOrder === "DESC",
+                          "Tap to sort oldest first",
+                        ],
+                      ])()}
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={match<void, Node>([
+                        [
+                          () => orderBy !== "modificationDate",
+                          <HorizontalRuleIcon key={null} />,
+                        ],
+                        [
+                          () => sortOrder === "ASC",
+                          <ArrowDownwardIcon key={null} />,
+                        ],
+                        [
+                          () => sortOrder === "DESC",
+                          <ArrowUpwardIcon key={null} />,
+                        ],
+                      ])()}
+                      onClick={() => {
+                        setSortMenuAnchorEl(null);
+                        if (orderBy === "modificationDate") {
+                          if (sortOrder === "ASC") {
+                            setSortOrder("DESC");
+                          } else {
+                            setSortOrder("ASC");
+                          }
+                        } else {
+                          setOrderBy("modificationDate");
+                          setSortOrder("ASC");
+                        }
+                      }}
+                    />
+                  </StyledMenu>
+                </Stack>
+              </Grid>
+              <Grid item sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}>
+                {viewMode === "tree" &&
+                  FetchingData.match(galleryListing, {
+                    loading: () => <></>,
+                    error: (error) => <>{error}</>,
+                    success: (listing) => (
+                      <TreeView
+                        listing={listing}
+                        path={path}
+                        selectedSection={selectedSection}
+                        refreshListing={refreshListing}
+                        sortOrder={sortOrder}
+                        orderBy={orderBy}
+                      />
+                    ),
+                  })}
+                {viewMode === "grid" &&
+                  FetchingData.match(galleryListing, {
+                    loading: () => <></>,
+                    error: (error) => <>{error}</>,
+                    success: (listing) => <GridView listing={listing} />,
+                  })}
+              </Grid>
+            </Grid>
+            <Grid item sx={{ mx: 0.5, display: { sm: "none", md: "block" } }}>
+              <Divider orientation="vertical" />
+            </Grid>
+            <Grid item md={4} lg={3} xl={2}></Grid>
           </Grid>
         </Grid>
         <Slide direction="up" in={over} mountOnEnter unmountOnExit>
