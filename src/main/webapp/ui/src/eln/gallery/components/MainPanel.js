@@ -73,6 +73,27 @@ import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
 import Divider from "@mui/material/Divider";
+import SwipeableDrawer from "@mui/material/SwipeableDrawer";
+import { grey } from "@mui/material/colors";
+
+const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
+
+const MobileInfoPanel = styled(SwipeableDrawer)(({ theme }) => ({
+  "& .MuiPaper-root": {
+    height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
+    overflow: "visible",
+  },
+}));
+
+const Puller = styled("div")(({ theme }) => ({
+  width: 30,
+  height: 6,
+  backgroundColor: grey[300],
+  borderRadius: 3,
+  position: "absolute",
+  top: 8,
+  left: "calc(50% - 15px)",
+}));
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -1028,6 +1049,8 @@ function GalleryMainPanel({
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
 
+  const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(true);
+
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
       /*
@@ -1296,10 +1319,46 @@ function GalleryMainPanel({
                   })}
               </Grid>
             </Grid>
-            <Grid item sx={{ mx: 0.5, display: { sm: "none", md: "block" } }}>
+            <Grid item sx={{ mx: 0.5, display: { xs: "none", md: "block" } }}>
               <Divider orientation="vertical" />
             </Grid>
             <Grid item md={4} lg={3} xl={2}></Grid>
+            <MobileInfoPanel
+              anchor="bottom"
+              open={mobileInfoPanelOpen}
+              sx={{ display: { xs: "block", md: "none" }, touchAction: "none" }}
+              onClose={() => {
+                setMobileInfoPanelOpen(false);
+              }}
+              onOpen={() => {
+                setMobileInfoPanelOpen(true);
+              }}
+              swipeAreaWidth={56}
+              disableSwipeToOpen={false}
+              ModalProps={{
+                keepMounted: true,
+              }}
+              onTouchDown={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
+                  height: CLOSED_MOBILE_INFO_PANEL_HEIGHT + 1,
+                  visibility: "visible",
+                  right: 0,
+                  left: 0,
+                  backgroundColor: "white",
+                  borderTopLeftRadius: (theme) => theme.spacing(2),
+                  borderTopRightRadius: (theme) => theme.spacing(2),
+                  boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
+                }}
+              >
+                <Puller />
+              </Box>
+            </MobileInfoPanel>
           </Grid>
         </Grid>
         <Slide direction="up" in={over} mountOnEnter unmountOnExit>
