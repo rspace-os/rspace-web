@@ -1385,6 +1385,10 @@ function GalleryMainPanel({
               ModalProps={{
                 keepMounted: true,
               }}
+              allowSwipeInChildren={(event) => {
+                if (event.target.id === "open") return false;
+                return true;
+              }}
             >
               <MobileInfoPanelHeader>
                 <Stack spacing={1}>
@@ -1407,6 +1411,11 @@ function GalleryMainPanel({
                           borderRadius: 3,
                           px: 2.5,
                           py: 0.5,
+                        }}
+                        id="open"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          alert("Opening!");
                         }}
                       >
                         Open
