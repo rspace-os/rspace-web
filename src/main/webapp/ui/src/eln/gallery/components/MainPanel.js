@@ -1355,9 +1355,6 @@ function GalleryMainPanel({
               ModalProps={{
                 keepMounted: true,
               }}
-              onTouchDown={(e) => {
-                e.stopPropagation();
-              }}
             >
               <MobileInfoPanelHeader>
                 <Puller />
