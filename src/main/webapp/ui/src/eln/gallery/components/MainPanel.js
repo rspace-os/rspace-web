@@ -1308,7 +1308,11 @@ function GalleryMainPanel({
                   </StyledMenu>
                 </Stack>
               </Grid>
-              <Grid item sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}>
+              <Grid
+                item
+                sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}
+                flexGrow={1}
+              >
                 {viewMode === "tree" &&
                   FetchingData.match(galleryListing, {
                     loading: () => <></>,
