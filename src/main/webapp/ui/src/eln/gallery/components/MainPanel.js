@@ -1380,7 +1380,7 @@ function GalleryMainPanel({
               onOpen={() => {
                 setMobileInfoPanelOpen(true);
               }}
-              swipeAreaWidth={56}
+              swipeAreaWidth={CLOSED_MOBILE_INFO_PANEL_HEIGHT}
               disableSwipeToOpen={false}
               ModalProps={{
                 keepMounted: true,
@@ -1392,7 +1392,11 @@ function GalleryMainPanel({
             >
               <MobileInfoPanelHeader>
                 <Stack spacing={1}>
-                  <Puller />
+                  <Puller
+                    onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
+                    role="button"
+                    tabIndex={-1}
+                  />
                   <CardContent>
                     <Stack direction="row" spacing={2}>
                       <Typography
