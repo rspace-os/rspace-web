@@ -1146,7 +1146,7 @@ function GalleryMainPanel({
             flexWrap="nowrap"
             flexGrow="1"
           >
-            <Grid item container direction="column" md={8} lg={9} xl={10}>
+            <Grid item container direction="column" md={7} lg={8} xl={10}>
               <Grid item>
                 <Stack direction="row" spacing={0.5} alignItems="center">
                   <ActionsMenu
@@ -1340,7 +1340,36 @@ function GalleryMainPanel({
             <Grid item sx={{ mx: 0.5, display: { xs: "none", md: "block" } }}>
               <Divider orientation="vertical" />
             </Grid>
-            <Grid item md={4} lg={3} xl={2}></Grid>
+            <Grid
+              item
+              md={5}
+              lg={4}
+              xl={2}
+              sx={{ display: { xs: "none", md: "block" } }}
+            >
+              <Stack direction="row" spacing={2} alignItems="flex-start">
+                <Typography
+                  variant="h3"
+                  sx={{ border: "none", flexShrink: 1, flexGrow: 1, m: 0.75 }}
+                >
+                  Name of selected folder
+                </Typography>
+                <Button
+                  color="primary"
+                  variant="contained"
+                  sx={{
+                    backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                    borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                    color: "white",
+                    borderRadius: 3,
+                    px: 1.125,
+                    py: 0.375,
+                  }}
+                >
+                  Open
+                </Button>
+              </Stack>
+            </Grid>
             <MobileInfoPanel
               anchor="bottom"
               open={mobileInfoPanelOpen}
@@ -1364,7 +1393,7 @@ function GalleryMainPanel({
                     <Stack direction="row" spacing={2}>
                       <Typography
                         variant="h3"
-                        sx={{ border: "none", flexShrink: 1 }}
+                        sx={{ border: "none", flexShrink: 1, flexGrow: 1 }}
                       >
                         Name of selected folder
                       </Typography>
