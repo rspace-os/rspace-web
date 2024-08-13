@@ -223,10 +223,7 @@ function _convertAuditTrailResults (xhr){
 	 for (var i = 0; i< xhr.data.results.length; i++) {
      	//update date format
      	var result = xhr.data.results[i];
-     	var date = new Date(result.timestamp);
-     	var parts = date.toString().split(" ");
-     	var timezoneCorrected = parts[3]+"-"+_pad(date.getMonth()+1)+"-"+parts[2] + "T" + parts[4] +" " + parts[6]
-     	result.timestamp = timezoneCorrected;
+     	result.timestamp = new Date(result.timestamp).toISOString();
      	// show export description if possible:
      	if( result.data.action ==='EXPORT'
      		&& result.data.data && result.data.data.data) {
