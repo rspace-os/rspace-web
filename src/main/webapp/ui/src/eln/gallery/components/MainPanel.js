@@ -74,6 +74,7 @@ import Fab from "@mui/material/Fab";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
 import Divider from "@mui/material/Divider";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
+import CardContent from "@mui/material/CardContent";
 import { grey } from "@mui/material/colors";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
@@ -1357,7 +1358,33 @@ function GalleryMainPanel({
               }}
             >
               <MobileInfoPanelHeader>
-                <Puller />
+                <Stack spacing={1}>
+                  <Puller />
+                  <CardContent>
+                    <Stack direction="row" spacing={2}>
+                      <Typography
+                        variant="h3"
+                        sx={{ border: "none", flexShrink: 1 }}
+                      >
+                        Name of selected folder
+                      </Typography>
+                      <Button
+                        color="primary"
+                        variant="contained"
+                        sx={{
+                          backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                          color: "white",
+                          borderRadius: 3,
+                          px: 2.5,
+                          py: 0.5,
+                        }}
+                      >
+                        Open
+                      </Button>
+                    </Stack>
+                  </CardContent>
+                </Stack>
               </MobileInfoPanelHeader>
             </MobileInfoPanel>
           </Grid>
