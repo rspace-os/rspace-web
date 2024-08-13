@@ -85,6 +85,19 @@ const MobileInfoPanel = styled(SwipeableDrawer)(({ theme }) => ({
   },
 }));
 
+const MobileInfoPanelHeader = styled(Box)(({ theme }) => ({
+  position: "absolute",
+  top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
+  height: CLOSED_MOBILE_INFO_PANEL_HEIGHT + 1,
+  visibility: "visible",
+  right: 0,
+  left: 0,
+  backgroundColor: "white",
+  borderTopLeftRadius: theme.spacing(2),
+  borderTopRightRadius: theme.spacing(2),
+  boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
+}));
+
 const Puller = styled("div")(({ theme }) => ({
   width: 30,
   height: 6,
@@ -1342,22 +1355,9 @@ function GalleryMainPanel({
                 e.stopPropagation();
               }}
             >
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
-                  height: CLOSED_MOBILE_INFO_PANEL_HEIGHT + 1,
-                  visibility: "visible",
-                  right: 0,
-                  left: 0,
-                  backgroundColor: "white",
-                  borderTopLeftRadius: (theme) => theme.spacing(2),
-                  borderTopRightRadius: (theme) => theme.spacing(2),
-                  boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
-                }}
-              >
+              <MobileInfoPanelHeader>
                 <Puller />
-              </Box>
+              </MobileInfoPanelHeader>
             </MobileInfoPanel>
           </Grid>
         </Grid>
