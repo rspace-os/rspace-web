@@ -465,8 +465,8 @@ const GridView = observer(
     const cardWidth = {
       xs: 6,
       sm: 4,
-      md: 3,
-      lg: 2,
+      md: 4,
+      lg: 3,
       xl: 2,
     };
     const cols = 12 / cardWidth[viewportDimensions.viewportSize];
@@ -784,8 +784,8 @@ const FileCard = styled(
       const cardWidth = {
         xs: 6,
         sm: 4,
-        md: 3,
-        lg: 2,
+        md: 4,
+        lg: 3,
         xl: 2,
       };
 
@@ -1146,7 +1146,7 @@ function GalleryMainPanel({
             flexWrap="nowrap"
             flexGrow="1"
           >
-            <Grid item container direction="column" md={7} lg={8} xl={10}>
+            <Grid item container direction="column" md={8} lg={8} xl={9}>
               <Grid item>
                 <Stack direction="row" spacing={0.5} alignItems="center">
                   <ActionsMenu
@@ -1342,9 +1342,9 @@ function GalleryMainPanel({
             </Grid>
             <Grid
               item
-              md={5}
+              md={4}
               lg={4}
-              xl={2}
+              xl={3}
               sx={{ display: { xs: "none", md: "block" } }}
             >
               <Stack direction="row" spacing={2} alignItems="flex-start">
