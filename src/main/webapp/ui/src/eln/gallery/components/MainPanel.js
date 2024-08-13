@@ -76,6 +76,7 @@ import Divider from "@mui/material/Divider";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import CardContent from "@mui/material/CardContent";
 import { grey } from "@mui/material/colors";
+import { Optional } from "../../../util/optional";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -881,8 +882,11 @@ const FileCard = styled(
                   e.stopPropagation();
                 }}
                 onClick={(e) => {
-                  if (file.open) file.open();
-                  else onClick(e);
+                  if (e.detail > 1 && file.open) {
+                    file.open();
+                    return;
+                  }
+                  onClick(e);
                 }}
                 sx={{ height: "100%" }}
               >
@@ -1063,7 +1067,7 @@ function GalleryMainPanel({
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
 
-  const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(true);
+  const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -1370,65 +1374,82 @@ function GalleryMainPanel({
                 </Button>
               </Stack>
             </Grid>
-            <MobileInfoPanel
-              anchor="bottom"
-              open={mobileInfoPanelOpen}
-              sx={{ display: { xs: "block", md: "none" }, touchAction: "none" }}
-              onClose={() => {
-                setMobileInfoPanelOpen(false);
-              }}
-              onOpen={() => {
-                setMobileInfoPanelOpen(true);
-              }}
-              swipeAreaWidth={CLOSED_MOBILE_INFO_PANEL_HEIGHT}
-              disableSwipeToOpen={false}
-              ModalProps={{
-                keepMounted: true,
-              }}
-              allowSwipeInChildren={(event) => {
-                if (event.target.id === "open") return false;
-                return true;
-              }}
-            >
-              <MobileInfoPanelHeader>
-                <Stack spacing={1}>
-                  <Puller
-                    onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
-                    role="button"
-                    tabIndex={-1}
-                  />
-                  <CardContent>
-                    <Stack direction="row" spacing={2}>
-                      <Typography
-                        variant="h3"
-                        sx={{ border: "none", flexShrink: 1, flexGrow: 1 }}
-                      >
-                        Name of selected folder
-                      </Typography>
-                      <Button
-                        color="primary"
-                        variant="contained"
-                        sx={{
-                          backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                          color: "white",
-                          borderRadius: 3,
-                          px: 2.5,
-                          py: 0.5,
-                        }}
-                        id="open"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          alert("Opening!");
-                        }}
-                      >
-                        Open
-                      </Button>
-                    </Stack>
-                  </CardContent>
-                </Stack>
-              </MobileInfoPanelHeader>
-            </MobileInfoPanel>
+            {!selection.isEmpty && (
+              <MobileInfoPanel
+                anchor="bottom"
+                open={mobileInfoPanelOpen}
+                sx={{
+                  display: { xs: "block", md: "none" },
+                  touchAction: "none",
+                }}
+                onClose={() => {
+                  setMobileInfoPanelOpen(false);
+                }}
+                onOpen={() => {
+                  setMobileInfoPanelOpen(true);
+                }}
+                swipeAreaWidth={CLOSED_MOBILE_INFO_PANEL_HEIGHT}
+                disableSwipeToOpen={false}
+                ModalProps={{
+                  keepMounted: true,
+                }}
+                allowSwipeInChildren={(event) => {
+                  if (event.target.id === "open") return false;
+                  return true;
+                }}
+              >
+                <MobileInfoPanelHeader>
+                  <Stack spacing={1}>
+                    <Puller
+                      onClick={() =>
+                        setMobileInfoPanelOpen(!mobileInfoPanelOpen)
+                      }
+                      role="button"
+                      tabIndex={-1}
+                    />
+                    <CardContent>
+                      <Stack direction="row" spacing={2}>
+                        <Typography
+                          variant="h3"
+                          sx={{ border: "none", flexShrink: 1, flexGrow: 1 }}
+                        >
+                          Name of selected folder
+                        </Typography>
+                        {selection
+                          .asSet()
+                          .only.flatMap((file) =>
+                            file.open
+                              ? Optional.present(file.open)
+                              : Optional.empty()
+                          )
+                          .map((open) => (
+                            <Button
+                              color="primary"
+                              variant="contained"
+                              sx={{
+                                backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                                borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                                color: "white",
+                                borderRadius: 3,
+                                px: 2.5,
+                                py: 0.5,
+                              }}
+                              id="open"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                open();
+                              }}
+                            >
+                              Open
+                            </Button>
+                          ))
+                          .orElse(null)}
+                      </Stack>
+                    </CardContent>
+                  </Stack>
+                </MobileInfoPanelHeader>
+              </MobileInfoPanel>
+            )}
           </Grid>
         </Grid>
         <Slide direction="up" in={over} mountOnEnter unmountOnExit>
