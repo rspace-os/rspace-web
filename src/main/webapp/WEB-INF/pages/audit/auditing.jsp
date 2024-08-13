@@ -70,8 +70,10 @@
 </shiro:hasRole>
 <shiro:hasRole name="ROLE_SYSADMIN">
 <div id="auditSysAdmin" class="auditIt">
-<h3> <spring:message code="action.audit"/>:  <spring:message code="audit.global.label"/> &nbsp; <spring:message code="audit.activity.hdr"/> </h3>
-		 <h4> 
+  <h3>
+    <spring:message code="action.audit"/>:  <spring:message code="audit.global.label"/> &nbsp; <spring:message code="audit.activity.hdr"/>
+  </h3>
+  <h4> 
 		<spring:message code="audit.activity.filter.label"/>
 		by <a href="#" id="domains" class="addRow"><spring:message code="audit.domains.label"/></a>,
 		by <a href="#" id="actions" class="addRow"><spring:message code="audit.actions.label"/></a>,
@@ -80,9 +82,9 @@
     and
 		by <a href="#" id="users" class="addRow"><spring:message code="audit.users.label"/></a>,
 		by <a href="#" id="groups" class="addRow"><spring:message code="audit.groups.label"/></a>
-   or by <a href="#" id="communities" class="addRow"><spring:message code="audit.communities.label"/></a>
-           </h4><br>
-		 <div class="auditRow"></div>
+    or by <a href="#" id="communities" class="addRow"><spring:message code="audit.communities.label"/></a>
+   </h4>
+   <div class="auditRow"></div>
 </div>
 </shiro:hasRole>
 <p class="bootstrap-custom-flat">
