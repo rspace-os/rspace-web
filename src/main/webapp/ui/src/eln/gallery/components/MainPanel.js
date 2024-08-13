@@ -76,6 +76,7 @@ import Divider from "@mui/material/Divider";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import CardContent from "@mui/material/CardContent";
 import { grey } from "@mui/material/colors";
+import { Optional } from "../../../util/optional";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -1357,20 +1358,29 @@ function GalleryMainPanel({
                 >
                   Name of selected folder
                 </Typography>
-                <Button
-                  color="primary"
-                  variant="contained"
-                  sx={{
-                    backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                    borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                    color: "white",
-                    borderRadius: 3,
-                    px: 1.125,
-                    py: 0.375,
-                  }}
-                >
-                  Open
-                </Button>
+                {selection
+                  .asSet()
+                  .only.flatMap((file) =>
+                    file.open ? Optional.present(file.open) : Optional.empty()
+                  )
+                  .map((open) => (
+                    <Button
+                      color="primary"
+                      variant="contained"
+                      sx={{
+                        backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                        borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                        color: "white",
+                        borderRadius: 3,
+                        px: 1.125,
+                        py: 0.375,
+                      }}
+                      onClick={open}
+                    >
+                      Open
+                    </Button>
+                  ))
+                  .orElse(null)}
               </Stack>
             </Grid>
             {selection
