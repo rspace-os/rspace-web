@@ -162,7 +162,7 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }) => {
             },
             {
               label: "Version",
-              value: "",
+              value: file.version,
             },
           ]}
         />
