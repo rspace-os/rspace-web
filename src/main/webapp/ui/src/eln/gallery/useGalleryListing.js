@@ -62,6 +62,7 @@ export type GalleryFile = {|
   thumbnailUrl: string,
   ownerName: string,
   description: Description,
+  size: number,
 
   path: $ReadOnlyArray<GalleryFile>,
   pathAsString: () => string,
@@ -258,6 +259,7 @@ export function useGalleryListing({
     type,
     extension,
     thumbnailId,
+    size,
   }: {
     id: number,
     globalId: string,
@@ -268,6 +270,7 @@ export function useGalleryListing({
     type: string,
     extension: string | null,
     thumbnailId: number | null,
+    size: number,
   }): GalleryFile {
     const isFolder = /Folder/.test(type);
     const isSystemFolder = /System Folder/.test(type);
@@ -280,6 +283,7 @@ export function useGalleryListing({
       description,
       modificationDate,
       type,
+      size,
       thumbnailUrl: generateIconSrc(
         name,
         type,
@@ -418,6 +422,10 @@ export function useGalleryListing({
                         )
                         .elseThrow();
 
+                      const size = Parsers.getValueWithKey("size")(obj)
+                        .flatMap(Parsers.isNumber)
+                        .elseThrow();
+
                       return Result.Ok(
                         mkGalleryFile({
                           id,
@@ -429,6 +437,7 @@ export function useGalleryListing({
                           type,
                           extension,
                           thumbnailId,
+                          size,
                         })
                       );
                     } catch (e) {

@@ -79,6 +79,7 @@ import { grey } from "@mui/material/colors";
 import { Optional } from "../../../util/optional";
 import DescriptionList from "../../../components/DescriptionList";
 import NoValue from "../../../components/NoValue";
+import { formatFileSize } from "../../../util/files";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -149,7 +150,7 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }) => {
             },
             {
               label: "Size",
-              value: "",
+              value: formatFileSize(file.size),
             },
             {
               label: "Created",
