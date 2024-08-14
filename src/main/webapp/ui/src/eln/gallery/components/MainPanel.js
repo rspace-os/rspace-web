@@ -1473,6 +1473,23 @@ function GalleryMainPanel({
                   </CardContent>
                 ))
                 .orElse(null)}
+              {selection.size > 1 && (
+                <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
+                  <DescriptionList
+                    rightAlignDds
+                    content={[
+                      {
+                        label: "Total size",
+                        value: formatFileSize(
+                          selection
+                            .asSet()
+                            .reduce((sum, file) => sum + file.size, 0)
+                        ),
+                      },
+                    ]}
+                  />
+                </CardContent>
+              )}
             </Grid>
             {selection
               .asSet()
