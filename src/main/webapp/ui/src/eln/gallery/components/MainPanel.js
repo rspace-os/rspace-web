@@ -1396,6 +1396,7 @@ function GalleryMainPanel({
                       m: 0.75,
                       ml: 1,
                       lineBreak: "anywhere",
+                      textTransform: "none",
                     }}
                   >
                     {selection.size === 0 && "Nothing selected"}
@@ -1490,7 +1491,10 @@ function GalleryMainPanel({
                             item
                             sx={{ flexShrink: 1, flexGrow: 1, mt: 0.5 }}
                           >
-                            <Typography variant="h3" sx={{ border: "none" }}>
+                            <Typography
+                              variant="h3"
+                              sx={{ border: "none", textTransform: "none" }}
+                            >
                               {file.name}
                             </Typography>
                           </Grid>
