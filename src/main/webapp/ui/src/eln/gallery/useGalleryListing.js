@@ -349,18 +349,14 @@ export function useGalleryListing({
                     try {
                       const id = Parsers.getValueWithKey("id")(obj)
                         .flatMap(Parsers.isNumber)
-                        .orElseGet<number>(([e]) => {
-                          throw e;
-                        });
+                        .elseThrow();
 
                       const globalId = Parsers.getValueWithKey("oid")(obj)
                         .flatMap(Parsers.isObject)
                         .flatMap(Parsers.isNotNull)
                         .flatMap(Parsers.getValueWithKey("idString"))
                         .flatMap(Parsers.isString)
-                        .orElseGet<string>(([e]) => {
-                          throw e;
-                        });
+                        .elseThrow();
 
                       const ownerName = Parsers.getValueWithKey(
                         "ownerFullName"
