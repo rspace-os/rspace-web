@@ -154,7 +154,7 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }) => {
             },
             {
               label: "Created",
-              value: "",
+              value: file.creationDate.toLocaleString(),
             },
             {
               label: "Modified",

@@ -57,6 +57,7 @@ export type GalleryFile = {|
   globalId: string,
   name: string,
   extension: string | null,
+  creationDate: Date,
   modificationDate: number,
   type: string,
   thumbnailUrl: string,
@@ -255,6 +256,7 @@ export function useGalleryListing({
     name,
     ownerName,
     description,
+    creationDate,
     modificationDate,
     type,
     extension,
@@ -266,6 +268,7 @@ export function useGalleryListing({
     name: string,
     ownerName: string,
     description: Description,
+    creationDate: Date,
     modificationDate: number,
     type: string,
     extension: string | null,
@@ -281,6 +284,7 @@ export function useGalleryListing({
       extension,
       ownerName,
       description,
+      creationDate,
       modificationDate,
       type,
       size,
@@ -396,6 +400,13 @@ export function useGalleryListing({
                         )
                         .orElse(Description.Missing());
 
+                      const creationDate = Parsers.getValueWithKey(
+                        "creationDate"
+                      )(obj)
+                        .flatMap(Parsers.isNumber)
+                        .flatMap(Parsers.parseDate)
+                        .elseThrow();
+
                       const modificationDate = Parsers.getValueWithKey(
                         "modificationDate"
                       )(obj)
@@ -433,6 +444,7 @@ export function useGalleryListing({
                           name,
                           ownerName,
                           description,
+                          creationDate,
                           modificationDate,
                           type,
                           extension,

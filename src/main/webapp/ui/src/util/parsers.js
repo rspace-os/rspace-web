@@ -44,7 +44,7 @@ export function parseInteger(value: string): Result<number> {
 /**
  * Parses a string into a date.
  */
-export function parseDate(s: string): Result<Date> {
+export function parseDate(s: string | number): Result<Date> {
   const d = new Date(s);
   if (d.toString() === "Invalid Date")
     return Result.Error([new Error(`"${s}" is not a valid date.`)]);
