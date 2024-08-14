@@ -248,7 +248,17 @@ export function useGalleryListing({
     return `There are no top-level ${gallerySectionCollectiveNoun[section]}.`;
   }
 
-  function mkGalleryFile(
+  function mkGalleryFile({
+    id,
+    globalId,
+    name,
+    ownerName,
+    description,
+    modificationDate,
+    type,
+    extension,
+    thumbnailId,
+  }: {
     id: number,
     globalId: string,
     name: string,
@@ -257,8 +267,8 @@ export function useGalleryListing({
     modificationDate: number,
     type: string,
     extension: string | null,
-    thumbnailId: number | null
-  ): GalleryFile {
+    thumbnailId: number | null,
+  }): GalleryFile {
     const isFolder = /Folder/.test(type);
     const isSystemFolder = /System Folder/.test(type);
     const ret: GalleryFile = {
@@ -409,7 +419,7 @@ export function useGalleryListing({
                         .elseThrow();
 
                       return Result.Ok(
-                        mkGalleryFile(
+                        mkGalleryFile({
                           id,
                           globalId,
                           name,
@@ -418,8 +428,8 @@ export function useGalleryListing({
                           modificationDate,
                           type,
                           extension,
-                          thumbnailId
-                        )
+                          thumbnailId,
+                        })
                       );
                     } catch (e) {
                       return Result.Error<GalleryFile>([e]);
