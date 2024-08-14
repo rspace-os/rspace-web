@@ -78,6 +78,7 @@ import CardContent from "@mui/material/CardContent";
 import { grey } from "@mui/material/colors";
 import { Optional } from "../../../util/optional";
 import DescriptionList from "../../../components/DescriptionList";
+import NoValue from "../../../components/NoValue";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -119,6 +120,18 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }) => {
           {
             label: "Global ID",
             value: file.globalId,
+          },
+          {
+            label: "Owner",
+            value: file.ownerName,
+          },
+          {
+            label: "Description",
+            value: file.description.match({
+              missing: () => "Unknown description",
+              empty: () => <NoValue label="No description" />,
+              present: (d) => d,
+            }),
           },
         ]}
       />

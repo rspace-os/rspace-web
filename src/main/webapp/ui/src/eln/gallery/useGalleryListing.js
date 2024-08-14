@@ -18,6 +18,40 @@ export function idToString(id: Id): string {
   return `${id}`;
 }
 
+type DescriptionInternalState =
+  | {| key: "missing" |}
+  | {| key: "empty" |}
+  | {| key: "present", value: string |};
+class Description {
+  +#state: DescriptionInternalState;
+
+  constructor(state: DescriptionInternalState) {
+    this.#state = state;
+  }
+
+  static Missing(): Description {
+    return new Description({ key: "missing" });
+  }
+
+  static Empty(): Description {
+    return new Description({ key: "empty" });
+  }
+
+  static Present(value: string): Description {
+    return new Description({ key: "present", value });
+  }
+
+  match<T>(opts: {|
+    missing: () => T,
+    empty: () => T,
+    present: (string) => T,
+  |}): T {
+    if (this.#state.key === "missing") return opts.missing();
+    if (this.#state.key === "empty") return opts.empty();
+    return opts.present(this.#state.value);
+  }
+}
+
 export type GalleryFile = {|
   id: Id,
   globalId: string,
@@ -26,6 +60,8 @@ export type GalleryFile = {|
   modificationDate: number,
   type: string,
   thumbnailUrl: string,
+  ownerName: string,
+  description: Description,
 
   path: $ReadOnlyArray<GalleryFile>,
   pathAsString: () => string,
@@ -216,6 +252,8 @@ export function useGalleryListing({
     id: number,
     globalId: string,
     name: string,
+    ownerName: string,
+    description: Description,
     modificationDate: number,
     type: string,
     extension: string | null,
@@ -228,6 +266,8 @@ export function useGalleryListing({
       globalId,
       name,
       extension,
+      ownerName,
+      description,
       modificationDate,
       type,
       thumbnailUrl: generateIconSrc(
@@ -306,31 +346,85 @@ export function useGalleryListing({
                 Parsers.isObject(m)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) => {
-                    return Result.lift7(mkGalleryFile)(
-                      Parsers.getValueWithKey("id")(obj).flatMap(
-                        Parsers.isNumber
-                      ),
-                      Parsers.getValueWithKey("oid")(obj)
+                    try {
+                      const id = Parsers.getValueWithKey("id")(obj)
+                        .flatMap(Parsers.isNumber)
+                        .orElseGet<number>(([e]) => {
+                          throw e;
+                        });
+
+                      const globalId = Parsers.getValueWithKey("oid")(obj)
                         .flatMap(Parsers.isObject)
                         .flatMap(Parsers.isNotNull)
                         .flatMap(Parsers.getValueWithKey("idString"))
-                        .flatMap(Parsers.isString),
-                      Parsers.getValueWithKey("name")(obj).flatMap(
-                        Parsers.isString
-                      ),
-                      Parsers.getValueWithKey("modificationDate")(obj).flatMap(
-                        Parsers.isNumber
-                      ),
-                      Parsers.getValueWithKey("type")(obj).flatMap(
-                        Parsers.isString
-                      ),
-                      Parsers.getValueWithKey("extension")(obj).flatMap((e) =>
-                        Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
-                      ),
-                      Parsers.getValueWithKey("thumbnailId")(obj).flatMap((t) =>
-                        Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
-                      )
-                    );
+                        .flatMap(Parsers.isString)
+                        .orElseGet<string>(([e]) => {
+                          throw e;
+                        });
+
+                      const ownerName = Parsers.getValueWithKey(
+                        "ownerFullName"
+                      )(obj)
+                        .flatMap(Parsers.isString)
+                        .orElse("Unknown owner");
+
+                      const description = Parsers.getValueWithKey(
+                        "description"
+                      )(obj)
+                        .flatMap(Parsers.isString)
+                        .map((d) => {
+                          if (d === "") return Description.Empty();
+                          return Description.Present(d);
+                        })
+                        .orElseTry(() =>
+                          Parsers.getValueWithKey("description")(obj)
+                            .flatMap(Parsers.isNull)
+                            .map(() => Description.Empty())
+                        )
+                        .orElse(Description.Missing());
+
+                      return Result.lift5(
+                        (
+                          name: string,
+                          modificationDate: number,
+                          type: string,
+                          extension: string | null,
+                          thumbnailId: number | null
+                        ) =>
+                          mkGalleryFile(
+                            id,
+                            globalId,
+                            name,
+                            ownerName,
+                            description,
+                            modificationDate,
+                            type,
+                            extension,
+                            thumbnailId
+                          )
+                      )(
+                        Parsers.getValueWithKey("name")(obj).flatMap(
+                          Parsers.isString
+                        ),
+                        Parsers.getValueWithKey("modificationDate")(
+                          obj
+                        ).flatMap(Parsers.isNumber),
+                        Parsers.getValueWithKey("type")(obj).flatMap(
+                          Parsers.isString
+                        ),
+                        Parsers.getValueWithKey("extension")(obj).flatMap((e) =>
+                          Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
+                        ),
+                        Parsers.getValueWithKey("thumbnailId")(obj).flatMap(
+                          (t) =>
+                            Parsers.isNumber(t).orElseTry(() =>
+                              Parsers.isNull(t)
+                            )
+                        )
+                      );
+                    } catch (e) {
+                      return Result.Error<GalleryFile>([e]);
+                    }
                   })
               )
             );
