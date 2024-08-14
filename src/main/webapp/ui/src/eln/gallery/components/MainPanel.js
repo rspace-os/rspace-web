@@ -172,6 +172,74 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }) => {
   );
 };
 
+const InfoPanelMultipleContent = () => {
+  const selection = useGallerySelection();
+  const sortedByCreated = selection
+    .asSet()
+    .toArray(
+      (fileA, fileB) =>
+        fileA.creationDate.getTime() - fileB.creationDate.getTime()
+    );
+  const sortedByModified = selection
+    .asSet()
+    .toArray(
+      (fileA, fileB) =>
+        fileA.modificationDate.getTime() - fileB.modificationDate.getTime()
+    );
+  return (
+    <DescriptionList
+      rightAlignDds
+      content={[
+        {
+          label: "Total size",
+          value: formatFileSize(
+            selection.asSet().reduce((sum, file) => sum + file.size, 0)
+          ),
+        },
+        ...Result.lift2<GalleryFile, GalleryFile, _>(
+          (oldestFile, newestFile) => [
+            {
+              label: "Created",
+              value: (
+                <>
+                  {oldestFile.creationDate.toLocaleDateString()} &ndash;{" "}
+                  {newestFile.creationDate.toLocaleDateString()}
+                </>
+              ),
+            },
+          ]
+        )(
+          ArrayUtils.head(sortedByCreated),
+          ArrayUtils.last(sortedByCreated)
+        ).orElse([]),
+        ...Result.lift2<GalleryFile, GalleryFile, _>(
+          (oldestFile, newestFile) => [
+            {
+              label: "Modified",
+              value: (
+                <>
+                  {oldestFile.modificationDate.toLocaleDateString()} &ndash;{" "}
+                  {newestFile.modificationDate.toLocaleDateString()}
+                </>
+              ),
+            },
+          ]
+        )(
+          ArrayUtils.head(sortedByModified),
+          ArrayUtils.last(sortedByModified)
+        ).orElse(
+          ([]: Array<{|
+            label: string,
+            value: Node,
+            below?: boolean,
+            reducedPadding?: boolean,
+          |}>)
+        ),
+      ]}
+    />
+  );
+};
+
 const DragCancelFab = () => {
   const dndContext = useDndContext();
   const dndInProgress = Boolean(dndContext.active);
@@ -1476,81 +1544,7 @@ function GalleryMainPanel({
                 .orElse(null)}
               {selection.size > 1 && (
                 <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
-                  <DescriptionList
-                    rightAlignDds
-                    content={[
-                      {
-                        label: "Total size",
-                        value: formatFileSize(
-                          selection
-                            .asSet()
-                            .reduce((sum, file) => sum + file.size, 0)
-                        ),
-                      },
-                      ...Result.lift2((oldestFile, newestFile) => [
-                        {
-                          label: "Created",
-                          value: (
-                            <>
-                              {oldestFile.creationDate.toLocaleDateString()}{" "}
-                              &ndash;{" "}
-                              {newestFile.creationDate.toLocaleDateString()}
-                            </>
-                          ),
-                        },
-                      ])(
-                        ArrayUtils.head(
-                          selection
-                            .asSet()
-                            .toArray(
-                              (fileA, fileB) =>
-                                fileA.creationDate.getTime() -
-                                fileB.creationDate.getTime()
-                            )
-                        ),
-                        ArrayUtils.last(
-                          selection
-                            .asSet()
-                            .toArray(
-                              (fileA, fileB) =>
-                                fileA.creationDate.getTime() -
-                                fileB.creationDate.getTime()
-                            )
-                        )
-                      ).orElse([]),
-                      ...Result.lift2((oldestFile, newestFile) => [
-                        {
-                          label: "Modified",
-                          value: (
-                            <>
-                              {oldestFile.modificationDate.toLocaleDateString()}{" "}
-                              &ndash;{" "}
-                              {newestFile.modificationDate.toLocaleDateString()}
-                            </>
-                          ),
-                        },
-                      ])(
-                        ArrayUtils.head(
-                          selection
-                            .asSet()
-                            .toArray(
-                              (fileA, fileB) =>
-                                fileA.modificationDate.getTime() -
-                                fileB.modificationDate.getTime()
-                            )
-                        ),
-                        ArrayUtils.last(
-                          selection
-                            .asSet()
-                            .toArray(
-                              (fileA, fileB) =>
-                                fileA.modificationDate.getTime() -
-                                fileB.modificationDate.getTime()
-                            )
-                        )
-                      ).orElse([]),
-                    ]}
-                  />
+                  <InfoPanelMultipleContent />
                 </CardContent>
               )}
             </Grid>
