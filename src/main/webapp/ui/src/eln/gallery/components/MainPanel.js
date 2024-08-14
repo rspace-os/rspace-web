@@ -1518,6 +1518,37 @@ function GalleryMainPanel({
                             )
                         )
                       ).orElse([]),
+                      ...Result.lift2((oldestFile, newestFile) => [
+                        {
+                          label: "Modified",
+                          value: (
+                            <>
+                              {oldestFile.modificationDate.toLocaleDateString()}{" "}
+                              &ndash;{" "}
+                              {newestFile.modificationDate.toLocaleDateString()}
+                            </>
+                          ),
+                        },
+                      ])(
+                        ArrayUtils.head(
+                          selection
+                            .asSet()
+                            .toArray(
+                              (fileA, fileB) =>
+                                fileA.modificationDate.getTime() -
+                                fileB.modificationDate.getTime()
+                            )
+                        ),
+                        ArrayUtils.last(
+                          selection
+                            .asSet()
+                            .toArray(
+                              (fileA, fileB) =>
+                                fileA.modificationDate.getTime() -
+                                fileB.modificationDate.getTime()
+                            )
+                        )
+                      ).orElse([]),
                     ]}
                   />
                 </CardContent>
