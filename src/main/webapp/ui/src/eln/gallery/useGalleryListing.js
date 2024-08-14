@@ -58,7 +58,7 @@ export type GalleryFile = {|
   name: string,
   extension: string | null,
   creationDate: Date,
-  modificationDate: number,
+  modificationDate: Date,
   type: string,
   thumbnailUrl: string,
   ownerName: string,
@@ -184,7 +184,7 @@ function generateIconSrc(
   extension: string | null,
   thumbnailId: number | null,
   id: number,
-  modificationDate: number,
+  modificationDate: Date,
   isFolder: boolean,
   isSystemFolder: boolean
 ) {
@@ -196,11 +196,11 @@ function generateIconSrc(
     return "/images/icons/folder.png";
   }
   if (type === "Image")
-    return `/gallery/getThumbnail/${id}/${modificationDate}`;
+    return `/gallery/getThumbnail/${id}/${Math.floor(modificationDate.getTime() / 1000)}`;
   if (type === "Documents" || type === "PdfDocuments")
     return `/image/docThumbnail/${id}/${thumbnailId ?? "none"}`;
   if (type === "Chemistry")
-    return `/gallery/getChemThumbnail/${id}/${modificationDate}`;
+    return `/gallery/getChemThumbnail/${id}/${Math.floor(modificationDate.getTime() / 1000)}`;
   if (!extension) return "/images/icons/unknownDocument.png";
   return getIconPathForExtension(extension);
 }
@@ -269,7 +269,7 @@ export function useGalleryListing({
     ownerName: string,
     description: Description,
     creationDate: Date,
-    modificationDate: number,
+    modificationDate: Date,
     type: string,
     extension: string | null,
     thumbnailId: number | null,
@@ -411,6 +411,7 @@ export function useGalleryListing({
                         "modificationDate"
                       )(obj)
                         .flatMap(Parsers.isNumber)
+                        .flatMap(Parsers.parseDate)
                         .elseThrow();
 
                       const type = Parsers.getValueWithKey("type")(obj)
