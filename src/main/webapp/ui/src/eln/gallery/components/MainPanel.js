@@ -136,6 +136,36 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }) => {
           },
         ]}
       />
+      <Box component="section" sx={{ mt: 0.5 }}>
+        <Typography variant="h6" component="h4">
+          Details
+        </Typography>
+        <DescriptionList
+          rightAlignDds
+          content={[
+            {
+              label: "Type",
+              value: file.type,
+            },
+            {
+              label: "Size",
+              value: "",
+            },
+            {
+              label: "Created",
+              value: "",
+            },
+            {
+              label: "Modified",
+              value: "",
+            },
+            {
+              label: "Version",
+              value: "",
+            },
+          ]}
+        />
+      </Box>
     </Stack>
   );
 };
