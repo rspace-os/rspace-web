@@ -1381,18 +1381,20 @@ function GalleryMainPanel({
               sx={{ display: { xs: "none", md: "block" } }}
             >
               <Stack direction="row" spacing={2} alignItems="flex-start">
-                <Typography
-                  variant="h3"
-                  sx={{ border: "none", flexShrink: 1, flexGrow: 1, m: 0.75 }}
-                >
-                  {selection.size === 0 && "Nothing selected"}
-                  {selection.size === 1 &&
-                    selection
-                      .asSet()
-                      .only.map((f) => f.name)
-                      .orElse(null)}
-                  {selection.size > 1 && selection.label}
-                </Typography>
+                <Box sx={{ flexShrink: 1, flexGrow: 1 }}>
+                  <Typography
+                    variant="h3"
+                    sx={{ border: "none", m: 0.75, ml: 1 }}
+                  >
+                    {selection.size === 0 && "Nothing selected"}
+                    {selection.size === 1 &&
+                      selection
+                        .asSet()
+                        .only.map((f) => f.name)
+                        .orElse(null)}
+                    {selection.size > 1 && selection.label}
+                  </Typography>
+                </Box>
                 {selection
                   .asSet()
                   .only.flatMap((file) =>
@@ -1419,7 +1421,11 @@ function GalleryMainPanel({
               </Stack>
               {selection
                 .asSet()
-                .only.map((f) => <InfoPanelContent file={f} />)
+                .only.map((f) => (
+                  <CardContent sx={{ p: 1 }}>
+                    <InfoPanelContent file={f} />
+                  </CardContent>
+                ))
                 .orElse(null)}
             </Grid>
             {selection
