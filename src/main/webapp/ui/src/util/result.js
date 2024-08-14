@@ -401,23 +401,4 @@ export default class Result<T> {
         )
       );
   }
-
-  static lift7<A, B, C, D, E, F, G, H>(
-    func: (A, B, C, D, E, F, G) => H
-  ): (
-    Result<A>,
-    Result<B>,
-    Result<C>,
-    Result<D>,
-    Result<E>,
-    Result<F>,
-    Result<G>
-  ) => Result<H> {
-    return (resultA, resultB, resultC, resultD, resultE, resultF, resultG) =>
-      resultA.flatMap((a) =>
-        Result.lift6((b: B, c: C, d: D, e: E, f: F, g: G) =>
-          func(a, b, c, d, e, f, g)
-        )(resultB, resultC, resultD, resultE, resultF, resultG)
-      );
-  }
 }
