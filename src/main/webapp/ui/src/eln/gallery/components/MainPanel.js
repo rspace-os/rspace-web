@@ -1501,6 +1501,7 @@ function GalleryMainPanel({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 file.open?.();
+                                setMobileInfoPanelOpen(false);
                               }}
                             >
                               Open
