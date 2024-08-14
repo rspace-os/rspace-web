@@ -4,6 +4,7 @@ import React, { type Node, type Context } from "react";
 import { type GalleryFile } from "./useGalleryListing";
 import { makeObservable, action, observable, computed, autorun } from "mobx";
 import RsSet from "../../util/set";
+import { Optional } from "../../util/optional";
 
 /*
  * We use a Map even though the interface exposed by this module is more akin
@@ -101,4 +102,22 @@ export function useGallerySelection({
   }, [selection]);
 
   return selection;
+}
+
+export function oldest(selection: Selection): Optional<GalleryFile> {
+  if (selection.size === 0) return Optional.empty();
+  return Optional.present(
+    selection
+      .asSet()
+      .toArray((fileA, fileB) => fileA.creationDate.getTime() - fileB.creationDate.getTime())[0]
+  );
+}
+
+export function newest(selection: Selection): Optional<GalleryFile> {
+  if (selection.size === 0) return Optional.empty();
+  return Optional.present(
+    selection
+      .asSet()
+      .toArray((fileA, fileB) => fileB.creationDate.getTime() - fileA.creationDate.getTime())[0]
+  );
 }

@@ -30,7 +30,7 @@ import {
   folderDestination,
   rootDestination,
 } from "../useGalleryActions";
-import { useGallerySelection } from "../useGallerySelection";
+import { useGallerySelection, oldest, newest } from "../useGallerySelection";
 import { doNotAwait, match } from "../../../util/Util";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
@@ -76,7 +76,7 @@ import Divider from "@mui/material/Divider";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import CardContent from "@mui/material/CardContent";
 import { grey } from "@mui/material/colors";
-import { Optional } from "../../../util/optional";
+import { Optional, lift2 } from "../../../util/optional";
 import DescriptionList from "../../../components/DescriptionList";
 import NoValue from "../../../components/NoValue";
 import { formatFileSize } from "../../../util/files";
@@ -1486,6 +1486,22 @@ function GalleryMainPanel({
                             .reduce((sum, file) => sum + file.size, 0)
                         ),
                       },
+                      ...lift2(
+                        (oldestFile, newestFile) => [
+                          {
+                            label: "Created",
+                            value: (
+                              <>
+                                {oldestFile.creationDate.toLocaleDateString()}{" "}
+                                &ndash;{" "}
+                                {newestFile.creationDate.toLocaleDateString()}
+                              </>
+                            ),
+                          },
+                        ],
+                        oldest(selection),
+                        newest(selection)
+                      ).orElse([]),
                     ]}
                   />
                 </CardContent>
