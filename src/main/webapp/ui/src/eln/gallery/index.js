@@ -68,7 +68,7 @@ const WholePage = styled(() => {
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
 
   return (
-    <Alerts>
+    <>
       <AppBar
         appliedSearchTerm={appliedSearchTerm}
         setAppliedSearchTerm={setAppliedSearchTerm}
@@ -107,7 +107,7 @@ const WholePage = styled(() => {
           />
         </Box>
       </Box>
-    </Alerts>
+    </>
   );
 })(() => ({
   "@keyframes drop": {
@@ -143,9 +143,11 @@ window.addEventListener("load", () => {
                         <Route
                           path="/newGallery"
                           element={
-                            <GallerySelection>
-                              <WholePage />
-                            </GallerySelection>
+                            <Alerts>
+                              <GallerySelection>
+                                <WholePage />
+                              </GallerySelection>
+                            </Alerts>
                           }
                         />
                         <Route

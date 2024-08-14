@@ -338,9 +338,8 @@ export function useGalleryListing({
       setGalleryListing(
         Parsers.objectPath(["data", "items", "results"], data)
           .flatMap(Parsers.isArray)
-          .flatMap((array) => {
-            if (array.length === 0)
-              return Result.Ok<$ReadOnlyArray<GalleryFile>>([]);
+          .map((array) => {
+            if (array.length === 0) return ([]: $ReadOnlyArray<GalleryFile>);
             return Result.all(
               ...array.map((m) =>
                 Parsers.isObject(m)
@@ -423,9 +422,21 @@ export function useGalleryListing({
                     }
                   })
               )
-            );
+            ).orElseGet<$ReadOnlyArray<GalleryFile>>((errors) => {
+              addAlert(
+                mkAlert({
+                  variant: "error",
+                  title: "Could not process Gallery content.",
+                  message: "Please try refreshing.",
+                })
+              );
+              errors.forEach((e) => {
+                console.error(e);
+              });
+              return [];
+            });
           })
-          .orElseTry(() => {
+          .orElseGet(() => {
             Parsers.isObject(data)
               .flatMap(Parsers.isNotNull)
               .flatMap(Parsers.getValueWithKey("exceptionMessage"))
@@ -439,19 +450,6 @@ export function useGalleryListing({
                   })
                 );
               });
-            return Result.Ok<$ReadOnlyArray<GalleryFile>>([]);
-          })
-          .orElseGet((errors) => {
-            addAlert(
-              mkAlert({
-                variant: "error",
-                title: "Could not process Gallery content.",
-                message: "Please try refreshing.",
-              })
-            );
-            errors.forEach((e) => {
-              console.error(e);
-            });
             return [];
           })
       );
