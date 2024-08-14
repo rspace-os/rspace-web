@@ -1356,7 +1356,13 @@ function GalleryMainPanel({
                   variant="h3"
                   sx={{ border: "none", flexShrink: 1, flexGrow: 1, m: 0.75 }}
                 >
-                  Name of selected folder
+                  {selection.size === 0 && "Nothing selected"}
+                  {selection.size === 1 &&
+                    selection
+                      .asSet()
+                      .only.map((f) => f.name)
+                      .orElse(null)}
+                  {selection.size > 1 && selection.label}
                 </Typography>
                 {selection
                   .asSet()
