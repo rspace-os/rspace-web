@@ -1478,36 +1478,46 @@ function GalleryMainPanel({
                         tabIndex={-1}
                       />
                       <CardContent>
-                        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-                          <Typography
-                            variant="h3"
-                            sx={{ border: "none", flexShrink: 1, flexGrow: 1 }}
+                        <Grid
+                          container
+                          direction="row"
+                          spacing={2}
+                          flexWrap="nowrap"
+                          sx={{ mb: 2, minHeight: "54px" }}
+                        >
+                          <Grid
+                            item
+                            sx={{ flexShrink: 1, flexGrow: 1, mt: 0.5 }}
                           >
-                            {file.name}
-                          </Typography>
+                            <Typography variant="h3" sx={{ border: "none" }}>
+                              {file.name}
+                            </Typography>
+                          </Grid>
                           {file.open && (
-                            <Button
-                              color="primary"
-                              variant="contained"
-                              sx={{
-                                backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                                borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                                color: "white",
-                                borderRadius: 3,
-                                px: 2.5,
-                                py: 0.5,
-                              }}
-                              id="open"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                file.open?.();
-                                setMobileInfoPanelOpen(false);
-                              }}
-                            >
-                              Open
-                            </Button>
+                            <Grid item>
+                              <Button
+                                color="primary"
+                                variant="contained"
+                                sx={{
+                                  backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                                  borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                                  color: "white",
+                                  borderRadius: 3,
+                                  px: 2.5,
+                                  py: 0.5,
+                                }}
+                                id="open"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  file.open?.();
+                                  setMobileInfoPanelOpen(false);
+                                }}
+                              >
+                                Open
+                              </Button>
+                            </Grid>
                           )}
-                        </Stack>
+                        </Grid>
                         {selection
                           .asSet()
                           .only.map((f) => <InfoPanelContent file={f} />)
