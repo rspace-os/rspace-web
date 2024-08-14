@@ -357,6 +357,10 @@ export function useGalleryListing({
                         .flatMap(Parsers.isString)
                         .elseThrow();
 
+                      const name = Parsers.getValueWithKey("name")(obj)
+                        .flatMap(Parsers.isString)
+                        .elseThrow();
+
                       const ownerName = Parsers.getValueWithKey(
                         "ownerFullName"
                       )(obj)
@@ -378,43 +382,43 @@ export function useGalleryListing({
                         )
                         .orElse(Description.Missing());
 
-                      return Result.lift5(
-                        (
-                          name: string,
-                          modificationDate: number,
-                          type: string,
-                          extension: string | null,
-                          thumbnailId: number | null
-                        ) =>
-                          mkGalleryFile(
-                            id,
-                            globalId,
-                            name,
-                            ownerName,
-                            description,
-                            modificationDate,
-                            type,
-                            extension,
-                            thumbnailId
-                          )
-                      )(
-                        Parsers.getValueWithKey("name")(obj).flatMap(
-                          Parsers.isString
-                        ),
-                        Parsers.getValueWithKey("modificationDate")(
-                          obj
-                        ).flatMap(Parsers.isNumber),
-                        Parsers.getValueWithKey("type")(obj).flatMap(
-                          Parsers.isString
-                        ),
-                        Parsers.getValueWithKey("extension")(obj).flatMap((e) =>
+                      const modificationDate = Parsers.getValueWithKey(
+                        "modificationDate"
+                      )(obj)
+                        .flatMap(Parsers.isNumber)
+                        .elseThrow();
+
+                      const type = Parsers.getValueWithKey("type")(obj)
+                        .flatMap(Parsers.isString)
+                        .elseThrow();
+
+                      const extension = Parsers.getValueWithKey("extension")(
+                        obj
+                      )
+                        .flatMap((e) =>
                           Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
-                        ),
-                        Parsers.getValueWithKey("thumbnailId")(obj).flatMap(
-                          (t) =>
-                            Parsers.isNumber(t).orElseTry(() =>
-                              Parsers.isNull(t)
-                            )
+                        )
+                        .elseThrow();
+
+                      const thumbnailId = Parsers.getValueWithKey(
+                        "thumbnailId"
+                      )(obj)
+                        .flatMap((t) =>
+                          Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
+                        )
+                        .elseThrow();
+
+                      return Result.Ok(
+                        mkGalleryFile(
+                          id,
+                          globalId,
+                          name,
+                          ownerName,
+                          description,
+                          modificationDate,
+                          type,
+                          extension,
+                          thumbnailId
                         )
                       );
                     } catch (e) {
