@@ -43,7 +43,7 @@
 		by <a href="#" id="oids" class="addRow"><spring:message code="audit.identifiers.label"/></a>,
 		by <a href="#" id="dates" class="addRow"><spring:message code="audit.date.label"/></a>
     and
-		by <a href="#" id="dates" class="addRow"><spring:message code="audit.users.label"/></a>
+		by <a href="#" id="users" class="addRow"><spring:message code="audit.users.label"/></a>
 	</h4>
 	<div class="auditRow"></div>
 </div>
