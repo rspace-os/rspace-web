@@ -77,6 +77,7 @@ import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import CardContent from "@mui/material/CardContent";
 import { grey } from "@mui/material/colors";
 import { Optional } from "../../../util/optional";
+import DescriptionList from "../../../components/DescriptionList";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -109,6 +110,21 @@ const Puller = styled("div")(({ theme }) => ({
   top: 8,
   left: "calc(50% - 15px)",
 }));
+
+const InfoPanelContent = ({ file }: { file: GalleryFile }) => {
+  return (
+    <Stack>
+      <DescriptionList
+        content={[
+          {
+            label: "Global ID",
+            value: file.globalId,
+          },
+        ]}
+      />
+    </Stack>
+  );
+};
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -1388,6 +1404,10 @@ function GalleryMainPanel({
                   ))
                   .orElse(null)}
               </Stack>
+              {selection
+                .asSet()
+                .only.map((f) => <InfoPanelContent file={f} />)
+                .orElse(null)}
             </Grid>
             {selection
               .asSet()
@@ -1425,7 +1445,7 @@ function GalleryMainPanel({
                         tabIndex={-1}
                       />
                       <CardContent>
-                        <Stack direction="row" spacing={2}>
+                        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                           <Typography
                             variant="h3"
                             sx={{ border: "none", flexShrink: 1, flexGrow: 1 }}
@@ -1454,6 +1474,10 @@ function GalleryMainPanel({
                             </Button>
                           )}
                         </Stack>
+                        {selection
+                          .asSet()
+                          .only.map((f) => <InfoPanelContent file={f} />)
+                          .orElse(null)}
                       </CardContent>
                     </Stack>
                   </MobileInfoPanelHeader>

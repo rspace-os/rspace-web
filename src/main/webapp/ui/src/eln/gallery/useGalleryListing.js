@@ -20,6 +20,7 @@ export function idToString(id: Id): string {
 
 export type GalleryFile = {|
   id: Id,
+  globalId: string,
   name: string,
   extension: string | null,
   modificationDate: number,
@@ -213,6 +214,7 @@ export function useGalleryListing({
 
   function mkGalleryFile(
     id: number,
+    globalId: string,
     name: string,
     modificationDate: number,
     type: string,
@@ -223,6 +225,7 @@ export function useGalleryListing({
     const isSystemFolder = /System Folder/.test(type);
     const ret: GalleryFile = {
       id,
+      globalId,
       name,
       extension,
       modificationDate,
@@ -303,10 +306,15 @@ export function useGalleryListing({
                 Parsers.isObject(m)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) => {
-                    return Result.lift6(mkGalleryFile)(
+                    return Result.lift7(mkGalleryFile)(
                       Parsers.getValueWithKey("id")(obj).flatMap(
                         Parsers.isNumber
                       ),
+                      Parsers.getValueWithKey("oid")(obj)
+                        .flatMap(Parsers.isObject)
+                        .flatMap(Parsers.isNotNull)
+                        .flatMap(Parsers.getValueWithKey("idString"))
+                        .flatMap(Parsers.isString),
                       Parsers.getValueWithKey("name")(obj).flatMap(
                         Parsers.isString
                       ),
