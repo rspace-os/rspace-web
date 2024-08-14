@@ -82,7 +82,7 @@ import NoValue from "../../../components/NoValue";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
-const MobileInfoPanel = styled(SwipeableDrawer)(({ theme }) => ({
+const MobileInfoPanel = styled(SwipeableDrawer)(() => ({
   "& .MuiPaper-root": {
     height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
     overflow: "visible",
@@ -102,7 +102,7 @@ const MobileInfoPanelHeader = styled(Box)(({ theme }) => ({
   boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
 }));
 
-const Puller = styled("div")(({ theme }) => ({
+const Puller = styled("div")(() => ({
   width: 30,
   height: 6,
   backgroundColor: grey[300],
@@ -1413,7 +1413,7 @@ function GalleryMainPanel({
                     file.open ? Optional.present(file.open) : Optional.empty()
                   )
                   .map((open) => (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                       <Button
                         color="primary"
                         variant="contained"
@@ -1436,7 +1436,7 @@ function GalleryMainPanel({
               {selection
                 .asSet()
                 .only.map((f) => (
-                  <CardContent sx={{ p: 1, pr: 0.5 }}>
+                  <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
                     <InfoPanelContent file={f} />
                   </CardContent>
                 ))
@@ -1446,6 +1446,7 @@ function GalleryMainPanel({
               .asSet()
               .only.map((file) => (
                 <MobileInfoPanel
+                  key={null}
                   anchor="bottom"
                   open={mobileInfoPanelOpen}
                   sx={{
@@ -1520,7 +1521,9 @@ function GalleryMainPanel({
                         </Grid>
                         {selection
                           .asSet()
-                          .only.map((f) => <InfoPanelContent file={f} />)
+                          .only.map((f) => (
+                            <InfoPanelContent key={null} file={f} />
+                          ))
                           .orElse(null)}
                       </CardContent>
                     </Stack>
