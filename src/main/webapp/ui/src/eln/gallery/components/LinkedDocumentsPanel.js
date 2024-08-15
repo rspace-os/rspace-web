@@ -22,6 +22,11 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
         columns={[
           DataGridColumn.newColumnWithFieldName<Document, _>("name", {
             headerName: "Name",
+            flex: 2,
+            sortable: false,
+          }),
+          DataGridColumn.newColumnWithFieldName<Document, _>("globalId", {
+            headerName: "Global ID",
             flex: 1,
             sortable: false,
           }),

@@ -7,8 +7,9 @@ import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 
 export type Document = {|
-  name: string,
   id: number,
+  globalId: string,
+  name: string,
 |};
 
 export default function useLinkedDocuments(file: GalleryFile): {|
@@ -40,12 +41,20 @@ export default function useLinkedDocuments(file: GalleryFile): {|
                     .flatMap(Parsers.isNumber)
                     .elseThrow();
 
+                  const globalId = Parsers.getValueWithKey("oid")(obj)
+                    .flatMap(Parsers.isObject)
+                    .flatMap(Parsers.isNotNull)
+                    .flatMap(Parsers.getValueWithKey("idString"))
+                    .flatMap(Parsers.isString)
+                    .elseThrow();
+
                   const name = Parsers.getValueWithKey("name")(obj)
                     .flatMap(Parsers.isString)
                     .elseThrow();
 
                   return {
                     id,
+                    globalId,
                     name,
                   };
                 })
