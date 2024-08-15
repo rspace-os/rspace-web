@@ -260,8 +260,7 @@ Adding the following to the command line:
 alters the logging verbosity for various frameworks or RSpace code.
 
 #### Set deployment properties through command line
-
-`-Djdbc.url=jdbc:mysql://localhost:3306/another_database -Djdbc.db=another_database`
+`-Djdbc.url=jdbc:mysql://localhost:3306/another_database -Djdbc.db=another_database -Djdbc.db.maven=another_database`
 specifies to use a different database `another_database` at the url `jdbc:mysql://localhost:3306/another_database`.
 
 `-DRS_FILE_BASE=/path/toFileStore`
