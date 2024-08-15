@@ -79,11 +79,15 @@ export const getViewGroup = (
     [() => true, "static"],
   ])(view);
 
-const prepareRecordsForBulkApi = (records: Array<InventoryRecord>) =>
+const prepareRecordsForBulkApi = (
+  records: Array<InventoryRecord>,
+  opts?: {| forceDelete?: boolean |}
+) =>
   records.map((record) => ({
     id: record.id,
     type: record.type,
     owner: { username: record.owner?.username },
+    ...(opts ?? {}),
   }));
 
 type SearchArgs = {|
@@ -421,7 +425,10 @@ export default class Search implements SearchInterface {
    * Deletes the passed records, displays toasts accordingly, and invokes the
    * refreshing of the UI's state.
    */
-  async deleteRecords(records: Array<InventoryRecord>): Promise<void> {
+  async deleteRecords(
+    records: Array<InventoryRecord>,
+    opts?: {| forceDelete?: boolean |}
+  ): Promise<void> {
     this.setProcessingContextActions(true);
     const { uiStore } = getRootStore();
 
@@ -446,7 +453,7 @@ export default class Search implements SearchInterface {
             }>,
             errorCount: number,
           }
-        >(prepareRecordsForBulkApi(records), "DELETE", false)
+        >(prepareRecordsForBulkApi(records, opts), "DELETE", false)
       );
 
       /*
@@ -496,7 +503,7 @@ export default class Search implements SearchInterface {
             })),
             actionLabel: "Move all to trash",
             onActionClick: () => {
-              alert("delete all");
+              void this.deleteRecords(records, { forceDelete: true });
             },
           })
         );
