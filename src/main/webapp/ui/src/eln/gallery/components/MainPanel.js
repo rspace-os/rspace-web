@@ -84,7 +84,7 @@ import Result from "../../../util/result";
 import {
   InfoPanelContent,
   InfoPanelMultipleContent,
-  MobileInfoPanel,
+  InfoPanelForSmallViewports,
   MobileInfoPanelHeader,
   Puller,
   InfoPanelForLargeViewports,
@@ -1049,8 +1049,6 @@ function GalleryMainPanel({
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
 
-  const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
-
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
       /*
@@ -1337,95 +1335,7 @@ function GalleryMainPanel({
             </Grid>
             {selection
               .asSet()
-              .only.map((file) => (
-                <MobileInfoPanel
-                  key={null}
-                  anchor="bottom"
-                  open={mobileInfoPanelOpen}
-                  sx={{
-                    display: { xs: "block", md: "none" },
-                    touchAction: "none",
-                  }}
-                  onClose={() => {
-                    setMobileInfoPanelOpen(false);
-                  }}
-                  onOpen={() => {
-                    setMobileInfoPanelOpen(true);
-                  }}
-                  swipeAreaWidth={CLOSED_MOBILE_INFO_PANEL_HEIGHT}
-                  disableSwipeToOpen={false}
-                  ModalProps={{
-                    keepMounted: true,
-                  }}
-                  allowSwipeInChildren={(event) => {
-                    if (event.target.id === "open") return false;
-                    return true;
-                  }}
-                >
-                  <MobileInfoPanelHeader>
-                    <Stack spacing={1}>
-                      <Puller
-                        onClick={() =>
-                          setMobileInfoPanelOpen(!mobileInfoPanelOpen)
-                        }
-                        role="button"
-                        tabIndex={-1}
-                      />
-                      <CardContent>
-                        <Grid
-                          container
-                          direction="row"
-                          spacing={2}
-                          flexWrap="nowrap"
-                          sx={{ mb: 2, minHeight: "54px" }}
-                        >
-                          <Grid
-                            item
-                            sx={{ flexShrink: 1, flexGrow: 1, mt: 0.5 }}
-                          >
-                            <Typography
-                              variant="h3"
-                              sx={{ border: "none", textTransform: "none" }}
-                            >
-                              {file.name}
-                            </Typography>
-                          </Grid>
-                          {file.open && (
-                            <Grid item>
-                              <Button
-                                color="primary"
-                                variant="contained"
-                                sx={{
-                                  backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                                  borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                                  color: "white",
-                                  borderRadius: 3,
-                                  px: 2.5,
-                                  py: 0.5,
-                                }}
-                                id="open"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  file.open?.();
-                                  setMobileInfoPanelOpen(false);
-                                }}
-                              >
-                                Open
-                              </Button>
-                            </Grid>
-                          )}
-                        </Grid>
-                        {selection
-                          .asSet()
-                          .only.map((f) => (
-                            <InfoPanelContent key={null} file={f} />
-                          ))
-                          .orElse(null)}
-                      </CardContent>
-                    </Stack>
-                  </MobileInfoPanelHeader>
-                </MobileInfoPanel>
-              ))
+              .only.map((file) => <InfoPanelForSmallViewports file={file} />)
               .orElse(null)}
           </Grid>
         </Grid>
