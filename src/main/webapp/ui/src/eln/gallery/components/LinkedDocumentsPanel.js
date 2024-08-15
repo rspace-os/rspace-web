@@ -40,6 +40,7 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
           noRowsLabel: "No Linked Documents",
         }}
         loading={linkedDocuments.loading}
+        getRowId={(row) => row.id}
       />
     </Box>
   );
