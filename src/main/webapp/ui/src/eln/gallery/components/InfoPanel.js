@@ -1,77 +1,16 @@
 //@flow
 
-import React, {
-  type Node,
-  type ComponentType,
-  type Ref,
-  type ElementConfig,
-} from "react";
-import DialogContent from "@mui/material/DialogContent";
+import React, { type Node, type ComponentType } from "react";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
-import Fade from "@mui/material/Fade";
-import {
-  gallerySectionLabel,
-  COLOR,
-  SELECTED_OR_FOCUS_BORDER,
-  SELECTED_OR_FOCUS_BLUE,
-  type GallerySection,
-} from "../common";
 import { styled } from "@mui/material/styles";
-import useViewportDimensions from "../../../util/useViewportDimensions";
-import Card from "@mui/material/Card";
-import CardActionArea from "@mui/material/CardActionArea";
-import Avatar from "@mui/material/Avatar";
-import FileIcon from "@mui/icons-material/InsertDriveFile";
-import * as FetchingData from "../../../util/fetchingData";
-import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
-import {
-  useGalleryActions,
-  folderDestination,
-  rootDestination,
-} from "../useGalleryActions";
+import { type GalleryFile } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
-import { doNotAwait, match } from "../../../util/Util";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import {
-  useDroppable,
-  useDraggable,
-  useDndContext,
-  DndContext,
-  useSensor,
-  MouseSensor,
-  TouchSensor,
-  KeyboardSensor,
-} from "@dnd-kit/core";
 import Button from "@mui/material/Button";
-import GridIcon from "@mui/icons-material/ViewCompact";
-import TreeIcon from "@mui/icons-material/AccountTree";
-import Menu from "@mui/material/Menu";
-import NewMenuItem from "./NewMenuItem";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import Slide from "@mui/material/Slide";
 import Stack from "@mui/material/Stack";
-import { observer } from "mobx-react-lite";
-import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
-import ActionsMenu from "./ActionsMenu";
-import RsSet from "../../../util/set";
-import TreeView from "./TreeView";
 import { COLORS as baseThemeColors } from "../../../theme";
-import PlaceholderLabel from "./PlaceholderLabel";
-import SwapVertIcon from "@mui/icons-material/SwapVert";
-import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import TextField from "@mui/material/TextField";
 import * as ArrayUtils from "../../../util/ArrayUtils";
-import Link from "@mui/material/Link";
-import { Link as ReactRouterLink } from "react-router-dom";
-import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
 import Box from "@mui/material/Box";
-import Fab from "@mui/material/Fab";
-import Divider from "@mui/material/Divider";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import CardContent from "@mui/material/CardContent";
 import { grey } from "@mui/material/colors";

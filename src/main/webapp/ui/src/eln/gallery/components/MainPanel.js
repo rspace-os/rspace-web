@@ -73,20 +73,10 @@ import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
 import Divider from "@mui/material/Divider";
-import SwipeableDrawer from "@mui/material/SwipeableDrawer";
-import CardContent from "@mui/material/CardContent";
-import { grey } from "@mui/material/colors";
-import { Optional } from "../../../util/optional";
-import DescriptionList from "../../../components/DescriptionList";
-import NoValue from "../../../components/NoValue";
-import { formatFileSize } from "../../../util/files";
-import Result from "../../../util/result";
 import {
   InfoPanelForSmallViewports,
   InfoPanelForLargeViewports,
 } from "./InfoPanel";
-
-const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -1331,7 +1321,9 @@ function GalleryMainPanel({
             </Grid>
             {selection
               .asSet()
-              .only.map((file) => <InfoPanelForSmallViewports file={file} />)
+              .only.map((file) => (
+                <InfoPanelForSmallViewports key={null} file={file} />
+              ))
               .orElse(null)}
           </Grid>
         </Grid>
