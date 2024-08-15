@@ -42,7 +42,7 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
           pagination: null,
         }}
         localeText={{
-          noRowsLabel: "No Linked Documents",
+          noRowsLabel: linkedDocuments.errorMessage ?? "No Linked Documents",
         }}
         loading={linkedDocuments.loading}
         getRowId={(row) => row.id}
