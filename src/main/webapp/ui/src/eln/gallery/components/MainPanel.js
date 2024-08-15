@@ -82,11 +82,7 @@ import NoValue from "../../../components/NoValue";
 import { formatFileSize } from "../../../util/files";
 import Result from "../../../util/result";
 import {
-  InfoPanelContent,
-  InfoPanelMultipleContent,
   InfoPanelForSmallViewports,
-  MobileInfoPanelHeader,
-  Puller,
   InfoPanelForLargeViewports,
 } from "./InfoPanel";
 

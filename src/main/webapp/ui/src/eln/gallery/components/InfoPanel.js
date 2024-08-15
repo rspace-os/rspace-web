@@ -83,16 +83,16 @@ import Result from "../../../util/result";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
-export const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(
-  SwipeableDrawer
-)(() => ({
-  "& .MuiPaper-root": {
-    height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
-    overflow: "visible",
-  },
-}));
+const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
+  () => ({
+    "& .MuiPaper-root": {
+      height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
+      overflow: "visible",
+    },
+  })
+);
 
-export const MobileInfoPanelHeader: ComponentType<{|
+const MobileInfoPanelHeader: ComponentType<{|
   children: Node,
 |}> = styled(Box)(({ theme }) => ({
   position: "absolute",
@@ -107,7 +107,7 @@ export const MobileInfoPanelHeader: ComponentType<{|
   boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
 }));
 
-export const Puller: ComponentType<{|
+const Puller: ComponentType<{|
   onClick: () => void,
   tabIndex?: number,
   role?: string,
@@ -121,7 +121,7 @@ export const Puller: ComponentType<{|
   left: "calc(50% - 15px)",
 }));
 
-export const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
+const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
   return (
     <Stack>
       <DescriptionList
@@ -179,7 +179,7 @@ export const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
   );
 };
 
-export const InfoPanelMultipleContent = (): Node => {
+const InfoPanelMultipleContent = (): Node => {
   const selection = useGallerySelection();
   const sortedByCreated = selection
     .asSet()
