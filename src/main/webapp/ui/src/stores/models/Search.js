@@ -494,6 +494,10 @@ export default class Search implements SearchInterface {
                 sample: s,
               }),
             })),
+            actionLabel: "Move all to trash",
+            onActionClick: () => {
+              alert("delete all");
+            },
           })
         );
       }
