@@ -37,7 +37,7 @@ const MobileInfoPanelHeader: ComponentType<{|
 |}> = styled(Box)(({ theme }) => ({
   position: "absolute",
   top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
-  height: CLOSED_MOBILE_INFO_PANEL_HEIGHT + 1,
+  height: "100%",
   visibility: "visible",
   right: 0,
   left: 0,
@@ -63,7 +63,7 @@ const Puller: ComponentType<{|
 
 const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
   return (
-    <Stack>
+    <Stack sx={{ height: "100%" }}>
       <DescriptionList
         rightAlignDds
         content={[
@@ -115,7 +115,7 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
           ]}
         />
       </Box>
-      <LinkedDocumentsPanel />
+      <LinkedDocumentsPanel file={file} />
     </Stack>
   );
 };
@@ -248,7 +248,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
       {selection
         .asSet()
         .only.map((f) => (
-          <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
+          <CardContent sx={{ p: 1, pr: 0.5, height: "100%" }} key={null}>
             <InfoPanelContent file={f} />
           </CardContent>
         ))
@@ -294,7 +294,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
       }}
     >
       <MobileInfoPanelHeader>
-        <Stack spacing={1}>
+        <Stack spacing={1} height="100%">
           <Puller
             onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
             role="button"

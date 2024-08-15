@@ -3,13 +3,44 @@
 import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { type GalleryFile } from "../useGalleryListing";
+import useLinkedDocuments from "../useLinkedDocuments";
+import { DataGrid } from "@mui/x-data-grid";
+import { DataGridColumn } from "../../../util/table";
 
-export const LinkedDocumentsPanel: ComponentType<{||}> = (): Node => {
+export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
+  file,
+}): Node => {
+  const linkedDocuments = useLinkedDocuments(file);
+
   return (
     <Box component="section" sx={{ mt: 0.5 }}>
       <Typography variant="h6" component="h4">
         Linked Documents
       </Typography>
+      <DataGrid
+        columns={[
+          DataGridColumn.newColumnWithFieldName<{| name: string |}, _>("name", {
+            headerName: "Name",
+            flex: 1,
+            sortable: false,
+          }),
+        ]}
+        rows={linkedDocuments.documents}
+        initialState={{
+          columns: {},
+        }}
+        density="compact"
+        disableColumnFilter
+        hideFooter
+        slots={{
+          pagination: null,
+        }}
+        localeText={{
+          noRowsLabel: "No Linked Documents",
+        }}
+        loading={false}
+      />
     </Box>
   );
 };
