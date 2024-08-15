@@ -19,6 +19,7 @@ import DescriptionList from "../../../components/DescriptionList";
 import NoValue from "../../../components/NoValue";
 import { formatFileSize } from "../../../util/files";
 import Result from "../../../util/result";
+import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -114,6 +115,7 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
           ]}
         />
       </Box>
+      <LinkedDocumentsPanel />
     </Stack>
   );
 };
