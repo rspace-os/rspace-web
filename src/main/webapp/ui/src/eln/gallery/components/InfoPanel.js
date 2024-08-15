@@ -246,3 +246,77 @@ export const InfoPanelMultipleContent = (): Node => {
     />
   );
 };
+
+export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
+  const selection = useGallerySelection();
+  return (
+    <>
+      <Grid
+        container
+        direction="row"
+        spacing={2}
+        alignItems="flex-start"
+        flexWrap="nowrap"
+      >
+        <Grid item sx={{ flexShrink: 1, flexGrow: 1 }}>
+          <Typography
+            variant="h3"
+            sx={{
+              border: "none",
+              m: 0.75,
+              ml: 1,
+              lineBreak: "anywhere",
+              textTransform: "none",
+            }}
+          >
+            {selection.size === 0 && "Nothing selected"}
+            {selection.size === 1 &&
+              selection
+                .asSet()
+                .only.map((f) => f.name)
+                .orElse(null)}
+            {selection.size > 1 && selection.label}
+          </Typography>
+        </Grid>
+        {selection
+          .asSet()
+          .only.flatMap((file) =>
+            file.open ? Optional.present(file.open) : Optional.empty()
+          )
+          .map((open) => (
+            <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+              <Button
+                color="primary"
+                variant="contained"
+                sx={{
+                  backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                  borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+                  color: "white",
+                  borderRadius: 3,
+                  px: 1.125,
+                  py: 0.25,
+                }}
+                onClick={open}
+              >
+                Open
+              </Button>
+            </Grid>
+          ))
+          .orElse(null)}
+      </Grid>
+      {selection
+        .asSet()
+        .only.map((f) => (
+          <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
+            <InfoPanelContent file={f} />
+          </CardContent>
+        ))
+        .orElse(null)}
+      {selection.size > 1 && (
+        <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
+          <InfoPanelMultipleContent />
+        </CardContent>
+      )}
+    </>
+  );
+};
