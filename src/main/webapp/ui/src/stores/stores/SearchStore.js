@@ -326,7 +326,6 @@ export default class SearchStore {
   async createNewContainer(
     containerParentDetails?: NewInContainerParams
   ): Promise<ContainerModel> {
-    // $FlowExpectedError[incompatible-call]
     const [currentUsersBench, currentUsersGroups] = await Promise.all<
       [?Promise<Container>, Promise<Array<Group>>]
     >([

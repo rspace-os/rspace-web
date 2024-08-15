@@ -117,6 +117,22 @@ type CreateInContextDialogArgs = {|
   menuID: $Values<typeof menuIDs>,
 |};
 
+function isContainer(c: mixed): c is ContainerModel {
+  return c instanceof ContainerModel;
+}
+
+function isSample(s: mixed): implies s is SampleModel {
+  return s instanceof SampleModel && !(s instanceof TemplateModel);
+}
+
+function isTemplate(t: mixed): t is TemplateModel {
+  return t instanceof TemplateModel;
+}
+
+function isSubsample(s: mixed): s is SubSampleModel {
+  return s instanceof SubSampleModel;
+}
+
 function CreateInContextDialog({
   open,
   onClose,
@@ -132,20 +148,18 @@ function CreateInContextDialog({
   const { classes } = useStyles();
 
   const gridContainer: boolean =
-    selectedResult instanceof ContainerModel && selectedResult.cType === "GRID";
+    isContainer(selectedResult) && selectedResult.cType === "GRID";
 
   const imageContainer: boolean =
-    selectedResult instanceof ContainerModel &&
-    selectedResult.cType === "IMAGE";
+    isContainer(selectedResult) && selectedResult.cType === "IMAGE";
 
   const imaGridContainer: boolean = imageContainer || gridContainer;
 
   const canStoreContainers = (): boolean =>
-    selectedResult instanceof ContainerModel &&
-    selectedResult.canStoreContainers;
+    isContainer(selectedResult) && selectedResult.canStoreContainers;
 
   const canStoreSamples = (): boolean =>
-    selectedResult instanceof ContainerModel && selectedResult.canStoreSamples;
+    isContainer(selectedResult) && selectedResult.canStoreSamples;
 
   const createActions = {
     CONTAINER: [
@@ -172,6 +186,22 @@ function CreateInContextDialog({
         name: `Create Template from ${sourceItemString}`,
         explanation: "A new Template will be created from the selected Sample.",
         disabled: false,
+      },
+      {
+        id: "sa-2",
+        name: "Split",
+        explanation:
+          isSample(selectedResult) && selectedResult.subSamples.length === 1 ? (
+            "Split this sample's only subsample into multiple subsamples."
+          ) : (
+            <>
+              Only samples with a single subsample can be split directly. <br />
+              Go to a specific subsample and open its Create dialog to split it.
+            </>
+          ),
+        disabled: !(
+          isSample(selectedResult) && selectedResult.subSamples.length === 1
+        ),
       },
     ],
     SAMPLE_TEMPLATE: [
@@ -206,18 +236,20 @@ function CreateInContextDialog({
   >([]);
 
   async function setLocations() {
-    if (selectedResult instanceof ContainerModel) {
+    if (isContainer(selectedResult)) {
       /* in some cases (e.g. mobile) locations have not been fetched yet */
       if (!selectedResult.infoLoaded)
         (await selectedResult.fetchAdditionalInfo(): void);
 
-      const allLocationsMapped = selectedResult.locations.map(
+      if (!selectedResult.locations) throw new Error("Impossible: Container's locations will have been fetched");
+      const locations = selectedResult.locations;
+      const allLocationsMapped: Array<[ number, boolean ]> = locations.map(
         (loc: Location, i: number) => [i + 1, loc.hasContent]
       );
       setAllContainerLocations(allLocationsMapped);
       /* locations without content */
       const available = allLocationsMapped.filter(
-        (loc: [number, Location]) => !loc[1]
+        (loc: [number, boolean]) => !loc[1]
       );
       setAvailableLocations(available);
 
@@ -227,7 +259,7 @@ function CreateInContextDialog({
 
       /* highlight starting location */
       if (createStore.creationContext)
-        selectedResult.locations[startingLocation - 1].toggleSelected(true);
+        locations[startingLocation - 1].toggleSelected(true);
     }
   }
 
@@ -236,7 +268,7 @@ function CreateInContextDialog({
    */
   useEffect(() => {
     if (
-      selectedResult instanceof ContainerModel &&
+      isContainer(selectedResult) &&
       imaGridContainer &&
       !selectedResult.isFull
     ) {
@@ -246,25 +278,26 @@ function CreateInContextDialog({
 
   // handler could be moved to createStore or other model as an action (as an improvement)
   const onSubmitHandler = async (): Promise<void> => {
-    if (selectedResult instanceof ContainerModel) {
+    if (isContainer(selectedResult)) {
       // handle cases for 3 cTypes
       const parentContainers = [selectedResult];
       let parentLocation: ParentLocation = {};
+      if (!selectedResult.locations) throw new Error("Impossible: Container's locations will have been fetched");
+      const locations = selectedResult.locations;
       if (gridContainer) {
         parentLocation = {
           coordX:
-            selectedResult.locations[createStore.targetLocationIdentifier - 1]
+            locations[createStore.targetLocationIdentifier - 1]
               .coordX,
           coordY:
-            selectedResult.locations[createStore.targetLocationIdentifier - 1]
+            locations[createStore.targetLocationIdentifier - 1]
               .coordY,
         };
       }
       if (imageContainer) {
-        parentLocation = {
-          id: selectedResult.locations[createStore.targetLocationIdentifier - 1]
-            .id,
-        };
+        const id = locations[createStore.targetLocationIdentifier - 1].id;
+        if (!id) throw new Error("Impossible: Location will have id");
+        parentLocation = { id, };
       }
 
       const newItemParams: NewInContainerParams = {
@@ -276,7 +309,7 @@ function CreateInContextDialog({
       if (createOption === createActions[selectedResult.type][1].name)
         await searchStore.createNewSample(newItemParams);
     }
-    if (selectedResult instanceof SubSampleModel) {
+    if (isSubsample(selectedResult)) {
       if (createOption === createActions[selectedResult.type][0].name) {
         await searchStore.search.splitRecord(
           parseInt(splitCopies, 10),
@@ -284,19 +317,21 @@ function CreateInContextDialog({
         );
       }
     }
-    /* check for TemplateModel before SampleModel check */
-    if (selectedResult instanceof TemplateModel) {
+    if (isTemplate(selectedResult)) {
       if (createOption === createActions[selectedResult.type][0].name) {
         const newSample: SampleModel = await searchStore.createNewSample();
         await newSample.setTemplate(selectedResult);
       }
     }
-    if (
-      selectedResult instanceof SampleModel &&
-      !(selectedResult instanceof TemplateModel)
-    ) {
+    if (isSample(selectedResult)) {
       if (createOption === createActions[selectedResult.type][0].name) {
         createStore.setTemplateCreationContext(menuID);
+      }
+      if (createOption === createActions[selectedResult.type][1].name) {
+        await searchStore.search.splitRecord(
+          parseInt(splitCopies, 10),
+          selectedResult.subSamples[0]
+        );
       }
     }
     onClose();
@@ -317,7 +352,7 @@ function CreateInContextDialog({
           }
         >
           {/* list container does not require location selection */}
-          {selectedResult instanceof ContainerModel &&
+          {isContainer(selectedResult) &&
           imaGridContainer &&
           availableLocations.length > 0 ? (
             <>
@@ -325,7 +360,9 @@ function CreateInContextDialog({
                 id="location-selector"
                 value={createStore.targetLocationIdentifier}
                 onChange={({ target: { value } }) => {
-                  selectedResult.locations[value - 1].selectOnlyThis();
+                  if (!selectedResult.locations) throw new Error("Impossible: Container's locations will have been fetched");
+                  const locations = selectedResult.locations;
+                  locations[value - 1].selectOnlyThis();
                   createStore.setTargetLocationIdentifier(
                     allContainerLocations[value - 1][0]
                   );
@@ -347,43 +384,50 @@ function CreateInContextDialog({
     }
   );
 
-  function SplitCopiesSelector(): Node {
+  function SplitCopiesSelector({ disabled }: {| disabled: boolean |}): Node {
     const MIN = 2;
     const MAX = 100;
     return (
-      <FormControl>
-        <NumberField
-          name="copies"
-          autoFocus
-          value={splitCopies}
-          onChange={({ target }) => {
-            setSplitCopies(parseInt(target.value, 10));
-            setValidState(target.checkValidity() && target.value !== "");
-          }}
-          error={!validState}
-          variant="outlined"
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">Copies</InputAdornment>
-            ),
-          }}
-          inputProps={{
-            min: MIN,
-            max: MAX,
-            step: 1,
-          }}
-          onKeyDown={({ key }) => {
-            if (key === "Enter" && validState) void onSubmitHandler();
-          }}
-          disabled={false}
-        />
-        {/* FormHelperText used rather than NumberField's helperText prop so that the text is always shown, not only when there's an error. */}
-        <FormHelperText error={!validState}>
-          {`The total number of subsamples wanted, including the source (min ${MIN}
+      <Box
+        sx={{
+          ml: 3,
+          width: (theme) => `calc(100% - ${theme.spacing(3)})`,
+        }}
+      >
+        <FormControl>
+          <NumberField
+            name="copies"
+            autoFocus
+            value={splitCopies}
+            onChange={({ target }) => {
+              setSplitCopies(parseInt(target.value, 10));
+              setValidState(target.checkValidity() && target.value !== "");
+            }}
+            error={!validState}
+            variant="outlined"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">Copies</InputAdornment>
+              ),
+            }}
+            inputProps={{
+              min: MIN,
+              max: MAX,
+              step: 1,
+            }}
+            onKeyDown={({ key }) => {
+              if (key === "Enter" && validState) void onSubmitHandler();
+            }}
+            disabled={disabled}
+          />
+          {/* FormHelperText used rather than NumberField's helperText prop so that the text is always shown, not only when there's an error. */}
+          <FormHelperText error={!validState}>
+            {`The total number of subsamples wanted, including the source (min ${MIN}
           , max ${MAX})`}
-        </FormHelperText>
-      </FormControl>
+          </FormHelperText>
+        </FormControl>
+      </Box>
     );
   }
 
@@ -458,12 +502,20 @@ function CreateInContextDialog({
                 </Grid>
               </RadioGroup>
             </FormControl>
-            {selectedResult instanceof ContainerModel && (
+            {isContainer(selectedResult) && (
               <LocationSelector container={selectedResult} />
             )}
-            {selectedResult instanceof SubSampleModel && (
-              <SplitCopiesSelector />
+            {isSubsample(selectedResult) && (
+              <SplitCopiesSelector
+                disabled={createOption !== createActions.SUBSAMPLE[0].name}
+              />
             )}
+            {isSample(selectedResult) &&
+              selectedResult.subSamples.length === 1 && (
+                <SplitCopiesSelector
+                  disabled={createOption !== createActions.SAMPLE[1].name}
+                />
+              )}
             {createActions[selectedResult.type].length === 0 && (
               <NoValue label="No option available." />
             )}

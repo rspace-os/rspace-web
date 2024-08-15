@@ -6,15 +6,44 @@ import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
-import { gallerySectionCollectiveNoun } from "./common";
+import { gallerySectionCollectiveNoun, type GallerySection } from "./common";
+import {
+  filenameExceptExtension,
+  justFilenameExtension,
+} from "../../util/files";
+import { useGallerySelection } from "./useGallerySelection";
+
+export opaque type Id = number;
+export function idToString(id: Id): string {
+  return `${id}`;
+}
 
 export type GalleryFile = {|
-  id: number,
+  id: Id,
   name: string,
   modificationDate: number,
   type: string,
   thumbnailUrl: string,
+
+  path: $ReadOnlyArray<GalleryFile>,
+  pathAsString: () => string,
   open?: () => void,
+  downloadHref?: string,
+
+  isFolder: boolean,
+  isSystemFolder: boolean,
+  isImage: boolean,
+  isSnippet: boolean,
+  isSnippetFolder: boolean,
+
+  /*
+   * There are various places in the UI where the user applies some
+   * transformation to the name of either a folder or file. Mainly the rename
+   * action, but also when duplicating and in other places too. This method
+   * allows the call to generate a new file name by applying a transformation
+   * to the name before the extension, leaving the extension in place.
+   */
+  transformFilename: ((string) => string) => string,
 |};
 
 /**
@@ -93,7 +122,7 @@ function getIconPathForExtension(extension: string) {
   if (dnaFiles.includes(ext)) return "/images/icons/dna-file.svg";
   if (iconOfSameName.includes(ext)) return `/images/icons/${ext}.png`;
   return (
-    {
+    ({
       htm: "/images/icons/html.png",
       html: "/images/icons/html.png",
       ppt: "/images/icons/powerpoint.png",
@@ -101,7 +130,7 @@ function getIconPathForExtension(extension: string) {
       txt: "/images/icons/txt.png",
       text: "/images/icons/txt.png",
       md: "/images/icons/txt.png",
-    }[ext] ?? "/images/icons/unknownDocument.png"
+    }: { [string]: string })[ext] ?? "/images/icons/unknownDocument.png"
   );
 }
 
@@ -115,10 +144,12 @@ function generateIconSrc(
   extension: string | null,
   thumbnailId: number | null,
   id: number,
-  modificationDate: number
+  modificationDate: number,
+  isFolder: boolean,
+  isSystemFolder: boolean
 ) {
-  if (/Folder/.test(type)) {
-    if (/System/.test(type)) {
+  if (isFolder) {
+    if (isSystemFolder) {
       if (/snippets/i.test(name)) return "/images/icons/folder-shared.png";
       return "/images/icons/folder-api-inbox.png";
     }
@@ -134,12 +165,18 @@ function generateIconSrc(
   return getIconPathForExtension(extension);
 }
 
-export default function useGalleryListing({
+export function useGalleryListing({
   section,
   searchTerm,
+  path: defaultPath,
+  sortOrder,
+  orderBy,
 }: {|
-  section: string,
+  section: GallerySection,
   searchTerm: string,
+  path?: $ReadOnlyArray<GalleryFile>,
+  sortOrder: "DESC" | "ASC",
+  orderBy: "name" | "modificationDate",
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
@@ -148,17 +185,18 @@ export default function useGalleryListing({
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
-  parentId: FetchingData.Fetched<number>,
+  folderId: FetchingData.Fetched<Id>,
 |} {
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
-  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
-  const [parentId, setParentId] = React.useState<Result<number>>(
-    Result.Error([])
+  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
+    defaultPath ?? []
   );
+  const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([]));
+  const selection = useGallerySelection();
 
   function emptyReason(): string {
     if (path.length > 0) {
@@ -168,8 +206,8 @@ export default function useGalleryListing({
       return `The folder "${folderName}" is empty.`;
     }
     if (searchTerm !== "")
-      return `There are no root-level ${gallerySectionCollectiveNoun[section]} that match the search term "${searchTerm}".`;
-    return `There are no root-level ${gallerySectionCollectiveNoun[section]}.`;
+      return `There are no top-level ${gallerySectionCollectiveNoun[section]} that match the search term "${searchTerm}".`;
+    return `There are no top-level ${gallerySectionCollectiveNoun[section]}.`;
   }
 
   function mkGalleryFile(
@@ -180,6 +218,8 @@ export default function useGalleryListing({
     extension: string | null,
     thumbnailId: number | null
   ): GalleryFile {
+    const isFolder = /Folder/.test(type);
+    const isSystemFolder = /System Folder/.test(type);
     const ret: GalleryFile = {
       id,
       name,
@@ -191,20 +231,39 @@ export default function useGalleryListing({
         extension,
         thumbnailId,
         id,
-        modificationDate
+        modificationDate,
+        isFolder,
+        isSystemFolder
       ),
-      ...(/Folder/.test(type)
+      path,
+      pathAsString: () =>
+        `/${[section, ...path.map(({ name }) => name), name].join("/")}/`,
+      ...(isFolder
         ? {
             open: () => {
               setPath([...path, ret]);
             },
           }
-        : {}),
+        : {
+            downloadHref: `/Streamfile/${idToString(id)}`,
+          }),
+      isFolder,
+      isSystemFolder,
+      isImage: /Image/.test(type),
+      isSnippet: /Snippet/.test(type),
+      isSnippetFolder: isSystemFolder && /SNIPPETS/.test(name),
+      transformFilename: (f) => {
+        if (isFolder) return f(name);
+        return `${f(filenameExceptExtension(name))}.${justFilenameExtension(
+          name
+        )}`;
+      },
     };
     return ret;
   }
 
   async function getGalleryFiles(): Promise<void> {
+    selection.clear();
     setGalleryListing([]);
     setLoading(true);
     try {
@@ -215,8 +274,8 @@ export default function useGalleryListing({
             path.length > 0 ? `${path[path.length - 1].id}` : "0",
           name: searchTerm,
           pageNumber: "0",
-          sortOrder: "DESC",
-          orderBy: "",
+          sortOrder,
+          orderBy,
         }),
       });
 
@@ -228,6 +287,7 @@ export default function useGalleryListing({
           .flatMap(Parsers.isNotNull)
           .flatMap(Parsers.getValueWithKey("parentId"))
           .flatMap(Parsers.isNumber)
+          .map((x) => x) // possibly a bug in Flow
       );
 
       setGalleryListing(
@@ -304,18 +364,18 @@ export default function useGalleryListing({
 
   React.useEffect(() => {
     void getGalleryFiles();
-  }, [searchTerm, path]);
+  }, [searchTerm, path, sortOrder, orderBy]);
 
   React.useEffect(() => {
-    setPath([]);
+    setPath(defaultPath ?? []);
   }, [section]);
 
   if (loading)
     return {
       galleryListing: { tag: "loading" },
-      path: [],
+      path,
       clearPath: () => {},
-      parentId: { tag: "loading" },
+      folderId: { tag: "loading" },
       refreshListing: () => {},
     };
 
@@ -329,7 +389,7 @@ export default function useGalleryListing({
     },
     path,
     clearPath: () => setPath([]),
-    parentId: parentId
+    folderId: parentId
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: () => {

@@ -5,6 +5,7 @@ import Grid from "@mui/material/Grid";
 import RadioField, {
   type RadioOption,
 } from "../../components/Inputs/RadioField";
+import Typography from "@mui/material/Typography";
 
 export type Scope = "MINE" | "PUBLIC" | "BOTH";
 
@@ -33,7 +34,7 @@ export default function ScopeField({ getDMPs }: ScopeFieldArgs): Node {
   };
 
   return (
-    <Grid container spacing={2} sx={{ mb: 1 }}>
+    <Grid container direction="row" spacing={2}>
       <Grid item>
         <RadioField
           value={currentScope}
@@ -48,11 +49,11 @@ export default function ScopeField({ getDMPs }: ScopeFieldArgs): Node {
       </Grid>
 
       <Grid item>
-        <p>
+        <Typography variant="body2">
           Select a scope to get the latest plans.
           <br /> Select a plan and click &quot;Import&quot; to add it to the
           Gallery.
-        </p>
+        </Typography>
       </Grid>
     </Grid>
   );

@@ -26,7 +26,7 @@ describe("PdfExport", () => {
           provenance: false,
           comments: false,
           annotations: false,
-          pageName: false,
+          restartPageNumberPerDoc: false,
           pageSize: "A4",
           defaultPageSize: "A4",
           dateType: "EXP",

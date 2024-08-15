@@ -856,6 +856,7 @@ CREATE TABLE `RSChemElement` (
   `chemElements` longtext,
   `dataImage` longblob,
   `parentId` bigint(20) NOT NULL,
+  `rgroupId` int(11),
   `smilesString` longtext,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -870,6 +871,7 @@ CREATE TABLE `RSChemElement_AUD` (
   `chemElements` longtext,
   `dataImage` longblob,
   `parentId` bigint(20) DEFAULT NULL,
+  `rgroupId` int(11),
   `smilesString` longtext,
   PRIMARY KEY (`id`,`REV`),
   KEY `FK2B28D43FDF74E053` (`REV`),

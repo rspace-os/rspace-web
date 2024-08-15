@@ -39,11 +39,9 @@ function CommonActions({ editableObject }: CommonActionsArgs): Node {
       <Button
         size="medium"
         onClick={() => {
-          if (uiStore.dirty) {
-            void uiStore.confirmDiscardAnyChanges();
-          } else {
+          void uiStore.confirmDiscardAnyChanges().then(() => {
             void editableObject.cancel();
-          }
+          });
         }}
         disabled={editableObject.loading}
       >

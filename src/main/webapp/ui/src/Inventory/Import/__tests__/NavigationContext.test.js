@@ -65,7 +65,10 @@ describe("NavigationContext", () => {
           key: "",
         };
         const navFn = jest.fn<
-          [string, ?{| skipToParentContext?: boolean |}],
+          [
+            string,
+            ?{| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+          ],
           void
         >();
         render(

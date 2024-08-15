@@ -156,7 +156,7 @@ export default class PersonModel implements Person {
         mkAlert({
           title: `Data export failed.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );

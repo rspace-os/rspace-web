@@ -115,7 +115,7 @@ export default class MaterialsStore {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: `Could not fetch List of Materials data.`,
-          message: error?.response?.data.message ?? "Unknown reason.",
+          message: error.response?.data.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -151,7 +151,7 @@ export default class MaterialsStore {
         mkAlert({
           title: `Could not fetch List of Materials data.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -182,7 +182,7 @@ export default class MaterialsStore {
         mkAlert({
           title: `Could not fetch List of Materials data.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -265,7 +265,7 @@ export default class MaterialsStore {
         mkAlert({
           title: `Could not fetch permission to edit.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );

@@ -2,17 +2,17 @@
 
 import React, { useContext, useState, type Node } from "react";
 import { observer } from "mobx-react-lite";
-import SearchContext from "../../stores/contexts/Search";
+import SearchContext from "../../../stores/contexts/Search";
 import { makeStyles } from "tss-react/mui";
 import TableCell from "@mui/material/TableCell";
-import RsSet from "../../util/set";
-import { StyledMenu, StyledMenuItem } from "../StyledMenu";
+import RsSet from "../../../util/set";
+import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import Grid from "@mui/material/Grid";
 import SortableProperty, { type SortProperty } from "./SortableProperty";
-import { type AdjustableTableRowLabel } from "../../stores/definitions/Tables";
+import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import ListItemText from "@mui/material/ListItemText";
-import IconButtonWithTooltip from "../IconButtonWithTooltip";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 
 const useStyles = makeStyles()((theme) => ({
   adjustableColumnMenuButton: {

@@ -86,6 +86,7 @@ export const subSampleAttrsArbitrary: Arbitrary<SubSampleAttrs> = fc
       id: fc.constant(id),
       type: fc.constant("SUBSAMPLE"),
       globalId: fc.constant(`SS${id}`),
+      // $FlowExpectedError[incompatible-call]
       name: fc.string({ minLength: 2, maxLength: 20 }),
       permittedActions: fc.constant(["UPDATE", "CHANGE_OWNER"]),
       quantity: fc.constant({ numericValue: 1, unitId: 3 }),

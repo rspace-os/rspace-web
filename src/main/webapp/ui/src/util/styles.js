@@ -6,8 +6,8 @@ import { type Theme } from "../theme";
 
 export function withStyles<Config, Classes: { ... }>(
   styles:
-    | $ObjMap<Classes, () => { ... }>
-    | ((Theme, Config) => $ObjMap<Classes, () => { ... }>)
+    | {[ Class in keyof Classes]: { ... }}
+    | ((Theme, Config) => {[ Class in keyof Classes]: { ... }})
 ): (ComponentType<{| ...Config, classes: Classes |}>) => ComponentType<Config> {
   return function (
     component: ComponentType<{| ...Config, classes: Classes |}>

@@ -318,7 +318,7 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
-  public Set<BaseRecord> getViewableTemplates(User user) {
+  public Set<BaseRecord> getViewableTemplates(Set<Long> userIds) {
     return null;
   }
 

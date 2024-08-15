@@ -13,14 +13,9 @@ import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
-import DMPTable from "./DMPTable";
 import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
-import clsx from "clsx";
-import WarningIcon from "@mui/icons-material/Warning";
 import Typography from "@mui/material/Typography";
 import axios from "axios";
 import { type UseState } from "../../util/types";
@@ -29,10 +24,52 @@ import { Optional } from "../../util/optional";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import Portal from "@mui/material/Portal";
+import createAccentedTheme from "../../accentedTheme";
+import { ThemeProvider } from "@mui/material/styles";
 import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "../../components/ValidatingSubmitButton";
+import Link from "@mui/material/Link";
+import Toolbar from "@mui/material/Toolbar";
+import AppBar from "@mui/material/AppBar";
+import docLinks from "../../assets/DocLinks";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import AccessibilityTips from "../../components/AccessibilityTips";
+import { DataGrid } from "@mui/x-data-grid";
+import { DataGridColumn } from "../../util/table";
+import Radio from "@mui/material/Radio";
+import DOMPurify from "dompurify";
+
+const COLOR = {
+  main: {
+    hue: 208,
+    saturation: 46,
+    lightness: 70,
+  },
+  darker: {
+    hue: 208,
+    saturation: 93,
+    lightness: 33,
+  },
+  contrastText: {
+    hue: 208,
+    saturation: 35,
+    lightness: 26,
+  },
+  background: {
+    hue: 208,
+    saturation: 25,
+    lightness: 71,
+  },
+  backgroundContrastText: {
+    hue: 208,
+    saturation: 11,
+    lightness: 24,
+  },
+};
 
 const CustomDialog = withStyles<
   {| fullScreen: boolean, ...ElementProps<typeof Dialog> |},
@@ -40,73 +77,27 @@ const CustomDialog = withStyles<
 >((theme, { fullScreen }) => ({
   paper: {
     overflow: "hidden",
+    margin: fullScreen ? 0 : theme.spacing(2.625),
+    maxHeight: "unset",
+    minHeight: "unset",
 
-    // this is to avoid intercom help button
-    maxHeight: fullScreen ? "unset" : "86vh",
-
-    // this is to ensure the picker has enough height even when list is empty
-    minHeight: "86vh",
+    // this is so that the hights of the dialog's content of constrained and scrollbars appear
+    // 24px margin above and below, 3px border above and below
+    height: fullScreen ? "100%" : "calc(100% - 48px)",
   },
 }))(Dialog);
-
-const useStyles = makeStyles()((theme) => ({
-  contentWrapper: {
-    overscrollBehavior: "contain",
-    WebkitOverflowScrolling: "unset",
-  },
-  barWrapper: {
-    display: "flex",
-    alignSelf: "center",
-    width: "95%",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  fullWidth: { width: "100%" },
-  sideSpaced: { marginRight: theme.spacing(1), marginLeft: theme.spacing(1) },
-  flexEndRow: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  warningRow: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    fontSize: "13px",
-    marginTop: theme.spacing(0.5),
-  },
-  warningMessage: { marginRight: "3vw" },
-  warningRed: { color: theme.palette.warningRed },
-  dialogTitle: {
-    paddingBottom: theme.spacing(0.5),
-  },
-}));
 
 export type Plan = {
   id: number,
   title: string,
   description: string,
+  modified: string,
+  created: string,
 };
-
-const WarningBar = observer(() => {
-  const { classes } = useStyles();
-  return (
-    <div
-      className={clsx(
-        classes.warningRow,
-        classes.fullWidth,
-        classes.warningRed
-      )}
-    >
-      <WarningIcon />
-      <span className={classes.warningMessage}>Warning text</span>
-    </div>
-  );
-});
 
 function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   const { addAlert } = useContext(AlertContext);
+  const { isViewportSmall } = useViewportDimensions();
 
   const [DMPs, setDMPs] = useState(([]: Array<Plan>));
   const [selectedPlan, setSelectedPlan]: UseState<?Plan> = useState();
@@ -137,7 +128,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                 title: "Fetch failed.",
                 message: r.data.error?.errorMessages[0] ?? "Could not get DMPs",
                 variant: "error",
-                isInfinite: false,
               })
             );
           }
@@ -200,71 +190,180 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
     }
   };
 
-  const { classes } = useStyles();
-
-  const showWarning = false; // intentionally left, may be used later
-
-  function statusText() {
-    if (errorFetching) return Optional.present(errorFetching);
-    if (fetching) return Optional.present("Fetching DMPs...");
-    if (DMPs.length === 0) return Optional.present("No items to display");
-    return Optional.empty<string>();
-  }
-
   return (
     <>
-      <DialogTitle className={classes.dialogTitle}>
-        Data Management Plans (DMPs) from DMPTool
-      </DialogTitle>
-      <DialogContent className={classes.contentWrapper}>
-        <Grid container>
-          <Grid item xs={12}>
+      <AppBar position="relative" open={true}>
+        <Toolbar variant="dense">
+          <Typography variant="h6" noWrap component="h2">
+            DMPTool
+          </Typography>
+          <Box flexGrow={1}></Box>
+          <Box ml={1}>
+            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
+          </Box>
+          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
+            <HelpLinkIcon title="DMPTool help" link={docLinks.dmptool} />
+          </Box>
+        </Toolbar>
+      </AppBar>
+      <DialogContent>
+        <Grid
+          container
+          direction="column"
+          spacing={2}
+          flexWrap="nowrap"
+          // this is so that just the table is scrollable
+          height="calc(100% + 16px)"
+        >
+          <Grid item>
+            <Typography variant="h3">Import a DMP into the Gallery</Typography>
+          </Grid>
+          <Grid item>
+            <Typography variant="body2">
+              Importing a DMP will make it available to view and reference
+              within RSpace.
+            </Typography>
+            <Typography variant="body2">
+              See <Link href="https://dmptool.org">dmptool.org</Link> and our{" "}
+              <Link href={docLinks.dmptool}>DMPTool integration docs</Link> for
+              more.
+            </Typography>
+          </Grid>
+          <Grid item>
             <ScopeField getDMPs={getDMPs} />
-            <DMPTable
-              plans={fetching ? [] : DMPs}
-              selectedPlan={selectedPlan}
-              setSelectedPlan={setSelectedPlan}
+          </Grid>
+          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
+            <DataGrid
+              columns={[
+                {
+                  field: "radio",
+                  headerName: "Select",
+                  renderCell: (params: { row: Plan, ... }) => (
+                    <Radio
+                      color="primary"
+                      value={selectedPlan?.id === params.row.id}
+                      checked={selectedPlan?.id === params.row.id}
+                      inputProps={{ "aria-label": "Plan selection" }}
+                    />
+                  ),
+                  hideable: false,
+                  width: 60,
+                  flex: 0,
+                  disableColumnMenu: true,
+                  sortable: false,
+                },
+                DataGridColumn.newColumnWithFieldName<Plan, _>("title", {
+                  headerName: "Title",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithFieldName("id", {
+                  headerName: "Id",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithFieldName("description", {
+                  renderCell: (params: { row: Plan, ... }) => {
+                    const sanitized = DOMPurify.sanitize(
+                      params.row.description
+                    );
+                    return (
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: `${sanitized.substring(0, 200)} ${
+                            sanitized.length > 200 ? "..." : ""
+                          }`,
+                        }}
+                      ></span>
+                    );
+                  },
+                  headerName: "Description",
+                  display: "flex",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithValueGetter(
+                  "created",
+                  (params: { row: Plan, ... }) =>
+                    new Date(params.row.created).toLocaleString(),
+                  {
+                    headerName: "Created At",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+                DataGridColumn.newColumnWithValueGetter(
+                  "modified",
+                  (params: { row: Plan, ... }) =>
+                    new Date(params.row.modified).toLocaleString(),
+                  {
+                    headerName: "Modified At",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+              ]}
+              rows={fetching ? [] : DMPs}
+              initialState={{
+                columns: {
+                  columnVisibilityModel: {
+                    id: !isViewportSmall,
+                    description: false,
+                    created: false,
+                    modified: false,
+                  },
+                },
+              }}
+              density="compact"
+              disableColumnFilter
+              hideFooter
+              slots={{
+                pagination: null,
+              }}
+              localeText={{
+                noRowsLabel: "No DMPs",
+              }}
+              loading={fetching}
+              getRowId={(row) => row.id}
+              onRowSelectionModelChange={(
+                newSelection: $ReadOnlyArray<Plan["id"]>
+              ) => {
+                if (newSelection[0]) {
+                  setSelectedPlan(DMPs.find((d) => d.id === newSelection[0]));
+                }
+              }}
+              getRowHeight={() => "auto"}
+              onCellKeyDown={({ id }, e) => {
+                if (e.key === " " || e.key === "Enter") {
+                  setSelectedPlan(DMPs.find((d) => d.id === id));
+                  e.stopPropagation();
+                }
+              }}
             />
-            {statusText()
-              .map((sText) => (
-                <Typography
-                  key={null}
-                  component="div"
-                  variant="body2"
-                  color="textPrimary"
-                  align="center"
-                >
-                  {sText}
-                </Typography>
-              ))
-              .orElse(null)}
           </Grid>
         </Grid>
       </DialogContent>
-      {showWarning && <WarningBar />}
-      <DialogActions className={clsx(classes.barWrapper)}>
-        <div className={clsx(classes.flexEndRow, classes.fullWidth)}>
-          <div>
-            <Button
-              className={classes.sideSpaced}
-              onClick={() => setOpen(false)}
-              disabled={importing}
-            >
-              {selectedPlan ? "Cancel" : "Close"}
-            </Button>
-            <ValidatingSubmitButton
-              onClick={() => {
-                void handleImport();
-              }}
-              validationResult={
-                !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
-              }
-              loading={importing}
-            >
-              Import
-            </ValidatingSubmitButton>
-          </div>
-        </div>
+      <DialogActions>
+        <Grid container direction="row" spacing={1}>
+          <Grid item sx={{ ml: "auto" }}>
+            <Stack direction="row" spacing={1}>
+              <Button onClick={() => setOpen(false)} disabled={importing}>
+                {selectedPlan ? "Cancel" : "Close"}
+              </Button>
+              <ValidatingSubmitButton
+                onClick={() => {
+                  void handleImport();
+                }}
+                validationResult={
+                  !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
+                }
+                loading={importing}
+              >
+                Import
+              </ValidatingSubmitButton>
+            </Stack>
+          </Grid>
+        </Grid>
       </DialogActions>
     </>
   );
@@ -295,21 +394,23 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <Portal>
-      <DialogBoundary>
-        <CustomDialog
-          onClose={() => {
-            setOpen(false);
-          }}
-          open={open}
-          maxWidth="lg"
-          fullWidth
-          fullScreen={isViewportSmall}
-        >
-          <DMPDialogContent setOpen={setOpen} />
-        </CustomDialog>
-      </DialogBoundary>
-    </Portal>
+    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <Portal>
+        <DialogBoundary>
+          <CustomDialog
+            onClose={() => {
+              setOpen(false);
+            }}
+            open={open}
+            maxWidth="lg"
+            fullWidth
+            fullScreen={isViewportSmall}
+          >
+            <DMPDialogContent setOpen={setOpen} />
+          </CustomDialog>
+        </DialogBoundary>
+      </Portal>
+    </ThemeProvider>
   );
 }
 

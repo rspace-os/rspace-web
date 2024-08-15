@@ -18,12 +18,16 @@ import materialTheme from "../../../theme";
 import { makeMockContainer } from "../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSample } from "../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockTemplate } from "../../../stores/models/__tests__/TemplateModel/mocking";
-import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleModel/mocking";
+import {
+  makeMockSubSample,
+  subsampleAttrs,
+} from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import getRootStore from "../../../stores/stores/RootStore";
 import SearchContext from "../../../stores/contexts/Search";
 import Search from "../../../stores/models/Search";
 import { mockFactory } from "../../../stores/definitions/__tests__/Factory/mocking";
+import each from "jest-each";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -70,6 +74,28 @@ const Dialog = ({
 };
 
 describe("CreateInContextDialog", () => {
+  describe("Splitting", () => {
+    each(["sample", "container", "subsample", "template"]).test(
+      "Is the split numerical field shown when the record type is a %s",
+      (type) => {
+        const record = {
+          sample: makeMockSample({
+            subSamples: [subsampleAttrs({})],
+          }),
+          container: makeMockContainer({}),
+          subsample: makeMockSubSample({}),
+          template: makeMockTemplate({}),
+        };
+        render(<Dialog selectedResult={record[type]} onClose={() => {}} />);
+        if (type === "sample" || type === "subsample") {
+          expect(screen.getByRole("spinbutton")).toBeInTheDocument();
+        } else {
+          expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+        }
+      }
+    );
+  });
+
   describe("When Container selected", () => {
     test("Creation text options are rendered", () => {
       render(<Dialog selectedResult={mockContainer} onClose={() => {}} />);

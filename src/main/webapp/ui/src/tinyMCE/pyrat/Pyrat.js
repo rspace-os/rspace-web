@@ -16,6 +16,8 @@ import Filter from "./Filter";
 import { createRoot } from "react-dom/client";
 import { getHeader } from "../../util/axios";
 import { parseInteger } from "../../util/parsers";
+import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
+import * as FetchingData from "../../util/fetchingData";
 
 const SUPPORTED_PYRAT_API_VERSION = 3;
 
@@ -38,12 +40,20 @@ const TABLE_HEADER_CELLS = [
 
 let VISIBLE_HEADER_CELLS = [];
 let SELECTED_ANIMALS = [];
+let PYRAT_URL = null;
 
 function Pyrat() {
   const pyrat = axios.create({
     baseURL: "/apps/pyrat",
     timeout: 15000,
   });
+
+  const pyratUrl = useDeploymentProperty("pyrat.url");
+  useEffect(() => {
+    FetchingData.getSuccessValue(pyratUrl).do((p) => {
+      PYRAT_URL = p;
+    });
+  }, [pyratUrl]);
 
   // Counter is increased when filtering is required.
   // Counter instead of boolean, as useEffect functions below that depend on
@@ -475,22 +485,42 @@ parent.tinymce.activeEditor.on("pyrat-insert", function () {
 });
 
 function createTinyMceTable() {
-  let pyratTable = document.createElement("table");
+  const pyratTable = document.createElement("table");
   pyratTable.setAttribute("data-tableSource", "pyrat");
+  pyratTable.style = "font-size: 0.7em";
 
-  let tableHeader = document.createElement("tr");
+  if (!PYRAT_URL) throw new Error("PYRAT_URL is not known");
+
+  const link = PYRAT_URL.slice(0, PYRAT_URL.lastIndexOf("/api/"));
+
+  const linkRow = document.createElement("tr");
+  const linkCell = document.createElement("th");
+  linkCell.appendChild(document.createTextNode("Imported from "));
+  const anchor = document.createElement("a");
+  anchor.href = link;
+  anchor.appendChild(document.createTextNode(link));
+  anchor.setAttribute("rel", "noreferrer");
+  linkCell.appendChild(anchor);
+  linkCell.appendChild(document.createTextNode(" on "));
+  linkCell.appendChild(document.createTextNode(new Date().toDateString()));
+  linkCell.setAttribute("colspan", VISIBLE_HEADER_CELLS.length);
+  linkCell.style = "font-weight: 400";
+  linkRow.appendChild(linkCell);
+  pyratTable.appendChild(linkRow);
+
+  const tableHeader = document.createElement("tr");
   VISIBLE_HEADER_CELLS.forEach((cell) => {
-    let columnName = document.createElement("th");
+    const columnName = document.createElement("th");
     columnName.textContent = cell.label;
     tableHeader.appendChild(columnName);
   });
   pyratTable.appendChild(tableHeader);
 
   SELECTED_ANIMALS.forEach((animal) => {
-    let row = document.createElement("tr");
+    const row = document.createElement("tr");
 
     VISIBLE_HEADER_CELLS.forEach((headerCell) => {
-      let cell = document.createElement("td");
+      const cell = document.createElement("td");
 
       const textContent = animal[headerCell.id];
       if (textContent) cell.textContent = textContent;

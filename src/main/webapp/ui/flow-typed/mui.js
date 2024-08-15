@@ -25,6 +25,14 @@ declare module "@mui/system" {
   declare export function darken(color: string, coefficient: number): string;
 
   /**
+   * Lightens a color.
+   * @param {string} color - CSS color, i.e. one of: #nnn, #nnnnnn, rgb(), rgba(), hsl(), hsla(), color()
+   * @param {number} coefficient - multiplier in the range 0 - 1
+   * @returns {string} A CSS color string. Hex input values are returned as rgb
+   */
+  declare export function lighten(color: string, coefficient: number): string;
+
+  /**
    * Applies a transparency to a color.
    * @param {string} color - CSS color, i.e. one of: #nnn, #nnnnnn, rgb(), rgba(), hsl(), hsla(), color()
    * @param {number} opacity - number in the range 0 - 1
@@ -54,6 +62,7 @@ declare module "@mui/x-data-grid" {
     sortable?: boolean,
     headerClassName?: string,
     disableExport?: boolean,
+    display?: "text" | "flex",
   |};
 
   declare export function DataGrid<
@@ -61,7 +70,8 @@ declare module "@mui/x-data-grid" {
     ColumnNames: string,
     Id: mixed,
     ToolbarProps: { ... },
-    Value: mixed
+    Value: mixed,
+    SortableColumnNames: ColumnNames,
   >({|
     rows: $ReadOnlyArray<Row>,
     columns: $ReadOnlyArray<Column<Row>>,
@@ -73,23 +83,25 @@ declare module "@mui/x-data-grid" {
     disableColumnFilter?: boolean,
     density?: "compact" | "standard" | "comfortable",
     getRowId?: (Row) => Id,
+    getRowHeight?: () => "auto" | number | null,
     rowSelectionModel?: $ReadOnlyArray<Id>,
     onRowSelectionModelChange?: ($ReadOnlyArray<Id>) => void,
     hideFooterSelectedRowCount?: boolean,
+    hideFooter?: boolean,
     paginationMode?: "server" | "client",
     rowCount?: number,
     paginationModel?: {| pageSize: number, page: number |},
     pageSizeOptions?: $ReadOnlyArray<
-      number | {| value: number, label: string |}
-    >,
+      number | {| value: number, label: string |}>,
     onPaginationModelChange?: ({| pageSize: number, page: number |}) => void,
     sortingMode?: "server",
-    sortModel?: Array<{| field: string, sort: "asc" | "desc" |}>,
+    sortModel?: $ReadOnlyArray<{| field: SortableColumnNames, sort: "asc" | "desc" |}>,
     onSortModelChange?: (
-      Array<{| field: string, sort: "asc" | "desc" |}>
+      $ReadOnlyArray<{| field: SortableColumnNames, sort: "asc" | "desc" |}>
     ) => void,
     slots?: {|
       toolbar?: (ToolbarProps) => Node,
+      pagination?: null,
     |},
     className?: string,
     classes?: {||},
@@ -102,6 +114,11 @@ declare module "@mui/x-data-grid" {
       toolbar?: ToolbarProps,
       panel?: { ... },
     |},
+    localeText?: {|
+      // https://github.com/mui/mui-x/blob/v7.12.0/packages/x-data-grid/src/constants/localeTextConstants.ts
+      noRowsLabel?: string,
+    |},
+    onCellKeyDown?: (Row, KeyboardEvent) => void,
   |}): Node;
 
   declare export function GridToolbarContainer({|

@@ -8,8 +8,7 @@ import Button from "@mui/material/Button";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import Dialog from "@mui/material/Dialog";
-import IconButton from "@mui/material/IconButton";
-import CloseIcon from "@mui/icons-material/Close";
+import DialogActions from "@mui/material/DialogActions";
 import MobileStepper from "@mui/material/MobileStepper";
 import axios from "axios";
 import FormatChoice, { type ArchiveType } from "./FormatChoice";
@@ -17,8 +16,6 @@ import FormatSpecificOptions from "./FormatSpecificOptions";
 import ExportRepo from "./ExportRepo";
 import ExportFileStore from "./ExportFileStore";
 import LoadingFade from "../components/LoadingFade";
-import Snackbar from "@mui/material/Snackbar";
-import SnackbarContent from "@mui/material/SnackbarContent";
 import Confirm from "../components/ConfirmContextDialog";
 import { runInAction, action, observable } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -33,7 +30,12 @@ import { type Person, type Repo } from "./repositories/common";
 import { lift3 } from "../util/optional";
 import { type Tag } from "./repositories/Tags";
 import * as ArrayUtils from "../util/ArrayUtils";
+import * as Parsers from "../util/parsers";
+import Result from "../util/result";
 import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
+import Divider from "@mui/material/Divider";
+import AlertContext, { mkAlert } from "../stores/contexts/Alert";
+import useViewportDimensions from "../util/useViewportDimensions";
 
 const DEFAULT_REPO_CONFIG = {
   repoChoice: 0,
@@ -63,7 +65,6 @@ type ExportConfig = {|
 const DEFAULT_STATE = {
   open: false,
   loading: false,
-  exportSubmitToast: false,
   exportSubmitResponse: "",
   exportSelection: ({
     type: "selection",
@@ -137,6 +138,9 @@ function ExportDialog({
   exportSelection,
   allowFileStores,
 }: ExportDialogArgs): Node {
+  const { addAlert } = React.useContext(AlertContext);
+  const { isViewportSmall } = useViewportDimensions();
+
   const [state, setState] = useState<typeof DEFAULT_STATE>(
     observable(DEFAULT_STATE)
   );
@@ -206,7 +210,7 @@ function ExportDialog({
         docConfig.pageSize = format;
         docConfig.defaultPageSize = format;
       })
-      .catch(function (error) {
+      .catch((error) => {
         console.log(error);
       });
   }, []);
@@ -256,12 +260,19 @@ function ExportDialog({
         setState(
           observable({
             ...DEFAULT_STATE,
-            exportSubmitToast: true,
-            exportSubmitResponse: response.data,
+          })
+        );
+        addAlert(
+          mkAlert({
+            variant:
+              response.data.indexOf("Please contact") > -1
+                ? "error"
+                : "success",
+            message: response.data,
           })
         );
       })
-      .catch(function (error) {
+      .catch((error) => {
         console.log(error);
       });
   };
@@ -283,25 +294,36 @@ function ExportDialog({
       nfsConfig: { ...state.nfsConfig },
     };
     return axios
-      .post<typeof data, {| data: Array<string> |}>(url, data)
+      .post<typeof data, mixed>(url, data)
       .then((response) =>
-        // parse the tag strings and only keep those with metadata
-        ArrayUtils.mapOptional(
-          (tag) =>
-            lift3(
-              (vocabulary, uri, version) => ({
-                value: tag.value,
-                vocabulary,
-                uri,
-                version,
-              }),
-              tag.vocabulary,
-              tag.uri,
-              tag.version
-            ),
-          parseEncodedTags(response.data.data.flatMap((str) => str.split(",")))
-        )
+        Parsers.isObject(response)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("data"))
+          .flatMap(Parsers.isArray)
+          .flatMap((data) => Result.all(...data.map(Parsers.isString)))
+          .map((data) =>
+            // parse the tag strings and only keep those with metadata
+            ArrayUtils.mapOptional(
+              (tag) =>
+                lift3(
+                  (vocabulary, uri, version) => ({
+                    value: tag.value,
+                    vocabulary,
+                    uri,
+                    version,
+                  }),
+                  tag.vocabulary,
+                  tag.uri,
+                  tag.version
+                ),
+              parseEncodedTags(data.flatMap((str) => str.split(",")))
+            )
+          )
+          .orElse<Array<Tag>>([])
       )
+      .catch(() => {
+        return ([]: Array<Tag>);
+      })
       .finally(() => {
         runInAction(() => {
           state.loading = false;
@@ -372,42 +394,19 @@ function ExportDialog({
     });
   };
 
-  const closeToast = () => {
-    runInAction(() => {
-      state.exportSubmitToast = false;
-    });
-  };
-
-  const styles = {
-    closeButton: {
-      position: "absolute",
-      right: 0,
-      top: 0,
-      width: "auto",
-    },
-    toastSuccess: {
-      backgroundColor: "#4CAF50",
-    },
-    toastFailure: {
-      backgroundColor: "#e51c23",
-    },
-  };
-
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
         <Confirm>
-          <Dialog open={state.open} fullWidth={true} maxWidth="sm">
+          <Dialog
+            open={state.open}
+            fullWidth={true}
+            maxWidth="sm"
+            onClose={handleClose}
+            fullScreen={isViewportSmall}
+          >
             <DialogTitle data-test-id="modalTitle">
               {activePane.title}
-              <IconButton
-                aria-label="Close"
-                data-test-id="closeModal"
-                style={styles.closeButton}
-                onClick={handleClose}
-              >
-                <CloseIcon />
-              </IconButton>
             </DialogTitle>
             <DialogContent>
               {activePane.key === "FormatChoice" && (
@@ -458,51 +457,45 @@ function ExportDialog({
               )}
             </DialogContent>
             <LoadingFade loading={state.loading} />
-            <MobileStepper
-              steps={numberOfPanes(firstPane)}
-              position="static"
-              activeStep={getIndexOfPane(firstPane, activePane)}
-              backButton={
-                <Button
-                  size="small"
-                  data-test-id="createGroupBackButton"
-                  onClick={handleBack}
-                  disabled={!activePane.prev}
-                >
-                  Back
-                </Button>
-              }
-              nextButton={
-                <Button
-                  size="small"
-                  data-test-id="createGroupNextButton"
-                  onClick={() => handleNext()}
-                  disabled={state.exportConfig.archiveType === ""}
-                >
-                  {activePane.next ? "Next" : "Export"}
-                </Button>
-              }
-            />
+            <DialogActions>
+              <Button size="small" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Divider orientation="vertical" sx={{ height: "2em" }} />
+              <MobileStepper
+                sx={{
+                  m: -1,
+                  ml: "0 !important",
+                  flexGrow: 1,
+                  background: "transparent",
+                  pl: 0,
+                }}
+                steps={numberOfPanes(firstPane)}
+                position="static"
+                activeStep={getIndexOfPane(firstPane, activePane)}
+                backButton={
+                  <Button
+                    size="small"
+                    data-test-id="createGroupBackButton"
+                    onClick={handleBack}
+                    disabled={!activePane.prev}
+                  >
+                    Back
+                  </Button>
+                }
+                nextButton={
+                  <Button
+                    size="small"
+                    data-test-id="createGroupNextButton"
+                    onClick={() => handleNext()}
+                    disabled={state.exportConfig.archiveType === ""}
+                  >
+                    {activePane.next ? "Next" : "Export"}
+                  </Button>
+                }
+              />
+            </DialogActions>
           </Dialog>
-          <Snackbar
-            anchorOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            open={state.exportSubmitToast}
-            autoHideDuration={6000}
-            onClose={closeToast}
-          >
-            <SnackbarContent
-              onClose={closeToast}
-              message={state.exportSubmitResponse}
-              style={
-                state.exportSubmitResponse.indexOf("Please contact") > -1
-                  ? styles.toastFailure
-                  : styles.toastSuccess
-              }
-            />
-          </Snackbar>
         </Confirm>
       </ThemeProvider>
     </StyledEngineProvider>
@@ -530,13 +523,13 @@ const xmlConfig = {
   allVersions: false,
 };
 
-let pdfConfig = {
+const pdfConfig = {
   exportFormat: "PDF",
   exportName: "",
   provenance: true,
   comments: true,
   annotations: true,
-  pageName: true,
+  restartPageNumberPerDoc: true,
   pageSize: "A4",
   defaultPageSize: "A4",
   dateType: "EXP",
@@ -545,7 +538,7 @@ let pdfConfig = {
   includeFieldLastModifiedDate: true,
 };
 
-let docConfig = {
+const docConfig = {
   exportFormat: "WORD",
   exportName: "",
   pageSize: "A4",

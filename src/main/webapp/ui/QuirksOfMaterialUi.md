@@ -82,30 +82,6 @@ is inside of a `Menu` then any letters that occur as the first character in any
 of the `MenuItems` will not be enterable into the `TextField` as the event will
 be captured by the `Menu` instead.
 
-The solution is wrap the `Dialog` in a component as defined below that prevents
-the key events, and others, from propagating up to the `Menu`.
+The solution is wrap the `Dialog` in the EventBoundary component
+(src/components/EventBoundary.js).
 
-```
-const EventBoundary = ({ children }: { children: Node }) => (
-  // eslint-disable-next-line
-  <div
-    onKeyDown={(e) => {
-      e.stopPropagation();
-    }}
-    onMouseDown={(e) => {
-      e.stopPropagation();
-    }}
-    onClick={(e) => {
-      e.stopPropagation();
-    }}
-  >
-    {children}
-  </div>
-);
-```
-
-The eslint suppression is required because `div`s should not ordinarilly have
-event handlers as they cannot be focussed. However, in this case, we are just
-using the event listeners on the `div` to prevent the events from further down
-the DOM from propagating up; the user need not interact with the `div` itself
-for this to work.

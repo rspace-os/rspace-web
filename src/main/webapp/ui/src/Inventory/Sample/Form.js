@@ -30,6 +30,8 @@ import {
 } from "../components/Stepper/StepperPanelHeader";
 import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import type { Person } from "../../stores/definitions/Person";
+import SubsampleDetails from "./Content/SubsampleDetails";
+import Typography from "@mui/material/Typography";
 
 const OverviewSection = observer(
   ({ activeResult }: { activeResult: SampleModel }) => {
@@ -224,7 +226,17 @@ function Form(): Node {
               sectionName="subsamples"
               recordType="sample"
             >
+              {/*
+               * We say "one of the {plural}" here instead of "a {alias}"
+               * because adding the logic to get the grammar of "a" versus
+               * "an" right would be too much of a pain.
+               */}
+              <Typography variant="body1">
+                Tap one of the {activeResult.subSampleAlias.plural} in the
+                search section to preview it below.
+              </Typography>
               <SubsampleListing sample={activeResult} />
+              <SubsampleDetails search={activeResult.search} />
             </StepperPanel>
           ) : null}
         </>

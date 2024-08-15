@@ -7,6 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.netfiles.NfsClient;
+import com.researchspace.webapp.controller.IgnoreInServiceLoggerAspct;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -50,6 +51,7 @@ public interface NfsManager {
   /**
    * @return "logged.as.-username" if logged in, null if not, or error code if error
    */
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
   String loginToNfs(
       Long fileSystemId,
       String nfsusername,

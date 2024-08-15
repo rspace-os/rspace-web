@@ -74,7 +74,7 @@ const CreateAction: ComponentType<CreateActionArgs> = forwardRef(
       [() => selectedResults.length > 1, "Can only create from a single item."],
       [
         () => !selectedResults[0].permittedActions.has("READ"),
-        "You do not have permission to access this item.",
+        "You do not have permission to create new items from this item.",
       ],
       [
         () => isFullContainer(),

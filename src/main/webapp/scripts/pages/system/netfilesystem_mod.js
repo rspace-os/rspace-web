@@ -273,13 +273,13 @@ define(function() {
     //have to give it a value in the UI else the UI framework throws an error on save
     function refreshClientTypeRows() {
 
-	// retrieve default label values from system.properties 
-	if (sysNetFileSysDetUrl === undefined) {
-	    sysNetFileSysDetUrl = $("label[for='fileSystemUrl']").text();
-	}
-	if (sysNetfileSysDetAuthPasswd === undefined) {
-	    sysNetfileSysDetAuthPasswd = $('#fileSystemAuthTypePasswordSpan').text();
-	}
+        // retrieve default label values from system.properties 
+        if (sysNetFileSysDetUrl === undefined) {
+            sysNetFileSysDetUrl = $("label[for='fileSystemUrl']").text();
+        }
+        if (sysNetfileSysDetAuthPasswd === undefined) {
+            sysNetfileSysDetAuthPasswd = $('#fileSystemAuthTypePasswordSpan').text();
+        }
 	
         const isSambaClient = $('#fileSystemClientTypeSamba').prop('checked');
         const isSambaSmbjClient = isSambaClient && $('#fileSystemClientTypeSambaSmbj').prop('checked');
@@ -314,22 +314,22 @@ define(function() {
             $('#fileSystemUrl')
                 .attr('title', 'Samba server URL should start with smb://')
                 .attr('pattern', '^smb://.*');
-	    $("label[for='fileSystemAuthTypePubKey']").show();
-	    $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
-	    $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
+	          $("label[for='fileSystemAuthTypePubKey']").show();
+	          $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
+	          $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
         } else if (isIrodsClient) {
-	    $('#fileSystemAuthTypePassword').click();
-	    $('#fileSystemUrl')
-		.removeAttr('pattern')
-		.attr('title', 'iRODS hostname or IP without protocol');
-	    $("label[for='fileSystemUrl']").text('iRODS Host');
-	    $("label[for='fileSystemAuthTypePubKey']").hide();
-	    $('#fileSystemAuthTypePasswordSpan').text('Native');
+	          $('#fileSystemAuthTypePassword').click();
+	          $('#fileSystemUrl')
+		            .removeAttr('pattern')
+		            .attr('title', 'iRODS hostname or IP without protocol');
+	          $("label[for='fileSystemUrl']").text('iRODS Host');
+	          $("label[for='fileSystemAuthTypePubKey']").hide();
+	          $('#fileSystemAuthTypePasswordSpan').text('Native');
         } else {
             $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
-	    $("label[for='fileSystemAuthTypePubKey']").show();
-	    $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
-	    $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
+	          $("label[for='fileSystemAuthTypePubKey']").show();
+      	    $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
+      	    $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
         }
     }
 

@@ -8,7 +8,7 @@ RSpace is an open-source collaborative research data management platform that in
 
 # 🚧 Construction ahead!
 Thank you for your interest in the RSpace open-source project! We're excited to have you here!
-Releasing RSpace as an open-source project is huge step for us and we likely won't have everything as polished as we'd like it to be in the beginning. Please bear with us as we're taking one step at a time to build an inclusive and efficient contributor experience. If you have any questions, concerns, or ideas how we can improve, don't hesitate to reach out to us 🙏.
+[Releasing RSpace as an open-source project](http://www.researchspace.com/blog/research-space-embraces-open-source-to-empower-fair-data-workflows) is huge step for us and we likely won't have everything as polished as we'd like it to be in the beginning. Please bear with us as we're taking one step at a time to build an inclusive and efficient contributor experience. If you have any questions, concerns, or ideas how we can improve, don't hesitate to reach out to us 🙏.
 
 # About the RSpace open-source project
 🗺️ You are currently on the main repository for building RSpace
@@ -25,6 +25,5 @@ Releasing RSpace as an open-source project is huge step for us and we likely won
 - Information on how to run RSpace via docker can be found in the [rspace-docker repository](https://github.com/rspace-os/rspace-docker).
 
 # Getting in touch
-Ways of connecting and communicating with the RSpace open source project can be found on this [wiki page](https://github.com/rspace-os/rspace-web/wiki/Contact).  
-
-For inquiries about Research Space's enterprise solutions, please visit the Research Space website [here](https://www.researchspace.com/pricing).
+- Various ways of connecting and communicating with the RSpace open source project can be found on this [wiki page](https://github.com/rspace-os/rspace-web/wiki/Contact).
+- For inquiries about Research Space's enterprise solutions, please visit the Research Space website [here](https://www.researchspace.com/pricing).

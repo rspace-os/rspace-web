@@ -7,8 +7,8 @@ import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AdjustableHeadCell from "../AdjustableHeadCell";
-import RsSet from "../../../util/set";
-import materialTheme from "../../../theme";
+import RsSet from "../../../../util/set";
+import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
 beforeEach(() => {

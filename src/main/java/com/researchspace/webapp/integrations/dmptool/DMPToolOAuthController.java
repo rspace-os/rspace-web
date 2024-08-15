@@ -5,6 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.dmptool.model.DMPList;
 import com.researchspace.dmptool.model.DMPPlanScope;
+import com.researchspace.dmptool.model.DMPToolDMP;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
@@ -125,7 +126,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     userConnectionManager.save(conn);
     log.info("Connected DMPTool for user {}", principal.getName());
 
-    return "apps/apps";
+    return "connect/dmptool/connected";
   }
 
   private URL getServerUrl() throws MalformedURLException {
@@ -186,10 +187,10 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
 
     User user = userManager.getAuthenticatedUserInSession();
     try {
-      var dmpDetails = client.getPlanById(id + "", user);
+      ServiceOperationResult<DMPToolDMP> dmpDetails = client.getPlanById(id + "", user);
       if (dmpDetails.isSucceeded()) {
         var dmpUserServiceOperationResult =
-            client.doPdfDownload(dmpDetails.getEntity(), dmpDetails.getEntity().getTitle(), user);
+            client.doJsonDownload(dmpDetails.getEntity(), dmpDetails.getEntity().getTitle(), user);
         if (!dmpUserServiceOperationResult.isSucceeded()) {
           return new AjaxReturnObject<>(
               null,

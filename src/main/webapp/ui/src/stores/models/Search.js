@@ -315,9 +315,10 @@ export default class Search implements SearchInterface {
   }
 
   async cleanBatchEditing() {
-    await Promise.all(
-      this.batchEditingRecords?.map((r) => r.setEditing(false, true, true)) ??
-        []
+    await Promise.all<Array<Promise<void>>>(
+      this.batchEditingRecords?.toArray().map(async (r) => {
+        await r.setEditing(false, true, true);
+      }) ?? []
     );
     this.disableBatchEditing();
   }
@@ -340,8 +341,7 @@ export default class Search implements SearchInterface {
     return this.editLoading === "batch" && !this.batchEditingRecords;
   }
 
-  get batchEditingRecordsByType():
-    | null
+  get batchEditingRecordsByType(): | null
     | {| type: "container", records: RsSet<ContainerModel> |}
     | {| type: "sample", records: RsSet<SampleModel> |}
     | {| type: "subSample", records: RsSet<SubSampleModel> |}
@@ -431,21 +431,72 @@ export default class Search implements SearchInterface {
         ApiService.bulk<
           mixed,
           {
-            results: Array<{ error: { errors: Array<string> }, record: any }>,
+            results: Array<{
+              error: { errors: Array<string> },
+              record: {
+                type: string,
+                canBeDeleted?: boolean,
+                subSamples: $ReadOnlyArray<{
+                  storedInContainer: boolean,
+                  ...$Diff<SubSampleAttrs, { sample: mixed }>,
+                  ...
+                }>,
+                ...
+              },
+            }>,
             errorCount: number,
           }
         >(prepareRecordsForBulkApi(records), "DELETE", false)
       );
 
-      const factory = this.factory.newFactory();
-      const successfullyDeleted = data.results
-        .filter(({ error }) => !error)
-        .map(({ record }) => {
-          const newRecord = factory.newRecord(record);
-          newRecord.populateFromJson(factory, record);
-          return newRecord;
-        });
+      /*
+       * We treat samples different to other record types because when a sample
+       * is deleted, each of its subsamples must be deleted too. If the
+       * subsamples are currently inside containers then the user is presented
+       * with an error detailing these subsamples and where to find them.
+       */
+      const samplesThatCouldNotBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
+      const samplesThatCouldBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && canBeDeleted);
 
+      const factory = this.factory.newFactory();
+      const successfullyDeleted = [
+        ...data.results
+          .filter(({ record: { type } }) => type !== "SAMPLE")
+          .filter(({ error }) => !error)
+          .map(({ record }) => record),
+        ...samplesThatCouldBeDeleted,
+      ].map((record) => {
+        const newRecord = factory.newRecord(record);
+        newRecord.populateFromJson(factory, record);
+        return newRecord;
+      });
+
+      if (samplesThatCouldNotBeDeleted.length > 0) {
+        const subsamplesThatPreventedSampleDeletion =
+          samplesThatCouldNotBeDeleted
+            .flatMap((s) => s.subSamples.map((ss) => [s, ss]))
+            .filter(([, ss]) => ss.storedInContainer);
+        uiStore.addAlert(
+          mkAlert({
+            variant: "error",
+            title:
+              "Some of the samples could not be trashed because the subsamples are in containers.",
+            message: "Please move them to the trash first.",
+            details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
+              title: `Could not trash "${ss.name ?? "UNKNOWN"}"`,
+              variant: "error",
+              record: factory.newRecord({
+                ...ss,
+                sample: s,
+              }),
+            })),
+          })
+        );
+      }
       handleDetailedErrors(
         data.errorCount,
         ArrayUtils.zipWith(data.results, records, (d, r) => ({
@@ -455,7 +506,8 @@ export default class Search implements SearchInterface {
         "sending to trash",
         (erroredRecords) => this.deleteRecords(erroredRecords)
       );
-      handleDetailedSuccesses(successfullyDeleted, "trashed");
+      if (successfullyDeleted.length > 0)
+        handleDetailedSuccesses(successfullyDeleted, "trashed");
       this.offerToDeleteNowEmptySamples(successfullyDeleted);
 
       await this.updateStateAfterDelete(new RsSet(successfullyDeleted));
@@ -464,7 +516,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Sending to trash failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -508,6 +560,12 @@ export default class Search implements SearchInterface {
     } else {
       // e.g. sample's quantity may have changed
       this.refetchActiveResult(deletedGlobalIds);
+    }
+
+    if (searchStore.activeResult instanceof ContainerModel) {
+      const cont = searchStore.activeResult;
+      if (cont.state === "preview") await cont.fetchAdditionalInfo();
+      cont.refreshAssociatedSearch();
     }
   }
 
@@ -587,7 +645,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Restore failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -698,7 +756,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Duplication failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -752,7 +810,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Splitting subsample failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
           duration: 8000,
         })
@@ -776,10 +834,15 @@ export default class Search implements SearchInterface {
      * the sample form's subsample listing. As such, we should refresh the
      * activeResult so that the form fields that display the number of
      * subsamples remains correct.
+     *
+     * If the activeResult is itself the subsample being split then we should
+     * refresh it so that the label in the quantity field that displays the
+     * number of siblings is similarly updated.
      */
     if (
       subsample instanceof SubSampleModel &&
-      subsample.sample.globalId === activeResult?.globalId
+      (subsample.sample.globalId === activeResult?.globalId ||
+        subsample.globalId === activeResult?.globalId)
     ) {
       promises.push(activeResult?.fetchAdditionalInfo() ?? Promise.resolve());
     }
@@ -851,7 +914,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: "Transfer failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -940,9 +1003,9 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: `Template creation failed.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
-          details: error?.response?.data.errors.map((e) => ({
+          details: error.response?.data.errors.map((e) => ({
             title: e,
             variant: "error",
           })),
@@ -1014,7 +1077,7 @@ export default class Search implements SearchInterface {
         mkAlert({
           title: `Data export failed.`,
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -1157,8 +1220,8 @@ export default class Search implements SearchInterface {
     this.performSearch();
   }
 
-  setPage(pageNumber: number) {
-    this.fetcher.setPage(pageNumber);
+  async setPage(pageNumber: number) {
+    await this.fetcher.setPage(pageNumber);
   }
 
   setOwner(user: ?Person, doSearch: ?boolean = true) {
@@ -1394,7 +1457,7 @@ export default class Search implements SearchInterface {
             mkAlert({
               title: "Update failed.",
               message:
-                error?.response?.data.message ??
+                error.response?.data.message ??
                 error.message ??
                 "Unknown reason.",
               variant: "error",

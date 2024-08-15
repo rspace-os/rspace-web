@@ -1,6 +1,6 @@
 //@flow strict
 
-import React from "react";
+import React, { type Context } from "react";
 import axios from "axios";
 import * as FetchingData from "../util/fetchingData";
 
@@ -73,8 +73,13 @@ export function useDeploymentProperty(
   const [value, setValue] = React.useState<FetchingData.Fetched<mixed>>({
     tag: "loading",
   });
+  const map = React.useContext(DeploymentPropertyContext);
 
   React.useEffect(() => {
+    if (map.has(name)) {
+      setValue({ tag: "success", value: map.get(name) });
+      return;
+    }
     void (async () => {
       try {
         const { data } = await axios.get<mixed>(
@@ -82,6 +87,7 @@ export function useDeploymentProperty(
           { params: new URLSearchParams({ name }) }
         );
         setValue({ tag: "success", value: data });
+        map.set(name, data);
       } catch (error) {
         setValue({ tag: "error", error: error.message });
       }
@@ -94,3 +100,19 @@ export function useDeploymentProperty(
 
   return value;
 }
+
+/**
+ * This context acts as a cache for the fetched deployment properties so that
+ * they need not be fetched more than once each per page load. If the same
+ * deployment property is used in multiple components, or in a single component
+ * is that un-mounted and re-mounted, then only the first call to
+ * useDeploymentProperty will trigger a network call.
+ *
+ * Whilst this context is exported, there is no need to instantiate it on most
+ * pages with the DeploymentPropertyContext.Provider component; the default
+ * value of an empty Map suffices as a page-wide cache. However each test of
+ * any component that uses this hook should be wrapped my this context to
+ * ensure that test don't pollute one another with the shared state.
+ */
+export const DeploymentPropertyContext: Context<Map<string, mixed>> =
+  React.createContext(new Map<string, mixed>());

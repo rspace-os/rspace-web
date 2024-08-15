@@ -26,7 +26,7 @@ pipeline {
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
         booleanParam(name: 'DOCKER_AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to Docker on AWS - see the README in build/ folder for more details')
         booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run Flow/Jest tests (runs after changes to frontend files by default)')
-        booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests (runs on master/develop by default)')
+        booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
 
@@ -71,7 +71,6 @@ pipeline {
             when {
                 not {
                     anyOf {
-                        branch 'master'; branch 'develop'
                         expression { return params.FULL_JAVA_TESTS }
                         expression { return params.LIQUIBASE }
                     }
@@ -175,7 +174,6 @@ pipeline {
                 }
                 not {
                     anyOf {
-                        branch 'master'; branch 'develop'
                         expression { return params.FULL_JAVA_TESTS }
                         expression { return params.LIQUIBASE }
                         expression { return params.AWS_DEPLOY_PROD_RELEASE }
@@ -186,8 +184,8 @@ pipeline {
                 echo 'Building feature branch'
                 sh '''
                 ./mvnw clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
-                -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO
-                -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR}
+                -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
+                -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                 -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
                 '''
             }
@@ -237,11 +235,6 @@ pipeline {
                     expression { return params.AWS_DEPLOY }
                     expression { return params.AWS_DEPLOY_PROD_RELEASE }
                 }
-                not {
-                    anyOf {
-                        branch 'master'; branch 'develop'
-                    }
-                }
             }
 
             steps {
@@ -252,6 +245,11 @@ pipeline {
                                         $class: 'StringParameterValue',
                                         name: 'SERVER_NAME',
                                         value: "$BRANCH_NAME-$BUILD_ID"
+                                ],
+                                [
+                                        $class: 'StringParameterValue',
+                                        name: 'AMI',
+                                        value: 'ami-03643725c29083d16'
                                 ],
                                 [
                                         $class: 'StringParameterValue',
@@ -271,11 +269,6 @@ pipeline {
         stage('Deploy package to Docker on AWS') {
             when {
                 expression { return params.DOCKER_AWS_DEPLOY }
-                not {
-                    anyOf {
-                        branch 'master'; branch 'develop'
-                    }
-                }
             }
             steps {
                 dir('./build/packer/web') {
@@ -332,10 +325,10 @@ pipeline {
         stage('Liquibase tests') {
             when {
                 expression { return params.LIQUIBASE }
-                branch 'develop'
+                branch 'main'
             }
             steps {
-                echo 'Running liquibase tests on develop branch...'
+                echo 'Running liquibase tests on main branch...'
                 sh "./mvnw -e clean test -PtestLiquibase -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Dlog4j2.configurationFile=log4j2-dev.xml \
@@ -359,7 +352,6 @@ pipeline {
         stage('Full Java tests') {
             when {
                 anyOf {
-                    branch 'master'; branch 'develop'
                     expression { return params.FULL_JAVA_TESTS }
                 }
                 not {

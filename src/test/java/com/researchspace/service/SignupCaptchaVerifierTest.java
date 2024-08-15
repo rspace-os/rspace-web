@@ -85,7 +85,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
         SignupCaptchaVerifier.ERROR_VERIFICATION_FAILED,
         captchaVerifier.verifyCaptchaFromRequest(mockRequest));
     assertEquals(
-        "Captcha Verification failed, error-codes: [invalid-input-secret]",
+        "Captcha Verification failed, error-codes: [invalid-input-response]",
         stringLogger.logContents);
     stringLogger.logContents = ""; // clear contents
 

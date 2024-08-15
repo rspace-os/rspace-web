@@ -1,76 +1,14 @@
 // @flow
 
 import axios from "axios";
-import {
-  type AdjustableTableRow,
-  type AdjustableTableRowOptions,
-} from "../../stores/definitions/Tables";
-import RsSet from "../../util/set";
 
-type PlanSummaryJson = {
+export type PlanSummary = {
   id: string,
   label: string,
   grant: string,
   createdAt: number,
   modifiedAt: number,
 };
-
-export type PlanSummaryAdustableColumnLabel =
-  | "ID"
-  | "Grant"
-  | "Created At"
-  | "Last Modified";
-
-export const planSummaryAdustableColumnLabels: RsSet<PlanSummaryAdustableColumnLabel> =
-  new RsSet(["ID", "Grant", "Created At", "Last Modified"]);
-
-export class PlanSummary
-  implements AdjustableTableRow<PlanSummaryAdustableColumnLabel>
-{
-  id: string;
-  label: string;
-  grant: string;
-  createdAt: Date;
-  modifiedAt: Date;
-
-  constructor(json: PlanSummaryJson) {
-    this.id = json.id;
-    this.label = json.label;
-    this.grant = json.grant;
-    this.createdAt = new Date(json.createdAt);
-    this.modifiedAt = new Date(json.modifiedAt);
-  }
-
-  getIdAsString(): string {
-    return this.id;
-  }
-
-  getLabel(): string {
-    return this.label;
-  }
-
-  isEqual(plan: PlanSummary): boolean {
-    return plan.id === this.id;
-  }
-
-  adjustableTableOptions(): AdjustableTableRowOptions<PlanSummaryAdustableColumnLabel> {
-    return new Map([
-      ["ID", () => ({ renderOption: "node", data: this.id })],
-      ["Grant", () => ({ renderOption: "node", data: this.grant })],
-      [
-        "Created At",
-        () => ({ renderOption: "node", data: this.createdAt.toLocaleString() }),
-      ],
-      [
-        "Last Modified",
-        () => ({
-          renderOption: "node",
-          data: this.modifiedAt.toLocaleString(),
-        }),
-      ],
-    ]);
-  }
-}
 
 export type SearchParameters = {|
   like: ?string,
@@ -106,7 +44,7 @@ export async function fetchPlanSummaries({
   const { data } = await axios.get<
     | {|
         success: boolean,
-        data: { totalCount: number, data: Array<PlanSummaryJson> },
+        data: { totalCount: number, data: Array<PlanSummary> },
       |}
     | {| error: mixed |}
   >(`/apps/argos/plans?${urlArgs.toString()}`);
@@ -114,7 +52,7 @@ export async function fetchPlanSummaries({
     const plans = data.data;
     return {
       totalCount: plans.totalCount,
-      data: plans.data.map((plan) => new PlanSummary(plan)),
+      data: plans.data,
     };
   }
   throw data.error;

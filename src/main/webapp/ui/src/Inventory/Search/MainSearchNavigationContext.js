@@ -38,7 +38,7 @@ export default function MainSearchNavigationContext({
         mkAlert({
           title: "Search failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
           isInfinite: true,
         })
@@ -61,10 +61,16 @@ export default function MainSearchNavigationContext({
   };
 
   const newUseNavigate =
-    () => (url: string, opts: ?{| skipToParentContext?: boolean |}) => {
-      const { skipToParentContext = false } = opts ?? {
-        skipToParentContext: false,
-      };
+    () =>
+    (
+      url: string,
+      opts: ?{| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+    ) => {
+      const { skipToParentContext = false, modifyVisiblePanel = true } =
+        opts ?? {
+          skipToParentContext: false,
+          modifyVisiblePanel: true,
+        };
       if (/^\/inventory\/search/.test(url) && !skipToParentContext) {
         /*
          * If the navigation is to another part of the Inventory search page,
@@ -81,7 +87,7 @@ export default function MainSearchNavigationContext({
          * open that URL in a new window as the user has been navigated in this
          * browser window by updating the search paramters.
          */
-        navigate(url, { skipToParentContext: false });
+        navigate(url, { skipToParentContext: false, modifyVisiblePanel });
       } else {
         /*
          * For all other URLs, including all other Inventory URLs such as the
@@ -95,7 +101,7 @@ export default function MainSearchNavigationContext({
          * continue to pass the skipToParentContext parameter making this
          * context completely transparent to all contexts below when set.
          */
-        navigate(url, { skipToParentContext });
+        navigate(url, { skipToParentContext, modifyVisiblePanel });
       }
     };
 

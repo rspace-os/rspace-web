@@ -101,6 +101,7 @@ export default function TagListing({
                 ? null
                 : (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     onClick(tag);
                   }
             }

@@ -3,7 +3,7 @@
 import { createTheme } from "@mui/material";
 import baseTheme from "./theme";
 import { mergeThemes } from "./util/styles";
-import { darken, alpha } from "@mui/system";
+import { darken, alpha, lighten } from "@mui/system";
 import { toolbarClasses } from "@mui/material/Toolbar";
 import { typographyClasses } from "@mui/material/Typography";
 import { svgIconClasses } from "@mui/material/SvgIcon";
@@ -15,6 +15,7 @@ import { listItemIconClasses } from "@mui/material/ListItemIcon";
 import { paperClasses } from "@mui/material/Paper";
 import { cardActionAreaClasses } from "@mui/material/CardActionArea";
 import { buttonClasses } from "@mui/material/Button";
+import { iconButtonClasses } from "@mui/material/IconButton";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { gridClasses } from "@mui/x-data-grid";
 import { alertTitleClasses } from "@mui/material/AlertTitle";
@@ -23,6 +24,7 @@ import { radioClasses } from "@mui/material/Radio";
 import { chipClasses } from "@mui/material/Chip";
 import { formLabelClasses } from "@mui/material/FormLabel";
 import { inputLabelClasses } from "@mui/material/InputLabel";
+import { inputAdornmentClasses } from "@mui/material/InputAdornment";
 
 /**
  * This theme is used for pages that use the new styling, wherein the page (or
@@ -83,17 +85,26 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
   const prefersMoreContrast = window.matchMedia(
     "(prefers-contrast: more)"
   ).matches;
+  const prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
 
   // All of these strings are formatted specifically so MUI can parse them and perform its own arithmetic
 
   const mainAccentColor = prefersMoreContrast
     ? "rgb(0,0,0)"
     : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%)`;
-  const disabledColor = `hsl(${accent.main.hue}deg, 10%, 86%)`;
+  const disabledColor = lighten(
+    `hsl(${accent.main.hue}deg, 10%, ${accent.main.lightness}%)`,
+    0.5
+  );
 
   const linkButtonText = prefersMoreContrast
     ? "rgb(0,0,0)"
-    : `hsl(${accent.main.hue}deg, 13%, 50%)`;
+    : darken(
+        `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%)`,
+        0.5
+      );
 
   /**
    * A background colour that can be used behind headers, toolbars, and other
@@ -115,7 +126,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
    */
   const mainBackground = prefersMoreContrast
     ? "rgb(255,255,255)"
-    : `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, 99%)`;
+    : `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, 98%)`;
   /**
    * This may seem pointless to define as its just white, but defining it this
    * way allows us to dynamically apply darken
@@ -141,7 +152,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
   // Interactive elements: text fields in app bar, chips
   const lighterInteractiveColor = prefersMoreContrast
     ? secondaryBackground
-    : `hsl(${accent.main.hue}deg, 30%, 90%)`;
+    : `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, 90%)`;
 
   // Links are slightly darker to more closely match surrounding text
   const linkColor = prefersMoreContrast
@@ -152,7 +163,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
    * When interactive elements such as buttons and chips are hovered over,
    * their background and borders should be subtly darkened by this amount.
    */
-  const hoverDarkenCoefficient = 0.1;
+  const hoverDarkenCoefficient = 0.05;
 
   return createTheme(
     mergeThemes(baseTheme, {
@@ -189,21 +200,35 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 },
                 [`& .${svgIconClasses.root}`]: {
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
+                  transition: "all .3s ease",
                 },
+                [`& .${iconButtonClasses.root}.${iconButtonClasses.disabled}`]:
+                  {
+                    [`& .${svgIconClasses.root}`]: {
+                      opacity: 0.5,
+                    },
+                  },
               },
               [`& .${textFieldClasses.root}`]: {
                 background: lighterInteractiveColor,
                 borderRadius: "3px",
                 [`& .${inputBaseClasses.root}`]: {
                   paddingLeft: baseTheme.spacing(1),
-                  [`& .${svgIconClasses.root}`]: {
-                    fill: prefersMoreContrast
-                      ? "rgb(0,0,0)"
-                      : contrastTextColor,
+                  [`&:has(.${inputAdornmentClasses.positionStart})`]: {
+                    paddingLeft: 0,
+                  },
+                  [`& .${inputAdornmentClasses.root}`]: {
+                    paddingLeft: baseTheme.spacing(1),
+                    paddingRight: baseTheme.spacing(1),
+                    [`& .${svgIconClasses.root}`]: {
+                      fill: prefersMoreContrast
+                        ? "rgb(0,0,0)"
+                        : contrastTextColor,
+                    },
                   },
                   "& input": {
                     padding: baseTheme.spacing(0.5),
-                    paddingLeft: 0,
+                    paddingLeft: baseTheme.spacing(1),
                     color: prefersMoreContrast
                       ? "rgb(0,0,0)"
                       : contrastTextColor,
@@ -226,10 +251,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiDialog: {
           defaultProps: {
             TransitionProps: {
-              timeout: window.matchMedia("(prefers-reduced-motion: reduce)")
-                .matches
-                ? 0
-                : 200,
+              timeout: prefersReducedMotion ? 0 : 200,
             },
           },
           styleOverrides: {
@@ -237,6 +259,10 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               overflow: "hidden",
               border: dialogBorder,
               borderRadius: 6,
+              backgroundColor: mainBackground,
+            },
+            paperFullScreen: {
+              borderRadius: 0,
             },
           },
         },
@@ -279,7 +305,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         MuiDrawer: {
           styleOverrides: {
             root: {
-              backgroundColor: secondaryBackground,
+              transition: prefersReducedMotion
+                ? "none !important"
+                : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
               [`& .${listItemButtonClasses.root}`]: {
                 paddingLeft: baseTheme.spacing(3),
                 border: "none",
@@ -321,7 +349,11 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 },
               },
               [`& .${paperClasses.root}`]: {
+                backgroundColor: secondaryBackground,
                 borderRight: accentedBorder,
+                transition: prefersReducedMotion
+                  ? "none !important"
+                  : "width .25s cubic-bezier(0.4, 0, 0.2, 1)",
               },
             },
           },
@@ -382,6 +414,14 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 borderColor: disabledColor,
               },
             },
+            outlined: {
+              color: linkButtonText,
+              border: accentedBorder,
+              "&:hover": {
+                border: accentedBorder,
+                borderColor: darken(accentedBackground, hoverDarkenCoefficient),
+              },
+            },
             outlinedPrimary: {
               color: interactiveColor,
               borderColor: interactiveColor,
@@ -415,6 +455,27 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                     accentedBackground,
                     hoverDarkenCoefficient
                   ),
+                },
+              },
+              [`&:has(.${inputAdornmentClasses.positionStart})`]: {
+                paddingLeft: 0,
+                [`& .${outlinedInputClasses.input}`]: {
+                  paddingTop: "5px",
+                  paddingBottom: "5px",
+                  paddingLeft: baseTheme.spacing(1.5),
+                },
+              },
+              [`& .${inputAdornmentClasses.root}`]: {
+                height: "100%",
+                paddingLeft: baseTheme.spacing(1.5),
+                paddingRight: baseTheme.spacing(1.5),
+                borderRight: accentedBorder,
+                marginRight: 0,
+                [`& .${typographyClasses.root}`]: {
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                  fontSize: "0.8125rem",
+                  lineHeight: "20px",
                 },
               },
             },
@@ -614,14 +675,6 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
           },
         },
-        MuiTablePagination: {
-          styleOverrides: {
-            toolbar: {
-              background: mainBackground,
-              color: backgroundContrastTextColor,
-            },
-          },
-        },
         MuiChip: {
           styleOverrides: {
             root: {
@@ -629,6 +682,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               fontWeight: 500,
               letterSpacing: "0.03em",
               color: backgroundContrastTextColor,
+              [`&.${chipClasses.filled}`]: {
+                backgroundColor: `hsl(${accent.background.hue}deg, ${accent.background.saturation}%, ${accent.background.lightness}%, 60%)`,
+                [`& .${chipClasses.deleteIcon}`]: {
+                  color: contrastTextColor,
+                },
+              },
               [`&.${chipClasses.filled}${chipClasses.clickable}`]: {
                 backgroundColor: lighterInteractiveColor,
                 color: linkColor,
@@ -693,6 +752,11 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             paper: {
               boxShadow: "none",
               border: accentedBorder,
+              ...(prefersReducedMotion
+                ? {
+                    transition: "none !important",
+                  }
+                : {}),
             },
           },
         },
@@ -706,6 +770,73 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   },
                 },
               },
+            },
+          },
+        },
+        MuiTreeItem: {
+          styleOverrides: {
+            root: {
+              marginTop: baseTheme.spacing(0.5),
+            },
+            content: {
+              cursor: "default",
+              backgroundColor: prefersMoreContrast
+                ? "transparent"
+                : darken(secondaryBackground, hoverDarkenCoefficient),
+              border: prefersMoreContrast ? accentedBorder : "none",
+              maxWidth: "fit-content",
+              "&:hover": {
+                backgroundColor: prefersMoreContrast
+                  ? "transparent"
+                  : darken(secondaryBackground, hoverDarkenCoefficient * 2),
+              },
+              "&.Mui-selected": {
+                backgroundColor: accentedBackground,
+                "&.Mui-focused": {
+                  backgroundColor: prefersMoreContrast
+                    ? accentedBackground
+                    : darken(secondaryBackground, hoverDarkenCoefficient * 5),
+                },
+                "& .MuiTreeItem-label": {
+                  color: contrastTextColor,
+                },
+                "& .MuiTreeItem-iconContainer": {
+                  color: contrastTextColor,
+                },
+                "&:hover": {
+                  backgroundColor: prefersMoreContrast
+                    ? accentedBackground
+                    : darken(secondaryBackground, hoverDarkenCoefficient * 6),
+                },
+              },
+            },
+            label: {
+              fontWeight: 500,
+              letterSpacing: "0.01em",
+              color: backgroundContrastTextColor,
+              marginRight: baseTheme.spacing(1),
+            },
+            iconContainer: {
+              color: backgroundContrastTextColor,
+            },
+            groupTransition: {
+              paddingLeft: "calc(2 * var(--TreeView-itemChildrenIndentation))",
+            },
+          },
+        },
+        MuiTableCell: {
+          styleOverrides: {
+            root: {
+              color: backgroundContrastTextColor,
+            },
+          },
+        },
+        MuiTablePagination: {
+          styleOverrides: {
+            toolbar: {
+              background: mainBackground,
+              color: backgroundContrastTextColor,
+              minHeight: "unset !important",
             },
           },
         },

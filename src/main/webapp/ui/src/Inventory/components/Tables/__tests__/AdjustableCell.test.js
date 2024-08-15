@@ -9,14 +9,12 @@ import "@testing-library/jest-dom";
 import {
   type AdjustableTableRow,
   type CellContent,
-} from "../../../stores/definitions/Tables";
+} from "../../../../stores/definitions/Tables";
 import AdjustableCell from "../AdjustableCell";
-import { makeMockContainer } from "../../../stores/models/__tests__/ContainerModel/mocking";
-import RecordLocation from "../../../Inventory/components/RecordLocation";
+import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import RecordLocation from "../../../../Inventory/components/RecordLocation";
 
-jest.mock("../../../Inventory/components/RecordLocation", () =>
-  jest.fn(() => <span></span>)
-);
+jest.mock("../../RecordLocation", () => jest.fn(() => <span></span>));
 
 beforeEach(() => {
   jest.clearAllMocks();

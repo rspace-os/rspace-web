@@ -844,10 +844,12 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiContainer basicContainer = createBasicContainerForUser(anyUser);
     assertFalse(basicSample.getSubSamples().isEmpty());
     ApiSubSample subSample = basicSample.getSubSamples().get(0);
+    assertFalse(subSample.isStoredInContainer());
     verifyAuditAction(AuditAction.CREATE, 3);
 
     // move subsample to container
-    moveSubSampleIntoListContainer(subSample.getId(), basicContainer.getId(), anyUser);
+    subSample = moveSubSampleIntoListContainer(subSample.getId(), basicContainer.getId(), anyUser);
+    assertTrue(subSample.isStoredInContainer());
     verifyAuditAction(AuditAction.MOVE, 1);
 
     // verify subsample in container
@@ -866,11 +868,11 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     MvcResult deleteResult =
         mockMvc
             .perform(createBuilderForDelete(apiKey, "/samples/{id}", anyUser, basicSample.getId()))
-            .andExpect(status().is4xxClientError())
+            .andExpect(status().is2xxSuccessful())
             .andReturn();
-    ApiError deleteError = getErrorFromJsonResponseBody(deleteResult, ApiError.class);
-    assertApiErrorContainsMessage(
-        deleteError, "has 1 subsample(s) currently stored inside containers");
+    ApiSample sampleCannotBeDeleted = getFromJsonResponseBody(deleteResult, ApiSample.class);
+    assertFalse(sampleCannotBeDeleted.getCanBeDeleted());
+    assertTrue(sampleCannotBeDeleted.getSubSamples().get(0).isStoredInContainer());
     verifyAuditAction(AuditAction.DELETE, 0);
 
     // delete sample with forceDelete=true

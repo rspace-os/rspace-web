@@ -45,7 +45,7 @@ public interface DMPToolDMPProvider {
    * @throws URISyntaxException
    * @throws IOException
    */
-  DMPUser doPdfDownload(DMPToolDMP dmp, String title, String accessToken)
+  DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
       throws URISyntaxException, IOException;
 
   /**
@@ -59,7 +59,7 @@ public interface DMPToolDMPProvider {
    * @throws URISyntaxException
    * @throws IOException
    */
-  ServiceOperationResult<DMPUser> doPdfDownload(DMPToolDMP dmp, String title, User user)
+  ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
       throws URISyntaxException, IOException;
 
   /**

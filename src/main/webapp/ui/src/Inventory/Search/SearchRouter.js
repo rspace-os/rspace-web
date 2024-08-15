@@ -87,7 +87,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
           mkAlert({
             title: "Search failed.",
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",

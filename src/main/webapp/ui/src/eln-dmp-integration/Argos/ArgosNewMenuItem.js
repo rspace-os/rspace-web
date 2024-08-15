@@ -6,14 +6,21 @@ import NewMenuItem from "../../eln/gallery/components/NewMenuItem";
 import ArgosIcon from "../../eln/apps/icons/Argos.svg";
 import { COLOR } from "../../eln/apps/integrations/Argos";
 import CardMedia from "@mui/material/CardMedia";
+import EventBoundary from "../../components/EventBoundary";
 
-export default function ArgosNewMenuItem(): Node {
+type ArgosNewMenuItemArgs = {|
+  onDialogClose: () => void,
+|};
+
+export default function ArgosNewMenuItem({
+  onDialogClose,
+}: ArgosNewMenuItemArgs): Node {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
     <>
       <NewMenuItem
-        title="ARGOS"
+        title="Argos"
         avatar={<CardMedia image={ArgosIcon} />}
         backgroundColor={COLOR}
         foregroundColor={{ ...COLOR, lightness: 28 }}
@@ -21,8 +28,17 @@ export default function ArgosNewMenuItem(): Node {
         onClick={() => {
           setShowDMPDialog(true);
         }}
+        aria-haspopup="dialog"
       />
-      <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
+      <EventBoundary>
+        <DMPDialog
+          open={showDMPDialog}
+          setOpen={(b) => {
+            setShowDMPDialog(b);
+            if (!b) onDialogClose();
+          }}
+        />
+      </EventBoundary>
     </>
   );
 }

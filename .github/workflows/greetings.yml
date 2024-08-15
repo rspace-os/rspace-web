@@ -1,0 +1,16 @@
+name: Greetings
+
+on: [pull_request, issues]
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+    - uses: actions/first-interaction@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        issue-message: "Welcome to the RSpace open-source project! We're excited to have you here! To get started and learn more about the project, our code of conduct and contributor guidelines, please visit https://github.com/rspace-os/rspace-web/wiki"
+        pr-message: "Welcome to the RSpace open-source project! We're excited to have you here! To get started and learn more about the project, our code of conduct and contributor guidelines, please visit https://github.com/rspace-os/rspace-web/wiki"

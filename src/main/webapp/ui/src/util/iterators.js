@@ -9,9 +9,8 @@ export function* take<T>(
   n: number
 ): Generator<T, void, void> {
   let count = n;
-  // $FlowExpectedError[incompatible-use] Flow does not support Symbols
   const it = iterator[Symbol.iterator]();
-  for (let x of it) {
+  for (const x of it) {
     if (count === 0) return;
     yield x;
     count--;
@@ -19,9 +18,8 @@ export function* take<T>(
 }
 
 export function sum(iterator: Iterable<number>): number {
-  // $FlowExpectedError[incompatible-use] Flow does not support Symbols
   const it = iterator[Symbol.iterator]();
   let result = 0;
-  for (let x of it) result += x;
+  for (const x of it) result += x;
   return result;
 }

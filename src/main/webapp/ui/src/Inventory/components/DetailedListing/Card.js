@@ -208,14 +208,20 @@ type CardArgs = {|
 |};
 
 function RecordCard({ record }: CardArgs): Node {
-  const { search, disabled, isChild, scopedResult } = useContext(SearchContext);
+  const {
+    search,
+    disabled,
+    isChild,
+    scopedResult,
+    differentSearchForSettingActiveResult,
+  } = useContext(SearchContext);
   const { searchStore, uiStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const theme = useTheme();
 
   const activateResult = (r: InventoryRecord) => {
-    searchStore.search
+    differentSearchForSettingActiveResult
       .setActiveResult(r)
       .then(() => {
         uiStore.setVisiblePanel("right");

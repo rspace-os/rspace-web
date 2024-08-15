@@ -1,6 +1,6 @@
 //@flow
 
-import React, { type Node } from "react";
+import React, { type Node, type ComponentType } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
@@ -15,7 +15,9 @@ import InputAdornment from "@mui/material/InputAdornment";
 import { styled } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import AccessibilityTips from "../../../components/AccessibilityTips";
-import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import HelpDocs from "../../../components/Help/HelpDocs";
+import HelpIcon from "@mui/icons-material/Help";
+import { observer } from "mobx-react-lite";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -23,17 +25,19 @@ const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   width: 20,
 }));
 
-export default function GalleryAppBar({
-  appliedSearchTerm,
-  setAppliedSearchTerm,
-  setDrawerOpen,
-  drawerOpen,
-}: {|
+type GalleryAppBarArgs = {|
   appliedSearchTerm: string,
   setAppliedSearchTerm: (string) => void,
   setDrawerOpen: (boolean) => void,
   drawerOpen: boolean,
-|}): Node {
+|};
+
+function GalleryAppBar({
+  appliedSearchTerm,
+  setAppliedSearchTerm,
+  setDrawerOpen,
+  drawerOpen,
+}: GalleryAppBarArgs): Node {
   const viewport = useViewportDimensions();
   const [showTextfield, setShowTextfield] = React.useState(false);
   const searchTextfield = React.useRef();
@@ -125,6 +129,7 @@ export default function GalleryAppBar({
                   setSearchTerm(appliedSearchTerm);
                   setShowTextfield(appliedSearchTerm !== "");
                 },
+                "aria-label": "Search current folder",
               }}
             />
           </form>
@@ -134,12 +139,25 @@ export default function GalleryAppBar({
             elementType="dialog"
             supportsReducedMotion
             supportsHighContrastMode
+            supports2xZoom
           />
         </Box>
-        <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-          <HelpLinkIcon title="Importing from Gallery help" link="#" />
+        <Box ml={1}>
+          <HelpDocs
+            Action={({ onClick, disabled }) => (
+              <IconButtonWithTooltip
+                size="small"
+                onClick={onClick}
+                icon={<HelpIcon />}
+                title="Open Help"
+                disabled={disabled}
+              />
+            )}
+          />
         </Box>
       </Toolbar>
     </AppBar>
   );
 }
+
+export default (observer(GalleryAppBar): ComponentType<GalleryAppBarArgs>);

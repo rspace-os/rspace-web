@@ -11,6 +11,7 @@ import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOpera
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -104,7 +105,6 @@ public class InventoryBulkOperationHandler {
   private ApiInventoryBulkOperationResult runOperationForEachRecordFromBulkList(
       InventoryBulkOperationConfig bulkOpConfig,
       BiFunction<ApiInventoryRecordInfo, User, ApiInventoryRecordInfo> operation) {
-
     ApiInventoryBulkOperationResult result = new ApiInventoryBulkOperationResult();
     List<ApiInventoryRecordInfo> records = bulkOpConfig.getRecords();
     User user = bulkOpConfig.getUser();
@@ -117,8 +117,21 @@ public class InventoryBulkOperationHandler {
           }
           ApiInventoryRecordInfo operationResult = operation.apply(recInfo, user);
           if (operationResult != null) {
-            result.addSuccessResult(operationResult);
+            if (operationResult.getClass().isInstance(ApiSample.class)) {
+              ApiSample apiSample = (ApiSample) operationResult;
+              if (!apiSample.getCanBeDeleted()) {
+                ApiError err =
+                    new ApiError(
+                        HttpStatus.NOT_ACCEPTABLE,
+                        ApiErrorCodes.CONSTRAINT_VIOLATION.getCode(),
+                        "Errors detected : 1",
+                        "The Sample has at least one Subsample located inside a container");
+                result.addErrorWithRecord(operationResult, err);
+                continue;
+              }
+            }
           }
+          result.addSuccessResult(operationResult);
         } catch (Exception e) {
           ApiError error = convertExceptionToApiError(e);
           result.addError(error);

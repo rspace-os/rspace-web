@@ -389,7 +389,7 @@ function initPwdConfirmDlg () {
           var jqxhr = $.post('/userform/ajax/apiKey', {"password":pwd})
                        .done(function(data) {
                            showRSApiKey = true;
-                           renderApiKeyMenu(data); 
+                           renderApiKeyMenu(data);
                        })
                        .fail(function() {
                           RS.ajaxFailed("Creating a new API key", false, jqxhr);
@@ -495,19 +495,32 @@ function renderApiKeyMenu(serverResponse) {
   var keyInfoData = serverResponse.data;
   var htmlData = Mustache.render(apiKeyInfoTemplate, keyInfoData);
   $apiKeyInfo.html(htmlData);
+  if (keyInfoData.key) {
+    $('#api-menu__keyValue').text(keyInfoData.key);
+  }
+  $('#api-menu__keyValue, #api-menu__hideKey').toggle(showRSApiKey);
+  $('#api-menu__showKey').toggle(!showRSApiKey);
+}
+
+function showApiKeyValue(serverResponse) {
+  if (!serverResponse.data) {
+    apprise(getValidationErrorString(serverResponse.errorMsg));
+    return;
+  }
+  $('#api-menu__keyValue').text(serverResponse.data);
   $('#api-menu__keyValue, #api-menu__hideKey').toggle(showRSApiKey);
   $('#api-menu__showKey').toggle(!showRSApiKey);
 }
 
 function initApiKeyDisplay () {
+
   function updateApiKeyMenu() {
-    $.get('/userform/ajax/apiKeyInfo')
+    $.get('/userform/ajax/apiKeyDisplayInfo')
      .then(renderApiKeyMenu);
-  }  
-  
+  }
+
   $(document).on("click", "#apiKeyRegenerateBtn", function(e) {
     e.preventDefault();
-    e.stopPropagation();
 
 	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {  
       	if (response.data) {
@@ -518,7 +531,9 @@ function initApiKeyDisplay () {
 	  });
   });
   
-  $(document).on("click", "#apiKeyRevokeBtn", function(e) { 
+  $(document).on("click", "#apiKeyRevokeBtn", function(e) {
+    e.preventDefault();
+
     $.post('/userform/ajax/apiKey', {"_method":"DELETE"}, function (intDeleted){
       if (intDeleted > 0) {
         RS.defaultConfirm("Key deleted");
@@ -530,8 +545,13 @@ function initApiKeyDisplay () {
   });
   
   $(document).on("click", "#api-menu__showKey, #api-menu__hideKey", function() {
-	  showRSApiKey = !showRSApiKey;
-	  updateApiKeyMenu();
+    showRSApiKey = !showRSApiKey;
+    if (showRSApiKey) {
+      $.get('/userform/ajax/apiKeyValue')
+        .then(showApiKeyValue);
+    }
+    $('#api-menu__keyValue, #api-menu__hideKey').toggle(showRSApiKey);
+    $('#api-menu__showKey').toggle(!showRSApiKey);
   });
 
   updateApiKeyMenu();

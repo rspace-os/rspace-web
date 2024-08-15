@@ -21,7 +21,6 @@ import com.axiope.search.WorkspaceSearchInputValidator;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
-import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.TextSearchDao;
 import com.researchspace.model.Group;
@@ -30,7 +29,6 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
-import com.researchspace.model.dtos.WorkspaceFilters;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
@@ -92,21 +90,7 @@ public class SearchManagerImpl implements SearchManager {
 
     List<User> userFilter = getUserFilter(user);
     SearchConfig searchConfig = createWorkspaceSearchCfg(user, userFilter);
-    /*
-     * Apply filtered records to the search. If the shared filter is activated and
-     * filtered records list is empty, then we return an empty set of results,
-     * bypassing Lucene search altogether
-     */
-    if (input.getFilters().isSomeFilterActive()) {
-      List<BaseRecord> filteredRecords = getRecordFilter(input.getFilters(), user);
-      if (filteredRecords.isEmpty()) {
-        return SearchResultsImpl.emptyResult(input.getPgCrit());
-      }
-      searchConfig.setRecordFilterList(filteredRecords);
-    }
-
     updateSrchConfiguration(input, searchConfig);
-
     return textSearchDao.getSearchedElnResults(searchConfig);
   }
 
@@ -132,8 +116,7 @@ public class SearchManagerImpl implements SearchManager {
       searchConfig.setSearchStrategy(IFullTextSearcher.ADVANCED_LUCENE_SEARCH_STRATEGY);
       searchConfig.setOptions(input.getSrchOptions());
       searchConfig.setTerms(input.getSrchTerms());
-    } else if (!input.isAdvancedSearch()
-        && input.getSrchOptions()[0].equalsIgnoreCase(ALL_SEARCH_OPTION)) {
+    } else if (input.getSrchOptions()[0].equalsIgnoreCase(ALL_SEARCH_OPTION)) {
       searchConfig.setSearchStrategy(ALL_LUCENE_SEARCH_STRATEGY);
     } else {
       searchConfig.setSearchStrategy(SINGLE_LUCENE_SEARCH_STRATEGY);
@@ -181,10 +164,6 @@ public class SearchManagerImpl implements SearchManager {
       return getUserFilter(subject).stream().map(User::getUsername).collect(Collectors.toList());
     }
     return invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(subject);
-  }
-
-  private List<BaseRecord> getRecordFilter(WorkspaceFilters filters, User user) {
-    return recordManager.getFilteredRecordsList(filters, user);
   }
 
   @Override
@@ -285,13 +264,8 @@ public class SearchManagerImpl implements SearchManager {
     ISearchResults<? extends InventoryRecord> foundResults =
         textSearchDao.getSearchedInventoryResults(searchConfig);
 
-    ApiInventorySearchResult apiSearchResult =
-        sampleApiManager.convertToApiInventorySearchResult(
-            foundResults.getTotalHits(),
-            foundResults.getPageNumber(),
-            foundResults.getResults(),
-            user);
-    return apiSearchResult;
+    return sampleApiManager.convertToApiInventorySearchResult(
+        foundResults.getTotalHits(), foundResults.getPageNumber(), foundResults.getResults(), user);
   }
 
   private String adjustUserSearchQueryForBestResults(String searchQuery) {

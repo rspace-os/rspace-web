@@ -74,6 +74,15 @@ public class ApiInventoryBulkOperationResult {
     errorCount++;
   }
 
+  public void addErrorWithRecord(ApiInventoryRecordInfo operationResult, ApiError error) {
+    ApiInventoryBulkOperationRecordResult result =
+        new ApiInventoryBulkOperationRecordResult(operationResult, error);
+    result.record = operationResult;
+    result.error = error;
+    results.add(result);
+    errorCount++;
+  }
+
   public void changeIntoErrorResult(ApiInventoryBulkOperationRecordResult result, ApiError error) {
     result.record = null;
     result.error = error;

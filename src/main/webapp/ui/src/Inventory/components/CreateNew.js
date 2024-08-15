@@ -29,7 +29,9 @@ export default function CreateNew({ onCreate }: CreateNewArgs): Node {
       const params = searchStore.fetcher.generateNewQuery(
         newRecord.showNewlyCreatedRecordSearchParams
       );
-      navigate(`/inventory/search?${params.toString()}`);
+      navigate(`/inventory/search?${params.toString()}`, {
+        modifyVisiblePanel: false,
+      });
     } catch (e) {
       if (e instanceof UserCancelledAction) return;
       throw e;

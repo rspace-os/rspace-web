@@ -6,6 +6,7 @@ import React, {
   useRef,
   type Node,
   type ComponentType,
+  type RefObject,
 } from "react";
 import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
@@ -46,11 +47,11 @@ const useStyles = makeStyles()((theme, { paddingTop }) => ({
 
 type Buttons = Array<{
   inOverflow: boolean,
-  ref: {| current: ?HTMLElement |},
+  ref: RefObject<?HTMLElement>,
 }>;
 
-type ContextMenuArgs = {|
-  selectedResults?: Array<InventoryRecord>,
+export type ContextMenuArgs = {|
+  selectedResults: Array<InventoryRecord>,
   forceDisabled?: string,
   onSelectOptions?: Array<SplitButtonOption>,
   menuID: string,
@@ -163,6 +164,7 @@ function ContextMenu({
             <Grid container>
               {actions("button").map((action, i) =>
                 !action.hidden ? (
+                  // $FlowExpectedError[prop-missing]
                   <GridItem key={action.component.key}>
                     <Box ref={buttons[i].ref}>{action.component}</Box>
                   </GridItem>

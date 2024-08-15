@@ -58,41 +58,10 @@ Current location of the codebase is https://github.com/rspace-os/rspace-web
 It's best to use a Git client to download and update source code.
 Alternatively, for one-off installation, you can download project directly from the page as a zip package.
 
-#### Download required non-public RSpace dependencies (temporary solution before official open-source version)
+#### (only if running RSpace version < 2.1.0) Download required non-public RSpace dependencies 
 
-Not all of RSpace dependencies are yet publicly available, you need to download an additional package
-of dependencies for your release from https://github.com/rspace-os/rspace-web/releases page. 
-
-The .zip archive contains folder `rspace_os_local_dependencies` with dependencies from com.researchspace and com.github.rspace-os namespace.
-The archive need to be unpacked into location that maven will be able to read from, e.g. into your `.m2` folder.
-Note this location, as it will be required in next step.
-
-#### Configuring local repository for required non-public RSpace dependencies (temporary solution before official open-source version)
-
-In your `.m2` home folder create a file called `settings.xml` (if it's not there yet) and insert this content.
-E.g. on a Mac this would be in `Users/myusername/.m2/settings.xml`.
-If you already have a `settings.xml`, add the 'profile' or 'profiles' tag from the fragment above into your file, and save it.
-
-```xml
-<settings>
-  <profiles>
-    <profile>
-      <id>rspacelocalrepo</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <repositories>
-        <repository>
-          <id>rspace-os-local-dependencies-repo</id>
-          <url>file://path-to-unzipped-dependencies-folder>/rspace_os_local_dependencies</url>
-        </repository>
-      </repositories>
-    </profile>
-  </profiles>
-</settings>
-```
-
-Then update repository url in the fragment above so it point to the `rspace_os_local_dependencies` folder you unzipped before. 
+This is no longer needed for RSpace 2.1.0 version (or later), but if you're trying to run an older version, check the historical revision of this document,
+which describes how to download and install an additional package of dependencies from https://github.com/rspace-os/rspace-web/releases page. 
 
 #### Sanity check
 
@@ -185,15 +154,15 @@ mysql -u "root" -p"password" -e "
   GRANT ALL ON rspace.* TO 'rspacedbuser'@'127.0.0.1';
 "
 ```
-**NOTE:** on FIRST startup of Rspace with an empty rspace, don't skip the tests else liquibase fails for unknown reasons;
-i.e. do not have `-Dmaven.test.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true`
-in your launch config
-
-**NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands 
-from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`. 
+**NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands
+from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`.
 You will know if running the tests/app gets you db authentication error for user `'rspacedbuser'@'localhost'`
 
 **NOTE:** if you subsequently drop the rspace DB, the rspacedbuser user will stay; do not try to recreate the user.
+
+**NOTE:** on FIRST startup of Rspace with an empty rspace, don't skip the tests else liquibase fails for unknown reasons;
+i.e. do not have `-Dmaven.test.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true`
+in your launch config
 
 At the end of this, you should be able to connect to the rspace database from
 your command line. with `bash mysql -urspacedbuser -prspacedbpwd rspace`.
@@ -291,9 +260,8 @@ Adding the following to the command line:
 alters the logging verbosity for various frameworks or RSpace code.
 
 #### Set deployment properties through command line
-
-`-Djdbc.url=jdbc:mysql://localhost:3306/databasename`
-specifies a specific database different from the default, rspace
+`-Djdbc.url=jdbc:mysql://localhost:3306/another_database -Djdbc.db=another_database -Djdbc.db.maven=another_database`
+specifies to use a different database `another_database` at the url `jdbc:mysql://localhost:3306/another_database`.
 
 `-DRS_FILE_BASE=/path/toFileStore`
 overrides the default filestore location.

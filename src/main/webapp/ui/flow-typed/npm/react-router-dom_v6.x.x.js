@@ -425,7 +425,7 @@ declare module 'react-router-dom' {
     /**
      * Map of current blockers
      */
-    blockers: { [key: string]: Blocker<> },
+    blockers: { [key: string]: Blocker },
   |};
 
   /**

@@ -64,18 +64,32 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
       ExportToFileConfig config)
       throws IOException {
 
-    int startPage;
+    // 1 pdf export can contain multiple docs
+    int pdfPageLength;
     try {
-      startPage = doExportPdf(tempExportFile, documentData, strucDoc, config);
+      pdfPageLength = doExportPdf(tempExportFile, documentData, strucDoc, config);
     } catch (DocumentException e) {
       throw new IOException("Could not generate PDFWriter", e);
     }
+    int startPage = calculatePageNumber(config, pdfPageLength);
+    config.setStartPage(startPage);
+  }
 
-    if (!config.isPageName()) {
-      config.setStartPage(startPage);
-    } else {
-      config.setStartPage(0);
+  /***
+   *  The pdf writer expects the start page to be either:
+   *    - 0 for a new doc, or when restarting the page numbering for each doc on a
+   *      multi-doc/notebook export
+   *    - the length of the existing pdf on multi-doc/notebook export when the user has selected
+   *      not to restart the page numbering for each individual doc
+   * */
+  private int calculatePageNumber(ExportToFileConfig config, int pdfPageLength) {
+    if (!config.isRestartPageNumberPerDoc()) {
+      int currentStartPage = config.getStartPage();
+      return currentStartPage == 0
+          ? currentStartPage + pdfPageLength
+          : currentStartPage + pdfPageLength - 1;
     }
+    return 0;
   }
 
   private int doExportPdf(
@@ -85,7 +99,7 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
       ExportToFileConfig config)
       throws DocumentException, IOException {
 
-    log.info("Before: {}", documentData.getDocumentAsHtml());
+    log.debug("Before: {}", documentData.getDocumentAsHtml());
     documentData = preProcessHTML(documentData);
 
     String html = pdfHtmlGenerator.prepareHtml(documentData, strucDoc, config);
@@ -103,7 +117,7 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
     renderer.setDocumentFromString(html);
     renderer.layout();
     try (FileOutputStream out = new FileOutputStream(tempExportFile)) {
-      renderer.createPDF(out);
+      renderer.createPDF(out, true, config.getStartPage());
     }
     return renderer.getWriter().getPageNumber();
   }

@@ -545,6 +545,7 @@ function Sidebar(): Node {
 
   const afterClick = () => {
     if (!uiStore.alwaysVisibleSidebar) uiStore.toggleSidebar(false);
+    uiStore.setVisiblePanel("right");
   };
 
   return (

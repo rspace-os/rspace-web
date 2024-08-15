@@ -8,8 +8,15 @@ import { COLOR } from "../../eln/apps/integrations/DMPTool";
 import CardMedia from "@mui/material/CardMedia";
 import axios from "axios";
 import { mapNullable } from "../../util/Util";
+import EventBoundary from "../../components/EventBoundary";
 
-export default function DMPToolNewMenuItem(): Node {
+type DMPToolNewMenuItemArgs = {|
+  onDialogClose: () => void,
+|};
+
+export default function DMPToolNewMenuItem({
+  onDialogClose,
+}: DMPToolNewMenuItemArgs): Node {
   const [DMPHost, setDMPHost] = React.useState<?string>();
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
@@ -33,8 +40,17 @@ export default function DMPToolNewMenuItem(): Node {
         onClick={() => {
           setShowDMPDialog(true);
         }}
+        aria-haspopup="dialog"
       />
-      <DMPDialog open={showDMPDialog} setOpen={setShowDMPDialog} />
+      <EventBoundary>
+        <DMPDialog
+          open={showDMPDialog}
+          setOpen={(b) => {
+            setShowDMPDialog(b);
+            onDialogClose();
+          }}
+        />
+      </EventBoundary>
     </>
   );
 }

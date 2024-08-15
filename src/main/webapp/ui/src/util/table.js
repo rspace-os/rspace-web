@@ -7,10 +7,12 @@ import { type Order } from "./types";
 import { type Column } from "@mui/x-data-grid";
 import { type Node } from "react";
 
-function desc(a: { ... }, b: { ... }, orderBy: string): -1 | 0 | 1 {
+function desc<T: string, U>(a: {[T]: U}, b: {[T]: U}, orderBy: T): -1 | 0 | 1 {
+  // $FlowExpectedError[invalid-compare]
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
+  // $FlowExpectedError[invalid-compare]
   if (b[orderBy] > a[orderBy]) {
     return 1;
   }
@@ -26,7 +28,10 @@ function desc(a: { ... }, b: { ... }, orderBy: string): -1 | 0 | 1 {
  * but not so for older browsers. For more information, see
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#sort_stability
  */
-function stableSort<T>(array: Array<T>, cmp: (T, T) => -1 | 0 | 1): Array<T> {
+function stableSort<T>(
+  array: $ReadOnlyArray<T>,
+  cmp: (T, T) => -1 | 0 | 1
+): Array<T> {
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = cmp(a[0], b[0]);
@@ -114,6 +119,7 @@ type ColumnProps<Row: { ... }, Value> = {|
   sortable?: boolean,
   headerClassName?: string,
   disableExport?: boolean,
+  display?: "text" | "flex",
 |};
 
 const DataGridColumn = {
@@ -124,6 +130,7 @@ const DataGridColumn = {
   newColumnWithFieldName<Row: { ... }, Field: string>(
     // Also acts as the unique identifier for the column
     field: Field,
+    // $FlowExpectedError[invalid-computed-prop]
     rest: ColumnProps<Row, Row[Field]>
   ): Column<Row> {
     return {

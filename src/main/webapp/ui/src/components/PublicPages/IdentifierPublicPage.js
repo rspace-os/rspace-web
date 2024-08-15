@@ -402,7 +402,10 @@ export const IdentifierDataGrid = ({
                           key={sf.key}
                         >
                           <Grid item className={classes.key}>
-                            {RECOMMENDED_FIELDS_LABELS[sf.key]}
+                            {
+                              // $FlowExpectedError[invalid-computed-prop]
+                              RECOMMENDED_FIELDS_LABELS[sf.key]
+                            }
                           </Grid>
                           <Grid item>
                             {sf.value ? (
@@ -480,7 +483,10 @@ export const IdentifierDataGrid = ({
                           key={sf.key}
                         >
                           <Grid item className={classes.key}>
-                            {RECOMMENDED_FIELDS_LABELS[sf.key]}
+                            {
+                              // $FlowExpectedError[invalid-computed-prop]
+                              RECOMMENDED_FIELDS_LABELS[sf.key]
+                            }
                           </Grid>
                           <Grid item>
                             {sf.value ? <>{sf.value}</> : <em>None</em>}

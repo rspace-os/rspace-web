@@ -88,6 +88,9 @@ function AddToBasketDialog({
     void onAdd();
     handleClose();
   };
+
+  const basketSelectorLabel = React.useId();
+
   return (
     <ContextDialog
       open={openAddToBasketDialog}
@@ -99,22 +102,16 @@ function AddToBasketDialog({
       <DialogContent>
         <Grid container direction="column" spacing={2}>
           <Grid item>
-            <FormControl component="fieldset" fullWidth>
-              <InputLabel
-                htmlFor="basket-selector"
-                shrink={true}
-                variant="standard"
-              >
-                Choose a Basket
-              </InputLabel>
+            <FormControl component="fieldset" fullWidth sx={{ mt: 1 }}>
+              <InputLabel id={basketSelectorLabel}>Choose a Basket</InputLabel>
               <Select
-                id="basket-selector"
+                labelId={basketSelectorLabel}
                 value={targetBasket}
                 onChange={({ target: { value } }) => {
                   setTargetBasket(value);
                 }}
+                label="Choose a Basket"
                 size="small"
-                variant="standard"
               >
                 {targetBaskets.map((basket) => (
                   <MenuItem key={basket.id} value={basket}>

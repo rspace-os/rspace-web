@@ -92,7 +92,6 @@ function RecordsImport(): Node {
   };
 
   const recordType = importData?.recordType;
-  console.log(importStore);
   const isSamplesImport = importData?.isSamplesImport;
 
   const loadedFileByRecordType = importData?.byRecordType("file");
@@ -107,7 +106,7 @@ function RecordsImport(): Node {
     Boolean(importData?.subSamplesFile && !importData.subSamplesSubmittable);
 
   const notImportable = () => {
-    let types = [];
+    const types = [];
     if (importData?.containersFile && !importData.containersSubmittable)
       types.push("Containers");
     if (importData?.samplesFile && !importData.samplesSubmittable)

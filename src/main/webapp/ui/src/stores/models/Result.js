@@ -50,7 +50,6 @@ import React, { type Node } from "react";
 import {
   type HasEditableFields,
   type HasUneditableFields,
-  type OptionalString,
 } from "../definitions/Editable";
 import { type Factory } from "../definitions/Factory";
 import { type Attachment } from "../definitions/Attachment";
@@ -64,7 +63,7 @@ import {
   noProgress,
   type Progress,
 } from "../../util/progress";
-import { type SortProperty } from "../../components/Tables/SortableProperty";
+import { type SortProperty } from "../../Inventory/components/Tables/SortableProperty";
 import {
   type Identifier,
   type IdentifierAttrs,
@@ -721,7 +720,7 @@ export default class Result
               this.globalId ?? "UNKNOWN"
             } failed`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -734,7 +733,6 @@ export default class Result
       );
       throw new Error(
         `Error relinquishing control of ${this.globalId ?? "UNKNOWN"}`,
-        // $FlowExpectedError[extra-arg] Flow does not recognise this arg
         { cause: error }
       );
     }
@@ -764,7 +762,7 @@ export default class Result
           mkAlert({
             title: `Something went wrong while checking the lock for "${this.name}"`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -774,7 +772,6 @@ export default class Result
 
       console.error(`Error checking lock for ${globalId}`, error);
 
-      // $FlowExpectedError[extra-arg] Flow does not recognise this arg
       throw new Error(`Error checking lock for ${globalId}`, {
         cause: error,
       });
@@ -892,8 +889,7 @@ export default class Result
   }
 
   // to be implemented by the classes that extend this abtract one (and can be created inside a container)
-  get inContainerParams():
-    | ?ContainerInContainerParams
+  get inContainerParams(): | ?ContainerInContainerParams
     | ?SampleInContainerParams {
     return null;
   }
@@ -967,7 +963,7 @@ export default class Result
               this.globalId ?? "UNKNOWN"
             }.`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -980,7 +976,6 @@ export default class Result
       );
       throw new Error(
         `Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`,
-        // $FlowExpectedError[extra-arg] Flow doesn't recognise second arg
         { cause: error }
       );
     } finally {
@@ -1022,7 +1017,7 @@ export default class Result
           mkAlert({
             title: "Could not save changes to attachments.",
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -1069,7 +1064,7 @@ export default class Result
           mkAlert({
             title: `Something went wrong and the ${this.recordType} was not saved.`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -1121,7 +1116,7 @@ export default class Result
           mkAlert({
             title: "Could not save changes to attachments.",
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -1167,7 +1162,7 @@ export default class Result
           mkAlert({
             title: `Something went wrong and the ${this.recordType} was not saved.`,
             message:
-              error?.response?.data.message ??
+              error.response?.data.message ??
               error.message ??
               "Unknown reason.",
             variant: "error",
@@ -1337,7 +1332,7 @@ export default class Result
       }
     } catch (error) {
       // in case of errors like 404 the server provides a specific response message that we want to display
-      const serverErrorResponse = error?.response.data;
+      const serverErrorResponse = error.response.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `The Identifier could not be created.`,
@@ -1387,7 +1382,7 @@ export default class Result
         }
       }
     } catch (error) {
-      const serverErrorResponse = error?.response.data;
+      const serverErrorResponse = error.response.data;
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `The Identifier draft could not be deleted.`,
@@ -1702,8 +1697,8 @@ export default class Result
     throw new Error("Abstract computed property; not implemented.");
   }
 
-  get noValueLabel(): $ObjMap<ResultEditableFields, OptionalString> &
-    $ObjMap<ResultUneditableFields, OptionalString> {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof ResultEditableFields]: ?string} & {[key in keyof ResultUneditableFields]: ?string} {
     return {
       name: null,
       description: null,

@@ -53,7 +53,6 @@ import { type PersonAttrs } from "../definitions/Person";
 import {
   type HasEditableFields,
   type HasUneditableFields,
-  type OptionalString,
 } from "../definitions/Editable";
 import { type Template } from "../definitions/Template";
 import { type Attachment } from "../definitions/Attachment";
@@ -686,7 +685,7 @@ export default class SampleModel
         mkAlert({
           title: "Updating sample to latest template failed.",
           message:
-            error?.response?.data.message ?? error.message ?? "Unknown reason.",
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
           variant: "error",
         })
       );
@@ -801,8 +800,8 @@ export default class SampleModel
     return true;
   }
 
-  get noValueLabel(): $ObjMap<SampleEditableFields, OptionalString> &
-    $ObjMap<SampleUneditableFields, OptionalString> {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof SampleEditableFields]: ?string} & {[key in keyof SampleUneditableFields]: ?string} {
     return {
       ...super.noValueLabel,
       sampleSource: null,
@@ -936,9 +935,8 @@ export class SampleCollection
     };
   }
 
-  get noValueLabel(): {
-    ...$ObjMap<BatchSampleEditableFields, OptionalString>,
-  } {
+  //eslint-disable-next-line no-unused-vars
+  get noValueLabel(): {[key in keyof BatchSampleEditableFields]: ?string} {
     const currentSources = new RsSet(this.records.map((r) => r.sampleSource));
     const currentExpiryDates = new RsSet(this.records.map((r) => r.expiryDate));
     const allTemperaturesUnspecified =

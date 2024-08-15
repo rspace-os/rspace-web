@@ -13,7 +13,7 @@ import { makeStyles } from "tss-react/mui";
 import NameWithBadge from "../../components/NameWithBadge";
 import clsx from "clsx";
 import { globalStyles } from "../../../theme";
-import AdjustableCell from "../../../components/Tables/AdjustableCell";
+import AdjustableCell from "../../components/Tables/AdjustableCell";
 import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { UserCancelledAction } from "../../../util/error";
@@ -57,16 +57,16 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): Node {
   const { classes } = useStyles();
 
   /*
-   * Whilst card view uses `searchStore`, here we use
-   * `differentSearchForSettingActiveResult` because there are various places
-   * where list view is used for selecting records where slightly different
-   * actions are taken. In the right panel, tapping a row will set that record
-   * as the `activeResult` of `searchStore` (thereby changing the contents of
-   * the right panel). In the move dialog, the right panel of the dialog is
-   * updated to show the current contents of the container. In the template
-   * picker, tapping the row will set the `activeResult` of the picker's search
-   * which will ultimately change the `template` of the new sample that is the
-   * `searchStore`'s `activeResult`. Ultimately, this means that replacing
+   * Here we use `differentSearchForSettingActiveResult` because there are
+   * various places where list view is used for selecting records where
+   * slightly different actions are taken. In the right panel, tapping a row
+   * will set that record as the `activeResult` of `searchStore` (thereby
+   * changing the contents of the right panel). In the move dialog, the right
+   * panel of the dialog is updated to show the current contents of the
+   * container. In the template picker, tapping the row will set the
+   * `activeResult` of the picker's search which will ultimately change the
+   * `template` of the new sample that is the `searchStore`'s `activeResult`.
+   * Ultimately, this means that replacing
    * `differentSearchForSettingActiveResult` with a solution that just looks at
    * the current search context and its parent is not sufficiently flexible.
    */

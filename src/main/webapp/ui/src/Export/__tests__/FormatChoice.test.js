@@ -4,6 +4,7 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
+import { DeploymentPropertyContext } from "../../eln/useDeploymentProperty";
 import { render, cleanup, screen, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import FormatChoice from "../FormatChoice";
@@ -113,22 +114,24 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() => {
         void render(
-          <FormatChoice
-            exportSelection={{
-              type: "selection",
-              exportTypes: ["NORMAL"],
-              exportNames: ["foo"],
-              exportIds: ["1"],
-            }}
-            exportConfigUpdate={() => {}}
-            archiveType={""}
-            allowFileStores={false}
-            repoSelected={false}
-            fileStoresSelected={false}
-            allVersions={false}
-            updateFileStores={() => {}}
-            validator={mkValidator()}
-          />
+          <DeploymentPropertyContext.Provider value={new Map()}>
+            <FormatChoice
+              exportSelection={{
+                type: "selection",
+                exportTypes: ["NORMAL"],
+                exportNames: ["foo"],
+                exportIds: ["1"],
+              }}
+              exportConfigUpdate={() => {}}
+              archiveType={""}
+              allowFileStores={false}
+              repoSelected={false}
+              fileStoresSelected={false}
+              allVersions={false}
+              updateFileStores={() => {}}
+              validator={mkValidator()}
+            />
+          </DeploymentPropertyContext.Provider>
         );
       });
 
@@ -140,22 +143,24 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, false);
       await act(() => {
         void render(
-          <FormatChoice
-            exportSelection={{
-              type: "selection",
-              exportTypes: ["NORMAL"],
-              exportNames: ["foo"],
-              exportIds: ["1"],
-            }}
-            exportConfigUpdate={() => {}}
-            archiveType={""}
-            allowFileStores={false}
-            repoSelected={false}
-            fileStoresSelected={false}
-            allVersions={false}
-            updateFileStores={() => {}}
-            validator={mkValidator()}
-          />
+          <DeploymentPropertyContext.Provider value={new Map()}>
+            <FormatChoice
+              exportSelection={{
+                type: "selection",
+                exportTypes: ["NORMAL"],
+                exportNames: ["foo"],
+                exportIds: ["1"],
+              }}
+              exportConfigUpdate={() => {}}
+              archiveType={""}
+              allowFileStores={false}
+              repoSelected={false}
+              fileStoresSelected={false}
+              allVersions={false}
+              updateFileStores={() => {}}
+              validator={mkValidator()}
+            />
+          </DeploymentPropertyContext.Provider>
         );
       });
 
@@ -174,28 +179,30 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() => {
         void render(
-          <FormatChoice
-            exportSelection={{
-              type: "selection",
-              exportTypes: ["NORMAL", "NORMAL"],
-              exportNames: ["foo", "bar"],
-              exportIds: ["1", "2"],
-            }}
-            exportConfigUpdate={() => {}}
-            archiveType={""}
-            allowFileStores={false}
-            repoSelected={false}
-            fileStoresSelected={false}
-            allVersions={false}
-            updateFileStores={() => {}}
-            validator={mkValidator()}
-          />
+          <DeploymentPropertyContext.Provider value={new Map()}>
+            <FormatChoice
+              exportSelection={{
+                type: "selection",
+                exportTypes: ["NORMAL", "NORMAL"],
+                exportNames: ["foo", "bar"],
+                exportIds: ["1", "2"],
+              }}
+              exportConfigUpdate={() => {}}
+              archiveType={""}
+              allowFileStores={false}
+              repoSelected={false}
+              fileStoresSelected={false}
+              allVersions={false}
+              updateFileStores={() => {}}
+              validator={mkValidator()}
+            />
+          </DeploymentPropertyContext.Provider>
         );
       });
 
       expect(
         screen.getByRole("radio", {
-          name: "Word export is only available for a single document, and you have selected more than one.",
+          name: ".DOC file Word export is only available for a single document, and you have selected more than one.",
         })
       ).toBeDisabled();
     });
@@ -204,28 +211,30 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() => {
         void render(
-          <FormatChoice
-            exportSelection={{
-              type: "selection",
-              exportTypes: ["FOLDER"],
-              exportNames: ["foo"],
-              exportIds: ["1"],
-            }}
-            exportConfigUpdate={() => {}}
-            archiveType={""}
-            allowFileStores={false}
-            repoSelected={false}
-            fileStoresSelected={false}
-            allVersions={false}
-            updateFileStores={() => {}}
-            validator={mkValidator()}
-          />
+          <DeploymentPropertyContext.Provider value={new Map()}>
+            <FormatChoice
+              exportSelection={{
+                type: "selection",
+                exportTypes: ["FOLDER"],
+                exportNames: ["foo"],
+                exportIds: ["1"],
+              }}
+              exportConfigUpdate={() => {}}
+              archiveType={""}
+              allowFileStores={false}
+              repoSelected={false}
+              fileStoresSelected={false}
+              allVersions={false}
+              updateFileStores={() => {}}
+              validator={mkValidator()}
+            />
+          </DeploymentPropertyContext.Provider>
         );
       });
 
       expect(
         screen.getByRole("radio", {
-          name: "Word export is only available for a single document, and you've selected a folder.",
+          name: ".DOC file Word export is only available for a single document, and you've selected a folder.",
         })
       ).toBeDisabled();
     });
@@ -234,28 +243,30 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() => {
         void render(
-          <FormatChoice
-            exportSelection={{
-              type: "selection",
-              exportTypes: ["NOTEBOOK"],
-              exportNames: ["foo"],
-              exportIds: ["1"],
-            }}
-            exportConfigUpdate={() => {}}
-            archiveType={""}
-            allowFileStores={false}
-            repoSelected={false}
-            fileStoresSelected={false}
-            allVersions={false}
-            updateFileStores={() => {}}
-            validator={mkValidator()}
-          />
+          <DeploymentPropertyContext.Provider value={new Map()}>
+            <FormatChoice
+              exportSelection={{
+                type: "selection",
+                exportTypes: ["NOTEBOOK"],
+                exportNames: ["foo"],
+                exportIds: ["1"],
+              }}
+              exportConfigUpdate={() => {}}
+              archiveType={""}
+              allowFileStores={false}
+              repoSelected={false}
+              fileStoresSelected={false}
+              allVersions={false}
+              updateFileStores={() => {}}
+              validator={mkValidator()}
+            />
+          </DeploymentPropertyContext.Provider>
         );
       });
 
       expect(
         screen.getByRole("radio", {
-          name: "Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
+          name: ".DOC file Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
         })
       ).toBeDisabled();
     });
@@ -264,30 +275,31 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() => {
         void render(
-          <FormatChoice
-            exportSelection={{
-              type: "selection",
-              exportTypes: ["MEDIA_FILE"],
-              exportNames: ["foo"],
-              exportIds: ["1"],
-            }}
-            exportConfigUpdate={() => {}}
-            archiveType={""}
-            allowFileStores={false}
-            repoSelected={false}
-            fileStoresSelected={false}
-            allVersions={false}
-            updateFileStores={() => {}}
-            validator={mkValidator()}
-          />
+          <DeploymentPropertyContext.Provider value={new Map()}>
+            <FormatChoice
+              exportSelection={{
+                type: "selection",
+                exportTypes: ["MEDIA_FILE"],
+                exportNames: ["foo"],
+                exportIds: ["1"],
+              }}
+              exportConfigUpdate={() => {}}
+              archiveType={""}
+              allowFileStores={false}
+              repoSelected={false}
+              fileStoresSelected={false}
+              allVersions={false}
+              updateFileStores={() => {}}
+              validator={mkValidator()}
+            />
+          </DeploymentPropertyContext.Provider>
         );
       });
 
       expect(
         screen.getAllByRole("radio", {
-          name: "All selected items are attachments - there are no RSpace documents to export.",
-          // selecting second such radio because first will be for .pdf export
-        })[1]
+          name: ".DOC file All selected items are attachments — there are no RSpace documents to export.",
+        })[0]
       ).toBeDisabled();
     });
   });
@@ -316,7 +328,7 @@ describe("FormatChoice", () => {
 
       expect(
         screen.getAllByRole("radio", {
-          name: "All selected items are attachments - there are no RSpace documents to export.",
+          name: "PDF file All selected items are attachments — there are no RSpace documents to export.",
           // selecting first such radio because second will be for .doc export
         })[0]
       ).toBeDisabled();

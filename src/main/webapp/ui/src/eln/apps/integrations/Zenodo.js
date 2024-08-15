@@ -87,7 +87,7 @@ function Zenodo({ integrationState, update }: ZenodoArgs): Node {
           </>
         }
         update={(newMode) => {
-          return update({
+          update({
             mode: newMode,
             credentials: integrationState.credentials,
           });

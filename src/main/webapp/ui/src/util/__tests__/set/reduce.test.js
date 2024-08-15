@@ -10,6 +10,7 @@ describe("reduce", () => {
   test("Reducing an empty set, by a monoial operation, should give the monoid's identity element.", () => {
     fc.assert(
       fc.property(
+        // $FlowExpectedError[incompatible-call] Might be a way of getting this to work, but not worth the effort
         fc.oneof(...monoids),
         ([, booleanFunction, identityElement]) => {
           // $FlowExpectedError[underconstrained-implicit-instantiation] Might be a way of getting this to work, but not worth the effort
@@ -24,6 +25,7 @@ describe("reduce", () => {
     fc.assert(
       fc.property(
         fc
+          // $FlowExpectedError[incompatible-call] Might be a way of getting this to work, but not worth the effort
           .oneof(...monoids)
           .chain(([valueGenerator, booleanFunction, identityElement]) =>
             // $FlowExpectedError[incompatible-call] Might be a way of getting this to work, but not worth the effort
