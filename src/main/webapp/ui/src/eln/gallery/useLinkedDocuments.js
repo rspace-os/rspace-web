@@ -5,6 +5,7 @@ import axios from "axios";
 import { type GalleryFile, idToString } from "./useGalleryListing";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
+import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
 
 export type Document = {|
   id: number,
@@ -12,7 +13,42 @@ export type Document = {|
   name: string,
 
   permalinkHref: string,
+
+  linkableRecord: LinkableRecord,
 |};
+
+class LinkableDocument implements LinkableRecord {
+  id: ?number;
+  globalId: ?string;
+  name: string;
+
+  constructor({
+    id,
+    globalId,
+    name,
+  }: {|
+    id: number,
+    globalId: string,
+    name: string,
+  |}) {
+    this.id = id;
+    this.globalId = globalId;
+    this.name = name;
+  }
+
+  get recordTypeLabel(): string {
+    return "Document";
+  }
+
+  get iconName(): string {
+    return "document";
+  }
+
+  get permalinkURL(): string {
+    if (!this.globalId) throw new Error("Impossible");
+    return `/globalId/${this.globalId}`;
+  }
+}
 
 export default function useLinkedDocuments(file: GalleryFile): {|
   documents: $ReadOnlyArray<Document>,
@@ -64,6 +100,12 @@ export default function useLinkedDocuments(file: GalleryFile): {|
                       name,
 
                       permalinkHref: `/globalId/${globalId}`,
+
+                      linkableRecord: new LinkableDocument({
+                        id,
+                        globalId,
+                        name,
+                      }),
                     };
                   } catch (e) {
                     setErrorMessage("Error loading linked documents.");

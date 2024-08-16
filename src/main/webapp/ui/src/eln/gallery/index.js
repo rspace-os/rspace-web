@@ -29,6 +29,7 @@ import useUiPreference, {
   PREFERENCES,
   UiPreferences,
 } from "../../util/useUiPreference";
+import RouterNavigationContext from "./components/RouterNavigationContext";
 
 const WholePage = styled(() => {
   const [searchParams] = useSearchParams();
@@ -144,9 +145,11 @@ window.addEventListener("load", () => {
                           path="/newGallery"
                           element={
                             <Alerts>
+                            <RouterNavigationContext>
                               <GallerySelection>
                                 <WholePage />
                               </GallerySelection>
+                            </RouterNavigationContext>
                             </Alerts>
                           }
                         />
