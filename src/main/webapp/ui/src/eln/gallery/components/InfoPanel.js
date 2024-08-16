@@ -11,12 +11,12 @@ import Stack from "@mui/material/Stack";
 import { COLORS as baseThemeColors } from "../../../theme";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import CardContent from "@mui/material/CardContent";
 import { grey } from "@mui/material/colors";
 import { Optional } from "../../../util/optional";
 import DescriptionList from "../../../components/DescriptionList";
-import NoValue from "../../../components/NoValue";
 import { formatFileSize } from "../../../util/files";
 import Result from "../../../util/result";
 import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
@@ -61,6 +61,18 @@ const Puller: ComponentType<{|
   left: "calc(50% - 15px)",
 }));
 
+const Description = ({ value }: {| value: string |}) => {
+  return (
+    <TextField
+      value={value}
+      placeholder="No description"
+      disabled
+      fullWidth
+      size="small"
+    />
+  );
+};
+
 const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
   return (
     <Stack sx={{ height: "100%" }}>
@@ -79,11 +91,17 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
             label: "Description",
             value: file.description.match({
               missing: () => "Unknown description",
-              empty: () => <NoValue label="No description" />,
-              present: (d) => d,
+              empty: () => <Description value="" />,
+              present: (d) => <Description value={d} />,
             }),
+            below: true,
           },
         ]}
+        sx={{
+          "& dd.below": {
+            width: "100%",
+          },
+        }}
       />
       <Box component="section" sx={{ mt: 0.5 }}>
         <Typography variant="h6" component="h4">
