@@ -7,6 +7,7 @@ import { type GalleryFile } from "../useGalleryListing";
 import useLinkedDocuments, { type Document } from "../useLinkedDocuments";
 import { DataGrid } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../../util/table";
+import Link from "@mui/material/Link";
 
 export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
   file,
@@ -26,9 +27,12 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
             sortable: false,
           }),
           DataGridColumn.newColumnWithFieldName<Document, _>("globalId", {
-            headerName: "Global ID",
+            headerName: "ID",
             flex: 1,
             sortable: false,
+            renderCell: ({ row, value }) => (
+              <Link href={row.permalinkHref}>{value}</Link>
+            ),
           }),
         ]}
         rows={linkedDocuments.documents}

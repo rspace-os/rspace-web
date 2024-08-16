@@ -10,6 +10,8 @@ export type Document = {|
   id: number,
   globalId: string,
   name: string,
+
+  permalinkHref: string,
 |};
 
 export default function useLinkedDocuments(file: GalleryFile): {|
@@ -60,6 +62,8 @@ export default function useLinkedDocuments(file: GalleryFile): {|
                       id,
                       globalId,
                       name,
+
+                      permalinkHref: `/globalId/${globalId}`,
                     };
                   } catch (e) {
                     setErrorMessage("Error loading linked documents.");
