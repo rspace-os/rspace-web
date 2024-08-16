@@ -9,6 +9,7 @@ import { useGallerySelection } from "../useGallerySelection";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { COLORS as baseThemeColors } from "../../../theme";
+import { COLOR } from "../common";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
@@ -61,17 +62,33 @@ const Puller: ComponentType<{|
   left: "calc(50% - 15px)",
 }));
 
-const Description = ({ value }: {| value: string |}) => {
-  return (
-    <TextField
-      value={value}
-      placeholder="No description"
-      disabled
-      fullWidth
-      size="small"
-    />
-  );
-};
+const Description = styled(
+  ({ value, className }: {| value: string, classes: string |}) => {
+    return (
+      <TextField
+        value={value}
+        placeholder="No description"
+        fullWidth
+        size="small"
+        className={className}
+      />
+    );
+  }
+)(({ theme }) => ({
+  "& .MuiOutlinedInput-notchedOutline": {
+    border: "none",
+  },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "4px",
+    fontSize: "0.9rem",
+    marginTop: theme.spacing(0.5),
+    marginBottom: theme.spacing(0.5),
+    backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+  },
+  "& input": {
+    padding: theme.spacing(0.5, 1.5),
+  },
+}));
 
 const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
   return (
