@@ -5,14 +5,24 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { type GalleryFile } from "../useGalleryListing";
 import useLinkedDocuments, { type Document } from "../useLinkedDocuments";
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../../util/table";
 import GlobalId from "../../../components/GlobalId";
 
 export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
   file,
 }): Node => {
+  const apiRef = useGridApiRef();
   const linkedDocuments = useLinkedDocuments(file);
+
+  React.useEffect(() => {
+    setTimeout(() => {
+      apiRef.current?.autosizeColumns({
+        includeHeaders: true,
+        includeOutliers: true,
+      });
+    }, 10); // 10ms for react to re-render
+  }, [linkedDocuments.documents]);
 
   return (
     <Box component="section" sx={{ mt: 0.5 }} flexGrow={1}>
@@ -43,6 +53,7 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
         disableColumnFilter
         hideFooter
         autoHeight
+        apiRef={apiRef}
         slots={{
           pagination: null,
         }}
