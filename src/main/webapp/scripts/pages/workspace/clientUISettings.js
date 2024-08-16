@@ -53,21 +53,3 @@ function updateClientUISetting(name, value) {
         RS.ajaxFailed("Saving UI settings", false, jqxhr);
     });
 }
-
-function updateClientUICustomSetting(settingName, value) {
-    var data = {
-        preference: settingName,
-        value: value
-    };
-    var jqxhr = $.post("/userform/ajax/preference", data);
-    jqxhr.done(function(data) {
-        if (data.errorMsg) {
-            apprise(data.errorMsg);
-        } else {
-            console.log('preference saved, new value: ' +  data.data);
-        }
-    });
-    jqxhr.fail(function() {
-        RS.ajaxFailed("Saving UI settings", false, jqxhr);
-    });
-}

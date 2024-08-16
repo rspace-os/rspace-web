@@ -2923,7 +2923,7 @@
     <jstl.version>1.1.2</jstl.version>
     <lucene.version>5.5.5</lucene.version>
     <netty.version>4.1.63.Final</netty.version>
-    <rspace-core-model.version>34fc7a806c</rspace-core-model.version>
+    <rspace-core-model.version>2.1.2</rspace-core-model.version>
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
