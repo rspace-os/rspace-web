@@ -25,10 +25,12 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
             headerName: "Name",
             flex: 1,
             sortable: false,
+            resizable: true,
           }),
           DataGridColumn.newColumnWithFieldName<Document, _>("globalId", {
             headerName: "Global ID",
-            flex: 1,
+            flex: 0,
+            resizable: true,
             sortable: false,
             renderCell: ({ row }) => <GlobalId record={row.linkableRecord} />,
           }),
@@ -40,6 +42,7 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
         density="compact"
         disableColumnFilter
         hideFooter
+        autoHeight
         slots={{
           pagination: null,
         }}
