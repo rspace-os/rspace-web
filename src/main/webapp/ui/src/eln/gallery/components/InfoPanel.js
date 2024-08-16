@@ -21,6 +21,7 @@ import DescriptionList from "../../../components/DescriptionList";
 import { formatFileSize } from "../../../util/files";
 import Result from "../../../util/result";
 import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
+import InputAdornment from "@mui/material/InputAdornment";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -63,7 +64,7 @@ const Puller: ComponentType<{|
 }));
 
 const Description = styled(
-  ({ value, className }: {| value: string, classes: string |}) => {
+  ({ value, className }: {| value: string, className: string |}) => {
     return (
       <TextField
         value={value}
@@ -71,6 +72,13 @@ const Description = styled(
         fullWidth
         size="small"
         className={className}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <Button>Save</Button>
+            </InputAdornment>
+          ),
+        }}
       />
     );
   }
@@ -85,8 +93,10 @@ const Description = styled(
     marginBottom: theme.spacing(0.5),
     backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
   },
-  "& input": {
-    padding: theme.spacing(0.5, 1.5),
+  "& button": {
+    border: "none",
+    padding: 0,
+    minWidth: "unset",
   },
 }));
 

@@ -467,10 +467,18 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               },
               [`& .${inputAdornmentClasses.root}`]: {
                 height: "100%",
-                paddingLeft: baseTheme.spacing(1.5),
-                paddingRight: baseTheme.spacing(1.5),
-                borderRight: accentedBorder,
-                marginRight: 0,
+                [`&.${inputAdornmentClasses.positionStart}`]: {
+                  paddingLeft: baseTheme.spacing(1.5),
+                  paddingRight: baseTheme.spacing(1.5),
+                  borderRight: accentedBorder,
+                  marginRight: 0,
+                },
+                [`&.${inputAdornmentClasses.positionEnd}`]: {
+                  paddingRight: baseTheme.spacing(1.5),
+                  paddingLeft: baseTheme.spacing(1.5),
+                  borderLeft: accentedBorder,
+                  marginLeft: 0,
+                },
                 [`& .${typographyClasses.root}`]: {
                   textTransform: "uppercase",
                   fontWeight: 700,
