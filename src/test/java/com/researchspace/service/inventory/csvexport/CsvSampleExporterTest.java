@@ -86,7 +86,7 @@ public class CsvSampleExporterTest extends SpringTransactionalTest {
     List<String> csvColumnNames =
         sampleExporter.writeSampleCsvHeaderIntoOutput(
             exampleSamples.getResults(), exportMode, null, outputStream);
-    assertEquals(22, csvColumnNames.size());
+    assertEquals(23, csvColumnNames.size());
     String csvHeaderLineForSamples = outputStream.toString();
     String expectedHeaderLineStart =
         "Global ID,Name,Tags,Owner,Description,Parent Template (Global ID),Parent Template"

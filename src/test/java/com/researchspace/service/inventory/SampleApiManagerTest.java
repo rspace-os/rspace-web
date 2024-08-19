@@ -205,7 +205,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample retrievedSample = sampleApiMgr.getApiSampleById(newSample.getId(), testUser);
     assertEquals("myComplexSample", retrievedSample.getName());
     assertNotNull(retrievedSample.getSubSamples());
-    assertEquals(9, retrievedSample.getFields().size());
+    assertEquals(10, retrievedSample.getFields().size());
     assertEquals("23", retrievedSample.getFields().get(0).getContent());
     assertEquals(1, retrievedSample.getExtraFields().size());
     assertEquals("3.14", retrievedSample.getExtraFields().get(0).getContent());
