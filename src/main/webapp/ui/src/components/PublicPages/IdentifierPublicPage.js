@@ -23,7 +23,11 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import Divider from "@mui/material/Divider";
-import type { IdentifierAttrs } from "../../stores/definitions/Identifier";
+import {
+  type Identifier,
+  type IdentifierAttrs,
+} from "../../stores/definitions/Identifier";
+import { type GeoLocationPolygon } from "../../stores/definitions/GeoLocation";
 import Description from "../../Inventory/components/Fields/Description";
 import Tags from "../../Inventory/components/Fields/Tags";
 import { Optional } from "../../util/optional";
@@ -38,6 +42,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import NoValue from "../NoValue";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
+import IdentifierModel from "../../stores/models/IdentifierModel";
 
 const useStyles = makeStyles()((theme) => ({
   styledDescriptionList: {
@@ -162,8 +167,6 @@ type GeoLocationBox = {
   westBoundLongitude: string,
 };
 
-type GeoLocationPolygon = Array<{ polygonPoint: PolygonPoint }>;
-
 const glPointComplete = (point: PolygonPoint): boolean => {
   return Object.values(point).every((v) => v !== "");
 };
@@ -177,7 +180,7 @@ const glPolygonComplete = (polygon: GeoLocationPolygon): boolean => {
 };
 
 type IdentifierDataGridArgs = {|
-  identifier: IdentifierAttrs,
+  identifier: Identifier,
   record: {
     description: ?string,
     tags: Array<Tag>,
@@ -825,7 +828,7 @@ type IdentifierPublicPageArgs = {|
 const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): Node => {
   const [fetching, setFetching] = useState(false);
   const [publicData, setPublicData] = useState<?{
-    identifiers: Array<IdentifierAttrs>,
+    identifiers: Array<Identifier>,
     description: ?string,
     tags: Array<Tag>,
     fields?: Array<{
@@ -870,6 +873,9 @@ const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): Node => {
         }>(`/api/inventory/v1/public/view/${publicId}`);
         setPublicData({
           ...data,
+          identifiers: data.identifiers.map(
+            (x) => new IdentifierModel(x, publicId)
+          ),
           tags: data.tags.map((tag) => ({
             value: decodeTagString(tag.value),
             uri:

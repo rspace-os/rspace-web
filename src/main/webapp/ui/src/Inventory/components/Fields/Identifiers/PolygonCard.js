@@ -104,9 +104,7 @@ const PolygonEditor = observer(
                   value={point.pointLatitude ?? ""}
                   placeholder="Enter Point Latitude"
                   onChange={({ target: { value } }) => {
-                    runInAction(() => {
-                      point.pointLatitude = value;
-                    });
+                    geoLocationPolygon.set(i, "pointLatitude", value);
                     doUpdateIdentifiers();
                   }}
                   /* value is required for any polygon point (if at least another value is specified) */
@@ -138,9 +136,7 @@ const PolygonEditor = observer(
                   value={point.pointLongitude ?? ""}
                   placeholder="Enter Point Longitude"
                   onChange={({ target: { value } }) => {
-                    runInAction(() => {
-                      point.pointLongitude = value;
-                    });
+                    geoLocationPolygon.set(i, "pointLongitude", value);
                     doUpdateIdentifiers();
                   }}
                   /* value is required for any polygon point (if at least another value is specified) */

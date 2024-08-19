@@ -1,6 +1,6 @@
 //@flow
 
-import { observable, computed, makeObservable } from "mobx";
+import { observable, computed, action, makeObservable } from "mobx";
 import {
   type GeoLocationAttrs,
   type GeoLocation,
@@ -36,6 +36,49 @@ export const polygonComplete = (polygon: GeoLocationPolygon): boolean => {
   return polygon.every((el) => pointComplete(el.polygonPoint));
 };
 
+export class GeoLocationPolygonModel implements GeoLocationPolygon {
+  +points: Array<{| polygonPoint: PolygonPoint |}>;
+
+  constructor(points: Array<{| polygonPoint: PolygonPoint |}>) {
+    makeObservable(this, {
+      points: observable,
+      length: computed,
+      splice: action,
+      set: action,
+    });
+    this.points = points;
+  }
+
+  get length(): number {
+    return this.points.length;
+  }
+
+  get(i: number): ?{| polygonPoint: PolygonPoint |} {
+    return this.points[i];
+  }
+
+  set(i: number, key: $Keys<PolygonPoint>, value: string): void {
+    this.points[i].polygonPoint[key] = value;
+    if (i === 0) this.points[this.length - 1].polygonPoint[key] = value;
+  }
+
+  every(f: ({| polygonPoint: PolygonPoint |}) => boolean): boolean {
+    return this.points.every(f);
+  }
+
+  map<T>(f: ({| polygonPoint: PolygonPoint |}, i: number) => T): Array<T> {
+    return this.points.map(f);
+  }
+
+  splice(
+    i: number,
+    count: number,
+    ...items: $ReadOnlyArray<{| polygonPoint: PolygonPoint |}>
+  ): $ReadOnlyArray<{| polygonPoint: PolygonPoint |}> {
+    return this.points.splice(i, count, ...items);
+  }
+}
+
 export default class GeoLocationModel implements GeoLocation {
   geoLocationBox: GeoLocationBox;
   geoLocationPlace: string;
@@ -67,6 +110,7 @@ export default class GeoLocationModel implements GeoLocation {
      * we have them point to the same object in memory. The validation is just to
      * ensure we're not erasing data before doing so.
      */
+    console.debug("new GeoLocationModel");
     const lastIndex = attrs.geoLocationPolygon.length - 1;
     if (
       attrs.geoLocationPolygon[0].polygonPoint.pointLatitude ===
@@ -74,10 +118,14 @@ export default class GeoLocationModel implements GeoLocation {
       attrs.geoLocationPolygon[0].polygonPoint.pointLongitude ===
         attrs.geoLocationPolygon[lastIndex].polygonPoint.pointLongitude
     ) {
-      this.geoLocationPolygon = attrs.geoLocationPolygon.map(
-        ({ polygonPoint }) => ({ polygonPoint: observable(polygonPoint) })
+      console.debug("polygon data is correct");
+      //TODO remove the last one
+      this.geoLocationPolygon = new GeoLocationPolygonModel(
+        attrs.geoLocationPolygon.map(({ polygonPoint }) => ({
+          polygonPoint: observable(polygonPoint),
+        }))
       );
-      this.geoLocationPolygon[lastIndex] = this.geoLocationPolygon[0];
+      // this.geoLocationPolygon[lastIndex] = this.geoLocationPolygon[0];
     } else {
       throw new Error(
         "Polygon data is invalid: the first and last points are not the same."

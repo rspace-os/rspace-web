@@ -10,7 +10,9 @@ import {
 import ApiService from "../../common/InvApiService";
 import getRootStore from "../stores/RootStore";
 import React from "react";
-import GeoLocationModel from "../models/GeoLocationModel";
+import GeoLocationModel, {
+  GeoLocationPolygonModel,
+} from "../models/GeoLocationModel";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type URL } from "../../util/types";
 import { type _LINK } from "../../common/ApiServiceBase";
@@ -27,7 +29,10 @@ import {
   type IdentifierDate,
 } from "../definitions/Identifier";
 import type { RadioOption } from "../../components/Inputs/RadioField";
-import type { GeoLocation } from "../definitions/GeoLocation";
+import {
+  type GeoLocation,
+  type GeoLocationPolygon,
+} from "../definitions/GeoLocation";
 import { mkAlert } from "../contexts/Alert";
 import { parseInteger } from "../../util/parsers";
 
@@ -41,7 +46,6 @@ type PolygonPoint = {
   pointLatitude: string,
   pointLongitude: string,
 };
-export type GeoLocationPolygon = Array<{ polygonPoint: PolygonPoint }>;
 
 export type IdentifierGeoLocation = {
   geoLocationBox: GeoLocationBox,
@@ -232,7 +236,7 @@ export default class IdentifierModel implements Identifier {
       updateState: action,
       publish: action,
       retract: action,
-      publicData: computed,
+      //      publicData: computed,
     });
 
     this.parentGlobalId = parentGlobalId;
@@ -442,6 +446,7 @@ export default class IdentifierModel implements Identifier {
   }
 
   setGeoLocations(geoLocations: Array<GeoLocation>) {
+    // this breaks the loop
     this.geoLocations = geoLocations;
   }
 
@@ -674,37 +679,37 @@ export default class IdentifierModel implements Identifier {
     }
   }
 
-  get publicData(): IdentifierAttrs {
-    return {
-      id: this.id,
-      rsPublicId: this.rsPublicId,
-      doi: this.doi,
-      doiType: this.doiType,
-      creatorName: this.creatorName,
-      creatorType: this.creatorType,
-      creatorAffiliation: this.creatorAffiliation,
-      creatorAffiliationIdentifier: this.creatorAffiliationIdentifier,
-      title: this.title,
-      publicUrl: this.publicUrl,
-      publisher: this.publisher,
-      publicationYear: parseInteger(this.publicationYear).orElse(0),
-      resourceType: this.resourceType,
-      resourceTypeGeneral: this.resourceTypeGeneral,
-      url: this.url,
-      state: this.state,
-      subjects: this.subjects,
-      descriptions: this.descriptions,
-      alternateIdentifiers: this.alternateIdentifiers,
-      dates: this.dates,
-      geoLocations: this.geoLocations?.map((g) => ({
-        geoLocationBox: g.geoLocationBox,
-        geoLocationPlace: g.geoLocationPlace,
-        geoLocationPoint: g.geoLocationPoint,
-        geoLocationPolygon: g.geoLocationPolygon,
-        geoLocationInPolygonPoint: g.geoLocationInPolygonPoint,
-      })),
-      _links: this._links,
-      customFieldsOnPublicPage: this.customFieldsOnPublicPage,
-    };
-  }
+  //  get publicData(): IdentifierAttrs {
+  //    return {
+  //      id: this.id,
+  //      rsPublicId: this.rsPublicId,
+  //      doi: this.doi,
+  //      doiType: this.doiType,
+  //      creatorName: this.creatorName,
+  //      creatorType: this.creatorType,
+  //      creatorAffiliation: this.creatorAffiliation,
+  //      creatorAffiliationIdentifier: this.creatorAffiliationIdentifier,
+  //      title: this.title,
+  //      publicUrl: this.publicUrl,
+  //      publisher: this.publisher,
+  //      publicationYear: parseInteger(this.publicationYear).orElse(0),
+  //      resourceType: this.resourceType,
+  //      resourceTypeGeneral: this.resourceTypeGeneral,
+  //      url: this.url,
+  //      state: this.state,
+  //      subjects: this.subjects,
+  //      descriptions: this.descriptions,
+  //      alternateIdentifiers: this.alternateIdentifiers,
+  //      dates: this.dates,
+  //      geoLocations: this.geoLocations?.map((g) => ({
+  //        geoLocationBox: g.geoLocationBox,
+  //        geoLocationPlace: g.geoLocationPlace,
+  //        geoLocationPoint: g.geoLocationPoint,
+  //        geoLocationPolygon: new GeoLocationPolygonModel(g.geoLocationPolygon),
+  //        geoLocationInPolygonPoint: g.geoLocationInPolygonPoint,
+  //      })),
+  //      _links: this._links,
+  //      customFieldsOnPublicPage: this.customFieldsOnPublicPage,
+  //    };
+  //  }
 }

@@ -133,5 +133,5 @@ export interface Identifier {
    * compatible any implementations of this interface must expose an object
    * with the same type.
    */
-  +publicData: IdentifierAttrs;
+  //  +publicData: IdentifierAttrs;
 }
