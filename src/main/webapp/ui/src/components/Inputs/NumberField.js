@@ -77,7 +77,11 @@ export default function NumberField({
       helperText={helperText}
       value={value}
       inputProps={{
-        inputMode: "decimal",
+        /*
+         * This has to be text because "decimal" and "numeric" do not guarantee
+         * a minus key, and most of numerical field support negative values.
+         */
+        inputMode: "text",
         lang: "en", // force dot in decimal numbers in compatible browsers
         ["aria-label"]: ariaLabel,
         ...inputProps,
