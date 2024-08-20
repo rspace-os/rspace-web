@@ -197,11 +197,15 @@ function generateIconSrc(
     return "/images/icons/folder.png";
   }
   if (type === "Image")
-    return `/gallery/getThumbnail/${id}/${Math.floor(modificationDate.getTime() / 1000)}`;
+    return `/gallery/getThumbnail/${id}/${Math.floor(
+      modificationDate.getTime() / 1000
+    )}`;
   if (type === "Documents" || type === "PdfDocuments")
     return `/image/docThumbnail/${id}/${thumbnailId ?? "none"}`;
   if (type === "Chemistry")
-    return `/gallery/getChemThumbnail/${id}/${Math.floor(modificationDate.getTime() / 1000)}`;
+    return `/gallery/getChemThumbnail/${id}/${Math.floor(
+      modificationDate.getTime() / 1000
+    )}`;
   if (!extension) return "/images/icons/unknownDocument.png";
   return getIconPathForExtension(extension);
 }
