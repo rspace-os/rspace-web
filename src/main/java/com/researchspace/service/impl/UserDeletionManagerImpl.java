@@ -74,7 +74,8 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
       }
 
       if (toDelete.hasRole(Role.ADMIN_ROLE)) {
-        communityDao.listCommunitiesForAdmin(toDelete.getId())
+        communityDao
+            .listCommunitiesForAdmin(toDelete.getId())
             .forEach(comm -> communityDao.removeAdminFromCommunity(toDelete.getId(), comm.getId()));
       }
     }
@@ -225,8 +226,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     return failureMsg;
   }
 
-  private boolean isAllGroupCapableOfDeletion(
-      UserDeletionPolicy policy, Group group) {
+  private boolean isAllGroupCapableOfDeletion(UserDeletionPolicy policy, Group group) {
     if (policy.isStrictPreserveDataForGroup()) {
       for (User user : group.getMembers()) {
         if (user.getLastLogin() != null
@@ -248,8 +248,9 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     // ensure that at least 1 valid sysadmin remains
     return sysadmins.getTotalHits() >= 2
         && sysadmins.getResults().stream()
-        .filter(u -> !u.equals(toDelete))
-        .filter(User::isEnabled).anyMatch(User::isAccountNonLocked);
+            .filter(u -> !u.equals(toDelete))
+            .filter(User::isEnabled)
+            .anyMatch(User::isAccountNonLocked);
   }
 
   /*
