@@ -28,11 +28,8 @@ export interface GeoLocationPolygon {
   set(i: number, key: $Keys<PolygonPoint>, value: string): void;
   every(f: ({| polygonPoint: PolygonPoint |}) => boolean): boolean;
   map<T>(f: ({| polygonPoint: PolygonPoint |}, i: number) => T): Array<T>;
-  splice(
-    i: number,
-    count: number,
-    ...items: $ReadOnlyArray<{| polygonPoint: PolygonPoint |}>
-  ): $ReadOnlyArray<{| polygonPoint: PolygonPoint |}>;
+  addAnotherPoint(i: number): void;
+  removePoint(i: number): void;
   toJson(): mixed;
 }
 

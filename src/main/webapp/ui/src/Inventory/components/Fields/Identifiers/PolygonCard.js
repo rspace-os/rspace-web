@@ -61,13 +61,11 @@ const PolygonEditor = observer(
       editable && i < geoLocationPolygon.length - 1;
 
     const handleAddPoint = (i: number): void => {
-      geoLocationPolygon.splice(i + 1, 0, {
-        polygonPoint: { pointLatitude: "", pointLongitude: "" },
-      });
+      geoLocationPolygon.addAnotherPoint(i);
       doUpdateIdentifiers();
     };
     const handleRemovePoint = (i: number): void => {
-      geoLocationPolygon.splice(i, 1);
+      geoLocationPolygon.removePoint(i);
       doUpdateIdentifiers();
     };
 

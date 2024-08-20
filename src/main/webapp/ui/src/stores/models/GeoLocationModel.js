@@ -43,8 +43,9 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
     makeObservable(this, {
       points: observable,
       length: computed,
-      splice: action,
       set: action,
+      addAnotherPoint: action,
+      removePoint: action,
     });
     this.points = points;
   }
@@ -70,12 +71,14 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
     return this.points.map(f);
   }
 
-  splice(
-    i: number,
-    count: number,
-    ...items: $ReadOnlyArray<{| polygonPoint: PolygonPoint |}>
-  ): $ReadOnlyArray<{| polygonPoint: PolygonPoint |}> {
-    return this.points.splice(i, count, ...items);
+  addAnotherPoint(i: number): void {
+    this.points.splice(i + 1, 0, {
+      polygonPoint: { pointLatitude: "", pointLongitude: "" },
+    });
+  }
+
+  removePoint(i: number): void {
+    this.points.splice(i, 1);
   }
 
   toJson(): mixed {
