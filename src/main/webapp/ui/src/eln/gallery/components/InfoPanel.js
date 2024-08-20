@@ -4,7 +4,7 @@ import React, { type Node, type ComponentType } from "react";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import { styled } from "@mui/material/styles";
-import { type GalleryFile } from "../useGalleryListing";
+import { type GalleryFile, type Description } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
@@ -21,7 +21,6 @@ import DescriptionList from "../../../components/DescriptionList";
 import { formatFileSize } from "../../../util/files";
 import Result from "../../../util/result";
 import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
-import InputAdornment from "@mui/material/InputAdornment";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -63,23 +62,32 @@ const Puller: ComponentType<{|
   left: "calc(50% - 15px)",
 }));
 
-const Description = styled(
-  ({ value, className }: {| value: string, className: string |}) => {
+const DescriptionField = styled(
+  ({ value, className }: {| value: Description, className: string |}) => {
+    const [description, setDescription] = React.useState(
+      value.match({
+        missing: () => "",
+        empty: () => "",
+        present: (d) => d,
+      })
+    );
     return (
-      <TextField
-        value={value}
-        placeholder="No description"
-        fullWidth
-        size="small"
-        className={className}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <Button>Save</Button>
-            </InputAdornment>
-          ),
-        }}
-      />
+      <Stack>
+        <TextField
+          value={description}
+          placeholder="No description"
+          fullWidth
+          size="small"
+          className={className}
+          onChange={setDescription}
+        />
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+          <Button size="small">Cancel</Button>
+          <Button size="small" variant="contained">
+            Save
+          </Button>
+        </Stack>
+      </Stack>
     );
   }
 )(({ theme }) => ({
@@ -92,11 +100,6 @@ const Description = styled(
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
     backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
-  },
-  "& button": {
-    border: "none",
-    padding: 0,
-    minWidth: "unset",
   },
 }));
 
@@ -116,11 +119,7 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
           },
           {
             label: "Description",
-            value: file.description.match({
-              missing: () => "Unknown description",
-              empty: () => <Description value="" />,
-              present: (d) => <Description value={d} />,
-            }),
+            value: <DescriptionField value={file.description} />,
             below: true,
           },
         ]}

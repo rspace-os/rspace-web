@@ -22,7 +22,7 @@ type DescriptionInternalState =
   | {| key: "missing" |}
   | {| key: "empty" |}
   | {| key: "present", value: string |};
-class Description {
+export class Description {
   +#state: DescriptionInternalState;
 
   constructor(state: DescriptionInternalState) {
