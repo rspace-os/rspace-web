@@ -7,7 +7,7 @@ import {
   makeObservable,
   runInAction,
 } from "mobx";
-import axios from "axios";
+import ApiService from "../../common/InvApiService";
 import React, { type Node } from "react";
 import GeoLocationModel from "../models/GeoLocationModel";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
@@ -483,7 +483,7 @@ export default class IdentifierModel implements Identifier {
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
-        const response = await axios.post<
+        const response = await ApiService.post<
           {||},
           {
             state: IGSNPublishingState,
@@ -568,10 +568,10 @@ export default class IdentifierModel implements Identifier {
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
-        const response = await axios.post<{||}, { state: IGSNPublishingState }>(
-          `/identifiers/${this.id}/retract`,
-          {}
-        );
+        const response = await ApiService.post<
+          {||},
+          { state: IGSNPublishingState }
+        >(`/identifiers/${this.id}/retract`, {});
         this.updateState(response.data.state);
         addAlert(
           mkAlert({
@@ -628,10 +628,10 @@ export default class IdentifierModel implements Identifier {
 
       // retract
       try {
-        const response = await axios.post<{||}, { state: IGSNPublishingState }>(
-          `/identifiers/${id}/retract`,
-          {}
-        );
+        const response = await ApiService.post<
+          {||},
+          { state: IGSNPublishingState }
+        >(`/identifiers/${id}/retract`, {});
         this.updateState(response.data.state);
       } catch (error) {
         const serverErrorResponse = error.response.data;
@@ -650,7 +650,7 @@ export default class IdentifierModel implements Identifier {
 
       // publish
       try {
-        const response = await axios.post<
+        const response = await ApiService.post<
           {||},
           {
             state: IGSNPublishingState,
