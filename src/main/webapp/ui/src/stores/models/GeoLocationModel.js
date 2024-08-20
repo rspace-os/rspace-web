@@ -16,9 +16,6 @@ import {
  * incomplete status is not empty, and empty may be acceptable (for Place)
  */
 
-const pointEmpty = (point: PolygonPoint): boolean => {
-  return Object.values(point).every((v) => v === "");
-};
 export const pointComplete = (point: PolygonPoint): boolean => {
   return Object.values(point).every((v) => v !== "");
 };
@@ -32,9 +29,6 @@ const pointIncomplete = (point: PolygonPoint): boolean => {
 export const boxComplete = (box: GeoLocationBox): boolean => {
   return Object.values(box).every((v) => v !== "");
 };
-export const polygonComplete = (polygon: GeoLocationPolygon): boolean => {
-  return polygon.every((el) => pointComplete(el.polygonPoint));
-};
 
 export class GeoLocationPolygonModel implements GeoLocationPolygon {
   +points: Array<{| polygonPoint: PolygonPoint |}>;
@@ -46,6 +40,8 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
       set: action,
       addAnotherPoint: action,
       removePoint: action,
+      isValid: computed,
+      empty: computed,
     });
     this.points = points;
   }
@@ -63,10 +59,6 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
     if (i === 0) this.points[this.length - 1].polygonPoint[key] = value;
   }
 
-  every(f: ({| polygonPoint: PolygonPoint |}) => boolean): boolean {
-    return this.points.every(f);
-  }
-
   map<T>(f: ({| polygonPoint: PolygonPoint |}, i: number) => T): Array<T> {
     return this.points.map(f);
   }
@@ -79,6 +71,24 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
 
   removePoint(i: number): void {
     this.points.splice(i, 1);
+  }
+
+  get isValid(): boolean {
+    return this.points.every(({ polygonPoint }) => {
+      if (polygonPoint.pointLatitude === "") return false;
+      if (isNaN(parseFloat(polygonPoint.pointLatitude))) return false;
+      if (polygonPoint.pointLongitude === "") return false;
+      if (isNaN(parseFloat(polygonPoint.pointLongitude))) return false;
+      return true;
+    });
+  }
+
+  get empty(): boolean {
+    return this.points.every(({ polygonPoint }) => {
+      if (polygonPoint.pointLatitude !== "") return false;
+      if (polygonPoint.pointLongitude !== "") return false;
+      return true;
+    });
   }
 
   toJson(): mixed {
@@ -160,11 +170,11 @@ export default class GeoLocationModel implements GeoLocation {
   }
 
   get polygonEmpty(): boolean {
-    return this.geoLocationPolygon.every((el) => pointEmpty(el.polygonPoint));
+    return this.geoLocationPolygon.empty;
   }
 
   get polygonIncomplete(): boolean {
-    return !polygonComplete(this.geoLocationPolygon) && !this.polygonEmpty;
+    return !this.geoLocationPolygon.isValid && !this.polygonEmpty;
   }
 
   get isValid(): boolean {
@@ -172,7 +182,7 @@ export default class GeoLocationModel implements GeoLocation {
       (pointComplete(this.geoLocationPoint) ||
         this.placeComplete ||
         boxComplete(this.geoLocationBox) ||
-        polygonComplete(this.geoLocationPolygon)) &&
+        this.geoLocationPolygon.isValid) &&
       !this.pointIncomplete &&
       !this.boxIncomplete &&
       !this.polygonIncomplete

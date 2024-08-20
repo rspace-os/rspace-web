@@ -29,7 +29,6 @@ import {
   PolygonStateAlert,
   type PolygonMessages,
 } from "./GeoLocationField";
-import { polygonComplete } from "../../../../stores/models/GeoLocationModel";
 
 const POLYGON_CARD_MESSAGES: PolygonMessages = {
   empty: "An empty Polygon will not be included in the Geolocation.",
@@ -311,7 +310,7 @@ function PolygonCard({
           <Box sx={{ my: 1 }}>
             <PolygonStateAlert
               polygonEmpty={polygonEmpty}
-              polygonComplete={polygonComplete(geoLocation.geoLocationPolygon)}
+              polygonComplete={geoLocation.geoLocationPolygon.isValid}
               textMessages={POLYGON_CARD_MESSAGES}
             />
           </Box>

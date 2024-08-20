@@ -5,7 +5,6 @@ import "leaflet/dist/leaflet.css";
 import {
   boxComplete,
   pointComplete,
-  polygonComplete,
 } from "../../../../stores/models/GeoLocationModel";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid";
@@ -56,9 +55,7 @@ export default function MapViewer({
 
   const [showPoint, setShowPoint] = useState<boolean>(pointComplete(point));
   const [showBox, setShowBox] = useState<boolean>(boxComplete(box));
-  const [showPolygon, setShowPolygon] = useState<boolean>(
-    polygonComplete(polygon)
-  );
+  const [showPolygon, setShowPolygon] = useState<boolean>(polygon.isValid);
 
   const {
     eastBoundLongitude,
@@ -99,18 +96,12 @@ export default function MapViewer({
       latitudeDataPoints++;
     }
   }
-  if (polygonComplete(polygon)) {
-    if (
-      polygon.every(
-        ({ polygonPoint }) => !isNaN(parseFloat(polygonPoint.pointLatitude))
-      )
-    ) {
-      const sum = polygon
-        .map(({ polygonPoint }) => parseFloat(polygonPoint.pointLatitude))
-        .reduce((acc, lat) => acc + lat, 0);
-      latitudeCenter += sum * (1 / polygon.length);
-      latitudeDataPoints++;
-    }
+  if (polygon.isValid) {
+    const sum = polygon
+      .map(({ polygonPoint }) => parseFloat(polygonPoint.pointLatitude))
+      .reduce((acc, lat) => acc + lat, 0);
+    latitudeCenter += sum * (1 / polygon.length);
+    latitudeDataPoints++;
   }
   latitudeCenter /= latitudeDataPoints;
 
@@ -133,18 +124,12 @@ export default function MapViewer({
       longitudeDataPoints++;
     }
   }
-  if (polygonComplete(polygon)) {
-    if (
-      polygon.every(
-        ({ polygonPoint }) => !isNaN(parseFloat(polygonPoint.pointLongitude))
-      )
-    ) {
-      const sum = polygon
-        .map(({ polygonPoint }) => parseFloat(polygonPoint.pointLongitude))
-        .reduce((acc, lat) => acc + lat, 0);
-      longitudeCenter += sum * (1 / polygon.length);
-      longitudeDataPoints++;
-    }
+  if (polygon.isValid) {
+    const sum = polygon
+      .map(({ polygonPoint }) => parseFloat(polygonPoint.pointLongitude))
+      .reduce((acc, lat) => acc + lat, 0);
+    longitudeCenter += sum * (1 / polygon.length);
+    longitudeDataPoints++;
   }
   longitudeCenter /= longitudeDataPoints;
 
@@ -242,7 +227,7 @@ export default function MapViewer({
                 <Switch
                   color="tertiary"
                   checked={showPolygon}
-                  disabled={!polygonComplete(polygon)}
+                  disabled={!polygon.isValid}
                   onChange={() => setShowPolygon(!showPolygon)}
                   inputProps={{ "aria-label": "show GL Polygon" }}
                 />

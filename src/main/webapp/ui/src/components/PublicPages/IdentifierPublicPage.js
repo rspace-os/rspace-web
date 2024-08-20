@@ -27,7 +27,6 @@ import {
   type Identifier,
   type IdentifierAttrs,
 } from "../../stores/definitions/Identifier";
-import { type GeoLocationPolygon } from "../../stores/definitions/GeoLocation";
 import Description from "../../Inventory/components/Fields/Description";
 import Tags from "../../Inventory/components/Fields/Tags";
 import { Optional } from "../../util/optional";
@@ -173,10 +172,6 @@ const glPointComplete = (point: PolygonPoint): boolean => {
 
 const glBoxComplete = (box: GeoLocationBox): boolean => {
   return Object.values(box).every((v) => v !== "");
-};
-
-const glPolygonComplete = (polygon: GeoLocationPolygon): boolean => {
-  return polygon.every((el) => glPointComplete(el.polygonPoint));
 };
 
 type IdentifierDataGridArgs = {|
@@ -617,7 +612,7 @@ export const IdentifierDataGrid = ({
                               </dl>
                             </>
                           )}
-                          {glPolygonComplete(gl.geoLocationPolygon) && (
+                          {gl.geoLocationPolygon.isValid && (
                             <>
                               <Typography component="h4" variant="h6">
                                 Polygon

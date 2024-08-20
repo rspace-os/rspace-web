@@ -26,10 +26,11 @@ export interface GeoLocationPolygon {
   +length: number;
   get(i: number): ?{| polygonPoint: PolygonPoint |};
   set(i: number, key: $Keys<PolygonPoint>, value: string): void;
-  every(f: ({| polygonPoint: PolygonPoint |}) => boolean): boolean;
   map<T>(f: ({| polygonPoint: PolygonPoint |}, i: number) => T): Array<T>;
   addAnotherPoint(i: number): void;
   removePoint(i: number): void;
+  +isValid: boolean;
+  +empty: boolean;
   toJson(): mixed;
 }
 
