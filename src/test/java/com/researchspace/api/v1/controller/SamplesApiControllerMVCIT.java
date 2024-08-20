@@ -452,7 +452,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     return sampleApiMgr.getAllTemplates(user).stream()
         .filter(
             t ->
-                t.getName().equals(ContentInitializerForDevRunManager.COMPLEX_SAMPLE_TEMPLATE_NAME))
+                ContentInitializerForDevRunManager.COMPLEX_SAMPLE_TEMPLATE_NAME.equals(t.getName()))
         .findAny();
   }
 
