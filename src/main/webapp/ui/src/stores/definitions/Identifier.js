@@ -137,12 +137,5 @@ export interface Identifier {
     addAlert: (Alert) => void,
   |}): Promise<void>;
 
-  /*
-   * This computed property is for showing the Identifier in the public page
-   * preview dialog. The public page itself renders IdentifierAttrs so to be
-   * compatible any implementations of this interface must expose an object
-   * with the same type.
-   */
-  //  +publicData: IdentifierAttrs;
   toJson(): { ... };
 }

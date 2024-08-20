@@ -234,7 +234,6 @@ export default class IdentifierModel implements Identifier {
       updateState: action,
       publish: action,
       retract: action,
-      //      publicData: computed,
     });
 
     this.parentGlobalId = parentGlobalId;
@@ -736,38 +735,4 @@ export default class IdentifierModel implements Identifier {
       customFieldsOnPublicPage: this.customFieldsOnPublicPage,
     };
   }
-
-  //  get publicData(): IdentifierAttrs {
-  //    return {
-  //      id: this.id,
-  //      rsPublicId: this.rsPublicId,
-  //      doi: this.doi,
-  //      doiType: this.doiType,
-  //      creatorName: this.creatorName,
-  //      creatorType: this.creatorType,
-  //      creatorAffiliation: this.creatorAffiliation,
-  //      creatorAffiliationIdentifier: this.creatorAffiliationIdentifier,
-  //      title: this.title,
-  //      publicUrl: this.publicUrl,
-  //      publisher: this.publisher,
-  //      publicationYear: parseInteger(this.publicationYear).orElse(0),
-  //      resourceType: this.resourceType,
-  //      resourceTypeGeneral: this.resourceTypeGeneral,
-  //      url: this.url,
-  //      state: this.state,
-  //      subjects: this.subjects,
-  //      descriptions: this.descriptions,
-  //      alternateIdentifiers: this.alternateIdentifiers,
-  //      dates: this.dates,
-  //      geoLocations: this.geoLocations?.map((g) => ({
-  //        geoLocationBox: g.geoLocationBox,
-  //        geoLocationPlace: g.geoLocationPlace,
-  //        geoLocationPoint: g.geoLocationPoint,
-  //        geoLocationPolygon: new GeoLocationPolygonModel(g.geoLocationPolygon),
-  //        geoLocationInPolygonPoint: g.geoLocationInPolygonPoint,
-  //      })),
-  //      _links: this._links,
-  //      customFieldsOnPublicPage: this.customFieldsOnPublicPage,
-  //    };
-  //  }
 }
