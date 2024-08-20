@@ -116,4 +116,15 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
   RSForm get(Long id, boolean enableDeletedFilter);
 
   Long countDocsCreatedFromForm(RSForm form);
+
+  /**
+   * A user to be deleted can be the owner of forms which other users have created documents from.
+   * To allow for the complete removal of a user, ownership of the form can be transferred to a
+   * sysadmin
+   *
+   * @param toDelete - the user being deleted who owns forms that other users have created documents
+   *     from
+   * @param sysadmin - the sysadmin user that the ownership of those forms will be transferred to.
+   */
+  void transferOwnershipOfFormsToSysAdmin(User toDelete, User sysadmin);
 }

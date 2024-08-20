@@ -56,6 +56,10 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     }
     User toDelete = userDao.get(userId);
 
+    if (formDao.hasUserPublishedFormsUsedinOtherRecords(toDelete)) {
+      formDao.transferOwnershipOfFormsToSysAdmin(toDelete, subject);
+    }
+
     Optional<String> saveResourcesListError = saveFilestoreResourcesTempList(toDelete);
     if (saveResourcesListError.isPresent()) {
       return new ServiceOperationResult<>(null, false, saveResourcesListError.get());
@@ -198,9 +202,6 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
         log.warn(" invalid attempt to delete an sysadmin user! [userid={}]", userToDeleteId);
         return Optional.of(msgSource.getMessage("errors.deletesysadminuser", null, null));
       }
-    }
-    if (formDao.hasUserPublishedFormsUsedinOtherRecords(toDelete)) {
-      return Optional.of(msgSource.getMessage("errors.deleteuser.nousedforms", null, null));
     }
     if (policy.isForceDelete()) {
       for (Group group : toDelete.getGroups()) {
