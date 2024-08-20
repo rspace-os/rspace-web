@@ -494,7 +494,13 @@ export default class Search implements SearchInterface {
               "Some of the samples could not be trashed because the subsamples are in containers.",
             message: "Please move them to the trash first.",
             details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
-              title: `Could not trash "${ss.name ?? "UNKNOWN"}"`,
+              title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${
+                ss.parentContainers.length > 0
+                  ? `(in ${ss.parentContainers[0].name} ${
+                      ss.parentContainers[0].globalId ?? ""
+                    })`
+                  : ""
+              }`,
               variant: "error",
               record: factory.newRecord({
                 ...ss,
