@@ -1103,8 +1103,11 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSampleWithFullSubSamples createdSample =
         mvcUtils.getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
 
-    ApiSampleField timeField = createdSample.getFields().stream()
-        .filter(f -> f.getType().equals(ApiFieldType.TIME)).findFirst().get();
+    ApiSampleField timeField =
+        createdSample.getFields().stream()
+            .filter(f -> f.getType().equals(ApiFieldType.TIME))
+            .findFirst()
+            .get();
     assertEquals(validTime, timeField.getContent());
   }
 

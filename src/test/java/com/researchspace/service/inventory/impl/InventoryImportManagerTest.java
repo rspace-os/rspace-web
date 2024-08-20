@@ -578,8 +578,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     // csv file with 3 samples: columns mapped to name/expiry date/template fields/quantity
     InputStream samplesCsvIS =
         IOUtils.toInputStream(
-            "Expiry Date, Name, MyNumber, MyDate, MyString, MyText, MyURL, MyRef, MyAtt, MyTime, MyRadio,"
-                + " MyChoice, MyQuantity\n"
+            "Expiry Date, Name, MyNumber, MyDate, MyString, MyText, MyURL, MyRef, MyAtt, MyTime,"
+                + " MyRadio, MyChoice, MyQuantity\n"
                 + "2030-01-01, TestSample1,3.14,,,,,,,,,,\n"
                 + "2030-01-01, TestSample2,,2021-11-23,,,,,,,,,5.25ml\n"
                 + "2030-01-01, TestSample3,,, dummyText,,,,,,,,200 ml\n");

@@ -19,8 +19,12 @@ public class ApiFieldToModelFieldFactoryTest {
     for (ApiFieldType type :
         EnumSet.complementOf(
             EnumSet.of(
-                ApiFieldType.CHOICE, ApiFieldType.URI, ApiFieldType.RADIO, ApiFieldType.NUMBER,
-                ApiField.ApiFieldType.TIME, ApiField.ApiFieldType.DATE))) {
+                ApiFieldType.CHOICE,
+                ApiFieldType.URI,
+                ApiFieldType.RADIO,
+                ApiFieldType.NUMBER,
+                ApiField.ApiFieldType.TIME,
+                ApiField.ApiFieldType.DATE))) {
       ApiSampleField any = new ApiSampleField();
       any.setContent("some content");
       any.setType(type);
@@ -76,13 +80,13 @@ public class ApiFieldToModelFieldFactoryTest {
   }
 
   @Test
-  public void timeField(){
+  public void timeField() {
     // time field should be 24hour in pattern HH:mm
     assertValues("10:24", "9:24", ApiFieldType.TIME);
   }
 
   @Test
-  public void dateField(){
+  public void dateField() {
     // date field should be in pattern yyyy-MM-dd
     assertValues("2024-08-19", "24/08/19", ApiFieldType.DATE);
   }
