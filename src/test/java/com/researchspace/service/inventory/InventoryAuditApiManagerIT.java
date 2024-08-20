@@ -95,6 +95,6 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
     assertEquals("myComplexSample", apiSampleRev1.getName());
     assertEquals(sampleFirstRevisionId, apiSampleRev1.getRevisionId());
     assertEquals(1, apiSampleRev1.getExtraFields().size());
-    assertEquals(9, apiSampleRev1.getFields().size());
+    assertEquals(10, apiSampleRev1.getFields().size());
   }
 }

@@ -346,8 +346,8 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleWithFullSubSamples ninthSample =
         (ApiSampleWithFullSubSamples) sampleResults.getResults().get(8).getRecord();
     assertEquals("TestSample9", ninthSample.getName());
-    assertEquals(1, ninthSample.getFields().get(8).getSelectedOptions().size());
-    assertEquals("optionB", ninthSample.getFields().get(8).getSelectedOptions().get(0));
+    assertEquals(1, ninthSample.getFields().get(9).getSelectedOptions().size());
+    assertEquals("optionB", ninthSample.getFields().get(9).getSelectedOptions().get(0));
   }
 
   @Test

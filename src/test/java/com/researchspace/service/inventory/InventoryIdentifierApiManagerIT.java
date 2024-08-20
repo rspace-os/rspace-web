@@ -29,13 +29,13 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
     User user = createInitAndLoginAnyUser();
 
     ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
-    assertEquals(9, createdSample.getFields().size());
+    assertEquals(10, createdSample.getFields().size());
     assertEquals(1, createdSample.getTags().size());
     assertEquals(0, createdSample.getIdentifiers().size());
 
     ApiInventoryRecordInfo updatedSample =
         inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
-    assertEquals(9, ((ApiSample) updatedSample).getFields().size());
+    assertEquals(10, ((ApiSample) updatedSample).getFields().size());
     assertEquals(1, updatedSample.getTags().size());
     assertEquals(1, updatedSample.getIdentifiers().size());
     ApiInventoryDOI sampleDoi = updatedSample.getIdentifiers().get(0);
@@ -63,7 +63,7 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
         inventoryIdentifierApiMgr.findPublishedItemVersionByPublicLink(publicLink);
     assertNotNull(publishedRecord);
     assertEquals("myComplexSample", publishedRecord.getName());
-    assertEquals(9, ((ApiSample) publishedRecord).getFields().size());
+    assertEquals(10, ((ApiSample) publishedRecord).getFields().size());
     assertEquals(1, publishedRecord.getTags().size());
     assertEquals(1, publishedRecord.getIdentifiers().size());
 
