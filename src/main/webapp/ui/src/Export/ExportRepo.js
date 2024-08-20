@@ -431,7 +431,7 @@ function ExportRepo({
             />
           </>
         )}
-        {repo.repoName === "app.digital_commons_data" && (
+        {repo.repoName === "app.digitalCommonsData" && (
           <DigitalCommonsDataRepo
             handleChange={handleChange}
             updatePeople={updatePeople}

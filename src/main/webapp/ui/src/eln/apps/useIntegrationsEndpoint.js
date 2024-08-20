@@ -71,7 +71,7 @@ export type IntegrationStates = {|
       |}>
     >
   >,
-  DIGITAL_COMMONS_DATA: IntegrationState<{|
+  DIGITALCOMMONSDATA: IntegrationState<{|
     ACCESS_TOKEN: Optional<string>,
   |}>,
   DMPONLINE: IntegrationState<{||}>,
@@ -279,7 +279,7 @@ function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
 
 function decodeDigitalCommonsData(
   data: FetchedState
-): IntegrationStates["DIGITAL_COMMONS_DATA"] {
+): IntegrationStates["DIGITALCOMMONSDATA"] {
   return {
     mode: parseState(data),
     // TODO
@@ -512,7 +512,7 @@ function decodeIntegrationStates(data: {
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),
     DATAVERSE: decodeDataverse(data.DATAVERSE),
-    DIGITAL_COMMONS_DATA: decodeDigitalCommonsData(data.DIGITAL_COMMONS_DATA),
+    DIGITALCOMMONSDATA: decodeDigitalCommonsData(data.DIGITALCOMMONSDATA),
     DMPONLINE: decodeDmponline(data.DMPONLINE),
     DMPTOOL: decodeDmpTool(data.DMPTOOL),
     DROPBOX: decodeDropbox(data.DROPBOX),
@@ -634,9 +634,9 @@ const encodeIntegrationState = <I: Integration>(
       ),
     };
   }
-  if (integration === "DIGITAL_COMMONS_DATA") {
+  if (integration === "DIGITALCOMMONSDATA") {
     return {
-      name: "DIGITAL_COMMONS_DATA",
+      name: "DIGITALCOMMONSDATA",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       // $FlowExpectedError[prop-missing]
@@ -1069,7 +1069,7 @@ export function useIntegrationsEndpoint(): {|
               return decodeClustermarket(responseData.data);
             case "DATAVERSE":
               return decodeDataverse(responseData.data);
-            case "DIGITAL_COMMONS_DATA":
+            case "DIGITALCOMMONSDATA":
               return decodeDigitalCommonsData(responseData.data);
             case "DMPONLINE":
               return decodeDmponline(responseData.data);
@@ -1171,7 +1171,7 @@ export function useIntegrationsEndpoint(): {|
           return decodeClustermarket(response.data.data);
         case "DATAVERSE":
           return decodeDataverse(response.data.data);
-        case "DIGITAL_COMMONS_DATA":
+        case "DIGITALCOMMONSDATA":
           return decodeDigitalCommonsData(response.data.data);
         case "DMPONLINE":
           return decodeDmponline(response.data.data);

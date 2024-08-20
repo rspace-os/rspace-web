@@ -104,10 +104,10 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
   );
 
   const digitalCommonsDataUpdate = React.useCallback(
-    (newState: IntegrationStates["DIGITAL_COMMONS_DATA"]) => {
+    (newState: IntegrationStates["DIGITALCOMMONSDATA"]) => {
       void runInAction(async () => {
-        integrationStates.DIGITAL_COMMONS_DATA = await update(
-          "DIGITAL_COMMONS_DATA",
+        integrationStates.DIGITALCOMMONSDATA = await update(
+          "DIGITALCOMMONSDATA",
           newState
         );
       });
@@ -352,9 +352,9 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
           update={dataverseUpdate}
         />
       )}
-      {integrationStates.DIGITAL_COMMONS_DATA.mode === mode && (
+      {integrationStates.DIGITALCOMMONSDATA.mode === mode && (
         <DigitalCommonsData
-          integrationState={integrationStates.DIGITAL_COMMONS_DATA}
+          integrationState={integrationStates.DIGITALCOMMONSDATA}
           update={digitalCommonsDataUpdate}
         />
       )}

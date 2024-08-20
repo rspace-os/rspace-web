@@ -18,7 +18,7 @@
 <script>
   window.addEventListener("load", () => {
     if(window.opener.document.location.pathname === "/apps") {
-      window.opener.dispatchEvent(new Event("DIGITAL_COMMONS_DATA_CONNECTED"));
+      window.opener.dispatchEvent(new Event("DIGITALCOMMONSDATA_CONNECTED"));
       window.close();
     }
   });

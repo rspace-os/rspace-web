@@ -68,7 +68,7 @@
         <div id="dmptool.available.description"><spring:message code="system.property.description.dmptool.available" /></div>
         <div id="argos.available.description"><spring:message code="system.property.description.argos.available" /></div>
         <div id="zenodo.available.description"><spring:message code="system.property.description.zenodo.available" /></div>
-        <div id="digital_commons_data.available.description"><spring:message code="system.property.description.digital_commons_data.available" /></div>
+        <div id="digitalCommonsData.available.description"><spring:message code="system.property.description.digitalCommonsData.available" /></div>
         <div id="github.available.description"><spring:message code="system.property.description.github.available" /></div>
         <div id="api.available.description"><spring:message code="system.property.description.api.available" /></div>
         <div id="onboarding.available.description"><spring:message code="system.property.description.onboarding.available" /></div>

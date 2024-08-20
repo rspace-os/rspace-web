@@ -10,8 +10,8 @@ import { useDigitalCommonsDataEndpoint } from "../useDigitalCommonsDataEndpoint"
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 type DigitalCommonsDataArgs = {|
-  integrationState: IntegrationStates["DIGITAL_COMMONS_DATA"],
-  update: (IntegrationStates["DIGITAL_COMMONS_DATA"]) => void,
+  integrationState: IntegrationStates["DIGITALCOMMONSDATA"],
+  update: (IntegrationStates["DIGITALCOMMONSDATA"]) => void,
 |};
 
 export const COLOR = {
@@ -43,9 +43,9 @@ function DigitalCommonsData({
         })
       );
     };
-    window.addEventListener("DIGITAL_COMMONS_DATA_CONNECTED", f);
+    window.addEventListener("DIGITALCOMMONSDATA_CONNECTED", f);
     return () => {
-      window.removeEventListener("DIGITAL_COMMONS_DATA_CONNECTED", f);
+      window.removeEventListener("DIGITALCOMMONSDATA_CONNECTED", f);
     };
   }, []);
 
