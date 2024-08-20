@@ -618,8 +618,8 @@ export const IdentifierDataGrid = ({
                                 Polygon
                               </Typography>
                               <dl className={classes.styledDescriptionList}>
-                                {gl.geoLocationPolygon.map(
-                                  ({ polygonPoint: point }, index) => (
+                                {gl.geoLocationPolygon.mapPoints(
+                                  (point, index) => (
                                     <DividedPair key={index}>
                                       <dt>Point {index + 1} Latitude</dt>
                                       <dd>{point.pointLatitude}˚</dd>

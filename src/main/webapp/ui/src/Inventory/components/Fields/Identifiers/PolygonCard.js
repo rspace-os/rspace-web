@@ -75,105 +75,101 @@ const PolygonEditor = observer(
       (isEmpty(point.pointLongitude) && !polygonEmpty) ||
       isOutOfRangeX(Number(point.pointLongitude));
 
-    return geoLocationPolygon
-      .map((item) => item.polygonPoint)
-      .map((point, i) => (
-        <Grid
-          key={i}
-          container
-          direction="row"
-          spacing={1}
-          sx={{
-            alignItems: "center",
-            width: "100%",
-          }}
-        >
-          <Grid item md={5}>
-            <InputWrapper label={`Point ${i + 1} Latitude`}>
-              {editable && i < geoLocationPolygon.length - 1 ? (
-                <AmberNumberField
-                  inputProps={{ ...COORD_RANGE_Y }}
-                  size="small"
-                  variant="standard"
-                  fullWidth
-                  datatestid={`Polygon-point-${i}-latitude`}
-                  disabled={false}
-                  value={point.pointLatitude ?? ""}
-                  placeholder="Enter Point Latitude"
-                  onChange={({ target: { value } }) => {
-                    geoLocationPolygon.set(i, "pointLatitude", value);
-                    doUpdateIdentifiers();
-                  }}
-                  /* value is required for any polygon point (if at least another value is specified) */
-                  error={polygonPointLatitudeError(point)}
-                  helperText={
-                    polygonPointLatitudeError(point) ? (
-                      <>Between &minus;90.0˚ and 90.0˚.</>
-                    ) : null
-                  }
-                />
-              ) : (
-                /* last point is edited by editing first */
-                point.pointLatitude || (
-                  <span style={{ color: "#949494" }}>-</span>
-                )
-              )}
-            </InputWrapper>
-          </Grid>
-          <Grid item md={5}>
-            <InputWrapper label={`Point ${i + 1} Longitude`}>
-              {editable && i < geoLocationPolygon.length - 1 ? (
-                <AmberNumberField
-                  inputProps={{ ...COORD_RANGE_X }}
-                  size="small"
-                  variant="standard"
-                  fullWidth
-                  datatestid={`Polygon-point-${i + 1}-longitude`}
-                  disabled={false}
-                  value={point.pointLongitude ?? ""}
-                  placeholder="Enter Point Longitude"
-                  onChange={({ target: { value } }) => {
-                    geoLocationPolygon.set(i, "pointLongitude", value);
-                    doUpdateIdentifiers();
-                  }}
-                  /* value is required for any polygon point (if at least another value is specified) */
-                  error={polygonPointLongitudeError(point)}
-                  helperText={
-                    polygonPointLongitudeError(point) ? (
-                      <>Between &minus;180.0˚ and 180.0˚.</>
-                    ) : null
-                  }
-                />
-              ) : (
-                /* last point is edited by editing first */
-                point.pointLongitude || (
-                  <span style={{ color: "#949494" }}>-</span>
-                )
-              )}
-            </InputWrapper>
-          </Grid>
-          <Grid item md={1}>
-            {canBeAdded(i) ? (
-              <AddButton
-                onClick={() => handleAddPoint(i)}
-                title={`Add Point after ${i + 1}`}
+    return geoLocationPolygon.mapPoints((point, i) => (
+      <Grid
+        key={i}
+        container
+        direction="row"
+        spacing={1}
+        sx={{
+          alignItems: "center",
+          width: "100%",
+        }}
+      >
+        <Grid item md={5}>
+          <InputWrapper label={`Point ${i + 1} Latitude`}>
+            {editable && i < geoLocationPolygon.length - 1 ? (
+              <AmberNumberField
+                inputProps={{ ...COORD_RANGE_Y }}
+                size="small"
+                variant="standard"
+                fullWidth
+                datatestid={`Polygon-point-${i}-latitude`}
+                disabled={false}
+                value={point.pointLatitude ?? ""}
+                placeholder="Enter Point Latitude"
+                onChange={({ target: { value } }) => {
+                  geoLocationPolygon.set(i, "pointLatitude", value);
+                  doUpdateIdentifiers();
+                }}
+                /* value is required for any polygon point (if at least another value is specified) */
+                error={polygonPointLatitudeError(point)}
+                helperText={
+                  polygonPointLatitudeError(point) ? (
+                    <>Between &minus;90.0˚ and 90.0˚.</>
+                  ) : null
+                }
               />
             ) : (
-              <>&nbsp;</>
+              /* last point is edited by editing first */
+              point.pointLatitude || <span style={{ color: "#949494" }}>-</span>
             )}
-          </Grid>
-          <Grid item md={1}>
-            {canBeRemoved(i) ? (
-              <RemoveButton
-                onClick={() => handleRemovePoint(i)}
-                title={`Remove Point ${i + 1}`}
-              />
-            ) : (
-              <>&nbsp;</>
-            )}
-          </Grid>
+          </InputWrapper>
         </Grid>
-      ));
+        <Grid item md={5}>
+          <InputWrapper label={`Point ${i + 1} Longitude`}>
+            {editable && i < geoLocationPolygon.length - 1 ? (
+              <AmberNumberField
+                inputProps={{ ...COORD_RANGE_X }}
+                size="small"
+                variant="standard"
+                fullWidth
+                datatestid={`Polygon-point-${i + 1}-longitude`}
+                disabled={false}
+                value={point.pointLongitude ?? ""}
+                placeholder="Enter Point Longitude"
+                onChange={({ target: { value } }) => {
+                  geoLocationPolygon.set(i, "pointLongitude", value);
+                  doUpdateIdentifiers();
+                }}
+                /* value is required for any polygon point (if at least another value is specified) */
+                error={polygonPointLongitudeError(point)}
+                helperText={
+                  polygonPointLongitudeError(point) ? (
+                    <>Between &minus;180.0˚ and 180.0˚.</>
+                  ) : null
+                }
+              />
+            ) : (
+              /* last point is edited by editing first */
+              point.pointLongitude || (
+                <span style={{ color: "#949494" }}>-</span>
+              )
+            )}
+          </InputWrapper>
+        </Grid>
+        <Grid item md={1}>
+          {canBeAdded(i) ? (
+            <AddButton
+              onClick={() => handleAddPoint(i)}
+              title={`Add Point after ${i + 1}`}
+            />
+          ) : (
+            <>&nbsp;</>
+          )}
+        </Grid>
+        <Grid item md={1}>
+          {canBeRemoved(i) ? (
+            <RemoveButton
+              onClick={() => handleRemovePoint(i)}
+              title={`Remove Point ${i + 1}`}
+            />
+          ) : (
+            <>&nbsp;</>
+          )}
+        </Grid>
+      </Grid>
+    ));
   }
 );
 

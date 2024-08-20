@@ -59,8 +59,8 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
     if (i === 0) this.points[this.length - 1].polygonPoint[key] = value;
   }
 
-  map<T>(f: ({| polygonPoint: PolygonPoint |}, i: number) => T): Array<T> {
-    return this.points.map(f);
+  mapPoints<T>(f: (PolygonPoint, number) => T): Array<T> {
+    return this.points.map(({ polygonPoint }, i) => f(polygonPoint, i));
   }
 
   addAnotherPoint(i: number): void {

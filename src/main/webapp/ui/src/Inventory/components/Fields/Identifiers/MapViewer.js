@@ -98,7 +98,7 @@ export default function MapViewer({
   }
   if (polygon.isValid) {
     const sum = polygon
-      .map(({ polygonPoint }) => parseFloat(polygonPoint.pointLatitude))
+      .mapPoints((polygonPoint) => parseFloat(polygonPoint.pointLatitude))
       .reduce((acc, lat) => acc + lat, 0);
     latitudeCenter += sum * (1 / polygon.length);
     latitudeDataPoints++;
@@ -126,7 +126,7 @@ export default function MapViewer({
   }
   if (polygon.isValid) {
     const sum = polygon
-      .map(({ polygonPoint }) => parseFloat(polygonPoint.pointLongitude))
+      .mapPoints((polygonPoint) => parseFloat(polygonPoint.pointLongitude))
       .reduce((acc, lat) => acc + lat, 0);
     longitudeCenter += sum * (1 / polygon.length);
     longitudeDataPoints++;
@@ -182,10 +182,8 @@ export default function MapViewer({
               fillOpacity: 0.5,
               stroke: false,
             }}
-            positions={polygon.map(
-              ({
-                polygonPoint: { pointLatitude: lat, pointLongitude: long },
-              }) => [lat, long]
+            positions={polygon.mapPoints(
+              ({ pointLatitude: lat, pointLongitude: long }) => [lat, long]
             )}
           />
         )}

@@ -26,7 +26,7 @@ export interface GeoLocationPolygon {
   +length: number;
   get(i: number): ?{| polygonPoint: PolygonPoint |};
   set(i: number, key: $Keys<PolygonPoint>, value: string): void;
-  map<T>(f: ({| polygonPoint: PolygonPoint |}, i: number) => T): Array<T>;
+  mapPoints<T>(f: (PolygonPoint, number) => T): Array<T>;
   addAnotherPoint(i: number): void;
   removePoint(i: number): void;
   +isValid: boolean;
