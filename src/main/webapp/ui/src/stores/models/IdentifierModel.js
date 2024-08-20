@@ -7,7 +7,6 @@ import {
   makeObservable,
   runInAction,
 } from "mobx";
-import ApiService from "../../common/InvApiService";
 import React, { type Node } from "react";
 import GeoLocationModel from "../models/GeoLocationModel";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
@@ -30,9 +29,9 @@ import {
   type GeoLocation,
   type GeoLocationPolygon,
 } from "../definitions/GeoLocation";
-import { mkAlert } from "../contexts/Alert";
+import { mkAlert, type Alert } from "../contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import { type Alert } from "../contexts/Alert";
+import InvApiService from "../../common/InvApiService";
 
 type GeoLocationBox = {
   eastBoundLongitude: string,
@@ -185,7 +184,13 @@ export default class IdentifierModel implements Identifier {
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
 
-  constructor(attrs: IdentifierAttrs, parentGlobalId: GlobalId) {
+  ApiServiceBase: typeof InvApiService | null = null;
+
+  constructor(
+    attrs: IdentifierAttrs,
+    parentGlobalId: GlobalId,
+    ApiServiceBase?: typeof InvApiService
+  ) {
     makeObservable(this, {
       parentGlobalId: observable,
       id: observable,
@@ -265,6 +270,10 @@ export default class IdentifierModel implements Identifier {
       attrs.geoLocations?.map((gl) => new GeoLocationModel(gl)) ?? [];
     this._links = attrs._links;
     this.customFieldsOnPublicPage = attrs.customFieldsOnPublicPage;
+
+    if (ApiServiceBase) {
+      this.ApiServiceBase = ApiServiceBase;
+    }
   }
 
   get requiredFields(): Array<IdentifierField> {
@@ -460,6 +469,9 @@ export default class IdentifierModel implements Identifier {
     confirm: (Node, Node, string, string) => Promise<boolean>,
     addAlert: (Alert) => void,
   |}): Promise<void> {
+    if (!this.ApiServiceBase)
+      throw new Error("This operation requires the user be authenticated");
+    const ApiServiceBase = this.ApiServiceBase;
     try {
       if (
         await confirm(
@@ -483,7 +495,7 @@ export default class IdentifierModel implements Identifier {
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
-        const response = await ApiService.post<
+        const response = await ApiServiceBase.post<
           {||},
           {
             state: IGSNPublishingState,
@@ -545,6 +557,9 @@ export default class IdentifierModel implements Identifier {
     confirm: (Node, Node, string, string) => Promise<boolean>,
     addAlert: (Alert) => void,
   |}): Promise<void> {
+    if (!this.ApiServiceBase)
+      throw new Error("This operation requires the user be authenticated");
+    const ApiServiceBase = this.ApiServiceBase;
     try {
       if (
         await confirm(
@@ -568,7 +583,7 @@ export default class IdentifierModel implements Identifier {
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
-        const response = await ApiService.post<
+        const response = await ApiServiceBase.post<
           {||},
           { state: IGSNPublishingState }
         >(`/identifiers/${this.id}/retract`, {});
@@ -615,6 +630,9 @@ export default class IdentifierModel implements Identifier {
   }: {|
     addAlert: (Alert) => void,
   |}): Promise<void> {
+    if (!this.ApiServiceBase)
+      throw new Error("This operation requires the user be authenticated");
+    const ApiServiceBase = this.ApiServiceBase;
     if (this.id === null || typeof this.id === "undefined") {
       addAlert(
         mkAlert({
@@ -628,7 +646,7 @@ export default class IdentifierModel implements Identifier {
 
       // retract
       try {
-        const response = await ApiService.post<
+        const response = await ApiServiceBase.post<
           {||},
           { state: IGSNPublishingState }
         >(`/identifiers/${id}/retract`, {});
@@ -650,7 +668,7 @@ export default class IdentifierModel implements Identifier {
 
       // publish
       try {
-        const response = await ApiService.post<
+        const response = await ApiServiceBase.post<
           {||},
           {
             state: IGSNPublishingState,

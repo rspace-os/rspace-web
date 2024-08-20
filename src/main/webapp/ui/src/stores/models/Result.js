@@ -390,7 +390,7 @@ export default class Result
 
       this.identifiers = params.identifiers.map((idAttrs) => {
         if (!this.globalId) throw new Error("Global Id must be known.");
-        return factory.newIdentifier(idAttrs, this.globalId);
+        return factory.newIdentifier(idAttrs, this.globalId, ApiService);
       });
       void this.fetchImage("thumbnail");
     } else {
@@ -1321,7 +1321,7 @@ export default class Result
         >(`/identifiers`, {
           parentGlobalId: globalId,
         });
-        const newIGSN = new IdentifierModel(response.data, globalId);
+        const newIGSN = new IdentifierModel(response.data, globalId, ApiService);
         this.identifiers = this.identifiers.concat(newIGSN);
         getRootStore().uiStore.addAlert(
           mkAlert({
