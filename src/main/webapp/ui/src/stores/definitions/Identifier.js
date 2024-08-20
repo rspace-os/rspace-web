@@ -4,6 +4,8 @@ import { type GeoLocation, type GeoLocationAttrs } from "./GeoLocation";
 import { type URL } from "../../util/types";
 import { type _LINK } from "../../common/ApiServiceBase";
 import { type RadioOption } from "../../components/Inputs/RadioField";
+import { type Node } from "react";
+import { type Alert } from "../contexts/Alert";
 
 export type IGSNDateType =
   | "Accepted"
@@ -123,9 +125,17 @@ export interface Identifier {
   +recommendedFields: Array<IdentifierField>;
   +anyRecommendedGiven: boolean;
 
-  publish(): Promise<void>;
-  retract(): Promise<void>;
-  republish(): Promise<void>;
+  publish({|
+    confirm: (Node, Node, string, string) => Promise<boolean>,
+    addAlert: (Alert) => void,
+  |}): Promise<void>;
+  retract({|
+    confirm: (Node, Node, string, string) => Promise<boolean>,
+    addAlert: (Alert) => void,
+  |}): Promise<void>;
+  republish({|
+    addAlert: (Alert) => void,
+  |}): Promise<void>;
 
   /*
    * This computed property is for showing the Identifier in the public page
