@@ -98,7 +98,7 @@ export const partition = <T>(
  */
 export const filterClass = <T, U>(
   clazz: Class<T>,
-  array: Array<U>
+  array: $ReadOnlyArray<U>
 ): Array<T> => {
   const arrayOft = ([]: Array<T>);
   for (const a of array) {

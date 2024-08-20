@@ -77,6 +77,10 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
   ): $ReadOnlyArray<{| polygonPoint: PolygonPoint |}> {
     return this.points.splice(i, count, ...items);
   }
+
+  toJson(): mixed {
+    return this.points;
+  }
 }
 
 export default class GeoLocationModel implements GeoLocation {
@@ -110,7 +114,6 @@ export default class GeoLocationModel implements GeoLocation {
      * we have them point to the same object in memory. The validation is just to
      * ensure we're not erasing data before doing so.
      */
-    console.debug("new GeoLocationModel");
     const lastIndex = attrs.geoLocationPolygon.length - 1;
     if (
       attrs.geoLocationPolygon[0].polygonPoint.pointLatitude ===
@@ -118,7 +121,6 @@ export default class GeoLocationModel implements GeoLocation {
       attrs.geoLocationPolygon[0].polygonPoint.pointLongitude ===
         attrs.geoLocationPolygon[lastIndex].polygonPoint.pointLongitude
     ) {
-      console.debug("polygon data is correct");
       //TODO remove the last one
       this.geoLocationPolygon = new GeoLocationPolygonModel(
         attrs.geoLocationPolygon.map(({ polygonPoint }) => ({
@@ -172,5 +174,15 @@ export default class GeoLocationModel implements GeoLocation {
       !this.boxIncomplete &&
       !this.polygonIncomplete
     );
+  }
+
+  toJson(): { ... } {
+    return {
+      geoLocationBox: this.geoLocationBox,
+      geoLocationPlace: this.geoLocationPlace,
+      geoLocationPoint: this.geoLocationPoint,
+      geoLocationPolygon: this.geoLocationPolygon.toJson(),
+      geoLocationInPolygonPoint: this.geoLocationInPolygonPoint,
+    };
   }
 }

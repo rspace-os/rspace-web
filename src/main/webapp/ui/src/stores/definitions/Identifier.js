@@ -113,7 +113,7 @@ export interface Identifier {
   descriptions: ?Array<IdentifierDescription>;
   alternateIdentifiers: ?Array<AlternateIdentifier>;
   dates: ?Array<IdentifierDate>;
-  geoLocations: ?Array<GeoLocation>;
+  geoLocations: ?$ReadOnlyArray<GeoLocation>;
   customFieldsOnPublicPage: boolean;
   _links: Array<_LINK>;
 
@@ -134,4 +134,5 @@ export interface Identifier {
    * with the same type.
    */
   //  +publicData: IdentifierAttrs;
+  toJson(): { ... };
 }

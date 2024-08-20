@@ -33,6 +33,7 @@ export interface GeoLocationPolygon {
     count: number,
     ...items: $ReadOnlyArray<{| polygonPoint: PolygonPoint |}>
   ): $ReadOnlyArray<{| polygonPoint: PolygonPoint |}>;
+  toJson(): mixed;
 }
 
 /*
@@ -134,4 +135,6 @@ export interface GeoLocation {
    */
   +polygonEmpty: boolean;
   +inPolygonPointIncomplete: boolean;
+
+  toJson(): { ... };
 }

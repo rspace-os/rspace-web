@@ -22,7 +22,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import { capitaliseJustFirstChar } from "../../../../util/Util";
-import { GeoLocationPolygonModel } from "../../../../stores/models/GeoLocationModel";
+import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 
 export const isEmpty = (v: string): boolean => v === "";
 
@@ -55,12 +55,9 @@ const MultipleInputHandler = ({
 
   const newItem = () => {
     return field.key === "Geolocations"
-      ? {
+      ? new GeoLocationModel({
           ...newGeoLocation,
-          geoLocationPolygon: new GeoLocationPolygonModel(
-            newGeoLocation.geoLocationPolygon
-          ),
-        }
+        })
       : {
           value: field.key === "Dates" ? new Date() : "",
           ...(field.options ? { type: field.options[0].value } : null),

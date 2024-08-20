@@ -508,7 +508,7 @@ export default class Result
       |}>,
       newBase64Image?: ?string,
       barcodes?: Array<{ ... }>,
-      identifiers?: Array<Identifier>,
+      identifiers?: mixed,
       sharingMode?: SharingMode,
       sharedWith?: ?Array<SharedWithGroup>,
       ...
@@ -538,7 +538,7 @@ export default class Result
         this.barcodes
       ).map((b) => b.paramsForBackend);
     if (this.currentlyEditableFields.has("identifiers"))
-      params.identifiers = this.identifiers;
+      params.identifiers = this.identifiers.map(i => i.toJson());
     if (this.currentlyEditableFields.has("sharingMode"))
       params.sharingMode = this.sharingMode;
     if (this.currentlyEditableFields.has("sharedWith"))

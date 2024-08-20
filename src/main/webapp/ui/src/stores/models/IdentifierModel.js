@@ -10,9 +10,7 @@ import {
 import ApiService from "../../common/InvApiService";
 import getRootStore from "../stores/RootStore";
 import React from "react";
-import GeoLocationModel, {
-  GeoLocationPolygonModel,
-} from "../models/GeoLocationModel";
+import GeoLocationModel from "../models/GeoLocationModel";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type URL } from "../../util/types";
 import { type _LINK } from "../../common/ApiServiceBase";
@@ -34,7 +32,7 @@ import {
   type GeoLocationPolygon,
 } from "../definitions/GeoLocation";
 import { mkAlert } from "../contexts/Alert";
-import { parseInteger } from "../../util/parsers";
+import * as ArrayUtils from "../../util/ArrayUtils";
 
 type GeoLocationBox = {
   eastBoundLongitude: string,
@@ -182,7 +180,7 @@ export default class IdentifierModel implements Identifier {
   descriptions: ?Array<IdentifierDescription> = [];
   alternateIdentifiers: ?Array<AlternateIdentifier> = [];
   dates: ?Array<IdentifierDate> = [];
-  geoLocations: ?Array<GeoLocation> = [];
+  geoLocations: ?$ReadOnlyArray<GeoLocation> = [];
   _links: Array<_LINK> = [];
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
@@ -374,8 +372,10 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Geolocations",
         value: this.geoLocations,
-        // $FlowFixMe[incompatible-call]
-        handler: (v) => this.setGeoLocations(v),
+        handler: (v) => {
+          if (Array.isArray(v))
+            this.setGeoLocations(ArrayUtils.filterClass(GeoLocationModel, v));
+        },
       },
     ];
   }
@@ -445,8 +445,7 @@ export default class IdentifierModel implements Identifier {
     this.dates = dates;
   }
 
-  setGeoLocations(geoLocations: Array<GeoLocation>) {
-    // this breaks the loop
+  setGeoLocations(geoLocations: $ReadOnlyArray<GeoLocation>) {
     this.geoLocations = geoLocations;
   }
 
@@ -677,6 +676,35 @@ export default class IdentifierModel implements Identifier {
         );
       }
     }
+  }
+
+  toJson(): { ... } {
+    return {
+      parentGlobalId: this.parentGlobalId,
+      id: this.id,
+      rsPublicId: this.rsPublicId,
+      doi: this.doi,
+      doiType: this.doiType,
+      creatorName: this.creatorName,
+      creatorType: this.creatorType,
+      creatorAffiliation: this.creatorAffiliation,
+      creatorAffiliationIdentifier: this.creatorAffiliationIdentifier,
+      title: this.title,
+      publicUrl: this.publicUrl,
+      publisher: this.publisher,
+      publicationYear: this.publicationYear,
+      resourceType: this.resourceType,
+      resourceTypeGeneral: this.resourceTypeGeneral,
+      url: this.url,
+      state: this.state,
+      subjects: this.subjects,
+      descriptions: this.descriptions,
+      alternateIdentifiers: this.alternateIdentifiers,
+      dates: this.dates,
+      geoLocations: this.geoLocations?.map((g) => g.toJson()),
+      editing: this.editing,
+      customFieldsOnPublicPage: this.customFieldsOnPublicPage,
+    };
   }
 
   //  get publicData(): IdentifierAttrs {
