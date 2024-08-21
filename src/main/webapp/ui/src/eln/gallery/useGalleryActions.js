@@ -384,23 +384,21 @@ export function useGalleryActions(): {|
           },
         }
       );
+
+      Parsers.objectPath(["data", "exceptionMessage"], data)
+        .flatMap(Parsers.isString)
+        .do((exceptionMessage) => {
+          throw new Error(exceptionMessage);
+        });
+
       addAlert(
-        Parsers.objectPath(["data", "exceptionMessage"], data)
-          .flatMap(Parsers.isString)
-          .map((exceptionMessage) =>
-            mkAlert({
-              title: `Failed to rename item.`,
-              message: exceptionMessage,
-              variant: "error",
-            })
-          )
-          .orElse(
-            mkAlert({
-              message: `Successfully renamed item.`,
-              variant: "success",
-            })
-          )
+        mkAlert({
+          message: `Successfully renamed item.`,
+          variant: "success",
+        })
       );
+
+      file.setName(newName);
     } catch (e) {
       addAlert(
         mkAlert({

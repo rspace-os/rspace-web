@@ -87,6 +87,7 @@ export type GalleryFile = {|
    */
   transformFilename: ((string) => string) => string,
 
+  setName: (string) => void,
   changeDescription: (Description) => Promise<void>,
 |};
 
@@ -331,6 +332,11 @@ export function useGalleryListing({
         return `${f(filenameExceptExtension(name))}.${justFilenameExtension(
           name
         )}`;
+      },
+      setName: (newName: string) => {
+        runInAction(() => {
+          ret.name = newName;
+        });
       },
       changeDescription: async (desc: Description) => {
         try {

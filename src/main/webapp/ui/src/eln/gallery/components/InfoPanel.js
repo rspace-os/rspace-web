@@ -23,6 +23,7 @@ import { formatFileSize } from "../../../util/files";
 import Result from "../../../util/result";
 import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
 import { observer } from "mobx-react-lite";
+import { useGalleryActions } from "../useGalleryActions";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -67,6 +68,7 @@ const Puller: ComponentType<{|
 const NameFieldForLargeViewports = styled(
   observer(
     ({ file, className }: {| file: GalleryFile, className: string |}) => {
+      const { rename } = useGalleryActions();
       const [name, setName] = React.useState(file.name);
       React.useEffect(() => {
         setName(file.name);
@@ -99,7 +101,7 @@ const NameFieldForLargeViewports = styled(
                 size="small"
                 variant="contained"
                 onClick={() => {
-                  // save
+                  void rename(file, name);
                 }}
               >
                 Save
