@@ -338,28 +338,40 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
         flexWrap="nowrap"
       >
         <Grid item sx={{ flexShrink: 1, flexGrow: 1 }}>
-          {selection.size === 1 ? (
-            selection
-              .asSet()
-              .only.map((f) => (
-                <NameFieldForLargeViewports key={null} file={f} />
-              ))
-              .orElse(null)
-          ) : (
-            <Typography
-              variant="h3"
-              sx={{
-                border: "none",
-                m: 0.75,
-                ml: 1,
-                lineBreak: "anywhere",
-                textTransform: "none",
-              }}
-            >
-              {selection.size === 0 && "Nothing selected"}
-              {selection.size > 1 && selection.label}
-            </Typography>
-          )}
+          {selection
+            .asSet()
+            .only.toResult(() => new Error("Empty or multiple selected"))
+            .flatMap((f) =>
+              f.isSystemFolder
+                ? Result.Error<GalleryFile>([
+                    new Error("Cannot rename system folder"),
+                  ])
+                : Result.Ok(f)
+            )
+            .map((f) => <NameFieldForLargeViewports key={null} file={f} />)
+            .orElse(
+              <Typography
+                variant="h3"
+                sx={{
+                  border: "none",
+                  // these margins are setup so that the heading takes up the
+                  // same amount of space as the text field when it is shown
+                  mr: 0.75,
+                  ml: 1,
+                  mt: 1.25,
+                  mb: 1,
+                  lineBreak: "anywhere",
+                  textTransform: "none",
+                }}
+              >
+                {selection.size === 0 && "Nothing selected"}
+                {selection
+                  .asSet()
+                  .only.map((f) => f.name)
+                  .orElse(null)}
+                {selection.size > 1 && selection.label}
+              </Typography>
+            )}
         </Grid>
         {selection
           .asSet()
