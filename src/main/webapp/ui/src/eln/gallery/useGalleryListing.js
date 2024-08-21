@@ -87,7 +87,7 @@ export type GalleryFile = {|
    */
   transformFilename: ((string) => string) => string,
 
-  changeDescription: (Description) => void,
+  changeDescription: (Description) => Promise<void>,
 |};
 
 /**
@@ -332,11 +332,61 @@ export function useGalleryListing({
           name
         )}`;
       },
-      changeDescription: (d: Description) => {
-        // await network response
-        runInAction(() => {
-          ret.description = d;
-        });
+      changeDescription: async (desc: Description) => {
+        try {
+          const formData = new FormData();
+          formData.append("recordId", idToString(id));
+          formData.append(
+            "description",
+            desc.match({
+              missing: () => {
+                throw new Error("Description is missing");
+              },
+              empty: () => "",
+              present: (d) => d,
+            })
+          );
+          const { data } = await axios.post<FormData, mixed>(
+            `/workspace/editor/structuredDocument/ajax/description`,
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+
+          Parsers.isObject(data)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("data"))
+            .flatMap(Parsers.isBoolean)
+            .flatMap(Parsers.isTrue)
+            .mapError(
+              ([e]) =>
+                new Error("Description modification was not saved.", {
+                  cause: e,
+                })
+            )
+            .elseThrow();
+
+          addAlert(
+            mkAlert({
+              variant: "success",
+              message: "Successfully updated description.",
+            })
+          );
+          runInAction(() => {
+            ret.description = desc;
+          });
+        } catch (e) {
+          console.error(e);
+          addAlert(
+            mkAlert({
+              variant: "error",
+              message: e,
+            })
+          );
+        }
       },
     });
     return ret;

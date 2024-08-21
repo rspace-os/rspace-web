@@ -104,7 +104,7 @@ const DescriptionField = styled(
                 size="small"
                 variant="contained"
                 onClick={() => {
-                  file.changeDescription(Description.Present(description));
+                  void file.changeDescription(Description.Present(description));
                 }}
               >
                 Save
