@@ -8,8 +8,8 @@ import { Optional, lift2 } from "./optional";
  * to elements at each index in turn.
  */
 export const zipWith = <A, B, C>(
-  listA: Array<A>,
-  listB: Array<B>,
+  listA: $ReadOnlyArray<A>,
+  listB: $ReadOnlyArray<B>,
   f: (A, B, number) => C
 ): Array<C> => {
   if (listA.length !== listB.length) {
@@ -21,17 +21,17 @@ export const zipWith = <A, B, C>(
 /**
  * Checks whether an array of values are all unique.
  */
-export const allAreUnique = <T>(array: Array<T>): boolean =>
+export const allAreUnique = <T>(array: $ReadOnlyArray<T>): boolean =>
   array.length === [...new Set(array)].length;
 
 /**
  * Same as Array.prototype.splice, but without mutation.
  */
 export const splice = <T>(
-  arr: Array<T>,
+  arr: $ReadOnlyArray<T>,
   start: number,
   deleteCount: number,
-  ...items: Array<T>
+  ...items: $ReadOnlyArray<T>
 ): Array<T> => {
   const array = [...arr];
   array.splice(start, deleteCount, ...items);
@@ -42,7 +42,8 @@ export const splice = <T>(
  * Simply reverses a list, making it clear that the copying of the array is due
  * to the fact that Array.prototype.reverse acts on the array in place.
  */
-export const reverse = <A>(list: Array<A>): Array<A> => [...list].reverse();
+export const reverse = <A>(list: $ReadOnlyArray<A>): Array<A> =>
+  [...list].reverse();
 
 /**
  * Extract the head of the passed array, if there is one.
@@ -66,8 +67,8 @@ export function last<T>(array: $ReadOnlyArray<T>): Result<T> {
  *  outerProduct([1,2,3], [4,5], (x,y) => x * y) // [[4,5],[8,10],[12,15]]
  */
 export const outerProduct = <A, B, C>(
-  as: Array<A>,
-  bs: Array<B>,
+  as: $ReadOnlyArray<A>,
+  bs: $ReadOnlyArray<B>,
   f: (A, B) => C
 ): Array<Array<C>> => as.map((a) => bs.map((b) => f(a, b)));
 
@@ -81,7 +82,7 @@ export const outerProduct = <A, B, C>(
  */
 export const partition = <T>(
   predicate: (T) => boolean,
-  list: Array<T>
+  list: $ReadOnlyArray<T>
 ): [Array<T>, Array<T>] =>
   list.reduce(
     ([yes, no], element) => [
@@ -98,7 +99,7 @@ export const partition = <T>(
  */
 export const filterClass = <T, U>(
   clazz: Class<T>,
-  array: Array<U>
+  array: $ReadOnlyArray<U>
 ): Array<T> => {
   const arrayOft = ([]: Array<T>);
   for (const a of array) {
@@ -114,7 +115,7 @@ export const filterClass = <T, U>(
  * @arg a  The constant value to be inserted between the elements.
  * @arg as The source array from which elements will be copied.
  */
-export const intersperse = <A>(a: A, as: Array<A>): Array<A> => {
+export const intersperse = <A>(a: A, as: $ReadOnlyArray<A>): Array<A> => {
   if (as.length === 0) return [];
   const output = [as[0]];
   for (let i = 1; i < as.length; i++) {
@@ -130,7 +131,10 @@ export const intersperse = <A>(a: A, as: Array<A>): Array<A> => {
  * break. Useful for property-based testing where values can be randonly chosen
  * from an array by generating random array of booleans of the same length.
  */
-export const takeWhere = <A>(as: Array<A>, where: Array<boolean>): Array<A> => {
+export const takeWhere = <A>(
+  as: $ReadOnlyArray<A>,
+  where: $ReadOnlyArray<boolean>
+): Array<A> => {
   if (as.length !== where.length) throw new Error("length must match");
   const output = [];
   for (let i = 0; i < as.length; i++) {
@@ -179,7 +183,7 @@ export function getAt<T>(index: number, array: $ReadOnlyArray<T>): Optional<T> {
  */
 export const mapOptional = <A, B>(
   f: (A) => Optional<B>,
-  as: Array<A>
+  as: $ReadOnlyArray<A>
 ): Array<B> => {
   // These classes are here solely so that filterClass can be used
   class Present<T> {
@@ -190,15 +194,15 @@ export const mapOptional = <A, B>(
   }
   class Empty {}
 
-  const arrayOfOptionals: Array<Optional<B>> = as.map(f);
-  const arrayOfPresentOrEmpty: Array<Present<B> | Empty> = arrayOfOptionals.map(
-    (opt) =>
+  const arrayOfOptionals: $ReadOnlyArray<Optional<B>> = as.map(f);
+  const arrayOfPresentOrEmpty: $ReadOnlyArray<Present<B> | Empty> =
+    arrayOfOptionals.map((opt) =>
       opt.destruct(
         () => new Empty(),
         (v) => new Present(v)
       )
-  );
-  const arrayOfPresent: Array<Present<B>> = filterClass(
+    );
+  const arrayOfPresent: $ReadOnlyArray<Present<B>> = filterClass(
     Present,
     arrayOfPresentOrEmpty
   );
@@ -224,7 +228,7 @@ export const mapOptional = <A, B>(
  * const justNums: Array<number> = filterNull(mixture);
  * ```
  */
-export const filterNull = <A>(as: Array<?A>): Array<A> =>
+export const filterNull = <A>(as: $ReadOnlyArray<?A>): Array<A> =>
   mapOptional((a) => Optional.fromNullable(a), as);
 
 /**
