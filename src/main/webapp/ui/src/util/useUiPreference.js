@@ -10,6 +10,8 @@ import * as Parsers from "./parsers";
  */
 export const PREFERENCES: { [string]: symbol } = {
   GALLERY_VIEW_MODE: Symbol.for("GALLERY_VIEW_MODE"),
+  GALLERY_SORT_BY: Symbol.for("GALLERY_SORT_BY"),
+  GALLERY_SORT_ORDER: Symbol.for("GALLERY_SORT_ORDER"),
 };
 
 function fetchPreferences(): Promise<{ ... }> {

@@ -25,6 +25,7 @@ import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
 import { BrowserRouter, Navigate, useSearchParams } from "react-router-dom";
 import { Routes, Route } from "react-router";
+import useUiPreference, { PREFERENCES } from "../../util/useUiPreference";
 
 const WholePage = styled(() => {
   const [searchParams] = useSearchParams();
@@ -40,8 +41,15 @@ const WholePage = styled(() => {
   }, [searchParams]);
 
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
-  const [orderBy, setOrderBy] = React.useState("name");
-  const [sortOrder, setSortOrder] = React.useState("ASC");
+  const [orderBy, setOrderBy] = useUiPreference(PREFERENCES.GALLERY_SORT_BY, {
+    defaultValue: "name",
+  });
+  const [sortOrder, setSortOrder] = useUiPreference(
+    PREFERENCES.GALLERY_SORT_ORDER,
+    {
+      defaultValue: "ASC",
+    }
+  );
   const { galleryListing, path, clearPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
