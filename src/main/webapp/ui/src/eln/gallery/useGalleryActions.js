@@ -6,7 +6,12 @@ import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import RsSet from "../../util/set";
 import Result from "../../util/result";
-import { type GalleryFile, idToString, type Id } from "./useGalleryListing";
+import {
+  type GalleryFile,
+  Description,
+  idToString,
+  type Id,
+} from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
 export opaque type Destination =
@@ -52,6 +57,7 @@ export function useGalleryActions(): {|
     file: GalleryFile,
     newFile: File
   ) => Promise<void>,
+  changeDescription: (GalleryFile, Description) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -460,6 +466,59 @@ export function useGalleryActions(): {|
     }
   }
 
+  async function changeDescription(
+    file: GalleryFile,
+    newDescription: Description
+  ) {
+    const formData = new FormData();
+    formData.append("recordId", idToString(file.id));
+    formData.append(
+      "description",
+      newDescription.match({
+        missing: () => {
+          throw new Error("Description is missing");
+        },
+        empty: () => "",
+        present: (d) => d,
+      })
+    );
+    try {
+      const data = await axios.post<FormData, mixed>(
+        "workspace/editor/structuredDocument/ajax/description",
+        formData,
+        {
+          headers: {
+            "content-type": "multipart/form-data",
+          },
+        }
+      );
+
+      Parsers.objectPath(["data", "exceptionMessage"], data)
+        .flatMap(Parsers.isString)
+        .do((exceptionMessage) => {
+          throw new Error(exceptionMessage);
+        });
+
+      addAlert(
+        mkAlert({
+          message: `Successfully updated description.`,
+          variant: "success",
+        })
+      );
+
+      file.setDescription(newDescription);
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to update description.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
   return {
     uploadFiles,
     createFolder,
@@ -468,5 +527,6 @@ export function useGalleryActions(): {|
     duplicateFiles,
     rename,
     uploadNewVersion,
+    changeDescription,
   };
 }

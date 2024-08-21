@@ -133,6 +133,7 @@ const NameFieldForLargeViewports = styled(
 const DescriptionField = styled(
   observer(
     ({ file, className }: {| file: GalleryFile, className: string |}) => {
+      const { changeDescription } = useGalleryActions();
       function getDescValue(f: GalleryFile) {
         return f.description.match({
           missing: () => "",
@@ -170,7 +171,10 @@ const DescriptionField = styled(
                 size="small"
                 variant="contained"
                 onClick={() => {
-                  void file.changeDescription(Description.Present(description));
+                  void changeDescription(
+                    file,
+                    Description.Present(description)
+                  );
                 }}
               >
                 Save
