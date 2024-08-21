@@ -640,329 +640,333 @@ const GridView = observer(
 );
 
 const FileCard = styled(
-  //eslint-disable-next-line react/display-name
-  React.forwardRef(
-    (
-      {
-        file,
-        className,
-        selected,
-        index,
-        onClick,
-        tabIndex,
-        onFocus,
-        onBlur,
-      }: {|
-        file: GalleryFile,
-        className: string,
-        selected: boolean,
-        index: number,
-        onClick: (Event) => void,
-        tabIndex: number,
-        onFocus: () => void,
-        onBlur: () => void,
-      |},
-      ref
-    ) => {
-      const { uploadFiles } = useGalleryActions();
-      const selection = useGallerySelection();
-      const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
-        useFileImportDropZone({
-          onDrop: (files) => {
-            void uploadFiles([...file.path, file], file.id, files);
-            /*
-             * No need to refresh the listing as the uploaded file has been
-             * placed inside a folder into which the user cannot currently see
-             */
-          },
+  observer(
+    //eslint-disable-next-line react/display-name
+    React.forwardRef(
+      (
+        {
+          file,
+          className,
+          selected,
+          index,
+          onClick,
+          tabIndex,
+          onFocus,
+          onBlur,
+        }: {|
+          file: GalleryFile,
+          className: string,
+          selected: boolean,
+          index: number,
+          onClick: (Event) => void,
+          tabIndex: number,
+          onFocus: () => void,
+          onBlur: () => void,
+        |},
+        ref
+      ) => {
+        const { uploadFiles } = useGalleryActions();
+        const selection = useGallerySelection();
+        const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
+          useFileImportDropZone({
+            onDrop: (files) => {
+              void uploadFiles([...file.path, file], file.id, files);
+              /*
+               * No need to refresh the listing as the uploaded file has been
+               * placed inside a folder into which the user cannot currently see
+               */
+            },
+            disabled: !file.isFolder,
+          });
+        const { setNodeRef: setDropRef, isOver } = useDroppable({
+          id: file.id,
           disabled: !file.isFolder,
+          data: {
+            path: file.path,
+            destination: folderDestination(file),
+          },
         });
-      const { setNodeRef: setDropRef, isOver } = useDroppable({
-        id: file.id,
-        disabled: !file.isFolder,
-        data: {
-          path: file.path,
-          destination: folderDestination(file),
-        },
-      });
-      const {
-        attributes,
-        listeners,
-        setNodeRef: setDragRef,
-        transform,
-      } = useDraggable({
-        disabled: false,
-        id: file.id,
-        data: {
-          /*
-           * If this `file` is one of the selected files then all of the
-           * selected files are to be moved by the drag operation. If it is not
-           * included then just move this file.
-           */
-          filesBeingMoved: selection.includes(file)
-            ? selection.asSet()
-            : new RsSet([file]),
-        },
-      });
-      /*
-       * DndKit wants to set the role to "button" but if we do that then the
-       * keyboard controls of MUI's SimpleTreeView stop working. Keeping the
-       * correct role for tree items doesn't prevent DndKit from working.
-       */
-      delete attributes.role;
+        const {
+          attributes,
+          listeners,
+          setNodeRef: setDragRef,
+          transform,
+        } = useDraggable({
+          disabled: false,
+          id: file.id,
+          data: {
+            /*
+             * If this `file` is one of the selected files then all of the
+             * selected files are to be moved by the drag operation. If it is not
+             * included then just move this file.
+             */
+            filesBeingMoved: selection.includes(file)
+              ? selection.asSet()
+              : new RsSet([file]),
+          },
+        });
+        /*
+         * DndKit wants to set the role to "button" but if we do that then the
+         * keyboard controls of MUI's SimpleTreeView stop working. Keeping the
+         * correct role for tree items doesn't prevent DndKit from working.
+         */
+        delete attributes.role;
 
-      const dndContext = useDndContext();
-      const dndInProgress = Boolean(dndContext.active);
+        const dndContext = useDndContext();
+        const dndInProgress = Boolean(dndContext.active);
 
-      const dragStyle: { [string]: string | number } = transform
-        ? {
-            transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
-            zIndex: 1400, // Above the sidebar
-            position: "fixed",
-            boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
-          }
-        : {};
-      const dropStyle: { [string]: string | number } = isOver
-        ? {
-            borderColor: SELECTED_OR_FOCUS_BLUE,
-          }
-        : dndInProgress && file.isFolder
-        ? {
-            border: "2px solid white",
-            borderWidth: "2px",
-            borderRadius: "8px",
-            animation: "drop 2s linear infinite",
-          }
-        : {};
-      const inGroupBeingDraggedStyle: { [string]: string | number } =
-        (
-          dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
-        ).hasWithEq(file, (a, b) => a.id === b.id) &&
-        dndContext.active?.id !== file.id
+        const dragStyle: { [string]: string | number } = transform
           ? {
-              opacity: 0.2,
+              transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
+              zIndex: 1400, // Above the sidebar
+              position: "fixed",
+              boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
             }
           : {};
-      const fileUploadDropping: { [string]: string | number } = over
-        ? {
-            borderColor: SELECTED_OR_FOCUS_BLUE,
-          }
-        : {};
+        const dropStyle: { [string]: string | number } = isOver
+          ? {
+              borderColor: SELECTED_OR_FOCUS_BLUE,
+            }
+          : dndInProgress && file.isFolder
+          ? {
+              border: "2px solid white",
+              borderWidth: "2px",
+              borderRadius: "8px",
+              animation: "drop 2s linear infinite",
+            }
+          : {};
+        const inGroupBeingDraggedStyle: { [string]: string | number } =
+          (
+            dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
+          ).hasWithEq(file, (a, b) => a.id === b.id) &&
+          dndContext.active?.id !== file.id
+            ? {
+                opacity: 0.2,
+              }
+            : {};
+        const fileUploadDropping: { [string]: string | number } = over
+          ? {
+              borderColor: SELECTED_OR_FOCUS_BLUE,
+            }
+          : {};
 
-      const viewportDimensions = useViewportDimensions();
-      const cardWidth = {
-        xs: 6,
-        sm: 4,
-        md: 4,
-        lg: 3,
-        xl: 2,
-      };
+        const viewportDimensions = useViewportDimensions();
+        const cardWidth = {
+          xs: 6,
+          sm: 4,
+          md: 4,
+          lg: 3,
+          xl: 2,
+        };
 
-      return (
-        <Fade
-          in={true}
-          timeout={
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              ? 0
-              : 400
-          }
-        >
-          <Grid
-            item
-            {...cardWidth}
-            sx={{
-              /*
-               * This way, the animation takes the same amount of time (36ms) for
-               * each row of cards
-               */
-              transitionDelay: window.matchMedia(
-                "(prefers-reduced-motion: reduce)"
-              ).matches
-                ? "0s"
-                : `${
-                    (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
-                  }ms !important`,
-            }}
+        return (
+          <Fade
+            in={true}
+            timeout={
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? 0
+                : 400
+            }
           >
-            <Card
-              elevation={0}
-              className={className}
-              /*
-               * These are for dragging files from outside the browser
-               */
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              onDragEnter={onDragEnter}
-              onDragLeave={onDragLeave}
-              /*
-               * These are for dragging files between folders within the gallery
-               */
-              ref={(node) => {
-                setDropRef(node);
-                setDragRef(node);
-                // $FlowExpectedError[prop-missing]
-                if (ref) ref.current = node;
-              }}
-              {...listeners}
-              {...attributes}
-              tabIndex={tabIndex}
-              onFocus={onFocus}
-              onBlur={onBlur}
-              style={{
-                ...dragStyle,
-                ...dropStyle,
-                ...inGroupBeingDraggedStyle,
-                ...fileUploadDropping,
+            <Grid
+              item
+              {...cardWidth}
+              sx={{
                 /*
-                 * We don't need the outline as the selected styles will indicate
-                 * which item has focus
+                 * This way, the animation takes the same amount of time (36ms) for
+                 * each row of cards
                  */
-                outline: "none",
+                transitionDelay: window.matchMedia(
+                  "(prefers-reduced-motion: reduce)"
+                ).matches
+                  ? "0s"
+                  : `${
+                      (index + 1) *
+                      cardWidth[viewportDimensions.viewportSize] *
+                      3
+                    }ms !important`,
               }}
-              /*
-               * We conditionally just add the onKeyDown when file has an
-               * `open` action (which is to say it is a folder), leaving the
-               * keyDown event to propagate up to the KeyboardSensor of the
-               * drag-and-drop mechanism for all other files
-               */
-              {...(file.open
-                ? {
-                    onKeyDown: (e) => {
-                      if (e.key === " ") file.open?.();
-                    },
-                  }
-                : {})}
             >
-              <CardActionArea
-                role={file.open ? "button" : "checkbox"}
-                aria-checked={selected}
-                tabIndex={-1}
-                onFocus={(e) => {
+              <Card
+                elevation={0}
+                className={className}
+                /*
+                 * These are for dragging files from outside the browser
+                 */
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                onDragEnter={onDragEnter}
+                onDragLeave={onDragLeave}
+                /*
+                 * These are for dragging files between folders within the gallery
+                 */
+                ref={(node) => {
+                  setDropRef(node);
+                  setDragRef(node);
+                  // $FlowExpectedError[prop-missing]
+                  if (ref) ref.current = node;
+                }}
+                {...listeners}
+                {...attributes}
+                tabIndex={tabIndex}
+                onFocus={onFocus}
+                onBlur={onBlur}
+                style={{
+                  ...dragStyle,
+                  ...dropStyle,
+                  ...inGroupBeingDraggedStyle,
+                  ...fileUploadDropping,
                   /*
-                   * We're manually handling focus states through a roving tab
-                   * index on the GridView component, so we don't need to
-                   * handle focus state triggered by keyboard events here.
-                   * Moreover, we don't want mouse events, such as clicking, to
-                   * trigger a focus event either as the file with the current
-                   * tabIndexCoord will end up selected instead of the one the
-                   * user taps.
+                   * We don't need the outline as the selected styles will indicate
+                   * which item has focus
                    */
-                  e.stopPropagation();
+                  outline: "none",
                 }}
-                onClick={(e) => {
-                  if (e.detail > 1 && file.open) {
-                    file.open();
-                    return;
-                  }
-                  onClick(e);
-                }}
-                sx={{ height: "100%" }}
+                /*
+                 * We conditionally just add the onKeyDown when file has an
+                 * `open` action (which is to say it is a folder), leaving the
+                 * keyDown event to propagate up to the KeyboardSensor of the
+                 * drag-and-drop mechanism for all other files
+                 */
+                {...(file.open
+                  ? {
+                      onKeyDown: (e) => {
+                        if (e.key === " ") file.open?.();
+                      },
+                    }
+                  : {})}
               >
-                <Grid
-                  container
-                  direction="column"
-                  height="100%"
-                  flexWrap="nowrap"
+                <CardActionArea
+                  role={file.open ? "button" : "checkbox"}
+                  aria-checked={selected}
+                  tabIndex={-1}
+                  onFocus={(e) => {
+                    /*
+                     * We're manually handling focus states through a roving tab
+                     * index on the GridView component, so we don't need to
+                     * handle focus state triggered by keyboard events here.
+                     * Moreover, we don't want mouse events, such as clicking, to
+                     * trigger a focus event either as the file with the current
+                     * tabIndexCoord will end up selected instead of the one the
+                     * user taps.
+                     */
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    if (e.detail > 1 && file.open) {
+                      file.open();
+                      return;
+                    }
+                    onClick(e);
+                  }}
+                  sx={{ height: "100%" }}
                 >
                   <Grid
-                    item
-                    sx={{
-                      flexShrink: 0,
-                      padding: "8px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: "calc(100% - 9999999px)",
-                      flexDirection: "column",
-                      flexGrow: 1,
-                    }}
-                  >
-                    <Avatar
-                      src={file.thumbnailUrl}
-                      imgProps={{
-                        role: "presentation",
-                      }}
-                      variant="rounded"
-                      sx={{
-                        width: "auto",
-                        height: "100%",
-                        aspectRatio: "1 / 1",
-                        fontSize: "5em",
-                        backgroundColor: "transparent",
-                        pointerEvents: "none",
-                      }}
-                    >
-                      <FileIcon fontSize="inherit" />
-                    </Avatar>
-                  </Grid>
-                  <Grid
-                    item
                     container
-                    direction="row"
+                    direction="column"
+                    height="100%"
                     flexWrap="nowrap"
-                    alignItems="baseline"
-                    sx={{
-                      padding: "8px",
-                      paddingTop: 0,
-                    }}
                   >
                     <Grid
                       item
                       sx={{
-                        textAlign: "center",
+                        flexShrink: 0,
+                        padding: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "calc(100% - 9999999px)",
+                        flexDirection: "column",
                         flexGrow: 1,
-                        ...(selected
-                          ? {
-                              backgroundColor: window.matchMedia(
-                                "(prefers-contrast: more)"
-                              ).matches
-                                ? "black"
-                                : "#35afef",
-                              p: 0.25,
-                              borderRadius: "4px",
-                              mx: 0.5,
-                            }
-                          : {}),
                       }}
                     >
-                      <Typography
+                      <Avatar
+                        src={file.thumbnailUrl}
+                        imgProps={{
+                          role: "presentation",
+                        }}
+                        variant="rounded"
                         sx={{
-                          ...(selected
-                            ? {
-                                color: window.matchMedia(
-                                  "(prefers-contrast: more)"
-                                ).matches
-                                  ? "white"
-                                  : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-                              }
-                            : {}),
-                          fontSize: "0.8125rem",
-                          fontWeight: window.matchMedia(
-                            "(prefers-contrast: more)"
-                          ).matches
-                            ? 700
-                            : 400,
-
-                          // wrap onto a second line, but use an ellipsis after that
-                          overflowWrap: "anywhere",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          display: "-webkit-box",
-                          WebkitLineClamp: "2",
-                          WebkitBoxOrient: "vertical",
+                          width: "auto",
+                          height: "100%",
+                          aspectRatio: "1 / 1",
+                          fontSize: "5em",
+                          backgroundColor: "transparent",
+                          pointerEvents: "none",
                         }}
                       >
-                        {file.name}
-                      </Typography>
+                        <FileIcon fontSize="inherit" />
+                      </Avatar>
+                    </Grid>
+                    <Grid
+                      item
+                      container
+                      direction="row"
+                      flexWrap="nowrap"
+                      alignItems="baseline"
+                      sx={{
+                        padding: "8px",
+                        paddingTop: 0,
+                      }}
+                    >
+                      <Grid
+                        item
+                        sx={{
+                          textAlign: "center",
+                          flexGrow: 1,
+                          ...(selected
+                            ? {
+                                backgroundColor: window.matchMedia(
+                                  "(prefers-contrast: more)"
+                                ).matches
+                                  ? "black"
+                                  : "#35afef",
+                                p: 0.25,
+                                borderRadius: "4px",
+                                mx: 0.5,
+                              }
+                            : {}),
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            ...(selected
+                              ? {
+                                  color: window.matchMedia(
+                                    "(prefers-contrast: more)"
+                                  ).matches
+                                    ? "white"
+                                    : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
+                                }
+                              : {}),
+                            fontSize: "0.8125rem",
+                            fontWeight: window.matchMedia(
+                              "(prefers-contrast: more)"
+                            ).matches
+                              ? 700
+                              : 400,
+
+                            // wrap onto a second line, but use an ellipsis after that
+                            overflowWrap: "anywhere",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitLineClamp: "2",
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {file.name}
+                        </Typography>
+                      </Grid>
                     </Grid>
                   </Grid>
-                </Grid>
-              </CardActionArea>
-            </Card>
-          </Grid>
-        </Fade>
-      );
-    }
+                </CardActionArea>
+              </Card>
+            </Grid>
+          </Fade>
+        );
+      }
+    )
   )
 )(({ selected }) => ({
   height: "150px",
