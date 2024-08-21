@@ -3,6 +3,7 @@
 import { type UseState } from "./types";
 import React from "react";
 import axios from "axios";
+import * as Parsers from "./parsers";
 
 /*
  * This constant ensures that we don't end up with clashing keys
@@ -27,8 +28,11 @@ export default function useUiPreference(
 
   React.useEffect(() => {
     void fetchPreferences().then((data) => {
-      if (Symbol.keyFor(preference) in data)
-        setValue(data[Symbol.keyFor(preference)]);
+      const key = Symbol.keyFor(preference);
+      if (!key) return;
+      Parsers.getValueWithKey(key)(data).do((v) => {
+        setValue(v);
+      });
     });
   }, []);
 
@@ -37,6 +41,8 @@ export default function useUiPreference(
     (newValue) => {
       setValue(newValue);
 
+      const key = Symbol.keyFor(preference);
+      if (!key) return;
       void (async () => {
         const preferences = await fetchPreferences();
         const formData = new FormData();
@@ -45,7 +51,7 @@ export default function useUiPreference(
           "value",
           JSON.stringify({
             ...preferences,
-            [Symbol.keyFor(preference)]: newValue,
+            [key]: newValue,
           })
         );
         await axios.post<FormData, mixed>(
