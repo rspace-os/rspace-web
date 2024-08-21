@@ -12,6 +12,7 @@ import {
   justFilenameExtension,
 } from "../../util/files";
 import { useGallerySelection } from "./useGallerySelection";
+import { observable, runInAction } from "mobx";
 
 export opaque type Id = number;
 export function idToString(id: Id): string {
@@ -85,6 +86,8 @@ export type GalleryFile = {|
    * to the name before the extension, leaving the extension in place.
    */
   transformFilename: ((string) => string) => string,
+
+  changeDescription: (Description) => void,
 |};
 
 /**
@@ -284,7 +287,7 @@ export function useGalleryListing({
   }): GalleryFile {
     const isFolder = /Folder/.test(type);
     const isSystemFolder = /System Folder/.test(type);
-    const ret: GalleryFile = {
+    const ret: GalleryFile = observable({
       id,
       globalId,
       name,
@@ -329,7 +332,13 @@ export function useGalleryListing({
           name
         )}`;
       },
-    };
+      changeDescription: (d: Description) => {
+        // await network response
+        runInAction(() => {
+          ret.description = d;
+        });
+      },
+    });
     return ret;
   }
 

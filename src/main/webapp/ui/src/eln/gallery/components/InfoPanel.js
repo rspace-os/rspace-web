@@ -4,7 +4,7 @@ import React, { type Node, type ComponentType } from "react";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import { styled } from "@mui/material/styles";
-import { type GalleryFile, type Description } from "../useGalleryListing";
+import { type GalleryFile, Description } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
@@ -15,12 +15,14 @@ import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import CardContent from "@mui/material/CardContent";
+import Collapse from "@mui/material/Collapse";
 import { grey } from "@mui/material/colors";
 import { Optional } from "../../../util/optional";
 import DescriptionList from "../../../components/DescriptionList";
 import { formatFileSize } from "../../../util/files";
 import Result from "../../../util/result";
 import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
+import { observer } from "mobx-react-lite";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -63,33 +65,56 @@ const Puller: ComponentType<{|
 }));
 
 const DescriptionField = styled(
-  ({ value, className }: {| value: Description, className: string |}) => {
-    const [description, setDescription] = React.useState(
-      value.match({
-        missing: () => "",
-        empty: () => "",
-        present: (d) => d,
-      })
-    );
-    return (
-      <Stack>
-        <TextField
-          value={description}
-          placeholder="No description"
-          fullWidth
-          size="small"
-          className={className}
-          onChange={setDescription}
-        />
-        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-          <Button size="small">Cancel</Button>
-          <Button size="small" variant="contained">
-            Save
-          </Button>
+  observer(
+    ({ file, className }: {| file: GalleryFile, className: string |}) => {
+      function getDescValue(f: GalleryFile) {
+        return f.description.match({
+          missing: () => "",
+          empty: () => "",
+          present: (d) => d,
+        });
+      }
+
+      const [description, setDescription] = React.useState(getDescValue(file));
+      React.useEffect(() => {
+        setDescription(getDescValue(file));
+      }, [file]);
+
+      return (
+        <Stack>
+          <TextField
+            value={description}
+            placeholder="No description"
+            fullWidth
+            size="small"
+            className={className}
+            onChange={({ target: { value } }) => setDescription(value)}
+          />
+          <Collapse in={description !== getDescValue(file)}>
+            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+              <Button
+                size="small"
+                onClick={() => {
+                  setDescription(getDescValue(file));
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => {
+                  file.changeDescription(Description.Present(description));
+                }}
+              >
+                Save
+              </Button>
+            </Stack>
+          </Collapse>
         </Stack>
-      </Stack>
-    );
-  }
+      );
+    }
+  )
 )(({ theme }) => ({
   "& .MuiOutlinedInput-notchedOutline": {
     border: "none",
@@ -119,7 +144,7 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
           },
           {
             label: "Description",
-            value: <DescriptionField value={file.description} />,
+            value: <DescriptionField file={file} />,
             below: true,
           },
         ]}
