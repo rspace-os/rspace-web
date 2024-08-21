@@ -64,6 +64,70 @@ const Puller: ComponentType<{|
   left: "calc(50% - 15px)",
 }));
 
+const NameFieldForLargeViewports = styled(
+  observer(
+    ({ file, className }: {| file: GalleryFile, className: string |}) => {
+      const [name, setName] = React.useState(file.name);
+      React.useEffect(() => {
+        setName(file.name);
+      }, [file]);
+
+      return (
+        <Stack sx={{ pr: 0.25, pl: 0.75 }}>
+          <TextField
+            value={name}
+            placeholder="No Name"
+            fullWidth
+            size="small"
+            className={className}
+            onChange={({ target: { value } }) => setName(value)}
+            inputProps={{
+              "aria-label": "Name",
+            }}
+          />
+          <Collapse in={name !== file.name}>
+            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+              <Button
+                size="small"
+                onClick={() => {
+                  setName(file.name);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => {
+                  // save
+                }}
+              >
+                Save
+              </Button>
+            </Stack>
+          </Collapse>
+        </Stack>
+      );
+    }
+  )
+)(({ theme }) => ({
+  "& .MuiOutlinedInput-notchedOutline": {
+    border: "none",
+  },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "4px",
+    fontSize: "0.9rem",
+    marginTop: theme.spacing(0.5),
+    marginBottom: theme.spacing(0.5),
+    backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+  },
+  "& input": {
+    paddingTop: theme.spacing(0.75),
+    paddingBottom: theme.spacing(0.75),
+    paddingLeft: theme.spacing(1.5),
+  },
+}));
+
 const DescriptionField = styled(
   observer(
     ({ file, className }: {| file: GalleryFile, className: string |}) => {
@@ -125,6 +189,11 @@ const DescriptionField = styled(
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
     backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+  },
+  "& input": {
+    paddingTop: theme.spacing(0.75),
+    paddingBottom: theme.spacing(0.75),
+    paddingLeft: theme.spacing(1.5),
   },
 }));
 
@@ -264,29 +333,33 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
       <Grid
         container
         direction="row"
-        spacing={2}
+        spacing={0.5}
         alignItems="flex-start"
         flexWrap="nowrap"
       >
         <Grid item sx={{ flexShrink: 1, flexGrow: 1 }}>
-          <Typography
-            variant="h3"
-            sx={{
-              border: "none",
-              m: 0.75,
-              ml: 1,
-              lineBreak: "anywhere",
-              textTransform: "none",
-            }}
-          >
-            {selection.size === 0 && "Nothing selected"}
-            {selection.size === 1 &&
-              selection
-                .asSet()
-                .only.map((f) => f.name)
-                .orElse(null)}
-            {selection.size > 1 && selection.label}
-          </Typography>
+          {selection.size === 1 ? (
+            selection
+              .asSet()
+              .only.map((f) => (
+                <NameFieldForLargeViewports key={null} file={f} />
+              ))
+              .orElse(null)
+          ) : (
+            <Typography
+              variant="h3"
+              sx={{
+                border: "none",
+                m: 0.75,
+                ml: 1,
+                lineBreak: "anywhere",
+                textTransform: "none",
+              }}
+            >
+              {selection.size === 0 && "Nothing selected"}
+              {selection.size > 1 && selection.label}
+            </Typography>
+          )}
         </Grid>
         {selection
           .asSet()
@@ -302,7 +375,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
                   borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
                   color: "white",
-                  borderRadius: 3,
+                  borderRadius: "4px",
                   px: 1.125,
                   py: 0.25,
                 }}
