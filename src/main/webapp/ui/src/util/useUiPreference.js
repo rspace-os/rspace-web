@@ -1,6 +1,7 @@
 //@flow
 
 import { type UseState } from "./types";
+import React from "react";
 
 /*
  * This constant ensures that we don't end up with clashing keys
@@ -15,5 +16,15 @@ export default function useUiPreference(
     defaultValue: mixed,
   |}
 ): UseState<mixed> {
-  return ["tree", () => {}];
+  const [value, setValue] = React.useState(opts.defaultValue);
+
+  // fetch from server
+
+  return [
+    value,
+    (newValue) => {
+      setValue(newValue);
+      // update server
+    },
+  ];
 }
