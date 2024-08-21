@@ -71,6 +71,7 @@ import { Link as ReactRouterLink } from "react-router-dom";
 import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
+import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -1016,7 +1017,12 @@ function GalleryMainPanel({
       },
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
-  const [viewMode, setViewMode] = React.useState("grid");
+  const [viewMode, setViewMode] = useUiPreference(
+    PREFERENCES.GALLERY_VIEW_MODE,
+    {
+      defaultValue: "grid",
+    }
+  );
   const [sortMenuAnchorEl, setSortMenuAnchorEl] = React.useState(null);
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
