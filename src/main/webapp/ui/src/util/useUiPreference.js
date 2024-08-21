@@ -7,7 +7,7 @@ import axios from "axios";
 /*
  * This constant ensures that we don't end up with clashing keys
  */
-export const PREFERENCES: { [Preferences]: symbol } = {
+export const PREFERENCES: { [string]: symbol } = {
   GALLERY_VIEW_MODE: Symbol.for("GALLERY_VIEW_MODE"),
 };
 
