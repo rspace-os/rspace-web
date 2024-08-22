@@ -480,6 +480,10 @@ export const InfoPanelForSmallViewports: ComponentType<{|
   file: GalleryFile,
 |}> = ({ file }) => {
   const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
+  const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
+    null
+  );
+  const [previewOpen, setPreviewOpen] = React.useState(false);
   const selection = useGallerySelection();
 
   return (
@@ -545,6 +549,31 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                       setMobileInfoPanelOpen(false);
                     }}
                   />
+                </Grid>
+              )}
+              {file.isImage && file.downloadHref && (
+                <Grid item>
+                  <ActionButton
+                    onClick={() => {
+                      setPreviewOpen(true);
+                    }}
+                    label="Preview"
+                    sx={{
+                      borderRadius: 3,
+                      px: 2.5,
+                      py: 0.5,
+                    }}
+                  />
+                  {previewOpen && (
+                    <ImagePreview
+                      closePreview={() => {
+                        setPreviewOpen(false);
+                      }}
+                      link={file.downloadHref}
+                      size={previewSize}
+                      setSize={(s) => setPreviewSize(s)}
+                    />
+                  )}
                 </Grid>
               )}
             </Grid>
