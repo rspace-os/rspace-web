@@ -8,7 +8,6 @@ import { type GalleryFile, Description } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import { COLORS as baseThemeColors } from "../../../theme";
 import { COLOR } from "../common";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import Box from "@mui/material/Box";
@@ -39,17 +38,7 @@ const ActionButton = ({
   sx: {| borderRadius: number, px: number, py: number |},
 |}): Node => {
   return (
-    <Button
-      color="primary"
-      variant="contained"
-      sx={{
-        backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-        borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-        color: "white",
-        ...sx,
-      }}
-      onClick={onClick}
-    >
+    <Button color="selection" variant="contained" sx={sx} onClick={onClick}>
       {label}
     </Button>
   );
@@ -128,6 +117,7 @@ const NameFieldForLargeViewports = styled(
               <Button
                 size="small"
                 variant="contained"
+                color="primary"
                 onClick={() => {
                   void rename(file, name);
                 }}
@@ -195,6 +185,7 @@ const DescriptionField = styled(
               <Button
                 size="small"
                 variant="contained"
+                color="primary"
                 onClick={() => {
                   void changeDescription(
                     file,

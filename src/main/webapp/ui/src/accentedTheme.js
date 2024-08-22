@@ -174,6 +174,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           saturated: linkColor,
           dark: linkColor,
         },
+        selection: {
+          main: baseTheme.palette.primary.main,
+        },
         standardIcon: {
           main: interactiveColor,
         },
@@ -393,12 +396,24 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               "&:hover": {
                 borderColor: darken(accentedBackground, hoverDarkenCoefficient),
               },
+            },
+            colorPrimary: {
+              border: accentedBorder,
               [`&.${buttonClasses.disabled}`]: {
                 border: accentedBorder,
                 borderColor: disabledColor,
               },
             },
-            contained: {
+            containedSelection: {
+              border: `2px solid ${
+                prefersMoreContrast ? "black" : baseTheme.palette.primary.main
+              }`,
+              backgroundColor: prefersMoreContrast
+                ? "black"
+                : baseTheme.palette.primary.main,
+              color: "white",
+            },
+            containedPrimary: {
               backgroundColor: mainAccentColor,
               color: contrastTextColor,
               borderColor: mainAccentColor,
