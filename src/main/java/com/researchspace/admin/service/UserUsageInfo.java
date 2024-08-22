@@ -27,7 +27,7 @@ public class UserUsageInfo {
   private Date lastLogin;
   private Date creationDate;
 
-  private boolean hasFormsUsedByOtherUsers;
+  @Getter @Setter private boolean hasFormsUsedByOtherUsers;
 
   @Getter @Setter private String signupSource;
 
