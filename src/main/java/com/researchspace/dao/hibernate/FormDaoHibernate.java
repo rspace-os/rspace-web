@@ -503,23 +503,26 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   }
 
   @Override
-  public void transferOwnershipOfFormsToSysAdmin(User toBeDeleted, User sysAdmin) {
+  public void transferOwnershipOfForms(User toBeDeleted, User newOwner, List<Long> ids) {
     Query<?> query =
         getSession()
             .createQuery(
-                "UPDATE RSForm SET owner=:sysadmin, editInfo.createdBy=:createdByWithDeleted WHERE"
-                    + " owner=:toBeDeleted")
-            .setParameter("sysadmin", sysAdmin)
-            .setParameter("toBeDeleted", toBeDeleted)
+                "UPDATE RSForm SET owner=:newOwner, editInfo.createdBy=:createdByWithDeleted WHERE"
+                    + " id IN :ids")
+            .setParameter("newOwner", newOwner)
+            .setParameter("ids", ids)
             .setParameter("createdByWithDeleted", toBeDeleted.getUsername() + "(Deleted)");
     query.executeUpdate();
   }
 
   @Override
-  public List<RSForm> getAllFormsOwnedByUser(User originalOwner) {
+  public List<RSForm> getFormsUsedByOtherUsers(User formOwner) {
     return getSession()
-        .createQuery("FROM RSForm WHERE owner=:originalOwner", RSForm.class)
-        .setParameter("originalOwner", originalOwner)
+        .createQuery(
+            "select distinct form from StructuredDocument sd where sd.form.id in "
+                + "(select id from RSForm form where form.owner=:owner) and sd.owner!=:owner",
+            RSForm.class)
+        .setParameter("owner", formOwner)
         .list();
   }
 }

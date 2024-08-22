@@ -8,6 +8,7 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.service.TransferService;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,13 +26,15 @@ public class FormTransferService implements TransferService {
 
   @Transactional
   public void transferOwnership(User originalOwner, User newOwner) {
-    List<RSForm> originalOwnersForms = formDao.getAllFormsOwnedByUser(originalOwner);
-    formDao.transferOwnershipOfFormsToSysAdmin(originalOwner, newOwner);
+    List<RSForm> formsUsedByOtherUsers = formDao.getFormsUsedByOtherUsers(originalOwner);
+    List<Long> formIds =
+        formsUsedByOtherUsers.stream().map(RSForm::getId).collect(Collectors.toList());
+    formDao.transferOwnershipOfForms(originalOwner, newOwner, formIds);
     String description =
         String.format(
             "Ownership of form transferred from %s to %s",
             originalOwner.getUsername(), newOwner.getUsername());
-    for (RSForm form : originalOwnersForms) {
+    for (RSForm form : formsUsedByOtherUsers) {
       auditTrailService.notify(new GenericEvent(newOwner, form, AuditAction.TRANSFER, description));
     }
   }
