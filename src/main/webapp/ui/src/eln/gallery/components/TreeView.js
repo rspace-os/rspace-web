@@ -33,12 +33,16 @@ import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
 import { COLORS as baseThemeColors } from "../../../theme";
 
-const StyledTreeItem = styled(TreeItem)(() => ({
+const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   ".MuiTreeItem-content": {
     "&.Mui-selected": {
-      backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+      backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
+        ? "black"
+        : theme.palette.selection.main,
       "&.Mui-focused": {
-        backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
+          ? "black"
+          : theme.palette.selection.main,
       },
       "& .MuiTreeItem-label": {
         color: "white",

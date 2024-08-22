@@ -916,11 +916,11 @@ const FileCard = styled(
                           flexGrow: 1,
                           ...(selected
                             ? {
-                                backgroundColor: window.matchMedia(
-                                  "(prefers-contrast: more)"
-                                ).matches
-                                  ? "black"
-                                  : "#35afef",
+                                backgroundColor: (theme) =>
+                                  window.matchMedia("(prefers-contrast: more)")
+                                    .matches
+                                    ? "black"
+                                    : theme.palette.selection.main,
                                 p: 0.25,
                                 borderRadius: "4px",
                                 mx: 0.5,
