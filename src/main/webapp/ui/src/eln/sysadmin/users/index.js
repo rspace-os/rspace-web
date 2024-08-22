@@ -730,10 +730,11 @@ const DeleteAction = ({
                   {user.hasFormsUsedByOtherUsers &&
                     <Typography variant="body2">
                       <strong>The user you are trying to delete is the owner of Forms
-                      that are used by other users. To ensure continued access
-                      to these Forms, the system will transfer ownership of the
-                      Forms to this System Administrator account.
-                      Forms that are not used by others will be deleted.</strong>
+                      that are used by other users.</strong><br/>
+                      To ensure continued access to these Forms, the system
+                      will transfer ownership of the Forms to this System
+                      Administrator account. Forms that are not used by others
+                      will be deleted.
                     </Typography>
                   }
                   <Typography variant="body2">
