@@ -32,28 +32,26 @@ const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 const ActionButton = ({
   onClick,
   label,
+  sx,
 }: {|
-  onClick: () => void,
+  onClick: (Event) => void,
   label: string,
+  sx: {| borderRadius: number, px: number, py: number |},
 |}): Node => {
   return (
-    <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
-      <Button
-        color="primary"
-        variant="contained"
-        sx={{
-          backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-          color: "white",
-          borderRadius: 1,
-          px: 1.125,
-          py: 0.25,
-        }}
-        onClick={onClick}
-      >
-        {label}
-      </Button>
-    </Grid>
+    <Button
+      color="primary"
+      variant="contained"
+      sx={{
+        backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+        color: "white",
+        ...sx,
+      }}
+      onClick={onClick}
+    >
+      {label}
+    </Button>
   );
 };
 
@@ -417,15 +415,33 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
         {selection
           .asSet()
           .only.map((file) => {
-            if (file.open) return <ActionButton onClick={file.open} label="Open" />;
+            if (file.open)
+              return (
+                <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
+                  <ActionButton
+                    onClick={() => file.open()}
+                    label="Open"
+                    sx={{
+                      borderRadius: 1,
+                      px: 1.125,
+                      py: 0.25,
+                    }}
+                  />
+                </Grid>
+              );
             if (file.isImage && file.downloadHref)
               return (
-                <>
+                <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
                   <ActionButton
                     onClick={() => {
                       setPreviewOpen(true);
                     }}
                     label="Preview"
+                    sx={{
+                      borderRadius: 1,
+                      px: 1.125,
+                      py: 0.25,
+                    }}
                   />
                   {previewOpen && (
                     <ImagePreview
@@ -437,7 +453,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       setSize={(s) => setPreviewSize(s)}
                     />
                   )}
-                </>
+                </Grid>
               );
             return null;
           })
@@ -516,26 +532,19 @@ export const InfoPanelForSmallViewports: ComponentType<{|
               </Grid>
               {file.open && (
                 <Grid item>
-                  <Button
-                    color="primary"
-                    variant="contained"
+                  <ActionButton
+                    label="Open"
                     sx={{
-                      backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                      borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                      color: "white",
                       borderRadius: 3,
                       px: 2.5,
                       py: 0.5,
                     }}
-                    id="open"
                     onClick={(e) => {
                       e.stopPropagation();
                       file.open?.();
                       setMobileInfoPanelOpen(false);
                     }}
-                  >
-                    Open
-                  </Button>
+                  />
                 </Grid>
               )}
             </Grid>
