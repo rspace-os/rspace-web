@@ -37,6 +37,8 @@ export function UiPreferences({ children }: {| children: Node |}): Node {
   React.useEffect(() => {
     void fetchPreferences().then((data) => {
       setUiPreferences(data);
+    }).catch(() => {
+      setUiPreferences({});
     });
   }, []);
 
