@@ -59,7 +59,7 @@ export default function useUiPreference<T>(
   const uiPreferences = React.useContext(UiPreferencesContext);
   const key = Symbol.keyFor(preference);
   let v = opts.defaultValue;
-  if (key && uiPreferences[key]) {
+  if (key && typeof uiPreferences[key] !== "undefined") {
     // $FlowExpectedError[incompatible-type] We assume the server responds with the right type
     v = uiPreferences[key];
   }
