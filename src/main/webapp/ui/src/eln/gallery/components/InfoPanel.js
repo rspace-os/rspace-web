@@ -27,6 +27,34 @@ import { useGalleryActions } from "../useGalleryActions";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
+const ActionButton = ({
+  onClick,
+  label,
+}: {|
+  onClick: () => void,
+  label: string,
+|}): Node => {
+  return (
+    <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
+      <Button
+        color="primary"
+        variant="contained"
+        sx={{
+          backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+          borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+          color: "white",
+          borderRadius: "4px",
+          px: 1.125,
+          py: 0.25,
+        }}
+        onClick={onClick}
+      >
+        {label}
+      </Button>
+    </Grid>
+  );
+};
+
 const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
   () => ({
     "& .MuiPaper-root": {
@@ -385,23 +413,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
             file.open ? Optional.present(file.open) : Optional.empty()
           )
           .map((open) => (
-            <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-              <Button
-                color="primary"
-                variant="contained"
-                sx={{
-                  backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                  borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
-                  color: "white",
-                  borderRadius: "4px",
-                  px: 1.125,
-                  py: 0.25,
-                }}
-                onClick={open}
-              >
-                Open
-              </Button>
-            </Grid>
+            <ActionButton onClick={open} label="Open" key={null} />
           ))
           .orElse(null)}
       </Grid>
