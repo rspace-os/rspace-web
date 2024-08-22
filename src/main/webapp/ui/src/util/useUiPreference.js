@@ -31,6 +31,15 @@ function fetchPreferences(): Promise<{ ... }> {
     .then(({ data }) => data);
 }
 
+/**
+ * This page-wide contexts fetches the UI Preferences and makes the current
+ * values available to all calls to useUiPreference in child components.
+ *
+ * Whilst the data is being fetched, the child nodes are not rendered and so
+ * calls to useUiPreference do not need to consider ongoing network activity.
+ * If the network call fails, the UI Preferences default to an empty object
+ * and all calls to useUiPreference will use the passed default value.
+ */
 export function UiPreferences({ children }: {| children: Node |}): Node {
   const [uiPreferences, setUiPreferences] = React.useState<UiPreferencesContextType | null>(null);
 
@@ -42,6 +51,10 @@ export function UiPreferences({ children }: {| children: Node |}): Node {
     });
   }, []);
 
+  /*
+   * If it turns out that loading this data will likely take a while,
+   * then we will want to replace this null with a loading spinner.
+   */
   if (!uiPreferences) return null;
   return (
     <UiPreferencesContext.Provider value={uiPreferences}>
@@ -50,6 +63,19 @@ export function UiPreferences({ children }: {| children: Node |}): Node {
   );
 }
 
+/**
+ * Use this custom hook to get the value of a UI Preference from the page-wide
+ * context. The returned tuple has the same shape as a call to React.useState,
+ * so that the value can be updated and persisted across page loads.
+ *
+ * @arg preference The UI Preference in question
+ *
+ * @arg opts Various options, including
+ *
+ *      defaultValue  If the current state of UI Preferences does not include
+ *                    `preference` then `defaultValue` will be returned as the
+ *                    value instead.
+ */
 export default function useUiPreference<T>(
   preference: $Values<typeof PREFERENCES>,
   opts: {|
