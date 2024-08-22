@@ -45,7 +45,7 @@ const ActionButton = ({
           backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
           borderColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
           color: "white",
-          borderRadius: "4px",
+          borderRadius: 1,
           px: 1.125,
           py: 0.25,
         }}
