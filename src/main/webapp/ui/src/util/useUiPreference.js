@@ -86,8 +86,8 @@ export default function useUiPreference<T>(
   const key = Symbol.keyFor(preference);
   let v = opts.defaultValue;
   if (key && typeof uiPreferences[key] !== "undefined") {
-    // $FlowExpectedError[incompatible-type] We assume the server responds with the right type
-    v = uiPreferences[key];
+    // $FlowExpectedError[incompatible-use] We assume the server responds with the right type
+    v = uiPreferences[key].value;
   }
   const [value, setValue] = React.useState(v);
 
@@ -105,7 +105,12 @@ export default function useUiPreference<T>(
           "value",
           JSON.stringify({
             ...preferences,
-            [key]: newValue,
+            [key]: {
+              value: newValue,
+              // we save the time so that we have the option of implementing an
+              // eviction polciy in the future
+              time: new Date().getTime()
+            },
           })
         );
         await axios.post<FormData, mixed>(
