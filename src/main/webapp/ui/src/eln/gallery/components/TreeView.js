@@ -31,6 +31,21 @@ import { useFileImportDropZone } from "../../../components/useFileImportDragAndD
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
+import { COLORS as baseThemeColors } from "../../../theme";
+
+const StyledTreeItem = styled(TreeItem)(() => ({
+  ".MuiTreeItem-content": {
+    "&.Mui-selected": {
+      backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+      "&.Mui-focused": {
+        backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`,
+      },
+      "& .MuiTreeItem-label": {
+        color: "white",
+      },
+    },
+  },
+}));
 
 const CustomTransition = styled(({ children, in: open, className }) => (
   <div className={className}>
@@ -237,7 +252,7 @@ const CustomTreeItem = observer(
           transitionDelay: `${(index + 1) * 0.04}s !important`,
         }}
       >
-        <TreeItem
+        <StyledTreeItem
           itemId={idToString(file.id)}
           label={
             <Box
@@ -305,7 +320,7 @@ const CustomTreeItem = observer(
               orderBy={orderBy}
             />
           )}
-        </TreeItem>
+        </StyledTreeItem>
       </Box>
     );
   }
