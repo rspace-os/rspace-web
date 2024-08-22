@@ -141,9 +141,6 @@ const NameFieldForLargeViewports = styled(
     }
   )
 )(({ theme }) => ({
-  "& .MuiOutlinedInput-notchedOutline": {
-    border: "none",
-  },
   "& .MuiOutlinedInput-root": {
     borderRadius: "4px",
     fontSize: "0.9rem",
@@ -214,9 +211,6 @@ const DescriptionField = styled(
     }
   )
 )(({ theme }) => ({
-  "& .MuiOutlinedInput-notchedOutline": {
-    border: "none",
-  },
   "& .MuiOutlinedInput-root": {
     borderRadius: "4px",
     fontSize: "0.9rem",
