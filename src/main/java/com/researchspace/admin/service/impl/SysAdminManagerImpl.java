@@ -162,7 +162,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
         .lastLogin(user.getLastLogin())
         .hasFormsUsedByOtherUsers(
             formDao.hasUserPublishedFormsUsedinOtherRecords(
-                user)) // todo: can we get this info in a more performant manner?
+                user))
         .build();
   }
 
