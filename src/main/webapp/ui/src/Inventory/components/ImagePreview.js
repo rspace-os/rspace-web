@@ -13,7 +13,7 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type PreviewSize = {|
+export type PreviewSize = {|
   width: number,
   height: number,
 |};
@@ -39,7 +39,7 @@ export default function ImagePreview({
       options={{
         showAnimationDuration: 0,
         hideAnimationDuration: 0,
-        modal: modal,
+        modal,
         escKey: false,
       }}
       withDownloadButton

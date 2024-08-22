@@ -17,13 +17,15 @@ import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import CardContent from "@mui/material/CardContent";
 import Collapse from "@mui/material/Collapse";
 import { grey } from "@mui/material/colors";
-import { Optional } from "../../../util/optional";
 import DescriptionList from "../../../components/DescriptionList";
 import { formatFileSize } from "../../../util/files";
 import Result from "../../../util/result";
 import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
 import { observer } from "mobx-react-lite";
 import { useGalleryActions } from "../useGalleryActions";
+import ImagePreview, {
+  type PreviewSize,
+} from "../../../Inventory/components/ImagePreview";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -362,6 +364,11 @@ const InfoPanelMultipleContent = (): Node => {
 
 export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const selection = useGallerySelection();
+  const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
+    null
+  );
+  const [previewOpen, setPreviewOpen] = React.useState(false);
+
   return (
     <>
       <Grid
@@ -409,12 +416,31 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
         </Grid>
         {selection
           .asSet()
-          .only.flatMap((file) =>
-            file.open ? Optional.present(file.open) : Optional.empty()
-          )
-          .map((open) => (
-            <ActionButton onClick={open} label="Open" key={null} />
-          ))
+          .only.map((file) => {
+            if (file.open) return <ActionButton onClick={file.open} label="Open" />;
+            if (file.isImage && file.downloadHref)
+              return (
+                <>
+                  <ActionButton
+                    onClick={() => {
+                      setPreviewOpen(true);
+                    }}
+                    label="Preview"
+                  />
+                  {previewOpen && (
+                    <ImagePreview
+                      closePreview={() => {
+                        setPreviewOpen(false);
+                      }}
+                      link={file.downloadHref}
+                      size={previewSize}
+                      setSize={(s) => setPreviewSize(s)}
+                    />
+                  )}
+                </>
+              );
+            return null;
+          })
           .orElse(null)}
       </Grid>
       {selection
