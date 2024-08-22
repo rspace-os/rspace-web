@@ -127,4 +127,6 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
    * @param sysadmin - the sysadmin user that the ownership of those forms will be transferred to.
    */
   void transferOwnershipOfFormsToSysAdmin(User toDelete, User sysadmin);
+
+  List<RSForm> getAllFormsOwnedByUser(User originalOwner);
 }

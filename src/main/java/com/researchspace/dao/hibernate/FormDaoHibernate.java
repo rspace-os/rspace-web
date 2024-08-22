@@ -506,9 +506,20 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   public void transferOwnershipOfFormsToSysAdmin(User toBeDeleted, User sysAdmin) {
     Query<?> query =
         getSession()
-            .createQuery("UPDATE RSForm SET owner=:sysadmin WHERE owner=:toBeDeleted")
+            .createQuery(
+                "UPDATE RSForm SET owner=:sysadmin, editInfo.createdBy=:createdByWithDeleted WHERE"
+                    + " owner=:toBeDeleted")
             .setParameter("sysadmin", sysAdmin)
-            .setParameter("toBeDeleted", toBeDeleted);
+            .setParameter("toBeDeleted", toBeDeleted)
+            .setParameter("createdByWithDeleted", toBeDeleted.getUsername() + "(Deleted)");
     query.executeUpdate();
+  }
+
+  @Override
+  public List<RSForm> getAllFormsOwnedByUser(User originalOwner) {
+    return getSession()
+        .createQuery("FROM RSForm WHERE owner=:originalOwner", RSForm.class)
+        .setParameter("originalOwner", originalOwner)
+        .list();
   }
 }

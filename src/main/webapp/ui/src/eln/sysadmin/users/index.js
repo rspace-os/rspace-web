@@ -727,10 +727,17 @@ const DeleteAction = ({
               <DialogTitle>Deletion Confirmation</DialogTitle>
               <DialogContent>
                 <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                  {user.hasFormsUsedByOtherUsers &&
+                    <Typography variant="body2">
+                      <strong>The user you are trying to delete is the owner of Forms
+                      that are used by other users. To ensure continued access
+                      to these Forms, the system will transfer ownership of the
+                      Forms to this System Administrator account.
+                      Forms that are not used by others will be deleted.</strong>
+                    </Typography>
+                  }
                   <Typography variant="body2">
                     This is irreversible, and all documents will be deleted.
-                    Deletion may be impossible if this user has created shared
-                    forms.
                   </Typography>
                   <Typography variant="body2">
                     An XML archive will be made of the user&apos;s work which

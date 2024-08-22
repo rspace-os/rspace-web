@@ -15,6 +15,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.TransferService;
 import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
 import java.io.File;
@@ -47,6 +48,8 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
 
   private @Autowired DeletedUserResourcesListHelper deletedUserResourcesHelper;
 
+  private @Autowired @Qualifier("formTransferService") TransferService formTransferService;
+
   @Override
   public ServiceOperationResult<User> removeUser(
       Long userId, UserDeletionPolicy policy, User subject) {
@@ -57,7 +60,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     User toDelete = userDao.get(userId);
 
     if (formDao.hasUserPublishedFormsUsedinOtherRecords(toDelete)) {
-      formDao.transferOwnershipOfFormsToSysAdmin(toDelete, subject);
+      formTransferService.transferOwnership(toDelete, subject);
     }
 
     Optional<String> saveResourcesListError = saveFilestoreResourcesTempList(toDelete);
