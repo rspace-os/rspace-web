@@ -28,6 +28,7 @@ import ImagePreview, {
 import * as FetchingData from "../../../util/fetchingData";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
+import useCollabora from "../useCollabora";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -355,6 +356,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   );
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const collaboraEnabled = useDeploymentProperty("collabora.wopi.enabled");
+  const { supportedExts: supportedCollaboraExts } = useCollabora();
 
   return (
     <>
@@ -444,30 +446,37 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   )}
                 </Grid>
               );
-            return (
-              FetchingData.getSuccessValue(collaboraEnabled)
-                .flatMap(Parsers.isBoolean)
-                .flatMap(Parsers.isTrue)
-                //TODO: if extension matches allowed set
-                .map(() => (
-                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                    <ActionButton
-                      onClick={() => {
-                        window.open(
-                          "/collaboraOnline/" + file.globalId + "/edit"
-                        );
-                      }}
-                      label="Edit"
-                      sx={{
-                        borderRadius: 1,
-                        px: 1.125,
-                        py: 0.25,
-                      }}
-                    />
-                  </Grid>
-                ))
-                .orElse(null)
-            );
+            return FetchingData.getSuccessValue(collaboraEnabled)
+              .flatMap(Parsers.isBoolean)
+              .flatMap(Parsers.isTrue)
+              .flatMap(() =>
+                file.extension !== null &&
+                supportedCollaboraExts.has(file.extension)
+                  ? Result.Ok(null)
+                  : Result.Error([
+                      new Error(
+                        "Selected file's extension is not supported by collabora"
+                      ),
+                    ])
+              )
+              .map(() => (
+                <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                  <ActionButton
+                    onClick={() => {
+                      window.open(
+                        "/collaboraOnline/" + file.globalId + "/edit"
+                      );
+                    }}
+                    label="Edit"
+                    sx={{
+                      borderRadius: 1,
+                      px: 1.125,
+                      py: 0.25,
+                    }}
+                  />
+                </Grid>
+              ))
+              .orElse(null);
           })
           .orElse(null)}
       </Grid>
