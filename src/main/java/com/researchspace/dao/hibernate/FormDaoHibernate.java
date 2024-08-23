@@ -203,7 +203,10 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       StringBuilder baseQuery = new StringBuilder(" select distinct form.id");
       // for compatibility with older MySQL
       if (isSortOrderSet(pagCriteria)) {
-        baseQuery.append(", form.").append(pagCriteria.getOrderBy()).append(" ");
+        baseQuery
+            .append(pagCriteria.getOrderBy().equals("owner.username") ? ", " : ", form.")
+            .append(pagCriteria.getOrderBy())
+            .append(" ");
       }
       baseQuery.append(
           " from RSForm form left join User owner on form.owner_id=owner.id"

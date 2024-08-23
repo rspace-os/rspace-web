@@ -74,8 +74,8 @@
             </a>
           </th>
           <th>
-            <a href="#" class="orderByLink" data-orderby='createdBy' data-sortorder='ASC'>
-              Created&nbsp;By
+            <a href="#" class="orderByLink" data-orderby='owner.username' data-sortorder='ASC'>
+              Owner
             </a>
           </th>
           <th>
