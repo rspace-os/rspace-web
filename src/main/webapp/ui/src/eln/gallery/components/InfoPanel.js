@@ -452,7 +452,11 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 .map(() => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
-                      onClick={() => {}}
+                      onClick={() => {
+                        window.open(
+                          "/collaboraOnline/" + file.globalId + "/edit"
+                        );
+                      }}
                       label="Edit"
                       sx={{
                         borderRadius: 1,
