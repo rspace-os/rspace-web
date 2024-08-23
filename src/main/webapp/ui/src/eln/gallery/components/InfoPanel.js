@@ -449,9 +449,9 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
             return FetchingData.getSuccessValue(collaboraEnabled)
               .flatMap(Parsers.isBoolean)
               .flatMap(Parsers.isTrue)
-              .flatMap(() =>
-                file.extension !== null &&
-                supportedCollaboraExts.has(file.extension)
+              .flatMap(() => Parsers.isNotNull(file.extension))
+              .flatMap((extension) =>
+                supportedCollaboraExts.has(extension)
                   ? Result.Ok(null)
                   : Result.Error([
                       new Error(
