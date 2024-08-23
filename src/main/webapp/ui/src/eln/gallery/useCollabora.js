@@ -2,6 +2,7 @@
 
 import React from "react";
 import axios from "axios";
+import * as Parsers from "../../util/parsers";
 
 export default function useCollabora(): {|
   supportedExts: Set<string>,
@@ -18,6 +19,11 @@ export default function useCollabora(): {|
   );
 
   React.useEffect(() => {
+    void axios.get<mixed>("/collaboraOnline/supportedExts").then(({ data }) => {
+      Parsers.isObject(data)
+        .flatMap(Parsers.isNotNull)
+        .do((obj) => setSupportedExts(new Set(Object.keys(obj))));
+    });
     // we should probably store the result in session storage
     // as it doesn't need to be loaded everytime this component is mounted
   }, []);
