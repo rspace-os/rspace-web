@@ -82,17 +82,6 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return q.list();
   }
 
-  /**
-   * Gets form list by permission, using Criteria API to sort permission.
-   *
-   * @param user
-   * @param requestedAction
-   * @return
-   */
-  public ISearchResults<RSForm> getAllFormsByPermission(User user, PermissionType requestedAction) {
-    return getForms(user, requestedAction, null, null);
-  }
-
   @Override
   public ISearchResults<RSForm> getAllFormsByPermission(
       User user, FormSearchCriteria sc, PaginationCriteria<RSForm> pg) {
@@ -101,12 +90,6 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
 
   /**
    * Handles permissions at database level.
-   *
-   * @param user
-   * @param requestedAction
-   * @param searchCriteria
-   * @param pagCriteria
-   * @return
    */
   private ISearchResults<RSForm> getForms(
       User user,
@@ -128,14 +111,14 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     }
 
     boolean actionMatch = false;
-    List<String> clausesToOr = new ArrayList<String>();
+    List<String> clausesToOr = new ArrayList<>();
     for (Permission p : perms) {
       ConstraintBasedPermission cbp = (ConstraintBasedPermission) p;
       if (!cbp.isEnabled()) {
         continue;
       }
 
-      List<String> clausesToAnd = new ArrayList<String>();
+      List<String> clausesToAnd = new ArrayList<>();
       clausesToAnd.add(" t.current=true ");
 
       if (searchCriteria != null) {
@@ -220,10 +203,10 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
         continue;
       }
 
-      StringBuffer sel = new StringBuffer(" select distinct t.id");
+      StringBuilder sel = new StringBuilder(" select distinct t.id");
       // for compatibility with older MySQL
       if (isSortOrderSet(pagCriteria)) {
-        sel.append(", t." + pagCriteria.getOrderBy() + " ");
+        sel.append(", t.").append(pagCriteria.getOrderBy()).append(" ");
       }
       sel.append(
           " from RSForm t left join User owner on t.owner_id=owner.id"
@@ -232,7 +215,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       if (searchCriteria != null && searchCriteria.isInUserMenu()) {
         sel.append(" inner join FormUserMenu menu on t.stableId=menu.formStableId");
       }
-      if (clausesToAnd.size() > 0) {
+      if (!clausesToAnd.isEmpty()) {
         sel.append(" where ");
       }
 
@@ -255,13 +238,13 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     } // end permission loop
 
     if (!actionMatch) {
-      return new SearchResultsImpl<RSForm>(Collections.<RSForm>emptyList(), 0, 0L);
+      return new SearchResultsImpl<>(Collections.emptyList(), 0, 0L);
     }
 
     Session session = sessionFactory.getCurrentSession();
-    String allQuery = "";
+    String allQuery;
 
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     Iterator<String> unions = clausesToOr.iterator();
     while (unions.hasNext()) {
       sb.append(unions.next());
@@ -270,7 +253,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       }
     }
     if (pagCriteria != null && pagCriteria.getOrderBy() != null) {
-      sb.append(" order by " + pagCriteria.getOrderBy() + " ");
+      sb.append(" order by ").append(pagCriteria.getOrderBy()).append(" ");
       if (pagCriteria.getSortOrder() != null) {
         sb.append(pagCriteria.getSortOrder());
       }
@@ -294,14 +277,14 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       query.setMaxResults(pagCriteria.getResultsPerPage());
     }
 
-    Long end = System.currentTimeMillis();
+    long end = System.currentTimeMillis();
     log.info("time taken for form permission queries is: {}", (end - start));
 
     List<RSForm> forms = new ArrayList<>();
     if (!isSortOrderSet(pagCriteria)) {
       // there is only a single result column
       List<BigInteger> ids = query.list(); // preserve order
-      for (BigInteger id : ids) { // for debug puprose
+      for (BigInteger id : ids) { // for debug purpose
         RSForm fmx = get(id.longValue());
         forms.add(fmx);
       }
@@ -315,10 +298,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       }
     }
 
-    ISearchResults<RSForm> rc =
-        new SearchResultsImpl<RSForm>(forms, pagCriteria, count.longValue());
-
-    return rc;
+    return new SearchResultsImpl<>(forms, pagCriteria, count.longValue());
   }
 
   private static final String NAME_TAG_WC_SEARCH =
@@ -349,7 +329,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   private String join(Collection<?> ids, boolean quote) {
     Collection<?> collectionToJoin;
     if (quote) {
-      Set<String> quoted = new LinkedHashSet<String>();
+      Set<String> quoted = new LinkedHashSet<>();
       for (Object id : ids) {
         quoted.add("'" + id + "'");
       }
@@ -420,7 +400,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   @Override
   public RSForm getBasicDocumentForm() {
     Optional<RSForm> rc = getCurrentSystemFormByName(RecordFactory.BASIC_DOCUMENT_FORM_NAME);
-    return rc.map(form -> form).orElse(null);
+    return rc.orElse(null);
   }
 
   @Override
@@ -467,7 +447,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   private RSForm getOldestRsForm(Query<RSForm> q, String name) {
     List<RSForm> rc = q.list();
     if (rc.isEmpty()) {
-      log.info("No matching current form of name " + name);
+      log.info("No matching current form of name {}", name);
       return null;
     }
     RSForm oldest = rc.get(0);
