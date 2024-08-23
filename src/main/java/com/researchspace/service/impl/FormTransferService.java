@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FormTransferService implements TransferService {
@@ -24,7 +23,6 @@ public class FormTransferService implements TransferService {
     this.auditTrailService = auditTrailService;
   }
 
-  @Transactional
   public void transferOwnership(User originalOwner, User newOwner) {
     List<RSForm> formsUsedByOtherUsers = formDao.getFormsUsedByOtherUsers(originalOwner);
     List<Long> formIds =
