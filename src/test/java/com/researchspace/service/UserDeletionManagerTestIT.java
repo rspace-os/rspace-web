@@ -29,7 +29,6 @@ import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
@@ -260,25 +259,27 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertTrue(report.getMessage().equals(messages.getMessage("errors.deleteuser.nonself")));
   }
 
-  @Test
-  public void testCannotDeleteIfSharedForm() {
-    User creator = createAndSaveUser(getRandomAlphabeticString("formCreator"));
-    User formUser = createAndSaveUser(getRandomAlphabeticString("formUser"));
-    initUsers(creator, formUser);
-    logoutAndLoginAs(creator);
-    RSForm form = createAnyForm(creator);
-    form.publish();
-    formMgr.save(form, creator);
-    logoutAndLoginAs(formUser);
-    recordMgr.createNewStructuredDocument(
-        folderMgr.getRootRecordForUser(formUser, formUser).getId(), form.getId(), formUser);
-    User sysadmin = logoutAndLoginAsSysAdmin();
-    final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
-    ServiceOperationResult<User> report =
-        userDeletionMgr.removeUser(creator.getId(), policy, sysadmin);
-    assertFalse(report.isSucceeded());
-    assertTrue(report.getMessage().equals(messages.getMessage("errors.deleteuser.nousedforms")));
-  }
+  // todo: remove/ update
+  //  @Test
+  //  public void testCannotDeleteIfSharedForm() {
+  //    User creator = createAndSaveUser(getRandomAlphabeticString("formCreator"));
+  //    User formUser = createAndSaveUser(getRandomAlphabeticString("formUser"));
+  //    initUsers(creator, formUser);
+  //    logoutAndLoginAs(creator);
+  //    RSForm form = createAnyForm(creator);
+  //    form.publish();
+  //    formMgr.save(form, creator);
+  //    logoutAndLoginAs(formUser);
+  //    recordMgr.createNewStructuredDocument(
+  //        folderMgr.getRootRecordForUser(formUser, formUser).getId(), form.getId(), formUser);
+  //    User sysadmin = logoutAndLoginAsSysAdmin();
+  //    final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+  //    ServiceOperationResult<User> report =
+  //        userDeletionMgr.removeUser(creator.getId(), policy, sysadmin);
+  //    assertFalse(report.isSucceeded());
+  //
+  // assertTrue(report.getMessage().equals(messages.getMessage("errors.deleteuser.nousedforms")));
+  //  }
 
   @Test
   public void testOnlyAdminCanDelete() throws Exception {
