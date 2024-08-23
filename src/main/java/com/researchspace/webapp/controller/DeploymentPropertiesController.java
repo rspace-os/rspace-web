@@ -97,6 +97,9 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${sysadmin.delete.user}")
   private String sysadminDeleteUser;
 
+  @Value("${collabora.wopi.enabled}")
+  private String collaboraEnabled;
+
   /**
    * Service to return the value of property stored in the deployment.properties file. Uses a
    * whitelist strategy to only return properties that should be exposed.
@@ -165,6 +168,8 @@ public class DeploymentPropertiesController extends BaseController {
         return String.valueOf(isAsposeEnabled());
       case "sysadmin.delete.user":
         return sysadminDeleteUser;
+      case "collabora.wopi.enabled":
+        return collaboraEnabled;
       default:
         throw new IllegalArgumentException("No property available for name: " + propertyName);
     }
