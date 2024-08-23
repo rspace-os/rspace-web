@@ -146,7 +146,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
           clausesToAnd.add(" menu.user_id=" + user.getId());
         }
         if (searchCriteria.isUserFormsOnly()) {
-          clausesToAnd.add(" t.owner = '" + user.getUsername() + "' ");
+          clausesToAnd.add(" t.createdBy = '" + user.getUsername() + "' ");
         }
 
         if (searchCriteria.getFormType() != null) {
@@ -331,7 +331,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       sb.append("(").append(NAME_TAG_WC_SEARCH);
       if (!searchCriteria.isUserFormsOnly()) {
         // case 3
-        sb.append(" or t.owner like :searchTerm");
+        sb.append(" or t.createdBy like :searchTerm");
       }
       // else case 1
       sb.append(")");

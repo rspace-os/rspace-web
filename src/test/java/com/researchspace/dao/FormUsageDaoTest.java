@@ -1,7 +1,5 @@
 package com.researchspace.dao;
 
-// import org.compass.core.CompassTemplate;
-// import org.compass.gps.CompassGps;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

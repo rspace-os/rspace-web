@@ -97,7 +97,7 @@ public class FormDaoTest extends BaseDaoTestCase {
   }
 
   @Test
-  public void testGetMostRecentVErsionForStableId() throws InterruptedException {
+  public void testGetMostRecentVersionForStableId() throws InterruptedException {
     Thread.sleep(5);
     RSForm toCopy = forms[0];
     final int B4_count = dao.getAll().size();
@@ -119,7 +119,7 @@ public class FormDaoTest extends BaseDaoTestCase {
   }
 
   @Test
-  public void t001testSearchByCreateMenu() throws InterruptedException {
+  public void testSearchByCreateMenu() {
     flushDatabaseState();
     FormSearchCriteria searchCrit = new FormSearchCriteria(PermissionType.READ);
     searchCrit.setPublishedOnly(true);
