@@ -18,6 +18,7 @@ import com.researchspace.model.Version;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormUserMenu;
 import com.researchspace.model.record.RSForm;
@@ -30,6 +31,7 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.shiro.authz.Permission;
 import org.junit.After;
 import org.junit.Before;
@@ -233,7 +235,6 @@ public class FormDaoTest extends BaseDaoTestCase {
         parser.resolvePermission("FORM:READ:id=" + CAN_ACCESS.getId() + "," + forms[1].getId());
     user.addPermission(cbp);
     flushDatabaseState();
-    ISearchResults<RSForm> results = getPublishedForms(user, PermissionType.READ, true);
 
     user.removePermission(cbp);
 
@@ -436,6 +437,66 @@ public class FormDaoTest extends BaseDaoTestCase {
     pc.setSortOrder(SortOrder.DESC);
     pc.setOrderBy("name");
     assertEquals(2, dao.getAllFormsByPermission(user, sc, pc).getHits().longValue());
+  }
+
+  @Test
+  public void testTransferFormOwnership() {
+    List<Long> originalUserForms = getFormIdsOwnedByUser(user);
+    User newOwner = createAndSaveRandomUser();
+    List<Long> newOwnerForms = getFormIdsOwnedByUser(newOwner);
+
+    // original owner has 4 forms, new owner has none
+    assertEquals(4, originalUserForms.size());
+    assertEquals(0, newOwnerForms.size());
+
+    dao.transferOwnershipOfForms(user, newOwner, originalUserForms);
+    flush();
+
+    List<Long> originalOwnerFormsPostTransfer = getFormIdsOwnedByUser(user);
+    List<Long> newOwnerFormsPostTransfer = getFormIdsOwnedByUser(newOwner);
+    // new owners forms match those which used to be owned by the original user
+    assertEquals(originalUserForms, newOwnerFormsPostTransfer);
+    // original owner has no forms
+    assertEquals(0, originalOwnerFormsPostTransfer.size());
+  }
+
+  private List<Long> getFormIdsOwnedByUser(User owner){
+    return formDao.getAll().stream()
+        .filter(form -> form.getOwner().equals(owner))
+        .map(RSForm::getId)
+        .collect(Collectors.toList());
+  }
+
+  @Test
+  public void testGetFormsUsedByOtherUsers() {
+    User u1 = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
+    User u2 = createAndSaveUserIfNotExists(getRandomAlphabeticString("u2"));
+    initialiseContentWithEmptyContent(u1);
+    initialiseContentWithEmptyContent(u2);
+    logoutAndLoginAs(u1);
+
+    //create and publish form as u1
+    RSForm u1Form = recordFactory.createBasicDocumentForm(u1);
+    u1Form.publish();
+    u1Form.setAccessControl(
+        new AccessControl(PermissionType.WRITE, PermissionType.READ, PermissionType.READ));
+    formDao.save(u1Form);
+
+    // create doc from form as u1
+    Record u1Record = recordFactory.createStructuredDocument("doc", u1, u1Form);
+    recordDao.save(u1Record);
+    // no forms returned as the doc was created by the form creator
+    assertTrue(formDao.getFormsUsedByOtherUsers(u1).isEmpty());
+
+    // login and create doc as u2, based on u1 form
+    logoutAndLoginAs(u2);
+    Record u2Record = recordFactory.createStructuredDocument("doc", u2, u1Form);
+    recordDao.save(u2Record);
+
+    // u1 now has 1 form used by other users
+    List<RSForm> u1FormsUsedByOthers = formDao.getFormsUsedByOtherUsers(u1);
+    assertEquals(1, u1FormsUsedByOthers.size());
+    assertEquals(u1Form.getId(), u1FormsUsedByOthers.get(0).getId());
   }
 
   private Group createGroup(User pi) {
