@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Map;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -209,6 +210,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
 
   @Value("${zenodo.url}")
   private String zenodoApiUrl;
+
+  @Value("${dcd.base.url}")
+  @Getter
+  @Setter
+  private String digitalCommonsDataBaseUrl;
 
   @Value("${aspose.enabled:true}")
   private String asposeEnabled;

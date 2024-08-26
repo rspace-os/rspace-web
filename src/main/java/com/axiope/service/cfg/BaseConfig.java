@@ -19,6 +19,7 @@ import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.auth.WhiteListIPCheckerImpl;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.dao.customliquibaseupdates.LiveLiqUpdater;
+import com.researchspace.dcd.rspaceadapter.DigitalCommonsDataRepository;
 import com.researchspace.document.importer.DocumentImporterFromWord2HTML;
 import com.researchspace.document.importer.EvernoteEnexImporter;
 import com.researchspace.document.importer.ExternalFileImporter;
@@ -1274,6 +1275,18 @@ public abstract class BaseConfig {
   @Bean(name = "zenodoRepository")
   public IRepository zenodoRepository() {
     ZenodoRSpaceRepository rc = new ZenodoRSpaceRepository();
+    log.info("Setting in repository implementation {}", rc);
+    return rc;
+  }
+
+  /**
+   * Creates a new {@link IRepository} bean for Digital Commons Data.
+   *
+   * @return the repository adapter
+   */
+  @Bean(name = "digitalCommonsDataRepository")
+  public IRepository digitalCommonsDataRepository() {
+    DigitalCommonsDataRepository rc = new DigitalCommonsDataRepository();
     log.info("Setting in repository implementation {}", rc);
     return rc;
   }
