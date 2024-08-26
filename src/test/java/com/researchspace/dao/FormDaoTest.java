@@ -170,7 +170,6 @@ public class FormDaoTest extends BaseDaoTestCase {
 
   @Test
   public void userOnlyOrSearchAll() throws InterruptedException {
-
     ConstraintBasedPermission cbp = parser.resolvePermission("FORM:READ");
     User ownerOfFourForms = createAndSaveUserWithNoPermissions("any");
     ownerOfFourForms.addPermission(cbp);
@@ -439,19 +438,23 @@ public class FormDaoTest extends BaseDaoTestCase {
   }
 
   @Test
-  public void testTransferFormOwnership() {
-    List<Long> originalUserForms = getFormIdsOwnedByUser(user);
+  public void testTransferFormOwnership() throws InterruptedException {
+    User originalOwner = createAndSaveRandomUser();
+    setUpDBWith4Forms(originalOwner);
+
     User newOwner = createAndSaveRandomUser();
+
+    List<Long> originalUserForms = getFormIdsOwnedByUser(originalOwner);
     List<Long> newOwnerForms = getFormIdsOwnedByUser(newOwner);
 
     // original owner has 4 forms, new owner has none
     assertEquals(4, originalUserForms.size());
     assertEquals(0, newOwnerForms.size());
 
-    dao.transferOwnershipOfForms(user, newOwner, originalUserForms);
+    dao.transferOwnershipOfForms(originalOwner, newOwner, originalUserForms);
     flush();
 
-    List<Long> originalOwnerFormsPostTransfer = getFormIdsOwnedByUser(user);
+    List<Long> originalOwnerFormsPostTransfer = getFormIdsOwnedByUser(originalOwner);
     List<Long> newOwnerFormsPostTransfer = getFormIdsOwnedByUser(newOwner);
     // new owners forms match those which used to be owned by the original user
     assertEquals(originalUserForms, newOwnerFormsPostTransfer);
@@ -459,7 +462,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     assertEquals(0, originalOwnerFormsPostTransfer.size());
   }
 
-  private List<Long> getFormIdsOwnedByUser(User owner){
+  private List<Long> getFormIdsOwnedByUser(User owner) {
     return formDao.getAll().stream()
         .filter(form -> form.getOwner().equals(owner))
         .map(RSForm::getId)
@@ -474,7 +477,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     initialiseContentWithEmptyContent(u2);
     logoutAndLoginAs(u1);
 
-    //create and publish form as u1
+    // create and publish form as u1
     RSForm u1Form = recordFactory.createBasicDocumentForm(u1);
     u1Form.publish();
     u1Form.setAccessControl(

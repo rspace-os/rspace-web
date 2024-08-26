@@ -54,7 +54,8 @@ class FormTransferServiceTest {
 
     formTransferService.transferOwnership(originalOwner, newOwner);
 
-    Mockito.verify(formDao).transferOwnershipOfForms(originalOwner, newOwner, List.of(form1.getId(), form2.getId()));
+    Mockito.verify(formDao)
+        .transferOwnershipOfForms(originalOwner, newOwner, List.of(form1.getId(), form2.getId()));
 
     ArgumentCaptor<GenericEvent> auditEventCaptor = ArgumentCaptor.forClass(GenericEvent.class);
     Mockito.verify(auditTrailService, Mockito.times(2)).notify(auditEventCaptor.capture());
