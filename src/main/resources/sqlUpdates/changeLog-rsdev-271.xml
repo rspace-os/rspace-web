@@ -37,7 +37,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2024-07-29c" context="run,dev-test" author="nico">
+    <changeSet id="2024-07-29c" context="run" author="nico">
         <comment>Increase column space</comment>
         <modifyDataType columnName="accessToken" newDataType="varchar(2048)" tableName="UserConnection" />
         <modifyDataType columnName="refreshToken" newDataType="varchar(2048)" tableName="UserConnection" />

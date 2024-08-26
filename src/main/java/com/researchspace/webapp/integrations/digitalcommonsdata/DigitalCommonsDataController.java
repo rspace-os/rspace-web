@@ -84,9 +84,7 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
     URL_AUTH_END_POINT = getAuthBaseUrl(this.webBaseUrl) + "/oauth2/authorize";
     URL_TOKEN_END_POINT = getAuthBaseUrl(this.webBaseUrl) + "/oauth2/token";
     URL_DATASET_DELETE_END_POINT =
-        getApiBaseUrl(this.webBaseUrl)
-            + "/active-data-entities/datasets/drafts/"
-            + FAKE_DATASET_ID;
+        getApiBaseUrl(this.webBaseUrl) + "/active-data-entities/datasets/drafts/" + FAKE_DATASET_ID;
     URL_CALLBACK = getCallbackUrl() + "/apps/digitalcommonsdata/callback";
     URL_CALLBACK = new URI(URL_CALLBACK).normalize().toString();
     clientId = clientId == null ? "" : StringUtils.strip(clientId);
