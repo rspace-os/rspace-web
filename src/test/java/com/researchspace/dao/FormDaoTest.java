@@ -18,7 +18,6 @@ import com.researchspace.model.Version;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormUserMenu;
 import com.researchspace.model.record.RSForm;
@@ -44,7 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class FormDaoTest extends BaseDaoTestCase {
 
   private @Autowired FormDao dao;
-  private @Autowired FormCreateMenuDao menudao;
+  private @Autowired FormCreateMenuDao menuDao;
   private @Autowired GroupDao groupdao;
   private RecordFactory recordFactory;
 
@@ -127,19 +126,19 @@ public class FormDaoTest extends BaseDaoTestCase {
     searchCrit.setPublishedOnly(true);
     searchCrit.setIncludeSystemForm(true);
 
-    ISearchResults<RSForm> results = dao.getAllFormsByPermission(user, searchCrit, getAllPgCrit());
+    dao.getAllFormsByPermission(user, searchCrit, getAllPgCrit());
 
     // only default forms are in create menu yet.
     searchCrit.setInUserMenu(true);
     int totalInMenuInitialCount = countReadableForms(user, searchCrit, getAllPgCrit());
-    assertTrue(totalInMenuInitialCount > 0); // a default form is avaialble
+    assertTrue(totalInMenuInitialCount > 0); // a default form is available
 
     // now set 1 as wanted in create menu
-    menudao.save(new FormUserMenu(user, forms[0]));
+    menuDao.save(new FormUserMenu(user, forms[0]));
     flushDatabaseState();
     assertEquals(totalInMenuInitialCount + 1, countReadableForms(user, searchCrit, getAllPgCrit()));
     // if the same form gets added twice, no problem, duplicates are ignored.
-    menudao.save(new FormUserMenu(user, forms[0]));
+    menuDao.save(new FormUserMenu(user, forms[0]));
     flushDatabaseState();
     // still only 1 form.
     assertEquals(totalInMenuInitialCount + 1, countReadableForms(user, searchCrit, getAllPgCrit()));
@@ -321,11 +320,11 @@ public class FormDaoTest extends BaseDaoTestCase {
 
     clearPermissions(user);
     // check can handle no properties
-    ConstraintBasedPermission ALL = parser.resolvePermission("FORM:READ");
+    parser.resolvePermission("FORM:READ");
     other.addPermission(BY_ID);
     assertEquals(7, getPublishedForms(other, PermissionType.READ, true).getTotalHits().longValue());
 
-    // lets make a a Form no longer current
+    // make form no longer current
     forms[0].setCurrent(false);
 
     dao.save(forms[0]);
@@ -343,7 +342,7 @@ public class FormDaoTest extends BaseDaoTestCase {
   }
 
   @Test
-  public void hasUserPublishedFormsUserinOtherRecords() throws InterruptedException {
+  public void hasUserPublishedFormsUserInOtherRecords() {
     User u1 = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
     User u2 = createAndSaveUserIfNotExists(getRandomAlphabeticString("u2"));
     initialiseContentWithEmptyContent(u1);
@@ -371,7 +370,7 @@ public class FormDaoTest extends BaseDaoTestCase {
   }
 
   @Test
-  public void testSearchBySystemForm() throws InterruptedException {
+  public void testSearchBySystemForm() {
     RSForm basicForm = new RecordFactory().createBasicDocumentForm(user);
     formDao.save(basicForm);
 
@@ -383,7 +382,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     basicForm.setSystemForm(false);
     formDao.save(basicForm);
 
-    // this only retrives a basid documen which is a system form
+    // this only retrieves a basic document which is a system form
     RSForm basic2 = formDao.getBasicDocumentForm();
     assertNotNull(basic2);
 
@@ -431,7 +430,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     assertEquals(5, allFormsByPermission.getTotalHits().longValue());
 
     // now paginate with only 2 records per page
-    PaginationCriteria<RSForm> pc = new PaginationCriteria<RSForm>(RSForm.class);
+    PaginationCriteria<RSForm> pc = new PaginationCriteria<>(RSForm.class);
     pc.setPageNumber(0L);
     pc.setResultsPerPage(2);
     pc.setSortOrder(SortOrder.DESC);
@@ -509,10 +508,8 @@ public class FormDaoTest extends BaseDaoTestCase {
   }
 
   private void clearPermissions(User user2) {
-    Set<Permission> toDelete = new HashSet<Permission>();
-    for (Permission cbp : user2.getAllPermissions(true, true)) {
-      toDelete.add(cbp);
-    }
+    Set<Permission> toDelete = new HashSet<>();
+    toDelete.addAll(user2.getAllPermissions(true, true));
     for (Permission toDel : toDelete) {
       user2.removePermission(toDel);
     }
