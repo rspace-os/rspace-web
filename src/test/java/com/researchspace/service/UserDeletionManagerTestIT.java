@@ -6,6 +6,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 
 import com.researchspace.api.v1.model.ApiMaterialUsage;
@@ -28,7 +29,10 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.RSForm;
+import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
@@ -44,6 +48,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -57,6 +62,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.orm.ObjectRetrievalFailureException;
 
 @RunWith(ConditionalTestRunner.class)
 public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
@@ -151,7 +157,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void removeTempUserFailsIfUserIsInitalized() throws Exception {
+  public void removeTempUserFailsIfUserIsInitialized() throws Exception {
     final User tempuser =
         communityUserMgr.createInvitedUser(
             getRandomAlphabeticString("temp") + "@researchspace.com");
@@ -178,7 +184,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final long filePropertyCount = getFilePropertyCount(tempuser.getUsername());
     assertTrue(filePropertyCount > 0);
 
-    // now lets's create an attachment in a field with complicated content
+    // now let's create an attachment in a field with complicated content
     StructuredDocument sdoc = createComplexDocument(tempuser);
     Field field = sdoc.getFields().get(0);
     EcatMediaFile added =
@@ -236,13 +242,13 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     userAppConfigManager.saveAppConfigElementSet(channelOptions, null, false, user);
   }
 
-  private Long getFilePropertyCount(String usename) {
+  private Long getFilePropertyCount(String username) {
     openTransaction();
     Object rc =
         sessionFactory
             .getCurrentSession()
             .createCriteria(FileProperty.class)
-            .add(Restrictions.eq("fileOwner", usename))
+            .add(Restrictions.eq("fileOwner", username))
             .setProjection(Projections.countDistinct("id"))
             .uniqueResult();
     commitTransaction();
@@ -256,7 +262,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(sysadmin.getId(), policy, sysadmin);
     assertFalse(report.isSucceeded());
-    assertTrue(report.getMessage().equals(messages.getMessage("errors.deleteuser.nonself")));
+    assertEquals(report.getMessage(), messages.getMessage("errors.deleteuser.nonself"));
   }
 
   @Test
@@ -273,7 +279,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void testRemoveUserWithRequests() throws Exception {
+  public void testRemoveUserWithRequests() {
     final User toDelete = createAndSaveUser(getRandomAlphabeticString("toDelete"));
     final User toDelete2 = createAndSaveUser(getRandomAlphabeticString("toDelete2"));
     initUsers(toDelete, toDelete2);
@@ -288,7 +294,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     requestCreatorManager.createRequest(
         cgf,
         toDelete.getUsername(),
-        new HashSet<String>(Arrays.asList(toDelete2.getUsername())),
+        new HashSet<>(Collections.singletonList(toDelete2.getUsername())),
         null,
         null);
 
@@ -303,7 +309,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void deletePi() throws Exception {
+  public void deletePi() {
     // this user will create standard forms etc
     User sysadmin = logoutAndLoginAsSysAdmin();
 
@@ -321,7 +327,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void testRemoveUserWithFavourites() throws Exception {
+  public void testRemoveUserWithFavourites() {
     User anyUser = createInitAndLoginAnyUser();
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(anyUser, "any");
     favMgr.saveFavoriteRecord(sd.getId(), anyUser.getId()); // user's own favorites
@@ -337,10 +343,10 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void testRemoveUserWithUserConnection() throws Exception {
+  public void testRemoveUserWithUserConnection() {
     User anyUser = createInitAndLoginAnyUser();
     UserConnection aUserConnection = TestFactory.createUserConnection(anyUser.getUsername());
-    aUserConnection = userConn.save(aUserConnection);
+    userConn.save(aUserConnection);
     User sysadmin = logoutAndLoginAsSysAdmin();
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     // now we delete the person that toDelete shared the document with
@@ -396,7 +402,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void testRemoveUserInGroup() throws Exception {
+  public void testRemoveUserInGroup() {
     // this user will create standard forms etc
     final User admin = createAndSaveUser(getRandomAlphabeticString("toDelete"), "ROLE_ADMIN");
     initUser(admin, true);
@@ -407,7 +413,6 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     initUsers(true, pi, toDelete, toDelete2); // folders, permissions etc added
     logoutAndLoginAs(pi);
-    ;
     Group group = createGroupForUsers(pi, pi.getUsername(), "", pi, toDelete, toDelete2);
     logoutAndLoginAs(toDelete);
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(toDelete, "any");
@@ -516,6 +521,59 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report = userDeletionMgr.removeUser(pi.getId(), policy, sysadmin);
     assertTrue(report.isSucceeded());
+  }
+
+  @Test
+  public void testDeleteUserTransfersFormsUsedByOthersToSysadmin(){
+    User u1 = createInitAndLoginAnyUser();
+    RSForm u1Form = createAnyForm(u1);
+    u1Form.getAccessControl().setWorldPermissionType(PermissionType.READ);
+    u1Form.publish();
+    formMgr.save(u1Form);
+
+    User u2 = createInitAndLoginAnyUser();
+    Record u2Record = recordFactory.createStructuredDocument("doc", u2, u1Form);
+    recordMgr.save(u2Record, u2);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    // delete u1 and check deletion succeeds
+    ServiceOperationResult<User> report = userDeletionMgr.removeUser(u1.getId(), policy, sysadmin);
+    assertTrue(report.isSucceeded());
+
+    // check u1 form ownership has been transferred to sysadmin performing the deletion
+    RSForm formUsedToCreateDoc = formMgr.get(u1Form.getId());
+    assertEquals(sysadmin, formUsedToCreateDoc.getOwner());
+
+    // check u2 doc created from deleted user's form is unaffected and still accessible
+    Record u2Doc = recordMgr.get(u2Record.getId());
+    assertEquals(u2Record, u2Doc);
+  }
+
+  @Test
+  public void testDeleteUserDeletesFormsOnlyUsedByDeletedUser(){
+    User u1 = createInitAndLoginAnyUser();
+    RSForm u1Form = createAnyForm(u1);
+    u1Form.publish();
+    formMgr.save(u1Form);
+
+    Record u1Record = recordFactory.createStructuredDocument("doc", u1, u1Form);
+    recordMgr.save(u1Record, u1);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    // delete u1 and check deletion succeeds
+    ServiceOperationResult<User> report = userDeletionMgr.removeUser(u1.getId(), policy, sysadmin);
+    assertTrue(report.isSucceeded());
+
+    // check u1 form has been deleted (and exception is thrown trying to retrieve) since the form
+    // wasn't used by any other users
+    assertThrows(
+        ObjectRetrievalFailureException.class,
+        () -> formMgr.get(u1Form.getId())
+    );
   }
 
   private UserDeletionPolicy getDeleteTempUserPolicy() {
