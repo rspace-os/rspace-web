@@ -438,7 +438,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
             .createQuery(
                 "from RSForm r where r.editInfo.name=:name and r.current = true and"
                     + " r.editInfo.createdBy=:username order by r.editInfo.creationDateMillis asc",
-                RSForm.class); // todo: should this be the owner username instead?
+                RSForm.class);
     q.setParameter("name", name).setParameter("username", username).setMaxResults(1);
     return getOldestRsForm(q, name);
   }

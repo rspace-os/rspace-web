@@ -47,7 +47,6 @@ import com.researchspace.testutils.TestGroup;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -524,7 +523,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void testDeleteUserTransfersFormsUsedByOthersToSysadmin(){
+  public void testDeleteUserTransfersFormsUsedByOthersToSysadmin() {
     User u1 = createInitAndLoginAnyUser();
     RSForm u1Form = createAnyForm(u1);
     u1Form.getAccessControl().setWorldPermissionType(PermissionType.READ);
@@ -552,7 +551,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void testDeleteUserDeletesFormsOnlyUsedByDeletedUser(){
+  public void testDeleteUserDeletesFormsOnlyUsedByDeletedUser() {
     User u1 = createInitAndLoginAnyUser();
     RSForm u1Form = createAnyForm(u1);
     u1Form.publish();
@@ -570,10 +569,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     // check u1 form has been deleted (and exception is thrown trying to retrieve) since the form
     // wasn't used by any other users
-    assertThrows(
-        ObjectRetrievalFailureException.class,
-        () -> formMgr.get(u1Form.getId())
-    );
+    assertThrows(ObjectRetrievalFailureException.class, () -> formMgr.get(u1Form.getId()));
   }
 
   private UserDeletionPolicy getDeleteTempUserPolicy() {
