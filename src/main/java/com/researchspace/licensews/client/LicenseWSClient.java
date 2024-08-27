@@ -259,7 +259,7 @@ public class LicenseWSClient implements RemoteLicenseService {
     License updated = tryToUpdateLicenseFromServer();
     if (updated == null) {
       log.warn(
-          "Couldn't updated license, keeping current cached version: {} in cache {}",
+          "Could not update license, keeping current cached version: {} in cache {}",
           cache.getCachedItem().toString(),
           cache.toString());
       return false;
