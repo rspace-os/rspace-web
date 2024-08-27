@@ -454,7 +454,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
               return (
                 <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
                   <ActionButton
-                    onClick={() => file.open()}
+                    onClick={() => file.open?.()}
                     label="Open"
                     sx={{
                       borderRadius: 1,
