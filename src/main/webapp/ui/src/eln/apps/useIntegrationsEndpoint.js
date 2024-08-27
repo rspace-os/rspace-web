@@ -282,7 +282,6 @@ function decodeDigitalCommonsData(
 ): IntegrationStates["DIGITALCOMMONSDATA"] {
   return {
     mode: parseState(data),
-    // TODO
     credentials: {
       ACCESS_TOKEN: Optional.empty(),
     },
