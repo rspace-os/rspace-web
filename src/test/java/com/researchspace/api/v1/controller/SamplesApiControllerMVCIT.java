@@ -16,6 +16,7 @@ import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -44,7 +45,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
-  static final int NUM_FIELDS_IN_COMPLEX_SAMPLE = 9;
+  static final int NUM_FIELDS_IN_COMPLEX_SAMPLE = 10;
 
   @Before
   public void setup() throws Exception {
@@ -310,7 +311,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
         "{ \"templateId\": \""
             + complexSampleTemplateId
             + "\",\"fields\": [ { \"content\": \"3.14\" }, {}, {},  { \"type\": \"Text\","
-            + " \"content\": \"text content\" }, {}, {}, {}, {}, {}], \"extraFields\" : [   {"
+            + " \"content\": \"text content\" }, {}, {}, {}, {}, {}, {}], \"extraFields\" : [   {"
             + " \"name\": \"extraFieldName\", \"type\" : \"number\", \"content\": \"3.15\" } ],"
             + " \"expiryDate\":null, \"name\": \"sample1\" }";
 
@@ -406,7 +407,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSample sampleRev1Full = getFromJsonResponseBody(result, ApiSample.class);
     assertEquals("sample1", sampleRev1Full.getName());
     assertTrue(sampleRev1Full.getTags().isEmpty());
-    assertEquals(9, sampleRev1Full.getFields().size());
+    assertEquals(10, sampleRev1Full.getFields().size());
     assertEquals("text content", sampleRev1Full.getFields().get(3).getContent());
     assertEquals(1, sampleRev1Full.getExtraFields().size());
 
@@ -448,14 +449,11 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   private Optional<Sample> getComplexSampleTemplate(User user) {
-    Optional<Sample> complexTemplate =
-        sampleApiMgr.getAllTemplates(user).stream()
-            .filter(
-                t ->
-                    t.getName()
-                        .equals(ContentInitializerForDevRunManager.COMPLEX_SAMPLE_TEMPLATE_NAME))
-            .findAny();
-    return complexTemplate;
+    return sampleApiMgr.getAllTemplates(user).stream()
+        .filter(
+            t ->
+                ContentInitializerForDevRunManager.COMPLEX_SAMPLE_TEMPLATE_NAME.equals(t.getName()))
+        .findAny();
   }
 
   @Test
@@ -545,7 +543,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     String incorrectFieldContentJson =
         String.format(
             "{\"name\": \"sample1\", \"templateId\" : \"%s\", "
-                + "\"fields\" : [ { \"content\": \"test\" }, {}, {}, {}, {}, {}, {}, {},{}] }",
+                + "\"fields\" : [ { \"content\": \"test\" }, {}, {}, {}, {}, {}, {}, {},{},{}] }",
             complexTemplateInfo.getId());
     result =
         this.mockMvc
@@ -588,7 +586,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     json =
         String.format(
             "{\"name\": \"sample1\", \"templateId\" : \"%s\", \"fields\" : [ { \"content\": \"23\""
-                + " }, {}, {}, { \"content\": \"final call\" }, {}, {}, {}, {},{} ] }",
+                + " }, {}, {}, { \"content\": \"final call\" }, {}, {}, {}, {}, {}, {}] }",
             complexTemplateInfo.getId());
     result =
         this.mockMvc
@@ -1029,7 +1027,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiSample sampleRev1Full = getFromJsonResponseBody(result, ApiSample.class);
     assertEquals("myComplexSample", sampleRev1Full.getName());
-    assertEquals(9, sampleRev1Full.getFields().size());
+    assertEquals(10, sampleRev1Full.getFields().size());
     assertEquals(1, sampleRev1Full.getExtraFields().size());
     assertEquals(1, sampleRev1Full.getSubSamples().size());
     assertEquals(1, sampleRev1Full.getSubSamplesCount());
@@ -1082,5 +1080,67 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSample editedSample = mvcUtils.getFromJsonResponseBody(editResult, ApiSample.class);
     assertNotNull(editedSample);
     assertEquals(anotherUser.getUsername(), editedSample.getOwner().getUsername());
+  }
+
+  @Test
+  public void createSampleFromTemplateWithValidTimeIsAccepted() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createApiKeyForuser(anyUser);
+
+    Long sampleTemplateId = getComplexSampleTemplate(anyUser).get().getId();
+    String validTime = "10:15";
+    String sampleWithExtraFieldsJSON =
+        makeJsonSampleWithIdAndTime(sampleTemplateId.toString(), validTime);
+
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/samples", anyUser, sampleWithExtraFieldsJSON))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    ApiSampleWithFullSubSamples createdSample =
+        mvcUtils.getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+
+    ApiSampleField timeField =
+        createdSample.getFields().stream()
+            .filter(f -> f.getType().equals(ApiFieldType.TIME))
+            .findFirst()
+            .get();
+    assertEquals(validTime, timeField.getContent());
+  }
+
+  @Test
+  public void createSampleFromTemplateWithInvalidTimeIsRejected() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createApiKeyForuser(anyUser);
+
+    Long sampleTemplateId = getComplexSampleTemplate(anyUser).get().getId();
+    String invalidTime = "9:15"; // time format should be 24 hours with 4 digits e.g. 09:15
+    String sampleWithExtraFieldsJSON =
+        makeJsonSampleWithIdAndTime(sampleTemplateId.toString(), invalidTime);
+
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/samples", anyUser, sampleWithExtraFieldsJSON))
+            .andExpect(status().isBadRequest())
+            .andReturn();
+
+    String responseText = result.getResponse().getContentAsString();
+    String expectedErrorMessage = "9:15 is an invalid 24hour time format. Valid format is 00:00.";
+    assertTrue(responseText.contains(expectedErrorMessage));
+  }
+
+  private String makeJsonSampleWithIdAndTime(String id, String time) {
+    return "{ \"templateId\": \""
+        + id
+        + "\",\"fields\": [ { \"content\": \"3.14\" }, {}, {},  { \"type\": \"Text\","
+        + " \"content\": \"text content\" }, {}, {}, {}, {\"type\": \"time\", \"content\": \""
+        + time
+        + "\"}, {}, {}],"
+        + " \"expiryDate\":null, \"name\": \"sample1\" }";
   }
 }
