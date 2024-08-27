@@ -220,7 +220,7 @@ public class InventoryPublicApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNull(foundRecord.getName()); // name always null
     assertEquals(1, foundRecord.getTags().size());
     assertEquals("complexSampleDescription", foundRecord.getDescription());
-    assertEquals(9, ((ApiSampleWithoutSubSamples) foundRecord).getFields().size());
+    assertEquals(10, ((ApiSampleWithoutSubSamples) foundRecord).getFields().size());
     assertEquals(1, foundRecord.getExtraFields().size());
   }
 }

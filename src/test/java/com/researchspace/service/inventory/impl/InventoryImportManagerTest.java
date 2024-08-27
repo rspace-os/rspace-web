@@ -578,11 +578,11 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     // csv file with 3 samples: columns mapped to name/expiry date/template fields/quantity
     InputStream samplesCsvIS =
         IOUtils.toInputStream(
-            "Expiry Date, Name, MyNumber, MyDate, MyString, MyText, MyURL, MyRef, MyAtt, MyRadio,"
-                + " MyChoice, MyQuantity\n"
-                + "2030-01-01, TestSample1,3.14,,,,,,,,,\n"
-                + "2030-01-01, TestSample2,,2021-11-23,,,,,,,,5.25ml\n"
-                + "2030-01-01, TestSample3,,, dummyText,,,,,,,200 ml\n");
+            "Expiry Date, Name, MyNumber, MyDate, MyString, MyText, MyURL, MyRef, MyAtt, MyTime,"
+                + " MyRadio, MyChoice, MyQuantity\n"
+                + "2030-01-01, TestSample1,3.14,,,,,,,,,,\n"
+                + "2030-01-01, TestSample2,,2021-11-23,,,,,,,,,5.25ml\n"
+                + "2030-01-01, TestSample3,,, dummyText,,,,,,,,200 ml\n");
     HashMap<String, String> nameDescriptionMapping = new HashMap<>();
     nameDescriptionMapping.put("Name", "name");
     nameDescriptionMapping.put("Expiry Date", "expiry date");
@@ -673,7 +673,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     // check error
     String sampleErrorMsg = sampleResult.getTemplate().getError().getErrors().get(0);
     assertEquals(
-        "Number of unmapped CSV columns is 8, but number of fields in sample template is 9. "
+        "Number of unmapped CSV columns is 8, but number of fields in sample template is 10. "
             + "The CSV file must exactly map all the template fields.",
         sampleErrorMsg);
   }

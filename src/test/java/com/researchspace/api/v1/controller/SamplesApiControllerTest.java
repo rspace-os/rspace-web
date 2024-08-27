@@ -274,8 +274,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
         recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
     // add default value to various fields
     sampleTemplate.getActiveFields().get(4).setData("text"); // text
-    sampleTemplate.getActiveFields().get(7).setData("option1"); // radio
-    sampleTemplate.getActiveFields().get(8).setSelectedOptions(List.of("optionA")); // choice
+    sampleTemplate.getActiveFields().get(8).setData("option1"); // radio
+    sampleTemplate.getActiveFields().get(9).setSelectedOptions(List.of("optionA")); // choice
     Sample savedTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
     newSample.setTemplateId(savedTemplate.getId());
 
@@ -313,8 +313,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     // check fields and default values assignment
     assertEquals(NUM_FIELDS_IN_COMPLEX_SAMPLE, createdSample.getFields().size());
     assertEquals("text", createdSample.getFields().get(4).getContent());
-    assertEquals(List.of("option1"), createdSample.getFields().get(7).getSelectedOptions());
-    assertEquals(List.of("optionA"), createdSample.getFields().get(8).getSelectedOptions());
+    assertEquals(List.of("option1"), createdSample.getFields().get(8).getSelectedOptions());
+    assertEquals(List.of("optionA"), createdSample.getFields().get(9).getSelectedOptions());
     assertEquals(1, createdSample.getExtraFields().size());
 
     // retrieve
@@ -355,6 +355,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     fields.add(refrenceField);
     ApiSampleField attachmentField = new ApiSampleField();
     fields.add(attachmentField);
+    ApiSampleField timeField = new ApiSampleField();
+    fields.add(timeField);
     ApiSampleField radioField = new ApiSampleField();
     radioField.setSelectedOptions(List.of("option1"));
     fields.add(radioField);
@@ -382,9 +384,9 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
             .getFields()
             .get(1)
             .getContent()); // defaults get overridden by content in request
-    assertEquals(List.of("option1"), createdSample.getFields().get(7).getSelectedOptions());
+    assertEquals(List.of("option1"), createdSample.getFields().get(8).getSelectedOptions());
     assertEquals(
-        List.of("optionA", "optionB"), createdSample.getFields().get(8).getSelectedOptions());
+        List.of("optionA", "optionB"), createdSample.getFields().get(9).getSelectedOptions());
   }
 
   @Test
