@@ -382,6 +382,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
         flexWrap="nowrap"
         sx={{
           marginLeft: "-10px",
+          marginTop: "-8px",
           width: "calc(100% + 9px)",
         }}
       >
