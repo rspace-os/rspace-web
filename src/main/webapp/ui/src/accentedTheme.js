@@ -464,12 +464,25 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               // this has to be here (i.e. :hover and then
               // .MuiOutlinedInput-notchedOutline inside) because of the way
               // Mui applies its styles
-              "&:hover": {
+              "&:hover, &:focus-within": {
                 [`& .${outlinedInputClasses.notchedOutline}`]: {
-                  borderColor: darken(
+                  /*
+                   * These !importants are needed because when a className is
+                   * applied to a TextField, it is attached to the
+                   * .MuiFormControl-root that wraps .MuiOutlinedInput-root, so
+                   * that would have a higher specificity than this style. As
+                   * such, without the !important it would be impossible for a
+                   * styled component to disable the border when not hovering,
+                   * but keep it when hovering, as it would override all styles
+                   * on the notched outline. With the !important, if a style
+                   * components want to override the hover effect too, they too
+                   * can use !important
+                   */
+                  border: `${accentedBorder} !important`,
+                  borderColor: `${darken(
                     accentedBackground,
                     hoverDarkenCoefficient
-                  ),
+                  )} !important`,
                 },
               },
               [`&:has(.${inputAdornmentClasses.positionStart})`]: {

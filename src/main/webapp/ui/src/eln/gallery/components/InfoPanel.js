@@ -29,6 +29,7 @@ import * as FetchingData from "../../../util/fetchingData";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
 import useCollabora from "../useCollabora";
+import clsx from "clsx";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -102,7 +103,7 @@ const NameFieldForLargeViewports = styled(
             placeholder="No Name"
             fullWidth
             size="small"
-            className={className}
+            className={clsx(className, name !== file.name && "modified")}
             onChange={({ target: { value } }) => setName(value)}
             inputProps={{
               "aria-label": "Name",
@@ -135,17 +136,30 @@ const NameFieldForLargeViewports = styled(
     }
   )
 )(({ theme }) => ({
+  "&.modified": {
+    "& .MuiOutlinedInput-root": {
+      backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+    },
+  },
+  "&:not(.modified)": {
+    "& .MuiOutlinedInput-notchedOutline": {
+      border: "none",
+    },
+  },
   "& .MuiOutlinedInput-root": {
     borderRadius: "4px",
-    fontSize: "0.9rem",
+    fontSize: "1.2rem",
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
-    backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+    transition: "all .5s ease-in-out",
+    "&:hover, &:focus-within": {
+      backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+    },
   },
   "& input": {
-    paddingTop: theme.spacing(0.75),
-    paddingBottom: theme.spacing(0.75),
-    paddingLeft: theme.spacing(1.5),
+    paddingTop: theme.spacing(0.25),
+    paddingBottom: theme.spacing(0.25),
+    paddingLeft: theme.spacing(0.25),
   },
 }));
 
@@ -366,6 +380,10 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
         spacing={0.5}
         alignItems="flex-start"
         flexWrap="nowrap"
+        sx={{
+          marginLeft: "-10px",
+          width: "calc(100% + 9px)",
+        }}
       >
         <Grid item sx={{ flexShrink: 1, flexGrow: 1 }}>
           {selection
