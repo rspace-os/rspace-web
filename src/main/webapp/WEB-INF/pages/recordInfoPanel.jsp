@@ -131,6 +131,10 @@ There are no references to this file.
           <td class="infoLabelCell">Owner: </td>
           <td class="infoPanel-owner"></td>
         </tr>
+        <tr class="infoPanelCreatedByRow">
+          <td class="infoLabelCell">Created by: </td>
+          <td class="infoPanel-createdBy"></td>
+        </tr>
          <tr class="infoPanelOriginalSource">
           <td class="infoLabelCell">Source:  </td>
           <td >Imported from archive</td>

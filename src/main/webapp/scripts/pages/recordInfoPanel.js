@@ -29,7 +29,12 @@ function generate$RecordInfoPanel(info) {
   $newInfoPanel.find('.infoPanel-name').text(info.name);
   $newInfoPanel.find('.infoPanel-type').text(info.type);
   $newInfoPanel.find('.infoPanel-owner').text(info.ownerFullName);
-  $newInfoPanel.find('.infoPanel-owner').text(info.ownerFullName);
+  if(isForm){
+    $newInfoPanel.find('.infoPanelCreatedByRow').show();
+    $newInfoPanel.find('.infoPanel-createdBy').text(info.createdBy);
+  } else {
+    $newInfoPanel.find('.infoPanelCreatedByRow').hide();
+  }
   $newInfoPanel.find('tr.infoPanelOriginalSource').toggle(isCreatedFromXMLImport);
   if (isCreatedFromXMLImport) {
 	 $newInfoPanel.find('.infoPanelOriginalCreator').text(info.originalOwnerUsernamePreImport);
