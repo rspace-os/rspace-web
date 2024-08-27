@@ -12,13 +12,18 @@ import { type DocumentAttrs, type Document } from "../../Document";
 import { type InventoryRecord } from "../../InventoryRecord";
 import { type IdentifierAttrs, type Identifier } from "../../Identifier";
 import { type GlobalId } from "../../BaseRecord";
+import InvApiService from "../../../../common/InvApiService";
 
 type FactoryOverrides = {|
   newRecord?: (any) => InventoryRecord,
   newPerson?: (PersonAttrs) => PersonModel,
   newBarcode?: (BarcodeAttrs) => BarcodeRecord,
   newDocument?: (DocumentAttrs) => Document,
-  newIdentifier?: (IdentifierAttrs, GlobalId) => Identifier,
+  newIdentifier?: (
+    IdentifierAttrs,
+    GlobalId,
+    typeof InvApiService
+  ) => Identifier,
   newFactory?: () => Factory,
 |};
 
@@ -29,7 +34,10 @@ export const mockFactory: (?FactoryOverrides) => Factory = (
     newRecord: jest.fn<[any], InventoryRecord>(),
     newPerson: jest.fn<[PersonAttrs], PersonModel>(),
     newBarcode: jest.fn<[BarcodeAttrs], BarcodeRecord>(),
-    newIdentifier: jest.fn<[IdentifierAttrs, GlobalId], Identifier>(),
+    newIdentifier: jest.fn<
+      [IdentifierAttrs, GlobalId, typeof InvApiService],
+      Identifier
+    >(),
     newDocument: jest.fn<[DocumentAttrs], Document>(),
     newFactory: jest.fn<[], Factory>().mockImplementation(f),
     ...overrides,

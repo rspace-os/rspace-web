@@ -111,7 +111,7 @@ const PublicPreviewDialog = ({
                  * public page were the user to tap the "Publish" button right now.
                  */}
                 <IdentifierDataGrid
-                  identifier={id.publicData}
+                  identifier={id}
                   record={{
                     description: record.description,
                     tags: record.tags,

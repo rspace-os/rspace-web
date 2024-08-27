@@ -324,6 +324,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
     const { classes } = useStyles();
     const editable = activeResult.isFieldEditable("identifiers");
     const { addAlert } = useContext(AlertContext);
+    const { uiStore } = useStores();
 
     const StateInfo = ({
       identifierState,
@@ -405,7 +406,10 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
     };
 
     const handleRetract = (id: Identifier) => {
-      void id.retract();
+      void id.retract({
+        confirm: (...args) => uiStore.confirm(...args),
+        addAlert: (...args) => addAlert(...args),
+      });
     };
 
     const handleDelete = (id: Identifier) => {

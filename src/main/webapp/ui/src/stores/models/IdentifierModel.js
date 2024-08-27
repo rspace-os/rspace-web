@@ -7,9 +7,7 @@ import {
   makeObservable,
   runInAction,
 } from "mobx";
-import ApiService from "../../common/InvApiService";
-import getRootStore from "../stores/RootStore";
-import React from "react";
+import React, { type Node } from "react";
 import GeoLocationModel from "../models/GeoLocationModel";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type URL } from "../../util/types";
@@ -27,9 +25,13 @@ import {
   type IdentifierDate,
 } from "../definitions/Identifier";
 import type { RadioOption } from "../../components/Inputs/RadioField";
-import type { GeoLocation } from "../definitions/GeoLocation";
-import { mkAlert } from "../contexts/Alert";
-import { parseInteger } from "../../util/parsers";
+import {
+  type GeoLocation,
+  type GeoLocationPolygon,
+} from "../definitions/GeoLocation";
+import { mkAlert, type Alert } from "../contexts/Alert";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import InvApiService from "../../common/InvApiService";
 
 type GeoLocationBox = {
   eastBoundLongitude: string,
@@ -41,7 +43,6 @@ type PolygonPoint = {
   pointLatitude: string,
   pointLongitude: string,
 };
-export type GeoLocationPolygon = Array<{ polygonPoint: PolygonPoint }>;
 
 export type IdentifierGeoLocation = {
   geoLocationBox: GeoLocationBox,
@@ -178,12 +179,18 @@ export default class IdentifierModel implements Identifier {
   descriptions: ?Array<IdentifierDescription> = [];
   alternateIdentifiers: ?Array<AlternateIdentifier> = [];
   dates: ?Array<IdentifierDate> = [];
-  geoLocations: ?Array<GeoLocation> = [];
+  geoLocations: ?$ReadOnlyArray<GeoLocation> = [];
   _links: Array<_LINK> = [];
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
 
-  constructor(attrs: IdentifierAttrs, parentGlobalId: GlobalId) {
+  ApiServiceBase: typeof InvApiService | null = null;
+
+  constructor(
+    attrs: IdentifierAttrs,
+    parentGlobalId: GlobalId,
+    ApiServiceBase?: typeof InvApiService
+  ) {
     makeObservable(this, {
       parentGlobalId: observable,
       id: observable,
@@ -232,7 +239,6 @@ export default class IdentifierModel implements Identifier {
       updateState: action,
       publish: action,
       retract: action,
-      publicData: computed,
     });
 
     this.parentGlobalId = parentGlobalId;
@@ -264,6 +270,10 @@ export default class IdentifierModel implements Identifier {
       attrs.geoLocations?.map((gl) => new GeoLocationModel(gl)) ?? [];
     this._links = attrs._links;
     this.customFieldsOnPublicPage = attrs.customFieldsOnPublicPage;
+
+    if (ApiServiceBase) {
+      this.ApiServiceBase = ApiServiceBase;
+    }
   }
 
   get requiredFields(): Array<IdentifierField> {
@@ -370,8 +380,10 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Geolocations",
         value: this.geoLocations,
-        // $FlowFixMe[incompatible-call]
-        handler: (v) => this.setGeoLocations(v),
+        handler: (v) => {
+          if (Array.isArray(v))
+            this.setGeoLocations(ArrayUtils.filterClass(GeoLocationModel, v));
+        },
       },
     ];
   }
@@ -441,14 +453,28 @@ export default class IdentifierModel implements Identifier {
     this.dates = dates;
   }
 
-  setGeoLocations(geoLocations: Array<GeoLocation>) {
+  setGeoLocations(geoLocations: $ReadOnlyArray<GeoLocation>) {
     this.geoLocations = geoLocations;
   }
 
-  async publish(): Promise<void> {
+  /*
+   * We pass in various functions that would normally be pulled directly from
+   * the UiStore as this class is used on the public page where the global
+   * stores are not available as the user is not authenticated.
+   */
+  async publish({
+    confirm,
+    addAlert,
+  }: {|
+    confirm: (Node, Node, string, string) => Promise<boolean>,
+    addAlert: (Alert) => void,
+  |}): Promise<void> {
+    if (!this.ApiServiceBase)
+      throw new Error("This operation requires the user be authenticated");
+    const ApiServiceBase = this.ApiServiceBase;
     try {
       if (
-        await getRootStore().uiStore.confirm(
+        await confirm(
           "You are about to publish this Identifier",
           <>
             The IGSN ID landing page, DataCite Commons, and the DataCite APIs
@@ -469,7 +495,7 @@ export default class IdentifierModel implements Identifier {
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
-        const response = await ApiService.post<
+        const response = await ApiServiceBase.post<
           {||},
           {
             state: IGSNPublishingState,
@@ -495,7 +521,7 @@ export default class IdentifierModel implements Identifier {
           this.url = url;
           this.publicUrl = publicUrl;
         });
-        getRootStore().uiStore.addAlert(
+        addAlert(
           mkAlert({
             message: `The identifier ${this.doi} has been published.`,
             variant: "success",
@@ -505,7 +531,7 @@ export default class IdentifierModel implements Identifier {
     } catch (error) {
       // in case of errors like 422 the server provides a specific response message that we want to display
       const serverErrorResponse = error.response?.data;
-      getRootStore().uiStore.addAlert(
+      addAlert(
         mkAlert({
           title: `The identifier could not be published.`,
           message:
@@ -519,10 +545,24 @@ export default class IdentifierModel implements Identifier {
     }
   }
 
-  async retract(): Promise<void> {
+  /*
+   * We pass in various functions that would normally be pulled directly from
+   * the UiStore as this class is used on the public page where the global
+   * stores are not available as the user is not authenticated.
+   */
+  async retract({
+    confirm,
+    addAlert,
+  }: {|
+    confirm: (Node, Node, string, string) => Promise<boolean>,
+    addAlert: (Alert) => void,
+  |}): Promise<void> {
+    if (!this.ApiServiceBase)
+      throw new Error("This operation requires the user be authenticated");
+    const ApiServiceBase = this.ApiServiceBase;
     try {
       if (
-        await getRootStore().uiStore.confirm(
+        await confirm(
           "You are about to retract this Identifier",
           <>
             The IGSN ID will be set to <strong>Registered</strong>. It will be
@@ -543,12 +583,12 @@ export default class IdentifierModel implements Identifier {
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
-        const response = await ApiService.post<
+        const response = await ApiServiceBase.post<
           {||},
           { state: IGSNPublishingState }
         >(`/identifiers/${this.id}/retract`, {});
         this.updateState(response.data.state);
-        getRootStore().uiStore.addAlert(
+        addAlert(
           mkAlert({
             message: `The identifier ${this.doi} has been retracted.`,
             variant: "success",
@@ -557,7 +597,7 @@ export default class IdentifierModel implements Identifier {
       }
     } catch (error) {
       const serverErrorResponse = error.response.data;
-      getRootStore().uiStore.addAlert(
+      addAlert(
         mkAlert({
           title: `The identifier could not be retracted.`,
           message:
@@ -580,10 +620,21 @@ export default class IdentifierModel implements Identifier {
    * `retract` and `publish` methods above is that we don't need to display
    * alerts because there is no change to the visibility of the data and the
    * error handling is slightly more complex.
+   *
+   * We pass in various functions that would normally be pulled directly from
+   * the UiStore as this class is used on the public page where the global
+   * stores are not available as the user is not authenticated.
    */
-  async republish(): Promise<void> {
+  async republish({
+    addAlert,
+  }: {|
+    addAlert: (Alert) => void,
+  |}): Promise<void> {
+    if (!this.ApiServiceBase)
+      throw new Error("This operation requires the user be authenticated");
+    const ApiServiceBase = this.ApiServiceBase;
     if (this.id === null || typeof this.id === "undefined") {
-      getRootStore().uiStore.addAlert(
+      addAlert(
         mkAlert({
           title: "Identifier could not be re-published",
           message: "DOI must be known",
@@ -595,14 +646,14 @@ export default class IdentifierModel implements Identifier {
 
       // retract
       try {
-        const response = await ApiService.post<
+        const response = await ApiServiceBase.post<
           {||},
           { state: IGSNPublishingState }
         >(`/identifiers/${id}/retract`, {});
         this.updateState(response.data.state);
       } catch (error) {
         const serverErrorResponse = error.response.data;
-        getRootStore().uiStore.addAlert(
+        addAlert(
           mkAlert({
             title: `The identifier could not be republished.`,
             message:
@@ -617,7 +668,7 @@ export default class IdentifierModel implements Identifier {
 
       // publish
       try {
-        const response = await ApiService.post<
+        const response = await ApiServiceBase.post<
           {||},
           {
             state: IGSNPublishingState,
@@ -643,7 +694,7 @@ export default class IdentifierModel implements Identifier {
           this.url = url;
           this.publicUrl = publicUrl;
         });
-        getRootStore().uiStore.addAlert(
+        addAlert(
           mkAlert({
             message: `The identifier ${this.doi} has been republished.`,
             variant: "success",
@@ -656,7 +707,7 @@ export default class IdentifierModel implements Identifier {
          * state and the user will need to manually re-trigger a publish step.
          */
         const serverErrorResponse = error.response?.data;
-        getRootStore().uiStore.addAlert(
+        addAlert(
           mkAlert({
             title: `The identifier could not be republished.`,
             message:
@@ -674,8 +725,9 @@ export default class IdentifierModel implements Identifier {
     }
   }
 
-  get publicData(): IdentifierAttrs {
+  toJson(): { ... } {
     return {
+      parentGlobalId: this.parentGlobalId,
       id: this.id,
       rsPublicId: this.rsPublicId,
       doi: this.doi,
@@ -687,7 +739,7 @@ export default class IdentifierModel implements Identifier {
       title: this.title,
       publicUrl: this.publicUrl,
       publisher: this.publisher,
-      publicationYear: parseInteger(this.publicationYear).orElse(0),
+      publicationYear: this.publicationYear,
       resourceType: this.resourceType,
       resourceTypeGeneral: this.resourceTypeGeneral,
       url: this.url,
@@ -696,14 +748,8 @@ export default class IdentifierModel implements Identifier {
       descriptions: this.descriptions,
       alternateIdentifiers: this.alternateIdentifiers,
       dates: this.dates,
-      geoLocations: this.geoLocations?.map((g) => ({
-        geoLocationBox: g.geoLocationBox,
-        geoLocationPlace: g.geoLocationPlace,
-        geoLocationPoint: g.geoLocationPoint,
-        geoLocationPolygon: g.geoLocationPolygon,
-        geoLocationInPolygonPoint: g.geoLocationInPolygonPoint,
-      })),
-      _links: this._links,
+      geoLocations: this.geoLocations?.map((g) => g.toJson()),
+      editing: this.editing,
       customFieldsOnPublicPage: this.customFieldsOnPublicPage,
     };
   }

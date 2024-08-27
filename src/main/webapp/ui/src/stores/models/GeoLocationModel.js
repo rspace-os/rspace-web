@@ -1,6 +1,6 @@
 //@flow
 
-import { observable, computed, makeObservable } from "mobx";
+import { observable, computed, action, makeObservable } from "mobx";
 import {
   type GeoLocationAttrs,
   type GeoLocation,
@@ -16,9 +16,6 @@ import {
  * incomplete status is not empty, and empty may be acceptable (for Place)
  */
 
-const pointEmpty = (point: PolygonPoint): boolean => {
-  return Object.values(point).every((v) => v === "");
-};
 export const pointComplete = (point: PolygonPoint): boolean => {
   return Object.values(point).every((v) => v !== "");
 };
@@ -32,9 +29,72 @@ const pointIncomplete = (point: PolygonPoint): boolean => {
 export const boxComplete = (box: GeoLocationBox): boolean => {
   return Object.values(box).every((v) => v !== "");
 };
-export const polygonComplete = (polygon: GeoLocationPolygon): boolean => {
-  return polygon.every((el) => pointComplete(el.polygonPoint));
-};
+
+export class GeoLocationPolygonModel implements GeoLocationPolygon {
+  +points: Array<{| polygonPoint: PolygonPoint |}>;
+
+  constructor(points: Array<{| polygonPoint: PolygonPoint |}>) {
+    makeObservable(this, {
+      points: observable,
+      length: computed,
+      set: action,
+      addAnotherPoint: action,
+      removePoint: action,
+      isValid: computed,
+      empty: computed,
+    });
+    this.points = points;
+  }
+
+  get length(): number {
+    return this.points.length;
+  }
+
+  get(i: number): ?{| polygonPoint: PolygonPoint |} {
+    return this.points[i];
+  }
+
+  set(i: number, key: $Keys<PolygonPoint>, value: string): void {
+    this.points[i].polygonPoint[key] = value;
+    if (i === 0) this.points[this.length - 1].polygonPoint[key] = value;
+  }
+
+  mapPoints<T>(f: (PolygonPoint, number) => T): Array<T> {
+    return this.points.map(({ polygonPoint }, i) => f(polygonPoint, i));
+  }
+
+  addAnotherPoint(i: number): void {
+    this.points.splice(i + 1, 0, {
+      polygonPoint: { pointLatitude: "", pointLongitude: "" },
+    });
+  }
+
+  removePoint(i: number): void {
+    this.points.splice(i, 1);
+  }
+
+  get isValid(): boolean {
+    return this.points.every(({ polygonPoint }) => {
+      if (polygonPoint.pointLatitude === "") return false;
+      if (isNaN(parseFloat(polygonPoint.pointLatitude))) return false;
+      if (polygonPoint.pointLongitude === "") return false;
+      if (isNaN(parseFloat(polygonPoint.pointLongitude))) return false;
+      return true;
+    });
+  }
+
+  get empty(): boolean {
+    return this.points.every(({ polygonPoint }) => {
+      if (polygonPoint.pointLatitude !== "") return false;
+      if (polygonPoint.pointLongitude !== "") return false;
+      return true;
+    });
+  }
+
+  toJson(): mixed {
+    return this.points;
+  }
+}
 
 export default class GeoLocationModel implements GeoLocation {
   geoLocationBox: GeoLocationBox;
@@ -74,10 +134,13 @@ export default class GeoLocationModel implements GeoLocation {
       attrs.geoLocationPolygon[0].polygonPoint.pointLongitude ===
         attrs.geoLocationPolygon[lastIndex].polygonPoint.pointLongitude
     ) {
-      this.geoLocationPolygon = attrs.geoLocationPolygon.map(
-        ({ polygonPoint }) => ({ polygonPoint: observable(polygonPoint) })
+      //TODO remove the last one
+      this.geoLocationPolygon = new GeoLocationPolygonModel(
+        attrs.geoLocationPolygon.map(({ polygonPoint }) => ({
+          polygonPoint: observable(polygonPoint),
+        }))
       );
-      this.geoLocationPolygon[lastIndex] = this.geoLocationPolygon[0];
+      // this.geoLocationPolygon[lastIndex] = this.geoLocationPolygon[0];
     } else {
       throw new Error(
         "Polygon data is invalid: the first and last points are not the same."
@@ -107,11 +170,11 @@ export default class GeoLocationModel implements GeoLocation {
   }
 
   get polygonEmpty(): boolean {
-    return this.geoLocationPolygon.every((el) => pointEmpty(el.polygonPoint));
+    return this.geoLocationPolygon.empty;
   }
 
   get polygonIncomplete(): boolean {
-    return !polygonComplete(this.geoLocationPolygon) && !this.polygonEmpty;
+    return !this.geoLocationPolygon.isValid && !this.polygonEmpty;
   }
 
   get isValid(): boolean {
@@ -119,10 +182,20 @@ export default class GeoLocationModel implements GeoLocation {
       (pointComplete(this.geoLocationPoint) ||
         this.placeComplete ||
         boxComplete(this.geoLocationBox) ||
-        polygonComplete(this.geoLocationPolygon)) &&
+        this.geoLocationPolygon.isValid) &&
       !this.pointIncomplete &&
       !this.boxIncomplete &&
       !this.polygonIncomplete
     );
+  }
+
+  toJson(): { ... } {
+    return {
+      geoLocationBox: this.geoLocationBox,
+      geoLocationPlace: this.geoLocationPlace,
+      geoLocationPoint: this.geoLocationPoint,
+      geoLocationPolygon: this.geoLocationPolygon.toJson(),
+      geoLocationInPolygonPoint: this.geoLocationInPolygonPoint,
+    };
   }
 }
