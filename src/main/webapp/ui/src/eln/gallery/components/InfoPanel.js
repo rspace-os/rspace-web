@@ -91,54 +91,64 @@ const NameFieldForLargeViewports = styled(
   observer(
     ({ file, className }: {| file: GalleryFile, className: string |}) => {
       const { rename } = useGalleryActions();
+
       const [name, setName] = React.useState(file.name);
       React.useEffect(() => {
         setName(file.name);
       }, [file.name]);
 
+      const textField = React.useRef(null);
+
       return (
         <Stack sx={{ pr: 0.25, pl: 0.75 }}>
-          <TextField
-            value={name}
-            placeholder="No Name"
-            fullWidth
-            size="small"
-            className={clsx(className, name !== file.name && "modified")}
-            onChange={({ target: { value } }) => setName(value)}
-            inputProps={{
-              "aria-label": "Name",
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void rename(file, name);
+              textField.current?.blur();
             }}
-            onFocus={() => {
-              if (name === file.name)
-                setName(filenameExceptExtension(file.name));
-            }}
-            onBlur={() => {
-              if (name === filenameExceptExtension(file.name))
-                setName(file.name);
-            }}
-          />
-          <Collapse in={name !== file.name}>
-            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-              <Button
-                size="small"
-                onClick={() => {
+          >
+            <TextField
+              value={name}
+              placeholder="No Name"
+              fullWidth
+              size="small"
+              className={clsx(className, name !== file.name && "modified")}
+              onChange={({ target: { value } }) => setName(value)}
+              inputProps={{
+                "aria-label": "Name",
+                ref: textField,
+              }}
+              onFocus={() => {
+                if (name === file.name)
+                  setName(filenameExceptExtension(file.name));
+              }}
+              onBlur={() => {
+                if (name === filenameExceptExtension(file.name))
                   setName(file.name);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="primary"
-                onClick={() => {
-                  void rename(file, name);
-                }}
-              >
-                Save
-              </Button>
-            </Stack>
-          </Collapse>
+              }}
+            />
+            <Collapse in={name !== file.name}>
+              <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                <Button
+                  size="small"
+                  onClick={() => {
+                    setName(file.name);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                >
+                  Save
+                </Button>
+              </Stack>
+            </Collapse>
+          </form>
         </Stack>
       );
     }
