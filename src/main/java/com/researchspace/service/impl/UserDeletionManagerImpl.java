@@ -59,7 +59,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     }
     User toDelete = userDao.get(userId);
 
-    if (formDao.hasUserPublishedFormsUsedinOtherRecords(toDelete)) {
+    if (formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete)) {
       formTransferService.transferOwnership(toDelete, subject);
     }
 

@@ -53,11 +53,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return getAllVisibleFormOfType(FormType.NORMAL);
   }
 
-  public List<RSForm> getAllVisibleFormsByType(FormType formType) {
-    return getAllVisibleFormOfType(formType);
-  }
-
-  public boolean hasUserPublishedFormsUsedinOtherRecords(User user) {
+  public boolean hasUserPublishedFormsUsedInOtherRecords(User user) {
     Session session = getSession();
     Object result =
         session
@@ -372,14 +368,14 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return rc.isEmpty() ? null : rc.get(0);
   }
 
-  public RSForm getMostRecentVersionForForm(String stableid) {
+  public RSForm getMostRecentVersionForForm(String stableId) {
     Query<RSForm> q =
         getSession()
             .createQuery(
                 "from RSForm form where form.stableID=:id "
                     + "and form.publishingState='PUBLISHED' order by form.version desc",
                 RSForm.class)
-            .setParameter("id", stableid)
+            .setParameter("id", stableId)
             .setMaxResults(1);
     return getFirstResultOrNull(q);
   }
@@ -482,7 +478,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   }
 
   @Override
-  public void transferOwnershipOfForms(User toBeDeleted, User newOwner, List<Long> ids) {
+  public void transferOwnershipOfForms(User originalOwner, User newOwner, List<Long> ids) {
     Query<?> query =
         getSession()
             .createQuery(
@@ -490,7 +486,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
                     + " id IN :ids")
             .setParameter("newOwner", newOwner)
             .setParameter("ids", ids)
-            .setParameter("createdByWithDeleted", toBeDeleted.getUsername() + "(Deleted)");
+            .setParameter("createdByWithDeleted", originalOwner.getUsername() + "(Deleted)");
     query.executeUpdate();
   }
 

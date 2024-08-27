@@ -353,11 +353,11 @@ public class FormDaoTest extends BaseDaoTestCase {
         new AccessControl(PermissionType.WRITE, PermissionType.READ, PermissionType.READ));
     formDao.save(basicForm);
 
-    assertFalse(formDao.hasUserPublishedFormsUsedinOtherRecords(u1));
+    assertFalse(formDao.hasUserPublishedFormsUsedInOtherRecords(u1));
     Record record1 = recordFactory.createStructuredDocument("doc1", u1, basicForm);
     recordDao.save(record1);
     // still false for records owned by the creator of the form
-    assertFalse(formDao.hasUserPublishedFormsUsedinOtherRecords(u1));
+    assertFalse(formDao.hasUserPublishedFormsUsedInOtherRecords(u1));
 
     // now login as other user and create a document based on that form....
     logoutAndLoginAs(u2);
@@ -365,7 +365,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     recordDao.save(record2);
     // now, the form is used
     logoutAndLoginAs(u1);
-    assertTrue(formDao.hasUserPublishedFormsUsedinOtherRecords(u1));
+    assertTrue(formDao.hasUserPublishedFormsUsedInOtherRecords(u1));
   }
 
   @Test
