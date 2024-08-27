@@ -404,7 +404,7 @@ export function useGalleryActions(): {|
         })
       );
 
-      file.setName(newName);
+      file.setName(file.transformFilename(() => newName));
     } catch (e) {
       addAlert(
         mkAlert({

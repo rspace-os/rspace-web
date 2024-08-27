@@ -17,7 +17,7 @@ import CardContent from "@mui/material/CardContent";
 import Collapse from "@mui/material/Collapse";
 import { grey } from "@mui/material/colors";
 import DescriptionList from "../../../components/DescriptionList";
-import { formatFileSize } from "../../../util/files";
+import { formatFileSize, filenameExceptExtension } from "../../../util/files";
 import Result from "../../../util/result";
 import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
 import { observer } from "mobx-react-lite";
@@ -94,7 +94,7 @@ const NameFieldForLargeViewports = styled(
       const [name, setName] = React.useState(file.name);
       React.useEffect(() => {
         setName(file.name);
-      }, [file]);
+      }, [file.name]);
 
       return (
         <Stack sx={{ pr: 0.25, pl: 0.75 }}>
@@ -107,6 +107,14 @@ const NameFieldForLargeViewports = styled(
             onChange={({ target: { value } }) => setName(value)}
             inputProps={{
               "aria-label": "Name",
+            }}
+            onFocus={() => {
+              if (name === file.name)
+                setName(filenameExceptExtension(file.name));
+            }}
+            onBlur={() => {
+              if (name === filenameExceptExtension(file.name))
+                setName(file.name);
             }}
           />
           <Collapse in={name !== file.name}>
