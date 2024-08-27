@@ -464,7 +464,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               // this has to be here (i.e. :hover and then
               // .MuiOutlinedInput-notchedOutline inside) because of the way
               // Mui applies its styles
-              "&:hover, &:focus-within": {
+              "&:hover": {
                 [`& .${outlinedInputClasses.notchedOutline}`]: {
                   /*
                    * These !importants are needed because when a className is

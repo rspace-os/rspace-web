@@ -139,6 +139,9 @@ const NameFieldForLargeViewports = styled(
   "&.modified": {
     "& .MuiOutlinedInput-root": {
       backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+      "& .MuiOutlinedInput-notchedOutline": {
+        border: "none",
+      },
     },
   },
   "&:not(.modified)": {
@@ -147,13 +150,17 @@ const NameFieldForLargeViewports = styled(
     },
   },
   "& .MuiOutlinedInput-root": {
+    border: "none",
     borderRadius: "4px",
-    fontSize: "1.2rem",
+    fontSize: "1.23rem", // to be the same height as the adjacent button
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
-    transition: "all .5s ease-in-out",
+    transition: "all .3s ease-in-out",
     "&:hover, &:focus-within": {
       backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+      "& .MuiOutlinedInput-notchedOutline": {
+        border: "none !important",
+      },
     },
   },
   "& input": {
