@@ -59,13 +59,13 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     }
     User toDelete = userDao.get(userId);
 
-    if (formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete)) {
-      formTransferService.transferOwnership(toDelete, subject);
-    }
-
     Optional<String> saveResourcesListError = saveFilestoreResourcesTempList(toDelete);
     if (saveResourcesListError.isPresent()) {
       return new ServiceOperationResult<>(null, false, saveResourcesListError.get());
+    }
+
+    if (formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete)) {
+      formTransferService.transferOwnership(toDelete, subject);
     }
 
     if (policy.isForceDelete()) {

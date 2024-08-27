@@ -14,7 +14,6 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
 
   /**
    * Gets all Normal(Document) forms accessible to a user; i.e., excluding new or unpublished forms
-   *
    */
   List<RSForm> getAllVisibleNormalForms();
 
@@ -26,10 +25,7 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
    */
   RSForm getOriginalFromTemporaryForm(Long tempFormId);
 
-  /**
-   * Get all Forms that are the current version used to create new documents.
-   *
-   */
+  /** Get all Forms that are the current version used to create new documents. */
   List<RSForm> getAllCurrentNormalForms();
 
   /**
@@ -39,24 +35,18 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
    */
   List<RSForm> getAllCurrentFormsByType(FormType type);
 
-  /**
-   * Gets the most recent version of a form with a given template stable id
-   *
-   */
+  /** Gets the most recent version of a form with a given template stable id */
   RSForm getMostRecentVersionForForm(String stableId);
 
-  /**
-   * Gets form list by permission, using Criteria API to sort permission.
-   *
-   */
+  /** Gets form list by permission, using Criteria API to sort permission. */
   ISearchResults<RSForm> getAllFormsByPermission(
       User user, FormSearchCriteria sc, PaginationCriteria<RSForm> pg);
 
   /**
    * Convenience method to get the system-default basic document form
    *
-   * @return the {@link RSForm} representing a basic document, or <code>null</code> if the document could not be
-   *     found.
+   * @return the {@link RSForm} representing a basic document, or <code>null</code> if the document
+   *     could not be found.
    */
   RSForm getBasicDocumentForm();
 
@@ -72,7 +62,6 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
   /**
    * Boolean test for whether a user has created a form that has been used to create records by
    * other people.
-   *
    */
   boolean hasUserPublishedFormsUsedInOtherRecords(User user);
 
@@ -87,10 +76,7 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
    */
   boolean removeFieldsFromForm(Long formId);
 
-  /**
-   * Getter with boolean choice as to whether to load form fields marked deleted or not,
-   *
-   */
+  /** Getter with boolean choice as to whether to load form fields marked deleted or not, */
   RSForm get(Long id, boolean enableDeletedFilter);
 
   Long countDocsCreatedFromForm(RSForm form);
