@@ -76,4 +76,6 @@ public interface RepositoryDepositHandler {
   RepoUIConfigInfo getDryadRepoUIConfigInfo(User user) throws MalformedURLException;
 
   RepoUIConfigInfo getZenodoRepoUIConfigInfo(User user) throws MalformedURLException;
+
+  RepoUIConfigInfo getDigitalCommonsDataRepoUIConfigInfo(User user) throws MalformedURLException;
 }

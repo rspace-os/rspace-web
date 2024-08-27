@@ -171,6 +171,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case ZENODO_APP_NAME:
         setSingleUserToken(info, user, ZENODO_APP_NAME, ZENODO_USER_TOKEN);
         return;
+      case DIGITAL_COMMONS_DATA_APP_NAME:
+        setSingleUserToken(
+            info, user, DIGITAL_COMMONS_DATA_APP_NAME, DIGITAL_COMMONS_DATA_USER_TOKEN);
+        return;
       default:
     }
   }
@@ -403,6 +407,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DRYAD_APP_NAME:
       case ARGOS_APP_NAME:
       case ZENODO_APP_NAME:
+      case DIGITAL_COMMONS_DATA_APP_NAME:
         return true;
     }
     return isSingleOptionSetAppConfigIntegration(integrationName);
@@ -425,5 +430,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   private String getSysPropertyFromIntegrationName(String name) {
     return name.toLowerCase() + ".available"; // see SystemProperty table
+  }
+
+  /* For test purposes */
+  protected void setUserConnectionManager(UserConnectionManager userConnectionManager) {
+    this.userConnManager = userConnectionManager;
   }
 }

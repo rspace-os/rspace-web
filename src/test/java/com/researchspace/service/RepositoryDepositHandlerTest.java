@@ -92,6 +92,22 @@ public class RepositoryDepositHandlerTest {
     verifyConfigurerCalledOK(FIGSHARE_REPOSITORY);
   }
 
+  @Test
+  public void testGetDigitalCommonsDataConfigSuccessfully() throws MalformedURLException {
+    UserAppConfig appCfg =
+        SystemPropertyTestFactory.createAnyAppWithConfigElements(
+            anyUser, App.APP_DIGITAL_COMMONS_DATA);
+    mockGetSessionUser();
+    String DIGITAL_COMMONS_DATA_REPO = "digitalCommonsDataRepository";
+    setUpRepoExpectations(DIGITAL_COMMONS_DATA_REPO);
+
+    RepoUIConfigInfo returnedInfo =
+        handler.getDataverseRepoUIConfigInfo(
+            appCfg.getAppConfigElementSets().iterator().next(), anyUser);
+    assertEquals(App.APP_DIGITAL_COMMONS_DATA, returnedInfo.getRepoName());
+    verifyConfigurerCalledOK(DIGITAL_COMMONS_DATA_REPO);
+  }
+
   private void mockGetSessionUser() {
     when(userManager.getAuthenticatedUserInSession()).thenReturn(anyUser);
   }

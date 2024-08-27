@@ -115,7 +115,6 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): Node {
       }}
       onOptionChange={(index, changedOption) => {
         field.setAttributesDirty({
-          // $FlowExpectedError[incompatible-call] A literal true is indeed a boolean
           options: ArrayUtils.splice(field.options, index, 1, changedOption),
         });
       }}
