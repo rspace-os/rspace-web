@@ -67,6 +67,7 @@ const docLinks: { [string]: URL } = {
   dmponline: mkDocLink("pd84qoylzy"),
   taggingUsers: mkDocLink("zw6o5uh4qv"),
   irods: mkDocLink("xt21074dln"),
+  dcd: mkDocLink("jj6grnzbdl"),
 };
 
 export default docLinks;
