@@ -464,17 +464,18 @@ export default class Search implements SearchInterface {
        */
       const samplesThatCouldNotBeDeleted = data.results
         .map(({ record }) => record)
+        .filter((r) => Boolean(r))
         .filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
       const samplesThatCouldBeDeleted = data.results
         .map(({ record }) => record)
+        .filter((r) => Boolean(r))
         .filter(({ type, canBeDeleted }) => type === "SAMPLE" && canBeDeleted);
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
         ...data.results
-          .filter(({ record: { type } }) => type !== "SAMPLE")
           .filter(({ error }) => !error)
-          .map(({ record }) => record),
+          .filter(({ record: { type } }) => type !== "SAMPLE"),
         ...samplesThatCouldBeDeleted,
       ].map((record) => {
         const newRecord = factory.newRecord(record);
