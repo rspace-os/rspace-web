@@ -24,7 +24,6 @@ export const traverseObjectTree = (
   for (let i = 0; i < path.length; i++) {
     // $FlowExpectedError[invalid-computed-prop]
     if (typeof o[path[i]] === "undefined") return defval;
-    // $FlowExpectedError[invalid-computed-prop]
     o = o[path[i]];
   }
   return o;
