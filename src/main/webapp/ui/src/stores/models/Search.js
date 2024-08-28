@@ -440,7 +440,7 @@ export default class Search implements SearchInterface {
           {
             results: Array<{
               error: { errors: Array<string> },
-              record: {
+              record: null | {
                 type: string,
                 canBeDeleted?: boolean,
                 subSamples: $ReadOnlyArray<{
@@ -462,20 +462,18 @@ export default class Search implements SearchInterface {
        * subsamples are currently inside containers then the user is presented
        * with an error detailing these subsamples and where to find them.
        */
-      const samplesThatCouldNotBeDeleted = data.results
-        .map(({ record }) => record)
-        .filter((r) => Boolean(r))
-        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
-      const samplesThatCouldBeDeleted = data.results
-        .map(({ record }) => record)
-        .filter((r) => Boolean(r))
-        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && canBeDeleted);
+      const samplesThatCouldNotBeDeleted = ArrayUtils.filterNull(
+        data.results.map(({ record }) => record)
+      ).filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
+      const samplesThatCouldBeDeleted = ArrayUtils.filterNull(
+        data.results.map(({ record }) => record)
+      ).filter((r) => r.type === "SAMPLE" && r.canBeDeleted);
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
         ...data.results
           .filter(({ error }) => !error)
-          .filter(({ record: { type } }) => type !== "SAMPLE"),
+          .filter(({ record }) => record !== null && record.type !== "SAMPLE"),
         ...samplesThatCouldBeDeleted,
       ].map((record) => {
         const newRecord = factory.newRecord(record);
