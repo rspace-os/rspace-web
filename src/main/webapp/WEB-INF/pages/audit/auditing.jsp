@@ -106,7 +106,7 @@
 	</div>
 	<div class="oidsRow auditRow">
 	<label>Enter a global id of a document, notebook, or Inventory item e.g. SD12345
-    			<input id="oidsEntry" class="oidsSelection" name="oid" type="text">
+    			<input id="oidsEntry" class="oidsSelection" name="oids" type="text">
     		</label>
     			<button class="remover" style="height:19px; width:19px;padding:0px !important;" name="x1">X</button>
     	</div>
