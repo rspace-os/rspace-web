@@ -12,6 +12,7 @@ export const PREFERENCES: { [string]: symbol } = {
   GALLERY_VIEW_MODE: Symbol.for("GALLERY_VIEW_MODE"),
   GALLERY_SORT_BY: Symbol.for("GALLERY_SORT_BY"),
   GALLERY_SORT_ORDER: Symbol.for("GALLERY_SORT_ORDER"),
+  INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for("INVENTORY_FORM_SECTIONS_EXPANDED"),
 };
 
 type UiPreferencesContextType = {[key in keyof (typeof PREFERENCES)]: mixed};
@@ -45,9 +46,13 @@ export function UiPreferences({ children }: {| children: Node |}): Node {
 
   React.useEffect(() => {
     void fetchPreferences().then((data) => {
+      if (data === "") {
+        setUiPreferences(mapObject(() => null, PREFERENCES));
+        return;
+      }
       setUiPreferences(data);
     }).catch(() => {
-      setUiPreferences({});
+      setUiPreferences(mapObject(() => null, PREFERENCES));
     });
   }, []);
 
@@ -87,7 +92,7 @@ export default function useUiPreference<T>(
   let v = opts.defaultValue;
   if (key && typeof uiPreferences[key] !== "undefined") {
     // $FlowExpectedError[incompatible-use] We assume the server responds with the right type
-    v = uiPreferences[key].value;
+    v = uiPreferences[key]?.value ?? opts.defaultValue;
   }
   const [value, setValue] = React.useState(v);
 
@@ -113,14 +118,9 @@ export default function useUiPreference<T>(
             },
           })
         );
-        await axios.post<FormData, mixed>(
+        await axios.post<mixed, mixed>(
           "/userform/ajax/preference",
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
+          formData
         );
       })();
     },
