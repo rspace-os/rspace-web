@@ -107,6 +107,9 @@ const NameFieldForLargeViewports = styled(
               void rename(file, name);
               textField.current?.blur();
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setName(file.name);
+            }}
           >
             <TextField
               value={name}
