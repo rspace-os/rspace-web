@@ -42,11 +42,51 @@ Uncaught ReferenceError: Cannot access '__WEBPACK_DEFAULT_EXPORT__' before initi
     at __webpack_require__ (runtime.js:31:42)
 ```
 
-Things you can try:
+## So then how do I fix the issue?
 
-  1. Find the recent change that broke the page, and that it is small and thus
-     the new import obvious. `git bisect` is your friend.
+[Dependency-cruiser][depcruiser] to the rescue!
 
-  2. Chase each of the imports, starting in the component that is used as the
-     entry point in the Webpack config. This will be tedious, and there might
-     be an automated way to generate the import tree.
+Run `npm run depcruise` from `src/main/webapp/ui` and amongst the output,
+you're looking for a fragment that looks like this:
+
+```
+warn Public pages must not use stores: src/components/PublicPages/IdentifierPublicPage.js → src/stores/stores/ImportStore.js
+      src/components/PublicPages/IdentifierPublicPage.js →
+      src/stores/models/IdentifierModel.js →
+      src/common/InvApiService.js →
+      src/stores/stores/RootStore.js →
+      src/stores/stores/ImportStore.js
+```
+
+What this says is that `IdentifierPublicPage.js` has an indirect dependency on
+`ImportStore.js` via this chain of imports. The fact that it's ImportStore is
+not relevant; any of the stores that are reachable are problematic as they are
+all tightly coupled. What you need to do is to find a way to break this chain.
+
+In this case, the easiest place to do this to break the dependency that
+IdentifierModel.js has on InvApiService.js by having it only import the Flow
+types and have the values passed at runtime by dependency injection rather than
+reaching for the global variable. Try to break the chain as early as possible
+as the further down you go the more other places in the codebase will need to
+be modified: IdentifierModel is only used by the parent class of all of the
+Inventory records classes and the components that render the IGSN forms so its
+easier to make the necessary change than all the places that use the Inventory
+API service.
+
+If dependency-cruiser by itself doesn't help, as there may end up being lots of
+false positives if we don't end up keeping on top of what dependency-cruiser is
+reporting, then try finding the git commit that introduced the issue (here `git
+bisect` is your friend). If the commit is small then it may well be obvious
+what the new import statement is.
+
+If the change is large and nothing else is helping, then try removing chunks of
+the public page in question until it starts working again. If the issue is a
+react component, or something imported by a react component, then removing it
+from the page (by removing all the places it is rendered and its import) will
+allow the page to render. Then its just a case of repeating the process down
+the component tree.
+
+
+
+
+[depcruiser]: https://github.com/sverweij/dependency-cruiser

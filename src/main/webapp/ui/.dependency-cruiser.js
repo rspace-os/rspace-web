@@ -214,6 +214,18 @@ module.exports = {
       to: {
         pathNot: "src/util|babel|jest-dom|fast-check|mobx|react",
       }
+    },
+
+    {
+      name: "Public pages must not use stores",
+      comment: "Users may not be authenticated on the public pages and so we must not depend on the global stores as they assume the user is.",
+      from: {
+        path: "src/components/PublicPages",
+      },
+      to: {
+        path: "src/stores/stores",
+        reachable: true
+      },
     }
 
   ],
