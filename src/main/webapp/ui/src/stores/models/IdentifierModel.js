@@ -31,7 +31,7 @@ import {
 } from "../definitions/GeoLocation";
 import { mkAlert, type Alert } from "../contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import InvApiService from "../../common/InvApiService";
+import typeof InvApiService from "../../common/InvApiService";
 
 type GeoLocationBox = {
   eastBoundLongitude: string,
@@ -184,12 +184,12 @@ export default class IdentifierModel implements Identifier {
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
 
-  ApiServiceBase: typeof InvApiService | null = null;
+  ApiServiceBase: InvApiService | null = null;
 
   constructor(
     attrs: IdentifierAttrs,
     parentGlobalId: GlobalId,
-    ApiServiceBase?: typeof InvApiService
+    ApiServiceBase?: InvApiService
   ) {
     makeObservable(this, {
       parentGlobalId: observable,
