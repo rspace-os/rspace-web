@@ -30,6 +30,8 @@ import { useDeploymentProperty } from "../../useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
 import useCollabora from "../useCollabora";
 import clsx from "clsx";
+import { outlinedInputClasses } from "@mui/material/OutlinedInput";
+import { paperClasses } from "@mui/material/Paper";
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -51,7 +53,7 @@ const ActionButton = ({
 
 const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
   () => ({
-    "& .MuiPaper-root": {
+    [`& .${paperClasses.root}`]: {
       height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
       overflow: "visible",
     },
@@ -158,19 +160,19 @@ const NameFieldForLargeViewports = styled(
   )
 )(({ theme }) => ({
   "&.modified": {
-    "& .MuiOutlinedInput-root": {
+    [`& .${outlinedInputClasses.root}`]: {
       backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
-      "& .MuiOutlinedInput-notchedOutline": {
+      [`& .${outlinedInputClasses.notchedOutline}`]: {
         border: "none",
       },
     },
   },
   "&:not(.modified)": {
-    "& .MuiOutlinedInput-notchedOutline": {
+    [`& .${outlinedInputClasses.notchedOutline}`]: {
       border: "none",
     },
   },
-  "& .MuiOutlinedInput-root": {
+  [`& .${outlinedInputClasses.root}`]: {
     border: "none",
     borderRadius: "4px",
     fontSize: "1.23rem", // to be the same height as the adjacent button
@@ -179,12 +181,12 @@ const NameFieldForLargeViewports = styled(
     transition: "all .3s ease-in-out",
     "&:hover, &:focus-within": {
       backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
-      "& .MuiOutlinedInput-notchedOutline": {
+      [`& .${outlinedInputClasses.notchedOutline}`]: {
         border: "none !important",
       },
     },
   },
-  "& input": {
+  [`& .${outlinedInputClasses.input}`]: {
     paddingTop: theme.spacing(0.25),
     paddingBottom: theme.spacing(0.25),
     paddingLeft: theme.spacing(0.25),
@@ -249,14 +251,14 @@ const DescriptionField = styled(
     }
   )
 )(({ theme }) => ({
-  "& .MuiOutlinedInput-root": {
+  [`& .${outlinedInputClasses.root}`]: {
     borderRadius: "4px",
     fontSize: "0.9rem",
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
     backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
   },
-  "& .MuiOutlinedInput-input": {
+  [`& .${outlinedInputClasses.input}`]: {
     paddingLeft: theme.spacing(1),
   },
 }));
