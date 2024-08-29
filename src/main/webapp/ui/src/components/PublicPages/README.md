@@ -41,3 +41,12 @@ Uncaught ReferenceError: Cannot access '__WEBPACK_DEFAULT_EXPORT__' before initi
     at ./src/stores/stores/RootStore.js (inventoryRecordIdentifierPublicPage.js:4983:1)
     at __webpack_require__ (runtime.js:31:42)
 ```
+
+Things you can try:
+
+  1. Find the recent change that broke the page, and that it is small and thus
+     the new import obvious. `git bisect` is your friend.
+
+  2. Chase each of the imports, starting in the component that is used as the
+     entry point in the Webpack config. This will be tedious, and there might
+     be an automated way to generate the import tree.
