@@ -473,7 +473,8 @@ export default class Search implements SearchInterface {
       const successfullyDeleted = [
         ...data.results
           .filter(({ error }) => !error)
-          .filter(({ record }) => record !== null && record.type !== "SAMPLE"),
+          .filter(({ record }) => record !== null && record.type !== "SAMPLE")
+          .map(({ record }) => record),
         ...samplesThatCouldBeDeleted,
       ].map((record) => {
         const newRecord = factory.newRecord(record);
