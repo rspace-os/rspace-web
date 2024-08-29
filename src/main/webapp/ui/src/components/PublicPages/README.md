@@ -13,7 +13,7 @@ without also being able to check the contents of the current user's bench.
 Worse still, most of the model classes (../../stores/models/) and many of the
 react components depend on this global state either directly or indirectly.
 
-*None of this code can be used on the public pages.*
+**None of this code can be used on the public pages.**
 
 ## But what if I accidentally do?
 
@@ -23,10 +23,10 @@ will break. Now, this will hopefully be caught by the cypress test for that
 public page (so do make sure any new public pages have a cypress test!) but
 the error message that you get wont necessarily help you in identifying what
 exactly the cause of the issue is. For example, the following error message was
-to be found in the JavaScript console after IdentifierModel
-(../../stores/models/IdentifierModel.js) imported InvApiService
-(../../common/InvApiService.js) as the latter has a dependency on getRootStore
-(../../stores/stores/RootStore.js):
+to be found in the JavaScript console after
+[IdentifierModel](../../stores/models/IdentifierModel.js) imported
+[InvApiService](../../common/InvApiService.js) as the latter has a dependency
+on [getRootStore](../../stores/stores/RootStore.js):
 
 ```
 Uncaught ReferenceError: Cannot access '__WEBPACK_DEFAULT_EXPORT__' before initialization
