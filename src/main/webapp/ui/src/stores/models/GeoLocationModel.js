@@ -1,5 +1,19 @@
 //@flow
 
+/*
+ * ====  A POINT ABOUT THE IMPORTS  ===========================================
+ *
+ *  This class is used, amongst other places, on the IdentifierPublicPage[1]
+ *  where the user may not be authenticated. As such, this module, and any
+ *  module that is imported, MUST NOT import anything from the global Inventory
+ *  stores (i.e. from ../stores/*). If it does, then the page will be rendered
+ *  as a blank screen and there will be an unhelpful error message on the
+ *  browser's console saying that webpack export could not be initialised.
+ *
+ *  [1]: ../../components/PublicPage/IdentifierPublicPage.js
+ *
+ * ============================================================================
+ */
 import { observable, computed, action, makeObservable } from "mobx";
 import {
   type GeoLocationAttrs,

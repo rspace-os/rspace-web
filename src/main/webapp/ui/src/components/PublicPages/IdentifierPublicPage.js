@@ -1,5 +1,17 @@
 // @flow
 
+/*
+ * ====  A POINT ABOUT THE IMPORTS  ===========================================
+ *
+ *  This is a public page, so the user may not be authenticated. As such, this
+ *  module, and any module that is imported, MUST NOT import anything from the
+ *  global Inventory stores (i.e. from ../../stores/stores/*). If it does, then
+ *  the page will be rendered as a blank screen and there will be an unhelpful
+ *  error message on the browser's console saying that webpack export could not
+ *  be initialised. For more information, see the README in this directory.
+ *
+ * ============================================================================
+ */
 import React, {
   useState,
   useEffect,
