@@ -412,6 +412,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 ? "black"
                 : baseTheme.palette.primary.main,
               color: "white",
+              "&:hover": {
+                borderColor: baseTheme.palette.primary.main,
+              },
             },
             containedPrimary: {
               backgroundColor: mainAccentColor,
