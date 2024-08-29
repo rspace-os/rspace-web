@@ -217,6 +217,7 @@ const DescriptionField = styled(
             size="small"
             className={className}
             onChange={({ target: { value } }) => setDescription(value)}
+            multiline
           />
           <Collapse in={description !== getDescValue(file)}>
             <Stack direction="row" spacing={0.5} justifyContent="flex-end">
@@ -255,10 +256,8 @@ const DescriptionField = styled(
     marginBottom: theme.spacing(0.5),
     backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
   },
-  "& input": {
-    paddingTop: theme.spacing(0.75),
-    paddingBottom: theme.spacing(0.75),
-    paddingLeft: theme.spacing(1.5),
+  "& .MuiOutlinedInput-input": {
+    paddingLeft: theme.spacing(1),
   },
 }));
 
