@@ -29,6 +29,7 @@ import * as FetchingData from "../../../util/fetchingData";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
 import useCollabora from "../useCollabora";
+import useOfficeOnline from "../useOfficeOnline";
 import clsx from "clsx";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";
@@ -400,6 +401,8 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const collaboraEnabled = useDeploymentProperty("collabora.wopi.enabled");
   const { supportedExts: supportedCollaboraExts } = useCollabora();
+  const officeOnlineEnabled = useDeploymentProperty("msOfficeEnabled");
+  const { supportedExts: supportedOfficeOnlineExts } = useOfficeOnline();
 
   return (
     <>
@@ -524,7 +527,50 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   />
                 </Grid>
               ))
-              .orElse(null);
+              .orElseTry((collaboraErrors) =>
+                FetchingData.getSuccessValue(officeOnlineEnabled)
+                  .flatMap(Parsers.isBoolean)
+                  .flatMap(Parsers.isTrue)
+                  .flatMap(() => Parsers.isNotNull(file.extension))
+                  .flatMap((extension) =>
+                    supportedOfficeOnlineExts.has(extension)
+                      ? Result.Ok(null)
+                      : Result.Error([
+                          new Error(
+                            "Selected file's extension is not supported by office online"
+                          ),
+                        ])
+                  )
+                  .map(() => (
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                      <ActionButton
+                        onClick={() => {
+                          window.open(
+                            "/officeOnline/" + file.globalId + "/view"
+                          );
+                        }}
+                        label="Edit"
+                        sx={{
+                          borderRadius: 1,
+                          px: 1.125,
+                          py: 0.25,
+                        }}
+                      />
+                    </Grid>
+                  ))
+                  .orElseTry((officeOnlineErrors) =>
+                    Result.Error<Node>([
+                      ...collaboraErrors,
+                      ...officeOnlineErrors,
+                    ])
+                  )
+              )
+              .orElseGet((errors) => {
+                errors.forEach((e) => {
+                  console.error(e);
+                });
+                return null;
+              });
           })
           .orElse(null)}
       </Grid>
