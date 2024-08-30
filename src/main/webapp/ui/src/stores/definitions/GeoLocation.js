@@ -21,7 +21,18 @@ export type SimplePoint = {
   latitude: string,
   longitude: string,
 };
-export type GeoLocationPolygon = Array<{ polygonPoint: PolygonPoint }>;
+
+export interface GeoLocationPolygon {
+  +length: number;
+  get(i: number): ?{| polygonPoint: PolygonPoint |};
+  set(i: number, key: $Keys<PolygonPoint>, value: string): void;
+  mapPoints<T>(f: (PolygonPoint, number) => T): Array<T>;
+  addAnotherPoint(i: number): void;
+  removePoint(i: number): void;
+  +isValid: boolean;
+  +empty: boolean;
+  toJson(): mixed;
+}
 
 /*
  * This is the shape of the data output by the server to model a geoLocation that has been persisted
@@ -31,7 +42,7 @@ export type GeoLocationAttrs = {|
   geoLocationBox: GeoLocationBox,
   geoLocationPlace: string,
   geoLocationPoint: PolygonPoint,
-  geoLocationPolygon: GeoLocationPolygon,
+  geoLocationPolygon: Array<{| polygonPoint: PolygonPoint |}>,
   geoLocationInPolygonPoint: PolygonPoint,
 |};
 
@@ -122,4 +133,6 @@ export interface GeoLocation {
    */
   +polygonEmpty: boolean;
   +inPolygonPointIncomplete: boolean;
+
+  toJson(): { ... };
 }

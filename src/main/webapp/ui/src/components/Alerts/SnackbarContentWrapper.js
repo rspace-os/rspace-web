@@ -48,6 +48,7 @@ const useStyles = makeStyles()((theme, { verySmallLayout }) => ({
   buttons: {
     margin: -12,
     flexShrink: 0,
+    marginLeft: 0,
   },
   content: {
     width: "100%",
@@ -167,7 +168,8 @@ const SnackbarContentWrapper = forwardRef<
                     alert.onActionClick();
                     onClose();
                   }}
-                  color="primary"
+                  variant="outlined"
+                  sx={{ color: "white", borderColor: "white" }}
                 >
                   {alert.actionLabel.toUpperCase()}
                 </Button>

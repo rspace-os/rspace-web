@@ -18,6 +18,7 @@ import { type IdentifierAttrs } from "../../definitions/Identifier";
 import IdentifierModel from "../IdentifierModel";
 import { type DocumentAttrs, type Document } from "../../definitions/Document";
 import { newDocument } from "../Document";
+import InvApiService from "../../../common/InvApiService";
 
 /*
  * A Factory that has no state and always instantiates a new object whenever it
@@ -53,9 +54,10 @@ export default class AlwaysNewFactory implements Factory {
 
   newIdentifier(
     attrs: IdentifierAttrs,
-    parentGlobalId: GlobalId
+    parentGlobalId: GlobalId,
+    ApiService: typeof InvApiService
   ): IdentifierModel {
-    return new IdentifierModel(attrs, parentGlobalId);
+    return new IdentifierModel(attrs, parentGlobalId, ApiService);
   }
 
   newDocument(attrs: DocumentAttrs): Document {

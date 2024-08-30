@@ -390,7 +390,7 @@ export default class Result
 
       this.identifiers = params.identifiers.map((idAttrs) => {
         if (!this.globalId) throw new Error("Global Id must be known.");
-        return factory.newIdentifier(idAttrs, this.globalId);
+        return factory.newIdentifier(idAttrs, this.globalId, ApiService);
       });
       void this.fetchImage("thumbnail");
     } else {
@@ -508,7 +508,7 @@ export default class Result
       |}>,
       newBase64Image?: ?string,
       barcodes?: Array<{ ... }>,
-      identifiers?: Array<Identifier>,
+      identifiers?: mixed,
       sharingMode?: SharingMode,
       sharedWith?: ?Array<SharedWithGroup>,
       ...
@@ -538,7 +538,7 @@ export default class Result
         this.barcodes
       ).map((b) => b.paramsForBackend);
     if (this.currentlyEditableFields.has("identifiers"))
-      params.identifiers = this.identifiers;
+      params.identifiers = this.identifiers.map(i => i.toJson());
     if (this.currentlyEditableFields.has("sharingMode"))
       params.sharingMode = this.sharingMode;
     if (this.currentlyEditableFields.has("sharedWith"))
@@ -1321,7 +1321,7 @@ export default class Result
         >(`/identifiers`, {
           parentGlobalId: globalId,
         });
-        const newIGSN = new IdentifierModel(response.data, globalId);
+        const newIGSN = new IdentifierModel(response.data, globalId, ApiService);
         this.identifiers = this.identifiers.concat(newIGSN);
         getRootStore().uiStore.addAlert(
           mkAlert({

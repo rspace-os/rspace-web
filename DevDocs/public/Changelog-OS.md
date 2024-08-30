@@ -4,6 +4,22 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog 
 
+# 2.2.0 2024-08-30
+
+### ELN Features
+
+- RSDEV-221 integration with Digital Commons Data repository
+- RSDEV-224 minor visual fixes to Auditing page
+
+### Inventory Features
+
+- RSDEV-257 when deleting a Sample user can decide to force-delete all Subsamples regardless of their location
+- RSDEV-304, RSDEV-306, RSDEV-307 more UI/UX changes when displaying Samples that contain just one Subsample
+
+### Inventory Bugfix
+
+- RSDEV-326 more robust validation of Sample date/time fields
+
 ## 2.1.1 2024-08-01
 
 ### ELN Features

@@ -22,7 +22,7 @@
 		<spring:message code="audit.activity.filter.label"/>
 		by <a href="#" id="domains" class="addRow"><spring:message code="audit.domains.label"/></a>,
 		by <a href="#" id="actions" class="addRow"><spring:message code="audit.actions.label"/></a>,
-		by <a href="#" id="oids" class="addRow"><spring:message code="audit.identifiers.label"/></a>
+		by <a href="#" id="oid" class="addRow"><spring:message code="audit.identifiers.label"/></a>
 		and
 		by <a href="#" id="dates" class="addRow"><spring:message code="audit.date.label"/></a>
 	</h4>
@@ -40,7 +40,7 @@
 		<spring:message code="audit.activity.filter.label"/>
 		by <a href="#" id="domains" class="addRow"><spring:message code="audit.domains.label"/></a>,
 		by <a href="#" id="actions" class="addRow"><spring:message code="audit.actions.label"/></a>,
-		by <a href="#" id="oids" class="addRow"><spring:message code="audit.identifiers.label"/></a>,
+		by <a href="#" id="oid" class="addRow"><spring:message code="audit.identifiers.label"/></a>,
 		by <a href="#" id="dates" class="addRow"><spring:message code="audit.date.label"/></a>
     and
 		by <a href="#" id="users" class="addRow"><spring:message code="audit.users.label"/></a>
@@ -58,7 +58,7 @@
 		<spring:message code="audit.activity.filter.label"/>
 		by <a href="#" id="domains" class="addRow"><spring:message code="audit.domains.label"/></a>,
 		by <a href="#" id="actions" class="addRow"><spring:message code="audit.actions.label"/></a>,
-		by <a href="#" id="oids" class="addRow"><spring:message code="audit.identifiers.label"/></a>,
+		by <a href="#" id="oid" class="addRow"><spring:message code="audit.identifiers.label"/></a>,
 		by <a href="#" id="dates" class="addRow"><spring:message code="audit.date.label"/></a>,
     and
 		by <a href="#" id="users" class="addRow"><spring:message code="audit.users.label"/></a>
@@ -77,7 +77,7 @@
 		<spring:message code="audit.activity.filter.label"/>
 		by <a href="#" id="domains" class="addRow"><spring:message code="audit.domains.label"/></a>,
 		by <a href="#" id="actions" class="addRow"><spring:message code="audit.actions.label"/></a>,
-		by <a href="#" id="oids" class="addRow"><spring:message code="audit.identifiers.label"/></a>,
+		by <a href="#" id="oid" class="addRow"><spring:message code="audit.identifiers.label"/></a>,
 		by <a href="#" id="dates" class="addRow"><spring:message code="audit.date.label"/></a>,
     and
 		by <a href="#" id="users" class="addRow"><spring:message code="audit.users.label"/></a>,
@@ -104,7 +104,7 @@
 	</div>
 	<div class="actionsRow auditRow">
 	</div>
-	<div class="oidsRow auditRow">
+	<div class="oidRow auditRow">
 	<label>Enter a global id of a document, notebook, or Inventory item e.g. SD12345
     			<input id="oidsEntry" class="oidsSelection" name="oid" type="text">
     		</label>

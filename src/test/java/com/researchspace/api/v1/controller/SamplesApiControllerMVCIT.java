@@ -1130,7 +1130,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
 
     String responseText = result.getResponse().getContentAsString();
-    String expectedErrorMessage = "9:15 is an invalid 24hour time format. Valid format is 00:00.";
+    String expectedErrorMessage = "9:15 is an invalid 24hour time format. Valid format is HH:mm.";
     assertTrue(responseText.contains(expectedErrorMessage));
   }
 

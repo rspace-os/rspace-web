@@ -73,6 +73,7 @@ define(function() {
 
         _printCategory('Repositories');
         _printSettings([ 'dataverse.available' ]);
+        _printSettings([ 'digitalCommonsData.available' ]);
         _printSettings([ 'github.available' ]);
         _printSettings([ 'figshare.available' ]);
         _printSettings([ 'pyrat.available' ]);

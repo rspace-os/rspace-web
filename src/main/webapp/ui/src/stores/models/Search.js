@@ -79,11 +79,15 @@ export const getViewGroup = (
     [() => true, "static"],
   ])(view);
 
-const prepareRecordsForBulkApi = (records: Array<InventoryRecord>) =>
+const prepareRecordsForBulkApi = (
+  records: Array<InventoryRecord>,
+  opts?: {| forceDelete?: boolean |}
+) =>
   records.map((record) => ({
     id: record.id,
     type: record.type,
     owner: { username: record.owner?.username },
+    ...(opts ?? {}),
   }));
 
 type SearchArgs = {|
@@ -421,7 +425,10 @@ export default class Search implements SearchInterface {
    * Deletes the passed records, displays toasts accordingly, and invokes the
    * refreshing of the UI's state.
    */
-  async deleteRecords(records: Array<InventoryRecord>): Promise<void> {
+  async deleteRecords(
+    records: Array<InventoryRecord>,
+    opts?: {| forceDelete?: boolean |}
+  ): Promise<void> {
     this.setProcessingContextActions(true);
     const { uiStore } = getRootStore();
 
@@ -433,7 +440,7 @@ export default class Search implements SearchInterface {
           {
             results: Array<{
               error: { errors: Array<string> },
-              record: {
+              record: null | {
                 type: string,
                 canBeDeleted?: boolean,
                 subSamples: $ReadOnlyArray<{
@@ -446,7 +453,7 @@ export default class Search implements SearchInterface {
             }>,
             errorCount: number,
           }
-        >(prepareRecordsForBulkApi(records), "DELETE", false)
+        >(prepareRecordsForBulkApi(records, opts), "DELETE", false)
       );
 
       /*
@@ -455,18 +462,18 @@ export default class Search implements SearchInterface {
        * subsamples are currently inside containers then the user is presented
        * with an error detailing these subsamples and where to find them.
        */
-      const samplesThatCouldNotBeDeleted = data.results
-        .map(({ record }) => record)
-        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
-      const samplesThatCouldBeDeleted = data.results
-        .map(({ record }) => record)
-        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && canBeDeleted);
+      const samplesThatCouldNotBeDeleted = ArrayUtils.filterNull(
+        data.results.map(({ record }) => record)
+      ).filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
+      const samplesThatCouldBeDeleted = ArrayUtils.filterNull(
+        data.results.map(({ record }) => record)
+      ).filter((r) => r.type === "SAMPLE" && r.canBeDeleted);
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
         ...data.results
-          .filter(({ record: { type } }) => type !== "SAMPLE")
           .filter(({ error }) => !error)
+          .filter(({ record }) => record !== null && record.type !== "SAMPLE")
           .map(({ record }) => record),
         ...samplesThatCouldBeDeleted,
       ].map((record) => {
@@ -487,13 +494,23 @@ export default class Search implements SearchInterface {
               "Some of the samples could not be trashed because the subsamples are in containers.",
             message: "Please move them to the trash first.",
             details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
-              title: `Could not trash "${ss.name ?? "UNKNOWN"}"`,
+              title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${
+                ss.parentContainers.length > 0
+                  ? `(in ${ss.parentContainers[0].name} ${
+                      ss.parentContainers[0].globalId ?? ""
+                    })`
+                  : ""
+              }`,
               variant: "error",
               record: factory.newRecord({
                 ...ss,
                 sample: s,
               }),
             })),
+            actionLabel: "Move all to trash",
+            onActionClick: () => {
+              void this.deleteRecords(records, { forceDelete: true });
+            },
           })
         );
       }

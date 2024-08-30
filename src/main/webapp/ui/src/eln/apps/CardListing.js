@@ -11,6 +11,7 @@ import Argos from "./integrations/Argos";
 import Box from "./integrations/Box";
 import Clustermarket from "./integrations/Clustermarket";
 import Dataverse from "./integrations/Dataverse";
+import DigitalCommonsData from "./integrations/DigitalCommonsData";
 import DMPonline from "./integrations/DMPonline";
 import DMPTool from "./integrations/DMPTool";
 import Dropbox from "./integrations/Dropbox";
@@ -96,6 +97,19 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
     (newState: IntegrationStates["DATAVERSE"]) => {
       void runInAction(async () => {
         integrationStates.DATAVERSE = await update("DATAVERSE", newState);
+      });
+    },
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [update]
+  );
+
+  const digitalCommonsDataUpdate = React.useCallback(
+    (newState: IntegrationStates["DIGITALCOMMONSDATA"]) => {
+      void runInAction(async () => {
+        integrationStates.DIGITALCOMMONSDATA = await update(
+          "DIGITALCOMMONSDATA",
+          newState
+        );
       });
     },
     //eslint-disable-next-line react-hooks/exhaustive-deps
@@ -336,6 +350,12 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
         <Dataverse
           integrationState={integrationStates.DATAVERSE}
           update={dataverseUpdate}
+        />
+      )}
+      {integrationStates.DIGITALCOMMONSDATA.mode === mode && (
+        <DigitalCommonsData
+          integrationState={integrationStates.DIGITALCOMMONSDATA}
+          update={digitalCommonsDataUpdate}
         />
       )}
       {integrationStates.DMPONLINE.mode === mode && (
