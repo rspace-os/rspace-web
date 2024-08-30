@@ -187,7 +187,7 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
     createExistingUserConnection();
 
     when(restTemplate.exchange(
-            eq("https://auth.data.mendeley.com/active-data-entities/datasets/drafts/FAKE_ID"),
+            eq("https://api.data.mendeley.com/active-data-entities/datasets/drafts/FAKE_ID"),
             eq(HttpMethod.DELETE),
             any(),
             ArgumentMatchers.<Class<String>>any()))
@@ -197,14 +197,14 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
     assertTrue(result);
 
     when(restTemplate.exchange(
-            eq("https://auth.data.mendeley.com/active-data-entities/datasets/drafts/FAKE_ID"),
+            eq("https://api.data.mendeley.com/active-data-entities/datasets/drafts/FAKE_ID"),
             eq(HttpMethod.DELETE),
             any(),
             ArgumentMatchers.<Class<String>>any()))
         .thenThrow(
             new HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
-                "404 Not Found: \"{\"message\":\"Draft dataset 'FAKE_ID' not found\"}\""));
+                "Not Found: \"{\"message\":\"Draft dataset 'FAKE_ID' not found\"}\""));
 
     result = digitalCommonsDataController.isConnectionAlive(principal);
     assertTrue(result);
@@ -215,7 +215,7 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
     // given: no user connection exists
 
     when(restTemplate.exchange(
-            eq("https://auth.data.mendeley.com/active-data-entities/datasets/drafts/FAKE_ID"),
+            eq("https://api.data.mendeley.com/active-data-entities/datasets/drafts/FAKE_ID"),
             eq(HttpMethod.DELETE),
             any(),
             ArgumentMatchers.<Class<String>>any()))
@@ -224,8 +224,11 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
     Boolean result = digitalCommonsDataController.isConnectionAlive(principal);
     assertFalse(result);
 
+    // given: user connection exists
+    createExistingUserConnection();
+
     when(restTemplate.exchange(
-            eq("https://auth.data.mendeley.com/active-data-entities/datasets/drafts/FAKE_ID"),
+            eq("https://api.data.mendeley.com/active-data-entities/datasets/drafts/FAKE_ID"),
             eq(HttpMethod.DELETE),
             any(),
             ArgumentMatchers.<Class<String>>any()))
