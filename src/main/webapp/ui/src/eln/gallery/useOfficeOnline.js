@@ -4,7 +4,22 @@ import React from "react";
 import axios from "axios";
 import * as Parsers from "../../util/parsers";
 
+/**
+ * For fetching metadata about the integration with Office Online.
+ *
+ * The Office Online integration is used to allow users to quickly edit
+ * documents that are stored in the RSpace Gallery. The document can be opened
+ * in a new tab in the relevant Microsoft product, and any saved changes are
+ * propagated back to RSpace as a new version of that document.
+ *
+ * To check if Office Online is enabled, check the `msoffice.wopi.enabled`
+ * depeloyment property with
+ *   const officeOnlineEnabled = useDeploymentProperty("msoffice.wopy.enabled");
+ */
 export default function useOfficeOnline(): {|
+  /**
+   * The set of file extensions supported by Office Online.
+   */
   supportedExts: Set<string>,
 |} {
   /*

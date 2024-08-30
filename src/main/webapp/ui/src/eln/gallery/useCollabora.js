@@ -4,7 +4,22 @@ import React from "react";
 import axios from "axios";
 import * as Parsers from "../../util/parsers";
 
+/**
+ * For fetching metadata about the integration with Collabora.
+ *
+ * The Collabora integration is used to allow users to quickly edit
+ * documents that are stored in the RSpace Gallery. The document can be opened
+ * in a new tab in the relevant LibreOffice product, and any saved changes are
+ * propagated back to RSpace as a new version of that document.
+ *
+ * To check if Collabora is enabled, check the `collabora.wopi.enabled`
+ * depeloyment property with
+ *   const collaboraEnabled = useDeploymentProperty("collabora.wopi.enabled");
+ */
 export default function useCollabora(): {|
+  /**
+   * The set of file extensions supported by Collabora.
+   */
   supportedExts: Set<string>,
 |} {
   /*
