@@ -1,13 +1,12 @@
 package com.researchspace.service;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
+import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.UserApiKey;
 import com.researchspace.model.record.TestFactory;
@@ -20,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class UserApiKeyManagerTest extends SpringTransactionalTest {
   private static final String KEYSTRINGATLEAST16CHARS = "keystringatleast16chars";
+  private static final String CLEAR_16CHARS_KEY = "keystring16chars";
   private static final String KEYSTRING2_ATLEAST16CHARS = "keystring2atleast16chars";
   private @Autowired UserApiKeyManager apiMgr;
   User anyUser;
@@ -55,23 +55,27 @@ public class UserApiKeyManagerTest extends SpringTransactionalTest {
 
   @Test
   public void findByKey() {
-    String keyStr = KEYSTRINGATLEAST16CHARS;
-    UserApiKey key = new UserApiKey(anyUser, keyStr);
-    key = apiMgr.save(key);
+    String keyStr = CLEAR_16CHARS_KEY;
+    UserApiKey apiKeySaved = new UserApiKey(anyUser, keyStr);
+    apiKeySaved.setApiKey(CryptoUtils.encodeBCrypt(keyStr));
+    apiMgr.save(apiKeySaved);
     assertEquals(anyUser, apiMgr.findUserByKey(keyStr).get());
   }
 
   @Test
   public void createKey() {
-    UserApiKey key = apiMgr.createKeyForUser(anyUser);
-    String keyStr1 = key.getApiKey();
-    assertNotNull(key);
-    assertEquals(32, key.getApiKey().length());
+    UserApiKey userApiKey = apiMgr.createKeyForUser(anyUser);
+    String keyStr1 = userApiKey.getApiKey();
+    assertNotNull(userApiKey);
+    assertEquals(32, userApiKey.getApiKey().length());
+    assertEquals(anyUser, apiMgr.findUserByKey(keyStr1).get());
 
     // test can just create another, overwriting the original.
-    apiMgr.createKeyForUser(anyUser);
-    String keyStr2 = key.getApiKey();
-    assertThat(keyStr2, not(equalTo(keyStr1)));
+    userApiKey = apiMgr.createKeyForUser(anyUser);
+    String keyStr2 = userApiKey.getApiKey();
+    assertNotEquals(keyStr2, keyStr1);
+    assertNull(apiMgr.findUserByKey(keyStr1).orElse(null));
+    assertEquals(anyUser, apiMgr.findUserByKey(keyStr2).get());
   }
 
   @Test

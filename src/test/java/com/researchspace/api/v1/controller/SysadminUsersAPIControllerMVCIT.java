@@ -40,7 +40,12 @@ import org.springframework.validation.BindException;
 
 @WebAppConfiguration
 // test that this property is used.
-@TestPropertySource(properties = {"sysadmin.nodeletenewerthan.days=7", "api.beta.enabled=true"})
+@TestPropertySource(
+    properties = {
+        "sysadmin.apikey.generation=true",
+        "sysadmin.nodeletenewerthan.days=7",
+        "api.beta.enabled=true"
+    })
 public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
 
   private @Autowired JdbcTemplate jdbcTemplate;
@@ -53,7 +58,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void deleteTempUserFailsIfUserTooNew() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
     User temp = createAndSaveUser(getRandomName(10));
     temp.setTempAccount(true);
     userMgr.save(temp);
@@ -67,7 +72,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void deleteTempUserSuccess() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
     final int initialUserCount = countRowsInTable(jdbcTemplate, "User");
     User temp = createAndSaveUser(getRandomName(10));
     temp.setTempAccount(true);
@@ -84,7 +89,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void deleteRegularUserInGroup() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
     final int initialUserCount = countRowsInTable(jdbcTemplate, "User");
     TestGroup tg = createTestGroup(2);
     final int groupSize = tg.getGroup().getMemberCount();
@@ -114,7 +119,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void enableUserSuccessfully() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
     User userToEnable = createAndSaveUser(getRandomName(10));
     userToEnable.setEnabled(false);
     userMgr.save(userToEnable);
@@ -129,7 +134,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void disableUserSuccessfully() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
     User userToDisable = createAndSaveUser(getRandomName(10));
     userToDisable.setEnabled(true);
     userMgr.save(userToDisable);
@@ -155,7 +160,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void filterAllByLastLogin() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
     final int initialUserCount = countRowsInTable(jdbcTemplate, "User");
     final int initialNeverLoggedInUserCount =
         doInTransaction(
@@ -223,7 +228,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void searchForTempUsersByDate() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
 
     MvcResult result =
         mockMvc
@@ -250,7 +255,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void createUser() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
     String unameString = getRandomAlphabeticString("u1");
     UserApiPost userToPost = createAnyUserPost(unameString);
     System.err.println(JacksonUtil.toJson(userToPost));
@@ -307,7 +312,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void createProjectGroup() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
 
     UserApiPost userToPost = createAnyUserPost(getRandomAlphabeticString("u1"));
     ApiUser userApiUser = createUserViaAPI(userToPost, apiKey, sysadmin);
@@ -337,7 +342,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void projectGroupShouldHaveAtLeast1GroupOwner() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
 
     UserApiPost userToPost = createAnyUserPost(getRandomAlphabeticString("u1"));
     ApiUser userApiUser = createUserViaAPI(userToPost, apiKey, sysadmin);
@@ -362,7 +367,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void createLabGroupSetsDefaultPermissions() throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
 
     UserApiPost userToPost = createAnyUserPost(getRandomAlphabeticString("u1"));
     userToPost.setRole(Role.PI_ROLE.getName());
@@ -397,7 +402,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
 
   private void createAndAssertLabGroup(GroupApiPost post) throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    String apiKey = getApiKeyForuser(sysadmin);
+    String apiKey = createNewApiKeyForUser(sysadmin);
 
     String unameString = getRandomAlphabeticString("pi");
     UserApiPost piToPost = createAnyUserPost(unameString);

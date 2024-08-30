@@ -20,7 +20,7 @@ public class BarcodesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
-    apiKey = createApiKeyForuser(anyUser);
+    apiKey = createNewApiKeyForUser(anyUser);
   }
 
   @Test

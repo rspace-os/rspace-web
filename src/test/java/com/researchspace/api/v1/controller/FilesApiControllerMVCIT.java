@@ -42,7 +42,7 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void getFiles() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     EcatImage galleryImage = addImageToGallery(anyUser);
     MvcResult result =
@@ -67,7 +67,7 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void getFileById() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     EcatImage galleryImage = addImageToGallery(anyUser);
     MvcResult result = getFile(anyUser, apiKey, galleryImage.getId());
@@ -88,7 +88,7 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void getFileBytes() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     EcatImage galleryImage = addImageToGallery(anyUser);
     MvcResult result =
@@ -109,7 +109,7 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void updateFile() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     MockMultipartFile originalFile = picture1();
     final long originalFileSize = originalFile.getSize();
     ApiFile originalApiFile = doFileUpload(apiKey, originalFile);
@@ -164,7 +164,7 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void uploadFile() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     MockMultipartFile mf = picture1();
     // this will create an API inbox folder
     ApiFile apiFile = doFileUpload(apiKey, mf);
@@ -223,7 +223,7 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(otherUser, "apiTest");
     EcatDocumentFile galleryFile = addDocumentToGallery(otherUser);
     logout();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     // not-existent
     this.mockMvc
         .perform(createBuilderForGet(API_VERSION.ONE, apiKey, "/files/12345", anyUser))

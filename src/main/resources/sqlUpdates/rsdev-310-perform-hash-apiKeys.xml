@@ -1,0 +1,21 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Update apiKeys that have not been BCrypt hashed -->
+    <changeSet id="2024-09-04a" author="nico">
+        <comment>Update ApiKeys that have not been BCrypt hashed in the Database</comment>
+        <customChange
+                class="com.researchspace.dao.customliquibaseupdates.CryptingApiKeysAndUpdateDatabase_RSDEV310">
+        </customChange>
+    </changeSet>
+
+    <changeSet  id="2024-09-04b" author="nico">
+        <preConditions onFail="WARN">
+            <sqlCheck expectedResult="0">select count(*) from UserApiKey where length(apiKey) = 32;</sqlCheck>
+        </preConditions>
+        <comment>There should be no apiKey long 32 characters</comment>
+    </changeSet>
+
+</databaseChangeLog>

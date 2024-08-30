@@ -7,9 +7,11 @@ import org.apache.shiro.crypto.RandomNumberGenerator;
 import org.apache.shiro.crypto.SecureRandomNumberGenerator;
 import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.apache.shiro.util.ByteSource;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class CryptoUtils {
   private static RandomNumberGenerator randNumGen = new SecureRandomNumberGenerator();
+  private static BCryptPasswordEncoder bCryptEncoder = new BCryptPasswordEncoder();
   private static final int KEY_LENGTH = 192;
 
   /**
@@ -85,6 +87,14 @@ public class CryptoUtils {
 
   public static String hashToken(String unhashedToken) {
     return hashWithSha256inHex(unhashedToken);
+  }
+
+  public static String encodeBCrypt(String clearSecret) {
+    return bCryptEncoder.encode(clearSecret);
+  }
+
+  public static boolean matchBCrypt(String clearSecret, String encodedSecret) {
+    return bCryptEncoder.matches(clearSecret, encodedSecret);
   }
 
   public static String generateClientId() {

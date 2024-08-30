@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.service.UserDeletionPolicy.UserTypeRestriction.TEMP_USER;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang.StringUtils.abbreviate;
 import static org.apache.commons.lang.StringUtils.join;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
@@ -40,6 +39,7 @@ import com.researchspace.service.UserDeletionPolicy;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.DeploymentProperty;
 import com.researchspace.webapp.controller.SysAdminCreateUser;
 import com.researchspace.webapp.controller.UserExportHandler;
@@ -101,6 +101,9 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   private @Autowired AuditTrailService auditService;
   private @Autowired IContentInitializer initialiser;
   private @Autowired UserEnablementUtils userEnablementUtils;
+
+  @Value("${sysadmin.apikey.generation}")
+  private boolean sysadminApiKeyGeneration;
 
   void assertIsSysadmin(User subject, ServletRequest request) {
     if (!subject.hasRole(Role.SYSTEM_ROLE)
@@ -334,7 +337,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   @DeploymentProperty(DeploymentPropertyType.API_BETA_ENABLED)
   public ApiUser createUser(
       ServletRequest req,
-      @Valid @RequestBody UserApiPost userApi,
+      @Valid @RequestBody UserApiPost userApiToPost,
       BindingResult errors,
       @RequestAttribute(name = "user") User sysadmin)
       throws BindException {
@@ -344,16 +347,18 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
       log.warn("binding error on createUser api request: {}", errors);
       throw new BindException(errors);
     }
-    SysAdminCreateUser userForm = createSysadminUserObjectFromApi(userApi);
+    SysAdminCreateUser userForm = createSysadminUserObjectFromApi(userApiToPost);
 
-    var aroAjaxReturnObject = sysadminUserCreationHandler.createUser(userForm, sysadmin);
+    AjaxReturnObject<User> aroAjaxReturnObject =
+        sysadminUserCreationHandler.createUser(userForm, sysadmin);
     if (aroAjaxReturnObject.getData() != null) {
-      if (!StringUtils.isBlank(userApi.getApiKey())) {
-        UserApiKey key = new UserApiKey(aroAjaxReturnObject.getData(), userApi.getApiKey());
-        apiKeyMgr.save(key);
-        log.info("Creating API key, set as {}", abbreviate(userApi.getApiKey(), 6));
+      User createdUser = aroAjaxReturnObject.getData();
+      if (StringUtils.isNotBlank(userApiToPost.getApiKey()) && sysadminApiKeyGeneration) {
+        UserApiKey userApiKey = new UserApiKey(createdUser, userApiToPost.getApiKey());
+        apiKeyMgr.hashAndSaveApiKeyForUser(createdUser, userApiKey);
+        log.info("API key was provided and saved as API key");
       }
-      return new ApiUser(aroAjaxReturnObject.getData());
+      return new ApiUser(createdUser);
     } else {
       throw new IllegalArgumentException(
           aroAjaxReturnObject.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(","));

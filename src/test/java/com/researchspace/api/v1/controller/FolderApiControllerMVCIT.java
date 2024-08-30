@@ -34,7 +34,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void folderPostGetAndDelete() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiFolder folderPost = new ApiFolder();
     folderPost.setName("TestFolder");
@@ -114,7 +114,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void folderPostAndGetInGallery() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     Folder docGalleryFolder =
         recordMgr.getGallerySubFolderForUser(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME, anyUser);
@@ -156,7 +156,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
   public void folderTreeRootListing() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     StructuredDocument document = createBasicDocumentInRootFolderWithText(anyUser, "any");
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     MvcResult result = performRootFolderListing(anyUser, apiKey);
     ApiRecordTreeItemListing listing =
         getFromJsonResponseBody(result, ApiRecordTreeItemListing.class);
@@ -187,7 +187,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     User anyUser = createAndSaveUser(getRandomName(10));
     initUser(anyUser, true);
     logoutAndLoginAs(anyUser);
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     MvcResult result = performRootFolderListing(anyUser, apiKey);
     ApiRecordTreeItemListing listing =
@@ -223,7 +223,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(group.u1(), "any");
     shareRecordWithGroup(group.u1(), group.getGroup(), sd);
     User u1 = group.u1();
-    String apiKey = createApiKeyForuser(u1);
+    String apiKey = createNewApiKeyForUser(u1);
 
     MvcResult result = performRootFolderListing(u1, apiKey);
     ApiRecordTreeItemListing listing =
@@ -269,7 +269,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
 
     // now let's login as a PI and ensure they can't delete user folder
     logoutAndLoginAs(group.getPi());
-    String piApiKey = createApiKeyForuser(group.getPi());
+    String piApiKey = createNewApiKeyForUser(group.getPi());
     ApiRecordTreeItemListing labGroupsListingForPi =
         performFolderListingById(group.getPi(), piApiKey, labGroupsId);
     // the user folders don't seem to be added, just the group folder.

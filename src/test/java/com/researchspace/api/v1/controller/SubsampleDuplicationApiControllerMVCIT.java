@@ -24,7 +24,7 @@ public class SubsampleDuplicationApiControllerMVCIT extends API_MVC_InventoryTes
   @Test
   public void duplicateSubsample() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // new basic sample with default subsample
     ApiSampleWithFullSubSamples basicSample = createComplexSampleForUser(anyUser);
@@ -50,7 +50,7 @@ public class SubsampleDuplicationApiControllerMVCIT extends API_MVC_InventoryTes
   @Test
   public void splitSubsample() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // new basic sample with default subsample
     ApiSampleWithFullSubSamples basicSample = createComplexSampleForUser(anyUser);
