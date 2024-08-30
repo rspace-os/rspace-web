@@ -283,7 +283,10 @@ function decodeDigitalCommonsData(
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: Optional.empty(),
+      ACCESS_TOKEN: parseCredentialString(
+        data.options,
+        "DIGITAL_COMMONS_DATA_USER_TOKEN"
+      ),
     },
   };
 }
