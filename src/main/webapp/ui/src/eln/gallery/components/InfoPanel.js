@@ -500,6 +500,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
             return FetchingData.getSuccessValue(collaboraEnabled)
               .flatMap(Parsers.isBoolean)
               .flatMap(Parsers.isTrue)
+              .mapError(() => new Error("Collabora is not enabled"))
               .flatMap(() => Parsers.isNotNull(file.extension))
               .flatMap((extension) =>
                 supportedCollaboraExts.has(extension)
@@ -531,6 +532,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 FetchingData.getSuccessValue(officeOnlineEnabled)
                   .flatMap(Parsers.isBoolean)
                   .flatMap(Parsers.isTrue)
+                  .mapError(() => new Error("Office Online is not enabled"))
                   .flatMap(() => Parsers.isNotNull(file.extension))
                   .flatMap((extension) =>
                     supportedOfficeOnlineExts.has(extension)
@@ -567,7 +569,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
               )
               .orElseGet((errors) => {
                 errors.forEach((e) => {
-                  console.error(e);
+                  console.info(e);
                 });
                 return null;
               });
