@@ -401,7 +401,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const collaboraEnabled = useDeploymentProperty("collabora.wopi.enabled");
   const { supportedExts: supportedCollaboraExts } = useCollabora();
-  const officeOnlineEnabled = useDeploymentProperty("msOfficeEnabled");
+  const officeOnlineEnabled = useDeploymentProperty("msoffice.wopi.enabled");
   const { supportedExts: supportedOfficeOnlineExts } = useOfficeOnline();
 
   return (

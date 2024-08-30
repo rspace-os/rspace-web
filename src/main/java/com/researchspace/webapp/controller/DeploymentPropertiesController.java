@@ -100,6 +100,9 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${collabora.wopi.enabled}")
   private String collaboraEnabled;
 
+  @Value("${msoffice.wopi.enabled}")
+  private String officeOnlineEnabled;
+
   /**
    * Service to return the value of property stored in the deployment.properties file. Uses a
    * whitelist strategy to only return properties that should be exposed.
@@ -170,6 +173,8 @@ public class DeploymentPropertiesController extends BaseController {
         return sysadminDeleteUser;
       case "collabora.wopi.enabled":
         return collaboraEnabled;
+      case "msoffice.wopi.enabled":
+        return officeOnlineEnabled;
       default:
         throw new IllegalArgumentException("No property available for name: " + propertyName);
     }
