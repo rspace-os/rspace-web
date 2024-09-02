@@ -143,8 +143,9 @@ export default class Result<T> {
    * If the first computation did not succeed, then try another.
    *
    * This can be thought of as a disjunctive operator as if either computation
-   * results in an OK state the output is an OK state. Across functional
-   * programming, this is known as the Alternative typeclass.
+   * results in an OK state the output is an OK state. If both computation
+   * results in an Error state then the errors are accumulated. Across
+   * functional programming, this is known as the Alternative typeclass.
    */
   orElseTry<U>(func: (Array<Error>) => Result<U>): Result<T | U> {
     /*
@@ -152,9 +153,10 @@ export default class Result<T> {
      * that `Result<T> | Result<U>` is the same as `Result<T | U>`
      */
     if (this.#state.key === "error") {
-      const resultOfFunc = func(this.#state.errors);
+      const errors = this.#state.errors;
+      const resultOfFunc = func(errors);
       if (resultOfFunc.#state.key === "error")
-        return Result.Error(resultOfFunc.#state.errors);
+        return Result.Error([...errors, ...resultOfFunc.#state.errors]);
       return Result.Ok(resultOfFunc.#state.value);
     }
     return Result.Ok(this.#state.value);

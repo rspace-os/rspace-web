@@ -528,7 +528,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   />
                 </Grid>
               ))
-              .orElseTry((collaboraErrors) =>
+              .orElseTry(() =>
                 FetchingData.getSuccessValue(officeOnlineEnabled)
                   .flatMap(Parsers.isBoolean)
                   .flatMap(Parsers.isTrue)
@@ -560,12 +560,6 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       />
                     </Grid>
                   ))
-                  .orElseTry((officeOnlineErrors) =>
-                    Result.Error<Node>([
-                      ...collaboraErrors,
-                      ...officeOnlineErrors,
-                    ])
-                  )
               )
               .orElseGet((errors) => {
                 errors.forEach((e) => {
