@@ -320,6 +320,7 @@ export function useGalleryListing({
             },
           }
         : {
+            // TODO should this incorporate the version/revision?
             downloadHref: `/Streamfile/${idToString(id)}`,
           }),
       isFolder,
