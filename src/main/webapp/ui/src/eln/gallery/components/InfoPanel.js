@@ -43,6 +43,7 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import axios from "axios";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -426,7 +427,22 @@ const InfoPanelMultipleContent = (): Node => {
 };
 
 export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
-  const selection = useGallerySelection();
+  const [converting, setConverting] = React.useState(true);
+  const selection = useGallerySelection({
+    onChange: (selection) => {
+      selection.asSet().only.do((file) => {
+        void axios
+          .get<mixed>(
+            "/Streamfile/ajax/convert/" +
+              idToString(file.id) +
+              "?outputFormat=pdf"
+          )
+          .then(() => {
+            setConverting(false);
+          });
+      });
+    },
+  });
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
     null
   );
@@ -626,11 +642,14 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                               ),
                             ])
                       )
-                      .map(
-                        () =>
-                          "/Streamfile/ajax/convert/" +
-                          idToString(file.id) +
-                          "?outputFormat=pdf"
+                      .flatMap(() =>
+                        converting
+                          ? Result.Error<string>([
+                              new Error("Still converting file to PDF"),
+                            ])
+                          : Result.Ok(
+                              "/Streamfile/direct/" + idToString(file.id)
+                            )
                       )
                   )
                   .map((url) => (
