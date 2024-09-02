@@ -1719,7 +1719,6 @@
           </exclusion>
           <exclusion>
             <groupId>com.github.rspace-os</groupId>
-
             <artifactId>rspace-audit</artifactId>
           </exclusion>
           <exclusion>
