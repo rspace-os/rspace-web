@@ -728,7 +728,7 @@ const DeleteAction = ({
               <DialogContent>
                 <DialogContentText variant="body2" sx={{ mb: 2 }}>
                   <Typography variant="body2" sx={{ mb: 1 }}>
-                    This is irreversible, and all documents will be deleted.
+                    User deletion is irreversible, and all documents will be deleted.
                   </Typography>
                   {user.hasFormsUsedByOtherUsers &&
                     <Typography variant="body2" sx={{ mb: 1 }}>
