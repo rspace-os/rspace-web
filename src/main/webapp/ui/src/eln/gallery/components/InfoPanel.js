@@ -626,6 +626,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   ))
               )
               .orElseGet((errors) => {
+                console.info("Could not provide preview");
                 errors.forEach((e) => {
                   console.info(e);
                 });
