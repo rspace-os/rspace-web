@@ -1876,7 +1876,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-digital-commons-data-adapter</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.5</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>

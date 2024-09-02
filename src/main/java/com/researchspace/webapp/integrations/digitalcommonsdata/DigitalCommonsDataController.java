@@ -278,6 +278,8 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
       } catch (HttpClientErrorException clientEx) {
         if (expectedMsg.equals(clientEx.getMessage())) {
           return Boolean.TRUE;
+        } else {
+          return Boolean.FALSE;
         }
       } catch (Exception e) {
         log.error("Couldn't perform test action {}", e.getMessage());
