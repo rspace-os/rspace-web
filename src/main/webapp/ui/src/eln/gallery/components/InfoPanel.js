@@ -37,6 +37,17 @@ import useOfficeOnline from "../useOfficeOnline";
 import clsx from "clsx";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";
+import { Document, Page, pdfjs } from "react-pdf";
+import Dialog from "@mui/material/Dialog";
+import "react-pdf/dist/esm/Page/TextLayer.css";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
@@ -425,6 +436,19 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const officeOnlineEnabled = useDeploymentProperty("msoffice.wopi.enabled");
   const { supportedExts: supportedOfficeOnlineExts } = useOfficeOnline();
   const asposeEnabled = useDeploymentProperty("aspose.enabled");
+  const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(
+    null
+  );
+  const [numPages, setNumPages] = React.useState<number>(0);
+
+  function onDocumentLoadSuccess({
+    numPages: nextNumPages,
+  }: {
+    numPages: number,
+    ...
+  }): void {
+    setNumPages(nextNumPages);
+  }
 
   return (
     <>
@@ -613,7 +637,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                       <ActionButton
                         onClick={() => {
-                          window.open(url);
+                          setPdfPreviewOpen(url ?? null);
                         }}
                         label="Preview"
                         sx={{
@@ -635,6 +659,39 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
           })
           .orElse(null)}
       </Grid>
+      {pdfPreviewOpen && (
+        <Dialog
+          open={true}
+          fullWidth
+          onClose={() => {
+            setPdfPreviewOpen(null);
+          }}
+        >
+          <DialogContent sx={{ overflowY: "auto" }}>
+            <Document
+              file={pdfPreviewOpen}
+              onLoadSuccess={onDocumentLoadSuccess}
+            >
+              {Array.from(new Array(numPages), (_el, index) => (
+                <Page
+                  key={`page_${index + 1}`}
+                  pageNumber={index + 1}
+                  width={550}
+                />
+              ))}
+            </Document>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setPdfPreviewOpen(null);
+              }}
+            >
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
       {selection
         .asSet()
         .only.map((f) => (
