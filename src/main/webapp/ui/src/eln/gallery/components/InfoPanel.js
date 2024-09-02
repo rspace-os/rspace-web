@@ -497,61 +497,82 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   )}
                 </Grid>
               );
-            return FetchingData.getSuccessValue(collaboraEnabled)
-              .flatMap(Parsers.isBoolean)
-              .flatMap(Parsers.isTrue)
-              .mapError(() => new Error("Collabora is not enabled"))
-              .flatMap(() => Parsers.isNotNull(file.extension))
-              .flatMap((extension) =>
-                supportedCollaboraExts.has(extension)
-                  ? Result.Ok(null)
-                  : Result.Error([
-                      new Error(
-                        "Selected file's extension is not supported by collabora"
-                      ),
-                    ])
-              )
-              .map(() => (
-                <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                  <ActionButton
-                    onClick={() => {
-                      window.open(
-                        "/collaboraOnline/" + file.globalId + "/edit"
-                      );
-                    }}
-                    label="Edit"
-                    sx={{
-                      borderRadius: 1,
-                      px: 1.125,
-                      py: 0.25,
-                    }}
-                  />
-                </Grid>
-              ))
-              .orElseTry(() =>
-                FetchingData.getSuccessValue(officeOnlineEnabled)
-                  .flatMap(Parsers.isBoolean)
-                  .flatMap(Parsers.isTrue)
-                  .mapError(() => new Error("Office Online is not enabled"))
-                  .flatMap(() => Parsers.isNotNull(file.extension))
-                  .flatMap((extension) =>
-                    supportedOfficeOnlineExts.has(extension)
-                      ? Result.Ok(null)
-                      : Result.Error([
-                          new Error(
-                            "Selected file's extension is not supported by office online"
-                          ),
-                        ])
-                  )
-                  .map(() => (
+            return (
+              FetchingData.getSuccessValue(collaboraEnabled)
+                .flatMap(Parsers.isBoolean)
+                .flatMap(Parsers.isTrue)
+                .mapError(() => new Error("Collabora is not enabled"))
+                .flatMap(() => Parsers.isNotNull(file.extension))
+                .flatMap((extension) =>
+                  supportedCollaboraExts.has(extension)
+                    ? Result.Ok(null)
+                    : Result.Error([
+                        new Error(
+                          "Selected file's extension is not supported by collabora"
+                        ),
+                      ])
+                )
+                .map(() => (
+                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <ActionButton
+                      onClick={() => {
+                        window.open(
+                          "/collaboraOnline/" + file.globalId + "/edit"
+                        );
+                      }}
+                      label="Edit"
+                      sx={{
+                        borderRadius: 1,
+                        px: 1.125,
+                        py: 0.25,
+                      }}
+                    />
+                  </Grid>
+                ))
+                .orElseTry(() =>
+                  FetchingData.getSuccessValue(officeOnlineEnabled)
+                    .flatMap(Parsers.isBoolean)
+                    .flatMap(Parsers.isTrue)
+                    .mapError(() => new Error("Office Online is not enabled"))
+                    .flatMap(() => Parsers.isNotNull(file.extension))
+                    .flatMap((extension) =>
+                      supportedOfficeOnlineExts.has(extension)
+                        ? Result.Ok(null)
+                        : Result.Error([
+                            new Error(
+                              "Selected file's extension is not supported by office online"
+                            ),
+                          ])
+                    )
+                    .map(() => (
+                      <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                        <ActionButton
+                          onClick={() => {
+                            window.open(
+                              "/officeOnline/" + file.globalId + "/view"
+                            );
+                          }}
+                          label="Edit"
+                          sx={{
+                            borderRadius: 1,
+                            px: 1.125,
+                            py: 0.25,
+                          }}
+                        />
+                      </Grid>
+                    ))
+                )
+                .orElseTry(() =>
+                  (file.extension === "pdf"
+                    ? Result.Ok(file.downloadHref)
+                    : Result.Error([new Error("Not a PDF")])
+                  ).map((url) => (
                     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                       <ActionButton
                         onClick={() => {
-                          window.open(
-                            "/officeOnline/" + file.globalId + "/view"
-                          );
+                          window.open(url);
                         }}
-                        label="Edit"
+                        label="Preview"
                         sx={{
                           borderRadius: 1,
                           px: 1.125,
@@ -560,13 +581,14 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       />
                     </Grid>
                   ))
-              )
-              .orElseGet((errors) => {
-                errors.forEach((e) => {
-                  console.info(e);
-                });
-                return null;
-              });
+                )
+                .orElseGet((errors) => {
+                  errors.forEach((e) => {
+                    console.info(e);
+                  });
+                  return null;
+                })
+            );
           })
           .orElse(null)}
       </Grid>
