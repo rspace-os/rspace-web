@@ -727,16 +727,24 @@ const DeleteAction = ({
               <DialogTitle>Deletion Confirmation</DialogTitle>
               <DialogContent>
                 <DialogContentText variant="body2" sx={{ mb: 2 }}>
-                  <Typography variant="body2">
-                    This is irreversible, and all documents will be deleted.
-                    Deletion may be impossible if this user has created shared
-                    forms.
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    User deletion is irreversible, and all documents will be deleted.
                   </Typography>
-                  <Typography variant="body2">
+                  {user.hasFormsUsedByOtherUsers &&
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      The user you are trying to delete is <strong>the owner of Forms
+                      that are used by other users.</strong>
+                      To ensure continued access to these Forms, the system
+                      <strong> will transfer ownership</strong> of the Forms to
+                      <strong> this System Administrator</strong> account. Forms
+                      that are not used by others will be deleted.
+                    </Typography>
+                  }
+                  <Typography variant="body2" sx={{ mb: 1 }}>
                     An XML archive will be made of the user&apos;s work which
                     will be available for a short time on the server.
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography variant="body2" sx={{ mb: 1 }}>
                     To delete{" "}
                     <strong>
                       {selectedUser.map((u) => u.fullName).orElse("")}
@@ -768,7 +776,8 @@ const DeleteAction = ({
                   type="submit"
                   loading={false}
                   disabled={false}
-                  label="Delete"
+                  label={user.hasFormsUsedByOtherUsers ?
+                      "Transfer Forms And Delete" : "Delete"}
                 />
               </DialogActions>
             </form>

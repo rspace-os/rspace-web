@@ -27,6 +27,8 @@ public class UserUsageInfo {
   private Date lastLogin;
   private Date creationDate;
 
+  @Getter @Setter private boolean hasFormsUsedByOtherUsers;
+
   @Getter @Setter private String signupSource;
 
   /** Default constructor for frameworks */

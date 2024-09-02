@@ -53,11 +53,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return getAllVisibleFormOfType(FormType.NORMAL);
   }
 
-  public List<RSForm> getAllVisibleFormsByType(FormType formType) {
-    return getAllVisibleFormOfType(formType);
-  }
-
-  public boolean hasUserPublishedFormsUsedinOtherRecords(User user) {
+  public boolean hasUserPublishedFormsUsedInOtherRecords(User user) {
     Session session = getSession();
     Object result =
         session
@@ -82,32 +78,13 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return q.list();
   }
 
-  /**
-   * Gets form list by permission, using Criteria API to sort permission.
-   *
-   * @param user
-   * @param requestedAction
-   * @return
-   */
-  public ISearchResults<RSForm> getAllFormsByPermission(User user, PermissionType requestedAction) {
-    return getForms(user, requestedAction, null, null);
-  }
-
   @Override
   public ISearchResults<RSForm> getAllFormsByPermission(
       User user, FormSearchCriteria sc, PaginationCriteria<RSForm> pg) {
     return getForms(user, sc.getRequestedAction(), sc, pg);
   }
 
-  /**
-   * Handles permissions at database level.
-   *
-   * @param user
-   * @param requestedAction
-   * @param searchCriteria
-   * @param pagCriteria
-   * @return
-   */
+  /** Handles permissions at database level. */
   private ISearchResults<RSForm> getForms(
       User user,
       PermissionType requestedAction,
@@ -116,10 +93,9 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
 
     long start = System.currentTimeMillis();
 
-    // get all user's permissions
-    Set<Permission> perms = user.getAllPermissions(false, true);
+    Set<Permission> usersPermissions = user.getAllPermissions(false, true);
     for (Role r : user.getRoles()) {
-      perms.addAll(r.getPermissions());
+      usersPermissions.addAll(r.getPermissions());
     }
 
     String searchTerm = null;
@@ -128,75 +104,74 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     }
 
     boolean actionMatch = false;
-    List<String> clausesToOr = new ArrayList<String>();
-    for (Permission p : perms) {
-      ConstraintBasedPermission cbp = (ConstraintBasedPermission) p;
-      if (!cbp.isEnabled()) {
+    List<String> clausesToOr = new ArrayList<>();
+    for (Permission permission : usersPermissions) {
+      ConstraintBasedPermission constraintBasedPermission = (ConstraintBasedPermission) permission;
+      if (!constraintBasedPermission.isEnabled()) {
         continue;
       }
 
-      List<String> clausesToAnd = new ArrayList<String>();
-      clausesToAnd.add(" t.current=true ");
+      List<String> andClauses = new ArrayList<>();
+      andClauses.add(" form.current=true ");
 
       if (searchCriteria != null) {
         if (searchCriteria.isPublishedOnly()) {
-          clausesToAnd.add(" t.publishingState = 'PUBLISHED' ");
+          andClauses.add(" form.publishingState = 'PUBLISHED' ");
         }
         if (searchCriteria.isInUserMenu()) {
-          clausesToAnd.add(" menu.user_id=" + user.getId());
+          andClauses.add(" menu.user_id=" + user.getId());
         }
         if (searchCriteria.isUserFormsOnly()) {
-          // case1,2 RSPAC-1749
-          clausesToAnd.add(" t.createdBy = '" + user.getUsername() + "' ");
+          andClauses.add(" owner.username = '" + user.getUsername() + "' ");
         }
 
         if (searchCriteria.getFormType() != null) {
-          clausesToAnd.add(" t.formType='" + searchCriteria.getFormType() + "' ");
+          andClauses.add(" form.formType='" + searchCriteria.getFormType() + "' ");
         }
       }
 
-      clausesToAnd.add(createSearchClause(searchCriteria, searchTerm));
+      andClauses.add(createSearchClause(searchCriteria, searchTerm));
 
       if (searchCriteria != null) {
         // exclude system forms from results if need be, otherwise ignore
         if (!searchCriteria.isIncludeSystemForm()) {
-          clausesToAnd.add(" t.systemForm=false ");
+          andClauses.add(" form.systemForm=false ");
         }
       }
 
-      if (cbp.getActions().contains(requestedAction)
-          && cbp.getDomain().equals(PermissionDomain.FORM)) {
+      if (constraintBasedPermission.getActions().contains(requestedAction)
+          && constraintBasedPermission.getDomain().equals(PermissionDomain.FORM)) {
         actionMatch = true;
-        if (cbp.getIdConstraint() != null) {
-          String idConstraints = join(cbp.getIdConstraint().getId(), false);
-          String sqlIdSub = " t.id in (" + idConstraints + ")";
-          clausesToAnd.add(sqlIdSub);
+        if (constraintBasedPermission.getIdConstraint() != null) {
+          String idConstraints = join(constraintBasedPermission.getIdConstraint().getId(), false);
+          String sqlIdSub = " form.id in (" + idConstraints + ")";
+          andClauses.add(sqlIdSub);
         }
-        for (String propName : cbp.getPropertyConstraints().keySet()) {
-          PropertyConstraint pc = cbp.getPropertyConstraints().get(propName);
+        for (String propName : constraintBasedPermission.getPropertyConstraints().keySet()) {
+          PropertyConstraint pc = constraintBasedPermission.getPropertyConstraints().get(propName);
           if (pc.getName().equals("global")) {
             if (requestedAction.equals(PermissionType.READ)) {
-              String access1 = " t.worldPermissionType in (" + join(RW, true) + ")";
-              clausesToAnd.add(access1);
+              String access1 = " form.worldPermissionType in (" + join(RW, true) + ")";
+              andClauses.add(access1);
             } else if (requestedAction.equals(PermissionType.WRITE)) {
-              String access1 = " t.worldPermissionType = " + requestedAction;
-              clausesToAnd.add(access1);
+              String access1 = " form.worldPermissionType = " + requestedAction;
+              andClauses.add(access1);
             }
           } else if (pc.getName().equals("group")) {
             if (requestedAction.equals(PermissionType.READ)) {
-              String access1 = " t.groupPermissionType in (" + join(RW, true) + ")";
-              clausesToAnd.add(access1);
+              String access1 = " form.groupPermissionType in (" + join(RW, true) + ")";
+              andClauses.add(access1);
             } else if (requestedAction.equals(PermissionType.WRITE)) {
-              String access1 = " t.groupPermissionType = " + requestedAction;
-              clausesToAnd.add(access1);
+              String access1 = " form.groupPermissionType = " + requestedAction;
+              andClauses.add(access1);
             }
           } else if (pc.getName().equals("owner")) {
             if (requestedAction.equals(PermissionType.READ)) {
-              String access1 = " t.ownerPermissionType in (" + join(RW, true) + ")";
-              clausesToAnd.add(access1);
+              String access1 = " form.ownerPermissionType in (" + join(RW, true) + ")";
+              andClauses.add(access1);
             } else if (requestedAction.equals(PermissionType.WRITE)) {
-              String access1 = " t.ownerPermissionType = " + requestedAction;
-              clausesToAnd.add(access1);
+              String access1 = " form.ownerPermissionType = " + requestedAction;
+              andClauses.add(access1);
             }
 
             String ownerRestriction = null;
@@ -206,63 +181,66 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
               ownerRestriction = pc.getValue();
             }
             if (ownerRestriction != null) {
-              clausesToAnd.add(" owner.username= " + "'" + ownerRestriction + "'");
+              andClauses.add(" owner.username= " + "'" + ownerRestriction + "'");
             }
           } else if (isEditInfoProperty(pc.getName())) {
-            clausesToAnd.add(" t." + pc.getName() + "=" + "'" + pc.getValue() + "'");
+            andClauses.add(" form." + pc.getName() + "=" + "'" + pc.getValue() + "'");
           }
         }
-        if (cbp.getGroupConstraint() != null) {
-          GroupConstraint gc = cbp.getGroupConstraint();
+        if (constraintBasedPermission.getGroupConstraint() != null) {
+          GroupConstraint gc = constraintBasedPermission.getGroupConstraint();
           String grpName = gc.getGroupName();
-          clausesToAnd.add("grp.uniqueName=" + "'" + grpName + "'");
+          andClauses.add("grp.uniqueName=" + "'" + grpName + "'");
         }
       } else { // end if perm match
         continue;
       }
 
-      StringBuffer sel = new StringBuffer(" select distinct t.id");
+      StringBuilder baseQuery = new StringBuilder(" select distinct form.id");
       // for compatibility with older MySQL
       if (isSortOrderSet(pagCriteria)) {
-        sel.append(", t." + pagCriteria.getOrderBy() + " ");
+        baseQuery
+            .append(pagCriteria.getOrderBy().equals("owner.username") ? ", " : ", form.")
+            .append(pagCriteria.getOrderBy())
+            .append(" ");
       }
-      sel.append(
-          " from RSForm t left join User owner on t.owner_id=owner.id"
+      baseQuery.append(
+          " from RSForm form left join User owner on form.owner_id=owner.id"
               + " left join UserGroup up on up.user_id=owner.id"
               + " left join rsGroup grp on grp.id=up.group_id");
       if (searchCriteria != null && searchCriteria.isInUserMenu()) {
-        sel.append(" inner join FormUserMenu menu on t.stableId=menu.formStableId");
+        baseQuery.append(" inner join FormUserMenu menu on form.stableId=menu.formStableId");
       }
-      if (clausesToAnd.size() > 0) {
-        sel.append(" where ");
+      if (!andClauses.isEmpty()) {
+        baseQuery.append(" where ");
       }
 
-      Iterator<String> it = clausesToAnd.iterator();
+      Iterator<String> it = andClauses.iterator();
       while (it.hasNext()) {
         String next = it.next();
         if (StringUtils.isBlank(next)) {
           continue;
         }
-        sel.append(next);
+        baseQuery.append(next);
         if (it.hasNext()) {
-          sel.append(" and ");
+          baseQuery.append(" and ");
         }
       }
       // remove any trailing 'and'
-      if (sel.lastIndexOf(" and ") == sel.length() - 5) {
-        sel.replace(sel.length() - 5, sel.length(), "");
+      if (baseQuery.lastIndexOf(" and ") == baseQuery.length() - 5) {
+        baseQuery.replace(baseQuery.length() - 5, baseQuery.length(), "");
       }
-      clausesToOr.add(sel.toString());
+      clausesToOr.add(baseQuery.toString());
     } // end permission loop
 
     if (!actionMatch) {
-      return new SearchResultsImpl<RSForm>(Collections.<RSForm>emptyList(), 0, 0L);
+      return new SearchResultsImpl<>(Collections.emptyList(), 0, 0L);
     }
 
     Session session = sessionFactory.getCurrentSession();
-    String allQuery = "";
+    String allQuery;
 
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     Iterator<String> unions = clausesToOr.iterator();
     while (unions.hasNext()) {
       sb.append(unions.next());
@@ -271,7 +249,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       }
     }
     if (pagCriteria != null && pagCriteria.getOrderBy() != null) {
-      sb.append(" order by " + pagCriteria.getOrderBy() + " ");
+      sb.append(" order by ").append(pagCriteria.getOrderBy()).append(" ");
       if (pagCriteria.getSortOrder() != null) {
         sb.append(pagCriteria.getSortOrder());
       }
@@ -295,14 +273,14 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       query.setMaxResults(pagCriteria.getResultsPerPage());
     }
 
-    Long end = System.currentTimeMillis();
+    long end = System.currentTimeMillis();
     log.info("time taken for form permission queries is: {}", (end - start));
 
     List<RSForm> forms = new ArrayList<>();
     if (!isSortOrderSet(pagCriteria)) {
       // there is only a single result column
       List<BigInteger> ids = query.list(); // preserve order
-      for (BigInteger id : ids) { // for debug puprose
+      for (BigInteger id : ids) { // for debug purpose
         RSForm fmx = get(id.longValue());
         forms.add(fmx);
       }
@@ -316,14 +294,11 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       }
     }
 
-    ISearchResults<RSForm> rc =
-        new SearchResultsImpl<RSForm>(forms, pagCriteria, count.longValue());
-
-    return rc;
+    return new SearchResultsImpl<>(forms, pagCriteria, count.longValue());
   }
 
   private static final String NAME_TAG_WC_SEARCH =
-      " t.name like :searchTerm or t.tmpTag like :searchTerm";
+      " form.name like :searchTerm or form.tmpTag like :searchTerm";
 
   // RSPAC-1749
   private String createSearchClause(FormSearchCriteria searchCriteria, String searchTerm) {
@@ -332,7 +307,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       sb.append("(").append(NAME_TAG_WC_SEARCH);
       if (!searchCriteria.isUserFormsOnly()) {
         // case 3
-        sb.append(" or t.createdBy like :searchTerm");
+        sb.append(" or owner.username like :searchTerm");
       }
       // else case 1
       sb.append(")");
@@ -350,7 +325,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   private String join(Collection<?> ids, boolean quote) {
     Collection<?> collectionToJoin;
     if (quote) {
-      Set<String> quoted = new LinkedHashSet<String>();
+      Set<String> quoted = new LinkedHashSet<>();
       for (Object id : ids) {
         quoted.add("'" + id + "'");
       }
@@ -393,14 +368,14 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return rc.isEmpty() ? null : rc.get(0);
   }
 
-  public RSForm getMostRecentVersionForForm(String stableid) {
+  public RSForm getMostRecentVersionForForm(String stableId) {
     Query<RSForm> q =
         getSession()
             .createQuery(
                 "from RSForm form where form.stableID=:id "
                     + "and form.publishingState='PUBLISHED' order by form.version desc",
                 RSForm.class)
-            .setParameter("id", stableid)
+            .setParameter("id", stableId)
             .setMaxResults(1);
     return getFirstResultOrNull(q);
   }
@@ -421,7 +396,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   @Override
   public RSForm getBasicDocumentForm() {
     Optional<RSForm> rc = getCurrentSystemFormByName(RecordFactory.BASIC_DOCUMENT_FORM_NAME);
-    return rc.map(form -> form).orElse(null);
+    return rc.orElse(null);
   }
 
   @Override
@@ -468,7 +443,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   private RSForm getOldestRsForm(Query<RSForm> q, String name) {
     List<RSForm> rc = q.list();
     if (rc.isEmpty()) {
-      log.info("No matching current form of name " + name);
+      log.info("No matching current form of name {}", name);
       return null;
     }
     RSForm oldest = rc.get(0);
@@ -500,5 +475,29 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
           .setParameterList("formIds", formIds)
           .uniqueResult();
     }
+  }
+
+  @Override
+  public void transferOwnershipOfForms(User originalOwner, User newOwner, List<Long> ids) {
+    Query<?> query =
+        getSession()
+            .createQuery(
+                "UPDATE RSForm SET owner=:newOwner, editInfo.createdBy=:createdByWithDeleted WHERE"
+                    + " id IN :ids")
+            .setParameter("newOwner", newOwner)
+            .setParameter("ids", ids)
+            .setParameter("createdByWithDeleted", originalOwner.getUsername() + "(Deleted)");
+    query.executeUpdate();
+  }
+
+  @Override
+  public List<RSForm> getFormsUsedByOtherUsers(User formOwner) {
+    return getSession()
+        .createQuery(
+            "select distinct form from StructuredDocument sd where sd.form.id in "
+                + "(select id from RSForm form where form.owner=:owner) and sd.owner!=:owner",
+            RSForm.class)
+        .setParameter("owner", formOwner)
+        .list();
   }
 }

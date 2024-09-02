@@ -29,6 +29,7 @@ type FetchedUser = {|
   fileUsage: number,
   lastLogin: number,
   creationDate: number,
+  hasFormsUsedByOtherUsers: boolean,
 |};
 
 type FetchedData = {|
@@ -90,6 +91,7 @@ export type User = {|
   disable: () => Promise<void>,
   delete: () => Promise<void>,
   setAlias: (string) => Promise<void>,
+  hasFormsUsedByOtherUsers: boolean,
 |};
 
 export type UserListing = {|
@@ -389,6 +391,8 @@ export function useUserListing(): {|
         groups: fetchedUser.userInfo.groupNames,
         tags: fetchedUser.userInfo.tags,
         usernameAlias: fetchedUser.userInfo.usernameAlias,
+        hasFormsUsedByOtherUsers: fetchedUser.hasFormsUsedByOtherUsers,
+
 
         // operations on a single user
         grantPiRole,
