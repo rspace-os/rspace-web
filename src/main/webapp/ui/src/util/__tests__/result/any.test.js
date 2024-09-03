@@ -31,7 +31,7 @@ describe("any", () => {
     );
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
-      expect(errors.map((e) => e.message)).toEqual(["foo", "bar"]);
+      expect(errors.map((e) => e.message)).toEqual(["bar", "foo"]);
     });
   });
   test("Mix of OK and Error, should return OK value.", () => {
