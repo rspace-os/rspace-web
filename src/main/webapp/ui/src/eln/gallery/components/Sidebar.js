@@ -466,7 +466,13 @@ const Sidebar = ({
       setSelectedIndicatorOffset(
         sectionRefs.current[selectedSection].offsetTop
       );
-  }, [selectedSection]);
+    /*
+     * On mobile, the sectionRefs are not immediately initialised as the
+     * sidebar is closed. By re-executing this effect when the IMAGES
+     * sectionRef has been initialised we know that all of the sectionRefs
+     * have been initialised and can calculate the selection indicator offset
+     */
+  }, [selectedSection, sectionRefs.current[GALLERY_SECTION.IMAGES]]);
 
   React.useEffect(() => {
     autorun(() => {
@@ -484,6 +490,14 @@ const Sidebar = ({
       open={drawerOpen}
       anchor="left"
       variant={viewport.isViewportSmall ? "temporary" : "permanent"}
+      /*
+       * We want the sidebar to always been in the DOM, even on mobile when it
+       * is closed, so that we can calculate the selected indicator offset
+       * based on the sectionRefs. If they're not in the DOM we don't know how
+       * tall each menu item is, where the indicator should be, and thus it
+       * wont be in the correct place when the user goes to open the menu.
+       */
+      keepMounted
       onClose={() => {
         if (viewport.isViewportSmall) setDrawerOpen(false);
       }}
