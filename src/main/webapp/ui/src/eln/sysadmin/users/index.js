@@ -728,18 +728,21 @@ const DeleteAction = ({
               <DialogContent>
                 <DialogContentText variant="body2" sx={{ mb: 2 }}>
                   <Typography variant="body2" sx={{ mb: 1 }}>
-                    User deletion is irreversible, and all documents will be deleted.
+                    User deletion is irreversible, and all documents will be
+                    deleted.
                   </Typography>
-                  {user.hasFormsUsedByOtherUsers &&
+                  {user.hasFormsUsedByOtherUsers && (
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      The user you are trying to delete is <strong>the owner of Forms
-                      that are used by other users.</strong>
+                      The user you are trying to delete is{" "}
+                      <strong>
+                        the owner of Forms that are used by other users.
+                      </strong>
                       To ensure continued access to these Forms, the system
                       <strong> will transfer ownership</strong> of the Forms to
                       <strong> this System Administrator</strong> account. Forms
                       that are not used by others will be deleted.
                     </Typography>
-                  }
+                  )}
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     An XML archive will be made of the user&apos;s work which
                     will be available for a short time on the server.
@@ -776,8 +779,11 @@ const DeleteAction = ({
                   type="submit"
                   loading={false}
                   disabled={false}
-                  label={user.hasFormsUsedByOtherUsers ?
-                      "Transfer Forms And Delete" : "Delete"}
+                  label={
+                    user.hasFormsUsedByOtherUsers
+                      ? "Transfer Forms And Delete"
+                      : "Delete"
+                  }
                 />
               </DialogActions>
             </form>
@@ -1437,16 +1443,18 @@ export const UsersPage = (): Node => {
     $ReadOnlyArray<UserId>
   >([]);
   const [sortModel, setSortModel] = React.useState<
-    $ReadOnlyArray<{| field: | "username"
-      | "usage"
-      | "documents"
-      | "lastLogin"
-      | "created"
-      | "name"
-      | "firstName"
-      | "lastName"
-      | "email"
-    , sort: "asc" | "desc" |}>
+    $ReadOnlyArray<{|
+      field: | "username"
+        | "usage"
+        | "documents"
+        | "lastLogin"
+        | "created"
+        | "name"
+        | "firstName"
+        | "lastName"
+        | "email",
+      sort: "asc" | "desc",
+    |}>
   >([]);
   const [groupsAnchorEl, setGroupsAnchorEl] = React.useState(null);
   const [groupsList, setGroupsList] = React.useState<Array<string>>([]);
