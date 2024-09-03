@@ -6,6 +6,10 @@
  * each and every component.
  */
 
+type styleSystem = {|
+  sx?: {[string]: string | number }
+|};
+
 declare module "@mui/styled-engine/StyledEngineProvider" {
   import type { ComponentType, Node } from "react";
 
@@ -47,7 +51,7 @@ declare module "@mui/x-data-grid" {
   declare export type Column<Row> = {|
     headerName: string,
     field: string,
-    valueGetter?: (params: { row: Row, ... }) => mixed,
+    valueGetter?: (mixed) => mixed,
     renderCell?: (params: {
       row: Row,
       value: mixed,
@@ -63,7 +67,18 @@ declare module "@mui/x-data-grid" {
     headerClassName?: string,
     disableExport?: boolean,
     display?: "text" | "flex",
+    resizable?: boolean,
   |};
+
+  declare export type ApiRef = {|
+    current: null | {|
+      autosizeColumns: ({|
+        includeHeaders: boolean,
+        includeOutliers: boolean
+      |}) => void,
+    |}
+  |};
+  declare export function useGridApiRef(): ApiRef;
 
   declare export function DataGrid<
     Row,
@@ -80,6 +95,7 @@ declare module "@mui/x-data-grid" {
         columnVisibilityModel?: { [ColumnNames]: boolean },
       |},
     |},
+    apiRef?: ApiRef,
     disableColumnFilter?: boolean,
     density?: "compact" | "standard" | "comfortable",
     getRowId?: (Row) => Id,
@@ -110,7 +126,7 @@ declare module "@mui/x-data-grid" {
     autoHeight?: boolean,
     loading?: boolean,
     checkboxSelection?: boolean,
-    componentsProps?: {|
+    slotProps?: {|
       toolbar?: ToolbarProps,
       panel?: { ... },
     |},
@@ -122,6 +138,7 @@ declare module "@mui/x-data-grid" {
   |}): Node;
 
   declare export function GridToolbarContainer({|
+    ...styleSystem,
     children: Node,
   |}): Node;
 

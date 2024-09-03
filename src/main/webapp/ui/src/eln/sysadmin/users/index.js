@@ -1234,7 +1234,7 @@ const Toolbar = ({
   };
 
   return (
-    <GridToolbarContainer>
+    <GridToolbarContainer sx={{ width: "100%" }}>
       <SearchBox userListing={userListing} />
       <Badge badgeContent={tagsChecked ? tags.length : null} color="primary">
         <Button
@@ -1445,8 +1445,8 @@ export const UsersPage = (): Node => {
   const [sortModel, setSortModel] = React.useState<
     $ReadOnlyArray<{|
       field: | "username"
-        | "usage"
-        | "documents"
+        | "fileUsage"
+        | "recordCount"
         | "lastLogin"
         | "created"
         | "name"
@@ -1466,7 +1466,7 @@ export const UsersPage = (): Node => {
   const columns = [
     DataGridColumn.newColumnWithValueGetter(
       "fullName",
-      (params: { row: User, ... }) => params.row.fullName,
+      (fullName) => fullName,
       {
         headerName: "Full Name",
         flex: 1,
@@ -1501,10 +1501,10 @@ export const UsersPage = (): Node => {
       headerName: "Email",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueGetter(
+    DataGridColumn.newColumnWithValueGetter<User, _>(
       "role",
-      (params: { row: User, ... }) => {
-        const roles = params.row.role.split(",");
+      (role) => {
+        const roles = role.split(",");
         const labels = [];
         if (roles.includes("ROLE_ADMIN")) labels.push("Admin");
         if (roles.includes("ROLE_PI")) labels.push("PI");
@@ -1522,17 +1522,17 @@ export const UsersPage = (): Node => {
       headerName: "Username",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueGetter(
-      "documents",
-      (params: { row: User, ... }) => `${params.row.recordCount}`,
+    DataGridColumn.newColumnWithValueGetter<User, _>(
+      "recordCount",
+      (recordCount) => `${recordCount}`,
       {
         headerName: "Documents",
         flex: 1,
       }
     ),
-    DataGridColumn.newColumnWithValueGetter(
-      "usage",
-      (params: { row: User, ... }) => formatFileSize(params.row.fileUsage),
+    DataGridColumn.newColumnWithValueGetter<User, _>(
+      "fileUsage",
+      (fileUsage) => formatFileSize(fileUsage),
       {
         headerName: "Usage",
         flex: 1,
@@ -1541,21 +1541,20 @@ export const UsersPage = (): Node => {
     DataGridColumn.newColumnWithFieldName<User, _>("lastLogin", {
       headerName: "Last Login",
       flex: 1,
-      valueFormatter: (params: { value: Optional<Date>, ... }) =>
-        params.value.map((l) => l.toLocaleString()).orElse("—"),
+      valueFormatter: (value: Optional<Date>) =>
+        value.map((l) => l.toLocaleString()).orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<User, _>("created", {
       headerName: "Creation Date",
       flex: 1,
-      valueFormatter: (params: { value: Optional<Date>, ... }) =>
-        params.value.map((l) => l.toLocaleString()).orElse("—"),
+      valueFormatter: (value: Optional<Date>) =>
+        value.map((l) => l.toLocaleString()).orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<User, _>("enabled", {
       headerName: "Enabled",
       flex: 1,
       sortable: false,
-      valueFormatter: (params: { value: boolean, ... }) =>
-        params.value ? "true" : "false",
+      valueFormatter: (value: boolean) => (value ? "true" : "false"),
       renderCell: (params: { value: boolean, ... }) =>
         params.value ? (
           <TickIcon color="success" aria-label="Enabled" aria-hidden="false" />
@@ -1567,8 +1566,7 @@ export const UsersPage = (): Node => {
       headerName: "Locked",
       flex: 1,
       sortable: false,
-      valueFormatter: (params: { value: boolean, ... }) =>
-        params.value ? "true" : "false",
+      valueFormatter: (value: boolean) => (value ? "true" : "false"),
       renderCell: (params: { value: boolean, ... }) =>
         params.value ? (
           <LockIcon color="error" aria-label="Locked" aria-hidden="false" />
@@ -1580,8 +1578,7 @@ export const UsersPage = (): Node => {
       headerName: "Group Membership",
       flex: 1,
       sortable: false,
-      valueFormatter: (params: { value: Array<string>, ... }) =>
-        params.value.join(", "),
+      valueFormatter: (value: Array<string>) => value.join(", "),
       renderCell: (params: { value: Array<string>, tabIndex: number, ... }) => {
         if (params.value.length === 0) return <>&mdash;</>;
         return (
@@ -1616,8 +1613,7 @@ export const UsersPage = (): Node => {
       headerName: "Tags",
       flex: 1,
       sortable: false,
-      valueFormatter: (params: { value: Array<string>, ... }) =>
-        params.value.join(", "),
+      valueFormatter: (value: Array<string>) => value.join(", "),
       renderCell: (params: { value: Array<string>, tabIndex: number, ... }) => {
         if (params.value.length === 0) return <>&mdash;</>;
         return (
@@ -1801,7 +1797,7 @@ export const UsersPage = (): Node => {
                         columns: {
                           columnVisibilityModel: {
                             email: false,
-                            documents: false,
+                            recordCount: false,
                             created: false,
                             firstName: false,
                             lastName: false,
@@ -1891,8 +1887,8 @@ export const UsersPage = (): Node => {
                             void listing.setOrdering(
                               {
                                 username: "username",
-                                usage: "fileUsage()",
-                                documents: "recordCount()",
+                                fileUsage: "fileUsage()",
+                                recordCount: "recordCount()",
                                 lastLogin: "lastLogin",
                                 created: "creationDate",
                                 name: "lastName",
@@ -1908,7 +1904,7 @@ export const UsersPage = (): Node => {
                       slots={{
                         toolbar: Toolbar,
                       }}
-                      componentsProps={{
+                      slotProps={{
                         toolbar: {
                           userListing,
                           setColumnsMenuAnchorEl,

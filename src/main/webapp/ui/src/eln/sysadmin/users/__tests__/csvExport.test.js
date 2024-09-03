@@ -147,6 +147,7 @@ describe("CSV Export", () => {
           if (name === "Select all rows") return false;
           if (name === "Select row") return false;
           if (name === "Checkbox selection") return false;
+          if (name === "Show/Hide All") return false;
           if (name === "Full Name") return false; // First name and last name are included separately
           return true;
         },
