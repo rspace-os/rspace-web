@@ -1,5 +1,19 @@
 //@flow
 
+/*
+ * ====  A POINT ABOUT THE IMPORTS  ===========================================
+ *
+ *  This class is used, amongst other places, on the IdentifierPublicPage[1]
+ *  where the user may not be authenticated. As such, this module, and any
+ *  module that is imported, MUST NOT import anything from the global Inventory
+ *  stores (i.e. from ../stores/*). If it does, then the page will be rendered
+ *  as a blank screen and there will be an unhelpful error message on the
+ *  browser's console saying that webpack export could not be initialised.
+ *
+ *  [1]: ../../components/PublicPage/IdentifierPublicPage.js
+ *
+ * ============================================================================
+ */
 import { observable, computed, action, makeObservable } from "mobx";
 import {
   type GeoLocationAttrs,
@@ -8,13 +22,6 @@ import {
   type GeoLocationPolygon,
   type PolygonPoint,
 } from "../definitions/GeoLocation";
-
-/**
- * GeoLocation validation.
- * "error" state and helperText to be displayed when:
- * some values for a GL element are given (incomplete), and that value empty.
- * incomplete status is not empty, and empty may be acceptable (for Place)
- */
 
 export const pointComplete = (point: PolygonPoint): boolean => {
   return Object.values(point).every((v) => v !== "");
@@ -122,10 +129,11 @@ export default class GeoLocationModel implements GeoLocation {
     this.geoLocationBox = attrs.geoLocationBox;
 
     /*
-     * Polygons are a series of points, where the first and last point are the same.
-     * Rather than have all code which mutates these points synchronise the two ends,
-     * we have them point to the same object in memory. The validation is just to
-     * ensure we're not erasing data before doing so.
+     * Polygons are a series of points, where the first and last point are the
+     * same; GeoLocationPolygonModel ensures that this invariant is maintained.
+     * The validation is just to ensure we're not erasing data before doing so,
+     * because mutations of the first or last points inside the
+     * GeoLocationPolygonModel will over write the other.
      */
     const lastIndex = attrs.geoLocationPolygon.length - 1;
     if (
@@ -134,13 +142,11 @@ export default class GeoLocationModel implements GeoLocation {
       attrs.geoLocationPolygon[0].polygonPoint.pointLongitude ===
         attrs.geoLocationPolygon[lastIndex].polygonPoint.pointLongitude
     ) {
-      //TODO remove the last one
       this.geoLocationPolygon = new GeoLocationPolygonModel(
         attrs.geoLocationPolygon.map(({ polygonPoint }) => ({
           polygonPoint: observable(polygonPoint),
         }))
       );
-      // this.geoLocationPolygon[lastIndex] = this.geoLocationPolygon[0];
     } else {
       throw new Error(
         "Polygon data is invalid: the first and last points are not the same."
