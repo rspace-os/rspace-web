@@ -26,9 +26,9 @@ const UiPreferencesContext: Context<UiPreferencesContextType> = React.createCont
   DEFAULT_UI_PREFERENCES_CONTEXT
 );
 
-function fetchPreferences(): Promise<{ ... }> {
+function fetchPreferences(): Promise<UiPreferencesContextType | ""> {
   return axios
-    .get<UiPreferencesContextType>("/userform/ajax/preference?preference=UI_JSON_SETTINGS")
+    .get<UiPreferencesContextType | "">("/userform/ajax/preference?preference=UI_JSON_SETTINGS")
     .then(({ data }) => data);
 }
 
@@ -109,7 +109,7 @@ export default function useUiPreference<T>(
         formData.append(
           "value",
           JSON.stringify({
-            ...preferences,
+            ...(typeof preferences === "object" ? preferences : {}),
             [key]: {
               value: newValue,
               // we save the time so that we have the option of implementing an
