@@ -6,6 +6,10 @@
  * each and every component.
  */
 
+type styleSystem = {|
+  sx?: {[string]: string | number }
+|};
+
 declare module "@mui/styled-engine/StyledEngineProvider" {
   import type { ComponentType, Node } from "react";
 
@@ -134,6 +138,7 @@ declare module "@mui/x-data-grid" {
   |}): Node;
 
   declare export function GridToolbarContainer({|
+    ...styleSystem,
     children: Node,
   |}): Node;
 

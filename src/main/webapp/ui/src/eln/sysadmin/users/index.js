@@ -1234,7 +1234,7 @@ const Toolbar = ({
   };
 
   return (
-    <GridToolbarContainer>
+    <GridToolbarContainer sx={{ width: "100%" }}>
       <SearchBox userListing={userListing} />
       <Badge badgeContent={tagsChecked ? tags.length : null} color="primary">
         <Button
