@@ -568,7 +568,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                     />
                   ),
                   hideable: false,
-                  width: 60,
+                  width: 70,
                   flex: 0,
                   disableColumnMenu: true,
                   sortable: false,
@@ -588,20 +588,18 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithValueGetter(
+                DataGridColumn.newColumnWithValueGetter<PlanSummary, _>(
                   "createdAt",
-                  (params: { row: PlanSummary, ... }) =>
-                    new Date(params.row.createdAt).toLocaleString(),
+                  (createdAt) => new Date(createdAt).toLocaleString(),
                   {
                     headerName: "Created At",
                     flex: 1,
                     sortable: false,
                   }
                 ),
-                DataGridColumn.newColumnWithValueGetter(
+                DataGridColumn.newColumnWithValueGetter<PlanSummary, _>(
                   "modifiedAt",
-                  (params: { row: PlanSummary, ... }) =>
-                    new Date(params.row.modifiedAt).toLocaleString(),
+                  (modifiedAt) => new Date(modifiedAt).toLocaleString(),
                   {
                     headerName: "Modified At",
                     flex: 1,

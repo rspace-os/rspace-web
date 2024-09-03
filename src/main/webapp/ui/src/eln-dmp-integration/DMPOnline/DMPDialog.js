@@ -39,6 +39,7 @@ import ValidatingSubmitButton, {
   IsValid,
   IsInvalid,
 } from "../../components/ValidatingSubmitButton";
+import { DataGridColumn } from "../../util/table";
 
 const COLOR = {
   main: {
@@ -128,16 +129,15 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
         />
       ),
       hideable: false,
-      width: 60,
+      width: 70,
       flex: 0,
       disableColumnMenu: true,
     },
-    {
-      field: "title",
+    // $FlowExpectedError[class-object-subtyping]
+    DataGridColumn.newColumnWithFieldName<DmpSummary, _>("title", {
       headerName: "Title",
       hideable: false,
-      valueGetter: (params: { row: DmpSummary, ... }) => params.row.title,
-    },
+    }),
     {
       field: "contact name",
       headerName: "Contact Name",
@@ -152,16 +152,14 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
           <NoValue label="Not Specified" />
         ),
     },
-    {
-      field: "created",
+    // $FlowExpectedError[class-object-subtyping]
+    DataGridColumn.newColumnWithFieldName<DmpSummary, _>("created", {
       headerName: "Created",
-      valueGetter: (params: { row: DmpSummary, ... }) => params.row.created,
-    },
-    {
-      field: "modified",
+    }),
+    // $FlowExpectedError[class-object-subtyping]
+    DataGridColumn.newColumnWithFieldName<DmpSummary, _>("modified", {
       headerName: "Modified",
-      valueGetter: (params: { row: DmpSummary, ... }) => params.row.modified,
-    },
+    }),
   ].map((colDefinition) => ({
     sortable: false,
     flex: 1,

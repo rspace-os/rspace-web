@@ -108,7 +108,10 @@ async function findTableCell(
   const indexOfColumnHeading = getIndexOfTableCell(headingRow, columnHeading);
 
   const chosenRow = within(table).getAllByRole("row")[rowIndex + 1];
-  return within(chosenRow).getAllByRole("cell")[indexOfColumnHeading];
+
+  let cells = within(chosenRow).queryAllByRole("cell");
+  if (cells.length === 0) cells = within(chosenRow).queryAllByRole("gridcell");
+  return cells[indexOfColumnHeading];
 }
 
 const allQueries = { ...queries, findTableCell, getIndexOfTableCell };
