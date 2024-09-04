@@ -5,6 +5,19 @@ import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
+import { match } from "../../../util/Util";
+import theme from "../../../theme";
+
+export function useIsSingleColumnLayout(): boolean {
+  const { uiStore } = useStores();
+  const viewportSize = match<number, symbol>(
+    ["xl", "lg", "md", "sm", "xs"].map((bp) => [
+      (width) => width > theme.breakpoints.values[bp],
+      bp,
+    ])
+  )(window.innerWidth);
+  return ["xs", "sm"].includes(viewportSize) || uiStore.userHiddenRightPanel;
+}
 
 const useStyles = makeStyles()((theme) => ({
   paper: {
@@ -57,18 +70,18 @@ type Layout2x1Args = {|
  */
 function Layout2x1(props: Layout2x1Args): Node {
   const { uiStore } = useStores();
-  const hideLeftPanel =
-    uiStore.isSingleColumnLayout && uiStore.visiblePanel !== "left";
+  const isSingleColumnLayout = useIsSingleColumnLayout();
+  const hideLeftPanel = isSingleColumnLayout && uiStore.visiblePanel !== "left";
   const hideRightPanel =
-    uiStore.isSingleColumnLayout && uiStore.visiblePanel !== "right";
+    isSingleColumnLayout && uiStore.visiblePanel !== "right";
   const { classes } = useStyles({ hideLeftPanel, hideRightPanel });
 
   return (
     <Grid
       container
-      spacing={uiStore.isSingleColumnLayout ? 0 : 1}
+      spacing={isSingleColumnLayout ? 0 : 1}
       className={
-        uiStore.isSingleColumnLayout
+        isSingleColumnLayout
           ? classes.paper
           : props.isDialog
           ? classes.dialogWrapper
@@ -78,18 +91,16 @@ function Layout2x1(props: Layout2x1Args): Node {
       <Grid
         hidden={hideLeftPanel}
         item
-        xs={uiStore.isSingleColumnLayout ? 12 : 5}
+        xs={isSingleColumnLayout ? 12 : 5}
         className={
-          uiStore.isSingleColumnLayout
-            ? classes.leftPanelMobile
-            : classes.leftPanel
+          isSingleColumnLayout ? classes.leftPanelMobile : classes.leftPanel
         }
       >
         {props.colLeft}
       </Grid>
       <Grid
         item
-        xs={uiStore.isSingleColumnLayout ? 12 : 7}
+        xs={isSingleColumnLayout ? 12 : 7}
         className={classes.rightPanel}
         hidden={hideRightPanel}
       >
