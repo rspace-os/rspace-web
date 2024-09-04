@@ -8,6 +8,7 @@ import useStores from "../../../stores/use-stores";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import useViewportDimensions from "../../../util/useViewportDimensions";
+import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
 
 /**
  * The main Inventory UI is divided into two column on large viewports and a
@@ -173,7 +174,10 @@ const Layout2x1 = observer((props: Layout2x1Args) => {
 });
 
 export default function Layout2x1Wrapper(props: Layout2x1Args): Node {
-  const [userHiddenRightPanel, setUserHiddenRightPanel] = React.useState(false);
+  const [userHiddenRightPanel, setUserHiddenRightPanel] = useUiPreference(
+    PREFERENCES.INVENTORY_HIDDEN_RIGHT_PANEL,
+    { defaultValue: false }
+  );
   return (
     <UserHiddenRightPanelContext.Provider
       value={{ userHiddenRightPanel, setUserHiddenRightPanel }}
