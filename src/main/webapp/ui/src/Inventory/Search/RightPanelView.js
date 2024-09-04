@@ -23,6 +23,7 @@ import { type RecordType } from "../../stores/definitions/InventoryRecord";
 import { type Theme } from "../../theme";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
+import { UserCancelledAction } from "../../util/error";
 
 const border = (
   theme: Theme,
@@ -82,7 +83,26 @@ const BorderContainer = withStyles<
 );
 
 function RightPanelView(): Node {
-  const { searchStore } = useStores();
+  const { searchStore, uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
+
+  React.useEffect(() => {
+    void (async () => {
+      if (
+        !searchStore.activeResult &&
+        Boolean(searchStore.search.filteredResults.length) &&
+        !isSingleColumnLayout
+      ) {
+        try {
+          await searchStore.search.setActiveResult();
+          uiStore.setVisiblePanel("right");
+        } catch (e) {
+          if (e instanceof UserCancelledAction) return;
+          throw e;
+        }
+      }
+    })();
+  }, [searchStore.search.filteredResults]);
 
   const noActiveResult = () => {
     const search = searchStore.search;

@@ -60,13 +60,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
         );
       }
 
-      if (
-        (!searchStore.activeResult &&
-          Boolean(search.filteredResults.length) &&
-          !uiStore.isVerySmall &&
-          !uiStore.isSmall) ||
-        paramsOverride?.permalink
-      ) {
+      if (paramsOverride?.permalink) {
         try {
           await search.setActiveResult();
           uiStore.setVisiblePanel("right");
