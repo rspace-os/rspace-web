@@ -7,6 +7,7 @@ import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import useViewportDimensions from "../../../util/useViewportDimensions";
 
 const UserHiddenRightPanelContext = React.createContext<{|
   userHiddenRightPanel: boolean,
@@ -14,11 +15,15 @@ const UserHiddenRightPanelContext = React.createContext<{|
 |}>({ userHiddenRightPanel: false, setUserHiddenRightPanel: () => {} });
 
 export function useIsSingleColumnLayout(): boolean {
-  const { uiStore } = useStores();
+  const viewportDimensions = useViewportDimensions();
   const { userHiddenRightPanel } = React.useContext(
     UserHiddenRightPanelContext
   );
-  return uiStore.isSmall || uiStore.isVerySmall || userHiddenRightPanel;
+  return (
+    viewportDimensions.isViewportSmall ||
+    viewportDimensions.isViewportVerySmall ||
+    userHiddenRightPanel
+  );
 }
 
 export function RightPanelToggle(): Node {
