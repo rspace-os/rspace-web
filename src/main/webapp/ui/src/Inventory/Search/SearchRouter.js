@@ -10,7 +10,7 @@ import React, {
 import { Routes, Route } from "react-router";
 import useStores from "../../stores/use-stores";
 import { observer } from "mobx-react-lite";
-import Layout from "../components/Layout/Layout2x1";
+import Layout, { RightPanelToggle } from "../components/Layout/Layout2x1";
 import { makeStyles } from "tss-react/mui";
 import RightPanelView from "./RightPanelView";
 import Grid from "@mui/material/Grid";
@@ -34,8 +34,6 @@ import NavigateContext, {
 } from "../../stores/contexts/Navigate";
 import { mkAlert } from "../../stores/contexts/Alert";
 import { UserCancelledAction } from "../../util/error";
-import ExpandCollapseIcon from "../../components/ExpandCollapseIcon";
-import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
 import MainSearchNavigationContext from "./MainSearchNavigationContext";
 import { UiPreferences } from "../../util/useUiPreference";
 
@@ -52,9 +50,6 @@ const useStyles = makeStyles()((theme, { alwaysVisibleSidebar }) => ({
     display: "flex",
     flexDirection: "column",
     flexGrow: 1,
-  },
-  rightPanelHideToggle: {
-    border: "2px solid",
   },
 }));
 
@@ -220,33 +215,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
               <Grid item className={classes.searchbarWrapper}>
                 <Search
                   handleSearch={handleSearch}
-                  searchbarAdornment={
-                    !uiStore.isVerySmall &&
-                    !uiStore.isSmall && (
-                      <IconButtonWithTooltip
-                        onClick={() => {
-                          uiStore.setVisiblePanel("left");
-                          uiStore.setUserHiddenRightPanel(
-                            !uiStore.userHiddenRightPanel
-                          );
-                        }}
-                        sx={{ transform: "rotate(-90deg)" }}
-                        size="small"
-                        color="primary"
-                        icon={
-                          <ExpandCollapseIcon
-                            open={uiStore.userHiddenRightPanel}
-                          />
-                        }
-                        title={
-                          uiStore.userHiddenRightPanel
-                            ? "Show right panel"
-                            : "Hide right panel"
-                        }
-                        className={classes.rightPanelHideToggle}
-                      />
-                    )
-                  }
+                  searchbarAdornment={<RightPanelToggle />}
                 />
                 {showLeftBreadcrumbs && recordForBreadcrumbs && (
                   <Breadcrumbs

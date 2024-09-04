@@ -2,7 +2,7 @@
 
 import { action, observable, computed, makeObservable } from "mobx";
 import { isMobile } from "react-device-detect";
-import { mkAlert, type Alert } from "../contexts/Alert";
+import { type Alert } from "../contexts/Alert";
 import type { RootStore } from "./RootStore";
 import { match } from "../../util/Util";
 import theme from "../../theme";
@@ -47,7 +47,6 @@ export default class UiStore {
   viewportSize: $Values<typeof breakpoints>;
   dirty: boolean = false;
   discardChangesCallback: () => Promise<void>;
-  userHiddenRightPanel: boolean = false;
 
   /*
    * These properties keep a reference to the alert context that is used for
@@ -78,7 +77,6 @@ export default class UiStore {
       confirmationDialogProps: observable,
       viewportSize: observable,
       dirty: observable,
-      userHiddenRightPanel: observable,
       updateViewportSize: action,
       addAlert: observable,
       toggleSidebar: action,
@@ -138,7 +136,7 @@ export default class UiStore {
   }
 
   get isSingleColumnLayout(): boolean {
-    return isSingleColumnLayout(this.viewportSize) || this.userHiddenRightPanel;
+    return isSingleColumnLayout(this.viewportSize);
   }
 
   get isVerySmall(): boolean {
@@ -179,10 +177,6 @@ export default class UiStore {
       breakpoints.lg,
       breakpoints.xl,
     ].includes(this.viewportSize);
-  }
-
-  setUserHiddenRightPanel(value: boolean): void {
-    this.userHiddenRightPanel = value;
   }
 
   toggleSidebar(isOpen?: boolean = !this.sidebarOpen): void {

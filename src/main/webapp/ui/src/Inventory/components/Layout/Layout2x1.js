@@ -1,22 +1,46 @@
 //@flow
 
-import React, { type Node, type ComponentType } from "react";
+import React, { type Node } from "react";
 import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
-import { match } from "../../../util/Util";
-import theme from "../../../theme";
+import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+
+const UserHiddenRightPanelContext = React.createContext<{|
+  userHiddenRightPanel: boolean,
+  setUserHiddenRightPanel: (boolean) => void,
+|}>({ userHiddenRightPanel: false, setUserHiddenRightPanel: () => {} });
 
 export function useIsSingleColumnLayout(): boolean {
   const { uiStore } = useStores();
-  const viewportSize = match<number, symbol>(
-    ["xl", "lg", "md", "sm", "xs"].map((bp) => [
-      (width) => width > theme.breakpoints.values[bp],
-      bp,
-    ])
-  )(window.innerWidth);
-  return ["xs", "sm"].includes(viewportSize) || uiStore.userHiddenRightPanel;
+  const { userHiddenRightPanel } = React.useContext(
+    UserHiddenRightPanelContext
+  );
+  return uiStore.isSmall || uiStore.isVerySmall || userHiddenRightPanel;
+}
+
+export function RightPanelToggle(): Node {
+  const { userHiddenRightPanel, setUserHiddenRightPanel } = React.useContext(
+    UserHiddenRightPanelContext
+  );
+  const { uiStore } = useStores();
+
+  if (uiStore.isVerySmall || uiStore.isSmall) return null;
+  return (
+    <IconButtonWithTooltip
+      onClick={() => {
+        uiStore.setVisiblePanel("left");
+        setUserHiddenRightPanel(!userHiddenRightPanel);
+      }}
+      sx={{ transform: "rotate(-90deg)", border: "2px solid" }}
+      size="small"
+      color="primary"
+      icon={<ExpandCollapseIcon open={userHiddenRightPanel} />}
+      title={userHiddenRightPanel ? "Show right panel" : "Hide right panel"}
+    />
+  );
 }
 
 const useStyles = makeStyles()((theme) => ({
@@ -68,7 +92,7 @@ type Layout2x1Args = {|
  * but one panel is hidden on smaller ones (depending on viewport size).
  * This logic is determined based on the state of uiStore.
  */
-function Layout2x1(props: Layout2x1Args): Node {
+const Layout2x1 = observer((props: Layout2x1Args) => {
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const hideLeftPanel = isSingleColumnLayout && uiStore.visiblePanel !== "left";
@@ -108,6 +132,15 @@ function Layout2x1(props: Layout2x1Args): Node {
       </Grid>
     </Grid>
   );
-}
+});
 
-export default (observer(Layout2x1): ComponentType<Layout2x1Args>);
+export default function Layout2x1Wrapper(props: Layout2x1Args): Node {
+  const [userHiddenRightPanel, setUserHiddenRightPanel] = React.useState(false);
+  return (
+    <UserHiddenRightPanelContext.Provider
+      value={{ userHiddenRightPanel, setUserHiddenRightPanel }}
+    >
+      <Layout2x1 {...props} />
+    </UserHiddenRightPanelContext.Provider>
+  );
+}
