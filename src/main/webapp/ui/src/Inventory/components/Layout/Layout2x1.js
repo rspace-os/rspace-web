@@ -1,6 +1,6 @@
 //@flow
 
-import React, { type Node } from "react";
+import React, { type Node, type ComponentType } from "react";
 import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
@@ -26,7 +26,7 @@ export function useIsSingleColumnLayout(): boolean {
   );
 }
 
-export function RightPanelToggle(): Node {
+export const RightPanelToggle: ComponentType<{||}> = observer(() => {
   const { userHiddenRightPanel, setUserHiddenRightPanel } = React.useContext(
     UserHiddenRightPanelContext
   );
@@ -46,7 +46,7 @@ export function RightPanelToggle(): Node {
       title={userHiddenRightPanel ? "Show right panel" : "Hide right panel"}
     />
   );
-}
+});
 
 const useStyles = makeStyles()((theme) => ({
   paper: {
