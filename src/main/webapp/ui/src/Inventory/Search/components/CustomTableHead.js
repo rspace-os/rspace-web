@@ -20,6 +20,7 @@ import { sortProperties, isSortable } from "../../../stores/models/Result";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import useStores from "../../../stores/use-stores";
+import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 
 const useStyles = makeStyles()((theme) => ({
   iconCell: {
@@ -48,9 +49,14 @@ function CustomTableHead({
   contextMenuId,
 }: TableHeadArgs): Node {
   const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
   const multiselect = search.uiConfig.selectionMode === "MULTIPLE";
   const { order } = search.fetcher;
+
+  let cols = 3;
+  if (!uiStore.isSmall && !uiStore.isVerySmall && isSingleColumnLayout) cols++;
+  if (uiStore.isLarge && isSingleColumnLayout) cols++;
 
   /* this could be made adjustable too (e.g. name or global ID) */
   const mainProperty: SortProperty = ArrayUtils.find(
@@ -94,7 +100,7 @@ function CustomTableHead({
               current={search.uiConfig.adjustableColumns[0]}
               sortableProperties={sortProperties}
             />
-            {uiStore.numberOfColumnsInListView > 3 && (
+            {cols > 3 && (
               <AdjustableHeadCell
                 options={search.adjustableColumnOptions}
                 onChange={handleAdjustableColumnChange(1)}
@@ -102,7 +108,7 @@ function CustomTableHead({
                 sortableProperties={sortProperties}
               />
             )}
-            {uiStore.numberOfColumnsInListView > 4 && (
+            {cols > 4 && (
               <AdjustableHeadCell
                 options={search.adjustableColumnOptions}
                 onChange={handleAdjustableColumnChange(2)}
@@ -115,7 +121,7 @@ function CustomTableHead({
           <>
             <TableCell
               variant="head"
-              colSpan={uiStore.numberOfColumnsInListView}
+              colSpan={cols}
               className={classes.contextMenuCell}
             >
               <ContextMenu

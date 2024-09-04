@@ -22,12 +22,19 @@ import Skeleton from "@mui/material/Skeleton";
 import { withStyles } from "Styles";
 import ScrollBox from "./ScrollBox";
 import useStores from "../../stores/use-stores";
+import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 
 const ResultRowSkeleton = () => {
   const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
+
+  let cols = 3;
+  if (!uiStore.isSmall && !uiStore.isVerySmall && isSingleColumnLayout) cols++;
+  if (uiStore.isLarge && isSingleColumnLayout) cols++;
+
   return (
     <TableRow>
-      <TableCell colSpan={uiStore.numberOfColumnsInListView}>
+      <TableCell colSpan={cols}>
         <Skeleton variant="rectangular" width="100%" height={36} />
       </TableCell>
     </TableRow>

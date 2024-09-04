@@ -95,7 +95,6 @@ export default class UiStore {
       isTouchDevice: computed,
       isSmall: computed,
       alwaysVisibleSidebar: computed,
-      numberOfColumnsInListView: computed,
     });
     this.rootStore = rootStore;
     window.addEventListener("resize", () => {
@@ -161,13 +160,6 @@ export default class UiStore {
 
   get isSmall(): boolean {
     return this.viewportSize === breakpoints.sm;
-  }
-
-  get numberOfColumnsInListView(): number {
-    let cols = 3;
-    if (!this.isSmall && !this.isVerySmall && this.isSingleColumnLayout) cols++;
-    if (this.isLarge && this.isSingleColumnLayout) cols++;
-    return cols;
   }
 
   get alwaysVisibleSidebar(): boolean {
