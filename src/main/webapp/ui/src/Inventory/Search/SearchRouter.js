@@ -1,31 +1,18 @@
 // @flow
 
 import React, {
-  useState,
   useEffect,
   type Node,
   type ComponentType,
   useContext,
 } from "react";
-import { Routes, Route } from "react-router";
 import useStores from "../../stores/use-stores";
 import { observer } from "mobx-react-lite";
-import Layout, { RightPanelToggle } from "../components/Layout/Layout2x1";
-import { makeStyles } from "tss-react/mui";
+import Layout from "../components/Layout/Layout2x1";
 import RightPanelView from "./RightPanelView";
-import Grid from "@mui/material/Grid";
-import Breadcrumbs from "../components/Breadcrumbs";
-import SearchView from "./SearchView";
 import SearchContext from "../../stores/contexts/Search";
 import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFetcher";
 import { type CoreFetcherArgs } from "../../stores/definitions/Search";
-import { menuIDs } from "../../util/menuIDs";
-import SubSampleModel from "../../stores/models/SubSampleModel";
-import {
-  globalIdPatterns,
-  getSavedGlobalId,
-} from "../../stores/definitions/BaseRecord";
-import Search from "./Search";
 import Header from "../components/Layout/Header";
 import Sidebar from "../components/Layout/Sidebar";
 import Main from "../Main";
@@ -36,22 +23,7 @@ import { mkAlert } from "../../stores/contexts/Alert";
 import { UserCancelledAction } from "../../util/error";
 import MainSearchNavigationContext from "./MainSearchNavigationContext";
 import { UiPreferences } from "../../util/useUiPreference";
-
-const useStyles = makeStyles()((theme, { alwaysVisibleSidebar }) => ({
-  grid: {
-    height: "100%",
-    padding: alwaysVisibleSidebar ? theme.spacing(1) : theme.spacing(0),
-  },
-  searchbarWrapper: {
-    width: "100%",
-  },
-  listWrapper: {
-    overflow: "hidden",
-    display: "flex",
-    flexDirection: "column",
-    flexGrow: 1,
-  },
-}));
+import LeftPanelView from "./LeftPanelView";
 
 type SearchRouterArgs = {|
   paramsOverride?: CoreFetcherArgs,
@@ -59,11 +31,7 @@ type SearchRouterArgs = {|
 
 const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   const { searchStore, uiStore } = useStores();
-  const { search, fetcher } = searchStore;
-
-  const { classes } = useStyles({
-    alwaysVisibleSidebar: uiStore.alwaysVisibleSidebar,
-  });
+  const { search } = searchStore;
 
   const { useNavigate, useLocation } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -95,7 +63,8 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
       if (
         (!searchStore.activeResult &&
           Boolean(search.filteredResults.length) &&
-          !uiStore.isSingleColumnLayout) ||
+          !uiStore.isVerySmall &&
+          !uiStore.isSmall) ||
         paramsOverride?.permalink
       ) {
         try {
@@ -109,19 +78,6 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
     })();
   }, [paramsOverride]);
 
-  // processes a change to the search query string only
-  const handleSearch = (qry: string) => {
-    if ([null, ""].includes(fetcher.query) && !qry) return;
-    let params: CoreFetcherArgs = { query: qry };
-
-    // If entering query, show all results regardless of type or owner by default
-    if ([null, ""].includes(fetcher.query) && qry) {
-      params = { ...params, resultType: "ALL", ownedBy: null };
-    }
-
-    navigate(`/inventory/search?${fetcher.generateQuery(params).toString()}`);
-  };
-
   useEffect(() => {
     search.overrideSearchOnFilter = (args: CoreFetcherArgs) => {
       // when the main search's parameters change, the URL should be updated
@@ -131,111 +87,12 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
     };
   }, [search]);
 
-  const [isActiveIncluded, setIsActiveIncluded] = useState<?boolean>();
-  const [isParentContainerIncluded, setIsParentContainerIncluded] =
-    useState<?boolean>();
-  const [isParentSampleIncluded, setIsParentSampleIncluded] =
-    useState<?boolean>();
-  const [inContainerSearch, setInContainerSearch] = useState<?boolean>(false);
-
-  const view = search.searchView;
-  const results = search.filteredResults.map(getSavedGlobalId);
-
-  useEffect(() => {
-    const active = search.activeResult?.globalId;
-    const activeIncluded = results.includes(active);
-    setIsActiveIncluded(activeIncluded);
-  }, [search.filteredResults, search.activeResult]);
-
-  useEffect(() => {
-    if (search.activeResult?.hasParentContainers()) {
-      const parents = search.activeResult
-        // $FlowExpectedError[incompatible-use]
-        // $FlowExpectedError[prop-missing] if hasParentContainer is true, then allParentContainers exists
-        .allParentContainers()
-        .map((p) => p.globalId);
-      const anyParentIncluded = parents.some((p) => results.includes(p));
-      setIsParentContainerIncluded(anyParentIncluded);
-    } else {
-      setIsParentContainerIncluded(false);
-    }
-  }, [search.filteredResults, search.activeResult]);
-
-  useEffect(() => {
-    if (!(searchStore.activeResult instanceof SubSampleModel)) return;
-    const parentSampleGlobalId = searchStore.activeResult.sample.globalId;
-    const subSampleInSampleTree =
-      searchStore.activeResult instanceof SubSampleModel &&
-      results.includes(parentSampleGlobalId);
-    setIsParentSampleIncluded(subSampleInSampleTree);
-  }, [search.filteredResults, search.activeResult]);
-
-  const parentGlobalId = search.fetcher.parentGlobalId;
-
-  useEffect(() => {
-    const inContainer =
-      typeof parentGlobalId === "string"
-        ? globalIdPatterns.container.test(parentGlobalId)
-        : false;
-    setInContainerSearch(inContainer);
-  }, [view, parentGlobalId]);
-
-  const inContainerWithResults =
-    inContainerSearch && search.filteredResults.length > 0;
-
-  const showLeftBreadcrumbs = uiStore.isSingleColumnLayout
-    ? isActiveIncluded ||
-      inContainerWithResults ||
-      (view === "TREE" && (isParentContainerIncluded || isParentSampleIncluded))
-    : view === "TREE" && inContainerWithResults;
-
-  // get a fallback for showing breadcrumbs when activeResult is not in container we navigated to
-  const recordForBreadcrumbs =
-    inContainerSearch && !isActiveIncluded
-      ? search.filteredResults.length > 0
-        ? search.filteredResults[0]
-        : null
-      : searchStore.activeResult;
-
   return (
     <>
-      {uiStore.isSingleColumnLayout && <Header />}
+      {uiStore.isVerySmall && <Header />}
       <Sidebar />
       <Main>
-        <Layout
-          colLeft={
-            <Grid
-              container
-              direction="column"
-              wrap="nowrap"
-              className={classes.grid}
-              spacing={1}
-              data-testid="MainSearch"
-            >
-              <Grid item className={classes.searchbarWrapper}>
-                <Search
-                  handleSearch={handleSearch}
-                  searchbarAdornment={<RightPanelToggle />}
-                />
-                {showLeftBreadcrumbs && recordForBreadcrumbs && (
-                  <Breadcrumbs
-                    record={recordForBreadcrumbs}
-                    showCurrent={false}
-                  />
-                )}
-              </Grid>
-              <Grid item className={classes.listWrapper}>
-                <Routes>
-                  <Route
-                    path="/"
-                    element={<SearchView contextMenuId={menuIDs.RESULTS} />}
-                  />
-                </Routes>
-              </Grid>
-            </Grid>
-          }
-          colRight={<RightPanelView />}
-        />
+        <Layout colLeft={<LeftPanelView />} colRight={<RightPanelView />} />
       </Main>
     </>
   );

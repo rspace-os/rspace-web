@@ -22,6 +22,7 @@ import LoadingCircular from "../../components/LoadingCircular";
 import { type RecordType } from "../../stores/definitions/InventoryRecord";
 import { type Theme } from "../../theme";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 
 const border = (
   theme: Theme,
@@ -65,12 +66,12 @@ const BorderContainer = withStyles<
     classes: { root: string, notMobile: string, mobile: string },
     children: Node,
   }) => {
-    const { uiStore } = useStores();
+    const isSingleColumnLayout = useIsSingleColumnLayout();
     return (
       <div
         className={clsx(
           classes.root,
-          uiStore.isSingleColumnLayout ? classes.mobile : classes.notMobile
+          isSingleColumnLayout ? classes.mobile : classes.notMobile
         )}
         data-testid="MainActiveResult"
       >

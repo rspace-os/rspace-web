@@ -31,6 +31,7 @@ import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNa
 library.add(faVial);
 import PrintedMaterialsListing from "./PrintedMaterialsListing";
 import { createRoot } from "react-dom/client";
+import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
 
 const FAB_SIZE = 48;
 
@@ -121,7 +122,8 @@ const MaterialsLauncher = observer(
     elnFieldId: ElnFieldId,
     fabRightPadding: number,
   }) => {
-    const { materialsStore, uiStore } = useStores();
+    const { materialsStore } = useStores();
+    const isSingleColumnLayout = useIsSingleColumnLayout();
 
     const [showMenu, setShowMenu] = useState(false);
     const [showDialog, _setShowDialog] = useState(false);
@@ -131,13 +133,13 @@ const MaterialsLauncher = observer(
     useEffect(
       () =>
         autorun(() => {
-          hideHelpButton(uiStore.isSingleColumnLayout);
+          hideHelpButton(isSingleColumnLayout);
         }),
       []
     );
 
     const setShowDialog = (value: boolean) => {
-      hideHelpButton(value && uiStore.isSingleColumnLayout);
+      hideHelpButton(value && isSingleColumnLayout);
       _setShowDialog(value);
       window.dispatchEvent(new CustomEvent("listOfMaterialsOpened"));
     };
@@ -266,10 +268,11 @@ type NewMaterialsListingArgs = {|
 
 const NewMaterialsListing = observer(
   ({ elnFieldId }: NewMaterialsListingArgs) => {
-    const { materialsStore, uiStore } = useStores();
+    const { materialsStore } = useStores();
+    const isSingleColumnLayout = useIsSingleColumnLayout();
     const [showDialog, _setShowDialog] = useState(false);
     const setShowDialog = (value: boolean) => {
-      hideHelpButton(value && uiStore.isSingleColumnLayout);
+      hideHelpButton(value && isSingleColumnLayout);
       _setShowDialog(value);
       window.dispatchEvent(new CustomEvent("listOfMaterialsOpened"));
     };

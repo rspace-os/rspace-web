@@ -35,12 +35,8 @@ function Header(): Node {
     uiStore.toggleSidebar();
   };
 
-  return uiStore.alwaysVisibleSidebar ? null : (
-    <AppBar
-      position={uiStore.isSingleColumnLayout ? "absolute" : "fixed"}
-      className={classes.appBar}
-      elevation={0}
-    >
+  return (
+    <AppBar position={"absolute"} className={classes.appBar} elevation={0}>
       <Toolbar className={classes.toolbar}>
         <>
           {uiStore.isVerySmall && (

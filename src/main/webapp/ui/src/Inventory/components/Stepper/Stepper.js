@@ -26,6 +26,7 @@ import clsx from "clsx";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/CoreFetcher";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 const FOOTER_WHITESPACE = 10;
 
@@ -87,9 +88,9 @@ function _Stepper({
   factory,
 }: StepperArgs): Node {
   const {
-    uiStore: { isSingleColumnLayout },
     searchStore: { activeResult },
   } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
 
   const { useNavigate } = useContext(NavigateContext);

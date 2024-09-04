@@ -60,7 +60,7 @@ type ResultsTableArgs = {|
 
 function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
   const { search } = useContext(SearchContext);
-  const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   const handleChangePageSize = ({
     target: { value },
@@ -137,7 +137,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
 
   return (
     <>
-      <ScrollBox overflowY={uiStore.isSingleColumnLayout ? "unset" : "auto"}>
+      <ScrollBox overflowY={isSingleColumnLayout ? "unset" : "auto"}>
         <Table size="small" aria-label="Search results" stickyHeader>
           <CustomTableHead
             selectedCount={search.selectedResults.length}

@@ -89,7 +89,6 @@ export default class UiStore {
       setDirty: action,
       unsetDirty: action,
       closeConfirmationDialog: action,
-      isSingleColumnLayout: computed,
       isVerySmall: computed,
       isLarge: computed,
       isTouchDevice: computed,
@@ -132,10 +131,6 @@ export default class UiStore {
         breakpoints[bp],
       ])
     )(window.innerWidth);
-  }
-
-  get isSingleColumnLayout(): boolean {
-    return isSingleColumnLayout(this.viewportSize);
   }
 
   get isVerySmall(): boolean {

@@ -34,14 +34,13 @@ export default function ImportRouter(): Node {
   ) {
     return (
       <NavigationContext>
-        {uiStore.isSingleColumnLayout && <Header />}
+        {uiStore.isVerySmall && <Header />}
         <Sidebar />
         <Main>
           <RecordsImport />
         </Main>
       </NavigationContext>
     );
-  } else {
-    return <Navigate to="/inventory/pageNotFound" replace={true} />;
   }
+  return <Navigate to="/inventory/pageNotFound" replace={true} />;
 }

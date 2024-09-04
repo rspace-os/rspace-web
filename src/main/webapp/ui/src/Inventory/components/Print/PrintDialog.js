@@ -24,6 +24,7 @@ import ReactToPrint from "react-to-print";
 import docLinks from "../../../assets/DocLinks";
 import clsx from "clsx";
 import { mkAlert } from "../../../stores/contexts/Alert";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 const useStyles = makeStyles()((theme) => ({
   optionModuleWrapper: {
@@ -104,7 +105,7 @@ export const PrintOptionsWrapper = ({
   printOptions,
   setPrintOptions,
 }: OptionsWrapperArgs): Node => {
-  const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   const { classes } = useStyles();
 
   const printerTypeOptions: Array<RadioOption<PrinterType>> = [
@@ -125,9 +126,7 @@ export const PrintOptionsWrapper = ({
   return (
     <FormControl
       component="fieldset"
-      className={
-        uiStore.isSingleColumnLayout ? classes.fullWidth : classes.halfWidth
-      }
+      className={isSingleColumnLayout ? classes.fullWidth : classes.halfWidth}
     >
       <Box className={classes.optionModuleWrapper}>
         <FormLabel id="printer-type-radiogroup-label">Printer Type</FormLabel>
@@ -247,6 +246,7 @@ function PrintDialog({
 }: PrintDialogArgs): Node {
   const { classes } = useStyles();
   const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   const componentToPrint = useRef<mixed>();
   const barcodePrint = ["contextMenu", "barcodeLabel"].includes(printType);
 
@@ -285,9 +285,7 @@ function PrintDialog({
       <DialogContent>
         <Box
           className={
-            uiStore.isSingleColumnLayout
-              ? classes.columnWrapper
-              : classes.rowWrapper
+            isSingleColumnLayout ? classes.columnWrapper : classes.rowWrapper
           }
         >
           <PrintOptionsWrapper
@@ -298,9 +296,7 @@ function PrintDialog({
           <div
             className={clsx(
               classes.previewWrapper,
-              uiStore.isSingleColumnLayout
-                ? classes.fullWidth
-                : classes.halfWidth
+              isSingleColumnLayout ? classes.fullWidth : classes.halfWidth
             )}
           >
             <HelperText />

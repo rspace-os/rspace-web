@@ -19,6 +19,7 @@ import { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
 import RelativeBox from "../../../components/RelativeBox";
 import StickyMenu from "../Stepper/StickyMenu";
 import StickyStatus from "../StickyStatus";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 const useStyles = makeStyles()((theme, { recordType }) => ({
   appBar: {
@@ -89,6 +90,7 @@ function CustomToolbar({
     uiStore,
     searchStore: { search, activeResult },
   } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
     <AppBar position="sticky" className={classes.appBar} elevation={0}>
@@ -99,7 +101,7 @@ function CustomToolbar({
           alignItems="center"
           className={classes.topRow}
         >
-          {uiStore.isSingleColumnLayout && (
+          {isSingleColumnLayout && (
             <IconButton
               onClick={async () => {
                 try {

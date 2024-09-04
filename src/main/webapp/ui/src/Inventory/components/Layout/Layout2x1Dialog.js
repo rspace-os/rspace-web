@@ -11,6 +11,7 @@ import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import clsx from "clsx";
+import { useIsSingleColumnLayout } from "./Layout2x1";
 
 // Full height and full width
 const AlmostFullscreenDialog = withStyles<
@@ -66,8 +67,9 @@ type Layout2x1DialogArgs = {|
 
 function Layout2x1Dialog(props: Layout2x1DialogArgs): Node {
   const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   const { classes } = useStyles({
-    isSingleColumnLayout: uiStore.isSingleColumnLayout,
+    isSingleColumnLayout,
   });
 
   return (
@@ -92,7 +94,7 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): Node {
             item
             className={clsx(
               classes.leftPane,
-              uiStore.isSingleColumnLayout &&
+              isSingleColumnLayout &&
                 !(uiStore.dialogVisiblePanel === "left") &&
                 classes.hide
             )}
@@ -103,7 +105,7 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): Node {
             item
             className={clsx(
               classes.rightPane,
-              uiStore.isSingleColumnLayout &&
+              isSingleColumnLayout &&
                 !(uiStore.dialogVisiblePanel === "right") &&
                 classes.hide
             )}

@@ -12,6 +12,7 @@ import SaveSearch from "./SaveSearch";
 import NavigateContext, {
   type UseLocation,
 } from "../../../stores/contexts/Navigate";
+import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 
 const useStyles = makeStyles()((theme) => ({
   progress: {
@@ -40,9 +41,10 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 function SearchFeedback(): Node {
-  const { uiStore, searchStore } = useStores();
+  const { searchStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
-  const { classes } = useStyles({ singleColumn: uiStore.isSingleColumnLayout });
+  const { classes } = useStyles({ singleColumn: isSingleColumnLayout });
   const { useLocation } = useContext(NavigateContext);
 
   function useSearchParams() {
