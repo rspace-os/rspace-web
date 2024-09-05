@@ -64,8 +64,8 @@ const WholePage = styled(() => {
       orderBy,
       sortOrder,
     });
-  const viewport = useViewportDimensions();
-  const [drawerOpen, setDrawerOpen] = React.useState(!viewport.isViewportSmall);
+  const { isViewportSmall } = useViewportDimensions();
+  const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
 
   return (
     <Alerts>

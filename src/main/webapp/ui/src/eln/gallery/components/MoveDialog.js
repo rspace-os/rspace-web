@@ -39,7 +39,7 @@ const MoveDialog = ({
   selectedFiles,
   refreshListing,
 }: MoveDialogArgs): Node => {
-  const viewport = useViewportDimensions();
+  const { isViewportVerySmall } = useViewportDimensions();
   const { galleryListing } = useGalleryListing({
     section,
     searchTerm: "",
@@ -72,7 +72,7 @@ const MoveDialog = ({
         e.stopPropagation();
       }}
       scroll="paper"
-      fullScreen={viewport.isViewportVerySmall}
+      fullScreen={isViewportVerySmall}
     >
       <DialogTitle>Move</DialogTitle>
       <DialogContent sx={{ overflow: "hidden", flexGrow: 0 }}>

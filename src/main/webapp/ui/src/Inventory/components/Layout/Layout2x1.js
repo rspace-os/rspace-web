@@ -42,11 +42,11 @@ const UserHiddenRightPanelContext = React.createContext<{|
  * they can only determine whether the value is true or false; not why.
  */
 export function useIsSingleColumnLayout(): boolean {
-  const viewportDimensions = useViewportDimensions();
+  const { isViewportSmall } = useViewportDimensions();
   const { userHiddenRightPanel } = React.useContext(
     UserHiddenRightPanelContext
   );
-  return viewportDimensions.isViewportSmall || userHiddenRightPanel;
+  return isViewportSmall || userHiddenRightPanel;
 }
 
 /**

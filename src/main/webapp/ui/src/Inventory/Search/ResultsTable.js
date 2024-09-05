@@ -25,12 +25,12 @@ import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 import useViewportDimensions from "../../util/useViewportDimensions";
 
 const ResultRowSkeleton = () => {
-  const viewportDimensions = useViewportDimensions();
+  const { isViewportSmall, isViewportLarge } = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
   let cols = 3;
-  if (!viewportDimensions.isViewportSmall && isSingleColumnLayout) cols++;
-  if (viewportDimensions.isViewportLarge && isSingleColumnLayout) cols++;
+  if (!isViewportSmall && isSingleColumnLayout) cols++;
+  if (isViewportLarge && isSingleColumnLayout) cols++;
 
   return (
     <TableRow>

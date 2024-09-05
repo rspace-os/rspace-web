@@ -48,15 +48,15 @@ function CustomTableHead({
   toggleAll,
   contextMenuId,
 }: TableHeadArgs): Node {
-  const viewportDimensions = useViewportDimensions();
+  const { isViewportSmall, isViewportLarge } = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
   const multiselect = search.uiConfig.selectionMode === "MULTIPLE";
   const { order } = search.fetcher;
 
   let cols = 3;
-  if (!viewportDimensions.isViewportSmall && isSingleColumnLayout) cols++;
-  if (viewportDimensions.isViewportLarge && isSingleColumnLayout) cols++;
+  if (!isViewportSmall && isSingleColumnLayout) cols++;
+  if (isViewportLarge && isSingleColumnLayout) cols++;
 
   /* this could be made adjustable too (e.g. name or global ID) */
   const mainProperty: SortProperty = ArrayUtils.find(
