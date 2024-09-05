@@ -19,8 +19,8 @@ import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables
 import { sortProperties, isSortable } from "../../../stores/models/Result";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-import useStores from "../../../stores/use-stores";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
+import useViewportDimensions from "../../../util/useViewportDimensions";
 
 const useStyles = makeStyles()((theme) => ({
   iconCell: {
@@ -48,15 +48,15 @@ function CustomTableHead({
   toggleAll,
   contextMenuId,
 }: TableHeadArgs): Node {
-  const { uiStore } = useStores();
+  const viewportDimensions = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
   const multiselect = search.uiConfig.selectionMode === "MULTIPLE";
   const { order } = search.fetcher;
 
   let cols = 3;
-  if (!uiStore.isSmall && !uiStore.isVerySmall && isSingleColumnLayout) cols++;
-  if (uiStore.isLarge && isSingleColumnLayout) cols++;
+  if (!viewportDimensions.isViewportSmall && isSingleColumnLayout) cols++;
+  if (viewportDimensions.isViewportLarge && isSingleColumnLayout) cols++;
 
   /* this could be made adjustable too (e.g. name or global ID) */
   const mainProperty: SortProperty = ArrayUtils.find(

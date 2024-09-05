@@ -21,16 +21,16 @@ import TableCell from "@mui/material/TableCell";
 import Skeleton from "@mui/material/Skeleton";
 import { withStyles } from "Styles";
 import ScrollBox from "./ScrollBox";
-import useStores from "../../stores/use-stores";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
+import useViewportDimensions from "../../util/useViewportDimensions";
 
 const ResultRowSkeleton = () => {
-  const { uiStore } = useStores();
+  const viewportDimensions = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
   let cols = 3;
-  if (!uiStore.isSmall && !uiStore.isVerySmall && isSingleColumnLayout) cols++;
-  if (uiStore.isLarge && isSingleColumnLayout) cols++;
+  if (!viewportDimensions.isViewportSmall && isSingleColumnLayout) cols++;
+  if (viewportDimensions.isViewportLarge && isSingleColumnLayout) cols++;
 
   return (
     <TableRow>
