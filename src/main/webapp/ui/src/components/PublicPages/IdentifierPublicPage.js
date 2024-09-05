@@ -54,6 +54,7 @@ import TableRow from "@mui/material/TableRow";
 import NoValue from "../NoValue";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import IdentifierModel from "../../stores/models/IdentifierModel";
+import { truncateIsoTimestamp } from "../../util/conversions";
 
 const useStyles = makeStyles()((theme) => ({
   styledDescriptionList: {
@@ -530,7 +531,11 @@ export const IdentifierDataGrid = ({
                   <Grid item className={classes.key}>
                     {capitaliseJustFirstChar(d.type.toLowerCase())}
                   </Grid>
-                  <Grid item>{d.value.toString().split("T")[0]}</Grid>
+                  <Grid item>
+                    {truncateIsoTimestamp(d.value, "date").orElse(
+                      "Invalid date"
+                    )}
+                  </Grid>
                 </Grid>
               ))}
             </Grid>

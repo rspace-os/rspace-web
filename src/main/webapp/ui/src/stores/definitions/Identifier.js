@@ -8,17 +8,17 @@ import { type Node } from "react";
 import { type Alert } from "../contexts/Alert";
 
 export type IGSNDateType =
-  | "Accepted"
-  | "Available"
-  | "Copyrighted"
-  | "Collected"
-  | "Created"
-  | "Issued"
-  | "Submitted"
-  | "Updated"
-  | "Valid"
-  | "Withdrawn"
-  | "Other";
+  | "ACCEPTED"
+  | "AVAILABLE"
+  | "COPYRIGHTED"
+  | "COLLECTED"
+  | "CREATED"
+  | "ISSUED"
+  | "SUBMITTED"
+  | "UPDATED"
+  | "VALID"
+  | "WITHDRAWN"
+  | "OTHER";
 export type IGSNDescriptionType = "ABSTRACT" | "METHODS";
 
 type IGSNTypeOption = IGSNDescriptionType | IGSNDateType;
@@ -87,7 +87,7 @@ export type IdentifierAttrs = {|
   subjects: ?Array<IdentifierSubject>,
   descriptions: ?Array<IdentifierDescription>,
   alternateIdentifiers: ?Array<AlternateIdentifier>,
-  dates: ?Array<IdentifierDate>,
+  dates: ?Array<{| value: string, type: IGSNDateType |}>,
   geoLocations: ?Array<GeoLocationAttrs>,
   _links: Array<_LINK>,
   customFieldsOnPublicPage: boolean,
