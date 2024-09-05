@@ -37,6 +37,7 @@ import { UserCancelledAction } from "../../util/error";
 import ExpandCollapseIcon from "../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
 import MainSearchNavigationContext from "./MainSearchNavigationContext";
+import { UiPreferences } from "../../util/useUiPreference";
 
 const useStyles = makeStyles()((theme, { alwaysVisibleSidebar }) => ({
   grid: {
@@ -280,16 +281,18 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
 function SearchRouterWrapper({ paramsOverride }: SearchRouterArgs): Node {
   const { searchStore } = useStores();
   return (
-    <SearchContext.Provider
-      value={{
-        search: searchStore.search,
-        differentSearchForSettingActiveResult: searchStore.search,
-      }}
-    >
-      <MainSearchNavigationContext>
-        <SearchRouter paramsOverride={paramsOverride} />
-      </MainSearchNavigationContext>
-    </SearchContext.Provider>
+    <UiPreferences>
+      <SearchContext.Provider
+        value={{
+          search: searchStore.search,
+          differentSearchForSettingActiveResult: searchStore.search,
+        }}
+      >
+        <MainSearchNavigationContext>
+          <SearchRouter paramsOverride={paramsOverride} />
+        </MainSearchNavigationContext>
+      </SearchContext.Provider>
+    </UiPreferences>
   );
 }
 

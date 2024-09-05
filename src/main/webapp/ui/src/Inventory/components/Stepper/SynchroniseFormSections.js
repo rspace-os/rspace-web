@@ -1,8 +1,9 @@
 //@flow
 
-import React, { type Node, useState } from "react";
+import React, { type Node } from "react";
 import FormSectionsContext from "../../../stores/contexts/FormSections";
 import { mapObject } from "../../../util/Util";
+import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
 
 const defaultFormSectionExpandedState = () =>
   Object.freeze({
@@ -71,9 +72,10 @@ type SynchroniseFormSectionsArgs = {|
 export default function SynchroniseFormSections({
   children,
 }: SynchroniseFormSectionsArgs): Node {
-  const [formSectionExpandedState, setFormSectionExpandedState] = useState(
-    defaultFormSectionExpandedState()
-  );
+  const [formSectionExpandedState, setFormSectionExpandedState] =
+    useUiPreference(PREFERENCES.INVENTORY_FORM_SECTIONS_EXPANDED, {
+      defaultValue: defaultFormSectionExpandedState(),
+    });
   return (
     <FormSectionsContext.Provider
       value={{
