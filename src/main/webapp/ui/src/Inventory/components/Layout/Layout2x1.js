@@ -46,11 +46,7 @@ export function useIsSingleColumnLayout(): boolean {
   const { userHiddenRightPanel } = React.useContext(
     UserHiddenRightPanelContext
   );
-  return (
-    viewportDimensions.isViewportSmall ||
-    viewportDimensions.isViewportVerySmall ||
-    userHiddenRightPanel
-  );
+  return viewportDimensions.isViewportSmall || userHiddenRightPanel;
 }
 
 /**
