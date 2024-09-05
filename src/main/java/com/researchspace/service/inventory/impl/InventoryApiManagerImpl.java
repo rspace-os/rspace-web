@@ -1,7 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
 import static com.researchspace.api.v1.model.ApiInventoryRecordInfo.tagDifferenceExists;
-import static org.apache.commons.lang3.StringUtils.abbreviate;
 
 import com.axiope.search.SearchUtils;
 import com.researchspace.api.v1.model.ApiBarcode;
@@ -12,6 +11,7 @@ import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockS
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
+import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.GroupDao;
@@ -52,7 +52,6 @@ import java.util.List;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
@@ -271,9 +270,7 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   @Override
   public void setPreviewImageForInvRecord(InventoryRecord invRec, String base64Image, User user)
       throws IOException {
-    // save incoming image as a main image
-    String imageName =
-        String.format("%s_%s", getInvSampleType(invRec), invRec.getGlobalIdentifier());
+    String imageName = CryptoUtils.hashWithSha256inHex(base64Image);
     FileProperty imageFileProp =
         generateInventoryFilePropertyFromBase64Image(user, imageName, base64Image, false);
     invRec.setImageFileProperty(imageFileProp);
@@ -282,25 +279,6 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
     FileProperty thumbnailFileProp =
         generateInventoryFilePropertyFromBase64Image(user, imageName, base64Image, true);
     invRec.setThumbnailFileProperty(thumbnailFileProp);
-  }
-
-  private String getInvSampleType(InventoryRecord invRec) {
-    String name = getAbbreviatedSafeFilename(invRec);
-    if (invRec.isContainer()) {
-      return "container-" + name;
-    } else if (invRec.isSample()) {
-      return "sample-" + name;
-    } else if (invRec.isSubSample()) {
-      return "subsample-" + name;
-    } else {
-      return "other-inventory-" + name;
-    }
-  }
-
-  private String getAbbreviatedSafeFilename(InventoryRecord invRec) {
-    String name = abbreviate(invRec.getName(), 10);
-    name = StringUtils.removeEndIgnoreCase(name, "...").replaceAll("[^A-Za-z0-9\\-]+", "");
-    return name;
   }
 
   /**
