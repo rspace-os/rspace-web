@@ -370,7 +370,6 @@ const TreeView = ({
     );
   return (
     <SimpleTreeView
-      sx={{ maxWidth: `calc(100% - 200px)` }}
       expandedItems={expandedItems}
       onExpandedItemsChange={(_event, nodeIds) => {
         setExpandedItems(nodeIds);
