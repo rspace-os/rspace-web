@@ -55,6 +55,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
+/*
+ * The height, in pixels, of the region that responds to touch/pointer events
+ * to trigger the opening and closing of the floating info panel that is shown
+ * on small viewports. When the panel is closed only the trigger region is shown.
+ */
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
 const ASPOSE_EXTENSIONS = [
@@ -74,6 +79,16 @@ const ASPOSE_EXTENSIONS = [
   "odp",
 ];
 
+/**
+ * The info panel, be it the right column on desktop or the floating panel on
+ * mobile, presents the user with a primary action that can be performed on the
+ * item in question.
+ *
+ * The button is bright blue colour, despite the fact that the rest of the page
+ * is themed with a very saturated purple, to draw the user's attention and to
+ * match the colour of the cards/tree nodes that are selected; making a visual
+ * link between the two.
+ */
 const ActionButton = ({
   onClick,
   label,
@@ -93,13 +108,26 @@ const ActionButton = ({
 const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
   () => ({
     [`& .${paperClasses.root}`]: {
+      /*
+       * When open, the floating info panel takes up 90% of the height of
+       * viewport, leaving just a small section at the top unobscured so that
+       * the panel feels temporary and not modal. This height style is the
+       * height of the info panel, minus the region at the top with the border
+       * radii that triggers the open and closing and is therefore 0px when the
+       * panel is closed.
+       */
       height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
       overflow: "visible",
     },
   })
 );
 
-const MobileInfoPanelHeader: ComponentType<{|
+/**
+ * This components wraps all of the content inside of the floating info panel,
+ * adjusting the positioning of the content so that the title and action button
+ * are shown even when the panel is closed.
+ */
+const MobileInfoPanelContent: ComponentType<{|
   children: Node,
 |}> = styled(Box)(({ theme }) => ({
   position: "absolute",
@@ -114,6 +142,16 @@ const MobileInfoPanelHeader: ComponentType<{|
   boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
 }));
 
+/**
+ * This button serves two purposes:
+ *
+ *  1. On touch devices, it provides a visual indicator that the panel can be
+ *     swiped up and down to open and close, respectively.
+ *
+ *  2. On non-touch devices with small viewports, it provides a button that the
+ *     user can tap to trigger the opening/closing of the floating panel.
+ *
+ */
 const Puller: ComponentType<{|
   onClick: () => void,
   tabIndex?: number,
@@ -768,7 +806,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
         return true;
       }}
     >
-      <MobileInfoPanelHeader>
+      <MobileInfoPanelContent>
         <Stack spacing={1} height="100%">
           <Puller
             onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
@@ -840,7 +878,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
               .orElse(null)}
           </CardContent>
         </Stack>
-      </MobileInfoPanelHeader>
+      </MobileInfoPanelContent>
     </CustomSwipeableDrawer>
   );
 };
