@@ -561,14 +561,17 @@
 <script type="text/template" id="apiKeyDetailsTemplate">
 	{{#enabled}}
     <div class="api-menu__key col-xs-8">
-      {{#revokable}}
-        <strong>Key</strong>: <span id="api-menu__keyValue"> &lt;hidden&gt; </span>
-          <a href="#" id="api-menu__showKey" onclick="return false;">Show Key</a>
-          <a href="#" id="api-menu__hideKey" onclick="return false;">Hide Key</a>
-      {{/revokable}}
-      {{^revokable}}
-        <strong>Key</strong>: Empty.
-      {{/revokable}}
+      {{#key}}
+        Key: {{key}}
+      {{/key}}
+      {{^key}}
+        {{#revokable}}
+          There is an API key set.
+        {{/revokable}}
+        {{^revokable}}
+          There is no API key set.
+        {{/revokable}}
+      {{/key}}
 
       <br />
       See <a href="/public/apiDocs" target="_blank">API Documentation</a>.
