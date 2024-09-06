@@ -45,6 +45,11 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import axios from "axios";
 
+/*
+ * This snippet is a necessary step in initialising the PDF preview
+ * functionality. Taken from the example code for react-pdf
+ * https://github.com/wojtekmaj/react-pdf/blob/main/sample/webpack5/Sample.tsx
+ */
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
   import.meta.url
