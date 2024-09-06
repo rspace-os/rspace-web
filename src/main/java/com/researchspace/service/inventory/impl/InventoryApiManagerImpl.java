@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.dao.ContainerDao;
+import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
@@ -49,6 +50,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -73,6 +76,7 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   protected @Autowired InventoryPermissionUtils invPermissions;
   private @Autowired InventoryFileApiManager inventoryFileApiManager;
   @Autowired @Lazy private DocumentTagManager documentTagManager;
+  private @Autowired FileMetadataDao fileMetadataDao;
 
   final Long DEFAULT_ICON_ID = -1L;
 
@@ -271,14 +275,40 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   public void setPreviewImageForInvRecord(InventoryRecord invRec, String base64Image, User user)
       throws IOException {
     String imageName = CryptoUtils.hashWithSha256inHex(base64Image);
-    FileProperty imageFileProp =
-        generateInventoryFilePropertyFromBase64Image(user, imageName, base64Image, false);
-    invRec.setImageFileProperty(imageFileProp);
+    String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
+
+    Optional<FileProperty> existingFile =
+        getExistingFilePropertyForImage(
+            String.format("%s.%s", imageName, imageExtension), user.getUsername());
+    if (existingFile.isPresent()) {
+      invRec.setImageFileProperty(existingFile.get());
+    } else {
+      FileProperty imageFileProp =
+          generateInventoryFilePropertyFromBase64Image(user, imageName, base64Image, false);
+      invRec.setImageFileProperty(imageFileProp);
+    }
 
     // generate and save thumbnail version
-    FileProperty thumbnailFileProp =
-        generateInventoryFilePropertyFromBase64Image(user, imageName, base64Image, true);
-    invRec.setThumbnailFileProperty(thumbnailFileProp);
+    Optional<FileProperty> existingThumbnailImage =
+        getExistingFilePropertyForImage(
+            String.format("%s_thumbnail.%s", imageName, imageExtension), user.getUsername());
+    if (existingThumbnailImage.isPresent()) {
+      invRec.setThumbnailFileProperty(existingThumbnailImage.get());
+    } else {
+      FileProperty thumbnailFileProp =
+          generateInventoryFilePropertyFromBase64Image(user, imageName, base64Image, true);
+      invRec.setThumbnailFileProperty(thumbnailFileProp);
+    }
+  }
+
+  private Optional<FileProperty> getExistingFilePropertyForImage(
+      String imageName, String userName) {
+    Map<String, String> properties =
+        Map.ofEntries(
+            Map.entry("fileGroup", userName),
+            Map.entry("fileName", imageName),
+            Map.entry("fileOwner", userName));
+    return fileMetadataDao.findProperties(properties).stream().findFirst();
   }
 
   /**

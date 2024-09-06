@@ -303,10 +303,24 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   }
 
   @Override
+  public ResponseEntity<byte[]> getImageByFileName(
+      @PathVariable String fileName, @RequestAttribute(name = "user") User user)
+      throws IOException {
+    return doImageResponse(user, () -> getFilePropertyByFileName(fileName, user.getUsername()));
+  }
+
+  @Override
   public ResponseEntity<byte[]> getSampleThumbnail(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
     return doImageResponse(
         user, () -> sampleApiMgr.assertUserCanReadSample(id, user).getThumbnailFileProperty());
+  }
+
+  @Override
+  public ResponseEntity<byte[]> getThumbnailByFileName(
+      @PathVariable String fileName, @RequestAttribute(name = "user") User user)
+      throws IOException {
+    return doImageResponse(user, () -> getFilePropertyByFileName(fileName, user.getUsername()));
   }
 
   @Override

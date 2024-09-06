@@ -55,8 +55,14 @@ public interface SubSamplesApi {
   @GetMapping("/{id}/image/{unused}")
   ResponseEntity<byte[]> getSubSampleImage(Long id, User user) throws IOException;
 
+  @GetMapping("/image/{fileName}")
+  ResponseEntity<byte[]> getImageByFileName(String fileName, User user) throws IOException;
+
   @GetMapping("/{id}/thumbnail/{unused}")
   ResponseEntity<byte[]> getSubSampleThumbnail(Long id, User user) throws IOException;
+
+  @GetMapping("/thumbnail/{fileName}")
+  ResponseEntity<byte[]> getThumbnailByFileName(String fileName, User user) throws IOException;
 
   /**
    * Duplicates an inventory item

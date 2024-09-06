@@ -65,8 +65,14 @@ public interface SamplesApi {
   @GetMapping("/{id}/image/{unused}")
   ResponseEntity<byte[]> getSampleImage(Long id, User user) throws IOException;
 
+  @GetMapping("/image/{fileName}")
+  ResponseEntity<byte[]> getImageByFileName(String fileName, User user) throws IOException;
+
   @GetMapping("/{id}/thumbnail/{unused}")
   ResponseEntity<byte[]> getSampleThumbnail(Long id, User user) throws IOException;
+
+  @GetMapping("/thumbnail/{fileName}")
+  ResponseEntity<byte[]> getThumbnailByFileName(String fileName, User user) throws IOException;
 
   @PutMapping(value = "/{id}/actions/changeOwner")
   ApiSample changeSampleOwner(
