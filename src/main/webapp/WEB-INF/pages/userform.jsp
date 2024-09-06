@@ -593,11 +593,6 @@
     </div>
   {{/enabled}}
   {{^enabled}}
-    {{#key}}
-    	<div class="api-menu__key api-menu__key--disabled">
-    		<strong>Key</strong>: {{key}}
-      </div>
-    {{/key}}
     <div class="api-menu__description">
     	{{message}}
     </div>
