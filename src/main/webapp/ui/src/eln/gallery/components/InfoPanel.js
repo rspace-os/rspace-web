@@ -154,6 +154,7 @@ const MobileInfoPanelContent: ComponentType<{|
  */
 const Puller: ComponentType<{|
   onClick: () => void,
+  onKeyDown: (KeyboardEvent) => void,
   tabIndex?: number,
   role?: string,
 |}> = styled("div")(() => ({
@@ -810,8 +811,11 @@ export const InfoPanelForSmallViewports: ComponentType<{|
         <Stack spacing={1} height="100%">
           <Puller
             onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
+            onKeyDown={(e) => {
+              if (e.key === " ") setMobileInfoPanelOpen(!mobileInfoPanelOpen);
+            }}
             role="button"
-            tabIndex={-1}
+            tabIndex={0}
           />
           <CardContent>
             <Grid
