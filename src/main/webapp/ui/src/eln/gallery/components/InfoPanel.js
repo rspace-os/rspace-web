@@ -167,6 +167,24 @@ const Puller: ComponentType<{|
   left: "calc(50% - 15px)",
 }));
 
+/**
+ * In addition to simply stating the name of the selected file, this text field
+ * allows users to rename the file in place. At a glance it looks just like the
+ * heading of the info panel, but on hover there is a subtle background and the
+ * I-beam cursor to indicate that the text is editable. Upon clicking, the file
+ * extension disappears and the text can be edited. Upon editing, cancel and
+ * save buttons emerge which do the obvious. Escape and return keyboard events
+ * similarly clear and submit the changes.
+ *
+ * Whilst this functionality is not the most discoverable, and isn't at all
+ * available on mobile, the rename action remains in the actions menu so this
+ * is purely as a functionality enhancement for quick editing. Given that this
+ * is not the *only* way to perform a rename, this functionality MAY NOT fully
+ * meet the accessibility standard.
+ *
+ * @param file      The selected file that is being shown in the info panel
+ * @param className Ignore; it is provided by the `styled` HOC.
+ */
 const NameFieldForLargeViewports = styled(
   observer(
     ({ file, className }: {| file: GalleryFile, className: string |}) => {
