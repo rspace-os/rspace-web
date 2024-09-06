@@ -54,8 +54,6 @@ type Layout2x1Args = {|
  * Defines a responsive layout, where both panels are shown on larger devices,
  * but one panel is hidden on smaller ones (depending on viewport size).
  * This logic is determined based on the state of uiStore.
- *
- * This component is tested by ../../__tests__/components/Layout/Layout2x1.test.js
  */
 function Layout2x1(props: Layout2x1Args): Node {
   const { uiStore } = useStores();

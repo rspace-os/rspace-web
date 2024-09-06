@@ -33,6 +33,103 @@ module.exports = {
       to: {},
     },
     {
+      "name": "no-unreachable-from-root",
+      "severity": "error",
+      "from": {
+        path: [
+          // this list comes from webpack.config.js
+          "src/App\.js$",
+          "src/eln/apps/index.js",
+          "src/eln/gallery/index.js",
+          "src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.js",
+          "src/CreateGroup/CreateGroup.js",
+          "src/my-rspace/directory/groups/MyLabGroups.js",
+          "src/system-ror/RoRIntegration.js",
+          "src/Export/ExportModal.js",
+          "src/my-rspace/directory/groups/GroupEditBar.js",
+          "src/Toolbar/Workspace/Toolbar.js",
+          "src/Toolbar/Notebook/Toolbar.js",
+          "src/Toolbar/StructuredDocument/Toolbar.js",
+          "src/Toolbar/FileTreeToolbar.js",
+          "src/Toolbar/Gallery/Toolbar.js",
+          "src/system-groups/NewLabGroup.js",
+          "src/tinyMCE/sidebarInfo.js",
+          "src/tinyMCE/previewInfo.js",
+          "src/components/UserDetails.js",
+          "src/my-rspace/directory/groups/GroupUserActivity.js",
+          "src/my-rspace/profile/GroupActivity.js",
+          "src/my-rspace/profile/AccountActivity.js",
+          "src/my-rspace/profile/OAuthTrigger.js",
+          "src/my-rspace/profile/ConnectedAppsTrigger.js",
+          "src/my-rspace/profile/GroupsTable.js",
+          "src/tinyMCE/SnapGene/snapGeneDialog.js",
+          "src/components/ToastMessage.js",
+          "src/tinyMCE/internallink.js",
+          "src/tinyMCE/shortcutsPlugin/shortcuts.js",
+          "src/tinyMCE/pyrat/Pyrat.js",
+          "src/tinyMCE/clustermarket/index.js",
+          "src/tinyMCE/omero/index.js",
+          "src/tinyMCE/jove/index.js",
+          "src/components/BaseSearch.js",
+          "src/components/ConfirmationDialog.js",
+          "src/Gallery/imageEditorDialog.js",
+          "src/eln-inventory-integration/MaterialsListing/MaterialsListing.js",
+          "src/eln-inventory-integration/AssociatedInventoryRecords/index.js",
+          "src/eln/sysadmin/users/index.js",
+        ] 
+      },
+      "to": {
+        path: "src",
+        pathNot: [
+          "__tests__|__mocks__|test-stubs|node_modules",
+          // this list comes from webpack.config.js
+          "src/App\.js$",
+          "src/eln/apps/index.js",
+          "src/eln/gallery/index.js",
+          "src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.js",
+          "src/CreateGroup/CreateGroup.js",
+          "src/my-rspace/directory/groups/MyLabGroups.js",
+          "src/system-ror/RoRIntegration.js",
+          "src/Export/ExportModal.js",
+          "src/my-rspace/directory/groups/GroupEditBar.js",
+          "src/Toolbar/Workspace/Toolbar.js",
+          "src/Toolbar/Notebook/Toolbar.js",
+          "src/Toolbar/StructuredDocument/Toolbar.js",
+          "src/Toolbar/FileTreeToolbar.js",
+          "src/Toolbar/Gallery/Toolbar.js",
+          "src/system-groups/NewLabGroup.js",
+          "src/tinyMCE/sidebarInfo.js",
+          "src/tinyMCE/previewInfo.js",
+          "src/components/UserDetails.js",
+          "src/my-rspace/directory/groups/GroupUserActivity.js",
+          "src/my-rspace/profile/GroupActivity.js",
+          "src/my-rspace/profile/AccountActivity.js",
+          "src/my-rspace/profile/OAuthTrigger.js",
+          "src/my-rspace/profile/ConnectedAppsTrigger.js",
+          "src/my-rspace/profile/GroupsTable.js",
+          "src/tinyMCE/SnapGene/snapGeneDialog.js",
+          "src/components/ToastMessage.js",
+          "src/tinyMCE/internallink.js",
+          "src/tinyMCE/shortcutsPlugin/shortcuts.js",
+          "src/tinyMCE/pyrat/Pyrat.js",
+          "src/tinyMCE/clustermarket/index.js",
+          "src/tinyMCE/omero/index.js",
+          "src/tinyMCE/jove/index.js",
+          "src/components/BaseSearch.js",
+          "src/components/ConfirmationDialog.js",
+          "src/Gallery/imageEditorDialog.js",
+          "src/eln-inventory-integration/MaterialsListing/MaterialsListing.js",
+          "src/eln-inventory-integration/AssociatedInventoryRecords/index.js",
+          "src/eln/sysadmin/users/index.js",
+          // stores/defintion only export types so depcruise thinks it's never used, which at runtime it isn't
+          "stores/definitions",
+          // src/assets contains icon variants that may be useful in the future
+          "^src/assets",
+        ],
+        reachable: false
+      }
+    },
+    {
       name: 'no-deprecated-core',
       comment:
         'A module depends on a node core module that has been deprecated. Find an alternative - these are ' +
@@ -214,6 +311,18 @@ module.exports = {
       to: {
         pathNot: "src/util|babel|jest-dom|fast-check|mobx|react",
       }
+    },
+
+    {
+      name: "Public pages must not use stores",
+      comment: "Users may not be authenticated on the public pages and so we must not depend on the global stores as they assume the user is.",
+      from: {
+        path: "src/components/PublicPages",
+      },
+      to: {
+        path: "src/stores/stores",
+        reachable: true
+      },
     }
 
   ],

@@ -39,7 +39,7 @@ export const mockIGSNAttrs = (): IdentifierAttrs => {
     ],
     descriptions: [{ value: "My test description text", type: "ABSTRACT" }],
     alternateIdentifiers: [{ value: "SS4", freeType: "a-type" }],
-    dates: [{ value: new Date("2023-08-09T16:32:17.853Z"), type: "Created" }],
+    dates: [{ value: "2023-08-09T16:32:17.853Z", type: "CREATED" }],
     geoLocations: [],
     customFieldsOnPublicPage: false,
   };
@@ -87,7 +87,7 @@ export const mockIGSNIdentifier = (recordType: TestRecordType): Identifier => {
     ],
     descriptions: [{ value: "My test description text", type: "ABSTRACT" }],
     alternateIdentifiers: [{ value: "SS4", freeType: "a-type" }],
-    dates: [{ value: new Date("2023-08-09T16:32:17.853Z"), type: "Created" }],
+    dates: [{ value: new Date("2023-08-09T16:32:17.853Z"), type: "CREATED" }],
     geoLocations: [],
 
     doiTypeLabel: "Material Sample",

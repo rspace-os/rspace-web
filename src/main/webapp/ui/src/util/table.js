@@ -111,7 +111,7 @@ type ColumnProps<Row: { ... }, Value> = {|
     tabIndex: number,
     ...
   }) => Node,
-  valueFormatter?: ({ value: Value, ... }) => Node,
+  valueFormatter?: (Value) => Node,
   hideable?: boolean,
   width?: number,
   flex?: number,
@@ -120,6 +120,7 @@ type ColumnProps<Row: { ... }, Value> = {|
   headerClassName?: string,
   disableExport?: boolean,
   display?: "text" | "flex",
+  resizable?: boolean,
 |};
 
 const DataGridColumn = {
@@ -142,13 +143,14 @@ const DataGridColumn = {
    * Define a new column where the cell's value is the output of the
    * `valueGetter` function.
    */
-  newColumnWithValueGetter<Row: { ... }, Value>(
+  newColumnWithValueGetter<Row: { ... }, Field: string>(
     // Unique identifier for the column
-    field: string,
-    valueGetter: (params: { row: Row, ... }) => Value,
-    rest: ColumnProps<Row, Value>
+    field: Field,
+    // $FlowExpectedError[invalid-computed-prop]
+    valueGetter: (Row[Field]) => string,
+    // $FlowExpectedError[invalid-computed-prop]
+    rest: ColumnProps<Row, Row[Field]>
   ): Column<Row> {
-    // $FlowExpectedError[incompatible-return] Relaxing the constraint on Value
     return {
       field,
       valueGetter,

@@ -118,7 +118,8 @@ function StepperPanelHeader_({
         <Grid item>
           <IconButtonWithTooltip
             title={open ? "Collapse section" : "Expand section"}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               onToggle(!open);
               setAllBtn(true);
             }}

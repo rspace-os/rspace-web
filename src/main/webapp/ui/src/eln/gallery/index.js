@@ -15,7 +15,7 @@ import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
 import Box from "@mui/material/Box";
-import { useGalleryListing, type GalleryFile } from "./useGalleryListing";
+import { useGalleryListing } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
@@ -25,6 +25,10 @@ import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
 import { BrowserRouter, Navigate, useSearchParams } from "react-router-dom";
 import { Routes, Route } from "react-router";
+import useUiPreference, {
+  PREFERENCES,
+  UiPreferences,
+} from "../../util/useUiPreference";
 
 const WholePage = styled(() => {
   const [searchParams] = useSearchParams();
@@ -40,8 +44,18 @@ const WholePage = styled(() => {
   }, [searchParams]);
 
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
-  const [orderBy, setOrderBy] = React.useState("name");
-  const [sortOrder, setSortOrder] = React.useState("ASC");
+  const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
+    PREFERENCES.GALLERY_SORT_BY,
+    {
+      defaultValue: "name",
+    }
+  );
+  const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(
+    PREFERENCES.GALLERY_SORT_ORDER,
+    {
+      defaultValue: "ASC",
+    }
+  );
   const { galleryListing, path, clearPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
@@ -123,22 +137,24 @@ window.addEventListener("load", () => {
               <CssBaseline />
               <ThemeProvider theme={createAccentedTheme(COLOR)}>
                 <Analytics>
-                  <DisableDragAndDropByDefault>
-                    <Routes>
-                      <Route
-                        path="/newGallery"
-                        element={
-                          <GallerySelection>
-                            <WholePage />
-                          </GallerySelection>
-                        }
-                      />
-                      <Route
-                        path="*"
-                        element={<Navigate to="/newGallery" replace />}
-                      />
-                    </Routes>
-                  </DisableDragAndDropByDefault>
+                  <UiPreferences>
+                    <DisableDragAndDropByDefault>
+                      <Routes>
+                        <Route
+                          path="/newGallery"
+                          element={
+                            <GallerySelection>
+                              <WholePage />
+                            </GallerySelection>
+                          }
+                        />
+                        <Route
+                          path="*"
+                          element={<Navigate to="/newGallery" replace />}
+                        />
+                      </Routes>
+                    </DisableDragAndDropByDefault>
+                  </UiPreferences>
                 </Analytics>
               </ThemeProvider>
             </StyledEngineProvider>

@@ -1,5 +1,17 @@
 // @flow
 
+/*
+ * ====  A POINT ABOUT THE IMPORTS  ===========================================
+ *
+ *  This is a public page, so the user may not be authenticated. As such, this
+ *  module, and any module that is imported, MUST NOT import anything from the
+ *  global Inventory stores (i.e. from ../../stores/stores/*). If it does, then
+ *  the page will be rendered as a blank screen and there will be an unhelpful
+ *  error message on the browser's console saying that webpack export could not
+ *  be initialised. For more information, see the README in this directory.
+ *
+ * ============================================================================
+ */
 import React, {
   useState,
   useEffect,
@@ -42,6 +54,7 @@ import TableRow from "@mui/material/TableRow";
 import NoValue from "../NoValue";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import IdentifierModel from "../../stores/models/IdentifierModel";
+import { truncateIsoTimestamp } from "../../util/conversions";
 
 const useStyles = makeStyles()((theme) => ({
   styledDescriptionList: {
@@ -518,7 +531,11 @@ export const IdentifierDataGrid = ({
                   <Grid item className={classes.key}>
                     {capitaliseJustFirstChar(d.type.toLowerCase())}
                   </Grid>
-                  <Grid item>{d.value.toString().split("T")[0]}</Grid>
+                  <Grid item>
+                    {truncateIsoTimestamp(d.value, "date").orElse(
+                      "Invalid date"
+                    )}
+                  </Grid>
                 </Grid>
               ))}
             </Grid>
