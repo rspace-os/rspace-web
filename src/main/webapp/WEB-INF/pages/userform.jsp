@@ -581,7 +581,8 @@
     <div class="api-menu__buttons pull-right">
        {{#regenerable}}
          <div class="api-menu__edit">
-           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRegenerateBtn">Regenerate key</a>
+           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRegenerateBtn">
+            {{#revokable}}Regenerate{{/revokable}}{{^revokable}}Generate{{/revokable}} key</a>
          </div>
          <br>
        {{/regenerable}}
