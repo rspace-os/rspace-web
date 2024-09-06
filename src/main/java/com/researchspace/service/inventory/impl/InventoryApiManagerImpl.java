@@ -14,7 +14,6 @@ import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.dao.ContainerDao;
-import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
@@ -35,6 +34,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.RecordSharingACL;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.service.DocumentTagManager;
+import com.researchspace.service.FileStoreMetaManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.inventory.ApiBarcodesHelper;
@@ -76,7 +76,7 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   protected @Autowired InventoryPermissionUtils invPermissions;
   private @Autowired InventoryFileApiManager inventoryFileApiManager;
   @Autowired @Lazy private DocumentTagManager documentTagManager;
-  private @Autowired FileMetadataDao fileMetadataDao;
+  private @Autowired FileStoreMetaManager fileMetaManagerImpl;
 
   final Long DEFAULT_ICON_ID = -1L;
 
@@ -308,7 +308,7 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
             Map.entry("fileGroup", userName),
             Map.entry("fileName", imageName),
             Map.entry("fileOwner", userName));
-    return fileMetadataDao.findProperties(properties).stream().findFirst();
+    return fileMetaManagerImpl.findProperties(properties).stream().findFirst();
   }
 
   /**
