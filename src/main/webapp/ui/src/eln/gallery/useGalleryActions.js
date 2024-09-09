@@ -38,6 +38,7 @@ export function useGalleryActions(): {|
   deleteFiles: (RsSet<GalleryFile>) => Promise<void>,
   duplicateFiles: (RsSet<GalleryFile>) => Promise<void>,
   rename: (GalleryFile, string) => Promise<void>,
+  uploadNewVersion: (Id, GalleryFile, File) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
@@ -399,6 +400,58 @@ export function useGalleryActions(): {|
     }
   }
 
+  async function uploadNewVersion(
+    folderId: Id,
+    file: GalleryFile,
+    newFile: File
+  ) {
+    if (file.isSystemFolder) return;
+    const formData = new FormData();
+    formData.append("selectedMediaId", idToString(file.id));
+    formData.append("xfile", newFile);
+    const targetFolderId = ArrayUtils.last(file.path)
+      .map(({ id }) => idToString(id))
+      .orElse(idToString(folderId));
+    formData.append("targetFolderId", targetFolderId);
+    try {
+      const { data } = await axios.post<FormData, mixed>(
+        "gallery/ajax/uploadFile",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      addAlert(
+        Parsers.objectPath(["data", "exceptionMessage"], data)
+          .flatMap(Parsers.isString)
+          .map((exceptionMessage) =>
+            mkAlert({
+              title: `Failed to upload new version.`,
+              message: exceptionMessage,
+              variant: "error",
+            })
+          )
+          .orElse(
+            mkAlert({
+              message: `Successfully uploaded new version.`,
+              variant: "success",
+            })
+          )
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to upload new version.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
   return {
     uploadFiles,
     createFolder,
@@ -406,5 +459,6 @@ export function useGalleryActions(): {|
     deleteFiles,
     duplicateFiles,
     rename,
+    uploadNewVersion,
   };
 }

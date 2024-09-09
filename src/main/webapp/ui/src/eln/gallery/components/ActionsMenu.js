@@ -16,7 +16,7 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
-import { type GalleryFile, idToString } from "../useGalleryListing";
+import { type GalleryFile, idToString, type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import Dialog from "@mui/material/Dialog";
@@ -36,6 +36,7 @@ import MoveDialog from "./MoveDialog";
 import ExportDialog from "../../../Export/ExportDialog";
 import EventBoundary from "../../../components/EventBoundary";
 import * as Parsers from "../../../util/parsers";
+import * as FetchingData from "../../../util/fetchingData";
 
 const RenameDialog = ({
   open,
@@ -119,11 +120,16 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 type ActionsMenuArgs = {|
   refreshListing: () => void,
   section: GallerySection,
+  folderId: FetchingData.Fetched<Id>,
 |};
 
-function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
+function ActionsMenu({
+  refreshListing,
+  section,
+  folderId,
+}: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
-  const { deleteFiles, duplicateFiles } = useGalleryActions();
+  const { deleteFiles, duplicateFiles, uploadNewVersion } = useGalleryActions();
   const selection = useGallerySelection();
   const theme = useTheme();
 
@@ -365,16 +371,29 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
         />
         {selection
           .asSet()
-          .only.map((file) => file.extension)
-          .flatMap((f) => Parsers.isNotNull(f).toOptional())
-          .map((extension) => (
+          .only.map((file) => [file, file.extension])
+          .flatMap(([f, ext]) =>
+            Parsers.isNotNull(ext)
+              .toOptional()
+              .map((e) => [f, e])
+          )
+          .map(([file, extension]) => (
             <input
               key={null}
               ref={newVersionInputRef}
               accept={`.${extension}`}
               hidden
               onChange={({ target: { files } }) => {
-                console.debug(files);
+                void uploadNewVersion(
+                  FetchingData.getSuccessValue(folderId)
+                    .mapError(() => new Error("Current folder is not known"))
+                    .elseThrow(),
+                  file,
+                  files[0]
+                ).then(() => {
+                  setActionsMenuAnchorEl(null);
+                  refreshListing();
+                });
               }}
               type="file"
             />
