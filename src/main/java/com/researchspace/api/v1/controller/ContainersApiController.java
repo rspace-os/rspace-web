@@ -159,11 +159,25 @@ public class ContainersApiController extends BaseApiInventoryController implemen
   }
 
   @Override
+  public ResponseEntity<byte[]> getImageByFileName(
+      @PathVariable String fileName, @RequestAttribute(name = "user") User user)
+      throws IOException {
+    return doImageResponse(user, () -> getFilePropertyByFileName(fileName, user.getUsername()));
+  }
+
+  @Override
   public ResponseEntity<byte[]> getContainerThumbnail(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
     return doImageResponse(
         user,
         () -> containerApiMgr.assertUserCanReadContainer(id, user).getThumbnailFileProperty());
+  }
+
+  @Override
+  public ResponseEntity<byte[]> getThumbnailByFileName(
+      @PathVariable String fileName, @RequestAttribute(name = "user") User user)
+      throws IOException {
+    return doImageResponse(user, () -> getFilePropertyByFileName(fileName, user.getUsername()));
   }
 
   @Override

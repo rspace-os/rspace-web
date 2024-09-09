@@ -51,8 +51,14 @@ public interface ContainersApi {
   @GetMapping("/{id}/image/{unused}")
   ResponseEntity<byte[]> getContainerImage(Long id, User user) throws IOException;
 
+  @GetMapping("/image/{fileName}")
+  ResponseEntity<byte[]> getImageByFileName(String fileName, User user) throws IOException;
+
   @GetMapping("/{id}/thumbnail/{unused}")
   ResponseEntity<byte[]> getContainerThumbnail(Long id, User user) throws IOException;
+
+  @GetMapping("/thumbnail/{fileName}")
+  ResponseEntity<byte[]> getThumbnailByFileName(String fileName, User user) throws IOException;
 
   @GetMapping("/{id}/locationsImage/{unused}")
   ResponseEntity<byte[]> getContainerLocationsImage(Long id, User user) throws IOException;

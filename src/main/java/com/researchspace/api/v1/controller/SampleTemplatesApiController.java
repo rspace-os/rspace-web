@@ -181,10 +181,24 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
   }
 
   @Override
+  public ResponseEntity<byte[]> getImageByFileName(
+      @PathVariable String fileName, @RequestAttribute(name = "user") User user)
+      throws IOException {
+    return doImageResponse(user, () -> getFilePropertyByFileName(fileName, user.getUsername()));
+  }
+
+  @Override
   public ResponseEntity<byte[]> getSampleTemplateThumbnail(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
     return doImageResponse(
         user, () -> sampleApiMgr.assertUserCanReadSample(id, user).getThumbnailFileProperty());
+  }
+
+  @Override
+  public ResponseEntity<byte[]> getThumbnailByFileName(
+      @PathVariable String fileName, @RequestAttribute(name = "user") User user)
+      throws IOException {
+    return doImageResponse(user, () -> getFilePropertyByFileName(fileName, user.getUsername()));
   }
 
   @Override

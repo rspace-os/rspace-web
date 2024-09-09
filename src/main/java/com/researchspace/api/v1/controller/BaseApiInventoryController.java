@@ -97,10 +97,12 @@ public class BaseApiInventoryController extends BaseApiController {
     }
   }
 
+  // todo: make this work with shared template i.e. fileOwner might not be the user making the
+  // request
   FileProperty getFilePropertyByFileName(String fileName, String userName) {
     Map<String, String> properties =
         Map.ofEntries(
-            Map.entry("fileGroup", userName),
+//            Map.entry("fileGroup", userName),
             Map.entry("fileName", fileName),
             Map.entry("fileOwner", userName));
     return fileStoreMetaManager.findProperties(properties).stream().findFirst().orElse(null);
