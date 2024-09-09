@@ -203,7 +203,25 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
   const uploadNewVersionAllowed = (): Result<null> => {
     if (selection.isEmpty)
       return Result.Error([new Error("Nothing selected.")]);
-    return Result.Ok(null);
+    return selection
+      .asSet()
+      .only.toResult(
+        () =>
+          new Error("Only one item may be updated with a new version at once.")
+      )
+      .flatMap((file) => {
+        if (file.isFolder)
+          return Result.Error([
+            new Error("Cannot update folders with a new version."),
+          ]);
+        if (!file.extension)
+          return Result.Error([
+            new Error(
+              "An extension is required to be able to update the file with a new version"
+            ),
+          ]);
+        return Result.Ok(null);
+      });
   };
 
   const exportAllowed = (): Result<null> => {
