@@ -35,6 +35,7 @@ import Typography from "@mui/material/Typography";
 import MoveDialog from "./MoveDialog";
 import ExportDialog from "../../../Export/ExportDialog";
 import EventBoundary from "../../../components/EventBoundary";
+import * as Parsers from "../../../util/parsers";
 
 const RenameDialog = ({
   open,
@@ -346,11 +347,13 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
         />
         {selection
           .asSet()
-          .only.map((file) => (
+          .only.map((file) => file.extension)
+          .flatMap((f) => Parsers.isNotNull(f).toOptional())
+          .map((extension) => (
             <input
               key={null}
               ref={newVersionInputRef}
-              accept={".png"}
+              accept={`.${extension}`}
               hidden
               onChange={({ target: { files } }) => {
                 console.debug(files);
