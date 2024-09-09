@@ -12,6 +12,7 @@ import OpenWithIcon from "@mui/icons-material/OpenWith";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
@@ -129,6 +130,21 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
   const [moveOpen, setMoveOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
+  const newVersionInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  /*
+   * This is necessary because React does not yet support the new cancel event
+   * https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/cancel_event
+   * https://github.com/facebook/react/issues/27858
+   */
+  React.useEffect(() => {
+    const onCancel = () => {
+      setActionsMenuAnchorEl(null);
+    };
+    const input = newVersionInputRef.current;
+    input?.addEventListener("cancel", onCancel);
+    return () => input?.removeEventListener("cancel", onCancel);
+  }, [newVersionInputRef]);
 
   const duplicateAllowed = (): Result<null> => {
     if (selection.isEmpty)
@@ -181,6 +197,12 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
     if (selection.asSet().some((f) => !f.isImage))
       return Result.Error([new Error("Only images may be edited.")]);
     return Result.Error([new Error("Not yet available.")]);
+  };
+
+  const uploadNewVersionAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    return Result.Ok(null);
   };
 
   const exportAllowed = (): Result<null> => {
@@ -302,6 +324,38 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
                 refreshListing();
               }}
               file={file}
+            />
+          ))
+          .orElse(null)}
+        <NewMenuItem
+          title="Upload New Version"
+          subheader={uploadNewVersionAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
+          avatar={<FileUploadIcon />}
+          backgroundColor={COLOR.background}
+          foregroundColor={COLOR.contrastText}
+          onKeyDown={(e: KeyboardEvent) => {
+            if (e.key === " ") newVersionInputRef.current?.click();
+          }}
+          onClick={() => {
+            newVersionInputRef.current?.click();
+          }}
+          compact
+          disabled={uploadNewVersionAllowed().isError}
+        />
+        {selection
+          .asSet()
+          .only.map((file) => (
+            <input
+              key={null}
+              ref={newVersionInputRef}
+              accept={".png"}
+              hidden
+              onChange={({ target: { files } }) => {
+                console.debug(files);
+              }}
+              type="file"
             />
           ))
           .orElse(null)}
