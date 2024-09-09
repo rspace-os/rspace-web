@@ -102,9 +102,8 @@ public class BaseApiInventoryController extends BaseApiController {
   FileProperty getFilePropertyByFileName(String fileName, String userName) {
     Map<String, String> properties =
         Map.ofEntries(
-//            Map.entry("fileGroup", userName),
-            Map.entry("fileName", fileName),
-            Map.entry("fileOwner", userName));
+            //            Map.entry("fileGroup", userName),  Map.entry("fileOwner", userName)),
+            Map.entry("fileName", fileName));
     return fileStoreMetaManager.findProperties(properties).stream().findFirst().orElse(null);
   }
 
