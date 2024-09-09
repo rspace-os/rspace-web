@@ -306,8 +306,8 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
     Map<String, String> properties =
         Map.ofEntries(
             // todo: probably only fileName is needed here?
-//            Map.entry("fileGroup", userName),
-//            Map.entry("fileOwner", userName),
+            //            Map.entry("fileGroup", userName),
+            //            Map.entry("fileOwner", userName),
             Map.entry("fileName", imageName));
     return fileMetaManagerImpl.findProperties(properties).stream().findFirst();
   }
