@@ -409,10 +409,7 @@ export function useGalleryActions(): {|
     const formData = new FormData();
     formData.append("selectedMediaId", idToString(file.id));
     formData.append("xfile", newFile);
-    const targetFolderId = ArrayUtils.last(file.path)
-      .map(({ id }) => idToString(id))
-      .orElse(idToString(folderId));
-    formData.append("targetFolderId", targetFolderId);
+    formData.append("targetFolderId", idToString(folderId));
     try {
       const { data } = await axios.post<FormData, mixed>(
         "gallery/ajax/uploadFile",

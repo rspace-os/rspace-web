@@ -37,6 +37,7 @@ import ExportDialog from "../../../Export/ExportDialog";
 import EventBoundary from "../../../components/EventBoundary";
 import * as Parsers from "../../../util/parsers";
 import * as FetchingData from "../../../util/fetchingData";
+import * as ArrayUtils from "../../../util/ArrayUtils";
 
 const RenameDialog = ({
   open,
@@ -384,12 +385,37 @@ function ActionsMenu({
               accept={`.${extension}`}
               hidden
               onChange={({ target: { files } }) => {
+                /*
+                 * In grid view, the id of the last file in the path and the
+                 * folderId will always be the same as one can only operate on
+                 * the contents of the currently open folder but in tree view
+                 * it is possible to operate on files that are deeply nested.
+                 * In either case, if the path is empty it is because a root
+                 * level file is being operated on, and the only way that is
+                 * possible is if the folderId is the id of the root of the
+                 * gallery sub-section. The only time that folderId will not
+                 * be available is whilst the listing is still loading or
+                 * there has been an error so we can just also error here.
+                 */
+                const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
+                  .map(({ id }) => id)
+                  .orElseTry(() => FetchingData.getSuccessValue(folderId))
+                  .mapError(() => new Error("Current folder is not known"))
+                  .elseThrow();
+
+                /*
+                 * `multiple` is not set on the `<input>` so we need not check
+                 * that multiple files have been selected; the OS will prevent
+                 * it.
+                 */
+                const newFile = ArrayUtils.head(files)
+                  .mapError(() => new Error("No files selected"))
+                  .elseThrow();
+
                 void uploadNewVersion(
-                  FetchingData.getSuccessValue(folderId)
-                    .mapError(() => new Error("Current folder is not known"))
-                    .elseThrow(),
+                  idOfFolderThatFileIsIn,
                   file,
-                  files[0]
+                  newFile
                 ).then(() => {
                   setActionsMenuAnchorEl(null);
                   refreshListing();
