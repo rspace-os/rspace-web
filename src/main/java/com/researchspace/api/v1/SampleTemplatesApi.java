@@ -78,14 +78,8 @@ public interface SampleTemplatesApi {
   @GetMapping("/{id}/image/{unused}")
   ResponseEntity<byte[]> getSampleTemplateImage(Long id, User user) throws IOException;
 
-  @GetMapping("/image/{fileName}")
-  ResponseEntity<byte[]> getImageByFileName(String fileName, User user) throws IOException;
-
   @GetMapping("/{id}/thumbnail/{unused}")
   ResponseEntity<byte[]> getSampleTemplateThumbnail(Long id, User user) throws IOException;
-
-  @GetMapping("/thumbnail/{fileName}")
-  ResponseEntity<byte[]> getThumbnailByFileName(String fileName, User user) throws IOException;
 
   /**
    * Set template icon

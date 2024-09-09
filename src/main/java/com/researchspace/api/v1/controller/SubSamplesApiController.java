@@ -172,25 +172,11 @@ public class SubSamplesApiController extends BaseApiInventoryController implemen
   }
 
   @Override
-  public ResponseEntity<byte[]> getImageByFileName(
-      @PathVariable String fileName, @RequestAttribute(name = "user") User user)
-      throws IOException {
-    return doImageResponse(user, () -> getFilePropertyByFileName(fileName, user.getUsername()));
-  }
-
-  @Override
   public ResponseEntity<byte[]> getSubSampleThumbnail(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
     return doImageResponse(
         user,
         () -> subSampleApiMgr.assertUserCanReadSubSample(id, user).getThumbnailFileProperty());
-  }
-
-  @Override
-  public ResponseEntity<byte[]> getThumbnailByFileName(
-      @PathVariable String fileName, @RequestAttribute(name = "user") User user)
-      throws IOException {
-    return doImageResponse(user, () -> getFilePropertyByFileName(fileName, user.getUsername()));
   }
 
   public ApiInventoryRecordInfo duplicate(
