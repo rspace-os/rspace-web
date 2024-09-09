@@ -137,7 +137,7 @@ function _Stepper({
   React.useEffect(() => {
     window.addEventListener("scroll", onScroll);
     return () => {
-      window.removeEventListener(onScroll);
+      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
