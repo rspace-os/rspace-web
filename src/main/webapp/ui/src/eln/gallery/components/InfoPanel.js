@@ -94,14 +94,22 @@ const ASPOSE_EXTENSIONS = [
 const ActionButton = ({
   onClick,
   label,
+  disabled,
   sx,
 }: {|
   onClick: (Event) => void,
   label: string,
+  disabled?: boolean,
   sx: {| borderRadius: number, px: number, py: number |},
 |}): Node => {
   return (
-    <Button color="selection" variant="contained" sx={sx} onClick={onClick}>
+    <Button
+      color="selection"
+      variant="contained"
+      sx={sx}
+      onClick={onClick}
+      disabled={disabled}
+    >
       {label}
     </Button>
   );
@@ -498,11 +506,13 @@ const AsposePreviewButton = ({
   setPdfPreviewOpen: (string) => void,
 |}) => {
   const { addAlert } = React.useContext(AlertContext);
+  const [loading, setLoading] = React.useState(false);
   return (
     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
       <ActionButton
+        disabled={loading}
         onClick={doNotAwait(async () => {
-          // TODO: loading animation whilst generating
+          setLoading(true);
           const { data } = await axios.get<mixed>(
             "/Streamfile/ajax/convert/" +
               idToString(file.id) +
@@ -533,8 +543,9 @@ const AsposePreviewButton = ({
               })
             );
           }
+          setLoading(false);
         })}
-        label="Preview"
+        label={loading ? "Loading" : "Preview"}
         sx={{
           borderRadius: 1,
           px: 1.125,
