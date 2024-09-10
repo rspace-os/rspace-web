@@ -46,6 +46,7 @@ import DialogContent from "@mui/material/DialogContent";
 import axios from "axios";
 import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { take, incrementForever } from "../../../util/iterators";
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -830,7 +831,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
               file={pdfPreviewOpen}
               onLoadSuccess={onDocumentLoadSuccess}
             >
-              {Array.from(new Array(numPages), (_el, index) => (
+              {[...take(incrementForever(), numPages)].map((index) => (
                 <Page
                   key={`page_${index + 1}`}
                   pageNumber={index + 1}
