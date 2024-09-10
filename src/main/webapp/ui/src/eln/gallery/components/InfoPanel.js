@@ -498,11 +498,32 @@ const InfoPanelMultipleContent = (): Node => {
   );
 };
 
+/**
+ * If aspose is configured, then users can preview the contents of various
+ * common document file types by running them through the PDF generator and
+ * viewing that PDF by the same mechanism that we allow them to view PDFs
+ * stored in the Gallery. This button, when tapped, triggers the conversion of
+ * the GalleryFile to a PDF, and then via the callback passes the URL created
+ * by the microservice to the other UI code that displays PDFs.
+ *
+ * Whilst the conversion is on going the button becomes disabled and its label
+ * changes to indicate that the preview is loading. If the conversion fails or
+ * there is an error for any other reason with the network call then an error
+ * toast is shown.
+ */
 const AsposePreviewButton = ({
   file,
   setPdfPreviewOpen,
 }: {|
+  /*
+   * The GalleryFile that is of a type supported by aspose.
+   */
   file: GalleryFile,
+
+  /*
+   * A function, that when passed a URL, displays the PDF to be found at that
+   * URL in a dialog.
+   */
   setPdfPreviewOpen: (string) => void,
 |}) => {
   const { addAlert } = React.useContext(AlertContext);
