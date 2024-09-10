@@ -415,6 +415,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               "&:hover": {
                 borderColor: baseTheme.palette.primary.main,
               },
+              [`&.${buttonClasses.disabled}`]: {
+                borderColor: darken(disabledColor, 0.1),
+              },
             },
             containedPrimary: {
               backgroundColor: mainAccentColor,
