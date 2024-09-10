@@ -474,7 +474,20 @@ export default class Search implements SearchInterface {
         ...data.results
           .filter(({ error }) => !error)
           .filter(({ record }) => record !== null && record.type !== "SAMPLE")
-          .map(({ record }) => record),
+          .map(({ record }) => record)
+          /*
+           * The list is reversed because the server processes each record in
+           * turn and the processing of one record will at times impact how
+           * subsequent ones are processed and we always want the last piece of
+           * this cascaded state. For example, when deleting both of the
+           * subsamples of a sample, the first record to be returned will have
+           * a sample whose subSampleCount will be 1 and the second will have a
+           * sample whose subSampleCount will be 0. We want the second sample
+           * to be initialised by the factory and to be the sample used for
+           * both subsamples so we reverse the list so that the factory sees
+           * the second one first.
+           */
+          .toReversed(),
         ...samplesThatCouldBeDeleted,
       ].map((record) => {
         const newRecord = factory.newRecord(record);
@@ -592,13 +605,13 @@ export default class Search implements SearchInterface {
       ArrayUtils.filterClass(SubSampleModel, deletedRecords);
     const samplesOfDeletedSubSamples: Array<SampleModel> =
       justSubsamplesThatAreBeingDeleted.map((r) => r.sample);
-    const nowEmptySamples = samplesOfDeletedSubSamples.filter(
-      (s) => s.subSamplesCount === 0
-    );
     /*
-     * nowEmptySamples will be a unique list of samples because for each
-     * sample, only the last subsample deleted will have a subSamplesCount of 0
+     * Creating a set works because each sample is only instantiated once due
+     * to MemoisedFactory
      */
+    const nowEmptySamples = new Set(
+      samplesOfDeletedSubSamples.filter((s) => s.subSamplesCount === 0)
+    );
 
     for (const sample: SampleModel of nowEmptySamples) {
       uiStore.addAlert(
