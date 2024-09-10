@@ -490,8 +490,62 @@ const InfoPanelMultipleContent = (): Node => {
   );
 };
 
-export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
+const AsposePreviewButton = ({
+  file,
+  setPdfPreviewOpen,
+}: {|
+  file: GalleryFile,
+  setPdfPreviewOpen: (string) => void,
+|}) => {
   const { addAlert } = React.useContext(AlertContext);
+  return (
+    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+      <ActionButton
+        onClick={doNotAwait(async () => {
+          // TODO: loading animation whilst generating
+          const { data } = await axios.get<mixed>(
+            "/Streamfile/ajax/convert/" +
+              idToString(file.id) +
+              "?outputFormat=pdf"
+          );
+          const fileName = Parsers.isObject(data)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("data"))
+            .flatMap(Parsers.isString)
+            .orElse(null);
+          if (fileName) {
+            setPdfPreviewOpen(
+              "/Streamfile/direct/" +
+                idToString(file.id) +
+                "?fileName=" +
+                fileName
+            );
+          } else {
+            const errorMsg = Parsers.isObject(data)
+              .flatMap(Parsers.isNotNull)
+              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+              .orElse("Unknown reason");
+            addAlert(
+              mkAlert({
+                variant: "error",
+                title: "Could not generate preview.",
+                message: errorMsg,
+              })
+            );
+          }
+        })}
+        label="Preview"
+        sx={{
+          borderRadius: 1,
+          px: 1.125,
+          py: 0.25,
+        }}
+      />
+    </Grid>
+  );
+};
+
+export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const selection = useGallerySelection();
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
     null
@@ -708,51 +762,10 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                         ])
                   )
                   .map(() => (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                      <ActionButton
-                        onClick={doNotAwait(async () => {
-                          // TODO: loading animation whilst generating
-                          const { data } = await axios.get<mixed>(
-                            "/Streamfile/ajax/convert/" +
-                              idToString(file.id) +
-                              "?outputFormat=pdf"
-                          );
-                          const fileName = Parsers.isObject(data)
-                            .flatMap(Parsers.isNotNull)
-                            .flatMap(Parsers.getValueWithKey("data"))
-                            .flatMap(Parsers.isString)
-                            .orElse(null);
-                          if (fileName) {
-                            setPdfPreviewOpen(
-                              "/Streamfile/direct/" +
-                                idToString(file.id) +
-                                "?fileName=" +
-                                fileName
-                            );
-                          } else {
-                            const errorMsg = Parsers.isObject(data)
-                              .flatMap(Parsers.isNotNull)
-                              .flatMap(
-                                Parsers.getValueWithKey("exceptionMessage")
-                              )
-                              .orElse("Unknown reason");
-                            addAlert(
-                              mkAlert({
-                                variant: "error",
-                                title: "Could not generate preview.",
-                                message: errorMsg,
-                              })
-                            );
-                          }
-                        })}
-                        label="Preview"
-                        sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
-                        }}
-                      />
-                    </Grid>
+                    <AsposePreviewButton
+                      file={file}
+                      setPdfPreviewOpen={setPdfPreviewOpen}
+                    />
                   ))
               )
               .orElseGet((errors) => {
