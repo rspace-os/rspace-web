@@ -2,7 +2,6 @@
 
 import SearchContext from "../../stores/contexts/Search";
 import { DEFAULT_SEARCH } from "../../stores/models/Fetcher/CoreFetcher";
-import useStores from "../../stores/use-stores";
 import LoadingList from "../components/FetchOnScroll/LoadingList";
 import LoadingNode from "../components/RecordTree/LoadingNode";
 import RecordTree from "../components/RecordTree/RecordTree";
@@ -10,14 +9,15 @@ import ScrollBox from "./ScrollBox";
 import { observer } from "mobx-react-lite";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import React, { type Node, type ComponentType, useContext } from "react";
+import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 
 function ResultsTree(): Node {
   const { search } = useContext(SearchContext);
-  const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
     <ScrollBox
-      overflowY={uiStore.isSingleColumnLayout ? "unset" : "auto"}
+      overflowY={isSingleColumnLayout ? "unset" : "auto"}
       overflowX="hidden"
     >
       <RecordTree />

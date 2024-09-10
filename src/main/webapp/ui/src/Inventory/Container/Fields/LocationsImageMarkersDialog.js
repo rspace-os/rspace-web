@@ -33,6 +33,7 @@ import TitledBox from "../../components/TitledBox";
 import { type UseState } from "../../../util/types";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { type Location } from "../../../stores/definitions/Container";
+import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 
 export const COMPACT_VIEW = 0;
 export const DETAILED_VIEW = 1;
@@ -83,14 +84,15 @@ function LocationsImageMarkersDialog({
   close,
 }: LocationsImageMarkersDialogArgs): Node {
   const { classes } = useStyles();
-  const { searchStore, uiStore } = useStores();
+  const { searchStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   const activeResult = searchStore.activeResult;
   if (!activeResult || !(activeResult instanceof ContainerModel))
     throw new Error("ActiveResult must be a Container");
   const [selected, setSelected]: UseState<?TappedLocationData> =
     React.useState(null);
   const [rightView, setRightView] = React.useState(
-    uiStore.isSingleColumnLayout ? IMAGE_VIEW : COMPACT_VIEW
+    isSingleColumnLayout ? IMAGE_VIEW : COMPACT_VIEW
   );
   const cardParent = useRef<?HTMLElement>();
   const tableParent = useRef<?HTMLElement>();
@@ -114,7 +116,7 @@ function LocationsImageMarkersDialog({
 
   const onLocationTap = (mark: TappedLocationData) => {
     setSelected(mark);
-    if (uiStore.isSingleColumnLayout && rightView === IMAGE_VIEW)
+    if (isSingleColumnLayout && rightView === IMAGE_VIEW)
       setRightView(DETAILED_VIEW);
     const event = new CustomEvent(LOCATION_TAPPED_EVENT, {
       detail: { number: mark.number },
@@ -213,7 +215,7 @@ function LocationsImageMarkersDialog({
               iconPosition="start"
               value={DETAILED_VIEW}
             />
-            {uiStore.isSingleColumnLayout && (
+            {isSingleColumnLayout && (
               <Tab
                 icon={<ImageOutlinedIcon />}
                 label="Image"
@@ -251,9 +253,7 @@ function LocationsImageMarkersDialog({
               </List>
             </Box>
           )}
-          {uiStore.isSingleColumnLayout &&
-            rightView === IMAGE_VIEW &&
-            colRight()}
+          {isSingleColumnLayout && rightView === IMAGE_VIEW && colRight()}
         </TitledBox>
       }
       colRight={colRight()}

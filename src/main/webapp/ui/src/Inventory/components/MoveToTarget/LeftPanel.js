@@ -8,11 +8,13 @@ import { observer } from "mobx-react-lite";
 import React, { type ComponentType } from "react";
 import docLinks from "../../../assets/DocLinks";
 import ContainerModel from "../../../stores/models/ContainerModel";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 type LeftPanelArgs = {||};
 
 function LeftPanel(_: LeftPanelArgs) {
-  const { moveStore, uiStore } = useStores();
+  const { moveStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   const selectionHelpText = () => {
     if (!(moveStore.search?.activeResult instanceof ContainerModel))
@@ -21,14 +23,12 @@ function LeftPanel(_: LeftPanelArgs) {
       moveStore.search.activeResult.isWorkbench &&
       moveStore.search.fetcher.parentIsBench
     ) {
-      if (uiStore.isSingleColumnLayout) {
+      if (isSingleColumnLayout) {
         return "Press 'Next', followed by 'Move', to move the selected items to this bench.";
-      } else {
-        return "Press 'Move' in the bottom-right to move the selected items to this bench.";
       }
-    } else {
-      return null;
+      return "Press 'Move' in the bottom-right to move the selected items to this bench.";
     }
+    return null;
   };
 
   return (

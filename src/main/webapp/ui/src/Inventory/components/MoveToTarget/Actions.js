@@ -9,30 +9,29 @@ import { observer } from "mobx-react-lite";
 import React, { type ComponentType } from "react";
 import TopLevelButton from "./TopLevelButton";
 import { type Panel } from "../../../util/types";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
-const MoveSubmitButton = observer(function MoveSubmitButton({
-  handleSubmit,
-  isInvalid,
-}: {|
-  handleSubmit: () => void,
-  isInvalid: boolean,
-|}) {
-  const { moveStore } = useStores();
-  return (
-    <SubmitSpinner
-      onClick={handleSubmit}
-      disabled={isInvalid || moveStore.submitting === "TO-OTHER"}
-      loading={moveStore.submitting === "TO-OTHER"}
-      label="Move"
-    />
-  );
-});
+const MoveSubmitButton = observer(
+  ({
+    handleSubmit,
+    isInvalid,
+  }: {|
+    handleSubmit: () => void,
+    isInvalid: boolean,
+  |}) => {
+    const { moveStore } = useStores();
+    return (
+      <SubmitSpinner
+        onClick={handleSubmit}
+        disabled={isInvalid || moveStore.submitting === "TO-OTHER"}
+        loading={moveStore.submitting === "TO-OTHER"}
+        label="Move"
+      />
+    );
+  }
+);
 
-const CancelButton = observer(function CancelButton({
-  onClick,
-}: {|
-  onClick: () => void,
-|}) {
+const CancelButton = observer(({ onClick }: {| onClick: () => void |}) => {
   const { moveStore } = useStores();
   return (
     <Button onClick={onClick} disabled={moveStore.submitting !== "NO"}>
@@ -55,7 +54,8 @@ function Actions({
   handleNext,
   activeStep,
 }: ActionsArgs) {
-  const { uiStore, moveStore } = useStores();
+  const { moveStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   const isSelectionValid = () => {
     const ar = moveStore.activeResult;
     if (!ar) return false;
@@ -75,7 +75,7 @@ function Actions({
     );
   };
 
-  return !uiStore.isSingleColumnLayout ? (
+  return !isSingleColumnLayout ? (
     <>
       <TopLevelButton onClose={handleClose} />
       <div style={{ flexGrow: 1 }}></div>

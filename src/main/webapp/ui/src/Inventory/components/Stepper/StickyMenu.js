@@ -8,6 +8,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import Box from "@mui/material/Box";
 import ExtendedContextMenu from "../ContextMenu/ExtendedContextMenu";
 import Alert from "@mui/material/Alert";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 const MenuWrapper = withStyles<
   {| children: Node, recordType: string, isSingleColumnLayout: boolean |},
@@ -44,6 +45,7 @@ function StickyMenu({ stickyAlert }: StickyMenuArgs): Node {
     uiStore,
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   const prefixActions = [
     {
@@ -62,11 +64,9 @@ function StickyMenu({ stickyAlert }: StickyMenuArgs): Node {
     !["create", "edit"].includes(activeResult.state) && (
       <MenuWrapper
         recordType={activeResult.recordType}
-        isSingleColumnLayout={uiStore.isSingleColumnLayout}
+        isSingleColumnLayout={isSingleColumnLayout}
       >
-        <RoundedWhiteContainer
-          isSingleColumnLayout={uiStore.isSingleColumnLayout}
-        >
+        <RoundedWhiteContainer isSingleColumnLayout={isSingleColumnLayout}>
           <Box ml={0.5} pt={0.5}>
             <ExtendedContextMenu
               menuID="stepper"

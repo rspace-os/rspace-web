@@ -13,6 +13,7 @@ export const PREFERENCES: { [string]: symbol } = {
   GALLERY_SORT_BY: Symbol.for("GALLERY_SORT_BY"),
   GALLERY_SORT_ORDER: Symbol.for("GALLERY_SORT_ORDER"),
   INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for("INVENTORY_FORM_SECTIONS_EXPANDED"),
+  INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
 };
 
 type UiPreferencesContextType = {[key in keyof (typeof PREFERENCES)]: mixed};
