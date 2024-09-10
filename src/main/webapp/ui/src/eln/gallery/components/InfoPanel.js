@@ -45,6 +45,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import axios from "axios";
 import { doNotAwait } from "../../../util/Util";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -490,6 +491,7 @@ const InfoPanelMultipleContent = (): Node => {
 };
 
 export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
+  const { addAlert } = React.useContext(AlertContext);
   const selection = useGallerySelection();
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
     null
@@ -710,21 +712,38 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       <ActionButton
                         onClick={doNotAwait(async () => {
                           // TODO: loading animation whilst generating
-                          // TODO: error handling for when conversion fails (data.exceptionMessage)
-                          const { data } = await axios.get<{
-                            data: string,
-                            ...
-                          }>(
+                          const { data } = await axios.get<mixed>(
                             "/Streamfile/ajax/convert/" +
                               idToString(file.id) +
                               "?outputFormat=pdf"
                           );
-                          setPdfPreviewOpen(
-                            "/Streamfile/direct/" +
-                              idToString(file.id) +
-                              "?fileName=" +
-                              data.data
-                          );
+                          const fileName = Parsers.isObject(data)
+                            .flatMap(Parsers.isNotNull)
+                            .flatMap(Parsers.getValueWithKey("data"))
+                            .flatMap(Parsers.isString)
+                            .orElse(null);
+                          if (fileName) {
+                            setPdfPreviewOpen(
+                              "/Streamfile/direct/" +
+                                idToString(file.id) +
+                                "?fileName=" +
+                                fileName
+                            );
+                          } else {
+                            const errorMsg = Parsers.isObject(data)
+                              .flatMap(Parsers.isNotNull)
+                              .flatMap(
+                                Parsers.getValueWithKey("exceptionMessage")
+                              )
+                              .orElse("Unknown reason");
+                            addAlert(
+                              mkAlert({
+                                variant: "error",
+                                title: "Could not generate preview.",
+                                message: errorMsg,
+                              })
+                            );
+                          }
                         })}
                         label="Preview"
                         sx={{
