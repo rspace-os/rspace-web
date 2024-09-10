@@ -513,37 +513,44 @@ const AsposePreviewButton = ({
         disabled={loading}
         onClick={doNotAwait(async () => {
           setLoading(true);
-          const { data } = await axios.get<mixed>(
-            "/Streamfile/ajax/convert/" +
-              idToString(file.id) +
-              "?outputFormat=pdf"
-          );
-          const fileName = Parsers.isObject(data)
-            .flatMap(Parsers.isNotNull)
-            .flatMap(Parsers.getValueWithKey("data"))
-            .flatMap(Parsers.isString)
-            .orElse(null);
-          if (fileName) {
-            setPdfPreviewOpen(
-              "/Streamfile/direct/" +
+          try {
+            const { data } = await axios.get<mixed>(
+              "/Streamfile/ajax/convert/" +
                 idToString(file.id) +
-                "?fileName=" +
-                fileName
+                "?outputFormat=pdf"
             );
-          } else {
-            const errorMsg = Parsers.isObject(data)
+            const fileName = Parsers.isObject(data)
               .flatMap(Parsers.isNotNull)
-              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-              .orElse("Unknown reason");
+              .flatMap(Parsers.getValueWithKey("data"))
+              .flatMap(Parsers.isString)
+              .orElse(null);
+            if (fileName) {
+              setPdfPreviewOpen(
+                "/Streamfile/direct/" +
+                  idToString(file.id) +
+                  "?fileName=" +
+                  fileName
+              );
+            } else {
+              Parsers.isObject(data)
+                .flatMap(Parsers.isNotNull)
+                .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+                .flatMap(Parsers.isString)
+                .do((msg) => {
+                  throw new Error(msg);
+                });
+            }
+          } catch (e) {
             addAlert(
               mkAlert({
                 variant: "error",
                 title: "Could not generate preview.",
-                message: errorMsg,
+                message: e.message ?? "Unknown reason",
               })
             );
+          } finally {
+            setLoading(false);
           }
-          setLoading(false);
         })}
         label={loading ? "Loading" : "Preview"}
         sx={{
