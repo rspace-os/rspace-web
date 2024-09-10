@@ -44,6 +44,7 @@ import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import axios from "axios";
+import { doNotAwait } from "../../../util/Util";
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -489,22 +490,7 @@ const InfoPanelMultipleContent = (): Node => {
 };
 
 export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
-  const [converting, setConverting] = React.useState(true);
-  const selection = useGallerySelection({
-    onChange: (selection) => {
-      selection.asSet().only.do((file) => {
-        void axios
-          .get<mixed>(
-            "/Streamfile/ajax/convert/" +
-              idToString(file.id) +
-              "?outputFormat=pdf"
-          )
-          .then(() => {
-            setConverting(false);
-          });
-      });
-    },
-  });
+  const selection = useGallerySelection();
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
     null
   );
@@ -689,37 +675,57 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 (file.extension === "pdf"
                   ? Result.Ok(file.downloadHref)
                   : Result.Error([new Error("Not a PDF")])
-                )
-                  .orElseTry(() =>
-                    FetchingData.getSuccessValue(asposeEnabled)
-                      .flatMap(Parsers.isBoolean)
-                      .flatMap(Parsers.isTrue)
-                      .mapError(() => new Error("Aspose is not enabled"))
-                      .flatMap(() =>
-                        ASPOSE_EXTENSIONS.includes(file.extension)
-                          ? Result.Ok(null)
-                          : Result.Error([
-                              new Error(
-                                "Aspose does not support the extension of the selected file"
-                              ),
-                            ])
-                      )
-                      .flatMap(() =>
-                        converting
-                          ? Result.Error<string>([
-                              new Error("Still converting file to PDF"),
-                            ])
-                          : Result.Ok(
-                              "/Streamfile/direct/" + idToString(file.id)
-                            )
-                      )
+                ).map((url) => (
+                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <ActionButton
+                      onClick={() => {
+                        setPdfPreviewOpen(url ?? null);
+                      }}
+                      label="Preview"
+                      sx={{
+                        borderRadius: 1,
+                        px: 1.125,
+                        py: 0.25,
+                      }}
+                    />
+                  </Grid>
+                ))
+              )
+              .orElseTry(() =>
+                FetchingData.getSuccessValue(asposeEnabled)
+                  .flatMap(Parsers.isBoolean)
+                  .flatMap(Parsers.isTrue)
+                  .mapError(() => new Error("Aspose is not enabled"))
+                  .flatMap(() =>
+                    ASPOSE_EXTENSIONS.includes(file.extension)
+                      ? Result.Ok(null)
+                      : Result.Error([
+                          new Error(
+                            "Aspose does not support the extension of the selected file"
+                          ),
+                        ])
                   )
-                  .map((url) => (
+                  .map(() => (
                     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                       <ActionButton
-                        onClick={() => {
-                          setPdfPreviewOpen(url ?? null);
-                        }}
+                        onClick={doNotAwait(async () => {
+                          // TODO: loading animation whilst generating
+                          // TODO: error handling for when conversion fails (data.exceptionMessage)
+                          const { data } = await axios.get<{
+                            data: string,
+                            ...
+                          }>(
+                            "/Streamfile/ajax/convert/" +
+                              idToString(file.id) +
+                              "?outputFormat=pdf"
+                          );
+                          setPdfPreviewOpen(
+                            "/Streamfile/direct/" +
+                              idToString(file.id) +
+                              "?fileName=" +
+                              data.data
+                          );
+                        })}
                         label="Preview"
                         sx={{
                           borderRadius: 1,
