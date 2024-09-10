@@ -38,7 +38,20 @@ export function useGalleryActions(): {|
   deleteFiles: (RsSet<GalleryFile>) => Promise<void>,
   duplicateFiles: (RsSet<GalleryFile>) => Promise<void>,
   rename: (GalleryFile, string) => Promise<void>,
-  uploadNewVersion: (Id, GalleryFile, File) => Promise<void>,
+
+  /**
+   * The contents of `file` is replaced with `newFile`. The filename is also
+   * replaced and the version number incremented.
+   *
+   * @arg folderId The Id of the folder that `file` currently resides in.
+   * @arg file     The file whose contents are being updated.
+   * @arg newFile  The contents that `file` is being updated to.
+   */
+  uploadNewVersion: (
+    folderId: Id,
+    file: GalleryFile,
+    newFile: File
+  ) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
