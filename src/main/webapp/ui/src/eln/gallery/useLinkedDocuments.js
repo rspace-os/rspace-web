@@ -72,10 +72,10 @@ export default function useLinkedDocuments(file: GalleryFile): {|
 
       Parsers.objectPath(["data"], data)
         .flatMap(Parsers.isArray)
-        .flatMap((x) =>
+        .flatMap((docs) =>
           Result.all(
-            ...x.map((y) =>
-              Parsers.isObject(y)
+            ...docs.map((doc) =>
+              Parsers.isObject(doc)
                 .flatMap(Parsers.isNotNull)
                 .map((obj) => {
                   try {
