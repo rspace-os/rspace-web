@@ -77,6 +77,14 @@ import {
   InfoPanelForSmallViewports,
   InfoPanelForLargeViewports,
 } from "./InfoPanel";
+import {
+  useOpen,
+  useImagePreview,
+  useCollaboraEdit,
+  useOfficeOnlineEdit,
+  usePdfPreview,
+  useAsposePreview,
+} from "../primaryActionHooks";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -429,6 +437,12 @@ const GridView = observer(
   |}) => {
     const dndContext = useDndContext();
     const selection = useGallerySelection();
+    const OpenF = useOpen();
+    const ImagePreviewF = useImagePreview();
+    const CollaboraEditF = useCollaboraEdit();
+    const OfficeOnlineEditF = useOfficeOnlineEdit();
+    const PdfPreviewF = usePdfPreview();
+    const AsposePreviewF = useAsposePreview();
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
@@ -620,6 +634,39 @@ const GridView = observer(
                   selection.append(file);
                 }
               } else {
+                // on double click, try and figure out what the user would want
+                // to do with a file of this type based on what services are
+                // configured
+                if (e.detail > 1) {
+                  OpenF(file)
+                    .orElseTry(() =>
+                      ImagePreviewF(file).map((url) => () => {
+                        console.debug("open preview for", url);
+                      })
+                    )
+                    .orElseTry(() =>
+                      CollaboraEditF(file).map((url) => () => {
+                        window.open(url);
+                      })
+                    )
+                    .orElseTry(() =>
+                      OfficeOnlineEditF(file).map((url) => () => {
+                        window.open(url);
+                      })
+                    )
+                    .orElseTry(() =>
+                      PdfPreviewF(file).map((url) => () => {
+                        console.debug("open pdf preview for", url);
+                      })
+                    )
+                    .orElseTry(() =>
+                      AsposePreviewF(file).map(() => () => {
+                        console.debug("generate and open pdf preview");
+                      })
+                    )
+                    .orElse(() => {})();
+                  return;
+                }
                 selection.clear();
                 selection.append(file);
                 setShiftOrigin({
@@ -853,10 +900,6 @@ const FileCard = styled(
                     e.stopPropagation();
                   }}
                   onClick={(e) => {
-                    if (e.detail > 1 && file.open) {
-                      file.open();
-                      return;
-                    }
                     onClick(e);
                   }}
                   sx={{ height: "100%" }}
