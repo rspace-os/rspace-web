@@ -21,7 +21,10 @@ import * as Parsers from "../../../util/parsers";
  * network call then an error toast is shown.
  */
 
-const AsposePreviewContext = React.createContext((_file: GalleryFile) => {});
+const AsposePreviewContext = React.createContext({
+  setFile: (_file: GalleryFile) => {},
+  loading: false,
+});
 
 /**
  * Use the callable aspose preview component to display a document in a dialog
@@ -32,10 +35,14 @@ export function useAsposePreview(): {|
    * Preview the document at this GalleryFile.
    */
   openAsposePreview: (GalleryFile) => void,
+
+  loading: boolean,
 |} {
-  const openAsposePreview = React.useContext(AsposePreviewContext);
+  const { setFile: openAsposePreview, loading } =
+    React.useContext(AsposePreviewContext);
   return {
     openAsposePreview,
+    loading,
   };
 }
 
@@ -55,12 +62,14 @@ export function CallableAsposePreview({
   children: Node,
 |}): Node {
   const [file, setFile] = React.useState<null | GalleryFile>(null);
+  const [loading, setLoading] = React.useState(false);
   const { openPdfPreview } = usePdfPreview();
   const { addAlert } = React.useContext(AlertContext);
 
   React.useEffect(() => {
     if (file) {
       void (async () => {
+        setLoading(true);
         try {
           const { data } = await axios.get<mixed>(
             "/Streamfile/ajax/convert/" +
@@ -96,6 +105,8 @@ export function CallableAsposePreview({
               message: e.message ?? "Unknown reason",
             })
           );
+        } finally {
+          setLoading(false);
         }
       })();
     }
@@ -103,7 +114,7 @@ export function CallableAsposePreview({
 
   return (
     <>
-      <AsposePreviewContext.Provider value={setFile}>
+      <AsposePreviewContext.Provider value={{ setFile, loading }}>
         {children}
       </AsposePreviewContext.Provider>
     </>

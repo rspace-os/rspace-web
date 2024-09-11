@@ -4,11 +4,7 @@ import React, { type Node, type ComponentType } from "react";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import { styled } from "@mui/material/styles";
-import {
-  type GalleryFile,
-  Description,
-  idToString,
-} from "../useGalleryListing";
+import { type GalleryFile, Description } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
@@ -29,13 +25,9 @@ import { useGalleryActions } from "../useGalleryActions";
 import ImagePreview, {
   type PreviewSize,
 } from "../../../Inventory/components/ImagePreview";
-import * as Parsers from "../../../util/parsers";
 import clsx from "clsx";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";
-import axios from "axios";
-import { doNotAwait } from "../../../util/Util";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import {
   useOpen,
   useImagePreviewOfGalleryFile,
@@ -472,70 +464,15 @@ const InfoPanelMultipleContent = (): Node => {
   );
 };
 
-const AsposePreviewButton = ({
-  file,
-  setPdfPreviewOpen,
-}: {|
-  /*
-   * The GalleryFile that is of a type supported by aspose.
-   */
-  file: GalleryFile,
-
-  /*
-   * A function, that when passed a URL, displays the PDF to be found at that
-   * URL in a dialog.
-   */
-  setPdfPreviewOpen: (string) => void,
-|}) => {
-  const { addAlert } = React.useContext(AlertContext);
-  const [loading, setLoading] = React.useState(false);
-  const { openAsposePreview } = useAsposePreview();
+const AsposePreviewButton = ({ file }: {| file: GalleryFile |}) => {
+  const { openAsposePreview, loading } = useAsposePreview();
   return (
     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
       <ActionButton
         disabled={loading}
-        onClick={doNotAwait(async () => {
-          setLoading(true);
+        onClick={() => {
           openAsposePreview(file);
-          //        try {
-          //          const { data } = await axios.get<mixed>(
-          //            "/Streamfile/ajax/convert/" +
-          //              idToString(file.id) +
-          //              "?outputFormat=pdf"
-          //          );
-          //          const fileName = Parsers.isObject(data)
-          //            .flatMap(Parsers.isNotNull)
-          //            .flatMap(Parsers.getValueWithKey("data"))
-          //            .flatMap(Parsers.isString)
-          //            .orElse(null);
-          //          if (fileName) {
-          //            setPdfPreviewOpen(
-          //              "/Streamfile/direct/" +
-          //                idToString(file.id) +
-          //                "?fileName=" +
-          //                fileName
-          //            );
-          //          } else {
-          //            Parsers.isObject(data)
-          //              .flatMap(Parsers.isNotNull)
-          //              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-          //              .flatMap(Parsers.isString)
-          //              .do((msg) => {
-          //                throw new Error(msg);
-          //              });
-          //          }
-          //        } catch (e) {
-          //          addAlert(
-          //            mkAlert({
-          //              variant: "error",
-          //              title: "Could not generate preview.",
-          //              message: e.message ?? "Unknown reason",
-          //            })
-          //          );
-          //        } finally {
-          //          setLoading(false);
-          //        }
-        })}
+        }}
         label={loading ? "Loading" : "Preview"}
         sx={{
           borderRadius: 1,
@@ -695,11 +632,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
               })
               .orElseTry(() => {
                 return AsposePreviewF(file).map(() => (
-                  <AsposePreviewButton
-                    key={null}
-                    file={file}
-                    setPdfPreviewOpen={openPdfPreview}
-                  />
+                  <AsposePreviewButton key={null} file={file} />
                 ));
               })
               .orElseGet((errors) => {
