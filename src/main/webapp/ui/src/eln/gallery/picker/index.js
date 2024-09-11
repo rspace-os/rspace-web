@@ -29,6 +29,7 @@ import { observer } from "mobx-react-lite";
 import Sidebar from "../components/Sidebar";
 import MainPanel from "../components/MainPanel";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
+import { COLOR } from "../common";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -38,34 +39,6 @@ library.add(faShapes);
 library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
-
-const COLOR = {
-  main: {
-    hue: 190,
-    saturation: 30,
-    lightness: 80,
-  },
-  darker: {
-    hue: 190,
-    saturation: 30,
-    lightness: 32,
-  },
-  contrastText: {
-    hue: 190,
-    saturation: 20,
-    lightness: 29,
-  },
-  background: {
-    hue: 190,
-    saturation: 30,
-    lightness: 80,
-  },
-  backgroundContrastText: {
-    hue: 190,
-    saturation: 20,
-    lightness: 29,
-  },
-};
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-container > .MuiPaper-root": {
