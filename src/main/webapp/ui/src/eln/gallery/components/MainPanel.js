@@ -443,12 +443,12 @@ const GridView = observer(
     const { openImagePreview } = useImagePreview();
     const { openPdfPreview } = usePdfPreview();
     const { openAsposePreview } = useAsposePreview();
-    const OpenF = useOpen();
-    const ImagePreviewF = useImagePreviewOfGalleryFile();
-    const CollaboraEditF = useCollaboraEdit();
-    const OfficeOnlineEditF = useOfficeOnlineEdit();
-    const PdfPreviewF = usePdfPreviewOfGalleryFile();
-    const AsposePreviewF = useAsposePreviewOfGalleryFile();
+    const canOpenAsFolder = useOpen();
+    const canPreviewAsImage = useImagePreviewOfGalleryFile();
+    const canEditWithCollabora = useCollaboraEdit();
+    const canEditWithOfficeOnline = useOfficeOnlineEdit();
+    const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
+    const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
@@ -644,29 +644,29 @@ const GridView = observer(
                 // to do with a file of this type based on what services are
                 // configured
                 if (e.detail > 1) {
-                  OpenF(file)
+                  canOpenAsFolder(file)
                     .orElseTry(() =>
-                      ImagePreviewF(file).map((url) => () => {
+                      canPreviewAsImage(file).map((url) => () => {
                         openImagePreview(url);
                       })
                     )
                     .orElseTry(() =>
-                      CollaboraEditF(file).map((url) => () => {
+                      canEditWithCollabora(file).map((url) => () => {
                         window.open(url);
                       })
                     )
                     .orElseTry(() =>
-                      OfficeOnlineEditF(file).map((url) => () => {
+                      canEditWithOfficeOnline(file).map((url) => () => {
                         window.open(url);
                       })
                     )
                     .orElseTry(() =>
-                      PdfPreviewF(file).map((url) => () => {
+                      canPreviewAsPdf(file).map((url) => () => {
                         openPdfPreview(url);
                       })
                     )
                     .orElseTry(() =>
-                      AsposePreviewF(file).map(() => () => {
+                      canPreviewWithAspose(file).map(() => () => {
                         openAsposePreview(file);
                       })
                     )

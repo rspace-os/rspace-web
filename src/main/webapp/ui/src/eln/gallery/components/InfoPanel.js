@@ -488,12 +488,12 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const selection = useGallerySelection();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
-  const OpenF = useOpen();
-  const ImagePreviewF = useImagePreviewOfGalleryFile();
-  const CollaboraEditF = useCollaboraEdit();
-  const OfficeOnlineEditF = useOfficeOnlineEdit();
-  const PdfPreviewF = usePdfPreviewOfGalleryFile();
-  const AsposePreviewF = useAsposePreviewOfGalleryFile();
+  const canOpenAsFolder = useOpen();
+  const canPreviewAsImage = useImagePreviewOfGalleryFile();
+  const canEditWithCollabora = useCollaboraEdit();
+  const canEditWithOfficeOnline = useOfficeOnlineEdit();
+  const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
+  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
 
   return (
     <>
@@ -548,7 +548,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
         {selection
           .asSet()
           .only.map((file) => {
-            return OpenF(file)
+            return canOpenAsFolder(file)
               .map((open) => (
                 <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                   <ActionButton
@@ -563,7 +563,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 </Grid>
               ))
               .orElseTry(() => {
-                return ImagePreviewF(file).map((url) => (
+                return canPreviewAsImage(file).map((url) => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
@@ -580,7 +580,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 ));
               })
               .orElseTry(() => {
-                return CollaboraEditF(file).map((url) => (
+                return canEditWithCollabora(file).map((url) => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
@@ -597,7 +597,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 ));
               })
               .orElseTry(() => {
-                return OfficeOnlineEditF(file).map((url) => (
+                return canEditWithOfficeOnline(file).map((url) => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
@@ -614,7 +614,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 ));
               })
               .orElseTry(() => {
-                return PdfPreviewF(file).map((url) => (
+                return canPreviewAsPdf(file).map((url) => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
@@ -631,7 +631,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 ));
               })
               .orElseTry(() => {
-                return AsposePreviewF(file).map(() => (
+                return canPreviewWithAspose(file).map(() => (
                   <AsposePreviewButton key={null} file={file} />
                 ));
               })
