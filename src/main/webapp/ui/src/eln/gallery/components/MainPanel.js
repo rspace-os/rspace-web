@@ -82,10 +82,11 @@ import {
   useImagePreviewOfGalleryFile,
   useCollaboraEdit,
   useOfficeOnlineEdit,
-  usePdfPreview,
+  usePdfPreviewOfGalleryFile,
   useAsposePreview,
 } from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
+import { usePdfPreview } from "./CallablePdfPreview";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -439,11 +440,12 @@ const GridView = observer(
     const dndContext = useDndContext();
     const selection = useGallerySelection();
     const { openImagePreview } = useImagePreview();
+    const { openPdfPreview } = usePdfPreview();
     const OpenF = useOpen();
     const ImagePreviewF = useImagePreviewOfGalleryFile();
     const CollaboraEditF = useCollaboraEdit();
     const OfficeOnlineEditF = useOfficeOnlineEdit();
-    const PdfPreviewF = usePdfPreview();
+    const PdfPreviewF = usePdfPreviewOfGalleryFile();
     const AsposePreviewF = useAsposePreview();
 
     const viewportDimensions = useViewportDimensions();
@@ -658,7 +660,7 @@ const GridView = observer(
                     )
                     .orElseTry(() =>
                       PdfPreviewF(file).map((url) => () => {
-                        console.debug("open pdf preview for", url);
+                        if (url) openPdfPreview(url);
                       })
                     )
                     .orElseTry(() =>

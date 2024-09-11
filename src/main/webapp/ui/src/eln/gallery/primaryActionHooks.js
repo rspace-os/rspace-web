@@ -75,7 +75,7 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
   };
 }
 
-export function usePdfPreview(): (
+export function usePdfPreviewOfGalleryFile(): (
   file: GalleryFile
 ) => Result<string | typeof undefined> {
   return (file) => {

@@ -33,35 +33,19 @@ import * as Parsers from "../../../util/parsers";
 import clsx from "clsx";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";
-import { Document, Page, pdfjs } from "react-pdf";
-import Dialog from "@mui/material/Dialog";
-import "react-pdf/dist/esm/Page/TextLayer.css";
-import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
 import axios from "axios";
 import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import { take, incrementForever } from "../../../util/iterators";
 import {
   useOpen,
   useImagePreviewOfGalleryFile,
   useCollaboraEdit,
   useOfficeOnlineEdit,
-  usePdfPreview,
+  usePdfPreviewOfGalleryFile,
   useAsposePreview,
 } from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
-
-/*
- * This snippet is a necessary step in initialising the PDF preview
- * functionality. Taken from the example code for react-pdf
- * https://github.com/wojtekmaj/react-pdf/blob/main/sample/webpack5/Sample.tsx
- */
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
-).toString();
+import { usePdfPreview } from "./CallablePdfPreview";
 
 /*
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -576,25 +560,13 @@ const AsposePreviewButton = ({
 export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const selection = useGallerySelection();
   const { openImagePreview } = useImagePreview();
-  const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(
-    null
-  );
-  const [numPages, setNumPages] = React.useState<number>(0);
+  const { openPdfPreview } = usePdfPreview();
   const OpenF = useOpen();
   const ImagePreviewF = useImagePreviewOfGalleryFile();
   const CollaboraEditF = useCollaboraEdit();
   const OfficeOnlineEditF = useOfficeOnlineEdit();
-  const PdfPreviewF = usePdfPreview();
+  const PdfPreviewF = usePdfPreviewOfGalleryFile();
   const AsposePreviewF = useAsposePreview();
-
-  function onDocumentLoadSuccess({
-    numPages: nextNumPages,
-  }: {
-    numPages: number,
-    ...
-  }): void {
-    setNumPages(nextNumPages);
-  }
 
   return (
     <>
@@ -719,7 +691,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
-                        setPdfPreviewOpen(url ?? null);
+                        if (url) openPdfPreview(url);
                       }}
                       label="Preview"
                       sx={{
@@ -736,7 +708,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   <AsposePreviewButton
                     key={null}
                     file={file}
-                    setPdfPreviewOpen={setPdfPreviewOpen}
+                    setPdfPreviewOpen={openPdfPreview}
                   />
                 ));
               })
@@ -750,39 +722,6 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
           })
           .orElse(null)}
       </Grid>
-      {pdfPreviewOpen && (
-        <Dialog
-          open={true}
-          fullWidth
-          onClose={() => {
-            setPdfPreviewOpen(null);
-          }}
-        >
-          <DialogContent sx={{ overflowY: "auto" }}>
-            <Document
-              file={pdfPreviewOpen}
-              onLoadSuccess={onDocumentLoadSuccess}
-            >
-              {[...take(incrementForever(), numPages)].map((index) => (
-                <Page
-                  key={`page_${index + 1}`}
-                  pageNumber={index + 1}
-                  width={550}
-                />
-              ))}
-            </Document>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => {
-                setPdfPreviewOpen(null);
-              }}
-            >
-              Close
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
       {selection
         .asSet()
         .only.map((f) => (
