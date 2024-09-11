@@ -10,7 +10,6 @@ import { observer } from "mobx-react-lite";
 import FileField from "../../../../components/Inputs/FileField";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import docLinks from "../../../../assets/DocLinks";
-import AddButton from "../../../../components/AddButton";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import { newAttachment } from "../../../../stores/models/AttachmentModel";
@@ -36,13 +35,21 @@ import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { type Attachment } from "../../../../stores/definitions/Attachment";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { type BlobUrl } from "../../../../stores/stores/ImageStore";
+import BigIconButton from "../../../../components/BigIconButton";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import UploadIcon from "@mui/icons-material/Publish";
+
+const GalleryPicker = React.lazy(() =>
+  import("../../../../eln/gallery/picker")
+);
 
 const CustomCardHeader = withStyles<
   ElementProps<typeof CardHeader>,
   { root: string, action: string }
 >((theme) => ({
   root: {
-    padding: theme.spacing(0, 0, 0, 1.5),
+    padding: theme.spacing(0.5, 1.5, 0.25, 2),
   },
   action: {
     margin: 0,
@@ -91,21 +98,6 @@ const CollapseContents = <
   );
 };
 
-const AddButtonWrapper = ({
-  disabled,
-  id,
-}: {|
-  disabled: boolean,
-  id: string,
-|}): Node => (
-  <label htmlFor={id}>
-    <AddButton
-      disabled={disabled}
-      title={disabled ? "Press Edit to add a file" : "Select a file to attach"}
-    />
-  </label>
-);
-
 const ToggleButton = ({
   attachmentCount,
   open,
@@ -140,6 +132,7 @@ const FileSelector = ({
   editable: boolean,
 }): Node => {
   const { trackingStore } = useStores();
+  const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
 
   const onFileSelection = ({ file }: { file: File }) => {
     activeResult.setAttributesDirty({
@@ -158,75 +151,114 @@ const FileSelector = ({
   };
 
   return (
-    <FileField
-      accept="*"
-      buttonLabel="Add Attachment"
-      name="attachments"
-      onChange={onFileSelection}
-      showSelectedFilename={false}
-      icon={<AttachFileIcon />}
-      loading={false}
-      error={false}
-      key={0}
-      disabled={!editable}
-      triggerButton={({ id }) => (
-        <AddButtonWrapper disabled={!editable} id={id} />
+    <>
+      <FileField
+        accept="*"
+        buttonLabel="Upload"
+        name="attachments"
+        onChange={onFileSelection}
+        showSelectedFilename={false}
+        icon={<UploadIcon />}
+        loading={false}
+        error={false}
+        key={0}
+        disabled={!editable}
+        explanatoryText="File will be added to the Gallery once saved."
+        containerProps={{
+          wrap: "nowrap",
+          alignItems: "stretch",
+          flexDirection: "column",
+        }}
+        InputProps={{
+          startAdornment: (
+            <Grid item>
+              <BigIconButton
+                onClick={() => {
+                  setGalleryDialogOpen(true);
+                }}
+                icon={<AttachFileIcon />}
+                label="Browse Gallery"
+                explanatoryText="Link to existing items in the Gallery."
+              />
+            </Grid>
+          ),
+        }}
+      />
+      {galleryDialogOpen && (
+        <React.Suspense fallback={<></>}>
+          <GalleryPicker
+            open={true}
+            onClose={() => {
+              setGalleryDialogOpen(false);
+            }}
+          />
+        </React.Suspense>
       )}
-    />
+    </>
   );
 };
 
-const FilesCard = observer(function FilesCard<
-  Fields: {
-    image: ?BlobUrl,
-    newBase64Image: ?string,
-    ...
-  },
-  FieldOwner: HasEditableFields<Fields>
->({ fieldOwner }: { fieldOwner?: FieldOwner }): Node {
-  const [open, setOpen] = useState(false);
+const FilesCard = observer(
+  <
+    Fields: {
+      image: ?BlobUrl,
+      newBase64Image: ?string,
+      ...
+    },
+    FieldOwner: HasEditableFields<Fields>
+  >({
+    fieldOwner,
+  }: {
+    fieldOwner?: FieldOwner,
+  }): Node => {
+    const [open, setOpen] = useState(false);
 
-  const {
-    searchStore: { activeResult },
-  } = useStores();
-  if (!activeResult) throw new Error("ActiveResult must be a Record");
-  const editable = activeResult.isFieldEditable("attachments");
-  const attachments = activeResult.attachments ?? [];
+    const {
+      searchStore: { activeResult },
+    } = useStores();
+    if (!activeResult) throw new Error("ActiveResult must be a Record");
+    const editable = activeResult.isFieldEditable("attachments");
+    const attachments = activeResult.attachments ?? [];
 
-  useEffect(() => {
-    setOpen(attachments.length > 0);
-  }, [attachments]);
+    useEffect(() => {
+      setOpen(attachments.length > 0);
+    }, [attachments]);
 
-  return (
-    <Card variant="outlined">
-      <CustomCardHeader
-        subheader="Attach files of any type, e.g. images, documents, or chemistry files."
-        subheaderTypographyProps={{ variant: "body2" }}
-        action={
-          <>
+    return (
+      <Card variant="outlined">
+        <CustomCardHeader
+          subheader="Attach files of any type, e.g. images, documents, or chemistry files."
+          subheaderTypographyProps={{ variant: "body2" }}
+          action={
+            <>
+              <ToggleButton
+                attachmentCount={attachments.length}
+                open={open}
+                setOpen={setOpen}
+              />
+            </>
+          }
+        />
+        {editable && (
+          <CardContent sx={{ pt: 0.5 }}>
             <FileSelector
               activeResult={activeResult}
               setOpen={setOpen}
               editable={editable}
             />
-            <ToggleButton
-              attachmentCount={attachments.length}
-              open={open}
-              setOpen={setOpen}
-            />
-          </>
-        }
-      />
-      <Collapse in={open}>
-        <CollapseContents
-          attachments={attachments}
-          fieldOwner={fieldOwner}
-          editable={editable}
-        />
-      </Collapse>
-    </Card>
-  );
-});
+          </CardContent>
+        )}
+        <Collapse in={open}>
+          <CollapseContents
+            attachments={attachments}
+            fieldOwner={fieldOwner}
+            editable={editable}
+          />
+        </Collapse>
+      </Card>
+    );
+  }
+);
 
 function Attachments<
   Fields: {
