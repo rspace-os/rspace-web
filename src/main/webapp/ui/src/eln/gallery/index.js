@@ -33,19 +33,16 @@ import RouterNavigationContext from "./components/RouterNavigationContext";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
+import { useSearchParamState } from "../../util/useSearchParamState";
 
 const WholePage = styled(() => {
-  const [searchParams] = useSearchParams();
-  const [selectedSection, setSelectedSection] = React.useState(
-    parseGallerySectionFromUrlSearchParams(searchParams).orElse(
+  const [foo] = useSearchParams();
+  const [searchParams, setSelectedSection] = useSearchParamState({
+    mediaType: parseGallerySectionFromUrlSearchParams(foo).orElse(
       GALLERY_SECTION.IMAGES
-    )
-  );
-  React.useEffect(() => {
-    parseGallerySectionFromUrlSearchParams(searchParams).do((mediaType) => {
-      setSelectedSection(mediaType);
-    });
-  }, [searchParams]);
+    ),
+  });
+  const selectedSection = searchParams.mediaType;
 
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
@@ -84,6 +81,7 @@ const WholePage = styled(() => {
           <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
             <Sidebar
               selectedSection={selectedSection}
+              setSelectedSection={setSelectedSection}
               drawerOpen={drawerOpen}
               setDrawerOpen={setDrawerOpen}
               path={path}
