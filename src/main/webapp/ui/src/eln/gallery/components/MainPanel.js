@@ -83,10 +83,11 @@ import {
   useCollaboraEdit,
   useOfficeOnlineEdit,
   usePdfPreviewOfGalleryFile,
-  useAsposePreview,
+  useAsposePreviewOfGalleryFile,
 } from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
+import { useAsposePreview } from "./CallableAsposePreview";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -441,12 +442,13 @@ const GridView = observer(
     const selection = useGallerySelection();
     const { openImagePreview } = useImagePreview();
     const { openPdfPreview } = usePdfPreview();
+    const { openAsposePreview } = useAsposePreview();
     const OpenF = useOpen();
     const ImagePreviewF = useImagePreviewOfGalleryFile();
     const CollaboraEditF = useCollaboraEdit();
     const OfficeOnlineEditF = useOfficeOnlineEdit();
     const PdfPreviewF = usePdfPreviewOfGalleryFile();
-    const AsposePreviewF = useAsposePreview();
+    const AsposePreviewF = useAsposePreviewOfGalleryFile();
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
@@ -665,7 +667,7 @@ const GridView = observer(
                     )
                     .orElseTry(() =>
                       AsposePreviewF(file).map(() => () => {
-                        console.debug("generate and open pdf preview");
+                        openAsposePreview(file);
                       })
                     )
                     .orElse(() => {})();

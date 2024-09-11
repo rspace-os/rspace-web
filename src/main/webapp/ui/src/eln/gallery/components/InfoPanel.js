@@ -42,10 +42,11 @@ import {
   useCollaboraEdit,
   useOfficeOnlineEdit,
   usePdfPreviewOfGalleryFile,
-  useAsposePreview,
+  useAsposePreviewOfGalleryFile,
 } from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
+import { useAsposePreview } from "./CallableAsposePreview";
 
 /*
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -501,50 +502,52 @@ const AsposePreviewButton = ({
 |}) => {
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(false);
+  const { openAsposePreview } = useAsposePreview();
   return (
     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
       <ActionButton
         disabled={loading}
         onClick={doNotAwait(async () => {
           setLoading(true);
-          try {
-            const { data } = await axios.get<mixed>(
-              "/Streamfile/ajax/convert/" +
-                idToString(file.id) +
-                "?outputFormat=pdf"
-            );
-            const fileName = Parsers.isObject(data)
-              .flatMap(Parsers.isNotNull)
-              .flatMap(Parsers.getValueWithKey("data"))
-              .flatMap(Parsers.isString)
-              .orElse(null);
-            if (fileName) {
-              setPdfPreviewOpen(
-                "/Streamfile/direct/" +
-                  idToString(file.id) +
-                  "?fileName=" +
-                  fileName
-              );
-            } else {
-              Parsers.isObject(data)
-                .flatMap(Parsers.isNotNull)
-                .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-                .flatMap(Parsers.isString)
-                .do((msg) => {
-                  throw new Error(msg);
-                });
-            }
-          } catch (e) {
-            addAlert(
-              mkAlert({
-                variant: "error",
-                title: "Could not generate preview.",
-                message: e.message ?? "Unknown reason",
-              })
-            );
-          } finally {
-            setLoading(false);
-          }
+          openAsposePreview(file);
+          //        try {
+          //          const { data } = await axios.get<mixed>(
+          //            "/Streamfile/ajax/convert/" +
+          //              idToString(file.id) +
+          //              "?outputFormat=pdf"
+          //          );
+          //          const fileName = Parsers.isObject(data)
+          //            .flatMap(Parsers.isNotNull)
+          //            .flatMap(Parsers.getValueWithKey("data"))
+          //            .flatMap(Parsers.isString)
+          //            .orElse(null);
+          //          if (fileName) {
+          //            setPdfPreviewOpen(
+          //              "/Streamfile/direct/" +
+          //                idToString(file.id) +
+          //                "?fileName=" +
+          //                fileName
+          //            );
+          //          } else {
+          //            Parsers.isObject(data)
+          //              .flatMap(Parsers.isNotNull)
+          //              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+          //              .flatMap(Parsers.isString)
+          //              .do((msg) => {
+          //                throw new Error(msg);
+          //              });
+          //          }
+          //        } catch (e) {
+          //          addAlert(
+          //            mkAlert({
+          //              variant: "error",
+          //              title: "Could not generate preview.",
+          //              message: e.message ?? "Unknown reason",
+          //            })
+          //          );
+          //        } finally {
+          //          setLoading(false);
+          //        }
         })}
         label={loading ? "Loading" : "Preview"}
         sx={{
@@ -566,7 +569,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const CollaboraEditF = useCollaboraEdit();
   const OfficeOnlineEditF = useOfficeOnlineEdit();
   const PdfPreviewF = usePdfPreviewOfGalleryFile();
-  const AsposePreviewF = useAsposePreview();
+  const AsposePreviewF = useAsposePreviewOfGalleryFile();
 
   return (
     <>

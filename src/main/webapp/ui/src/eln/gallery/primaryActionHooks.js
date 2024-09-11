@@ -101,7 +101,9 @@ const ASPOSE_EXTENSIONS = [
   "odp",
 ];
 
-export function useAsposePreview(): (file: GalleryFile) => Result<null> {
+export function useAsposePreviewOfGalleryFile(): (
+  file: GalleryFile
+) => Result<null> {
   const asposeEnabled = useDeploymentProperty("aspose.enabled");
   return (file) => {
     return FetchingData.getSuccessValue(asposeEnabled)

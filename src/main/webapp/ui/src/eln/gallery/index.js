@@ -32,6 +32,7 @@ import useUiPreference, {
 import RouterNavigationContext from "./components/RouterNavigationContext";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
+import { CallableAsposePreview } from "./components/CallableAsposePreview";
 
 const WholePage = styled(() => {
   const [searchParams] = useSearchParams();
@@ -73,44 +74,46 @@ const WholePage = styled(() => {
   return (
     <CallableImagePreview>
       <CallablePdfPreview>
-        <AppBar
-          appliedSearchTerm={appliedSearchTerm}
-          setAppliedSearchTerm={setAppliedSearchTerm}
-          setDrawerOpen={setDrawerOpen}
-          drawerOpen={drawerOpen}
-        />
-        <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-          <Sidebar
-            selectedSection={selectedSection}
-            drawerOpen={drawerOpen}
+        <CallableAsposePreview>
+          <AppBar
+            appliedSearchTerm={appliedSearchTerm}
+            setAppliedSearchTerm={setAppliedSearchTerm}
             setDrawerOpen={setDrawerOpen}
-            path={path}
-            folderId={folderId}
-            refreshListing={refreshListing}
+            drawerOpen={drawerOpen}
           />
-          <Box
-            sx={{
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              flexGrow: 1,
-            }}
-          >
-            <MainPanel
+          <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+            <Sidebar
               selectedSection={selectedSection}
+              drawerOpen={drawerOpen}
+              setDrawerOpen={setDrawerOpen}
               path={path}
-              clearPath={clearPath}
-              galleryListing={galleryListing}
               folderId={folderId}
               refreshListing={refreshListing}
-              key={null}
-              sortOrder={sortOrder}
-              orderBy={orderBy}
-              setSortOrder={setSortOrder}
-              setOrderBy={setOrderBy}
             />
+            <Box
+              sx={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                flexGrow: 1,
+              }}
+            >
+              <MainPanel
+                selectedSection={selectedSection}
+                path={path}
+                clearPath={clearPath}
+                galleryListing={galleryListing}
+                folderId={folderId}
+                refreshListing={refreshListing}
+                key={null}
+                sortOrder={sortOrder}
+                orderBy={orderBy}
+                setSortOrder={setSortOrder}
+                setOrderBy={setOrderBy}
+              />
+            </Box>
           </Box>
-        </Box>
+        </CallableAsposePreview>
       </CallablePdfPreview>
     </CallableImagePreview>
   );
