@@ -422,7 +422,7 @@ const DrawerTab = styled(
 
 type SidebarArgs = {|
   selectedSection: GallerySection,
-  setSelectedSection: ({| mediaType: GallerySection |}) => void,
+  setSelectedSection: (GallerySection) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,
   path: $ReadOnlyArray<GalleryFile>,
@@ -556,7 +556,7 @@ const Sidebar = ({
               if (selectedSection === "DMPs") {
                 refreshListing();
               } else {
-                setSelectedSection({ mediaType: "DMPs" });
+                setSelectedSection("DMPs");
               }
             }}
           />
@@ -589,7 +589,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Images"}
               onClick={() => {
-                setSelectedSection({ mediaType: "Images" });
+                setSelectedSection("Images");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -606,7 +606,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Audios"}
               onClick={() => {
-                setSelectedSection({ mediaType: "Audios" });
+                setSelectedSection("Audios");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -623,7 +623,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Videos"}
               onClick={() => {
-                setSelectedSection({ mediaType: "Videos" });
+                setSelectedSection("Videos");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -640,7 +640,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Documents"}
               onClick={() => {
-                setSelectedSection({ mediaType: "Documents" });
+                setSelectedSection("Documents");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -657,7 +657,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Chemistry"}
               onClick={() => {
-                setSelectedSection({ mediaType: "Chemistry" });
+                setSelectedSection("Chemistry");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -674,7 +674,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "DMPs"}
               onClick={() => {
-                setSelectedSection({ mediaType: "DMPs" });
+                setSelectedSection("DMPs");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -691,7 +691,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Snippets"}
               onClick={() => {
-                setSelectedSection({ mediaType: "Snippets" });
+                setSelectedSection("Snippets");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -708,7 +708,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Miscellaneous"}
               onClick={() => {
-                setSelectedSection({ mediaType: "Miscellaneous" });
+                setSelectedSection("Miscellaneous");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -728,7 +728,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "PdfDocuments"}
               onClick={() => {
-                setSelectedSection({ mediaType: "PdfDocuments" });
+                setSelectedSection("PdfDocuments");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />

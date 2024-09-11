@@ -81,7 +81,9 @@ const WholePage = styled(() => {
           <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
             <Sidebar
               selectedSection={selectedSection}
-              setSelectedSection={setSelectedSection}
+              setSelectedSection={(mediaType) => {
+                setSelectedSection({ mediaType });
+              }}
               drawerOpen={drawerOpen}
               setDrawerOpen={setDrawerOpen}
               path={path}

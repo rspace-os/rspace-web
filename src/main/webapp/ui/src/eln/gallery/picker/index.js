@@ -143,7 +143,7 @@ const Picker = observer(
           <CaptureSearchParamsAsUseState>
             <Sidebar
               selectedSection={selectedSection}
-              setSelectedSection={({ mediaType }) => {
+              setSelectedSection={(mediaType) => {
                 setSelectedSection(mediaType);
               }}
               drawerOpen={drawerOpen}
