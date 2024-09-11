@@ -78,9 +78,11 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
 
 export function usePdfPreviewOfGalleryFile(): (
   file: GalleryFile
-) => Result<string | typeof undefined> {
+) => Result<string> {
   return (file) => {
     if (file.extension !== "pdf") return Result.Error([new Error("Not a PDF")]);
+    if (!file.downloadHref)
+      return Result.Error([new Error("URL to download is missing")]);
     return Result.Ok(file.downloadHref);
   };
 }

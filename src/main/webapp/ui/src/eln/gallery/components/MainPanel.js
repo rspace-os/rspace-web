@@ -662,7 +662,7 @@ const GridView = observer(
                     )
                     .orElseTry(() =>
                       PdfPreviewF(file).map((url) => () => {
-                        if (url) openPdfPreview(url);
+                        openPdfPreview(url);
                       })
                     )
                     .orElseTry(() =>

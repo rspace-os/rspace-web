@@ -618,7 +618,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
-                        if (url) openPdfPreview(url);
+                        openPdfPreview(url);
                       }}
                       label="Preview"
                       sx={{
