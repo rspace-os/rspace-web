@@ -7,6 +7,7 @@ import { type GalleryFile } from "./useGalleryListing";
 import { useDeploymentProperty } from "../useDeploymentProperty";
 import useCollabora from "./useCollabora";
 import useOfficeOnline from "./useOfficeOnline";
+import { supportedAsposeFile } from "./components/CallableAsposePreview";
 
 export function useOpen(): (file: GalleryFile) => Result<() => void> {
   return (file) => {
@@ -84,23 +85,6 @@ export function usePdfPreviewOfGalleryFile(): (
   };
 }
 
-const ASPOSE_EXTENSIONS = [
-  "doc",
-  "docx",
-  "md",
-  "odt",
-  "rtf",
-  "txt",
-  "xls",
-  "xlsx",
-  "csv",
-  "ods",
-  "pdf",
-  "ppt",
-  "pptx",
-  "odp",
-];
-
 export function useAsposePreviewOfGalleryFile(): (
   file: GalleryFile
 ) => Result<null> {
@@ -110,14 +94,7 @@ export function useAsposePreviewOfGalleryFile(): (
       .flatMap(Parsers.isBoolean)
       .flatMap(Parsers.isTrue)
       .mapError(() => new Error("Aspose is not enabled"))
-      .flatMap(() =>
-        ASPOSE_EXTENSIONS.includes(file.extension)
-          ? Result.Ok(null)
-          : Result.Error([
-              new Error(
-                "Aspose does not support the extension of the selected file"
-              ),
-            ])
-      );
+      .flatMap(() => supportedAsposeFile(file))
+      .map(() => null);
   };
 }

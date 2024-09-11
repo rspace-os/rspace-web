@@ -6,6 +6,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import axios from "axios";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as Parsers from "../../../util/parsers";
+import Result from "../../../util/result";
 
 /*
  * If aspose is configured, then users can preview the contents of various
@@ -119,4 +120,29 @@ export function CallableAsposePreview({
       </AsposePreviewContext.Provider>
     </>
   );
+}
+
+export function supportedAsposeFile(file: GalleryFile): Result<GalleryFile> {
+  const ASPOSE_EXTENSIONS = [
+    "doc",
+    "docx",
+    "md",
+    "odt",
+    "rtf",
+    "txt",
+    "xls",
+    "xlsx",
+    "csv",
+    "ods",
+    "pdf",
+    "ppt",
+    "pptx",
+    "odp",
+  ];
+
+  if (!ASPOSE_EXTENSIONS.includes(file.extension))
+    return Result.Error([
+      new Error("Aspose does not support the extension of the file"),
+    ]);
+  return Result.Ok(file);
 }
