@@ -547,8 +547,8 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
         </Grid>
         {selection
           .asSet()
-          .only.map((file) => {
-            return canOpenAsFolder(file)
+          .only.map((file) =>
+            canOpenAsFolder(file)
               .map((open) => (
                 <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                   <ActionButton
@@ -562,8 +562,8 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   />
                 </Grid>
               ))
-              .orElseTry(() => {
-                return canPreviewAsImage(file).map((url) => (
+              .orElseTry(() =>
+                canPreviewAsImage(file).map((url) => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
@@ -577,10 +577,10 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       }}
                     />
                   </Grid>
-                ));
-              })
-              .orElseTry(() => {
-                return canEditWithCollabora(file).map((url) => (
+                ))
+              )
+              .orElseTry(() =>
+                canEditWithCollabora(file).map((url) => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
@@ -594,10 +594,10 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       }}
                     />
                   </Grid>
-                ));
-              })
-              .orElseTry(() => {
-                return canEditWithOfficeOnline(file).map((url) => (
+                ))
+              )
+              .orElseTry(() =>
+                canEditWithOfficeOnline(file).map((url) => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
@@ -611,10 +611,10 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       }}
                     />
                   </Grid>
-                ));
-              })
-              .orElseTry(() => {
-                return canPreviewAsPdf(file).map((url) => (
+                ))
+              )
+              .orElseTry(() =>
+                canPreviewAsPdf(file).map((url) => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
@@ -628,21 +628,21 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       }}
                     />
                   </Grid>
-                ));
-              })
-              .orElseTry(() => {
-                return canPreviewWithAspose(file).map(() => (
+                ))
+              )
+              .orElseTry(() =>
+                canPreviewWithAspose(file).map(() => (
                   <AsposePreviewButton key={null} file={file} />
-                ));
-              })
+                ))
+              )
               .orElseGet((errors) => {
                 console.info("Could not provide preview");
                 errors.forEach((e) => {
                   console.info(e);
                 });
                 return null;
-              });
-          })
+              })
+          )
           .orElse(null)}
       </Grid>
       {selection
