@@ -29,11 +29,7 @@ import { useGalleryActions } from "../useGalleryActions";
 import ImagePreview, {
   type PreviewSize,
 } from "../../../Inventory/components/ImagePreview";
-import * as FetchingData from "../../../util/fetchingData";
-import { useDeploymentProperty } from "../../useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
-import useCollabora from "../useCollabora";
-import useOfficeOnline from "../useOfficeOnline";
 import clsx from "clsx";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";
@@ -47,6 +43,14 @@ import axios from "axios";
 import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { take, incrementForever } from "../../../util/iterators";
+import {
+  useOpen,
+  useImagePreview,
+  useCollaboraEdit,
+  useOfficeOnlineEdit,
+  usePdfPreview,
+  useAsposePreview,
+} from "../primaryActionHooks";
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -64,23 +68,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
  * on small viewports. When the panel is closed only the trigger region is shown.
  */
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
-
-const ASPOSE_EXTENSIONS = [
-  "doc",
-  "docx",
-  "md",
-  "odt",
-  "rtf",
-  "txt",
-  "xls",
-  "xlsx",
-  "csv",
-  "ods",
-  "pdf",
-  "ppt",
-  "pptx",
-  "odp",
-];
 
 /**
  * The info panel, be it the right column on desktop or the floating panel on
@@ -591,15 +578,16 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
     null
   );
   const [previewOpen, setPreviewOpen] = React.useState(false);
-  const collaboraEnabled = useDeploymentProperty("collabora.wopi.enabled");
-  const { supportedExts: supportedCollaboraExts } = useCollabora();
-  const officeOnlineEnabled = useDeploymentProperty("msoffice.wopi.enabled");
-  const { supportedExts: supportedOfficeOnlineExts } = useOfficeOnline();
-  const asposeEnabled = useDeploymentProperty("aspose.enabled");
   const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(
     null
   );
   const [numPages, setNumPages] = React.useState<number>(0);
+  const OpenF = useOpen();
+  const ImagePreviewF = useImagePreview();
+  const CollaboraEditF = useCollaboraEdit();
+  const OfficeOnlineEditF = useOfficeOnlineEdit();
+  const PdfPreviewF = usePdfPreview();
+  const AsposePreviewF = useAsposePreview();
 
   function onDocumentLoadSuccess({
     numPages: nextNumPages,
@@ -663,11 +651,11 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
         {selection
           .asSet()
           .only.map((file) => {
-            if (file.open)
-              return (
-                <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
+            return OpenF(file)
+              .map((open) => (
+                <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                   <ActionButton
-                    onClick={() => file.open?.()}
+                    onClick={open}
                     label="Open"
                     sx={{
                       borderRadius: 1,
@@ -676,102 +664,70 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                     }}
                   />
                 </Grid>
-              );
-            if (file.isImage && file.downloadHref)
-              return (
-                <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
-                  <ActionButton
-                    onClick={() => {
-                      setPreviewOpen(true);
-                    }}
-                    label="Preview"
-                    sx={{
-                      borderRadius: 1,
-                      px: 1.125,
-                      py: 0.25,
-                    }}
-                  />
-                  {previewOpen && (
-                    <ImagePreview
-                      closePreview={() => {
-                        setPreviewOpen(false);
-                      }}
-                      link={file.downloadHref}
-                      size={previewSize}
-                      setSize={(s) => setPreviewSize(s)}
-                    />
-                  )}
-                </Grid>
-              );
-            return FetchingData.getSuccessValue(collaboraEnabled)
-              .flatMap(Parsers.isBoolean)
-              .flatMap(Parsers.isTrue)
-              .mapError(() => new Error("Collabora is not enabled"))
-              .flatMap(() => Parsers.isNotNull(file.extension))
-              .flatMap((extension) =>
-                supportedCollaboraExts.has(extension)
-                  ? Result.Ok(null)
-                  : Result.Error([
-                      new Error(
-                        "Selected file's extension is not supported by collabora"
-                      ),
-                    ])
-              )
-              .map(() => (
-                <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                  <ActionButton
-                    onClick={() => {
-                      window.open(
-                        "/collaboraOnline/" + file.globalId + "/edit"
-                      );
-                    }}
-                    label="Edit"
-                    sx={{
-                      borderRadius: 1,
-                      px: 1.125,
-                      py: 0.25,
-                    }}
-                  />
-                </Grid>
               ))
-              .orElseTry(() =>
-                FetchingData.getSuccessValue(officeOnlineEnabled)
-                  .flatMap(Parsers.isBoolean)
-                  .flatMap(Parsers.isTrue)
-                  .mapError(() => new Error("Office Online is not enabled"))
-                  .flatMap(() => Parsers.isNotNull(file.extension))
-                  .flatMap((extension) =>
-                    supportedOfficeOnlineExts.has(extension)
-                      ? Result.Ok(null)
-                      : Result.Error([
-                          new Error(
-                            "Selected file's extension is not supported by office online"
-                          ),
-                        ])
-                  )
-                  .map(() => (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          window.open(
-                            "/officeOnline/" + file.globalId + "/view"
-                          );
+              .orElseTry(() => {
+                return ImagePreviewF(file).map((url) => (
+                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <ActionButton
+                      onClick={() => {
+                        setPreviewOpen(true);
+                      }}
+                      label="Preview"
+                      sx={{
+                        borderRadius: 1,
+                        px: 1.125,
+                        py: 0.25,
+                      }}
+                    />
+                    {previewOpen && (
+                      <ImagePreview
+                        closePreview={() => {
+                          setPreviewOpen(false);
                         }}
-                        label="Edit"
-                        sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
-                        }}
+                        link={url}
+                        size={previewSize}
+                        setSize={(s) => setPreviewSize(s)}
                       />
-                    </Grid>
-                  ))
-              )
-              .orElseTry(() =>
-                (file.extension === "pdf"
-                  ? Result.Ok(file.downloadHref)
-                  : Result.Error([new Error("Not a PDF")])
-                ).map((url) => (
+                    )}
+                  </Grid>
+                ));
+              })
+              .orElseTry(() => {
+                return CollaboraEditF(file).map((url) => (
+                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <ActionButton
+                      onClick={() => {
+                        window.open(url);
+                      }}
+                      label="Edit"
+                      sx={{
+                        borderRadius: 1,
+                        px: 1.125,
+                        py: 0.25,
+                      }}
+                    />
+                  </Grid>
+                ));
+              })
+              .orElseTry(() => {
+                return OfficeOnlineEditF(file).map((url) => (
+                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <ActionButton
+                      onClick={() => {
+                        window.open(url);
+                      }}
+                      label="Edit"
+                      sx={{
+                        borderRadius: 1,
+                        px: 1.125,
+                        py: 0.25,
+                      }}
+                    />
+                  </Grid>
+                ));
+              })
+              .orElseTry(() => {
+                return PdfPreviewF(file).map((url) => (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
@@ -785,29 +741,17 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       }}
                     />
                   </Grid>
-                ))
-              )
-              .orElseTry(() =>
-                FetchingData.getSuccessValue(asposeEnabled)
-                  .flatMap(Parsers.isBoolean)
-                  .flatMap(Parsers.isTrue)
-                  .mapError(() => new Error("Aspose is not enabled"))
-                  .flatMap(() =>
-                    ASPOSE_EXTENSIONS.includes(file.extension)
-                      ? Result.Ok(null)
-                      : Result.Error([
-                          new Error(
-                            "Aspose does not support the extension of the selected file"
-                          ),
-                        ])
-                  )
-                  .map(() => (
-                    <AsposePreviewButton
-                      file={file}
-                      setPdfPreviewOpen={setPdfPreviewOpen}
-                    />
-                  ))
-              )
+                ));
+              })
+              .orElseTry(() => {
+                return AsposePreviewF(file).map(() => (
+                  <AsposePreviewButton
+                    key={null}
+                    file={file}
+                    setPdfPreviewOpen={setPdfPreviewOpen}
+                  />
+                ));
+              })
               .orElseGet((errors) => {
                 console.info("Could not provide preview");
                 errors.forEach((e) => {
