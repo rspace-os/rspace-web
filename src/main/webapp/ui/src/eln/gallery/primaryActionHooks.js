@@ -18,7 +18,9 @@ export function useOpen(): (file: GalleryFile) => Result<() => void> {
   };
 }
 
-export function useImagePreview(): (file: GalleryFile) => Result<string> {
+export function useImagePreviewOfGalleryFile(): (
+  file: GalleryFile
+) => Result<string> {
   return (file) => {
     if (file.isImage && file.downloadHref) return Result.Ok(file.downloadHref);
     return Result.Error([new Error("Not an image")]);

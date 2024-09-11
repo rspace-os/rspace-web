@@ -30,6 +30,7 @@ import useUiPreference, {
   UiPreferences,
 } from "../../util/useUiPreference";
 import RouterNavigationContext from "./components/RouterNavigationContext";
+import { CallableImagePreview } from "./components/CallableImagePreview";
 
 const WholePage = styled(() => {
   const [searchParams] = useSearchParams();
@@ -69,7 +70,7 @@ const WholePage = styled(() => {
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
 
   return (
-    <>
+    <CallableImagePreview>
       <AppBar
         appliedSearchTerm={appliedSearchTerm}
         setAppliedSearchTerm={setAppliedSearchTerm}
@@ -108,7 +109,7 @@ const WholePage = styled(() => {
           />
         </Box>
       </Box>
-    </>
+    </CallableImagePreview>
   );
 })(() => ({
   "@keyframes drop": {
@@ -145,11 +146,11 @@ window.addEventListener("load", () => {
                           path="/newGallery"
                           element={
                             <Alerts>
-                            <RouterNavigationContext>
-                              <GallerySelection>
-                                <WholePage />
-                              </GallerySelection>
-                            </RouterNavigationContext>
+                              <RouterNavigationContext>
+                                <GallerySelection>
+                                  <WholePage />
+                                </GallerySelection>
+                              </RouterNavigationContext>
                             </Alerts>
                           }
                         />

@@ -45,12 +45,13 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { take, incrementForever } from "../../../util/iterators";
 import {
   useOpen,
-  useImagePreview,
+  useImagePreviewOfGalleryFile,
   useCollaboraEdit,
   useOfficeOnlineEdit,
   usePdfPreview,
   useAsposePreview,
 } from "../primaryActionHooks";
+import { useImagePreview } from "./CallableImagePreview";
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -574,16 +575,13 @@ const AsposePreviewButton = ({
 
 export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const selection = useGallerySelection();
-  const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
-    null
-  );
-  const [previewOpen, setPreviewOpen] = React.useState(false);
+  const { openImagePreview } = useImagePreview();
   const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(
     null
   );
   const [numPages, setNumPages] = React.useState<number>(0);
   const OpenF = useOpen();
-  const ImagePreviewF = useImagePreview();
+  const ImagePreviewF = useImagePreviewOfGalleryFile();
   const CollaboraEditF = useCollaboraEdit();
   const OfficeOnlineEditF = useOfficeOnlineEdit();
   const PdfPreviewF = usePdfPreview();
@@ -670,7 +668,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                     <ActionButton
                       onClick={() => {
-                        setPreviewOpen(true);
+                        openImagePreview(url);
                       }}
                       label="Preview"
                       sx={{
@@ -679,16 +677,6 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                         py: 0.25,
                       }}
                     />
-                    {previewOpen && (
-                      <ImagePreview
-                        closePreview={() => {
-                          setPreviewOpen(false);
-                        }}
-                        link={url}
-                        size={previewSize}
-                        setSize={(s) => setPreviewSize(s)}
-                      />
-                    )}
                   </Grid>
                 ));
               })
