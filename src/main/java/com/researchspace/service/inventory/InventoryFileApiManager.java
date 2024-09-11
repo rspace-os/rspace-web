@@ -27,4 +27,6 @@ public interface InventoryFileApiManager {
 
   /** Marks attachment as deleted. */
   InventoryFile markInventoryFileAsDeleted(Long id, User user);
+
+  FileProperty getFilePropertyByFileName(String fileName, User user);
 }

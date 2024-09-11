@@ -265,6 +265,6 @@ public class InventoryFilesApiController extends BaseApiInventoryController
 
   @Override
   public ResponseEntity<byte[]> getImageByFileName(String fileName, User user) throws IOException {
-    return doImageResponse(user, () -> getFilePropertyByFileName(fileName, user.getUsername()));
+    return doImageResponse(user, () -> invFileManager.getFilePropertyByFileName(fileName, user));
   }
 }

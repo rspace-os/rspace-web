@@ -12,7 +12,6 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.service.FileStoreMetaManager;
 import com.researchspace.service.inventory.BasketApiManager;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
@@ -24,7 +23,6 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.commons.compress.utils.IOUtils;
@@ -51,8 +49,6 @@ public class BaseApiInventoryController extends BaseApiController {
   @Autowired
   @Qualifier("compositeFileStore")
   private FileStore fileStore;
-
-  @Autowired private FileStoreMetaManager fileStoreMetaManager;
 
   protected @Autowired InventoryPermissionUtils invPermissions;
   protected @Autowired InventoryEditLockTracker tracker;
@@ -95,16 +91,6 @@ public class BaseApiInventoryController extends BaseApiController {
         }
       }
     }
-  }
-
-  // todo: make this work with shared template i.e. fileOwner might not be the user making the
-  // request
-  FileProperty getFilePropertyByFileName(String fileName, String userName) {
-    Map<String, String> properties =
-        Map.ofEntries(
-            //            Map.entry("fileGroup", userName),  Map.entry("fileOwner", userName)),
-            Map.entry("fileName", fileName));
-    return fileStoreMetaManager.findProperties(properties).stream().findFirst().orElse(null);
   }
 
   // helper method to stream an image direct to response, from a file identified by the FileProperty

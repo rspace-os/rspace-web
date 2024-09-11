@@ -14,13 +14,18 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.service.FileDuplicateStrategy;
+import com.researchspace.service.FileStoreMetaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.InventoryRecordRetriever;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLConnection;
+import java.util.List;
+import java.util.Map;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +47,12 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
   @Autowired
   @Qualifier("compositeFileStore")
   private FileStore fileStore;
+
+  @Autowired private FileStoreMetaManager fileStoreMetaManager;
+
+  @Autowired private InventoryRecordRetriever inventoryRecordRetriever;
+
+  @Autowired private InventoryPermissionUtils permissionUtils;
 
   @Override
   public boolean exists(long id) {
@@ -162,5 +173,23 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     }
 
     return invFile;
+  }
+
+  public FileProperty getFilePropertyByFileName(String fileName, User user) {
+    Map<String, String> properties = Map.ofEntries(Map.entry("fileName", fileName));
+    FileProperty fileProp =
+        fileStoreMetaManager.findProperties(properties).stream().findFirst().orElse(null);
+    List<InventoryRecord> records =
+        inventoryRecordRetriever.idsForRecordsUsingFileProperty(fileProp);
+
+    boolean hasPermissions =
+        records.stream()
+            .anyMatch(r -> permissionUtils.canUserReadInventoryRecord(r.getOid(), user));
+
+    if (hasPermissions) {
+      return fileProp;
+    } else {
+      throw new NotAuthorizedException("User doesn't have permissions to read image file");
+    }
   }
 }
