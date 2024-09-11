@@ -28,6 +28,7 @@ import Result from "../../../util/result";
 import { observer } from "mobx-react-lite";
 import Sidebar from "../components/Sidebar";
 import MainPanel from "../components/MainPanel";
+import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -122,14 +123,30 @@ const Picker = observer(
       null
     );
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
+    const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
+      PREFERENCES.GALLERY_SORT_BY,
+      {
+        defaultValue: "name",
+      }
+    );
+    const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(
+      PREFERENCES.GALLERY_SORT_ORDER,
+      {
+        defaultValue: "ASC",
+      }
+    );
     const [selectedSection, setSelectedSection] = React.useState("Chemistry");
     const [drawerOpen, setDrawerOpen] = React.useState(
       !viewport.isViewportSmall
     );
-    const { galleryListing, path, clearPath } = useGalleryListing({
-      section: selectedSection,
-      searchTerm: appliedSearchTerm,
-    });
+    const { galleryListing, path, clearPath, folderId, refreshListing } =
+      useGalleryListing({
+        section: selectedSection,
+        searchTerm: appliedSearchTerm,
+        path: [],
+        orderBy,
+        sortOrder,
+      });
 
     React.useEffect(() => {
       setSelectedFile(null);
@@ -151,8 +168,11 @@ const Picker = observer(
         <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
           <Sidebar
             selectedSection={selectedSection}
-            setSelectedSection={setSelectedSection}
             drawerOpen={drawerOpen}
+            setDrawerOpen={setDrawerOpen}
+            path={path}
+            folderId={folderId}
+            refreshListing={refreshListing}
           />
           <Box
             sx={{
@@ -167,8 +187,13 @@ const Picker = observer(
               path={path}
               clearPath={clearPath}
               galleryListing={galleryListing}
-              selectedFile={selectedFile}
-              setSelectedFile={setSelectedFile}
+              folderId={folderId}
+              refreshListing={refreshListing}
+              key={null}
+              sortOrder={sortOrder}
+              orderBy={orderBy}
+              setSortOrder={setSortOrder}
+              setOrderBy={setOrderBy}
             />
             <DialogActions>
               <Button onClick={() => onClose()}>Cancel</Button>
