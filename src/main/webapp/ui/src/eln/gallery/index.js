@@ -5,12 +5,7 @@ import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { ThemeProvider, styled, lighten } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
-import {
-  COLOR,
-  SELECTED_OR_FOCUS_BLUE,
-  parseGallerySectionFromUrlSearchParams,
-  GALLERY_SECTION,
-} from "./common";
+import { COLOR, SELECTED_OR_FOCUS_BLUE, GALLERY_SECTION } from "./common";
 import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
@@ -23,7 +18,7 @@ import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
-import { BrowserRouter, Navigate, useSearchParams } from "react-router-dom";
+import { BrowserRouter, Navigate } from "react-router-dom";
 import { Routes, Route } from "react-router";
 import useUiPreference, {
   PREFERENCES,
@@ -36,11 +31,8 @@ import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
 
 const WholePage = styled(() => {
-  const [foo] = useSearchParams();
   const [searchParams, setSelectedSection] = useSearchParamState({
-    mediaType: parseGallerySectionFromUrlSearchParams(foo).orElse(
-      GALLERY_SECTION.IMAGES
-    ),
+    mediaType: GALLERY_SECTION.IMAGES,
   });
   const selectedSection = searchParams.mediaType;
 

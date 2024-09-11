@@ -30,7 +30,6 @@ import Sidebar from "../components/Sidebar";
 import MainPanel from "../components/MainPanel";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
 import { COLOR } from "../common";
-import { CaptureSearchParamsAsUseState } from "../../../util/useSearchParamState";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -140,19 +139,17 @@ const Picker = observer(
           drawerOpen={drawerOpen}
         />
         <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-          <CaptureSearchParamsAsUseState>
-            <Sidebar
-              selectedSection={selectedSection}
-              setSelectedSection={(mediaType) => {
-                setSelectedSection(mediaType);
-              }}
-              drawerOpen={drawerOpen}
-              setDrawerOpen={setDrawerOpen}
-              path={path}
-              folderId={folderId}
-              refreshListing={refreshListing}
-            />
-          </CaptureSearchParamsAsUseState>
+          <Sidebar
+            selectedSection={selectedSection}
+            setSelectedSection={(mediaType) => {
+              setSelectedSection(mediaType);
+            }}
+            drawerOpen={drawerOpen}
+            setDrawerOpen={setDrawerOpen}
+            path={path}
+            folderId={folderId}
+            refreshListing={refreshListing}
+          />
           <Box
             sx={{
               height: "100%",
