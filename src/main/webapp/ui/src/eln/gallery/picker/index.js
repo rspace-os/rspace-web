@@ -157,6 +157,7 @@ const Picker = observer(
                     orderBy={orderBy}
                     setSortOrder={setSortOrder}
                     setOrderBy={setOrderBy}
+                    hideMobileInfoPanel
                   />
                   <DialogActions>
                     <Button onClick={() => onClose()}>Cancel</Button>
