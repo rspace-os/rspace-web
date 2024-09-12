@@ -1114,6 +1114,7 @@ function GalleryMainPanel({
       sx={{
         position: "relative",
         overflowY: "hidden",
+        pr: 2.5,
         ...(over
           ? {
               borderColor: SELECTED_OR_FOCUS_BLUE,
@@ -1158,18 +1159,28 @@ function GalleryMainPanel({
               </Fade>
             </Typography>
           </Grid>
-          <Grid item sx={{ marginTop: 0.5 }}>
+          <Grid item sx={{ marginTop: 1.25 }}>
             <Path section={selectedSection} path={path} clearPath={clearPath} />
           </Grid>
           <Grid
             item
             container
             direction="row"
-            sx={{ marginTop: 0.5 }}
+            sx={{ marginTop: 0.75 }}
             flexWrap="nowrap"
             flexGrow="1"
           >
-            <Grid item container direction="column" md={8} lg={8} xl={9}>
+            <Grid
+              item
+              container
+              direction="column"
+              md={8}
+              lg={8}
+              xl={9}
+              sx={{
+                mt: 0.75,
+              }}
+            >
               <Grid item>
                 <Stack direction="row" spacing={0.5} alignItems="center">
                   <ActionsMenu
@@ -1360,7 +1371,7 @@ function GalleryMainPanel({
                   })}
               </Grid>
             </Grid>
-            <Grid item sx={{ mx: 0.5, display: { xs: "none", md: "block" } }}>
+            <Grid item sx={{ mx: 1.5, display: { xs: "none", md: "block" } }}>
               <Divider orientation="vertical" />
             </Grid>
             <Grid
@@ -1368,7 +1379,7 @@ function GalleryMainPanel({
               md={4}
               lg={4}
               xl={3}
-              sx={{ display: { xs: "none", md: "block" } }}
+              sx={{ display: { xs: "none", md: "block" }, mt: 0.75 }}
             >
               <InfoPanelForLargeViewports />
             </Grid>

@@ -529,14 +529,15 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   // these margins are setup so that the heading takes up the
                   // same amount of space as the text field when it is shown
                   mr: 0.75,
-                  ml: 1,
-                  mt: 1.25,
+                  ml: 1.5,
+                  mt: 1,
                   mb: 1,
                   lineBreak: "anywhere",
                   textTransform: "none",
+                  fontWeight: 400,
                 }}
               >
-                {selection.size === 0 && "Nothing selected"}
+                {selection.size === 0 && "Nothing selected."}
                 {selection
                   .asSet()
                   .only.map((f) => f.name)
