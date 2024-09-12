@@ -22,7 +22,7 @@ import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
 import createAccentedTheme from "../../../accentedTheme";
 import Grow from "@mui/material/Grow";
 import useViewportDimensions from "../../../util/useViewportDimensions";
-import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
+import { useGalleryListing } from "../useGalleryListing";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import { observer } from "mobx-react-lite";
@@ -33,6 +33,7 @@ import { COLOR } from "../common";
 import { CallableImagePreview } from "../components/CallableImagePreview";
 import { CallablePdfPreview } from "../components/CallablePdfPreview";
 import { CallableAsposePreview } from "../components/CallableAsposePreview";
+import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -61,20 +62,6 @@ const CustomDialog = styled(Dialog)(({ theme }) => ({
   },
 }));
 
-export default function Wrapper({
-  open,
-  onClose,
-}: {|
-  open: boolean,
-  onClose: () => void,
-|}): Node {
-  return (
-    <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <Picker open={open} onClose={onClose} />
-    </ThemeProvider>
-  );
-}
-
 const CustomGrow = React.forwardRef<ElementConfig<typeof Grow>, {||}>(
   (props: ElementConfig<typeof Grow>, ref: Ref<typeof Grow>) => (
     <Grow
@@ -95,9 +82,7 @@ CustomGrow.displayName = "CustomGrow";
 const Picker = observer(
   ({ open, onClose }: {| open: boolean, onClose: () => void |}) => {
     const viewport = useViewportDimensions();
-    const [selectedFile, setSelectedFile] = React.useState<GalleryFile | null>(
-      null
-    );
+    const selection = useGallerySelection();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
     const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
       PREFERENCES.GALLERY_SORT_BY,
@@ -123,10 +108,6 @@ const Picker = observer(
         orderBy,
         sortOrder,
       });
-
-    React.useEffect(() => {
-      setSelectedFile(null);
-    }, [selectedSection, appliedSearchTerm, path]);
 
     return (
       <CallableImagePreview>
@@ -181,13 +162,15 @@ const Picker = observer(
                     <Button onClick={() => onClose()}>Cancel</Button>
                     <ValidatingSubmitButton
                       validationResult={
-                        selectedFile
+                        selection.size === 1
                           ? Result.Ok(null)
-                          : Result.Error([new Error("No file selected.")])
+                          : Result.Error([
+                              new Error("Select one file to proceed."),
+                            ])
                       }
                       loading={false}
                       onClick={() => {
-                        alert("Yet to be implemented!");
+                        console.debug("Yet to be implemented!");
                       }}
                     >
                       Add
@@ -202,3 +185,19 @@ const Picker = observer(
     );
   }
 );
+
+export default function Wrapper({
+  open,
+  onClose,
+}: {|
+  open: boolean,
+  onClose: () => void,
+|}): Node {
+  return (
+    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <GallerySelection>
+        <Picker open={open} onClose={onClose} />
+      </GallerySelection>
+    </ThemeProvider>
+  );
+}
