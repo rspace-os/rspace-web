@@ -815,6 +815,11 @@ export const InfoPanelForSmallViewports: ComponentType<{|
         display: { xs: "block", md: "none" },
         touchAction: "none",
       }}
+      SwipeAreaProps={{
+        sx: {
+          display: { xs: "block", md: "none" },
+        },
+      }}
       onClose={() => {
         setMobileInfoPanelOpen(false);
       }}
