@@ -1171,6 +1171,7 @@ function GalleryMainPanel({
             sx={{ marginTop: 0.75 }}
             flexWrap="nowrap"
             flexGrow="1"
+            height="calc(100% - 56px)"
           >
             <Grid
               item
@@ -1381,7 +1382,12 @@ function GalleryMainPanel({
               md={4}
               lg={4}
               xl={3}
-              sx={{ display: { xs: "none", md: "block" }, mt: 0.75 }}
+              sx={{
+                display: { xs: "none", md: "block" },
+                overflowX: "hidden",
+                overflowY: "auto",
+                mt: 0.75,
+              }}
             >
               <InfoPanelForLargeViewports />
             </Grid>
