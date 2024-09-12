@@ -30,6 +30,9 @@ import Sidebar from "../components/Sidebar";
 import MainPanel from "../components/MainPanel";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
 import { COLOR } from "../common";
+import { CallableImagePreview } from "../components/CallableImagePreview";
+import { CallablePdfPreview } from "../components/CallablePdfPreview";
+import { CallableAsposePreview } from "../components/CallableAsposePreview";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -126,70 +129,76 @@ const Picker = observer(
     }, [selectedSection, appliedSearchTerm, path]);
 
     return (
-      <CustomDialog
-        open={open}
-        TransitionComponent={CustomGrow}
-        onClose={onClose}
-        fullScreen={viewport.isViewportSmall}
-      >
-        <AppBar
-          appliedSearchTerm={appliedSearchTerm}
-          setAppliedSearchTerm={setAppliedSearchTerm}
-          setDrawerOpen={setDrawerOpen}
-          drawerOpen={drawerOpen}
-        />
-        <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-          <Sidebar
-            selectedSection={selectedSection}
-            setSelectedSection={(mediaType) => {
-              setSelectedSection(mediaType);
-            }}
-            drawerOpen={drawerOpen}
-            setDrawerOpen={setDrawerOpen}
-            path={path}
-            folderId={folderId}
-            refreshListing={refreshListing}
-          />
-          <Box
-            sx={{
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              flexGrow: 1,
-            }}
-          >
-            <MainPanel
-              selectedSection={selectedSection}
-              path={path}
-              clearPath={clearPath}
-              galleryListing={galleryListing}
-              folderId={folderId}
-              refreshListing={refreshListing}
-              key={null}
-              sortOrder={sortOrder}
-              orderBy={orderBy}
-              setSortOrder={setSortOrder}
-              setOrderBy={setOrderBy}
-            />
-            <DialogActions>
-              <Button onClick={() => onClose()}>Cancel</Button>
-              <ValidatingSubmitButton
-                validationResult={
-                  selectedFile
-                    ? Result.Ok(null)
-                    : Result.Error([new Error("No file selected.")])
-                }
-                loading={false}
-                onClick={() => {
-                  alert("Yet to be implemented!");
-                }}
-              >
-                Add
-              </ValidatingSubmitButton>
-            </DialogActions>
-          </Box>
-        </Box>
-      </CustomDialog>
+      <CallableImagePreview>
+        <CallablePdfPreview>
+          <CallableAsposePreview>
+            <CustomDialog
+              open={open}
+              TransitionComponent={CustomGrow}
+              onClose={onClose}
+              fullScreen={viewport.isViewportSmall}
+            >
+              <AppBar
+                appliedSearchTerm={appliedSearchTerm}
+                setAppliedSearchTerm={setAppliedSearchTerm}
+                setDrawerOpen={setDrawerOpen}
+                drawerOpen={drawerOpen}
+              />
+              <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+                <Sidebar
+                  selectedSection={selectedSection}
+                  setSelectedSection={(mediaType) => {
+                    setSelectedSection(mediaType);
+                  }}
+                  drawerOpen={drawerOpen}
+                  setDrawerOpen={setDrawerOpen}
+                  path={path}
+                  folderId={folderId}
+                  refreshListing={refreshListing}
+                />
+                <Box
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    flexGrow: 1,
+                  }}
+                >
+                  <MainPanel
+                    selectedSection={selectedSection}
+                    path={path}
+                    clearPath={clearPath}
+                    galleryListing={galleryListing}
+                    folderId={folderId}
+                    refreshListing={refreshListing}
+                    key={null}
+                    sortOrder={sortOrder}
+                    orderBy={orderBy}
+                    setSortOrder={setSortOrder}
+                    setOrderBy={setOrderBy}
+                  />
+                  <DialogActions>
+                    <Button onClick={() => onClose()}>Cancel</Button>
+                    <ValidatingSubmitButton
+                      validationResult={
+                        selectedFile
+                          ? Result.Ok(null)
+                          : Result.Error([new Error("No file selected.")])
+                      }
+                      loading={false}
+                      onClick={() => {
+                        alert("Yet to be implemented!");
+                      }}
+                    >
+                      Add
+                    </ValidatingSubmitButton>
+                  </DialogActions>
+                </Box>
+              </Box>
+            </CustomDialog>
+          </CallableAsposePreview>
+        </CallablePdfPreview>
+      </CallableImagePreview>
     );
   }
 );
