@@ -19,6 +19,7 @@ import CardContent from "@mui/material/CardContent";
 import ShowSamples from "./ShowSamples";
 import LinkedDocuments from "./LinkedDocuments";
 import { type Factory } from "../../../stores/definitions/Factory";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 const useStyles = makeStyles()(() => ({
   card: {
@@ -40,7 +41,8 @@ function Sidebar({ factory }: SidebarArgs): Node {
     searchStore: { activeResult },
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
-  const persistant = !uiStore.isSingleColumnLayout;
+  const isSingleColumnLayout = useIsSingleColumnLayout();
+  const persistant = !isSingleColumnLayout;
   const { classes } = useStyles();
 
   const closeSidebar = () => {

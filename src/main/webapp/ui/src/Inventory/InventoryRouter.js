@@ -42,11 +42,7 @@ function InventoryRouter(): Node {
                 exact
                 path="/"
                 element={
-                  !uiStore.isSingleColumnLayout ? (
-                    <RedirectToBench />
-                  ) : (
-                    <InitialScreen />
-                  )
+                  !uiStore.isVerySmall ? <RedirectToBench /> : <InitialScreen />
                 }
               />
               <Route

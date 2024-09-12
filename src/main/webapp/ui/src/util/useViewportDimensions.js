@@ -16,6 +16,7 @@ class ViewportDimensions {
       viewportSize: computed,
       isViewportVerySmall: computed,
       isViewportSmall: computed,
+      isViewportLarge: computed,
     });
     this.width = width;
     this.height = height;
@@ -35,6 +36,10 @@ class ViewportDimensions {
 
   get isViewportSmall(): boolean {
     return this.viewportSize === "xs" || this.viewportSize === "sm";
+  }
+
+  get isViewportLarge(): boolean {
+    return this.viewportSize === "lg" || this.viewportSize === "xl";
   }
 }
 

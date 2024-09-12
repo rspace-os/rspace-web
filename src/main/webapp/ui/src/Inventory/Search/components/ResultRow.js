@@ -17,6 +17,7 @@ import AdjustableCell from "../../components/Tables/AdjustableCell";
 import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { UserCancelledAction } from "../../../util/error";
+import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 
 type ResultRowArgs = {|
   result: InventoryRecord,
@@ -51,6 +52,7 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): Node {
   const multiselect = search.uiConfig.selectionMode === "MULTIPLE";
   const noSelection = search.uiConfig.selectionMode === "NONE";
   const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { classes: globalClasses } = globalStyles();
@@ -98,7 +100,7 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): Node {
 
   return (
     <TableRow
-      hover={!uiStore.isSingleColumnLayout}
+      hover={!isSingleColumnLayout}
       tabIndex={-1}
       className={clsx(
         classes.tableRow,
@@ -135,15 +137,13 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): Node {
         dataSource={result}
         selectedOption={adjustableColumns[0]}
       />
-      {!uiStore.isSmall &&
-        !uiStore.isVerySmall &&
-        uiStore.isSingleColumnLayout && (
-          <AdjustableCell
-            dataSource={result}
-            selectedOption={adjustableColumns[1]}
-          />
-        )}
-      {uiStore.isLarge && uiStore.isSingleColumnLayout && (
+      {!uiStore.isSmall && !uiStore.isVerySmall && isSingleColumnLayout && (
+        <AdjustableCell
+          dataSource={result}
+          selectedOption={adjustableColumns[1]}
+        />
+      )}
+      {uiStore.isLarge && isSingleColumnLayout && (
         <AdjustableCell
           dataSource={result}
           selectedOption={adjustableColumns[2]}

@@ -48,7 +48,8 @@ export default function MainSearchNavigationContext({
     if (
       !search.activeResult &&
       Boolean(search.filteredResults.length) &&
-      !uiStore.isSingleColumnLayout
+      !uiStore.isVerySmall &&
+      !uiStore.isSmall
     ) {
       try {
         await search.setActiveResult();

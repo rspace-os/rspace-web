@@ -15,6 +15,7 @@ import ContainerModel from "../../../stores/models/ContainerModel";
 import { isMac } from "../../../util/shortcuts";
 import docLinks from "../../../assets/DocLinks";
 import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
+import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 
 const useStyles = makeStyles()((theme) => ({
   alert: {
@@ -29,13 +30,14 @@ const useStyles = makeStyles()((theme) => ({
 
 function ImageContainerZoomHelpText() {
   const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   /*
    * If the user is on a small touchscreen device, like a phone, then they can
    * neither use the keyboard to zoom out nor the Panel Adjuster to view in
    * single column mode as they're always in single column mode.
    */
-  if (uiStore.isTouchDevice && uiStore.isSingleColumnLayout) return null;
+  if (uiStore.isTouchDevice && isSingleColumnLayout) return null;
 
   let zoomText: string = "Tip: Use Ctrl and the - key";
   try {
@@ -46,7 +48,7 @@ function ImageContainerZoomHelpText() {
   }
   zoomText = zoomText + " to zoom the page out to view more of the image.";
 
-  const helpText = uiStore.isSingleColumnLayout ? (
+  const helpText = isSingleColumnLayout ? (
     zoomText
   ) : (
     <>

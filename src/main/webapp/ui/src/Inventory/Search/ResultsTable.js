@@ -21,13 +21,20 @@ import TableCell from "@mui/material/TableCell";
 import Skeleton from "@mui/material/Skeleton";
 import { withStyles } from "Styles";
 import ScrollBox from "./ScrollBox";
-import useStores from "../../stores/use-stores";
+import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
+import useViewportDimensions from "../../util/useViewportDimensions";
 
 const ResultRowSkeleton = () => {
-  const { uiStore } = useStores();
+  const { isViewportSmall, isViewportLarge } = useViewportDimensions();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
+
+  let cols = 3;
+  if (!isViewportSmall && isSingleColumnLayout) cols++;
+  if (isViewportLarge && isSingleColumnLayout) cols++;
+
   return (
     <TableRow>
-      <TableCell colSpan={uiStore.numberOfColumnsInListView}>
+      <TableCell colSpan={cols}>
         <Skeleton variant="rectangular" width="100%" height={36} />
       </TableCell>
     </TableRow>
@@ -53,7 +60,7 @@ type ResultsTableArgs = {|
 
 function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
   const { search } = useContext(SearchContext);
-  const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   const handleChangePageSize = ({
     target: { value },
@@ -130,7 +137,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
 
   return (
     <>
-      <ScrollBox overflowY={uiStore.isSingleColumnLayout ? "unset" : "auto"}>
+      <ScrollBox overflowY={isSingleColumnLayout ? "unset" : "auto"}>
         <Table size="small" aria-label="Search results" stickyHeader>
           <CustomTableHead
             selectedCount={search.selectedResults.length}
