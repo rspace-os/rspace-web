@@ -115,6 +115,8 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
 const CustomDrawer = styled(Drawer)(({ open, theme }) => ({
   // on small viewports, it will hidden entirely when not open
   width: open ? "200px" : "64px",
+  // drawer should float over dialog in Inventory
+  zIndex: 1300,
   "& .MuiPaper-root": {
     /*
      * We set this position so that the drawer does not float above the AppBar
