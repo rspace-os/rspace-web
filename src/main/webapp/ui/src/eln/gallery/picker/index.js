@@ -49,7 +49,8 @@ const CustomDialog = styled(Dialog)(({ theme }) => ({
     width: "1000px",
     maxWidth: "1000px",
     height: "calc(100% - 32px)", // 16px margin above and below dialog
-    [theme.breakpoints.only("xs")]: {
+    [theme.breakpoints.down("md")]: {
+      // sm and xs are fullscreen, where the sidebar is a floating element
       height: "100%",
       borderRadius: 0,
     },
