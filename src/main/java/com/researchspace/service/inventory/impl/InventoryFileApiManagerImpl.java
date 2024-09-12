@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.InventoryFileDao;
 import com.researchspace.dao.SampleDao;
@@ -23,6 +24,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLConnection;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.NotAuthorizedException;
@@ -91,7 +94,10 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
     String filestoreName =
         String.format("att_%s_%s", invRecGlobalId.getIdString(), originalFileName);
-    FileProperty fileProp = generateInventoryFileProperty(user, filestoreName, inputStream);
+    String contentsHash =
+        CryptoUtils.hashWithSha256inHex(Arrays.toString(inputStream.readAllBytes()));
+    FileProperty fileProp =
+        generateInventoryFileProperty(user, filestoreName, contentsHash, inputStream);
 
     InventoryFile invFile = recordFactory.createInventoryFile(originalFileName, fileProp, user);
     invFile.setExtension(MediaUtils.getExtension(originalFileName));
@@ -134,7 +140,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
   @Override
   public FileProperty generateInventoryFileProperty(
-      User user, String fileName, InputStream inputStream) throws IOException {
+      User user, String fileName, String contentsHash, InputStream inputStream) throws IOException {
 
     FileProperty fileProperty = new FileProperty();
     fileProperty.setFileCategory(INVENTORY_FILESTORE_CATEGORY);
@@ -146,6 +152,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     fileProperty.setFileOwner(user.getUsername());
     fileProperty.setFileUser(user.getUsername());
     fileProperty.setFileVersion("1");
+    fileProperty.setContentsHash(contentsHash);
     // we always save locally on initial upload
     fileProperty.setRoot(fileStore.getCurrentLocalFileStoreRoot());
 
@@ -176,20 +183,22 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
   }
 
   public FileProperty getFilePropertyByFileName(String fileName, User user) {
-    Map<String, String> properties = Map.ofEntries(Map.entry("fileName", fileName));
+    Map<String, String> properties = new HashMap<>();
+    properties.put("fileName", fileName);
     FileProperty fileProp =
         fileStoreMetaManager.findProperties(properties).stream().findFirst().orElse(null);
-    List<InventoryRecord> records =
-        inventoryRecordRetriever.idsForRecordsUsingFileProperty(fileProp);
 
-    boolean hasPermissions =
-        records.stream()
-            .anyMatch(r -> permissionUtils.canUserReadInventoryRecord(r.getOid(), user));
-
-    if (hasPermissions) {
+    if (userHasReadPermissionsForFile(user, fileProp)) {
       return fileProp;
     } else {
       throw new NotAuthorizedException("User doesn't have permissions to read image file");
     }
+  }
+
+  private boolean userHasReadPermissionsForFile(User user, FileProperty fileProp) {
+    List<InventoryRecord> records =
+        inventoryRecordRetriever.idsForRecordsUsingFileProperty(fileProp);
+    return records.stream()
+        .anyMatch(r -> permissionUtils.canUserReadInventoryRecord(r.getOid(), user));
   }
 }

@@ -240,21 +240,21 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   }
 
   FileProperty generateInventoryFilePropertyFromBase64Image(
-      User user, String imageName, String base64Image, boolean thumbnail) throws IOException {
-
+      User user, String contentsHash, String base64Image, boolean thumbnail) throws IOException {
     String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
     byte[] imageBytes = ImageUtils.getImageBytesFromBase64DataImage(base64Image);
 
     InputStream imageIS;
+    String fileName;
     if (thumbnail) {
       imageIS = createThumbnailFromImageBytes(imageBytes, imageExtension);
-      imageName += "_thumbnail";
+      fileName = contentsHash + "_thumbnail." + imageExtension;
     } else {
       imageIS = new ByteArrayInputStream(imageBytes);
+      fileName = contentsHash + "." + imageExtension;
     }
-
-    String fileName = imageName + "." + imageExtension;
-    return inventoryFileApiManager.generateInventoryFileProperty(user, fileName, imageIS);
+    return inventoryFileApiManager.generateInventoryFileProperty(
+        user, fileName, contentsHash, imageIS);
   }
 
   InputStream createThumbnailFromImageBytes(byte[] imageBytes, String outputFormat)
@@ -305,9 +305,8 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
       String imageName, String userName) {
     Map<String, String> properties =
         Map.ofEntries(
-            // todo: probably only fileName is needed here?
-            //            Map.entry("fileGroup", userName),
-            //            Map.entry("fileOwner", userName),
+            Map.entry("fileGroup", userName),
+            Map.entry("fileOwner", userName),
             Map.entry("fileName", imageName));
     return fileMetaManagerImpl.findProperties(properties).stream().findFirst();
   }
