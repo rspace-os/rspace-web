@@ -191,6 +191,9 @@ const FileSelector = ({
             onClose={() => {
               setGalleryDialogOpen(false);
             }}
+            onSubmit={(files) => {
+              console.debug(files);
+            }}
           />
         </React.Suspense>
       )}

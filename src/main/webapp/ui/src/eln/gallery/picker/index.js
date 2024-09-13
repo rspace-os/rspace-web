@@ -10,7 +10,7 @@ import Box from "@mui/material/Box";
 import createAccentedTheme from "../../../accentedTheme";
 import Grow from "@mui/material/Grow";
 import useViewportDimensions from "../../../util/useViewportDimensions";
-import { useGalleryListing } from "../useGalleryListing";
+import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import { observer } from "mobx-react-lite";
@@ -62,7 +62,15 @@ const CustomGrow = React.forwardRef<ElementConfig<typeof Grow>, {||}>(
 CustomGrow.displayName = "CustomGrow";
 
 const Picker = observer(
-  ({ open, onClose }: {| open: boolean, onClose: () => void |}) => {
+  ({
+    open,
+    onClose,
+    onSubmit,
+  }: {|
+    open: boolean,
+    onClose: () => void,
+    onSubmit: (Set<GalleryFile>) => void,
+  |}) => {
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -163,15 +171,15 @@ const Picker = observer(
                     <Button onClick={() => onClose()}>Cancel</Button>
                     <ValidatingSubmitButton
                       validationResult={
-                        selection.size === 1
+                        selection.size > 0
                           ? Result.Ok(null)
                           : Result.Error([
-                              new Error("Select one file to proceed."),
+                              new Error("Select at least one file to proceed."),
                             ])
                       }
                       loading={false}
                       onClick={() => {
-                        console.debug("Yet to be implemented!");
+                        onSubmit(selection.asSet());
                       }}
                     >
                       Add
@@ -187,17 +195,23 @@ const Picker = observer(
   }
 );
 
+/**
+ * This component allows other parts of the product to present an interface for
+ * the user to pick a number of Gallery files
+ */
 export default function Wrapper({
   open,
   onClose,
+  onSubmit,
 }: {|
   open: boolean,
   onClose: () => void,
+  onSubmit: (Set<GalleryFile>) => void,
 |}): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
       <GallerySelection>
-        <Picker open={open} onClose={onClose} />
+        <Picker open={open} onClose={onClose} onSubmit={onSubmit} />
       </GallerySelection>
     </ThemeProvider>
   );
