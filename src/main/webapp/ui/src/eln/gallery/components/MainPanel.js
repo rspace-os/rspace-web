@@ -1410,6 +1410,12 @@ function GalleryMainPanel({
   );
 }
 
+/**
+ * This component constitues most of the Gallery page, including the section
+ * title, the breadcrumbs, the menus and buttons for controlling the listing,
+ * the listing of files itself, the info panel, and the dropzone for dragging
+ * in files from outside the browser.
+ */
 export default (observer(
   GalleryMainPanel
 ): ComponentType<GalleryMainPanelArgs>);
