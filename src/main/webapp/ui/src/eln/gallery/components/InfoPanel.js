@@ -188,6 +188,7 @@ const NameFieldForLargeViewports = styled(
             <TextField
               value={name}
               placeholder="No Name"
+              multiline
               fullWidth
               size="small"
               className={clsx(className, name !== file.name && "modified")}
@@ -258,7 +259,7 @@ const NameFieldForLargeViewports = styled(
       },
     },
   },
-  [`& .${outlinedInputClasses.input}`]: {
+  [`& .${outlinedInputClasses.multiline}`]: {
     paddingTop: theme.spacing(0.25),
     paddingBottom: theme.spacing(0.25),
     paddingLeft: theme.spacing(0.25),
@@ -719,7 +720,11 @@ export const InfoPanelForSmallViewports: ComponentType<{|
               <Grid item sx={{ flexShrink: 1, flexGrow: 1, mt: 0.5 }}>
                 <Typography
                   variant="h3"
-                  sx={{ border: "none", textTransform: "none" }}
+                  sx={{
+                    border: "none",
+                    textTransform: "none",
+                    overflowWrap: "anywhere",
+                  }}
                 >
                   {file.name}
                 </Typography>
