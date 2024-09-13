@@ -74,6 +74,19 @@ const ActionButton = ({
       variant="contained"
       sx={sx}
       onClick={onClick}
+      /*
+       * The SwipeableDrawer used on mobile has a little discoverability
+       * feature where if you tap the card without swiping it it jiggles up and
+       * down to indicate that it can be moved; this is controlled by the
+       * `disableDiscovery` prop. When someone taps a button that is on the
+       * card we want to prevent this discovery animation as the button has
+       * nought to do with the sliding of the card. As such, we capture that
+       * touch start event and prevent it from bubbling up to the
+       * SwipeableDrawer component.
+       */
+      onTouchStart={(e) => {
+        e.stopPropagation();
+      }}
       disabled={disabled}
     >
       {label}
