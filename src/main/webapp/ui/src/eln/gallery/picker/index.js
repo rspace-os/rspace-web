@@ -161,7 +161,6 @@ const Picker = observer(
                     galleryListing={galleryListing}
                     folderId={folderId}
                     refreshListing={refreshListing}
-                    key={null}
                     sortOrder={sortOrder}
                     orderBy={orderBy}
                     setSortOrder={setSortOrder}
