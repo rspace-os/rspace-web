@@ -6,5 +6,6 @@
      to be in sync with the database.  -->
 
     <include relativeToChangelogFile="true" file="rspac-2559-fix-missing-media-file-acls.xml"/>
+    <include relativeToChangelogFile="true" file="rsdev-292-custom.xml"/>
 
 </databaseChangeLog>
