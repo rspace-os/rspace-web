@@ -34,6 +34,7 @@ import { CallableImagePreview } from "../components/CallableImagePreview";
 import { CallablePdfPreview } from "../components/CallablePdfPreview";
 import { CallableAsposePreview } from "../components/CallableAsposePreview";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
+import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -45,6 +46,7 @@ library.add(faCircleDown);
 library.add(faVolumeLow);
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
+  zIndex: 1100, // less than the SwipeableDrawer so that mobile info panel is shown
   "& .MuiDialog-container > .MuiPaper-root": {
     width: "1000px",
     maxWidth: "1000px",
@@ -119,6 +121,15 @@ const Picker = observer(
               TransitionComponent={CustomGrow}
               onClose={onClose}
               fullScreen={viewport.isViewportSmall}
+              sx={{
+                height: {
+                  xs:
+                    selection.size > 0
+                      ? `calc(100% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`
+                      : "100%",
+                  md: "unset",
+                },
+              }}
             >
               <AppBar
                 appliedSearchTerm={appliedSearchTerm}
@@ -158,7 +169,6 @@ const Picker = observer(
                     orderBy={orderBy}
                     setSortOrder={setSortOrder}
                     setOrderBy={setOrderBy}
-                    hideMobileInfoPanel
                   />
                   <DialogActions>
                     <Button onClick={() => onClose()}>Cancel</Button>

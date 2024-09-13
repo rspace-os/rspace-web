@@ -45,7 +45,7 @@ import { useAsposePreview } from "./CallableAsposePreview";
  * to trigger the opening and closing of the floating info panel that is shown
  * on small viewports. When the panel is closed only the trigger region is shown.
  */
-const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
+export const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
 /*
  * To reduce the amount of visual noise, some components have a minimal stying

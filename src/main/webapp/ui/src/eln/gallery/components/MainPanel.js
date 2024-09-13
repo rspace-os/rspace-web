@@ -1051,7 +1051,6 @@ type GalleryMainPanelArgs = {|
   orderBy: "name" | "modificationDate",
   setSortOrder: ("DESC" | "ASC") => void,
   setOrderBy: ("name" | "modificationDate") => void,
-  hideMobileInfoPanel?: boolean,
 |};
 
 function GalleryMainPanel({
@@ -1065,7 +1064,6 @@ function GalleryMainPanel({
   orderBy,
   setSortOrder,
   setOrderBy,
-  hideMobileInfoPanel = false,
 }: GalleryMainPanelArgs): Node {
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
@@ -1393,11 +1391,9 @@ function GalleryMainPanel({
             </Grid>
             {selection
               .asSet()
-              .only.map((file) =>
-                hideMobileInfoPanel ? null : (
-                  <InfoPanelForSmallViewports key={null} file={file} />
-                )
-              )
+              .only.map((file) => (
+                <InfoPanelForSmallViewports key={null} file={file} />
+              ))
               .orElse(null)}
           </Grid>
         </Grid>
