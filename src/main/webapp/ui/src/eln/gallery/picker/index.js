@@ -7,18 +7,6 @@ import AppBar from "../components/AppBar";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import {
-  faImage,
-  faFilm,
-  faFile,
-  faFileInvoice,
-  faDatabase,
-  faShapes,
-  faCircleDown,
-  faVolumeLow,
-} from "@fortawesome/free-solid-svg-icons";
-import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
 import createAccentedTheme from "../../../accentedTheme";
 import Grow from "@mui/material/Grow";
 import useViewportDimensions from "../../../util/useViewportDimensions";
@@ -35,15 +23,6 @@ import { CallablePdfPreview } from "../components/CallablePdfPreview";
 import { CallableAsposePreview } from "../components/CallableAsposePreview";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
-library.add(faImage);
-library.add(faFilm);
-library.add(faFile);
-library.add(faFileInvoice);
-library.add(faDatabase);
-library.add(faShapes);
-library.add(faNoteSticky);
-library.add(faCircleDown);
-library.add(faVolumeLow);
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   zIndex: 1100, // less than the SwipeableDrawer so that mobile info panel is shown
