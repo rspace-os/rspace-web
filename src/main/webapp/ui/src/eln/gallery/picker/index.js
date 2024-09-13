@@ -80,7 +80,17 @@ const Picker = observer(
     );
     const [selectedSection, setSelectedSection] = React.useState("Chemistry");
     const [drawerOpen, setDrawerOpen] = React.useState(
-      !viewport.isViewportSmall
+      /*
+       * On the Gallery page, the sidebar is open on any viewport size that
+       * isn't small -- on the smaller viewport sizes the sidebar is floating
+       * instead of being persistent. However, in the picker dialog there is
+       * less space than on the main page as the dialog isn't fullscreen and on
+       * the medium size we run into there not being enough horizontal space to
+       * properly display the info panel. As such, initially the sidebar is
+       * closed. The user can open it if they wish but at least we initially
+       * present everything with enough space.
+       */
+      viewport.isViewportNotLarge
     );
     const { galleryListing, path, clearPath, folderId, refreshListing } =
       useGalleryListing({
