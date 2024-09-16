@@ -27,8 +27,6 @@ import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   zIndex: 1100, // less than the SwipeableDrawer so that mobile info panel is shown
   "& .MuiDialog-container > .MuiPaper-root": {
-    width: "1000px",
-    maxWidth: "1000px",
     height: "calc(100% - 32px)", // 16px margin above and below dialog
     [theme.breakpoints.down("md")]: {
       // sm and xs are fullscreen, where the sidebar is a floating element
@@ -114,6 +112,8 @@ const Picker = observer(
         <CallablePdfPreview>
           <CallableAsposePreview>
             <CustomDialog
+              maxWidth="xl"
+              fullWidth
               open={open}
               TransitionComponent={CustomGrow}
               onClose={onClose}
@@ -152,6 +152,7 @@ const Picker = observer(
                     display: "flex",
                     flexDirection: "column",
                     flexGrow: 1,
+                    width: "calc(100% - 200px)",
                   }}
                 >
                   <MainPanel

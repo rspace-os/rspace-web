@@ -1175,14 +1175,14 @@ function GalleryMainPanel({
               item
               container
               direction="column"
-              md={8}
+              md={7}
               lg={8}
               xl={9}
               sx={{
                 mt: 0.75,
               }}
             >
-              <Grid item>
+              <Grid item sx={{ maxWidth: "100% !important" }}>
                 <Stack direction="row" spacing={0.5} alignItems="center">
                   <ActionsMenu
                     refreshListing={refreshListing}
@@ -1377,7 +1377,7 @@ function GalleryMainPanel({
             </Grid>
             <Grid
               item
-              md={4}
+              md={5}
               lg={4}
               xl={3}
               sx={{
