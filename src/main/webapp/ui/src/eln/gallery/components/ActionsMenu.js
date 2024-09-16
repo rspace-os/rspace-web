@@ -615,7 +615,24 @@ function ActionsMenu({
           p: 0,
           pl: 1,
           fontWeight: 500,
-          display: { xs: "none", sm: "initial" },
+          display: {
+            /*
+             * On medium viewports, there isn't enought horizontal space to
+             * display the actions menu, this selection label, the views
+             * menu, and the sort menu in the picker dialog so we hide the
+             * least important. On small viewports there is enough space
+             * because the info panel is instead a panel that slides up
+             * from the bottom. Once v6 of MUI is stable, it might be worth
+             * changing this to a container query rather than using the page
+             * width as a rough heuristic for available space. See
+             * https://mui.com/system/getting-started/usage/#responsive-values
+             */
+            xs: "none",
+            sm: "initial",
+            md: "none",
+            lg: "initial",
+            xl: "initial",
+          },
           ...(selection.isEmpty
             ? {
                 color: "grey",
