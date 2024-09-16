@@ -163,7 +163,7 @@ const FileSelector = ({
         error={false}
         key={0}
         disabled={!editable}
-        explanatoryText="File will be added to the Gallery once saved."
+        explanatoryText="Upload a file from your device."
         containerProps={{
           wrap: "nowrap",
           alignItems: "stretch",
