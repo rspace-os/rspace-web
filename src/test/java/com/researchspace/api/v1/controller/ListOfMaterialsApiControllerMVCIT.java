@@ -31,7 +31,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
   public void createEditDeleteListOfMaterialsForDocField() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiSampleWithFullSubSamples mySample = createBasicSampleForUser(anyUser);
     ApiSubSample mySubSample = mySample.getSubSamples().get(0);
@@ -162,7 +162,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
   public void checkValidationOnLomCreationAndUpdate() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // ApiSampleFull mySample = createBasicSampleForUser(anyUser);
     StructuredDocument myDoc = createBasicDocumentInRootFolderWithText(anyUser, "text");
@@ -230,10 +230,10 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
   public void checkLomPermissionErrors() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     User otherUser = createInitAndLoginAnyUser();
-    String otherApiKey = createApiKeyForuser(otherUser);
+    String otherApiKey = createNewApiKeyForUser(otherUser);
     StructuredDocument basicDoc = createBasicDocumentInRootFolderWithText(otherUser, "test");
     Field basicDocField = basicDoc.getFields().get(0);
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(otherUser);

@@ -2,7 +2,6 @@ package com.researchspace.testutils;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertFalse;
 
 import com.axiope.search.IFileIndexer;
@@ -64,7 +63,6 @@ import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
-import com.researchspace.model.UserApiKey;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
@@ -1602,35 +1600,13 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @param apiUser
    * @return
    */
-  protected String createApiKeyForuser(User apiUser) {
-    UserApiKey key = new UserApiKey(apiUser, randomAlphabetic(16));
-    return userApiKeyMgr.save(key).getApiKey();
+  protected String createNewApiKeyForUser(User apiUser) {
+    return userApiKeyMgr.createKeyForUser(apiUser).getApiKey();
   }
 
-  protected String getOrCreateNewSysAdminApiKey() {
+  protected String createNewSysAdminApiKey() {
     User sysadmin = userMgr.getUserByUsername(Constants.SYSADMIN_UNAME);
-    UserApiKey key =
-        userApiKeyMgr
-            .getKeyForUser(sysadmin)
-            .orElseGet(
-                () -> {
-                  UserApiKey newKey = new UserApiKey(sysadmin, randomAlphabetic(16));
-                  return userApiKeyMgr.save(newKey);
-                });
-    return key.getApiKey();
-  }
-
-  /**
-   * Gets existing API key if there is one, else creates new one and returns it
-   *
-   * @param apiUser
-   * @return
-   */
-  protected String getApiKeyForuser(User apiUser) {
-    return userApiKeyMgr
-        .getKeyForUser(apiUser)
-        .map(UserApiKey::getApiKey)
-        .orElseGet(() -> createApiKeyForuser(apiUser));
+    return createNewApiKeyForUser(sysadmin);
   }
 
   protected abstract Group reloadGroup(Group group);

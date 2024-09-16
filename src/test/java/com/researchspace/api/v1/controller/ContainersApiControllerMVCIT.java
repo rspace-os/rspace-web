@@ -47,7 +47,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     User anyUser = createAndSaveUser(CoreTestUtils.getRandomName(10));
     setUpUserWithInitialisedContent(anyUser);
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // no pagination
     MvcResult result = retrieveTopContainers(anyUser, apiKey, false);
@@ -230,7 +230,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void createContainerWithImageAndTags() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     String post =
         "{ \"name\": \"Simplest"
@@ -259,7 +259,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     Mockito.reset(auditer);
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     String simplestContainerJSON = "{ \"name\": \"Simplest Container\", \"cType\": \"LIST\" }";
     MvcResult result =
@@ -351,7 +351,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void createEditGridContainer() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     String simplestContainerJSON =
         "{ \"name\": \"Grid Container\", \"cType\": \"GRID\",\"gridLayout\": { \"columnsNumber\":"
@@ -377,7 +377,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void containerCreationErrors() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // no name
     String emptyNameJSON = "{ }";
@@ -480,7 +480,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void containerUpdateErrors() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create grid container
     ApiContainer gridContainer = createBasicContainerForUser(anyUser);
@@ -560,7 +560,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     Mockito.reset(auditer);
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create top containers, explicitly rename two of them
     ApiContainer containerA = createBasicContainerForUser(anyUser);
@@ -639,7 +639,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     // create user with a container and subcontainer
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiContainer workbench = getWorkbenchForUser(anyUser);
     ApiContainer basicContainer = createBasicContainerForUser(anyUser);
     moveContainerToTopLevel(basicContainer, anyUser);
@@ -790,7 +790,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     // create user with container
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiContainer container = createBasicContainerForUser(anyUser);
 
     // copy container
@@ -818,8 +818,8 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     initUsers(pi, user, secondUser);
     createGroupForUsersWithDefaultPi(pi, user);
 
-    String userApiKey = createApiKeyForuser(user);
-    String secondUserApiKey = createApiKeyForuser(secondUser);
+    String userApiKey = createNewApiKeyForUser(user);
+    String secondUserApiKey = createNewApiKeyForUser(secondUser);
 
     // create a container for each user
     ApiContainer piContainer = createBasicContainerForUser(pi, "pi's container");
@@ -905,7 +905,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void changeContainerOwner() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create basic sample
     ApiContainer createdContainer = createBasicContainerForUser(anyUser);

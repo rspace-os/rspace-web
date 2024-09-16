@@ -24,7 +24,7 @@ public class ImportApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void testWordImport() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     MockMultipartFile mf =
         new MockMultipartFile(
             "file", "letterlegal5.doc", "ms/doc", getTestResourceFileStream("letterlegal5.doc"));
@@ -73,7 +73,7 @@ public class ImportApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void testEvernoteImport() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     MockMultipartFile mf =
         new MockMultipartFile(
             "file",

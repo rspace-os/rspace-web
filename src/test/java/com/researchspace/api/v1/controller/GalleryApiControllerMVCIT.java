@@ -166,7 +166,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
     fileStorePathId2 =
         createIrodsFileStore(iRodsFileSystem, "test_folder_2", IRODS_HOME_DIR + "/training_jpgs");
     logoutAndLoginAs(user1);
-    apiKeyUser1 = createApiKeyForuser(user1);
+    apiKeyUser1 = createNewApiKeyForUser(user1);
     irodsCredentials =
         ApiNfsCredentials.builder().username(IRODS_USERNAME).password(IRODS_PASSWORD).build();
     iRodsAccount =
@@ -191,7 +191,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
     TestGroup testGrp1 = createTestGroup(2, new TestGroupConfig(true));
     User userNew = testGrp1.getUserByPrefix("u2");
     logoutAndLoginAs(userNew);
-    String apiKeyNew = createApiKeyForuser(userNew);
+    String apiKeyNew = createNewApiKeyForUser(userNew);
     MvcResult getResult =
         mockMvc
             .perform(createIrodsGetBuilder(userNew, apiKeyNew))
@@ -242,7 +242,7 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
   public void testIrodsCopyingFilesSuccessfully() throws IOException {
     User user2 = testGrp.getUserByPrefix("u2");
     logoutAndLoginAs(user2);
-    String apiKeyUser2 = createApiKeyForuser(user2);
+    String apiKeyUser2 = createNewApiKeyForUser(user2);
 
     EcatMediaFile imageInGallery1 = uploadFileIntoRspace("image1.png");
     EcatMediaFile imageInGallery2 = uploadFileIntoRspace("image2.png");

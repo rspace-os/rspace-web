@@ -1,0 +1,13 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Allow the table to save the new hashed apiKey -->
+    <changeSet id="2024-09-03a" context="run" author="nico">
+        <comment>Increase column space</comment>
+        <modifyDataType columnName="apiKey" newDataType="varchar(60)" tableName="UserApiKey" />
+    </changeSet>
+
+</databaseChangeLog>

@@ -36,7 +36,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void saveSubsampleImage() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     Long fpCount = getCountOfEntityTable("FileProperty");
 
     // new basic sample with default subsample
@@ -69,7 +69,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void subsampleHasLinkToSampleImageAsDefault() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // new basic sample with default subsample
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
@@ -105,7 +105,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void addNote() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     Long b4Count = getCountOfEntityTable("SubSampleNote");
 
     // new basic sample with default subsample
@@ -152,7 +152,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     Mockito.reset(auditer);
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // new basic sample with default subsample
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
@@ -303,7 +303,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     Mockito.reset(auditer);
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // new basic sample with default subsample
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
@@ -479,7 +479,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     // create user with a subsample in a container
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     MvcResult getAllResult = getAllSubSamples(anyUser, apiKey, false);
     ApiSubSampleSearchResult allSubSamples =
@@ -610,7 +610,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void subSampleRevisionHistory() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiSampleWithFullSubSamples sample = createComplexSampleForUser(anyUser);
     ApiSubSampleInfo subSample = sample.getSubSamples().get(0);
 

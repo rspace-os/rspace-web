@@ -29,8 +29,8 @@ public class InventoryEditLocksControllerMVCIT extends API_MVC_InventoryTestBase
     initUsers(pi, testUser);
     createGroupForUsersWithDefaultPi(pi, testUser);
 
-    String testUserApiKey = createApiKeyForuser(testUser);
-    String piApiKey = createApiKeyForuser(pi);
+    String testUserApiKey = createNewApiKeyForUser(testUser);
+    String piApiKey = createNewApiKeyForUser(pi);
 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
 

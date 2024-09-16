@@ -34,8 +34,8 @@ public class WorkbenchApiControllerMVCIT extends API_MVC_InventoryTestBase {
     initUsers(pi, user, secondUser);
     createGroupForUsersWithDefaultPi(pi, user);
 
-    String userApiKey = createApiKeyForuser(user);
-    String secondUserApiKey = createApiKeyForuser(secondUser);
+    String userApiKey = createNewApiKeyForUser(user);
+    String secondUserApiKey = createNewApiKeyForUser(secondUser);
 
     // check visibility within a group - user can see pi's bench
     MvcResult result = retrieveVisibleWorkbenches(user, userApiKey);

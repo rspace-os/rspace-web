@@ -46,7 +46,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     logoutAndLoginAs(sharer);
     EcatMediaFile anyMediaFile = addAudioFileToGallery(sharer);
     SharePost toPost = createValidSharePostWithGroup(testGrp1, anyMediaFile, "EDIT");
-    String apiKey = createApiKeyForuser(sharer);
+    String apiKey = createNewApiKeyForUser(sharer);
     MvcResult result =
         mockMvc
             .perform(createBuilderForPostWithJSONBody(apiKey, "/share", sharer, toPost))
@@ -61,7 +61,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     logoutAndLoginAs(sharer);
     Snippet aSnippet = recordMgr.createSnippet("snippet", "some text", sharer);
     SharePost toPost = createValidSharePostWithGroup(testGrp1, aSnippet, "EDIT");
-    String apiKey = createApiKeyForuser(sharer);
+    String apiKey = createNewApiKeyForUser(sharer);
     MvcResult result =
         mockMvc
             .perform(createBuilderForPostWithJSONBody(apiKey, "/share", sharer, toPost))
@@ -97,7 +97,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     logoutAndLoginAs(sharer);
     StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "anytext");
     SharePost toPost = createValidSharePostWithGroup(testGrp1, toShare, "EDIT");
-    String apiKey = createApiKeyForuser(sharer);
+    String apiKey = createNewApiKeyForUser(sharer);
 
     assertEquals(0, getShareCount(sharer, apiKey));
 
@@ -157,7 +157,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     User sharer = testGrp1.getUserByPrefix("u1");
     logoutAndLoginAs(sharer);
     StructuredDocument toShare = createBasicDocumentInRootFolderWithText(sharer, "anytext");
-    String apiKey = createApiKeyForuser(sharer);
+    String apiKey = createNewApiKeyForUser(sharer);
 
     // create subfolder of sharing folder
     ApiFolder subfolder =
@@ -183,7 +183,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     TestGroup testGrp1 = createTestGroup(3, new TestGroupConfig(true));
     User other = createInitAndLoginAnyUser();
     StructuredDocument toShare = createBasicDocumentInRootFolderWithText(other, "anytext");
-    String otherApiKey = createApiKeyForuser(other);
+    String otherApiKey = createNewApiKeyForUser(other);
 
     // other is not member of group, can't share his doc.
     SharePost toPost = createValidSharePostWithGroup(testGrp1, toShare, "EDIT");
@@ -192,7 +192,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(ApiErrorCodes.AUTH.getCode(), error.getInternalCode());
 
     // pi IS member of group but can't share someone elses' work
-    String piApiKey = createApiKeyForuser(testGrp1.getPi());
+    String piApiKey = createNewApiKeyForUser(testGrp1.getPi());
     postAndExpectUnauthorized(other, toPost, piApiKey);
 
     // now, sharer is in both groups and is sharing own doc, but has specified target folder in the
