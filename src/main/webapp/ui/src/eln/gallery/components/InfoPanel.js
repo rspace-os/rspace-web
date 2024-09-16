@@ -39,6 +39,8 @@ import {
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import CloseIcon from "@mui/icons-material/Close";
+import TickIcon from "@mui/icons-material/Done";
 
 /*
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -245,18 +247,20 @@ const NameFieldForLargeViewports = styled(
                   onClick={() => {
                     setName(file.name);
                   }}
-                  sx={{ px: 0.75 }}
+                  sx={{ px: 0.75, minWidth: "unset" }}
+                  aria-label="Cancel"
                 >
-                  Cancel
+                  <CloseIcon />
                 </Button>
                 <Button
                   size="small"
                   variant="contained"
                   color="callToAction"
                   type="submit"
-                  sx={{ px: 0.75 }}
+                  sx={{ px: 0.75, minWidth: "unset" }}
+                  aria-label="Rename"
                 >
-                  Save
+                  <TickIcon />
                 </Button>
               </Stack>
             </Collapse>
