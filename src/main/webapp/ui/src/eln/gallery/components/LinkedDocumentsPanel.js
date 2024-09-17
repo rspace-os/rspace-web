@@ -9,6 +9,17 @@ import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../../util/table";
 import GlobalId from "../../../components/GlobalId";
 
+/**
+ * This table lists all of the ELN documents that reference the passed
+ * GalleryFile, providing a backlink. For some files, this graph of references
+ * is a nice addition whilst in other cases it forms the basis for the
+ * justification of storing files in the RSpace Gallery. Take Data Management
+ * Plans (DMPs), for example: being able to mark experiments as recording data
+ * that adheres to a DMP means that finding all such experiments becomes
+ * trivial with the aid of this table.
+ *
+ * @param file The GalleryFile that can be referenced by ELN documents.
+ */
 export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
   file,
 }): Node => {

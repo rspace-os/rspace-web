@@ -50,6 +50,9 @@ class LinkableDocument implements LinkableRecord {
   }
 }
 
+/**
+ * Given a GalleryFile, get all of the ELN documents that reference it.
+ */
 export default function useLinkedDocuments(file: GalleryFile): {|
   documents: $ReadOnlyArray<Document>,
   loading: boolean,
