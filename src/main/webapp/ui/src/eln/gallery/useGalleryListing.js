@@ -21,6 +21,7 @@ export function idToString(id: Id): string {
 export type GalleryFile = {|
   id: Id,
   name: string,
+  extension: string | null,
   modificationDate: number,
   type: string,
   thumbnailUrl: string,
@@ -223,6 +224,7 @@ export function useGalleryListing({
     const ret: GalleryFile = {
       id,
       name,
+      extension,
       modificationDate,
       type,
       thumbnailUrl: generateIconSrc(

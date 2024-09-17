@@ -12,10 +12,11 @@ import OpenWithIcon from "@mui/icons-material/OpenWith";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import { observer } from "mobx-react-lite";
-import { type GalleryFile, idToString } from "../useGalleryListing";
+import { type GalleryFile, idToString, type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import Dialog from "@mui/material/Dialog";
@@ -34,6 +35,151 @@ import Typography from "@mui/material/Typography";
 import MoveDialog from "./MoveDialog";
 import ExportDialog from "../../../Export/ExportDialog";
 import EventBoundary from "../../../components/EventBoundary";
+import * as Parsers from "../../../util/parsers";
+import * as FetchingData from "../../../util/fetchingData";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+
+/**
+ * When tapped, the user is presented with their operating system's file
+ * picker. Once they have picked a file its contents is uploaded and is used to
+ * replace the contents of the selected gallery file. The filename is also
+ * replaced and the version number incremented.
+ */
+const UploadNewVersionMenuItem = ({
+  onSuccess,
+  onError,
+  folderId,
+}: {|
+  /*
+   * Called when the selected local file has been uploaded and has successfully
+   * replaced the contents of the gallery file.
+   */
+  onSuccess: () => void,
+
+  /*
+   * Called when either there is an error uploading the file or the user has
+   * cancelled the operating system's file picker.
+   */
+  onError: () => void,
+
+  /*
+   * The current folder being shown in the UI. It's not clear why this is
+   * necessary given that the Id of the selected file should be sufficient to
+   * identify it, but the API requires it so pass it we must.
+   */
+  folderId: FetchingData.Fetched<Id>,
+|}) => {
+  const { uploadNewVersion } = useGalleryActions();
+  const selection = useGallerySelection();
+  const newVersionInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  /*
+   * This is necessary because React does not yet support the new cancel event
+   * https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/cancel_event
+   * https://github.com/facebook/react/issues/27858
+   */
+  React.useEffect(() => {
+    const input = newVersionInputRef.current;
+    input?.addEventListener("cancel", onError);
+    return () => input?.removeEventListener("cancel", onError);
+  }, [newVersionInputRef, onError]);
+
+  const uploadNewVersionAllowed = (): Result<null> => {
+    if (selection.isEmpty)
+      return Result.Error([new Error("Nothing selected.")]);
+    return selection
+      .asSet()
+      .only.toResult(
+        () =>
+          new Error("Only one item may be updated with a new version at once.")
+      )
+      .flatMap((file) => {
+        if (file.isFolder)
+          return Result.Error([
+            new Error("Cannot update folders with a new version."),
+          ]);
+        if (!file.extension)
+          return Result.Error([
+            new Error(
+              "An extension is required to be able to update the file with a new version"
+            ),
+          ]);
+        return Result.Ok(null);
+      });
+  };
+
+  return (
+    <>
+      <NewMenuItem
+        title="Upload New Version"
+        subheader={uploadNewVersionAllowed()
+          .map(() => "")
+          .orElseGet(([e]) => e.message)}
+        avatar={<FileUploadIcon />}
+        backgroundColor={COLOR.background}
+        foregroundColor={COLOR.contrastText}
+        onKeyDown={(e: KeyboardEvent) => {
+          if (e.key === " ") newVersionInputRef.current?.click();
+        }}
+        onClick={() => {
+          newVersionInputRef.current?.click();
+        }}
+        compact
+        disabled={uploadNewVersionAllowed().isError}
+      />
+      {selection
+        .asSet()
+        .only.map((file) => [file, file.extension])
+        .flatMap(([f, ext]) =>
+          Parsers.isNotNull(ext)
+            .toOptional()
+            .map((e) => [f, e])
+        )
+        .map(([file, extension]) => (
+          <input
+            key={null}
+            ref={newVersionInputRef}
+            accept={`.${extension}`}
+            hidden
+            onChange={({ target: { files } }) => {
+              /*
+               * In grid view, the id of the last file in the path and the
+               * folderId will always be the same as one can only operate on
+               * the contents of the currently open folder but in tree view
+               * it is possible to operate on files that are deeply nested.
+               * In either case, if the path is empty it is because a root
+               * level file is being operated on, and the only way that is
+               * possible is if the folderId is the id of the root of the
+               * gallery sub-section. The only time that folderId will not
+               * be available is whilst the listing is still loading or
+               * there has been an error so we can just also error here.
+               */
+              const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
+                .map(({ id }) => id)
+                .orElseTry(() => FetchingData.getSuccessValue(folderId))
+                .mapError(() => new Error("Current folder is not known"))
+                .elseThrow();
+
+              /*
+               * `multiple` is not set on the `<input>` so we need not check
+               * that multiple files have been selected; the OS will prevent
+               * it.
+               */
+              const newFile = ArrayUtils.head(files)
+                .mapError(() => new Error("No files selected"))
+                .elseThrow();
+
+              void uploadNewVersion(idOfFolderThatFileIsIn, file, newFile)
+                .then(onSuccess)
+                .catch(onError);
+            }}
+            type="file"
+          />
+        ))
+        .orElse(null)}
+    </>
+  );
+};
 
 const RenameDialog = ({
   open,
@@ -117,9 +263,14 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 type ActionsMenuArgs = {|
   refreshListing: () => void,
   section: GallerySection,
+  folderId: FetchingData.Fetched<Id>,
 |};
 
-function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
+function ActionsMenu({
+  refreshListing,
+  section,
+  folderId,
+}: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
   const { deleteFiles, duplicateFiles } = useGalleryActions();
   const selection = useGallerySelection();
@@ -305,6 +456,16 @@ function ActionsMenu({ refreshListing, section }: ActionsMenuArgs): Node {
             />
           ))
           .orElse(null)}
+        <UploadNewVersionMenuItem
+          folderId={folderId}
+          onSuccess={() => {
+            setActionsMenuAnchorEl(null);
+            refreshListing();
+          }}
+          onError={() => {
+            setActionsMenuAnchorEl(null);
+          }}
+        />
         <NewMenuItem
           title="Download"
           subheader={downloadAllowed()
