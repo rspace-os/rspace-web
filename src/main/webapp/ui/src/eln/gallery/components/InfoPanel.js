@@ -225,7 +225,14 @@ const NameFieldForLargeViewports = styled(
                   setName(file.name);
               }}
             />
-            <Collapse in={name !== file.name}>
+            <Collapse
+              in={name !== file.name}
+              timeout={
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                  ? 0
+                  : 200
+              }
+            >
               <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                 <Button
                   size="small"
@@ -355,7 +362,14 @@ const DescriptionField = styled(
             onChange={({ target: { value } }) => setDescription(value)}
             multiline
           />
-          <Collapse in={description !== getDescValue(file)}>
+          <Collapse
+            in={description !== getDescValue(file)}
+            timeout={
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? 0
+                : 200
+            }
+          >
             <Stack direction="row" spacing={0.5} justifyContent="flex-end">
               <Button
                 size="small"
