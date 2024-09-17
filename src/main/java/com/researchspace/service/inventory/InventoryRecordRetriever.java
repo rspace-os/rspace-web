@@ -160,7 +160,7 @@ public class InventoryRecordRetriever {
     return containerDao.getWorkbenchForUser(user);
   }
 
-  public List<InventoryRecord> idsForRecordsUsingFileProperty(FileProperty fileProperty) {
+  public List<InventoryRecord> recordsUsingImageFile(FileProperty fileProperty) {
     List<InventoryRecord> ids = new ArrayList<>();
     ids.addAll(containerDao.getAllUsingImage(fileProperty));
     ids.addAll(sampleDao.getAllUsingImage(fileProperty));

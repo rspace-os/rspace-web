@@ -11,4 +11,11 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="2024-09-13b" context="run" author="fraser">
+        <comment>RSDEV-292: Add index to contentsHash column</comment>
+        <createIndex indexName="contentsHash_idx" tableName="FileProperty">
+            <column name="contentsHash" type="varchar"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

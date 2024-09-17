@@ -9,7 +9,6 @@ import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiContainerLocationWithContent;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
-import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.FileProperty;
@@ -403,9 +402,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl
 
   private Container saveContainerLocationsImage(Container container, String base64Image, User user)
       throws IOException {
-    String locationsImageName = CryptoUtils.hashWithSha256inHex(base64Image);
-    FileProperty locationsImageFileProp =
-        generateInventoryFilePropertyFromBase64Image(user, locationsImageName, base64Image, false);
+    FileProperty locationsImageFileProp = saveImageFile(user, base64Image, false);
     container.setLocationsImageFileProperty(locationsImageFileProp);
 
     container = containerDao.save(container);

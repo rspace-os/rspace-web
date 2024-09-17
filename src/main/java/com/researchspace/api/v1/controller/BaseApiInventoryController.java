@@ -116,7 +116,7 @@ public class BaseApiInventoryController extends BaseApiController {
       headers.setLastModified(fileProp.getUpdateDate().getTime());
     }
 
-    return new ResponseEntity<byte[]>(bytes, headers, HttpStatus.OK);
+    return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
   }
 
   private byte[] getImageBytes(FileProperty imageFileProp) throws IOException {

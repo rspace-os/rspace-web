@@ -52,6 +52,9 @@ public class StoreFileContentsHash_rsdev292 extends AbstractCustomLiquibaseUpdat
   }
 
   private List<FileProperty> getAllFileProperties() {
-    return sessionFactory.getCurrentSession().createCriteria(FileProperty.class).list();
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from FileProperty", FileProperty.class)
+        .list();
   }
 }

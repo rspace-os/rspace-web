@@ -561,11 +561,11 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   protected abstract String getSelfLinkEndpoint();
 
   void buildAndAddInventoryImageLink(String imageType, UriComponentsBuilder baseUrlBuilder) {
-    addLink(buildInventoryImageLink(imageType, baseUrlBuilder, getId(), "/files"));
+    addLink(buildInventoryImageLink(imageType, baseUrlBuilder, "/files"));
   }
 
   ApiLinkItem buildInventoryImageLink(
-      String imageType, UriComponentsBuilder baseUrlBuilder, Long invRecId, String endpointName) {
+      String imageType, UriComponentsBuilder baseUrlBuilder, String endpointName) {
     String imagePath =
         endpointName
             + "/image/"

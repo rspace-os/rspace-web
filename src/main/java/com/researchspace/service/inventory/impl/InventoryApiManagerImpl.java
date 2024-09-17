@@ -62,25 +62,21 @@ import org.springframework.context.annotation.Lazy;
 @Slf4j
 public abstract class InventoryApiManagerImpl implements InventoryApiManager {
 
+  static final int THUMBNAIL_MAX_SIZE_IN_PX = 150;
+  final Long DEFAULT_ICON_ID = -1L;
   protected @Autowired IRecordFactory recordFactory;
   protected @Autowired ApiExtraFieldsHelper extraFieldHelper;
   protected @Autowired ApiBarcodesHelper barcodesHelper;
   protected @Autowired ApiIdentifiersHelper identifiersHelper;
-
   protected @Autowired ApplicationEventPublisher publisher;
   protected @Autowired UserManager userManager;
-  private @Autowired InventoryEditLockTracker tracker;
-  private @Autowired GroupDao groupDao;
-
   protected @Autowired ContainerDao containerDao;
   protected @Autowired InventoryPermissionUtils invPermissions;
+  private @Autowired InventoryEditLockTracker tracker;
+  private @Autowired GroupDao groupDao;
   private @Autowired InventoryFileApiManager inventoryFileApiManager;
   @Autowired @Lazy private DocumentTagManager documentTagManager;
   private @Autowired FileStoreMetaManager fileMetaManagerImpl;
-
-  final Long DEFAULT_ICON_ID = -1L;
-
-  static final int THUMBNAIL_MAX_SIZE_IN_PX = 150;
 
   protected void updateOntologyOnUpdate(
       ApiInventoryRecordInfo original, ApiInventoryRecordInfo updated, User user) {
@@ -239,66 +235,63 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
     return apiSearchResult;
   }
 
-  FileProperty generateInventoryFilePropertyFromBase64Image(
-      User user, String contentsHash, String base64Image, boolean thumbnail) throws IOException {
+  FileProperty saveImageFile(User user, String base64Image, boolean isThumbnail)
+      throws IOException {
+    String contentsHash = CryptoUtils.hashWithSha256inHex(base64Image);
     String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
+    String mainImageNameFormat = "%s.%s";
+    String thumbnailNameFormat = "%s_thumbnail.%s";
     byte[] imageBytes = ImageUtils.getImageBytesFromBase64DataImage(base64Image);
 
-    InputStream imageIS;
-    String fileName;
-    if (thumbnail) {
-      imageIS = createThumbnailFromImageBytes(imageBytes, imageExtension);
-      fileName = contentsHash + "_thumbnail." + imageExtension;
+    // The same FileProperty (and therefore the same file on disk) can belong to many
+    // InventoryRecords.
+    // Checks if a FileProperty already exists for the given user and hash of the contents of the
+    // image and returns that if so. Otherwise, generates a new FileProperty.
+    String fileName =
+        String.format(
+            isThumbnail ? thumbnailNameFormat : mainImageNameFormat, contentsHash, imageExtension);
+    Optional<FileProperty> existingFile =
+        getExistingFilePropertyForImage(fileName, user.getUsername());
+    if (existingFile.isPresent()) {
+      return existingFile.get();
     } else {
-      imageIS = new ByteArrayInputStream(imageBytes);
-      fileName = contentsHash + "." + imageExtension;
+      InputStream imageIS;
+      if (isThumbnail) {
+        imageIS = createThumbnailFromImageBytes(imageBytes, imageExtension);
+      } else {
+        imageIS = new ByteArrayInputStream(imageBytes);
+      }
+      return inventoryFileApiManager.generateInventoryFileProperty(
+          user, fileName, contentsHash, imageIS);
     }
-    return inventoryFileApiManager.generateInventoryFileProperty(
-        user, fileName, contentsHash, imageIS);
   }
 
   InputStream createThumbnailFromImageBytes(byte[] imageBytes, String outputFormat)
       throws IOException {
 
     InputStream imageIS = new ByteArrayInputStream(imageBytes);
-    BufferedImage image = ImageUtils.getBufferedImageFromInputImageStream(imageIS).get();
+    Optional<BufferedImage> image = ImageUtils.getBufferedImageFromInputImageStream(imageIS);
+    if (image.isPresent()) {
+      int width = Math.min(image.get().getWidth(), THUMBNAIL_MAX_SIZE_IN_PX);
+      int height = Math.min(image.get().getHeight(), THUMBNAIL_MAX_SIZE_IN_PX);
 
-    int width = Math.min(image.getWidth(), THUMBNAIL_MAX_SIZE_IN_PX);
-    int height = Math.min(image.getHeight(), THUMBNAIL_MAX_SIZE_IN_PX);
-
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ImageUtils.createThumbnail(image, width, height, baos, outputFormat);
-    return new ByteArrayInputStream(baos.toByteArray());
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      ImageUtils.createThumbnail(image.get(), width, height, baos, outputFormat);
+      return new ByteArrayInputStream(baos.toByteArray());
+    }
+    return new ByteArrayInputStream(new byte[0]);
   }
 
   @Override
-  public void setPreviewImageForInvRecord(InventoryRecord invRec, String base64Image, User user)
+  public void createImagesForRecord(InventoryRecord invRec, String base64Image, User user)
       throws IOException {
-    String imageName = CryptoUtils.hashWithSha256inHex(base64Image);
-    String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
+    // main image
+    FileProperty mainImage = saveImageFile(user, base64Image, false);
+    invRec.setImageFileProperty(mainImage);
 
-    Optional<FileProperty> existingFile =
-        getExistingFilePropertyForImage(
-            String.format("%s.%s", imageName, imageExtension), user.getUsername());
-    if (existingFile.isPresent()) {
-      invRec.setImageFileProperty(existingFile.get());
-    } else {
-      FileProperty imageFileProp =
-          generateInventoryFilePropertyFromBase64Image(user, imageName, base64Image, false);
-      invRec.setImageFileProperty(imageFileProp);
-    }
-
-    // generate and save thumbnail version
-    Optional<FileProperty> existingThumbnailImage =
-        getExistingFilePropertyForImage(
-            String.format("%s_thumbnail.%s", imageName, imageExtension), user.getUsername());
-    if (existingThumbnailImage.isPresent()) {
-      invRec.setThumbnailFileProperty(existingThumbnailImage.get());
-    } else {
-      FileProperty thumbnailFileProp =
-          generateInventoryFilePropertyFromBase64Image(user, imageName, base64Image, true);
-      invRec.setThumbnailFileProperty(thumbnailFileProp);
-    }
+    // thumbnail version
+    FileProperty thumbnail = saveImageFile(user, base64Image, true);
+    invRec.setThumbnailFileProperty(thumbnail);
   }
 
   private Optional<FileProperty> getExistingFilePropertyForImage(
@@ -314,7 +307,6 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   /**
    * Save incoming main image.
    *
-   * @throws IOException
    * @return true if any images were saved
    */
   <T extends InventoryRecord> boolean saveIncomingImage(
@@ -341,7 +333,7 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   <T extends InventoryRecord> T doSaveImage(
       InventoryRecord record, String base64Image, User user, Class<T> type, UnaryOperator<T> dao)
       throws IOException {
-    setPreviewImageForInvRecord(record, base64Image, user);
+    createImagesForRecord(record, base64Image, user);
     record = dao.apply((T) record);
     return (T) record;
   }

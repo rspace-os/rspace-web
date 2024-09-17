@@ -28,9 +28,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -158,7 +158,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
     URI uri = fileStore.save(fileProperty, inputStream, fileName, FileDuplicateStrategy.AS_NEW);
     log.debug("File property {} created at URI {}", fileProperty.getId(), uri);
-    log.info("URI is {}", fileProperty.getAbsolutePathUri().toString());
+    log.info("URI is {}", fileProperty.getAbsolutePathUri());
 
     return fileProperty;
   }
@@ -186,18 +186,26 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     Map<String, String> properties = new HashMap<>();
     properties.put("fileName", fileName);
     FileProperty fileProp =
-        fileStoreMetaManager.findProperties(properties).stream().findFirst().orElse(null);
+        fileStoreMetaManager.findProperties(properties).stream()
+            .findFirst()
+            .orElseThrow(
+                () -> new NotFoundException(String.format("Image %s not found.", fileName)));
 
     if (userHasReadPermissionsForFile(user, fileProp)) {
       return fileProp;
     } else {
-      throw new NotAuthorizedException("User doesn't have permissions to read image file");
+      throw new AuthorizationException(
+          String.format("User doesn't have permissions to read image file %s.", fileName));
     }
   }
 
+  /**
+   * Check the user has permission to read the image file by retrieving all the InventoryRecords
+   * which reference the FileProperty, then checking if the user has permissions to view any of
+   * those files
+   */
   private boolean userHasReadPermissionsForFile(User user, FileProperty fileProp) {
-    List<InventoryRecord> records =
-        inventoryRecordRetriever.idsForRecordsUsingFileProperty(fileProp);
+    List<InventoryRecord> records = inventoryRecordRetriever.recordsUsingImageFile(fileProp);
     return records.stream()
         .anyMatch(r -> permissionUtils.canUserReadInventoryRecord(r.getOid(), user));
   }
