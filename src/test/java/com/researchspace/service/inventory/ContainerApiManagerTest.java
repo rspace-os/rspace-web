@@ -804,7 +804,6 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
 
   @Test
   public void saveNewContainerWithImage() throws IOException {
-
     // create new default container
     ApiContainer savedContainer =
         containerApiMgr.createNewApiContainer(new ApiContainer(), testUser);
@@ -835,25 +834,30 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     Mockito.verify(mockPublisher, Mockito.times(2))
         .publishEvent(Mockito.any(InventoryEditingEvent.class));
 
+    // images are named as a hash of their contentsq
+    String mainImageHash = "f80c29ef57845fbcece93142a9497afe943cf3772e8941f27beba4a38f51c8df";
+    String thumbnailHash = "e7bdf239dd7ea19b3e2180de4ca1de09816ef51f15ba6fbe3a6c6003c42e2f72";
+    String locationsHash = "28fcb66876c91f599e63aa4daa19f18d5db80c82caeb3add283348fcfaaea800";
+
     // verify both images saved
     Container updatedContainer = containerApiMgr.getContainerById(containerId, testUser);
     FileProperty jpgImageFP = updatedContainer.getImageFileProperty();
     assertNotNull(jpgImageFP);
     assertEquals("102469", jpgImageFP.getFileSize());
     assertEquals(
-        "container-Generic_" + updatedContainer.getGlobalIdentifier() + ".jpg",
+        mainImageHash + ".jpg",
         jpgImageFP.getFileName());
     FileProperty jpgThumbnailFP = updatedContainer.getThumbnailFileProperty();
     assertNotNull(jpgThumbnailFP);
     assertEquals("3177", jpgThumbnailFP.getFileSize());
     assertEquals(
-        "container-Generic_" + updatedContainer.getGlobalIdentifier() + "_thumbnail.jpg",
+        thumbnailHash + "_thumbnail.jpg",
         jpgThumbnailFP.getFileName());
     FileProperty pngLocationsFP = updatedContainer.getLocationsImageFileProperty();
     assertNotNull(pngLocationsFP);
     assertEquals("168434", pngLocationsFP.getFileSize());
     assertEquals(
-        "container_" + updatedContainer.getGlobalIdentifier() + "_locations.png",
+        locationsHash + ".png",
         pngLocationsFP.getFileName());
 
     // update main image again
@@ -869,18 +873,19 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
 
     // verify image updated
     updatedContainer = containerApiMgr.getContainerById(containerId, testUser);
+
     FileProperty jpgUpdatedImageFP = updatedContainer.getImageFileProperty();
+    String updatedMainImageHash = "21ede13b2a6e043c956e1e7f14f934bbdd6c8c3d5589cc80bcfdc09c86045f49";
     assertNotNull(jpgUpdatedImageFP);
     assertEquals("794", jpgUpdatedImageFP.getFileSize());
-    assertEquals(
-        "container-Generic_" + updatedContainer.getGlobalIdentifier() + ".jpg",
-        jpgUpdatedImageFP.getFileName());
+    assertEquals(updatedMainImageHash + ".jpg", jpgUpdatedImageFP.getFileName());
+    assertEquals(updatedMainImageHash, jpgUpdatedImageFP.getContentsHash());
+
     FileProperty jpgUpdatedThumbnailFP = updatedContainer.getThumbnailFileProperty();
+    String updatedThumbnailHash = "d34f2fe4a6b04eb4b5ddc1d1273ff0064042caf0cb114828b5a4f336d2203958";
     assertNotNull(jpgUpdatedThumbnailFP);
     assertEquals("972", jpgUpdatedThumbnailFP.getFileSize());
-    assertEquals(
-        "container-Generic_" + updatedContainer.getGlobalIdentifier() + "_thumbnail.jpg",
-        jpgUpdatedThumbnailFP.getFileName());
+    assertEquals(updatedThumbnailHash + "_thumbnail.jpg", jpgUpdatedThumbnailFP.getFileName());
     // locations image should stay the same
     assertEquals(pngLocationsFP, updatedContainer.getLocationsImageFileProperty());
 

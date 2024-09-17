@@ -94,10 +94,8 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
     String filestoreName =
         String.format("att_%s_%s", invRecGlobalId.getIdString(), originalFileName);
-    String contentsHash =
-        CryptoUtils.hashWithSha256inHex(Arrays.toString(inputStream.readAllBytes()));
     FileProperty fileProp =
-        generateInventoryFileProperty(user, filestoreName, contentsHash, inputStream);
+        generateInventoryFileProperty(user, filestoreName, inputStream);
 
     InventoryFile invFile = recordFactory.createInventoryFile(originalFileName, fileProp, user);
     invFile.setExtension(MediaUtils.getExtension(originalFileName));
@@ -136,6 +134,14 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
       return parentInvItemOid;
     }
     return invRecGlobalId;
+  }
+
+  private FileProperty generateInventoryFileProperty(User user, String filestoreName, InputStream inputStream)
+      throws IOException {
+    // FileProperty.contentsHash is only relevant to images and the way they are retrieved therefore
+    // set to an empty string here.
+    String emptyContentsHash = "";
+    return generateInventoryFileProperty(user, filestoreName, emptyContentsHash, inputStream);
   }
 
   @Override

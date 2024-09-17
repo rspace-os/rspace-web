@@ -549,10 +549,10 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   public void buildAndAddInventoryRecordLinks(UriComponentsBuilder baseUrlBuilder) {
     if (isCustomImage()) {
       if (getImageFileProperty() != null) {
-        buildAndAddInventoryImageLink(ApiLinkItem.IMAGE_REL, baseUrlBuilder);
+        addMainImageLink(baseUrlBuilder);
       }
       if (getThumbnailFileProperty() != null) {
-        buildAndAddInventoryImageLink(ApiLinkItem.THUMBNAIL_REL, baseUrlBuilder);
+        addThumbnailLink(baseUrlBuilder);
       }
     }
     buildAndAddSelfLink(getSelfLinkEndpoint(), "" + getId(), baseUrlBuilder);
@@ -560,20 +560,16 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
 
   protected abstract String getSelfLinkEndpoint();
 
-  void buildAndAddInventoryImageLink(String imageType, UriComponentsBuilder baseUrlBuilder) {
-    addLink(buildInventoryImageLink(imageType, baseUrlBuilder, "/files"));
+  void addMainImageLink(UriComponentsBuilder baseUrlBuilder) {
+    String imagePath = "/files/image/" + getImageFileProperty().getContentsHash();
+    String imageLink = buildLinkForForPath(baseUrlBuilder, imagePath);
+    addLink(ApiLinkItem.builder().link(imageLink).rel("image").build());
   }
 
-  ApiLinkItem buildInventoryImageLink(
-      String imageType, UriComponentsBuilder baseUrlBuilder, String endpointName) {
-    String imagePath =
-        endpointName
-            + "/image/"
-            + (imageType.equals("image")
-                ? getImageFileProperty().getContentsHash()
-                : getThumbnailFileProperty().getContentsHash());
+  void addThumbnailLink(UriComponentsBuilder baseUrlBuilder) {
+    String imagePath = "/files/image/" + getThumbnailFileProperty().getContentsHash();
     String imageLink = buildLinkForForPath(baseUrlBuilder, imagePath);
-    return ApiLinkItem.builder().link(imageLink).rel(imageType).build();
+    addLink(ApiLinkItem.builder().link(imageLink).rel("thumbnail").build());
   }
 
   String buildLinkForForPath(UriComponentsBuilder baseUrlBuilder, String imagePath) {

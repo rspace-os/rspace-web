@@ -39,12 +39,15 @@ import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.Group;
+import com.researchspace.model.Thumbnail;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.ThumbnailManager;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
+import com.researchspace.service.impl.ThumbnailManagerImpl;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -68,6 +71,10 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   @Autowired private SampleApiManager sampleApiMgr;
   private BindingResult mockBindingResult = mock(BindingResult.class);
   private User testUser;
+
+  private static final String PIC1_MAIN_IMAGE_CONTENT_HASH = "b1c4808af0cd7e946d9a5cbac42cd9e0e7bae46f3bff0698ef08d94519360498";
+  private static final String PIC1_THUMBNAIL_CONTENT_HASH = "9ffa3fa76ae55473cdc319ae72218c1cd375fca2f75c63ff782b6b26bc2debbe";
+
 
   @Before
   public void setUp() {
@@ -676,29 +683,27 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   public void contentsHashSetInFileProperty() throws Exception {
     InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
-    String contentsHash = CryptoUtils.hashWithSha256inHex(imageBytes);
 
     ApiSample updatedSample = updateSampleWithImage(imageBytes);
 
-    assertEquals(contentsHash, updatedSample.getImageFileProperty().getContentsHash());
-    assertEquals(contentsHash, updatedSample.getThumbnailFileProperty().getContentsHash());
+    assertEquals(PIC1_MAIN_IMAGE_CONTENT_HASH, updatedSample.getImageFileProperty().getContentsHash());
+    assertEquals(PIC1_THUMBNAIL_CONTENT_HASH, updatedSample.getThumbnailFileProperty().getContentsHash());
   }
 
   @Test
   public void linksUrlsCreatedWithContentsHash() throws Exception {
     InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
-    String contentsHash = CryptoUtils.hashWithSha256inHex(imageBytes);
 
     ApiSample updatedSample = updateSampleWithImage(imageBytes);
 
     String expectedFileEndpoint = "/api/inventory/v1/files/image/";
     assertTrue(
         assertLinksContainsUrl(
-            updatedSample.getLinks(), expectedFileEndpoint + contentsHash + ".png"));
+            updatedSample.getLinks(), expectedFileEndpoint + PIC1_MAIN_IMAGE_CONTENT_HASH));
     assertTrue(
         assertLinksContainsUrl(
-            updatedSample.getLinks(), expectedFileEndpoint + contentsHash + "_thumbnail.png"));
+            updatedSample.getLinks(), expectedFileEndpoint + PIC1_THUMBNAIL_CONTENT_HASH));
   }
 
   private ApiSample updateSampleWithImage(String image) throws Exception {

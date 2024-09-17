@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.api.v1.controller.BaseApiInventoryController;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Container.GridLayoutAxisLabelEnum;
@@ -123,8 +124,7 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
     return ContainerType.WORKBENCH.name().equals(cType);
   }
 
-  /* used when generating links on controller level, but not sent to front-end */
-  @JsonIgnore private boolean locationsImage;
+  @JsonIgnore private FileProperty locationsImageFileProperty;
 
   /** default constructor used by jackson deserializer */
   public ApiContainerInfo() {
@@ -154,8 +154,8 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
     setCanStoreContainers(container.isCanStoreContainers());
     setCanStoreSamples(container.isCanStoreSamples());
     setCustomImage(container.getImageFileProperty() != null);
-    setLocationsImage(container.getLocationsImageFileProperty() != null);
     setCType(container.getContainerType().name());
+    setLocationsImageFileProperty(container.getLocationsImageFileProperty());
 
     if (container.getParentLocation() != null) {
       parentLocation = new ApiContainerLocation(container.getParentLocation());
@@ -258,9 +258,15 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
   public void buildAndAddInventoryRecordLinks(UriComponentsBuilder inventoryApiBaseUrl) {
     super.buildAndAddInventoryRecordLinks(inventoryApiBaseUrl);
 
-    if (isLocationsImage()) {
-      buildAndAddInventoryImageLink(ApiLinkItem.LOCATIONS_IMAGE_REL, inventoryApiBaseUrl);
+    if (getLocationsImageFileProperty() != null) {
+      addLink(buildLocationImageLink(inventoryApiBaseUrl));
     }
+  }
+
+  ApiLinkItem buildLocationImageLink(UriComponentsBuilder baseUrlBuilder) {
+    String imagePath = "/files/image/" + getLocationsImageFileProperty();
+    String imageLink = buildLinkForForPath(baseUrlBuilder, imagePath);
+    return ApiLinkItem.builder().link(imageLink).rel("locationsImage").build();
   }
 
   @Override

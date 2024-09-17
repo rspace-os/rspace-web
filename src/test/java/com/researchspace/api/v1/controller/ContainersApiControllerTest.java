@@ -24,6 +24,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
@@ -369,7 +370,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     assertEquals(
         2,
         contentInFirstLocation.getLinks().stream()
-            .filter(ali -> ali.getLink().contains("v1/samples"))
+            .filter(ali -> ali.getLink().contains("v1/files/image/"))
             .count());
     // check subcontainer
     ApiInventoryRecordInfo contentInSecondLocation =
@@ -484,6 +485,10 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     imageContainer.setNewBase64Image(base64Png);
     imageContainer.setNewBase64LocationsImage(base64Png);
 
+    // images are saved named as a hash of their file contents
+    String expectedInitialImageName = "7fe5c7a3083b770860b56b6e2797935649ba3ae185fc49d06d85a9d129ada3f1.png";
+    String expectedInitialThumbnailName = "96b83d55c92cf15520cac72cd5fc1779c0b363099ad7dbc7d4ab7045f1f5c5a2_thumbnail.png";
+
     // check saved image files
     createdContainer =
         containersApi.createNewContainer(imageContainer, mockBindingResult, testUser);
@@ -493,18 +498,18 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     assertNotNull(containerId);
     Container container = containerMgr.getContainerById(containerId, testUser);
     assertEquals(
-        "container-imageCo_" + container.getGlobalIdentifier() + ".png",
+        expectedInitialImageName,
         container.getImageFileProperty().getFileName());
     assertEquals("211", container.getImageFileProperty().getFileSize());
     assertEquals(
-        "container-imageCo_" + container.getGlobalIdentifier() + "_thumbnail.png",
+        expectedInitialThumbnailName,
         container.getThumbnailFileProperty().getFileName());
     int thumbnailSize = Integer.valueOf(container.getThumbnailFileProperty().getFileSize());
     assertTrue(
         thumbnailSize == 117 || thumbnailSize == 129,
         "unexpected size: " + thumbnailSize); // different results depending on jdk version
     assertEquals(
-        "container_" + container.getGlobalIdentifier() + "_locations.png",
+        expectedInitialImageName,
         container.getLocationsImageFileProperty().getFileName());
     assertEquals("211", container.getLocationsImageFileProperty().getFileSize());
 
@@ -539,12 +544,17 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     imageContainer.setNewBase64Image(base64Jpeg);
     containersApi.updateContainer(containerId, imageContainer, mockBindingResult, testUser);
     container = containerMgr.getContainerById(containerId, testUser);
+
+    // images are saved named as a hash of their file contents
+    String expectedUpdatedImageName = "731b921adb66d1fedcb1ea65661e0ddf3bd54045742fae8c58016fc7b125b3b4.jpg";
+    String expectedUpdatedThumbnailName = "0da8a1a374e8153c3967b842eb5f962467b6fcb9435e5b7fc9e14e8d3b09bcb1_thumbnail.jpg";
+
     assertEquals(
-        "container-imageCo_" + container.getGlobalIdentifier() + ".jpg",
+        expectedUpdatedImageName,
         container.getImageFileProperty().getFileName());
     assertEquals("1250", container.getImageFileProperty().getFileSize());
     assertEquals(
-        "container-imageCo_" + container.getGlobalIdentifier() + "_thumbnail.jpg",
+        expectedUpdatedThumbnailName,
         container.getThumbnailFileProperty().getFileName());
     assertEquals("1682", container.getThumbnailFileProperty().getFileSize());
 

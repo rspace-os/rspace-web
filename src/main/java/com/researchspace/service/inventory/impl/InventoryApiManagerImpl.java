@@ -273,12 +273,12 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
       InputStream imageIs,
       String contentsHash)
       throws IOException {
-    String fileName = String.format(fileNameFormat, contentsHash, imageExtension);
     Optional<FileProperty> existingFile =
-        getExistingFilePropertyForImage(fileName, user.getUsername());
+        getExistingFilePropertyForImage(contentsHash, user.getUsername());
     if (existingFile.isPresent()) {
       return existingFile.get();
     } else {
+      String fileName = String.format(fileNameFormat, contentsHash, imageExtension);
       return inventoryFileApiManager.generateInventoryFileProperty(
           user, fileName, contentsHash, imageIs);
     }

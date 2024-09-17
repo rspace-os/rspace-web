@@ -2017,8 +2017,6 @@ paths:
 
 
         Requires chemistry conversion service to be properly configured and available.
-
-
       produces:
         - application/json
       tags:
