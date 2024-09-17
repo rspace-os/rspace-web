@@ -17,7 +17,7 @@ import { observer } from "mobx-react-lite";
 import Sidebar from "../components/Sidebar";
 import MainPanel from "../components/MainPanel";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
-import { COLOR } from "../common";
+import { COLOR, type GallerySection } from "../common";
 import { CallableImagePreview } from "../components/CallableImagePreview";
 import { CallablePdfPreview } from "../components/CallablePdfPreview";
 import { CallableAsposePreview } from "../components/CallableAsposePreview";
@@ -84,7 +84,11 @@ const Picker = observer(
         defaultValue: "ASC",
       }
     );
-    const [selectedSection, setSelectedSection] = React.useState("Chemistry");
+    const [selectedSection, setSelectedSection] =
+      useUiPreference<GallerySection>(
+        PREFERENCES.GALLERY_PICKER_INITIAL_SECTION,
+        { defaultValue: "Chemistry" }
+      );
     const [drawerOpen, setDrawerOpen] = React.useState(
       /*
        * On the Gallery page, the sidebar is open on any viewport size that
