@@ -53,23 +53,47 @@ export class Description {
   }
 }
 
+/**
+ * Objects of this shape model files and folders in the Gallery.
+ */
 export type GalleryFile = {|
   id: Id,
   globalId: string,
   name: string,
+
+  // null for folders, otherwise usually a non-empty string
   extension: string | null,
+
   creationDate: Date,
   modificationDate: Date,
   type: string,
   thumbnailUrl: string,
   ownerName: string,
   description: Description,
-  size: number,
+
+  /*
+   * A positive natural number, that is incremented whenever the user uploads a
+   * new version or otherwise edits the file
+   */
   version: number,
 
+  // In bytes. Folders are always 0 bytes
+  size: number,
+
+  /*
+   * A list of folders from the top gallery section to the parent of this
+   * file/folder
+   */
   path: $ReadOnlyArray<GalleryFile>,
+
+  /*
+   * The names of the folders that form the path, separated with forward slashes
+   */
   pathAsString: () => string,
+
+  // if the file is a folder, open it
   open?: () => void,
+
   downloadHref?: string,
 
   isFolder: boolean,
@@ -320,7 +344,7 @@ export function useGalleryListing({
             },
           }
         : {
-            // TODO should this incorporate the version/revision?
+            // downloads the latest version, if the version is >1
             downloadHref: `/Streamfile/${idToString(id)}`,
           }),
       isFolder,
