@@ -96,7 +96,7 @@ const Picker = observer(
        * closed. The user can open it if they wish but at least we initially
        * present everything with enough space.
        */
-      viewport.isViewportNotLarge
+      viewport.isViewportLarge
     );
     const { galleryListing, path, clearPath, folderId, refreshListing } =
       useGalleryListing({
