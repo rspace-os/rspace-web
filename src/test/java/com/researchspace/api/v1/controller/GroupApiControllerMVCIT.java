@@ -44,7 +44,7 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
     groupMgr.saveGroup(privateGroup, testGrp3.getPi());
 
     // as a PI of 1st group, search for own groups
-    String apiKey = createApiKeyForuser(testGrp1.getPi());
+    String apiKey = createNewApiKeyForUser(testGrp1.getPi());
     MvcResult result =
         mockMvc
             .perform(get(createUrl(API_VERSION.ONE, "/groups")).header("apiKey", apiKey))
@@ -78,7 +78,7 @@ public class GroupApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void noGroupsReturnsEmptyList() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     MvcResult result =
         mockMvc
             .perform(get(createUrl(API_VERSION.ONE, "/groups")).header("apiKey", apiKey))

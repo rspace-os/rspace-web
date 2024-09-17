@@ -43,7 +43,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
   @Test
   public void uploadRetrieveDeleteInventoryFileAttachment() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
     assertEquals(0, apiContainer.getAttachments().size());
@@ -97,7 +97,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
   @RunIfSystemPropertyDefined("nightly")
   public void uploadRetrieveImageInventoryFileAttachment() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
     assertEquals(0, apiContainer.getAttachments().size());

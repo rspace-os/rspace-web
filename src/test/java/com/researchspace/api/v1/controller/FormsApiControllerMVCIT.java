@@ -50,7 +50,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
-    apiKey = createApiKeyForuser(anyUser);
+    apiKey = createNewApiKeyForUser(anyUser);
   }
 
   @Test
@@ -116,7 +116,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(4, apiForm.getLinks().size());
     // other user unauthorised
     otherUser = createInitAndLoginAnyUser();
-    String otherUserKey = createApiKeyForuser(otherUser);
+    String otherUserKey = createNewApiKeyForUser(otherUser);
     mockMvc
         .perform(
             createBuilderForGet(
@@ -201,7 +201,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     // global share
     String globalshareUrl =
         extractLinkByRel(unpublishedForm, "share").replace("share", "shareglobal");
-    MvcResult globalsharedResult = putUrl(globalshareUrl, getOrCreateNewSysAdminApiKey());
+    MvcResult globalsharedResult = putUrl(globalshareUrl, createNewSysAdminApiKey());
     ApiForm globalsharedForm = getFromJsonResponseBody(globalsharedResult, ApiForm.class);
     assertEquals(PermissionType.READ, globalsharedForm.getAccessControl().getGroupPermissionType());
     assertEquals(PermissionType.READ, globalsharedForm.getAccessControl().getWorldPermissionType());

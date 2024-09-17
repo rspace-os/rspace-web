@@ -71,7 +71,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   @RunIfSystemPropertyDefined("nightly")
   public void realConnectionRegisterUpdateDeleteDataciteIdentifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer draftContainer =
         createBasicContainerForUser(anyUser, "container for draft identifier test");
@@ -96,7 +96,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   @RunIfSystemPropertyDefined("nightly")
   public void realConnectionRegisterPublishRetractDataciteIdentifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
     assertEquals(0, apiContainer.getAttachments().size());

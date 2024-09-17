@@ -80,13 +80,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.Principal;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -108,6 +104,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -141,6 +138,7 @@ public class UserProfileController extends BaseController {
   private static final String ERRORS_REQUIRED = "errors.required";
   private static final String ERRORS_MAXLENGTH = "errors.maxlength";
   private static final String AFFILIATION = "affiliation";
+  public static final String API_KEY_IS_ACTIVE = "apiKey is ACTIVE";
 
   private @Autowired IReauthenticator reauthenticator;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
@@ -154,6 +152,9 @@ public class UserProfileController extends BaseController {
   private @Autowired OAuthTokenManager oAuthTokenManager;
   private @Autowired AutoshareManager autoshareManager;
   private @Autowired UserRoleHandler userRoleHandler;
+
+  @Value("${sysadmin.apikey.generation}")
+  private boolean sysadminApiKeyGeneration;
 
   @Autowired
   @Qualifier("loginPasswordResetHandler")
@@ -704,6 +705,12 @@ public class UserProfileController extends BaseController {
       return new AjaxReturnObject<>(
           null, ErrorList.of(getText(ERRORS_REQUIRED, new Object[] {"Password"})));
     }
+
+    if (SecurityUtils.getSubject().isRunAs() && !sysadminApiKeyGeneration) {
+      return new AjaxReturnObject<>(
+          null, ErrorList.of("API key value cannot be accessed when 'operating as' another user"));
+    }
+
     User user = userManager.getAuthenticatedUserInSession();
     if (!reauthenticator.reauthenticate(user, pwd)) {
       SECURITY_LOG.warn(
@@ -751,11 +758,10 @@ public class UserProfileController extends BaseController {
   @GetMapping("/ajax/apiKeyDisplayInfo")
   public @ResponseBody AjaxReturnObject<ApiKeyInfo> getApiKeyDisplayInfo() {
     User user = userManager.getAuthenticatedUserInSession();
-    Optional<UserApiKey> optKey = apiKeyMgr.getKeyForUser(user);
     ApiKeyInfo rc = new ApiKeyInfo();
-    if (optKey.isPresent()) {
+    if (apiKeyMgr.isKeyExistingForUser(user)) {
       rc.setRevokable(true);
-      rc.setAge(calculateAge(optKey.get()));
+      rc.setAge(apiKeyMgr.calculateApiKeyAgeForUser(user));
     }
     ServiceOperationResult<String> available = availabilityHandler.isAvailable(user, null);
     rc.setEnabled(available.isSucceeded());
@@ -774,11 +780,10 @@ public class UserProfileController extends BaseController {
     User user = userManager.getAuthenticatedUserInSession();
     SECURITY_LOG.info("User [{}] asked to see their API key", user.getUsername());
 
-    Optional<UserApiKey> optKey = apiKeyMgr.getKeyForUser(user);
-    if (!optKey.isPresent()) {
+    if (!apiKeyMgr.isKeyExistingForUser(user)) {
       return new AjaxReturnObject<>(null, ErrorList.of("API key is not set"));
     }
-    return new AjaxReturnObject<>(optKey.get().getApiKey(), null);
+    return new AjaxReturnObject<>(API_KEY_IS_ACTIVE, null);
   }
 
   /** Shows a list of created OAuth apps on the user's profile page */
@@ -873,12 +878,6 @@ public class UserProfileController extends BaseController {
         .intervalFunction(intervalWithCustomExponentialBackoff)
         .retryExceptions(DataIntegrityViolationException.class)
         .build();
-  }
-
-  private long calculateAge(UserApiKey userApiKey) {
-    Date created = userApiKey.getCreated();
-    LocalDate createDate = created.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-    return ChronoUnit.DAYS.between(createDate, LocalDate.now());
   }
 
   private static final String PROFILE_IMAGE_LINK_FMT = "/userform/profileImage/%d/%d";

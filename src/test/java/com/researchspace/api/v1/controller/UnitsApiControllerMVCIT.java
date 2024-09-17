@@ -23,7 +23,7 @@ public class UnitsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void getUnits() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     MvcResult result =
         mockMvc
             .perform(createBuilderForGet(API_VERSION.ONE, apiKey, "/units", anyUser))

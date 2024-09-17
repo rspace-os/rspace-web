@@ -56,7 +56,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void getUserSamples() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create 3 samples
     createBasicSampleForUser(anyUser);
@@ -114,7 +114,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void getSampleById() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiContainer workbench = getWorkbenchForUser(anyUser);
 
     // new basic sample with subsample inside a subcontainer
@@ -167,7 +167,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void getSampleErrorMessages() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     EcatDocumentFile galleryFile = addDocumentToGallery(anyUser);
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     User otherUser = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(otherUser);
@@ -191,7 +191,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     Mockito.reset(auditer);
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     String simplestSampleJSON = "{\"name\": \"sample-cbs1\"}";
     MvcResult result =
@@ -249,7 +249,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void createSampleErrors() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // no name
     String json = "{}";
@@ -303,7 +303,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void createEditSampleWithFields() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create sample, check field type is case-insensitive
     Long complexSampleTemplateId = getComplexSampleTemplate(anyUser).get().getId();
@@ -459,7 +459,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void editSampleWithExpiryDate() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     // this has a valid expiry date set 1 year from now.
     ApiSampleWithFullSubSamples complexSample = createComplexSampleForUser(anyUser);
     LocalDate expiry = complexSample.getExpiryDate();
@@ -517,7 +517,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void createSampleWithFieldsErrors() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiSampleWithFullSubSamples complexSample = createComplexSampleForUser(anyUser);
     Sample complexTemplateInfo =
@@ -603,7 +603,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void editSampleWithFieldsErrors() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiSampleWithFullSubSamples complexSample = createComplexSampleForUser(anyUser);
 
@@ -660,7 +660,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     User anyUser = createAndSaveUser(getRandomName(10));
     logoutAndLoginAs(anyUser);
     initUser(anyUser, true); // initialise example templates and content
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // get all samples
     MvcResult result =
@@ -708,7 +708,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void createSampleSeries() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create sample with 3 subsamples
     String emptySampleJSON2 =
@@ -755,7 +755,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void createSampleSeriesErrors() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // when providing subSamplesCount don't provide sample.subSamples array
     String simpleSampleWithSubSampleJSON =
@@ -788,7 +788,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void validateNameForNewSample() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(anyUser);
 
     // too long name warning
@@ -837,7 +837,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     // create user with sample
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
     ApiContainer basicContainer = createBasicContainerForUser(anyUser);
     assertFalse(basicSample.getSubSamples().isEmpty());
@@ -930,7 +930,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void createSampleWithImage() throws Exception {
     Mockito.reset(auditer);
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     String post = "{ \"name\": \"Simple Sample\", \"newBase64Image\":\"" + BASE_64 + "\" }";
     MvcResult result =
@@ -953,7 +953,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     // create user with sample
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiSampleWithFullSubSamples complexSample = createComplexSampleForUser(anyUser);
     verifyAuditAction(AuditAction.CREATE, 2);
 
@@ -980,7 +980,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void sampleRevisionHistory() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiSampleWithFullSubSamples sample = createComplexSampleForUser(anyUser);
 
     String correctJson = "{\"name\": \"updated sample\"}";
@@ -1045,7 +1045,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   public void changeSampleOwner() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create basic sample
     String basicSampleFieldsJSON = "{ \"name\": \"sample1\" }";
@@ -1085,7 +1085,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void createSampleFromTemplateWithValidTimeIsAccepted() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     Long sampleTemplateId = getComplexSampleTemplate(anyUser).get().getId();
     String validTime = "10:15";
@@ -1114,7 +1114,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void createSampleFromTemplateWithInvalidTimeIsRejected() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     Long sampleTemplateId = getComplexSampleTemplate(anyUser).get().getId();
     String invalidTime = "9:15"; // time format should be 24 hours with 4 digits e.g. 09:15

@@ -29,7 +29,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void getCurrentUserDetails() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     MvcResult result =
         mockMvc
@@ -58,7 +58,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void getIsOperatedAs() throws Exception {
     User regularUser = createInitAndLoginAnyUser();
-    String regularUserApiKey = createApiKeyForuser(regularUser);
+    String regularUserApiKey = createNewApiKeyForUser(regularUser);
 
     MvcResult result =
         mockMvc
@@ -72,7 +72,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void getGroupMembersForCurrentUser() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     User pi = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
     User secondUser = createAndSaveUser(getRandomName(10));
@@ -109,9 +109,9 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void findUserDetails() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String userApiKey = createApiKeyForuser(anyUser);
+    String userApiKey = createNewApiKeyForUser(anyUser);
     User sysAdminUser = getSysAdminUser();
-    String sysAdminApiKey = getApiKeyForuser(sysAdminUser);
+    String sysAdminApiKey = createNewApiKeyForUser(sysAdminUser);
 
     MvcResult result =
         mockMvc
