@@ -5,7 +5,7 @@ info:
   description: >
     Welcome to the RSpace Inventory API.
 
-  version: "1.91"
+  version: "1.103"
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit headers.
   license:
@@ -2028,6 +2028,32 @@ paths:
       responses:
         '200':
           description: Chemical details object
+
+  '/attachments':
+    post:
+      summary: Attach existing Gallery item to the inventory item or sample field
+      description: >
+
+        Attaches existing Gallery file to the inventory item or sample field of 'attachment' type.
+
+        Body must be a JSON object with the following properties:
+           * `parentGlobalId` property pointing to the inventory item, or sample field, for which this attachment is uploaded.
+           * `mediaFileGlobalId` property pointing to the Gallery item that should be connected as an attachment.
+
+      produces:
+        - application/json
+      tags:
+        - Attached Gallery Items
+      parameters:
+        - in: body
+          name: attachmentDetails
+          type: string
+          description: json settings string for attaching gallery file operation.
+          required: true
+          example: { "parentGlobalId": "IC8", "mediaFileGlobalId": "GL12" }
+      responses:
+        '200':
+          description: Details of connected attachment (ApiInventoryFile object).
 
   '/identifiers':
     post:

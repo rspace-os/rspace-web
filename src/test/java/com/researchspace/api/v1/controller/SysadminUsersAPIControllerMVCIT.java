@@ -42,9 +42,9 @@ import org.springframework.validation.BindException;
 // test that this property is used.
 @TestPropertySource(
     properties = {
-        "sysadmin.apikey.generation=true",
-        "sysadmin.nodeletenewerthan.days=7",
-        "api.beta.enabled=true"
+      "sysadmin.apikey.generation=true",
+      "sysadmin.nodeletenewerthan.days=7",
+      "api.beta.enabled=true"
     })
 public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
 
