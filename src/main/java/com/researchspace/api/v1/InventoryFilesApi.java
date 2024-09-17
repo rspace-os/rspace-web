@@ -68,7 +68,7 @@ public interface InventoryFilesApi {
   @DeleteMapping(value = "/{id}")
   ApiInventoryFile deleteFile(Long id, User user);
 
-  @GetMapping("/image/{fileName}")
-  ResponseEntity<byte[]> getImageByFileName(
-      @PathVariable String fileName, @RequestAttribute(name = "user") User user) throws IOException;
+  @GetMapping("/image/{contentsHash}")
+  ResponseEntity<byte[]> getImageByContentsHash(
+      @PathVariable String contentsHash, @RequestAttribute(name = "user") User user) throws IOException;
 }

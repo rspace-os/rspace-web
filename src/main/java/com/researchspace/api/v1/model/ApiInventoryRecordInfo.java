@@ -570,8 +570,8 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
         endpointName
             + "/image/"
             + (imageType.equals("image")
-                ? getImageFileProperty().getFileName()
-                : getThumbnailFileProperty().getFileName());
+                ? getImageFileProperty().getContentsHash()
+                : getThumbnailFileProperty().getContentsHash());
     String imageLink = buildLinkForForPath(baseUrlBuilder, imagePath);
     return ApiLinkItem.builder().link(imageLink).rel(imageType).build();
   }

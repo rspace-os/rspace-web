@@ -182,20 +182,20 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     return invFile;
   }
 
-  public FileProperty getFilePropertyByFileName(String fileName, User user) {
+  public FileProperty getFilePropertyByContentsHash(String contentsHash, User user) {
     Map<String, String> properties = new HashMap<>();
-    properties.put("fileName", fileName);
+    properties.put("contentsHash", contentsHash);
     FileProperty fileProp =
         fileStoreMetaManager.findProperties(properties).stream()
             .findFirst()
             .orElseThrow(
-                () -> new NotFoundException(String.format("Image %s not found.", fileName)));
+                () -> new NotFoundException(String.format("Image with hash %s not found.", contentsHash)));
 
     if (userHasReadPermissionsForFile(user, fileProp)) {
       return fileProp;
     } else {
       throw new AuthorizationException(
-          String.format("User doesn't have permissions to read image file %s.", fileName));
+          String.format("User doesn't have permissions to read image file with hash %s.", contentsHash));
     }
   }
 

@@ -311,12 +311,12 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   }
 
   private Optional<FileProperty> getExistingFilePropertyForImage(
-      String imageName, String userName) {
+      String contentsHash, String userName) {
     Map<String, String> properties =
         Map.ofEntries(
             Map.entry("fileGroup", userName),
             Map.entry("fileOwner", userName),
-            Map.entry("fileName", imageName));
+            Map.entry("contentsHash", contentsHash));
     return fileMetaManagerImpl.findProperties(properties).stream().findFirst();
   }
 

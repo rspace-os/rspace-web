@@ -13,8 +13,8 @@ public interface FileStoreMetaManager extends GenericManager<FileProperty, Long>
   FileStoreRoot saveFileStoreRoot(FileStoreRoot root);
 
   /**
-   * @param wheres: pair of Key: column name(same as variable name) and value for where clause
-   * @return List of FileProperty
+   * @param wheres: Map of column name to value for where clause
+   * @return List of FileProperty matching wheres
    */
-  public List<FileProperty> findProperties(Map<String, String> wheres);
+  List<FileProperty> findProperties(Map<String, String> wheres);
 }
