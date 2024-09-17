@@ -402,7 +402,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl
 
   private Container saveContainerLocationsImage(Container container, String base64Image, User user)
       throws IOException {
-    FileProperty locationsImageFileProp = saveImageFile(user, base64Image, false);
+    FileProperty locationsImageFileProp = saveImageFile(user, base64Image);
     container.setLocationsImageFileProperty(locationsImageFileProp);
 
     container = containerDao.save(container);

@@ -49,6 +49,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -235,34 +236,49 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
     return apiSearchResult;
   }
 
-  FileProperty saveImageFile(User user, String base64Image, boolean isThumbnail)
-      throws IOException {
-    String contentsHash = CryptoUtils.hashWithSha256inHex(base64Image);
-    String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
+  FileProperty saveImageFile(User user, String base64Image) throws IOException {
     String mainImageNameFormat = "%s.%s";
+    String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
+    byte[] imageBytes = ImageUtils.getImageBytesFromBase64DataImage(base64Image);
+    InputStream imageIS = new ByteArrayInputStream(imageBytes);
+    String contentsHash = CryptoUtils.hashWithSha256inHex(base64Image);
+    return retrieveOrCreateFileProperty(
+        user, mainImageNameFormat, imageExtension, imageIS, contentsHash);
+  }
+
+  FileProperty saveThumbnailImageFile(User user, String base64Image) throws IOException {
     String thumbnailNameFormat = "%s_thumbnail.%s";
+    String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
     byte[] imageBytes = ImageUtils.getImageBytesFromBase64DataImage(base64Image);
 
-    // The same FileProperty (and therefore the same file on disk) can belong to many
-    // InventoryRecords.
-    // Checks if a FileProperty already exists for the given user and hash of the contents of the
-    // image and returns that if so. Otherwise, generates a new FileProperty.
-    String fileName =
-        String.format(
-            isThumbnail ? thumbnailNameFormat : mainImageNameFormat, contentsHash, imageExtension);
+    try (InputStream imageIS = createThumbnailFromImageBytes(imageBytes, imageExtension)) {
+      String contentsHash =
+          CryptoUtils.hashWithSha256inHex(Arrays.toString(imageIS.readAllBytes()));
+      return retrieveOrCreateFileProperty(
+          user, thumbnailNameFormat, imageExtension, imageIS, contentsHash);
+    }
+  }
+
+  /*
+  The same FileProperty (and therefore the same file on disk) can belong to many InventoryRecords.
+  Checks if a FileProperty already exists for the given user and hash of the contents of the image
+  and returns that if so. Otherwise, generates a new FileProperty.
+   */
+  private FileProperty retrieveOrCreateFileProperty(
+      User user,
+      String fileNameFormat,
+      String imageExtension,
+      InputStream imageIs,
+      String contentsHash)
+      throws IOException {
+    String fileName = String.format(fileNameFormat, contentsHash, imageExtension);
     Optional<FileProperty> existingFile =
         getExistingFilePropertyForImage(fileName, user.getUsername());
     if (existingFile.isPresent()) {
       return existingFile.get();
     } else {
-      InputStream imageIS;
-      if (isThumbnail) {
-        imageIS = createThumbnailFromImageBytes(imageBytes, imageExtension);
-      } else {
-        imageIS = new ByteArrayInputStream(imageBytes);
-      }
       return inventoryFileApiManager.generateInventoryFileProperty(
-          user, fileName, contentsHash, imageIS);
+          user, fileName, contentsHash, imageIs);
     }
   }
 
@@ -286,11 +302,11 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   public void createImagesForRecord(InventoryRecord invRec, String base64Image, User user)
       throws IOException {
     // main image
-    FileProperty mainImage = saveImageFile(user, base64Image, false);
+    FileProperty mainImage = saveImageFile(user, base64Image);
     invRec.setImageFileProperty(mainImage);
 
     // thumbnail version
-    FileProperty thumbnail = saveImageFile(user, base64Image, true);
+    FileProperty thumbnail = saveThumbnailImageFile(user, base64Image);
     invRec.setThumbnailFileProperty(thumbnail);
   }
 

@@ -161,10 +161,10 @@ public class InventoryRecordRetriever {
   }
 
   public List<InventoryRecord> recordsUsingImageFile(FileProperty fileProperty) {
-    List<InventoryRecord> ids = new ArrayList<>();
-    ids.addAll(containerDao.getAllUsingImage(fileProperty));
-    ids.addAll(sampleDao.getAllUsingImage(fileProperty));
-    ids.addAll(subSampleDao.getAllUsingImage(fileProperty));
-    return ids;
+    List<InventoryRecord> recordsUsingImageFile = new ArrayList<>();
+    recordsUsingImageFile.addAll(containerDao.getAllUsingImage(fileProperty));
+    recordsUsingImageFile.addAll(sampleDao.getAllUsingImage(fileProperty));
+    recordsUsingImageFile.addAll(subSampleDao.getAllUsingImage(fileProperty));
+    return recordsUsingImageFile;
   }
 }

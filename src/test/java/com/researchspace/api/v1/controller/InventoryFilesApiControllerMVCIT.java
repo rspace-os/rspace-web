@@ -144,7 +144,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     // create basic sample
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
-    String apiKey = createApiKeyForuser(user);
+    String apiKey = createNewApiKeyForUser(user);
 
     // update sample with image
     InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
@@ -179,7 +179,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
 
     // try to retrieve image as user2, who isn't authorised
     User user2 = createInitAndLoginAnyUser();
-    String user2ApiKey = createApiKeyForuser(user2);
+    String user2ApiKey = createNewApiKeyForUser(user2);
     String fileName = CryptoUtils.hashWithSha256inHex(imageBytes) + ".png";
     MvcResult result =
         mockMvc
@@ -196,7 +196,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
   @Test
   public void retrieveNonExistentImageReturnsNotFound() throws Exception {
     User user = createInitAndLoginAnyUser();
-    String apikey = createApiKeyForuser(user);
+    String apikey = createNewApiKeyForUser(user);
     String nonExistentFile = "abc123.some.file";
 
     MvcResult result =
