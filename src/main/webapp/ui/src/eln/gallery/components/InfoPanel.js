@@ -285,16 +285,40 @@ const NameFieldForLargeViewports = styled(
   },
 }));
 
+/*
+ * With this component, the user can edit the description of the passed file.
+ *
+ * The component has two styles: a regular mode where it has a border and
+ * background which makes it look like a normal text field and a minimal
+ * styling mode where the border and background are only shown on hover, on
+ * focus, and when there have been edits. This so that we can minimise the
+ * visual noise on desktop where the fact that the rendered text is editable is
+ * discoverable by hovering over it with the cursor or tabbing to it with the
+ * keyboard. On mobile devices, the regular styling should be used to make it
+ * obvious that the text is editable.
+ *
+ * When the field has focus or edits have been made, a save and cancel button
+ * appear. Enter allows the user to enter multiple lines of text and so
+ * submitting by keyboard requires tabbing to the submit button.
+ *
+ * @param file           The selected file whose description is being edited.
+ *                       A description that is anything but `present` is
+ *                       considered to be blank.
+ * @param minimalStyling Whether minimal styling is applied.
+ *                       Ignored when high contrast mode is requested, with the
+ *                       borders always being shown.
+ * @param className      Ignore; it is provided by the `styled` HOC.
+ */
 const DescriptionField = styled(
   observer(
     ({
       file,
-      className,
       minimalStyling = false,
+      className,
     }: {|
       file: GalleryFile,
-      className: string,
       minimalStyling?: boolean,
+      className: string,
     |}) => {
       const { changeDescription } = useGalleryActions();
       function getDescValue(f: GalleryFile) {
