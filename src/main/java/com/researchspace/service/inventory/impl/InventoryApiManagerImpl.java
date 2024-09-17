@@ -251,9 +251,11 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
     String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
     byte[] imageBytes = ImageUtils.getImageBytesFromBase64DataImage(base64Image);
 
+    InputStream thumbnailForHash = new ByteArrayInputStream(imageBytes);
+    String contentsHash =
+        CryptoUtils.hashWithSha256inHex(Arrays.toString(thumbnailForHash.readAllBytes()));
+
     try (InputStream imageIS = createThumbnailFromImageBytes(imageBytes, imageExtension)) {
-      String contentsHash =
-          CryptoUtils.hashWithSha256inHex(Arrays.toString(imageIS.readAllBytes()));
       return retrieveOrCreateFileProperty(
           user, thumbnailNameFormat, imageExtension, imageIS, contentsHash);
     }
