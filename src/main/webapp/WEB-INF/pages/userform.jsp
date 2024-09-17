@@ -563,6 +563,8 @@
     <div class="api-menu__key col-xs-8">
       {{#key}}
         Key: {{key}}
+        <br>
+        Be sure to note the key down in a secure manner as it will not be visible again.
       {{/key}}
       {{^key}}
         {{#revokable}}
