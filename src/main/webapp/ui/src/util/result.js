@@ -161,6 +161,15 @@ export default class Result<T> {
   }
 
   /**
+   * Simply hand-off the error handling to try/catch logic.
+   * The first error will be thrown and all others discarded.
+   */
+  elseThrow(): T {
+    if (this.#state.key === "error") throw this.#state.errors[0];
+    return this.#state.value;
+  }
+
+  /**
    * To modify/accumulate the errors collected in the Error branch.  The most
    * common reason to do this is to take a generic error message and convert it
    * into a specific one for the use-case at hand. Some tips:

@@ -1108,6 +1108,7 @@ function GalleryMainPanel({
                 <ActionsMenu
                   refreshListing={refreshListing}
                   section={selectedSection}
+                  folderId={folderId}
                 />
                 <Box sx={{ flexGrow: 1 }}></Box>
                 <Button
