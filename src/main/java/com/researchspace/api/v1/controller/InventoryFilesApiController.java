@@ -267,6 +267,7 @@ public class InventoryFilesApiController extends BaseApiInventoryController
   public ResponseEntity<byte[]> getImageByContentsHash(
       @PathVariable String contentsHash, @RequestAttribute(name = "user") User user)
       throws IOException {
-    return doImageResponse(user, () -> invFileManager.getFilePropertyByContentsHash(contentsHash, user));
+    return doImageResponse(
+        user, () -> invFileManager.getFilePropertyByContentsHash(contentsHash, user));
   }
 }

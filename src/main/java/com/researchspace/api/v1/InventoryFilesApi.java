@@ -70,5 +70,6 @@ public interface InventoryFilesApi {
 
   @GetMapping("/image/{contentsHash}")
   ResponseEntity<byte[]> getImageByContentsHash(
-      @PathVariable String contentsHash, @RequestAttribute(name = "user") User user) throws IOException;
+      @PathVariable String contentsHash, @RequestAttribute(name = "user") User user)
+      throws IOException;
 }

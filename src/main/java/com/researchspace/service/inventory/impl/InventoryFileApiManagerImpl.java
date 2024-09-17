@@ -189,13 +189,16 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
         fileStoreMetaManager.findProperties(properties).stream()
             .findFirst()
             .orElseThrow(
-                () -> new NotFoundException(String.format("Image with hash %s not found.", contentsHash)));
+                () ->
+                    new NotFoundException(
+                        String.format("Image with hash %s not found.", contentsHash)));
 
     if (userHasReadPermissionsForFile(user, fileProp)) {
       return fileProp;
     } else {
       throw new AuthorizationException(
-          String.format("User doesn't have permissions to read image file with hash %s.", contentsHash));
+          String.format(
+              "User doesn't have permissions to read image file with hash %s.", contentsHash));
     }
   }
 
