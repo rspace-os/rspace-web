@@ -47,6 +47,12 @@ import { useAsposePreview } from "./CallableAsposePreview";
  */
 const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
+/*
+ * To reduce the amount of visual noise, some components have a minimal stying
+ * mode. This class is used to conditionally apply those styles.
+ */
+const MINIMAL_STYLING_CLASS = "minimal-styling";
+
 /**
  * The info panel, be it the right column on desktop or the floating panel on
  * mobile, presents the user with a primary action that can be performed on the
@@ -281,7 +287,15 @@ const NameFieldForLargeViewports = styled(
 
 const DescriptionField = styled(
   observer(
-    ({ file, className }: {| file: GalleryFile, className: string |}) => {
+    ({
+      file,
+      className,
+      minimalStyling = false,
+    }: {|
+      file: GalleryFile,
+      className: string,
+      minimalStyling?: boolean,
+    |}) => {
       const { changeDescription } = useGalleryActions();
       function getDescValue(f: GalleryFile) {
         return f.description.match({
@@ -291,10 +305,16 @@ const DescriptionField = styled(
         });
       }
 
-      const [description, setDescription] = React.useState(getDescValue(file));
+      const [description, setDescription] = React.useState<string>(
+        getDescValue(file)
+      );
       React.useEffect(() => {
         setDescription(getDescValue(file));
       }, [file]);
+
+      const prefersMoreContrast = window.matchMedia(
+        "(prefers-contrast: more)"
+      ).matches;
 
       return (
         <Stack>
@@ -303,7 +323,11 @@ const DescriptionField = styled(
             placeholder="No description"
             fullWidth
             size="small"
-            className={className}
+            className={clsx(
+              className,
+              minimalStyling && !prefersMoreContrast && MINIMAL_STYLING_CLASS,
+              description !== getDescValue(file) && "modified"
+            )}
             onChange={({ target: { value } }) => setDescription(value)}
             multiline
           />
@@ -347,9 +371,51 @@ const DescriptionField = styled(
   [`& .${outlinedInputClasses.input}`]: {
     paddingLeft: theme.spacing(1),
   },
+  [`&.${MINIMAL_STYLING_CLASS}`]: {
+    "&.modified": {
+      [`& .${outlinedInputClasses.root}`]: {
+        backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+        [`& .${outlinedInputClasses.notchedOutline}`]: {
+          border: "none",
+        },
+      },
+    },
+    "&:not(.modified)": {
+      [`& .${outlinedInputClasses.root}`]: {
+        backgroundColor: "unset",
+        [`& .${outlinedInputClasses.notchedOutline}`]: {
+          border: "none",
+        },
+      },
+    },
+    [`& .${outlinedInputClasses.root}`]: {
+      border: "none",
+      borderRadius: "4px",
+      marginTop: theme.spacing(0.5),
+      marginBottom: theme.spacing(0.5),
+      transition: "all .3s ease-in-out",
+      "&:hover, &:focus-within": {
+        backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+        [`& .${outlinedInputClasses.notchedOutline}`]: {
+          border: "none !important",
+        },
+      },
+    },
+    [`& .${outlinedInputClasses.multiline}`]: {
+      paddingTop: theme.spacing(0.25),
+      paddingBottom: theme.spacing(0.25),
+      paddingLeft: theme.spacing(0.25),
+    },
+  },
 }));
 
-const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
+const InfoPanelContent = ({
+  file,
+  smallViewport = false,
+}: {
+  file: GalleryFile,
+  smallViewport?: boolean,
+}): Node => {
   return (
     <Stack sx={{ height: "100%" }}>
       <DescriptionList
@@ -365,7 +431,9 @@ const InfoPanelContent = ({ file }: { file: GalleryFile }): Node => {
           },
           {
             label: "Description",
-            value: <DescriptionField file={file} />,
+            value: (
+              <DescriptionField file={file} minimalStyling={!smallViewport} />
+            ),
             below: true,
           },
         ]}
@@ -787,7 +855,9 @@ export const InfoPanelForSmallViewports: ComponentType<{|
             </Grid>
             {selection
               .asSet()
-              .only.map((f) => <InfoPanelContent key={null} file={f} />)
+              .only.map((f) => (
+                <InfoPanelContent key={null} file={f} smallViewport />
+              ))
               .orElse(null)}
           </CardContent>
         </Stack>
