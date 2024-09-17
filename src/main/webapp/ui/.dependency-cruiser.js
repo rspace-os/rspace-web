@@ -1,6 +1,15 @@
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
+    {
+      name: "compatible-licenses",
+      comment: "Third-party code should adhere to a license that is compatible with our own",
+      severity: "error",
+      from: {},
+      to: {
+        licenseNot: ["MIT", "BSD", "Apache", "Hippocratic"]
+      }
+    },
     // {
     //   name: 'no-circular',
     //   severity: 'warn',
