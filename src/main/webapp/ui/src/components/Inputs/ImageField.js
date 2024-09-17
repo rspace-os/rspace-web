@@ -21,7 +21,7 @@ import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import DynamicallyLoadedImageEditor from "./DynamicallyLoadedImageEditor";
 import { doNotAwait } from "../../util/Util";
-import ImagePreview from "../../Inventory/components/ImagePreview";
+import ImagePreview from "../ImagePreview";
 import NoValue from "../../components/NoValue";
 import FileField from "./FileField";
 

@@ -24,7 +24,7 @@ import { observer } from "mobx-react-lite";
 import { useGalleryActions } from "../useGalleryActions";
 import ImagePreview, {
   type PreviewSize,
-} from "../../../Inventory/components/ImagePreview";
+} from "../../../components/ImagePreview";
 import clsx from "clsx";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";

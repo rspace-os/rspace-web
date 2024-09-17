@@ -3,7 +3,7 @@
 import React, { type Node } from "react";
 import ImagePreview, {
   type PreviewSize,
-} from "../../../Inventory/components/ImagePreview";
+} from "../../../components/ImagePreview";
 import { type URL } from "../../../util/types";
 
 /**

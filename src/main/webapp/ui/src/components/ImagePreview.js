@@ -3,7 +3,7 @@
 import React, { type Node } from "react";
 import "photoswipe/dist/photoswipe.css";
 import { Gallery, Item } from "react-photoswipe-gallery";
-import { type URL } from "../../util/types";
+import { type URL } from "../util/types";
 import { makeStyles } from "tss-react/mui";
 
 const useStyles = makeStyles()(() => ({
