@@ -114,12 +114,8 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
 }));
 
 const CustomDrawer = styled(Drawer)(({ open, theme }) => ({
-  [theme.breakpoints.up("sm")]: {
-    width: open ? "200px" : "64px",
-  },
-  [theme.breakpoints.down("sm")]: {
-    width: open ? "200px" : "200px",
-  },
+  // on small viewports, it will hidden entirely when not open
+  width: open ? "200px" : "64px",
   "& .MuiPaper-root": {
     /*
      * We set this position so that the drawer does not float above the AppBar

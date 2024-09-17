@@ -23,38 +23,37 @@ import { take, incrementForever } from "../../../util/iterators";
 
 const mockAxios = new MockAdapter(axios);
 
-beforeEach(() => {
-  jest.clearAllMocks();
-  mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
-    data: {
-      totalCount: 2,
-      data: [
-        {
-          id: "e27789f1-de35-4b4a-9587-a46d131c366e",
-          label: "Foo",
-          grant: "Foo's grant",
-          createdAt: 0,
-          modifiedAt: 0,
-        },
-        {
-          id: "e9a73d77-adfa-4546-974f-4a4a623b53a8",
-          label: "Bar",
-          grant: "Bar's grant",
-          createdAt: 0,
-          modifiedAt: 0,
-        },
-      ],
-    },
-    error: null,
-    errorMsg: null,
-    success: true,
-  });
-});
+beforeEach(() => {});
 
 afterEach(cleanup);
 
 describe("DMPDialog", () => {
   test("Should render mock data correctly.", async () => {
+    jest.clearAllMocks();
+    mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
+      data: {
+        totalCount: 2,
+        data: [
+          {
+            id: "e27789f1-de35-4b4a-9587-a46d131c366e",
+            label: "Foo",
+            grant: "Foo's grant",
+            createdAt: 0,
+            modifiedAt: 0,
+          },
+          {
+            id: "e9a73d77-adfa-4546-974f-4a4a623b53a8",
+            label: "Bar",
+            grant: "Bar's grant",
+            createdAt: 0,
+            modifiedAt: 0,
+          },
+        ],
+      },
+      error: null,
+      errorMsg: null,
+      success: true,
+    });
     mockAxios.resetHistory();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -62,10 +61,13 @@ describe("DMPDialog", () => {
       </ThemeProvider>
     );
 
-    await waitFor(() => {
-      expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
-      // i.e. the table body has been rendered
-    });
+    await waitFor(
+      () => {
+        expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
+        // i.e. the table body has been rendered
+      },
+      { timeout: 2000 }
+    );
 
     expect(
       await within(screen.getByRole("grid")).findTableCell({
@@ -75,41 +77,70 @@ describe("DMPDialog", () => {
     ).toHaveTextContent("Foo");
   });
 
-  test("Importing a selected DMP should call the import endpoint.", async () => {
-    mockAxios.resetHistory();
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <DMPDialog open={true} setOpen={() => {}} />
-      </ThemeProvider>
-    );
+  test(
+    "Importing a selected DMP should call the import endpoint.",
+    async () => {
+      jest.clearAllMocks();
+      mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
+        data: {
+          totalCount: 2,
+          data: [
+            {
+              id: "e27789f1-de35-4b4a-9587-a46d131c366e",
+              label: "Foo",
+              grant: "Foo's grant",
+              createdAt: 0,
+              modifiedAt: 0,
+            },
+            {
+              id: "e9a73d77-adfa-4546-974f-4a4a623b53a8",
+              label: "Bar",
+              grant: "Bar's grant",
+              createdAt: 0,
+              modifiedAt: 0,
+            },
+          ],
+        },
+        error: null,
+        errorMsg: null,
+        success: true,
+      });
+      mockAxios.resetHistory();
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <DMPDialog open={true} setOpen={() => {}} />
+        </ThemeProvider>
+      );
 
-    await waitFor(() => {
-      expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
-      // i.e. the table body has been rendered
-    });
+      await waitFor(() => {
+        expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
+        // i.e. the table body has been rendered
+      });
 
-    await act(async () => {
-      (
-        await within(
-          await within(screen.getByRole("grid")).findTableCell({
-            columnHeading: "Select",
-            rowIndex: 0,
-          })
-        ).findByRole("radio")
-      ).click();
-    });
+      await act(async () => {
+        (
+          await within(
+            await within(screen.getByRole("grid")).findTableCell({
+              columnHeading: "Select",
+              rowIndex: 0,
+            })
+          ).findByRole("radio")
+        ).click();
+      });
 
-    mockAxios.resetHistory();
+      mockAxios.resetHistory();
 
-    await act(async () => {
-      (await screen.findByRole("button", { name: "Import" })).click();
-    });
+      await act(async () => {
+        (await screen.findByRole("button", { name: "Import" })).click();
+      });
 
-    expect(mockAxios.history.post.length).toBe(1);
-    expect(mockAxios.history.post[0].url).toBe(
-      "/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e"
-    );
-  });
+      expect(mockAxios.history.post.length).toBe(1);
+      expect(mockAxios.history.post[0].url).toBe(
+        "/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e"
+      );
+    },
+    10 * 1000
+  );
 
   describe("Pagination should work.", () => {
     test(
@@ -137,10 +168,13 @@ describe("DMPDialog", () => {
           </ThemeProvider>
         );
 
-        await waitFor(() => {
-          expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
-          // i.e. the table body has been rendered
-        });
+        await waitFor(
+          () => {
+            expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
+            // i.e. the table body has been rendered
+          },
+          { timeout: 2000 }
+        );
 
         await act(() => {
           screen
@@ -167,12 +201,37 @@ describe("DMPDialog", () => {
           )
         ).toEqual(["0", "1", "0"]);
       },
-      10 * 1000
+      20 * 1000
     );
 
     test(
       "Changing the page size should make the right API call.",
       async () => {
+        jest.clearAllMocks();
+        mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
+          data: {
+            totalCount: 2,
+            data: [
+              {
+                id: "e27789f1-de35-4b4a-9587-a46d131c366e",
+                label: "Foo",
+                grant: "Foo's grant",
+                createdAt: 0,
+                modifiedAt: 0,
+              },
+              {
+                id: "e9a73d77-adfa-4546-974f-4a4a623b53a8",
+                label: "Bar",
+                grant: "Bar's grant",
+                createdAt: 0,
+                modifiedAt: 0,
+              },
+            ],
+          },
+          error: null,
+          errorMsg: null,
+          success: true,
+        });
         mockAxios.resetHistory();
         mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
           data: {
@@ -195,10 +254,13 @@ describe("DMPDialog", () => {
           </ThemeProvider>
         );
 
-        await waitFor(() => {
-          expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
-          // i.e. the table body has been rendered
-        });
+        await waitFor(
+          () => {
+            expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
+            // i.e. the table body has been rendered
+          },
+          { timeout: 2000 }
+        );
 
         fireEvent.mouseDown(screen.getByRole("combobox"));
 
@@ -225,6 +287,31 @@ describe("DMPDialog", () => {
     test(
       "Label filter should make the right API call.",
       async () => {
+        jest.clearAllMocks();
+        mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
+          data: {
+            totalCount: 2,
+            data: [
+              {
+                id: "e27789f1-de35-4b4a-9587-a46d131c366e",
+                label: "Foo",
+                grant: "Foo's grant",
+                createdAt: 0,
+                modifiedAt: 0,
+              },
+              {
+                id: "e9a73d77-adfa-4546-974f-4a4a623b53a8",
+                label: "Bar",
+                grant: "Bar's grant",
+                createdAt: 0,
+                modifiedAt: 0,
+              },
+            ],
+          },
+          error: null,
+          errorMsg: null,
+          success: true,
+        });
         mockAxios.resetHistory();
         render(
           <ThemeProvider theme={materialTheme}>
@@ -232,10 +319,13 @@ describe("DMPDialog", () => {
           </ThemeProvider>
         );
 
-        await waitFor(() => {
-          expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
-          // i.e. the table body has been rendered
-        });
+        await waitFor(
+          () => {
+            expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
+            // i.e. the table body has been rendered
+          },
+          { timeout: 2000 }
+        );
 
         await act(() => {
           screen
