@@ -207,7 +207,8 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
             .andExpect(status().isNotFound())
             .andReturn();
 
-    assertEquals("Image with hash abc123.some.file not found.", result.getResolvedException().getMessage());
+    assertEquals(
+        "Image with hash abc123.some.file not found.", result.getResolvedException().getMessage());
   }
 
   private MockMultipartFile picture1() throws IOException {

@@ -1,6 +1,5 @@
 package com.researchspace.service.inventory.impl;
 
-import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.InventoryFileDao;
 import com.researchspace.dao.SampleDao;
@@ -24,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLConnection;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,8 +92,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
     String filestoreName =
         String.format("att_%s_%s", invRecGlobalId.getIdString(), originalFileName);
-    FileProperty fileProp =
-        generateInventoryFileProperty(user, filestoreName, inputStream);
+    FileProperty fileProp = generateInventoryFileProperty(user, filestoreName, inputStream);
 
     InventoryFile invFile = recordFactory.createInventoryFile(originalFileName, fileProp, user);
     invFile.setExtension(MediaUtils.getExtension(originalFileName));
@@ -136,8 +133,8 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     return invRecGlobalId;
   }
 
-  private FileProperty generateInventoryFileProperty(User user, String filestoreName, InputStream inputStream)
-      throws IOException {
+  private FileProperty generateInventoryFileProperty(
+      User user, String filestoreName, InputStream inputStream) throws IOException {
     // FileProperty.contentsHash is only relevant to images and the way they are retrieved therefore
     // set to an empty string here.
     String emptyContentsHash = "";

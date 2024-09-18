@@ -16,6 +16,7 @@ import com.researchspace.service.AuditManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,9 +32,14 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     List<?> entityRevisions = auditManager.getRevisionsForEntity(cls, currentInvRec.getId());
 
     ApiInventoryRecordRevisionList apiRevisions = new ApiInventoryRecordRevisionList();
-    for (int i = 0; i < entityRevisions.size(); i++) {
-      AuditedEntity<?> auditedEntity = (AuditedEntity<?>) entityRevisions.get(i);
+    for (Object entityRevision : entityRevisions) {
+      AuditedEntity<?> auditedEntity = (AuditedEntity<?>) entityRevision;
       InventoryRecord invRec = (InventoryRecord) auditedEntity.getEntity();
+
+      // Hibernate envers loads relationships lazily, so these FileProperties need to be
+      // initialised to avoid lazy load exceptions.
+      Hibernate.initialize(invRec.getImageFileProperty());
+      Hibernate.initialize(invRec.getThumbnailFileProperty());
       long revisionId = auditedEntity.getRevision().longValue();
       ApiInventoryRecordInfo apiInvRec = ApiInventoryRecordInfo.fromInventoryRecord(invRec);
       apiInvRec.setRevisionId(revisionId);
@@ -52,6 +58,11 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     Sample sample = getInventoryRecordRevision(Sample.class, sampleId, revisionId);
     if (sample != null) {
       result = (ApiSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(sample);
+
+      // Hibernate envers loads relationships lazily, so these FileProperties need to be
+      // initialised to avoid lazy load exceptions.
+      Hibernate.initialize(result.getImageFileProperty());
+      Hibernate.initialize(result.getThumbnailFileProperty());
       result.setRevisionId(revisionId);
       result.setGlobalId(sample.getOidWithVersion().toString());
       for (ApiSubSampleInfo subSample : result.getSubSamples()) {

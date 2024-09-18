@@ -844,21 +844,15 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     FileProperty jpgImageFP = updatedContainer.getImageFileProperty();
     assertNotNull(jpgImageFP);
     assertEquals("102469", jpgImageFP.getFileSize());
-    assertEquals(
-        mainImageHash + ".jpg",
-        jpgImageFP.getFileName());
+    assertEquals(mainImageHash + ".jpg", jpgImageFP.getFileName());
     FileProperty jpgThumbnailFP = updatedContainer.getThumbnailFileProperty();
     assertNotNull(jpgThumbnailFP);
     assertEquals("3177", jpgThumbnailFP.getFileSize());
-    assertEquals(
-        thumbnailHash + "_thumbnail.jpg",
-        jpgThumbnailFP.getFileName());
+    assertEquals(thumbnailHash + "_thumbnail.jpg", jpgThumbnailFP.getFileName());
     FileProperty pngLocationsFP = updatedContainer.getLocationsImageFileProperty();
     assertNotNull(pngLocationsFP);
     assertEquals("168434", pngLocationsFP.getFileSize());
-    assertEquals(
-        locationsHash + ".png",
-        pngLocationsFP.getFileName());
+    assertEquals(locationsHash + ".png", pngLocationsFP.getFileName());
 
     // update main image again
     // save the container with jpeg image
@@ -875,14 +869,16 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     updatedContainer = containerApiMgr.getContainerById(containerId, testUser);
 
     FileProperty jpgUpdatedImageFP = updatedContainer.getImageFileProperty();
-    String updatedMainImageHash = "21ede13b2a6e043c956e1e7f14f934bbdd6c8c3d5589cc80bcfdc09c86045f49";
+    String updatedMainImageHash =
+        "21ede13b2a6e043c956e1e7f14f934bbdd6c8c3d5589cc80bcfdc09c86045f49";
     assertNotNull(jpgUpdatedImageFP);
     assertEquals("794", jpgUpdatedImageFP.getFileSize());
     assertEquals(updatedMainImageHash + ".jpg", jpgUpdatedImageFP.getFileName());
     assertEquals(updatedMainImageHash, jpgUpdatedImageFP.getContentsHash());
 
     FileProperty jpgUpdatedThumbnailFP = updatedContainer.getThumbnailFileProperty();
-    String updatedThumbnailHash = "d34f2fe4a6b04eb4b5ddc1d1273ff0064042caf0cb114828b5a4f336d2203958";
+    String updatedThumbnailHash =
+        "d34f2fe4a6b04eb4b5ddc1d1273ff0064042caf0cb114828b5a4f336d2203958";
     assertNotNull(jpgUpdatedThumbnailFP);
     assertEquals("972", jpgUpdatedThumbnailFP.getFileSize());
     assertEquals(updatedThumbnailHash + "_thumbnail.jpg", jpgUpdatedThumbnailFP.getFileName());
