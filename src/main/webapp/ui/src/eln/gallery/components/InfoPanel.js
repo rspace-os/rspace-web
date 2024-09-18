@@ -361,6 +361,13 @@ const DescriptionField = styled(
             )}
             onChange={({ target: { value } }) => setDescription(value)}
             multiline
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.shiftKey) {
+                e.stopPropagation();
+                e.preventDefault();
+                void changeDescription(file, Description.Present(description));
+              }
+            }}
           />
           <Collapse
             in={description !== getDescValue(file)}
