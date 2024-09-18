@@ -9,8 +9,7 @@ import Grid from "@mui/material/Grid";
 import NameWithBadge from "../../NameWithBadge";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { faAtom } from "@fortawesome/free-solid-svg-icons";
+import { faSpinner, faAtom } from "@fortawesome/free-solid-svg-icons";
 library.add(faSpinner);
 import ChemicalViewerDialog from "../../../../eln-inventory-integration/ChemicalViewer/ChemicalViewerDialog";
 import { type Attachment } from "../../../../stores/definitions/Attachment";
@@ -25,44 +24,49 @@ import { type HasEditableFields } from "../../../../stores/definitions/Editable"
 import { type BlobUrl } from "../../../../stores/stores/ImageStore";
 import { doNotAwait } from "../../../../util/Util";
 
-const ChemicalPreview = observer(({ attachment }: { attachment: Attachment }) => {
-  const loadingString = attachment.loadingString;
-  const chemicalString = attachment.chemicalString;
-  const isChemicalFile = attachment.isChemicalFile;
-  const chemistrySupported = attachment.chemistrySupported;
+const ChemicalPreview = observer(
+  ({ attachment }: { attachment: Attachment }) => {
+    const loadingString = attachment.loadingString;
+    const chemicalString = attachment.chemicalString;
+    const isChemicalFile = attachment.isChemicalFile;
+    const chemistrySupported = attachment.chemistrySupported;
 
-  return (
-    <>
-      <IconButtonWithTooltip
-        title={
-          chemicalString
-            ? ""
-            : loadingString
-            ? "Loading file"
-            : chemistrySupported
-            ? "Preview file as 3D structure"
-            : isChemicalFile && !attachment.id
-            ? "Save first to enable 3D preview"
-            : "3D Preview is not supported for this file type"
-        }
-        size="small"
-        color="primary"
-        onClick={doNotAwait(() => attachment.createChemicalPreview())}
-        disabled={loadingString || !chemistrySupported}
-        icon={
-          loadingString ? (
-            <FontAwesomeIcon icon="spinner" spin size="lg" />
-          ) : (
+    return (
+      <>
+        <IconButtonWithTooltip
+          title={
+            chemicalString
+              ? ""
+              : loadingString
+              ? "Loading file"
+              : chemistrySupported
+              ? "Preview file as 3D structure"
+              : isChemicalFile && !attachment.id
+              ? "Save first to enable 3D preview"
+              : "3D Preview is not supported for this file type"
+          }
+          size="small"
+          color="primary"
+          onClick={doNotAwait(() => attachment.createChemicalPreview())}
+          disabled={loadingString || !chemistrySupported}
+          icon={
+            loadingString ? (
+              <FontAwesomeIcon icon="spinner" spin size="lg" />
+            ) : (
               <FontAwesomeIcon icon={faAtom} size="lg" />
-          )
-        }
-      />
-      {!loadingString && Boolean(chemicalString) && (
-        <ChemicalViewerDialog attachment={attachment} open={Boolean(chemicalString)} />
-      )}
-    </>
-  );
-});
+            )
+          }
+        />
+        {!loadingString && Boolean(chemicalString) && (
+          <ChemicalViewerDialog
+            attachment={attachment}
+            open={Boolean(chemicalString)}
+          />
+        )}
+      </>
+    );
+  }
+);
 
 const Download = ({ attachment }: { attachment: Attachment }) => (
   <IconButtonWithTooltip
