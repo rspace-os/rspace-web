@@ -21,6 +21,7 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.units.RSUnitDef;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -61,9 +62,14 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSubSample editedSubSample = getFromJsonResponseBody(updateimage, ApiSubSample.class);
     assertEquals(fpCount + 2, getCountOfEntityTable("FileProperty"));
     assertEquals(3, editedSubSample.getLinks().size());
-    assertTrue(
-        editedSubSample.getLinks().stream()
-            .allMatch(ali -> ali.getLink().contains("v1/subSamples")));
+    // 2 image links - 1 for main image, 1 for thumbnail
+    assertEquals(2,
+        (int) editedSubSample.getLinks().stream()
+            .filter(ali -> ali.getLink().contains("v1/files/image")).count());
+    // 1 self link
+    assertEquals(1,
+        (int) editedSubSample.getLinks().stream()
+            .filter(ali -> ali.getLink().contains("v1/subSamples")).count());
   }
 
   @Test
@@ -98,7 +104,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(
         2,
         retrievedSubSample.getLinks().stream()
-            .filter(ali -> ali.getLink().contains("v1/samples"))
+            .filter(ali -> ali.getLink().contains("v1/files/image"))
             .count());
   }
 

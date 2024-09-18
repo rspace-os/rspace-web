@@ -153,12 +153,12 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     sampleApiMgr.updateApiSample(sample, user);
 
     // retrieve image via filename
-    String fileName = CryptoUtils.hashWithSha256inHex(imageBytes) + ".png";
+    String contentsHash = CryptoUtils.hashWithSha256inHex(imageBytes);
     MvcResult result =
         mockMvc
             .perform(
                 createBuilderForGet(
-                    API_VERSION.ONE, apiKey, "/files/image/{fileName}", user, fileName))
+                    API_VERSION.ONE, apiKey, "/files/image/{contentsHash}", user, contentsHash))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     String responseImage = result.getResponse().getContentAsString();
@@ -180,7 +180,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     // try to retrieve image as user2, who isn't authorised
     User user2 = createInitAndLoginAnyUser();
     String user2ApiKey = createNewApiKeyForUser(user2);
-    String fileName = CryptoUtils.hashWithSha256inHex(imageBytes) + ".png";
+    String fileName = CryptoUtils.hashWithSha256inHex(imageBytes);
     MvcResult result =
         mockMvc
             .perform(
@@ -189,7 +189,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
             .andExpect(status().isUnauthorized())
             .andReturn();
     assertEquals(
-        String.format("User doesn't have permissions to read image file %s.", fileName),
+        String.format("User doesn't have permissions to read image file with hash %s.", fileName),
         result.getResolvedException().getMessage());
   }
 
@@ -207,7 +207,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
             .andExpect(status().isNotFound())
             .andReturn();
 
-    assertEquals("Image abc123.some.file not found.", result.getResolvedException().getMessage());
+    assertEquals("Image with hash abc123.some.file not found.", result.getResolvedException().getMessage());
   }
 
   private MockMultipartFile picture1() throws IOException {
