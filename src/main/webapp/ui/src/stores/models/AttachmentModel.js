@@ -396,20 +396,11 @@ export class NewlyUploadedAttachment implements Attachment {
     this.permalinkURL = permalinkURL;
   }
 
-  async getFile(): Promise<File> {
-    if (this.file) return this.file;
-    if (!this.link) throw new Error("No file specified");
-    const { data } = await ApiService.query<{||}, Blob>(
-      this.link,
-      new URLSearchParams(),
-      true
+  getFile(): Promise<File> {
+    if (this.file) return Promise.resolve(this.file);
+    throw new Error(
+      "Impossible because the user already selected a file to upload"
     );
-    return runInAction(() => {
-      if (!this.contentMimeType) throw new Error("ContentMimeType is missing");
-      const file = new File([data], this.name, { type: this.contentMimeType });
-      this.file = file;
-      return file;
-    });
   }
 
   setLoadingImage(value: boolean): void {
@@ -421,8 +412,11 @@ export class NewlyUploadedAttachment implements Attachment {
   }
 
   async setImageLink(): Promise<void> {
-    const file = await this.getFile();
-    if (!file) throw new Error("File is not yet known.");
+    const file = this.file;
+    if (!file)
+      throw new Error(
+        "Impossible because the user already selected a file to upload"
+      );
     let imageFile;
     if (this.isChemicalFile) imageFile = await this.fetchChemicalImage();
     runInAction(() => {
@@ -557,18 +551,10 @@ export class NewlyUploadedAttachment implements Attachment {
   }
 
   get isImageFile(): boolean {
-    if (typeof this.contentMimeType === "string") {
-      return /^image/.test(this.contentMimeType);
-    }
-    if (this.file) {
-      return /^image/.test(this.file.type);
-    }
-    /*
-     * This can't happen because if attachment is loaded from the server
-     * then it will have a contentMimeType whereas if it is a new
-     * attachment then it will have a file. Included to satisfy flow.
-     */
-    throw new Error("Should not happen.");
+    if (this.file) return /^image/.test(this.file.type);
+    throw new Error(
+      "Impossible because the user already selected a file to upload"
+    );
   }
 
   get isChemicalFile(): boolean {
