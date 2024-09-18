@@ -568,7 +568,7 @@
       {{/key}}
       {{^key}}
         {{#revokable}}
-          There is an API key set.
+          The current key was last generated {{age}} days ago.
         {{/revokable}}
         {{^revokable}}
           There is no API key set.
