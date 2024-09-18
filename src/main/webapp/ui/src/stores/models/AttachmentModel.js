@@ -73,7 +73,7 @@ export class ExistingAttachment implements Attachment {
   removed: boolean;
   loadingImage: boolean = false;
   loadingString: boolean = false;
-  contentMimeType: ?string;
+  contentMimeType: string;
   onRemoveCallback: (Attachment) => void;
   permalinkURL: ?Url;
   owner: ?Person; // For the info button
@@ -132,7 +132,6 @@ export class ExistingAttachment implements Attachment {
       true
     );
     return runInAction(() => {
-      if (!this.contentMimeType) throw new Error("ContentMimeType is missing");
       const file = new File([data], this.name, { type: this.contentMimeType });
       this.file = file;
       return file;
@@ -284,18 +283,7 @@ export class ExistingAttachment implements Attachment {
   }
 
   get isImageFile(): boolean {
-    if (typeof this.contentMimeType === "string") {
-      return /^image/.test(this.contentMimeType);
-    }
-    if (this.file) {
-      return /^image/.test(this.file.type);
-    }
-    /*
-     * This can't happen because if attachment is loaded from the server
-     * then it will have a contentMimeType whereas if it is a new
-     * attachment then it will have a file. Included to satisfy flow.
-     */
-    throw new Error("Should not happen.");
+    return /^image/.test(this.contentMimeType);
   }
 
   get isChemicalFile(): boolean {
@@ -347,7 +335,6 @@ export class NewlyUploadedAttachment implements Attachment {
   removed: boolean;
   loadingImage: boolean = false;
   loadingString: boolean = false;
-  contentMimeType: ?string;
   onRemoveCallback: (Attachment) => void;
   permalinkURL: ?Url;
   owner: ?Person; // For the info button
