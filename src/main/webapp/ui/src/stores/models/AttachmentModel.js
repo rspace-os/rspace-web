@@ -16,7 +16,11 @@ import getRootStore from "../stores/RootStore";
 import { justFilenameExtension } from "../../util/files";
 import { type Person } from "../definitions/Person";
 import { type Attachment } from "../definitions/Attachment";
-import { type GlobalId } from "../definitions/BaseRecord";
+import { type GlobalId, type Id } from "../definitions/BaseRecord";
+import {
+  type GalleryFile,
+  type Id as GalleryId,
+} from "../../eln/gallery/useGalleryListing";
 
 type AttachmentId = ?number;
 type Bytes = number;
@@ -37,6 +41,11 @@ type FromServer = {|
 type FromUpload = {|
   ...CommonAttrs,
   file: File,
+|};
+
+type FromGallery = {|
+  ...CommonAttrs,
+  galleryId: GalleryId,
 |};
 
 export type AttachmentAttrs = FromServer | FromUpload;
@@ -100,14 +109,9 @@ export class ExistingAttachment implements Attachment {
       iconName: computed,
       isImageFile: computed,
       isChemicalFile: computed,
-      hasId: computed,
       previewSupported: computed,
       chemistrySupported: computed,
       recordDetails: computed,
-      fetchChemicalImage: action,
-      fetchChemicalString: action,
-      setLoadingImage: action,
-      setLoadingString: action,
       setImageLink: action,
       setChemicalString: action,
     });
@@ -605,6 +609,142 @@ export const newAttachment = (
       name: file.name,
       size: file.size,
       file,
+    },
+    permalinkURL,
+    onRemoveCallback
+  );
+};
+
+export class NewGalleryAttachment implements Attachment {
+  galleryId: number;
+  name: string;
+  size: Bytes;
+  removed: boolean = false;
+  onRemoveCallback: (Attachment) => void;
+  permalinkURL: ?Url;
+
+  /*
+   * Dummy values to satisfy Attachment interface
+   */
+  globalId: ?GlobalId = null;
+  id: Id = null;
+  imageLink: ?Url = null;
+  owner: ?Person = null;
+  loadingImage: boolean = false;
+  loadingString: boolean = false;
+  chemicalString: string = "";
+
+  constructor(
+    attrs: FromGallery,
+    permalinkURL: ?Url,
+    onRemoveCallback: (Attachment) => void
+  ) {
+    makeObservable(this, {
+      galleryId: observable,
+      name: observable,
+      size: observable,
+      imageLink: observable,
+      chemicalString: observable,
+      removed: observable,
+      loadingImage: observable,
+      loadingString: observable,
+      permalinkURL: observable,
+      cardTypeLabel: computed,
+      deleted: computed,
+      recordTypeLabel: computed,
+      iconName: computed,
+      isChemicalFile: computed,
+      previewSupported: computed,
+      chemistrySupported: computed,
+      recordDetails: computed,
+    });
+    this.name = attrs.name;
+    this.size = attrs.size;
+    this.removed = false;
+    this.onRemoveCallback = onRemoveCallback;
+    this.permalinkURL = permalinkURL;
+  }
+
+  async getFile(): Promise<File> {
+    return Promise.reject(new Error("Not implemented"));
+  }
+
+  remove() {
+    this.removed = true;
+    this.onRemoveCallback(this);
+    getRootStore().trackingStore.trackEvent("RemovedAttachment");
+  }
+
+  async download() {
+    //TODO
+  }
+
+  createChemicalPreview(): Promise<void> {
+    return Promise.reject(
+      new Error("Gallery files do not support chemical preview")
+    );
+  }
+
+  revokeChemicalPreview() {}
+
+  setImageLink(): Promise<void> {
+    return Promise.reject(
+      new Error("Gallery files do not yet support preview image")
+    );
+  }
+
+  revokeAuthenticatedLink() {}
+
+  get isChemicalFile(): boolean {
+    return false;
+  }
+
+  get chemistrySupported(): boolean {
+    return false;
+  }
+
+  get previewSupported(): boolean {
+    return false;
+  }
+
+  get cardTypeLabel(): string {
+    return "Attachment";
+  }
+
+  get deleted(): boolean {
+    return this.removed;
+  }
+
+  get recordTypeLabel(): string {
+    return this.cardTypeLabel;
+  }
+
+  get iconName(): string {
+    return "attachment";
+  }
+
+  get recordDetails(): RecordDetails {
+    return {
+      size: this.size,
+    };
+  }
+
+  save(_parentGlobalId: GlobalId): Promise<void> {
+    return Promise.reject(new Error("Not yet implemented"));
+  }
+}
+
+export const newGalleryAttachment = (
+  file: GalleryFile,
+  permalinkURL: ?Url,
+  onRemoveCallback: (Attachment) => void
+): NewGalleryAttachment => {
+  return new NewGalleryAttachment(
+    {
+      id: null,
+      name: file.name,
+      size: file.size,
+      galleryId: file.id,
     },
     permalinkURL,
     onRemoveCallback

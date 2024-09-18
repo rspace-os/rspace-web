@@ -23,6 +23,7 @@ import { CallablePdfPreview } from "../components/CallablePdfPreview";
 import { CallableAsposePreview } from "../components/CallableAsposePreview";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
+import RsSet from "../../../util/set";
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   zIndex: 1100, // less than the SwipeableDrawer so that mobile info panel is shown
@@ -67,7 +68,7 @@ const Picker = observer(
   }: {|
     open: boolean,
     onClose: () => void,
-    onSubmit: (Set<GalleryFile>) => void,
+    onSubmit: (RsSet<GalleryFile>) => void,
   |}) => {
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
@@ -210,7 +211,7 @@ export default function Wrapper({
 }: {|
   open: boolean,
   onClose: () => void,
-  onSubmit: (Set<GalleryFile>) => void,
+  onSubmit: (RsSet<GalleryFile>) => void,
 |}): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>

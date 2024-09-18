@@ -12,7 +12,10 @@ import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import docLinks from "../../../../assets/DocLinks";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
-import { newAttachment } from "../../../../stores/models/AttachmentModel";
+import {
+  newAttachment,
+  newGalleryAttachment,
+} from "../../../../stores/models/AttachmentModel";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import { match } from "../../../../util/Util";
@@ -192,7 +195,17 @@ const FileSelector = ({
               setGalleryDialogOpen(false);
             }}
             onSubmit={(files) => {
-              console.debug(files);
+              activeResult.setAttributesDirty({
+                attachments: [
+                  ...activeResult.attachments,
+                  ...files.map((f) =>
+                    newGalleryAttachment(f, activeResult.permalinkURL, () =>
+                      activeResult.setAttributesDirty({})
+                    )
+                  ),
+                ],
+              });
+              setGalleryDialogOpen(false);
             }}
           />
         </React.Suspense>
