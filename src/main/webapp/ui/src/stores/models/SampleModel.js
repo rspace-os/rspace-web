@@ -78,6 +78,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
+import * as ArrayUtils  from "../../util/ArrayUtils";
 
 type SampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -435,43 +436,18 @@ export default class SampleModel
       return newFields?.find((f) => f.name === field.name)?.globalId;
     };
 
-    const toFormData = async (attachment: ?Attachment) => {
-      const fd = new FormData();
-      if (!attachment?.file) throw new Error("File is not specified.");
-      const file = await attachment.getFile();
-      fd.append("file", file);
-      fd.append(
-        "fileSettings",
-        JSON.stringify({
-          fileName: attachment.name,
-          parentGlobalId: findGlobalIdOfField(attachment),
-        })
-      );
-      return fd;
-    };
-
-    const fieldAttachments = this.fields
+    const fieldAttachments: Array<Attachment> = ArrayUtils.filterNull(this.fields
       .filter((f) => Boolean(f.attachment))
       // handle removal of correct field attachment
       .map((f) =>
         f.attachment?.removed ? f.originalAttachment : f.attachment
-      );
+      ));
 
-    const newFiles = await Promise.all(
-      fieldAttachments
-        .filter((a) => !a?.id && !a?.removed)
-        .map((a) =>
-          toFormData(a).then((formData) => ApiService.post("files", formData))
-        )
-    );
-
-    await Promise.all([
-      ...newFiles,
-      ...fieldAttachments
-        .filter((a) => a?.removed && a.id)
-        // $FlowExpectedError[incompatible-call] all have non-null id
-        .map((a) => ApiService.delete("files", a?.id)),
-    ]);
+    await Promise.all(fieldAttachments.map(attachment => {
+      const g = findGlobalIdOfField(attachment);
+      if (!g) return Promise.reject(new Error("Could not find Global Id for a field"));
+      return attachment.save(g);
+    }));
   }
 
   updateFieldsState() {

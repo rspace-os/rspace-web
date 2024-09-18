@@ -119,7 +119,7 @@ const SetAsPreviewImage = <
   const setAsPreviewImage = async () => {
     try {
       await attachment.setImageLink();
-      await storeImage(attachment.imageLink, attachment.file);
+      await storeImage(attachment.imageLink, await attachment.getFile());
     } catch (e) {
       uiStore.addAlert(
         mkAlert({

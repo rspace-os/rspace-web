@@ -12,11 +12,11 @@ import { type _LINK } from "../../common/ApiServiceBase";
 import { mkAlert } from "../contexts/Alert";
 import ApiService from "../../common/InvApiService";
 import { type RecordDetails } from "../../stores/definitions/Record";
-import { type GlobalId } from "../../stores/definitions/BaseRecord";
 import getRootStore from "../stores/RootStore";
 import { justFilenameExtension } from "../../util/files";
 import { type Person } from "../definitions/Person";
 import { type Attachment } from "../definitions/Attachment";
+import { type GlobalId } from "../definitions/BaseRecord";
 
 type AttachmentId = ?number;
 type Bytes = number;
@@ -320,6 +320,14 @@ export class ExistingAttachment implements Attachment {
       size: this.size,
     };
   }
+
+  async save(_parentGlobalId: GlobalId): Promise<void> {
+    if (typeof this.id === "number" && this.removed) {
+      await ApiService.delete<mixed, mixed>("files", this.id);
+      return;
+    }
+    return Promise.resolve();
+  }
 }
 
 /**
@@ -333,7 +341,7 @@ export class NewlyUploadedAttachment implements Attachment {
   name: string;
   size: Bytes;
   link: ?Url;
-  file: ?File;
+  file: ?File; // will never actually be null because the user just uploaded it
   imageLink: ?Url;
   chemicalString: string = "";
   removed: boolean;
@@ -584,6 +592,32 @@ export class NewlyUploadedAttachment implements Attachment {
     return {
       size: this.size,
     };
+  }
+
+  async save(parentGlobalId: GlobalId): Promise<void> {
+    const toFormData = () => {
+      const fd = new FormData();
+      if (!this.file)
+        throw new Error(
+          "Impossible because the user already selected a file to upload"
+        );
+      fd.append("file", this.file);
+      fd.append(
+        "fileSettings",
+        JSON.stringify({
+          fileName: this.name,
+          parentGlobalId,
+        })
+      );
+      return fd;
+    };
+
+    if (!this.removed) {
+      const formData = await toFormData();
+      await ApiService.post<FormData, mixed>("files", formData);
+      return;
+    }
+    return Promise.resolve();
   }
 }
 
