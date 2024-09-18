@@ -485,6 +485,18 @@ function displayOrcidIdSpan() {
 
 var showRSApiKey = false;
 
+function computeDaysAgoLabel(days) {
+  const rtf = new Intl.RelativeTimeFormat("en", {
+    style: "long",
+    numeric: "auto", // uses today rather than 0 days ago
+  });
+
+  if (days < 7) return rtf.format(days * -1, "days");
+  if (days < 31) return rtf.format(Math.floor(days / 7) * -1, "weeks");
+  if (days < 365) return rtf.format(Math.floor(days / 31) * -1, "months");
+  return rtf.format(Math.floor(days / 365) * -1, "years");
+}
+
 function renderApiKeyMenu(serverResponse) {
   if (!serverResponse.data) {
     apprise(getValidationErrorString(serverResponse.errorMsg));
@@ -492,7 +504,11 @@ function renderApiKeyMenu(serverResponse) {
   }
   var $apiKeyInfo = $('#apiKeyInfo');
   var apiKeyInfoTemplate = $('#apiKeyDetailsTemplate').html();
-  var keyInfoData = serverResponse.data;
+
+  var keyInfoData = {
+    ...serverResponse.data,
+    ageLabel: computeDaysAgoLabel(serverResponse.data.age),
+  };
   var htmlData = Mustache.render(apiKeyInfoTemplate, keyInfoData);
   $apiKeyInfo.html(htmlData);
   if (keyInfoData.key) {
