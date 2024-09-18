@@ -41,6 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import lombok.AccessLevel;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,7 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
   public static final Long EVENT_NEVER_HAPPENED = -100L;
 
   private static final Logger log = LoggerFactory.getLogger(AnalyticsManagerImpl.class);
+  public static final String ANALYTICS_SEGMENT_TYPE = "segment";
 
   private @Autowired LicenseService licenseService;
   private @Autowired SysAdminManager sysAdminManager;
@@ -70,17 +72,21 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
   @Value("${analytics.server.key}")
   private String analyticsServerKey;
 
+  @Value("${analytics.server.type}")
+  private String analyticsServerType;
+
   private Analytics analyticsClient;
 
   /*
-   * initialise analytics client when all deployment properties are loaded and
-   * analytics.enabled property is set to 'true'
+   * initialise analytics client when all deployment properties are loaded AND
+   * analytics.enabled property is set to 'true' AND the analytics server type is 'segment'
    */
   @PostConstruct
-  private void initialiseAnalyticsClientIfAllPropertiesAvailable() {
+  private void initialiseSegmentAnalyticsClientIfAllPropertiesAvailable() {
     if (Boolean.parseBoolean(analyticsEnabled)
-        && analyticsServerKey != null
-        && analyticsServerHost != null) {
+        && ANALYTICS_SEGMENT_TYPE.equals(analyticsServerType)
+        && StringUtils.isNotBlank(analyticsServerKey)
+        && StringUtils.isNotBlank(analyticsServerHost)) {
       SegmentAnalyticsLogAdapter analyticsLogger = new SegmentAnalyticsLogAdapter();
       analyticsClient =
           Analytics.builder(analyticsServerKey)
