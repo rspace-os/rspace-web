@@ -139,6 +139,17 @@ const baseTheme = createTheme({
       placeholderText: "#8babcb",
       background: "#00adef22",
     },
+    callToAction: {
+      main: hslToHex(
+        COLORS.primary.hue,
+        COLORS.primary.saturation,
+        COLORS.primary.lightness
+      ),
+      contrastText: "#fff",
+      saturated: "#009ad6",
+      placeholderText: "#8babcb",
+      background: "#00adef22",
+    },
     secondary: {
       main: "#f50057",
       light: "#fc6da0",

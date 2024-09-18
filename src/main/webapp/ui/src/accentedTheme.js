@@ -175,7 +175,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           dark: linkColor,
         },
         callToAction: {
-          main: baseTheme.palette.primary.main,
+          main: baseTheme.palette.callToAction.main,
         },
         standardIcon: {
           main: interactiveColor,
@@ -406,14 +406,16 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
             containedCallToAction: {
               border: `2px solid ${
-                prefersMoreContrast ? "black" : baseTheme.palette.primary.main
+                prefersMoreContrast
+                  ? "black"
+                  : baseTheme.palette.callToAction.main
               }`,
               backgroundColor: prefersMoreContrast
                 ? "black"
-                : baseTheme.palette.primary.main,
-              color: "white",
+                : baseTheme.palette.callToAction.main,
+              color: baseTheme.palette.callToAction.contrastText,
               "&:hover": {
-                borderColor: baseTheme.palette.primary.main,
+                borderColor: baseTheme.palette.callToAction.main,
               },
               [`&.${buttonClasses.disabled}`]: {
                 borderColor: darken(disabledColor, 0.1),

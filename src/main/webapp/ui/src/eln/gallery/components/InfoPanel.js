@@ -245,7 +245,7 @@ const NameFieldForLargeViewports = styled(
                 <Button
                   size="small"
                   variant="contained"
-                  color="primary"
+                  color="callToAction"
                   type="submit"
                 >
                   Save
@@ -382,7 +382,7 @@ const DescriptionField = styled(
               <Button
                 size="small"
                 variant="contained"
-                color="primary"
+                color="callToAction"
                 onClick={() => {
                   void changeDescription(
                     file,
