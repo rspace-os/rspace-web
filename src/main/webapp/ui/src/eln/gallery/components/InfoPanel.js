@@ -76,7 +76,7 @@ const ActionButton = ({
 |}): Node => {
   return (
     <Button
-      color="selection"
+      color="callToAction"
       variant="contained"
       sx={sx}
       onClick={onClick}

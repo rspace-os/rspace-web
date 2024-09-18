@@ -174,7 +174,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           saturated: linkColor,
           dark: linkColor,
         },
-        selection: {
+        callToAction: {
           main: baseTheme.palette.primary.main,
         },
         standardIcon: {
@@ -404,7 +404,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 borderColor: disabledColor,
               },
             },
-            containedSelection: {
+            containedCallToAction: {
               border: `2px solid ${
                 prefersMoreContrast ? "black" : baseTheme.palette.primary.main
               }`,

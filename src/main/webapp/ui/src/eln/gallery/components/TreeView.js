@@ -37,11 +37,11 @@ const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
     [`&.${treeItemClasses.selected}`]: {
       backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
         ? "black"
-        : theme.palette.selection.main,
+        : theme.palette.callToAction.main,
       [`&.${treeItemClasses.focused}`]: {
         backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
           ? "black"
-          : theme.palette.selection.main,
+          : theme.palette.callToAction.main,
       },
       [`& .${treeItemClasses.label}`]: {
         color: "white",

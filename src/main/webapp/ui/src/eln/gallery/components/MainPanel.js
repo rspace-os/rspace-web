@@ -969,7 +969,7 @@ const FileCard = styled(
                                   window.matchMedia("(prefers-contrast: more)")
                                     .matches
                                     ? "black"
-                                    : theme.palette.selection.main,
+                                    : theme.palette.callToAction.main,
                                 p: 0.25,
                                 borderRadius: "4px",
                                 mx: 0.5,
