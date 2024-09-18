@@ -207,11 +207,17 @@ const NameFieldForLargeViewports = styled(
             <TextField
               value={name}
               placeholder="No Name"
+              /*
+               * We use multiline so that long names wrap, but prevent the user
+               * from typing in a return character by using string replacement
+               */
               multiline
+              onChange={({ target: { value } }) =>
+                setName(value.replace(/\n/g, ""))
+              }
               fullWidth
               size="small"
               className={clsx(className, name !== file.name && "modified")}
-              onChange={({ target: { value } }) => setName(value)}
               inputProps={{
                 "aria-label": "Name",
                 ref: textField,
