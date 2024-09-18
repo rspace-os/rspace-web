@@ -488,7 +488,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     String expectedInitialImageName =
         "7fe5c7a3083b770860b56b6e2797935649ba3ae185fc49d06d85a9d129ada3f1.png";
     String expectedInitialThumbnailName =
-        "96b83d55c92cf15520cac72cd5fc1779c0b363099ad7dbc7d4ab7045f1f5c5a2_thumbnail.png";
+        "96b83d55c92cf15520cac72cd5fc1779c0b363099ad7dbc7d4ab7045f1f5c5a2.png";
 
     // check saved image files
     createdContainer =
@@ -544,7 +544,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     String expectedUpdatedImageName =
         "731b921adb66d1fedcb1ea65661e0ddf3bd54045742fae8c58016fc7b125b3b4.jpg";
     String expectedUpdatedThumbnailName =
-        "0da8a1a374e8153c3967b842eb5f962467b6fcb9435e5b7fc9e14e8d3b09bcb1_thumbnail.jpg";
+        "0da8a1a374e8153c3967b842eb5f962467b6fcb9435e5b7fc9e14e8d3b09bcb1.jpg";
 
     assertEquals(expectedUpdatedImageName, container.getImageFileProperty().getFileName());
     assertEquals("1250", container.getImageFileProperty().getFileSize());

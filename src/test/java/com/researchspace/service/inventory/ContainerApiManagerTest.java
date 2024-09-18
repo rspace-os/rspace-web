@@ -848,7 +848,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     FileProperty jpgThumbnailFP = updatedContainer.getThumbnailFileProperty();
     assertNotNull(jpgThumbnailFP);
     assertEquals("3177", jpgThumbnailFP.getFileSize());
-    assertEquals(thumbnailHash + "_thumbnail.jpg", jpgThumbnailFP.getFileName());
+    assertEquals(thumbnailHash + ".jpg", jpgThumbnailFP.getFileName());
     FileProperty pngLocationsFP = updatedContainer.getLocationsImageFileProperty();
     assertNotNull(pngLocationsFP);
     assertEquals("168434", pngLocationsFP.getFileSize());
@@ -881,7 +881,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         "d34f2fe4a6b04eb4b5ddc1d1273ff0064042caf0cb114828b5a4f336d2203958";
     assertNotNull(jpgUpdatedThumbnailFP);
     assertEquals("972", jpgUpdatedThumbnailFP.getFileSize());
-    assertEquals(updatedThumbnailHash + "_thumbnail.jpg", jpgUpdatedThumbnailFP.getFileName());
+    assertEquals(updatedThumbnailHash + ".jpg", jpgUpdatedThumbnailFP.getFileName());
     // locations image should stay the same
     assertEquals(pngLocationsFP, updatedContainer.getLocationsImageFileProperty());
 

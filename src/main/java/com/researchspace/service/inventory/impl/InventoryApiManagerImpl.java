@@ -237,27 +237,26 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   }
 
   FileProperty saveImageFile(User user, String base64Image) throws IOException {
-    String mainImageNameFormat = "%s.%s";
     String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
     byte[] imageBytes = ImageUtils.getImageBytesFromBase64DataImage(base64Image);
     InputStream imageIS = new ByteArrayInputStream(imageBytes);
     String contentsHash = CryptoUtils.hashWithSha256inHex(base64Image);
-    return retrieveOrCreateFileProperty(
-        user, mainImageNameFormat, imageExtension, imageIS, contentsHash);
+    String filename = String.format("%s.%s", contentsHash, imageExtension);
+
+    return retrieveOrCreateFileProperty(user, filename, imageIS, contentsHash);
   }
 
   FileProperty saveThumbnailImageFile(User user, String base64Image) throws IOException {
-    String thumbnailNameFormat = "%s_thumbnail.%s";
     String imageExtension = ImageUtils.getExtensionFromBase64DataImage(base64Image);
     byte[] imageBytes = ImageUtils.getImageBytesFromBase64DataImage(base64Image);
 
     InputStream thumbnailForHash = new ByteArrayInputStream(imageBytes);
     String contentsHash =
         CryptoUtils.hashWithSha256inHex(Arrays.toString(thumbnailForHash.readAllBytes()));
+    String filename = String.format("%s.%s", contentsHash, imageExtension);
 
     try (InputStream imageIS = createThumbnailFromImageBytes(imageBytes, imageExtension)) {
-      return retrieveOrCreateFileProperty(
-          user, thumbnailNameFormat, imageExtension, imageIS, contentsHash);
+      return retrieveOrCreateFileProperty(user, filename, imageIS, contentsHash);
     }
   }
 
@@ -267,18 +266,12 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   and returns that if so. Otherwise, generates a new FileProperty.
    */
   private FileProperty retrieveOrCreateFileProperty(
-      User user,
-      String fileNameFormat,
-      String imageExtension,
-      InputStream imageIs,
-      String contentsHash)
-      throws IOException {
+      User user, String fileName, InputStream imageIs, String contentsHash) throws IOException {
     Optional<FileProperty> existingFile =
         getExistingFilePropertyForImage(contentsHash, user.getUsername());
     if (existingFile.isPresent()) {
       return existingFile.get();
     } else {
-      String fileName = String.format(fileNameFormat, contentsHash, imageExtension);
       return inventoryFileApiManager.generateInventoryFileProperty(
           user, fileName, contentsHash, imageIs);
     }
