@@ -561,15 +561,21 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   protected abstract String getSelfLinkEndpoint();
 
   void addMainImageLink(UriComponentsBuilder baseUrlBuilder) {
-    String imagePath = "/files/image/" + getImageFileProperty().getContentsHash();
-    String imageLink = buildLinkForForPath(baseUrlBuilder, imagePath);
-    addLink(ApiLinkItem.builder().link(imageLink).rel("image").build());
+    String imageType = "image";
+    String contentsHash = getImageFileProperty().getContentsHash();
+    addImageLink(baseUrlBuilder, contentsHash, imageType);
   }
 
   void addThumbnailLink(UriComponentsBuilder baseUrlBuilder) {
-    String imagePath = "/files/image/" + getThumbnailFileProperty().getContentsHash();
+    String imageType = "thumbnail";
+    String contentsHash = getThumbnailFileProperty().getContentsHash();
+    addImageLink(baseUrlBuilder, contentsHash, imageType);
+  }
+
+  void addImageLink(UriComponentsBuilder baseUrlBuilder, String contentsHash, String imageType){
+    String imagePath = "/files/image/" + contentsHash;
     String imageLink = buildLinkForForPath(baseUrlBuilder, imagePath);
-    addLink(ApiLinkItem.builder().link(imageLink).rel("thumbnail").build());
+    addLink(ApiLinkItem.builder().link(imageLink).rel(imageType).build());
   }
 
   String buildLinkForForPath(UriComponentsBuilder baseUrlBuilder, String imagePath) {

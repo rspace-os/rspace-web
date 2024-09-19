@@ -259,14 +259,13 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
     super.buildAndAddInventoryRecordLinks(inventoryApiBaseUrl);
 
     if (getLocationsImageFileProperty() != null) {
-      addLink(buildLocationImageLink(inventoryApiBaseUrl));
+      addLocationImageLink(inventoryApiBaseUrl);
     }
   }
 
-  ApiLinkItem buildLocationImageLink(UriComponentsBuilder baseUrlBuilder) {
-    String imagePath = "/files/image/" + getLocationsImageFileProperty();
-    String imageLink = buildLinkForForPath(baseUrlBuilder, imagePath);
-    return ApiLinkItem.builder().link(imageLink).rel("locationsImage").build();
+  void addLocationImageLink(UriComponentsBuilder baseUrlBuilder) {
+    String imageType = "locationsImage";
+    addImageLink(baseUrlBuilder, getLocationsImageFileProperty().getContentsHash(), imageType);
   }
 
   @Override
