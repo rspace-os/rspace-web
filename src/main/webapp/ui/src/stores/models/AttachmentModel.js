@@ -35,6 +35,11 @@ type FromServer = {|
   _links: Array<_LINK>,
 |};
 
+type FromServerFromGallery = {|
+  ...FromServer,
+  mediaFileGlobalId: string,
+|};
+
 type FromUpload = {|
   ...CommonAttrs,
   file: File,
@@ -318,6 +323,41 @@ export class ExistingAttachment implements Attachment {
     }
     return Promise.resolve();
   }
+}
+
+export class ExistingAttachmentFromGallery extends ExistingAttachment {
+  mediaFileGlobalId: string;
+
+  constructor(
+    attrs: FromServerFromGallery,
+    permalinkURL: ?Url,
+    onRemoveCallback: (Attachment) => void
+  ) {
+    const { mediaFileGlobalId, ...rest } = attrs;
+    super(rest, permalinkURL, onRemoveCallback);
+    makeObservable(this, {
+      mediaFileGlobalId: observable,
+    });
+    this.mediaFileGlobalId = mediaFileGlobalId;
+    this.globalId = mediaFileGlobalId;
+    this.permalinkURL = `/globalId/${mediaFileGlobalId}`;
+  }
+}
+
+export function newExistingAttachment(
+  attrs: FromServerFromGallery | FromServer,
+  permalinkURL: ?Url,
+  onRemoveCallback: (Attachment) => void
+): ExistingAttachment {
+  const { mediaFileGlobalId, ...rest } = attrs;
+  if (typeof mediaFileGlobalId === "string") {
+    return new ExistingAttachmentFromGallery(
+      { ...rest, mediaFileGlobalId },
+      permalinkURL,
+      onRemoveCallback
+    );
+  }
+  return new ExistingAttachment(rest, permalinkURL, onRemoveCallback);
 }
 
 /**

@@ -3,9 +3,9 @@
 import { action, observable, computed, makeObservable } from "mobx";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import {
-  ExistingAttachment,
   type AttachmentAttrs,
   newAttachment,
+  newExistingAttachment,
 } from "./AttachmentModel";
 import {
   apiStringToFieldType,
@@ -170,7 +170,7 @@ export default class FieldModel implements Field {
     // have to do this setAttributes after because this.permalinkURL needs to be set
     if (attachment)
       this.setAttributes({
-        attachment: new ExistingAttachment(
+        attachment: newExistingAttachment(
           attachment,
           this.owner.id ? this.permalinkURL : "",
           (a) => {
