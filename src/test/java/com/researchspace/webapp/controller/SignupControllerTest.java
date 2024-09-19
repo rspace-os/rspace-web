@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -80,7 +80,7 @@ public class SignupControllerTest {
   }
 
   @Test
-  public void ssoSignupAllowedRequiresGeneralUseRSignup() {
+  public void ssoSignupAllowedRequiresGeneralUserSignup() {
     when(properties.isUserSignup()).thenReturn(Boolean.FALSE);
     signupCtrller.setAcceptedSignupDomains("@xyz, abc, def");
     assertFalse(signupCtrller.isSsoSignupAllowed("any.somwhere@abc"));
@@ -109,10 +109,9 @@ public class SignupControllerTest {
     assertEquals("Mæck", signupCtrller.getFirstNameFromRemote(mockUtf8Request));
     assertEquals("Schødt-Żębski", signupCtrller.getLastnameFromRemote(mockUtf8Request));
 
-    // confirm not conversion when encoding disabled in deployment property
+    // confirm no conversion if encoding is disabled in deployment property
     signupCtrller.setDeploymentSsoRecodeNamesToUft8(false);
     assertEquals("MÃ¦ck", signupCtrller.getFirstNameFromRemote(mockIso8859Request));
     assertEquals("SchÃ¸dt-Å»Ä\u0099bski", signupCtrller.getLastnameFromRemote(mockIso8859Request));
   }
-
 }

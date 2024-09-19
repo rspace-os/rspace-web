@@ -51,6 +51,7 @@ public class SignupController extends BaseController {
   @Autowired
   @Setter(AccessLevel.PACKAGE) // for testing
   private RemoteUserRetrievalPolicy remoteUserPolicy;
+
   private @Autowired UserValidator userValidator;
   private @Autowired SignupCaptchaVerifier captchaVerifier;
   private @Autowired UserEnablementUtils userEnablementUtils;
