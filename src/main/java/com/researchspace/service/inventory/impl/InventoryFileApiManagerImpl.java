@@ -185,7 +185,6 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     return invFile;
   }
 
-
   public FileProperty getFilePropertyByContentsHash(String contentsHash, User user) {
     Map<String, String> properties = new HashMap<>();
     // get any usage of the contents hash, as oppose to being restricted by user, since e.g. the
@@ -193,20 +192,21 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     properties.put("contentsHash", contentsHash);
     List<FileProperty> filePropsWithHash = fileStoreMetaManager.findProperties(properties);
 
-    if(filePropsWithHash.isEmpty()) {
+    if (filePropsWithHash.isEmpty()) {
       throw new NotFoundException(String.format("Image with hash %s not found.", contentsHash));
     }
 
-    for(FileProperty fileProperty: filePropsWithHash) {
-      if(userHasReadPermissionsForFile(user, fileProperty)){
+    for (FileProperty fileProperty : filePropsWithHash) {
+      if (userHasReadPermissionsForFile(user, fileProperty)) {
         return fileProperty;
       }
     }
 
     // FileProperty exists, but the user doesn't have read permissions on any file which uses
     // the FileProperty
-    throw new AuthorizationException(String.format("User doesn't have permissions to read image "
-        + "file with hash %s.", contentsHash));
+    throw new AuthorizationException(
+        String.format(
+            "User doesn't have permissions to read image " + "file with hash %s.", contentsHash));
   }
 
   /**

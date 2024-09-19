@@ -118,11 +118,11 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
    * avoid lazy initialisation issues when attempting to access the file properties.
    * Subsamples in particular need to have the FileProperty fields of a connected sample initialised
    */
-  private void initialiseInventoryRecordRelationships(InventoryRecord record){
+  private void initialiseInventoryRecordRelationships(InventoryRecord record) {
     Hibernate.initialize(record.getImageFileProperty());
     Hibernate.initialize(record.getThumbnailFileProperty());
     if (record.isSubSample()) {
-      Sample connectedSample =  ((SubSample) record).getSample();
+      Sample connectedSample = ((SubSample) record).getSample();
       if (connectedSample != null) {
         initialiseInventoryRecordRelationships(connectedSample);
       }

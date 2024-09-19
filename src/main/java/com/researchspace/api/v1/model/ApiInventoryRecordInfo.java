@@ -572,7 +572,7 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
     addImageLink(baseUrlBuilder, contentsHash, imageType);
   }
 
-  void addImageLink(UriComponentsBuilder baseUrlBuilder, String contentsHash, String imageType){
+  void addImageLink(UriComponentsBuilder baseUrlBuilder, String contentsHash, String imageType) {
     String imagePath = "/files/image/" + contentsHash;
     String imageLink = buildLinkForForPath(baseUrlBuilder, imagePath);
     addLink(ApiLinkItem.builder().link(imageLink).rel(imageType).build());
