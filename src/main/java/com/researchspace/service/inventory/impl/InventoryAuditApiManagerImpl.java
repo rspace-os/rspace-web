@@ -40,12 +40,12 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
       // initialised to avoid lazy load exceptions.
       Hibernate.initialize(invRec.getImageFileProperty());
       Hibernate.initialize(invRec.getThumbnailFileProperty());
-
-      if(invRec.getImageFileProperty() != null) {
-        invRec.getImageFileProperty().getContentsHash();
-      }
-      if(invRec.getThumbnailFileProperty() != null) {
-        invRec.getThumbnailFileProperty().getContentsHash();
+      if (invRec.isSubSample()) {
+        Sample connectedSample =  ((SubSample) invRec).getSample();
+        if (connectedSample != null) {
+          Hibernate.initialize(connectedSample.getImageFileProperty());
+          Hibernate.initialize(connectedSample.getThumbnailFileProperty());
+        }
       }
       long revisionId = auditedEntity.getRevision().longValue();
       ApiInventoryRecordInfo apiInvRec = ApiInventoryRecordInfo.fromInventoryRecord(invRec);
@@ -85,21 +85,14 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     if (subSample != null) {
       Hibernate.initialize(subSample.getImageFileProperty());
       Hibernate.initialize(subSample.getThumbnailFileProperty());
-      if(subSample.getImageFileProperty() != null) {
-        subSample.getImageFileProperty().getContentsHash();
-      }
-      if(subSample.getThumbnailFileProperty() != null) {
-        subSample.getThumbnailFileProperty().getContentsHash();
-      }
       result = (ApiSubSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(subSample);
       result.setRevisionId(revisionId);
       Hibernate.initialize(result.getImageFileProperty());
       Hibernate.initialize(result.getThumbnailFileProperty());
-      if(result.getImageFileProperty() != null) {
-        result.getImageFileProperty().getContentsHash();
-      }
-      if(result.getThumbnailFileProperty() != null) {
-        result.getThumbnailFileProperty().getContentsHash();
+      Sample connectedSample =  subSample.getSample();
+      if (connectedSample != null) {
+        Hibernate.initialize(connectedSample.getImageFileProperty());
+        Hibernate.initialize(connectedSample.getThumbnailFileProperty());
       }
     }
     return result;
