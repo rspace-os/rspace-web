@@ -56,6 +56,7 @@ const CustomDrawer = withStyles<
     width: drawerWidth,
     flexShrink: 0,
     whiteSpace: "nowrap",
+    zIndex: 1100, // less than the Gallery picker, which is a dialog
   },
   drawerPaper: {
     width: drawerWidth,

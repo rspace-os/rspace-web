@@ -56,7 +56,6 @@ import useViewportDimensions from "../../../util/useViewportDimensions";
 import { observer } from "mobx-react-lite";
 import { autorun } from "mobx";
 import EventBoundary from "../../../components/EventBoundary";
-import { useSearchParams } from "react-router-dom";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -116,6 +115,8 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
 const CustomDrawer = styled(Drawer)(({ open, theme }) => ({
   // on small viewports, it will hidden entirely when not open
   width: open ? "200px" : "64px",
+  // drawer should float over dialog in Inventory
+  zIndex: 1300,
   "& .MuiPaper-root": {
     /*
      * We set this position so that the drawer does not float above the AppBar
@@ -423,6 +424,7 @@ const DrawerTab = styled(
 
 type SidebarArgs = {|
   selectedSection: GallerySection,
+  setSelectedSection: (GallerySection) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,
   path: $ReadOnlyArray<GalleryFile>,
@@ -432,13 +434,13 @@ type SidebarArgs = {|
 
 const Sidebar = ({
   selectedSection,
+  setSelectedSection,
   drawerOpen,
   setDrawerOpen,
   path,
   folderId,
   refreshListing,
 }: SidebarArgs): Node => {
-  const [, setSearchParams] = useSearchParams();
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
@@ -556,7 +558,7 @@ const Sidebar = ({
               if (selectedSection === "DMPs") {
                 refreshListing();
               } else {
-                setSearchParams({ mediaType: "DMPs" });
+                setSelectedSection("DMPs");
               }
             }}
           />
@@ -589,7 +591,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Images"}
               onClick={() => {
-                setSearchParams({ mediaType: "Images" });
+                setSelectedSection("Images");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -606,7 +608,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Audios"}
               onClick={() => {
-                setSearchParams({ mediaType: "Audios" });
+                setSelectedSection("Audios");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -623,7 +625,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Videos"}
               onClick={() => {
-                setSearchParams({ mediaType: "Videos" });
+                setSelectedSection("Videos");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -640,7 +642,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Documents"}
               onClick={() => {
-                setSearchParams({ mediaType: "Documents" });
+                setSelectedSection("Documents");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -657,7 +659,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Chemistry"}
               onClick={() => {
-                setSearchParams({ mediaType: "Chemistry" });
+                setSelectedSection("Chemistry");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -674,7 +676,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "DMPs"}
               onClick={() => {
-                setSearchParams({ mediaType: "DMPs" });
+                setSelectedSection("DMPs");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -691,7 +693,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Snippets"}
               onClick={() => {
-                setSearchParams({ mediaType: "Snippets" });
+                setSelectedSection("Snippets");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -708,7 +710,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "Miscellaneous"}
               onClick={() => {
-                setSearchParams({ mediaType: "Miscellaneous" });
+                setSelectedSection("Miscellaneous");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
@@ -728,7 +730,7 @@ const Sidebar = ({
               drawerOpen={drawerOpen}
               selected={selectedSection === "PdfDocuments"}
               onClick={() => {
-                setSearchParams({ mediaType: "PdfDocuments" });
+                setSelectedSection("PdfDocuments");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />

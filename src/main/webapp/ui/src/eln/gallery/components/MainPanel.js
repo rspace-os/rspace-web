@@ -1169,19 +1169,20 @@ function GalleryMainPanel({
             sx={{ marginTop: 0.75 }}
             flexWrap="nowrap"
             flexGrow="1"
+            height="calc(100% - 56px)"
           >
             <Grid
               item
               container
               direction="column"
-              md={8}
+              md={7}
               lg={8}
               xl={9}
               sx={{
                 mt: 0.75,
               }}
             >
-              <Grid item>
+              <Grid item sx={{ maxWidth: "100% !important" }}>
                 <Stack direction="row" spacing={0.5} alignItems="center">
                   <ActionsMenu
                     refreshListing={refreshListing}
@@ -1376,10 +1377,15 @@ function GalleryMainPanel({
             </Grid>
             <Grid
               item
-              md={4}
+              md={5}
               lg={4}
               xl={3}
-              sx={{ display: { xs: "none", md: "block" }, mt: 0.75 }}
+              sx={{
+                display: { xs: "none", md: "block" },
+                overflowX: "hidden",
+                overflowY: "auto",
+                mt: 0.75,
+              }}
             >
               <InfoPanelForLargeViewports />
             </Grid>
@@ -1404,6 +1410,12 @@ function GalleryMainPanel({
   );
 }
 
+/**
+ * This component constitues most of the Gallery page, including the section
+ * title, the breadcrumbs, the menus and buttons for controlling the listing,
+ * the listing of files itself, the info panel, and the dropzone for dragging
+ * in files from outside the browser.
+ */
 export default (observer(
   GalleryMainPanel
 ): ComponentType<GalleryMainPanelArgs>);

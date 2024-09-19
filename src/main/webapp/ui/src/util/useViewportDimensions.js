@@ -56,6 +56,14 @@ class ViewportDimensions {
   get isViewportLarge(): boolean {
     return this.viewportSize === "lg" || this.viewportSize === "xl";
   }
+
+  get isViewportNotLarge(): boolean {
+    return (
+      this.viewportSize === "xs" ||
+      this.viewportSize === "sm" ||
+      this.viewportSize === "md"
+    );
+  }
 }
 
 /**
