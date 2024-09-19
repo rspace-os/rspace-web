@@ -36,17 +36,8 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
       AuditedEntity<?> auditedEntity = (AuditedEntity<?>) entityRevision;
       InventoryRecord invRec = (InventoryRecord) auditedEntity.getEntity();
 
-      // Hibernate envers loads relationships lazily, so these FileProperties need to be
-      // initialised to avoid lazy load exceptions.
-      Hibernate.initialize(invRec.getImageFileProperty());
-      Hibernate.initialize(invRec.getThumbnailFileProperty());
-      if (invRec.isSubSample()) {
-        Sample connectedSample =  ((SubSample) invRec).getSample();
-        if (connectedSample != null) {
-          Hibernate.initialize(connectedSample.getImageFileProperty());
-          Hibernate.initialize(connectedSample.getThumbnailFileProperty());
-        }
-      }
+      initialiseInventoryRecordRelationships(invRec);
+
       long revisionId = auditedEntity.getRevision().longValue();
       ApiInventoryRecordInfo apiInvRec = ApiInventoryRecordInfo.fromInventoryRecord(invRec);
       apiInvRec.setRevisionId(revisionId);
@@ -64,10 +55,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     ApiSample result = null;
     Sample sample = getInventoryRecordRevision(Sample.class, sampleId, revisionId);
     if (sample != null) {
-      // Hibernate envers loads relationships lazily, so these FileProperties need to be
-      // initialised to avoid lazy load exceptions.
-      Hibernate.initialize(sample.getImageFileProperty());
-      Hibernate.initialize(sample.getThumbnailFileProperty());
+      initialiseInventoryRecordRelationships(sample);
       result = (ApiSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(sample);
       result.setRevisionId(revisionId);
       result.setGlobalId(sample.getOidWithVersion().toString());
@@ -83,17 +71,9 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     ApiSubSample result = null;
     SubSample subSample = getInventoryRecordRevision(SubSample.class, subSampleId, revisionId);
     if (subSample != null) {
-      Hibernate.initialize(subSample.getImageFileProperty());
-      Hibernate.initialize(subSample.getThumbnailFileProperty());
+      initialiseInventoryRecordRelationships(subSample);
       result = (ApiSubSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(subSample);
       result.setRevisionId(revisionId);
-      Hibernate.initialize(result.getImageFileProperty());
-      Hibernate.initialize(result.getThumbnailFileProperty());
-      Sample connectedSample =  subSample.getSample();
-      if (connectedSample != null) {
-        Hibernate.initialize(connectedSample.getImageFileProperty());
-        Hibernate.initialize(connectedSample.getThumbnailFileProperty());
-      }
     }
     return result;
   }
@@ -128,9 +108,24 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     AuditedEntity<T> entityRevision = auditManager.getObjectForRevision(cls, recordId, revisionId);
     if (entityRevision != null) {
       invRec = entityRevision.getEntity();
-      Hibernate.initialize(invRec.getImageFileProperty());
-      Hibernate.initialize(invRec.getThumbnailFileProperty());
     }
     return invRec;
+  }
+
+  /***
+   * Hibernate envers lazily loads all entity relationships regardless of the fetch type defined
+   * in the entity mappings. Therefore, these FileProperty fields need to be explicitly initialised to
+   * avoid lazy initialisation issues when attempting to access the file properties.
+   * Subsamples in particular need to have the FileProperty fields of a connected sample initialised
+   */
+  private void initialiseInventoryRecordRelationships(InventoryRecord record){
+    Hibernate.initialize(record.getImageFileProperty());
+    Hibernate.initialize(record.getThumbnailFileProperty());
+    if (record.isSubSample()) {
+      Sample connectedSample =  ((SubSample) record).getSample();
+      if (connectedSample != null) {
+        initialiseInventoryRecordRelationships(connectedSample);
+      }
+    }
   }
 }
