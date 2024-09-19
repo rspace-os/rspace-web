@@ -1619,13 +1619,11 @@ export default class Result
       return fd;
     };
 
-    const newFiles = await Promise.all(
-      this.attachments
-        .filter((a) => !a.id && !a.removed)
-        .map((a) =>
-          toFormData(a).then((formData) => ApiService.post("files", formData))
-        )
-    );
+    const newFiles = this.attachments
+      .filter((a) => !a.id && !a.removed)
+      .map((a) =>
+        toFormData(a).then((formData) => ApiService.post("files", formData))
+      );
 
     await Promise.all([
       ...newFiles,
