@@ -72,6 +72,22 @@ import useOneDimensionalRovingTabIndex from "../../../components/useOneDimension
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
+import Divider from "@mui/material/Divider";
+import {
+  InfoPanelForSmallViewports,
+  InfoPanelForLargeViewports,
+} from "./InfoPanel";
+import {
+  useOpen,
+  useImagePreviewOfGalleryFile,
+  useCollaboraEdit,
+  useOfficeOnlineEdit,
+  usePdfPreviewOfGalleryFile,
+  useAsposePreviewOfGalleryFile,
+} from "../primaryActionHooks";
+import { useImagePreview } from "./CallableImagePreview";
+import { usePdfPreview } from "./CallablePdfPreview";
+import { useAsposePreview } from "./CallableAsposePreview";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -424,13 +440,22 @@ const GridView = observer(
   |}) => {
     const dndContext = useDndContext();
     const selection = useGallerySelection();
+    const { openImagePreview } = useImagePreview();
+    const { openPdfPreview } = usePdfPreview();
+    const { openAsposePreview } = useAsposePreview();
+    const canOpenAsFolder = useOpen();
+    const canPreviewAsImage = useImagePreviewOfGalleryFile();
+    const canEditWithCollabora = useCollaboraEdit();
+    const canEditWithOfficeOnline = useOfficeOnlineEdit();
+    const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
+    const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
       xs: 6,
       sm: 4,
-      md: 3,
-      lg: 2,
+      md: 4,
+      lg: 3,
       xl: 2,
     };
     const cols = 12 / cardWidth[viewportDimensions.viewportSize];
@@ -615,6 +640,39 @@ const GridView = observer(
                   selection.append(file);
                 }
               } else {
+                // on double click, try and figure out what the user would want
+                // to do with a file of this type based on what services are
+                // configured
+                if (e.detail > 1) {
+                  canOpenAsFolder(file)
+                    .orElseTry(() =>
+                      canPreviewAsImage(file).map((url) => () => {
+                        openImagePreview(url);
+                      })
+                    )
+                    .orElseTry(() =>
+                      canEditWithCollabora(file).map((url) => () => {
+                        window.open(url);
+                      })
+                    )
+                    .orElseTry(() =>
+                      canEditWithOfficeOnline(file).map((url) => () => {
+                        window.open(url);
+                      })
+                    )
+                    .orElseTry(() =>
+                      canPreviewAsPdf(file).map((url) => () => {
+                        openPdfPreview(url);
+                      })
+                    )
+                    .orElseTry(() =>
+                      canPreviewWithAspose(file).map(() => () => {
+                        openAsposePreview(file);
+                      })
+                    )
+                    .orElse(() => {})();
+                  return;
+                }
                 selection.clear();
                 selection.append(file);
                 setShiftOrigin({
@@ -635,326 +693,329 @@ const GridView = observer(
 );
 
 const FileCard = styled(
-  //eslint-disable-next-line react/display-name
-  React.forwardRef(
-    (
-      {
-        file,
-        className,
-        selected,
-        index,
-        onClick,
-        tabIndex,
-        onFocus,
-        onBlur,
-      }: {|
-        file: GalleryFile,
-        className: string,
-        selected: boolean,
-        index: number,
-        onClick: (Event) => void,
-        tabIndex: number,
-        onFocus: () => void,
-        onBlur: () => void,
-      |},
-      ref
-    ) => {
-      const { uploadFiles } = useGalleryActions();
-      const selection = useGallerySelection();
-      const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
-        useFileImportDropZone({
-          onDrop: (files) => {
-            void uploadFiles([...file.path, file], file.id, files);
-            /*
-             * No need to refresh the listing as the uploaded file has been
-             * placed inside a folder into which the user cannot currently see
-             */
-          },
+  observer(
+    //eslint-disable-next-line react/display-name
+    React.forwardRef(
+      (
+        {
+          file,
+          className,
+          selected,
+          index,
+          onClick,
+          tabIndex,
+          onFocus,
+          onBlur,
+        }: {|
+          file: GalleryFile,
+          className: string,
+          selected: boolean,
+          index: number,
+          onClick: (Event) => void,
+          tabIndex: number,
+          onFocus: () => void,
+          onBlur: () => void,
+        |},
+        ref
+      ) => {
+        const { uploadFiles } = useGalleryActions();
+        const selection = useGallerySelection();
+        const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
+          useFileImportDropZone({
+            onDrop: (files) => {
+              void uploadFiles([...file.path, file], file.id, files);
+              /*
+               * No need to refresh the listing as the uploaded file has been
+               * placed inside a folder into which the user cannot currently see
+               */
+            },
+            disabled: !file.isFolder,
+          });
+        const { setNodeRef: setDropRef, isOver } = useDroppable({
+          id: file.id,
           disabled: !file.isFolder,
+          data: {
+            path: file.path,
+            destination: folderDestination(file),
+          },
         });
-      const { setNodeRef: setDropRef, isOver } = useDroppable({
-        id: file.id,
-        disabled: !file.isFolder,
-        data: {
-          path: file.path,
-          destination: folderDestination(file),
-        },
-      });
-      const {
-        attributes,
-        listeners,
-        setNodeRef: setDragRef,
-        transform,
-      } = useDraggable({
-        disabled: false,
-        id: file.id,
-        data: {
-          /*
-           * If this `file` is one of the selected files then all of the
-           * selected files are to be moved by the drag operation. If it is not
-           * included then just move this file.
-           */
-          filesBeingMoved: selection.includes(file)
-            ? selection.asSet()
-            : new RsSet([file]),
-        },
-      });
-      /*
-       * DndKit wants to set the role to "button" but if we do that then the
-       * keyboard controls of MUI's SimpleTreeView stop working. Keeping the
-       * correct role for tree items doesn't prevent DndKit from working.
-       */
-      delete attributes.role;
+        const {
+          attributes,
+          listeners,
+          setNodeRef: setDragRef,
+          transform,
+        } = useDraggable({
+          disabled: false,
+          id: file.id,
+          data: {
+            /*
+             * If this `file` is one of the selected files then all of the
+             * selected files are to be moved by the drag operation. If it is not
+             * included then just move this file.
+             */
+            filesBeingMoved: selection.includes(file)
+              ? selection.asSet()
+              : new RsSet([file]),
+          },
+        });
+        /*
+         * DndKit wants to set the role to "button" but if we do that then the
+         * keyboard controls of MUI's SimpleTreeView stop working. Keeping the
+         * correct role for tree items doesn't prevent DndKit from working.
+         */
+        delete attributes.role;
 
-      const dndContext = useDndContext();
-      const dndInProgress = Boolean(dndContext.active);
+        const dndContext = useDndContext();
+        const dndInProgress = Boolean(dndContext.active);
 
-      const dragStyle: { [string]: string | number } = transform
-        ? {
-            transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
-            zIndex: 1400, // Above the sidebar
-            position: "fixed",
-            boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
-          }
-        : {};
-      const dropStyle: { [string]: string | number } = isOver
-        ? {
-            borderColor: SELECTED_OR_FOCUS_BLUE,
-          }
-        : dndInProgress && file.isFolder
-        ? {
-            border: "2px solid white",
-            borderWidth: "2px",
-            borderRadius: "8px",
-            animation: "drop 2s linear infinite",
-          }
-        : {};
-      const inGroupBeingDraggedStyle: { [string]: string | number } =
-        (
-          dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
-        ).hasWithEq(file, (a, b) => a.id === b.id) &&
-        dndContext.active?.id !== file.id
+        const dragStyle: { [string]: string | number } = transform
           ? {
-              opacity: 0.2,
+              transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
+              zIndex: 1400, // Above the sidebar
+              position: "fixed",
+              boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
             }
           : {};
-      const fileUploadDropping: { [string]: string | number } = over
-        ? {
-            borderColor: SELECTED_OR_FOCUS_BLUE,
-          }
-        : {};
+        const dropStyle: { [string]: string | number } = isOver
+          ? {
+              borderColor: SELECTED_OR_FOCUS_BLUE,
+            }
+          : dndInProgress && file.isFolder
+          ? {
+              border: "2px solid white",
+              borderWidth: "2px",
+              borderRadius: "8px",
+              animation: "drop 2s linear infinite",
+            }
+          : {};
+        const inGroupBeingDraggedStyle: { [string]: string | number } =
+          (
+            dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
+          ).hasWithEq(file, (a, b) => a.id === b.id) &&
+          dndContext.active?.id !== file.id
+            ? {
+                opacity: 0.2,
+              }
+            : {};
+        const fileUploadDropping: { [string]: string | number } = over
+          ? {
+              borderColor: SELECTED_OR_FOCUS_BLUE,
+            }
+          : {};
 
-      const viewportDimensions = useViewportDimensions();
-      const cardWidth = {
-        xs: 6,
-        sm: 4,
-        md: 3,
-        lg: 2,
-        xl: 2,
-      };
+        const viewportDimensions = useViewportDimensions();
+        const cardWidth = {
+          xs: 6,
+          sm: 4,
+          md: 4,
+          lg: 3,
+          xl: 2,
+        };
 
-      return (
-        <Fade
-          in={true}
-          timeout={
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              ? 0
-              : 400
-          }
-        >
-          <Grid
-            item
-            {...cardWidth}
-            sx={{
-              /*
-               * This way, the animation takes the same amount of time (36ms) for
-               * each row of cards
-               */
-              transitionDelay: window.matchMedia(
-                "(prefers-reduced-motion: reduce)"
-              ).matches
-                ? "0s"
-                : `${
-                    (index + 1) * cardWidth[viewportDimensions.viewportSize] * 3
-                  }ms !important`,
-            }}
+        return (
+          <Fade
+            in={true}
+            timeout={
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? 0
+                : 400
+            }
           >
-            <Card
-              elevation={0}
-              className={className}
-              /*
-               * These are for dragging files from outside the browser
-               */
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              onDragEnter={onDragEnter}
-              onDragLeave={onDragLeave}
-              /*
-               * These are for dragging files between folders within the gallery
-               */
-              ref={(node) => {
-                setDropRef(node);
-                setDragRef(node);
-                // $FlowExpectedError[prop-missing]
-                if (ref) ref.current = node;
-              }}
-              {...listeners}
-              {...attributes}
-              tabIndex={tabIndex}
-              onFocus={onFocus}
-              onBlur={onBlur}
-              style={{
-                ...dragStyle,
-                ...dropStyle,
-                ...inGroupBeingDraggedStyle,
-                ...fileUploadDropping,
+            <Grid
+              item
+              {...cardWidth}
+              sx={{
                 /*
-                 * We don't need the outline as the selected styles will indicate
-                 * which item has focus
+                 * This way, the animation takes the same amount of time (36ms) for
+                 * each row of cards
                  */
-                outline: "none",
+                transitionDelay: window.matchMedia(
+                  "(prefers-reduced-motion: reduce)"
+                ).matches
+                  ? "0s"
+                  : `${
+                      (index + 1) *
+                      cardWidth[viewportDimensions.viewportSize] *
+                      3
+                    }ms !important`,
               }}
-              /*
-               * We conditionally just add the onKeyDown when file has an
-               * `open` action (which is to say it is a folder), leaving the
-               * keyDown event to propagate up to the KeyboardSensor of the
-               * drag-and-drop mechanism for all other files
-               */
-              {...(file.open
-                ? {
-                    onKeyDown: (e) => {
-                      if (e.key === " ") file.open?.();
-                    },
-                  }
-                : {})}
             >
-              <CardActionArea
-                role={file.open ? "button" : "checkbox"}
-                aria-checked={selected}
-                tabIndex={-1}
-                onFocus={(e) => {
+              <Card
+                elevation={0}
+                className={className}
+                /*
+                 * These are for dragging files from outside the browser
+                 */
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                onDragEnter={onDragEnter}
+                onDragLeave={onDragLeave}
+                /*
+                 * These are for dragging files between folders within the gallery
+                 */
+                ref={(node) => {
+                  setDropRef(node);
+                  setDragRef(node);
+                  // $FlowExpectedError[prop-missing]
+                  if (ref) ref.current = node;
+                }}
+                {...listeners}
+                {...attributes}
+                tabIndex={tabIndex}
+                onFocus={onFocus}
+                onBlur={onBlur}
+                style={{
+                  ...dragStyle,
+                  ...dropStyle,
+                  ...inGroupBeingDraggedStyle,
+                  ...fileUploadDropping,
                   /*
-                   * We're manually handling focus states through a roving tab
-                   * index on the GridView component, so we don't need to
-                   * handle focus state triggered by keyboard events here.
-                   * Moreover, we don't want mouse events, such as clicking, to
-                   * trigger a focus event either as the file with the current
-                   * tabIndexCoord will end up selected instead of the one the
-                   * user taps.
+                   * We don't need the outline as the selected styles will indicate
+                   * which item has focus
                    */
-                  e.stopPropagation();
+                  outline: "none",
                 }}
-                onClick={(e) => {
-                  if (file.open) file.open();
-                  else onClick(e);
-                }}
-                sx={{ height: "100%" }}
+                /*
+                 * We conditionally just add the onKeyDown when file has an
+                 * `open` action (which is to say it is a folder), leaving the
+                 * keyDown event to propagate up to the KeyboardSensor of the
+                 * drag-and-drop mechanism for all other files
+                 */
+                {...(file.open
+                  ? {
+                      onKeyDown: (e) => {
+                        if (e.key === " ") file.open?.();
+                      },
+                    }
+                  : {})}
               >
-                <Grid
-                  container
-                  direction="column"
-                  height="100%"
-                  flexWrap="nowrap"
+                <CardActionArea
+                  role={file.open ? "button" : "checkbox"}
+                  aria-checked={selected}
+                  tabIndex={-1}
+                  onFocus={(e) => {
+                    /*
+                     * We're manually handling focus states through a roving tab
+                     * index on the GridView component, so we don't need to
+                     * handle focus state triggered by keyboard events here.
+                     * Moreover, we don't want mouse events, such as clicking, to
+                     * trigger a focus event either as the file with the current
+                     * tabIndexCoord will end up selected instead of the one the
+                     * user taps.
+                     */
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    onClick(e);
+                  }}
+                  sx={{ height: "100%" }}
                 >
                   <Grid
-                    item
-                    sx={{
-                      flexShrink: 0,
-                      padding: "8px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: "calc(100% - 9999999px)",
-                      flexDirection: "column",
-                      flexGrow: 1,
-                    }}
-                  >
-                    <Avatar
-                      src={file.thumbnailUrl}
-                      imgProps={{
-                        role: "presentation",
-                      }}
-                      variant="rounded"
-                      sx={{
-                        width: "auto",
-                        height: "100%",
-                        aspectRatio: "1 / 1",
-                        fontSize: "5em",
-                        backgroundColor: "transparent",
-                        pointerEvents: "none",
-                      }}
-                    >
-                      <FileIcon fontSize="inherit" />
-                    </Avatar>
-                  </Grid>
-                  <Grid
-                    item
                     container
-                    direction="row"
+                    direction="column"
+                    height="100%"
                     flexWrap="nowrap"
-                    alignItems="baseline"
-                    sx={{
-                      padding: "8px",
-                      paddingTop: 0,
-                    }}
                   >
                     <Grid
                       item
                       sx={{
-                        textAlign: "center",
+                        flexShrink: 0,
+                        padding: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "calc(100% - 9999999px)",
+                        flexDirection: "column",
                         flexGrow: 1,
-                        ...(selected
-                          ? {
-                              backgroundColor: window.matchMedia(
-                                "(prefers-contrast: more)"
-                              ).matches
-                                ? "black"
-                                : "#35afef",
-                              p: 0.25,
-                              borderRadius: "4px",
-                              mx: 0.5,
-                            }
-                          : {}),
                       }}
                     >
-                      <Typography
+                      <Avatar
+                        src={file.thumbnailUrl}
+                        imgProps={{
+                          role: "presentation",
+                        }}
+                        variant="rounded"
                         sx={{
-                          ...(selected
-                            ? {
-                                color: window.matchMedia(
-                                  "(prefers-contrast: more)"
-                                ).matches
-                                  ? "white"
-                                  : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-                              }
-                            : {}),
-                          fontSize: "0.8125rem",
-                          fontWeight: window.matchMedia(
-                            "(prefers-contrast: more)"
-                          ).matches
-                            ? 700
-                            : 400,
-
-                          // wrap onto a second line, but use an ellipsis after that
-                          overflowWrap: "anywhere",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          display: "-webkit-box",
-                          WebkitLineClamp: "2",
-                          WebkitBoxOrient: "vertical",
+                          width: "auto",
+                          height: "100%",
+                          aspectRatio: "1 / 1",
+                          fontSize: "5em",
+                          backgroundColor: "transparent",
+                          pointerEvents: "none",
                         }}
                       >
-                        {file.name}
-                      </Typography>
+                        <FileIcon fontSize="inherit" />
+                      </Avatar>
+                    </Grid>
+                    <Grid
+                      item
+                      container
+                      direction="row"
+                      flexWrap="nowrap"
+                      alignItems="baseline"
+                      sx={{
+                        padding: "8px",
+                        paddingTop: 0,
+                      }}
+                    >
+                      <Grid
+                        item
+                        sx={{
+                          textAlign: "center",
+                          flexGrow: 1,
+                          ...(selected
+                            ? {
+                                backgroundColor: (theme) =>
+                                  window.matchMedia("(prefers-contrast: more)")
+                                    .matches
+                                    ? "black"
+                                    : theme.palette.callToAction.main,
+                                p: 0.25,
+                                borderRadius: "4px",
+                                mx: 0.5,
+                              }
+                            : {}),
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            ...(selected
+                              ? {
+                                  color: window.matchMedia(
+                                    "(prefers-contrast: more)"
+                                  ).matches
+                                    ? "white"
+                                    : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
+                                }
+                              : {}),
+                            fontSize: "0.8125rem",
+                            fontWeight: window.matchMedia(
+                              "(prefers-contrast: more)"
+                            ).matches
+                              ? 700
+                              : 400,
+
+                            // wrap onto a second line, but use an ellipsis after that
+                            overflowWrap: "anywhere",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitLineClamp: "2",
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {file.name}
+                        </Typography>
+                      </Grid>
                     </Grid>
                   </Grid>
-                </Grid>
-              </CardActionArea>
-            </Card>
-          </Grid>
-        </Fade>
-      );
-    }
+                </CardActionArea>
+              </Card>
+            </Grid>
+          </Fade>
+        );
+      }
+    )
   )
 )(({ selected }) => ({
   height: "150px",
@@ -1053,6 +1114,7 @@ function GalleryMainPanel({
       sx={{
         position: "relative",
         overflowY: "hidden",
+        pr: 2.5,
         ...(over
           ? {
               borderColor: SELECTED_OR_FOCUS_BLUE,
@@ -1097,198 +1159,236 @@ function GalleryMainPanel({
               </Fade>
             </Typography>
           </Grid>
-          <Grid item sx={{ marginTop: 0.5 }}>
-            <Stack spacing={0.5}>
-              <Path
-                section={selectedSection}
-                path={path}
-                clearPath={clearPath}
-              />
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <ActionsMenu
-                  refreshListing={refreshListing}
-                  section={selectedSection}
-                  folderId={folderId}
-                />
-                <Box sx={{ flexGrow: 1 }}></Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<TreeIcon />}
-                  onClick={(e) => {
-                    setViewMenuAnchorEl(e.target);
-                  }}
-                  aria-haspopup="menu"
-                >
-                  Views
-                </Button>
-                <StyledMenu
-                  open={Boolean(viewMenuAnchorEl)}
-                  anchorEl={viewMenuAnchorEl}
-                  onClose={() => setViewMenuAnchorEl(null)}
-                  MenuListProps={{
-                    disablePadding: true,
-                  }}
-                >
-                  <NewMenuItem
-                    title="Grid"
-                    subheader="Browse by thumbnail previews"
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={<GridIcon />}
-                    onClick={() => {
-                      setViewMode("grid");
-                      setViewMenuAnchorEl(null);
-                      selection.clear();
-                    }}
-                  />
-                  <NewMenuItem
-                    title="Tree"
-                    subheader="View and manage folder hierarchy"
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={<TreeIcon />}
-                    onClick={() => {
-                      setViewMode("tree");
-                      setViewMenuAnchorEl(null);
-                      selection.clear();
-                    }}
-                  />
-                </StyledMenu>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<SwapVertIcon />}
-                  onClick={(e) => {
-                    setSortMenuAnchorEl(e.target);
-                  }}
-                  aria-haspopup="menu"
-                >
-                  Sort
-                </Button>
-                <StyledMenu
-                  open={Boolean(sortMenuAnchorEl)}
-                  anchorEl={sortMenuAnchorEl}
-                  onClose={() => setSortMenuAnchorEl(null)}
-                  MenuListProps={{
-                    disablePadding: true,
-                  }}
-                >
-                  <NewMenuItem
-                    title={`Name${match<void, string>([
-                      [() => orderBy !== "name", ""],
-                      [() => sortOrder === "ASC", " (Sorted from A to Z)"],
-                      [() => sortOrder === "DESC", " (Sorted from Z to A)"],
-                    ])()}`}
-                    subheader={match<void, string>([
-                      [() => orderBy !== "name", "Tap to sort from A to Z"],
-                      [() => sortOrder === "ASC", "Tap to sort from Z to A"],
-                      [() => sortOrder === "DESC", "Tap to sort from A to Z"],
-                    ])()}
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={match<void, Node>([
-                      [
-                        () => orderBy !== "name",
-                        <HorizontalRuleIcon key={null} />,
-                      ],
-                      [
-                        () => sortOrder === "ASC",
-                        <ArrowDownwardIcon key={null} />,
-                      ],
-                      [
-                        () => sortOrder === "DESC",
-                        <ArrowUpwardIcon key={null} />,
-                      ],
-                    ])()}
-                    onClick={() => {
-                      setSortMenuAnchorEl(null);
-                      if (orderBy === "name") {
-                        if (sortOrder === "ASC") {
-                          setSortOrder("DESC");
-                        } else {
-                          setSortOrder("ASC");
-                        }
-                      } else {
-                        setOrderBy("name");
-                        setSortOrder("ASC");
-                      }
-                    }}
-                  />
-                  <NewMenuItem
-                    title={`Modification Date${match<void, string>([
-                      [() => orderBy !== "modificationDate", ""],
-                      [() => sortOrder === "ASC", " (Sorted oldest first)"],
-                      [() => sortOrder === "DESC", " (Sorted newest first)"],
-                    ])()}`}
-                    subheader={match<void, string>([
-                      [
-                        () => orderBy !== "modificationDate",
-                        "Tap to sort oldest first",
-                      ],
-                      [() => sortOrder === "ASC", "Tap to sort newest first"],
-                      [() => sortOrder === "DESC", "Tap to sort oldest first"],
-                    ])()}
-                    backgroundColor={COLOR.background}
-                    foregroundColor={COLOR.contrastText}
-                    avatar={match<void, Node>([
-                      [
-                        () => orderBy !== "modificationDate",
-                        <HorizontalRuleIcon key={null} />,
-                      ],
-                      [
-                        () => sortOrder === "ASC",
-                        <ArrowDownwardIcon key={null} />,
-                      ],
-                      [
-                        () => sortOrder === "DESC",
-                        <ArrowUpwardIcon key={null} />,
-                      ],
-                    ])()}
-                    onClick={() => {
-                      setSortMenuAnchorEl(null);
-                      if (orderBy === "modificationDate") {
-                        if (sortOrder === "ASC") {
-                          setSortOrder("DESC");
-                        } else {
-                          setSortOrder("ASC");
-                        }
-                      } else {
-                        setOrderBy("modificationDate");
-                        setSortOrder("ASC");
-                      }
-                    }}
-                  />
-                </StyledMenu>
-              </Stack>
-            </Stack>
+          <Grid item sx={{ marginTop: 1.25 }}>
+            <Path section={selectedSection} path={path} clearPath={clearPath} />
           </Grid>
           <Grid
             item
-            sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}
-            flexGrow={1}
+            container
+            direction="row"
+            sx={{ marginTop: 0.75 }}
+            flexWrap="nowrap"
+            flexGrow="1"
           >
-            {viewMode === "tree" &&
-              FetchingData.match(galleryListing, {
-                loading: () => <></>,
-                error: (error) => <>{error}</>,
-                success: (listing) => (
-                  <TreeView
-                    listing={listing}
-                    path={path}
-                    selectedSection={selectedSection}
+            <Grid
+              item
+              container
+              direction="column"
+              md={8}
+              lg={8}
+              xl={9}
+              sx={{
+                mt: 0.75,
+              }}
+            >
+              <Grid item>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <ActionsMenu
                     refreshListing={refreshListing}
-                    sortOrder={sortOrder}
-                    orderBy={orderBy}
+                    section={selectedSection}
+                    folderId={folderId}
                   />
-                ),
-              })}
-            {viewMode === "grid" &&
-              FetchingData.match(galleryListing, {
-                loading: () => <></>,
-                error: (error) => <>{error}</>,
-                success: (listing) => <GridView listing={listing} />,
-              })}
+                  <Box sx={{ flexGrow: 1 }}></Box>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<TreeIcon />}
+                    onClick={(e) => {
+                      setViewMenuAnchorEl(e.target);
+                    }}
+                    aria-haspopup="menu"
+                  >
+                    Views
+                  </Button>
+                  <StyledMenu
+                    open={Boolean(viewMenuAnchorEl)}
+                    anchorEl={viewMenuAnchorEl}
+                    onClose={() => setViewMenuAnchorEl(null)}
+                    MenuListProps={{
+                      disablePadding: true,
+                    }}
+                  >
+                    <NewMenuItem
+                      title="Grid"
+                      subheader="Browse by thumbnail previews"
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={<GridIcon />}
+                      onClick={() => {
+                        setViewMode("grid");
+                        setViewMenuAnchorEl(null);
+                        selection.clear();
+                      }}
+                    />
+                    <NewMenuItem
+                      title="Tree"
+                      subheader="View and manage folder hierarchy"
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={<TreeIcon />}
+                      onClick={() => {
+                        setViewMode("tree");
+                        setViewMenuAnchorEl(null);
+                        selection.clear();
+                      }}
+                    />
+                  </StyledMenu>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<SwapVertIcon />}
+                    onClick={(e) => {
+                      setSortMenuAnchorEl(e.target);
+                    }}
+                    aria-haspopup="menu"
+                  >
+                    Sort
+                  </Button>
+                  <StyledMenu
+                    open={Boolean(sortMenuAnchorEl)}
+                    anchorEl={sortMenuAnchorEl}
+                    onClose={() => setSortMenuAnchorEl(null)}
+                    MenuListProps={{
+                      disablePadding: true,
+                    }}
+                  >
+                    <NewMenuItem
+                      title={`Name${match<void, string>([
+                        [() => orderBy !== "name", ""],
+                        [() => sortOrder === "ASC", " (Sorted from A to Z)"],
+                        [() => sortOrder === "DESC", " (Sorted from Z to A)"],
+                      ])()}`}
+                      subheader={match<void, string>([
+                        [() => orderBy !== "name", "Tap to sort from A to Z"],
+                        [() => sortOrder === "ASC", "Tap to sort from Z to A"],
+                        [() => sortOrder === "DESC", "Tap to sort from A to Z"],
+                      ])()}
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={match<void, Node>([
+                        [
+                          () => orderBy !== "name",
+                          <HorizontalRuleIcon key={null} />,
+                        ],
+                        [
+                          () => sortOrder === "ASC",
+                          <ArrowDownwardIcon key={null} />,
+                        ],
+                        [
+                          () => sortOrder === "DESC",
+                          <ArrowUpwardIcon key={null} />,
+                        ],
+                      ])()}
+                      onClick={() => {
+                        setSortMenuAnchorEl(null);
+                        if (orderBy === "name") {
+                          if (sortOrder === "ASC") {
+                            setSortOrder("DESC");
+                          } else {
+                            setSortOrder("ASC");
+                          }
+                        } else {
+                          setOrderBy("name");
+                          setSortOrder("ASC");
+                        }
+                      }}
+                    />
+                    <NewMenuItem
+                      title={`Modification Date${match<void, string>([
+                        [() => orderBy !== "modificationDate", ""],
+                        [() => sortOrder === "ASC", " (Sorted oldest first)"],
+                        [() => sortOrder === "DESC", " (Sorted newest first)"],
+                      ])()}`}
+                      subheader={match<void, string>([
+                        [
+                          () => orderBy !== "modificationDate",
+                          "Tap to sort oldest first",
+                        ],
+                        [() => sortOrder === "ASC", "Tap to sort newest first"],
+                        [
+                          () => sortOrder === "DESC",
+                          "Tap to sort oldest first",
+                        ],
+                      ])()}
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={match<void, Node>([
+                        [
+                          () => orderBy !== "modificationDate",
+                          <HorizontalRuleIcon key={null} />,
+                        ],
+                        [
+                          () => sortOrder === "ASC",
+                          <ArrowDownwardIcon key={null} />,
+                        ],
+                        [
+                          () => sortOrder === "DESC",
+                          <ArrowUpwardIcon key={null} />,
+                        ],
+                      ])()}
+                      onClick={() => {
+                        setSortMenuAnchorEl(null);
+                        if (orderBy === "modificationDate") {
+                          if (sortOrder === "ASC") {
+                            setSortOrder("DESC");
+                          } else {
+                            setSortOrder("ASC");
+                          }
+                        } else {
+                          setOrderBy("modificationDate");
+                          setSortOrder("ASC");
+                        }
+                      }}
+                    />
+                  </StyledMenu>
+                </Stack>
+              </Grid>
+              <Grid
+                item
+                sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}
+                flexGrow={1}
+              >
+                {viewMode === "tree" &&
+                  FetchingData.match(galleryListing, {
+                    loading: () => <></>,
+                    error: (error) => <>{error}</>,
+                    success: (listing) => (
+                      <TreeView
+                        listing={listing}
+                        path={path}
+                        selectedSection={selectedSection}
+                        refreshListing={refreshListing}
+                        sortOrder={sortOrder}
+                        orderBy={orderBy}
+                      />
+                    ),
+                  })}
+                {viewMode === "grid" &&
+                  FetchingData.match(galleryListing, {
+                    loading: () => <></>,
+                    error: (error) => <>{error}</>,
+                    success: (listing) => <GridView listing={listing} />,
+                  })}
+              </Grid>
+            </Grid>
+            <Grid item sx={{ mx: 1.5, display: { xs: "none", md: "block" } }}>
+              <Divider orientation="vertical" />
+            </Grid>
+            <Grid
+              item
+              md={4}
+              lg={4}
+              xl={3}
+              sx={{ display: { xs: "none", md: "block" }, mt: 0.75 }}
+            >
+              <InfoPanelForLargeViewports />
+            </Grid>
+            {selection
+              .asSet()
+              .only.map((file) => (
+                <InfoPanelForSmallViewports key={null} file={file} />
+              ))
+              .orElse(null)}
           </Grid>
         </Grid>
         <Slide direction="up" in={over} mountOnEnter unmountOnExit>

@@ -3,7 +3,7 @@
 import React, { type Node } from "react";
 import "photoswipe/dist/photoswipe.css";
 import { Gallery, Item } from "react-photoswipe-gallery";
-import { type URL } from "../../util/types";
+import { type URL } from "../util/types";
 import { makeStyles } from "tss-react/mui";
 
 const useStyles = makeStyles()(() => ({
@@ -13,7 +13,7 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-type PreviewSize = {|
+export type PreviewSize = {|
   width: number,
   height: number,
 |};
@@ -39,7 +39,7 @@ export default function ImagePreview({
       options={{
         showAnimationDuration: 0,
         hideAnimationDuration: 0,
-        modal: modal,
+        modal,
         escKey: false,
       }}
       withDownloadButton

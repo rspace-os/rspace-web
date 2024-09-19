@@ -30,6 +30,14 @@ describe("parseDate", () => {
     expect(d.getDay()).toEqual(2);
   });
 
+  test("Parsers UNIX timestamp", () => {
+    const input = new Date();
+    const d = parseDate(Math.floor(input.getTime())).elseThrow();
+    expect(d.getFullYear()).toEqual(input.getFullYear());
+    expect(d.getMonth()).toEqual(input.getMonth());
+    expect(d.getDay()).toEqual(input.getDay());
+  });
+
   test("Fails on invalid dates", () => {
     const input = "2021-13-02T00:00:00.000Z";
     const d = parseDate(input);

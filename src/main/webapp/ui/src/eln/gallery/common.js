@@ -79,22 +79,22 @@ export const gallerySectionCollectiveNoun = {
 export const COLOR = {
   main: {
     hue: 280,
-    saturation: 7,
+    saturation: 14,
     lightness: 81,
   },
   darker: {
     hue: 280,
-    saturation: 8,
+    saturation: 13,
     lightness: 22,
   },
   contrastText: {
     hue: 280,
-    saturation: 8,
+    saturation: 13,
     lightness: 19,
   },
   background: {
     hue: 280,
-    saturation: 7,
+    saturation: 10,
     lightness: 81,
   },
   backgroundContrastText: {

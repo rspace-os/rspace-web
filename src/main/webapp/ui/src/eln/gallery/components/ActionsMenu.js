@@ -365,7 +365,7 @@ function ActionsMenu({
     <>
       <Button
         variant="contained"
-        color="primary"
+        color="callToAction"
         size="small"
         disabled={selection.isEmpty}
         aria-haspopup="menu"

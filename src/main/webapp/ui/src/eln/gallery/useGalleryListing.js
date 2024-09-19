@@ -12,23 +12,88 @@ import {
   justFilenameExtension,
 } from "../../util/files";
 import { useGallerySelection } from "./useGallerySelection";
+import { observable, runInAction } from "mobx";
 
 export opaque type Id = number;
 export function idToString(id: Id): string {
   return `${id}`;
 }
 
+type DescriptionInternalState =
+  | {| key: "missing" |}
+  | {| key: "empty" |}
+  | {| key: "present", value: string |};
+export class Description {
+  +#state: DescriptionInternalState;
+
+  constructor(state: DescriptionInternalState) {
+    this.#state = state;
+  }
+
+  static Missing(): Description {
+    return new Description({ key: "missing" });
+  }
+
+  static Empty(): Description {
+    return new Description({ key: "empty" });
+  }
+
+  static Present(value: string): Description {
+    return new Description({ key: "present", value });
+  }
+
+  match<T>(opts: {|
+    missing: () => T,
+    empty: () => T,
+    present: (string) => T,
+  |}): T {
+    if (this.#state.key === "missing") return opts.missing();
+    if (this.#state.key === "empty") return opts.empty();
+    return opts.present(this.#state.value);
+  }
+}
+
+/**
+ * Objects of this shape model files and folders in the Gallery.
+ */
 export type GalleryFile = {|
   id: Id,
+  globalId: string,
   name: string,
+
+  // null for folders, otherwise usually a non-empty string
   extension: string | null,
-  modificationDate: number,
+
+  creationDate: Date,
+  modificationDate: Date,
   type: string,
   thumbnailUrl: string,
+  ownerName: string,
+  description: Description,
 
+  /*
+   * A positive natural number, that is incremented whenever the user uploads a
+   * new version or otherwise edits the file
+   */
+  version: number,
+
+  // In bytes. Folders are always 0 bytes
+  size: number,
+
+  /*
+   * A list of folders from the top gallery section to the parent of this
+   * file/folder
+   */
   path: $ReadOnlyArray<GalleryFile>,
+
+  /*
+   * The names of the folders that form the path, separated with forward slashes
+   */
   pathAsString: () => string,
+
+  // if the file is a folder, open it
   open?: () => void,
+
   downloadHref?: string,
 
   isFolder: boolean,
@@ -45,6 +110,9 @@ export type GalleryFile = {|
    * to the name before the extension, leaving the extension in place.
    */
   transformFilename: ((string) => string) => string,
+
+  setName: (string) => void,
+  setDescription: (Description) => void,
 |};
 
 /**
@@ -145,7 +213,7 @@ function generateIconSrc(
   extension: string | null,
   thumbnailId: number | null,
   id: number,
-  modificationDate: number,
+  modificationDate: Date,
   isFolder: boolean,
   isSystemFolder: boolean
 ) {
@@ -157,11 +225,15 @@ function generateIconSrc(
     return "/images/icons/folder.png";
   }
   if (type === "Image")
-    return `/gallery/getThumbnail/${id}/${modificationDate}`;
+    return `/gallery/getThumbnail/${id}/${Math.floor(
+      modificationDate.getTime() / 1000
+    )}`;
   if (type === "Documents" || type === "PdfDocuments")
     return `/image/docThumbnail/${id}/${thumbnailId ?? "none"}`;
   if (type === "Chemistry")
-    return `/gallery/getChemThumbnail/${id}/${modificationDate}`;
+    return `/gallery/getChemThumbnail/${id}/${Math.floor(
+      modificationDate.getTime() / 1000
+    )}`;
   if (!extension) return "/images/icons/unknownDocument.png";
   return getIconPathForExtension(extension);
 }
@@ -211,22 +283,47 @@ export function useGalleryListing({
     return `There are no top-level ${gallerySectionCollectiveNoun[section]}.`;
   }
 
-  function mkGalleryFile(
+  function mkGalleryFile({
+    id,
+    globalId,
+    name,
+    ownerName,
+    description,
+    creationDate,
+    modificationDate,
+    type,
+    extension,
+    thumbnailId,
+    size,
+    version,
+  }: {
     id: number,
+    globalId: string,
     name: string,
-    modificationDate: number,
+    ownerName: string,
+    description: Description,
+    creationDate: Date,
+    modificationDate: Date,
     type: string,
     extension: string | null,
-    thumbnailId: number | null
-  ): GalleryFile {
+    thumbnailId: number | null,
+    size: number,
+    version: number,
+  }): GalleryFile {
     const isFolder = /Folder/.test(type);
     const isSystemFolder = /System Folder/.test(type);
-    const ret: GalleryFile = {
+    const ret: GalleryFile = observable({
       id,
+      globalId,
       name,
       extension,
+      ownerName,
+      description,
+      creationDate,
       modificationDate,
       type,
+      size,
+      version,
       thumbnailUrl: generateIconSrc(
         name,
         type,
@@ -247,6 +344,7 @@ export function useGalleryListing({
             },
           }
         : {
+            // downloads the latest version, if the version is >1
             downloadHref: `/Streamfile/${idToString(id)}`,
           }),
       isFolder,
@@ -260,7 +358,17 @@ export function useGalleryListing({
           name
         )}`;
       },
-    };
+      setName: (newName: string) => {
+        runInAction(() => {
+          ret.name = newName;
+        });
+      },
+      setDescription: (newDescription: Description) => {
+        runInAction(() => {
+          ret.description = newDescription;
+        });
+      },
+    });
     return ret;
   }
 
@@ -295,39 +403,128 @@ export function useGalleryListing({
       setGalleryListing(
         Parsers.objectPath(["data", "items", "results"], data)
           .flatMap(Parsers.isArray)
-          .flatMap((array) => {
-            if (array.length === 0)
-              return Result.Ok<$ReadOnlyArray<GalleryFile>>([]);
+          .map((array) => {
+            if (array.length === 0) return ([]: $ReadOnlyArray<GalleryFile>);
             return Result.all(
               ...array.map((m) =>
                 Parsers.isObject(m)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) => {
-                    return Result.lift6(mkGalleryFile)(
-                      Parsers.getValueWithKey("id")(obj).flatMap(
-                        Parsers.isNumber
-                      ),
-                      Parsers.getValueWithKey("name")(obj).flatMap(
-                        Parsers.isString
-                      ),
-                      Parsers.getValueWithKey("modificationDate")(obj).flatMap(
-                        Parsers.isNumber
-                      ),
-                      Parsers.getValueWithKey("type")(obj).flatMap(
-                        Parsers.isString
-                      ),
-                      Parsers.getValueWithKey("extension")(obj).flatMap((e) =>
-                        Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
-                      ),
-                      Parsers.getValueWithKey("thumbnailId")(obj).flatMap((t) =>
-                        Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
+                    try {
+                      const id = Parsers.getValueWithKey("id")(obj)
+                        .flatMap(Parsers.isNumber)
+                        .elseThrow();
+
+                      const globalId = Parsers.getValueWithKey("oid")(obj)
+                        .flatMap(Parsers.isObject)
+                        .flatMap(Parsers.isNotNull)
+                        .flatMap(Parsers.getValueWithKey("idString"))
+                        .flatMap(Parsers.isString)
+                        .elseThrow();
+
+                      const name = Parsers.getValueWithKey("name")(obj)
+                        .flatMap(Parsers.isString)
+                        .elseThrow();
+
+                      const ownerName = Parsers.getValueWithKey(
+                        "ownerFullName"
+                      )(obj)
+                        .flatMap(Parsers.isString)
+                        .orElse("Unknown owner");
+
+                      const description = Parsers.getValueWithKey(
+                        "description"
+                      )(obj)
+                        .flatMap(Parsers.isString)
+                        .map((d) => {
+                          if (d === "") return Description.Empty();
+                          return Description.Present(d);
+                        })
+                        .orElseTry(() =>
+                          Parsers.getValueWithKey("description")(obj)
+                            .flatMap(Parsers.isNull)
+                            .map(() => Description.Empty())
+                        )
+                        .orElse(Description.Missing());
+
+                      const creationDate = Parsers.getValueWithKey(
+                        "creationDate"
+                      )(obj)
+                        .flatMap(Parsers.isNumber)
+                        .flatMap(Parsers.parseDate)
+                        .elseThrow();
+
+                      const modificationDate = Parsers.getValueWithKey(
+                        "modificationDate"
+                      )(obj)
+                        .flatMap(Parsers.isNumber)
+                        .flatMap(Parsers.parseDate)
+                        .elseThrow();
+
+                      const type = Parsers.getValueWithKey("type")(obj)
+                        .flatMap(Parsers.isString)
+                        .elseThrow();
+
+                      const extension = Parsers.getValueWithKey("extension")(
+                        obj
                       )
-                    );
+                        .flatMap((e) =>
+                          Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
+                        )
+                        .elseThrow();
+
+                      const thumbnailId = Parsers.getValueWithKey(
+                        "thumbnailId"
+                      )(obj)
+                        .flatMap((t) =>
+                          Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
+                        )
+                        .elseThrow();
+
+                      const size = Parsers.getValueWithKey("size")(obj)
+                        .flatMap(Parsers.isNumber)
+                        .elseThrow();
+
+                      const version = Parsers.getValueWithKey("version")(obj)
+                        .flatMap(Parsers.isNumber)
+                        .elseThrow();
+
+                      return Result.Ok(
+                        mkGalleryFile({
+                          id,
+                          globalId,
+                          name,
+                          ownerName,
+                          description,
+                          creationDate,
+                          modificationDate,
+                          type,
+                          extension,
+                          thumbnailId,
+                          size,
+                          version,
+                        })
+                      );
+                    } catch (e) {
+                      return Result.Error<GalleryFile>([e]);
+                    }
                   })
               )
-            );
+            ).orElseGet<$ReadOnlyArray<GalleryFile>>((errors) => {
+              addAlert(
+                mkAlert({
+                  variant: "error",
+                  title: "Could not process Gallery content.",
+                  message: "Please try refreshing.",
+                })
+              );
+              errors.forEach((e) => {
+                console.error(e);
+              });
+              return [];
+            });
           })
-          .orElseTry(() => {
+          .orElseGet(() => {
             Parsers.isObject(data)
               .flatMap(Parsers.isNotNull)
               .flatMap(Parsers.getValueWithKey("exceptionMessage"))
@@ -341,19 +538,6 @@ export function useGalleryListing({
                   })
                 );
               });
-            return Result.Ok<$ReadOnlyArray<GalleryFile>>([]);
-          })
-          .orElseGet((errors) => {
-            addAlert(
-              mkAlert({
-                variant: "error",
-                title: "Could not process Gallery content.",
-                message: "Please try refreshing.",
-              })
-            );
-            errors.forEach((e) => {
-              console.error(e);
-            });
             return [];
           })
       );

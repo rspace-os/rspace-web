@@ -10,6 +10,7 @@ import React, { type Node, type ComponentType } from "react";
 import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
+import { styled } from "@mui/material/styles";
 
 const useStyles = makeStyles()((theme, { dividers, rightAlignDds }) => ({
   dl: {
@@ -64,17 +65,39 @@ type DescriptionListArgs = {|
   |}>,
   dividers?: boolean,
   rightAlignDds?: boolean,
+  sx?: { ... },
 |};
 
+// This is used so that we can attach sx to the <dl>
+const Dl = styled("dl")``;
+
+/**
+ * This component provides some means for the contents to be styled using the
+ * MUI `sx` prop.
+ *
+ *  - When `below` is true, the <dt> and <dd> have the class .below. As such,
+ *    they can styled by passing an `sx` object that selects them:
+ *
+ *      <DescriptionList
+ *        sx={{
+ *          "& dd.below": {
+ *            width: "100%",
+ *          }
+ *        }}
+ *        ...
+ *      />
+ *
+ */
 function DescriptionList({
   content,
   dividers = false,
   rightAlignDds = false,
+  sx,
 }: DescriptionListArgs): Node {
   const { classes } = useStyles({ dividers, rightAlignDds });
 
   return (
-    <dl className={classes.dl}>
+    <Dl className={classes.dl} sx={sx}>
       {content.map(
         ({ label, value, below = false, reducedPadding = false }) => (
           <span
@@ -85,16 +108,28 @@ function DescriptionList({
               reducedPadding && classes.spanReducedPadding
             )}
           >
-            <dt className={clsx(classes.dt, below && classes.dtBelow)}>
+            <dt
+              className={clsx(
+                classes.dt,
+                below && classes.dtBelow,
+                below && "below"
+              )}
+            >
               {label}
             </dt>
-            <dd className={clsx(classes.dd, below && classes.ddBelow)}>
+            <dd
+              className={clsx(
+                classes.dd,
+                below && classes.ddBelow,
+                below && "below"
+              )}
+            >
               {value}
             </dd>
           </span>
         )
       )}
-    </dl>
+    </Dl>
   );
 }
 

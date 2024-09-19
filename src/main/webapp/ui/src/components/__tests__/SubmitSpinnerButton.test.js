@@ -8,6 +8,8 @@ import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SubmitSpinnerButton from "../SubmitSpinnerButton";
 import { calculateProgress } from "../../util/progress";
+import { ThemeProvider } from "@mui/material/styles";
+import materialTheme from "../../theme";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -20,12 +22,14 @@ describe("SubmitSpinnerButton", () => {
     const onClick = jest.fn<[Event], void>();
 
     render(
-      <SubmitSpinnerButton
-        onClick={onClick}
-        disabled={false}
-        loading={false}
-        label="foo"
-      />
+      <ThemeProvider theme={materialTheme}>
+        <SubmitSpinnerButton
+          onClick={onClick}
+          disabled={false}
+          loading={false}
+          label="foo"
+        />
+      </ThemeProvider>
     );
 
     fireEvent.click(screen.getByRole("button", { name: "foo" }));
@@ -37,12 +41,14 @@ describe("SubmitSpinnerButton", () => {
     const onClick = jest.fn<[Event], void>();
 
     render(
-      <SubmitSpinnerButton
-        onClick={onClick}
-        disabled={true}
-        loading={false}
-        label="foo"
-      />
+      <ThemeProvider theme={materialTheme}>
+        <SubmitSpinnerButton
+          onClick={onClick}
+          disabled={true}
+          loading={false}
+          label="foo"
+        />
+      </ThemeProvider>
     );
 
     fireEvent.click(screen.getByRole("button", { name: "foo" }));
@@ -52,13 +58,15 @@ describe("SubmitSpinnerButton", () => {
 
   test("When progress is set, the progress bar should have correct aria attributes.", () => {
     render(
-      <SubmitSpinnerButton
-        onClick={() => {}}
-        disabled={true}
-        loading={false}
-        label="foo"
-        progress={calculateProgress({ progressMade: 2, total: 4 })}
-      />
+      <ThemeProvider theme={materialTheme}>
+        <SubmitSpinnerButton
+          onClick={() => {}}
+          disabled={true}
+          loading={false}
+          label="foo"
+          progress={calculateProgress({ progressMade: 2, total: 4 })}
+        />
+      </ThemeProvider>
     );
 
     expect(screen.getByRole("progressbar")).toHaveAttribute(
@@ -77,13 +85,15 @@ describe("SubmitSpinnerButton", () => {
 
   test("When loading is not set, the label should be shown.", () => {
     render(
-      <SubmitSpinnerButton
-        onClick={() => {}}
-        disabled={true}
-        loading={false}
-        label="foo"
-        progress={calculateProgress({ progressMade: 2, total: 4 })}
-      />
+      <ThemeProvider theme={materialTheme}>
+        <SubmitSpinnerButton
+          onClick={() => {}}
+          disabled={true}
+          loading={false}
+          label="foo"
+          progress={calculateProgress({ progressMade: 2, total: 4 })}
+        />
+      </ThemeProvider>
     );
 
     expect(screen.getByText("foo")).toBeVisible();
@@ -91,13 +101,15 @@ describe("SubmitSpinnerButton", () => {
 
   test("When loading is set, the label should not be shown.", () => {
     render(
-      <SubmitSpinnerButton
-        onClick={() => {}}
-        disabled={true}
-        loading={true}
-        label="foo"
-        progress={calculateProgress({ progressMade: 2, total: 4 })}
-      />
+      <ThemeProvider theme={materialTheme}>
+        <SubmitSpinnerButton
+          onClick={() => {}}
+          disabled={true}
+          loading={true}
+          label="foo"
+          progress={calculateProgress({ progressMade: 2, total: 4 })}
+        />
+      </ThemeProvider>
     );
 
     expect(screen.getByText("foo")).not.toBeVisible();

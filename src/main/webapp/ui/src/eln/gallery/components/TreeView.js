@@ -21,16 +21,34 @@ import { useGalleryActions, folderDestination } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import { doNotAwait } from "../../../util/Util";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { TreeItem } from "@mui/x-tree-view/TreeItem";
+import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { useDroppable, useDraggable, useDndContext } from "@dnd-kit/core";
-import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
+import Box, { boxClasses } from "@mui/material/Box";
+import Collapse, { collapseClasses } from "@mui/material/Collapse";
 import { runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
+
+const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
+  [`.${treeItemClasses.content}`]: {
+    [`&.${treeItemClasses.selected}`]: {
+      backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
+        ? "black"
+        : theme.palette.callToAction.main,
+      [`&.${treeItemClasses.focused}`]: {
+        backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
+          ? "black"
+          : theme.palette.callToAction.main,
+      },
+      [`& .${treeItemClasses.label}`]: {
+        color: "white",
+      },
+    },
+  },
+}));
 
 const CustomTransition = styled(({ children, in: open, className }) => (
   <div className={className}>
@@ -44,7 +62,7 @@ const CustomTransition = styled(({ children, in: open, className }) => (
     </Collapse>
   </div>
 ))(({ in: open }) => ({
-  "& .MuiCollapse-wrapperInner > .MuiBox-root": {
+  [`& .${collapseClasses.wrappedInner} > .${boxClasses.root}`]: {
     transform:
       window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
         ? "none"
@@ -237,7 +255,7 @@ const CustomTreeItem = observer(
           transitionDelay: `${(index + 1) * 0.04}s !important`,
         }}
       >
-        <TreeItem
+        <StyledTreeItem
           itemId={idToString(file.id)}
           label={
             <Box
@@ -305,7 +323,7 @@ const CustomTreeItem = observer(
               orderBy={orderBy}
             />
           )}
-        </TreeItem>
+        </StyledTreeItem>
       </Box>
     );
   }
