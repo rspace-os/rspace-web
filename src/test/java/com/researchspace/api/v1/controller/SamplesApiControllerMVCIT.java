@@ -42,9 +42,7 @@ import org.mockito.Mockito;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.transaction.annotation.Transactional;
 
-@Transactional
 public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   static final int NUM_FIELDS_IN_COMPLEX_SAMPLE = 10;

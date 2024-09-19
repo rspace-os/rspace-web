@@ -243,7 +243,7 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
     String contentsHash = CryptoUtils.hashWithSha256inHex(base64Image);
     String filename = String.format("%s.%s", contentsHash, imageExtension);
 
-    return retrieveOrCreateFileProperty(user, filename, imageIS, contentsHash);
+    return saveOrRetrieveImage(user, filename, imageIS, contentsHash);
   }
 
   FileProperty saveThumbnailImageFile(User user, String base64Image) throws IOException {
@@ -256,7 +256,7 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
     String filename = String.format("%s.%s", contentsHash, imageExtension);
 
     try (InputStream imageIS = createThumbnailFromImageBytes(imageBytes, imageExtension)) {
-      return retrieveOrCreateFileProperty(user, filename, imageIS, contentsHash);
+      return saveOrRetrieveImage(user, filename, imageIS, contentsHash);
     }
   }
 
@@ -265,7 +265,7 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
   Checks if a FileProperty already exists for the given user and hash of the contents of the image
   and returns that if so. Otherwise, generates a new FileProperty.
    */
-  private FileProperty retrieveOrCreateFileProperty(
+  private FileProperty saveOrRetrieveImage(
       User user, String fileName, InputStream imageIs, String contentsHash) throws IOException {
     Optional<FileProperty> existingFile =
         getExistingFilePropertyForImage(contentsHash, user.getUsername());

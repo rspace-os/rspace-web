@@ -187,7 +187,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
   public FileProperty getFilePropertyByContentsHash(String contentsHash, User user) {
     Map<String, String> properties = new HashMap<>();
-    // get any usage of the contents hash, as oppose to being restricted by user, since e.g. the
+    // get any usage of the contents hash, rather than also being restricted by user, since e.g. the
     // image could belong to a template which wasn't created by the requesting user
     properties.put("contentsHash", contentsHash);
     List<FileProperty> filePropsWithHash = fileStoreMetaManager.findProperties(properties);
