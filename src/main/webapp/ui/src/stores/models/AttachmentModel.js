@@ -17,10 +17,7 @@ import { justFilenameExtension } from "../../util/files";
 import { type Person } from "../definitions/Person";
 import { type Attachment } from "../definitions/Attachment";
 import { type GlobalId, type Id } from "../definitions/BaseRecord";
-import {
-  type GalleryFile,
-  type Id as GalleryId,
-} from "../../eln/gallery/useGalleryListing";
+import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
 
 type AttachmentId = ?number;
 type Bytes = number;
@@ -45,7 +42,7 @@ type FromUpload = {|
 
 type FromGallery = {|
   ...CommonAttrs,
-  galleryId: GalleryId,
+  galleryId: string,
 |};
 
 export type AttachmentAttrs = FromServer | FromUpload;
@@ -616,7 +613,7 @@ export const newAttachment = (
 };
 
 export class NewGalleryAttachment implements Attachment {
-  galleryId: number;
+  galleryId: string;
   name: string;
   size: Bytes;
   removed: boolean = false;
@@ -660,6 +657,7 @@ export class NewGalleryAttachment implements Attachment {
     });
     this.name = attrs.name;
     this.size = attrs.size;
+    this.galleryId = attrs.galleryId;
     this.removed = false;
     this.onRemoveCallback = onRemoveCallback;
     this.permalinkURL = permalinkURL;
@@ -729,8 +727,15 @@ export class NewGalleryAttachment implements Attachment {
     };
   }
 
-  save(_parentGlobalId: GlobalId): Promise<void> {
-    return Promise.reject(new Error("Not yet implemented"));
+  async save(parentGlobalId: GlobalId): Promise<void> {
+    if (this.removed) return Promise.resolve();
+    await ApiService.post<
+      {| parentGlobalId: GlobalId, mediaFileGlobalId: string |},
+      mixed
+    >("attachments", {
+      parentGlobalId,
+      mediaFileGlobalId: this.galleryId,
+    });
   }
 }
 
@@ -744,7 +749,7 @@ export const newGalleryAttachment = (
       id: null,
       name: file.name,
       size: file.size,
-      galleryId: file.id,
+      galleryId: file.globalId,
     },
     permalinkURL,
     onRemoveCallback
