@@ -12,8 +12,6 @@ import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
