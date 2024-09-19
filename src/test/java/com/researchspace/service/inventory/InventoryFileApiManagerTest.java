@@ -2,6 +2,7 @@ package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -70,22 +71,30 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
     Sample dbSample = sampleApiMgr.getSampleById(apiSample.getId(), user);
     assertEquals(0, dbSample.getAttachedFiles().size());
 
-    // add attachment
+    // add file attachment
     InventoryFile attachedFile = addFileAttachmentToInventoryItem(dbSample.getOid(), user);
     assertNotNull(attachedFile.getCreationDate());
     assertEquals(user.getUsername(), attachedFile.getCreatedBy());
 
+    // add gallery attachment
+    InventoryFile attachedGalleryItem = addGalleryFileToInventoryItem(dbSample.getOid(), user);
+    assertNotNull(attachedGalleryItem.getCreationDate());
+    assertEquals(user.getUsername(), attachedGalleryItem.getCreatedBy());
+
     // verify attachment added
     dbSample = sampleApiMgr.getSampleById(apiSample.getId(), user);
-    assertEquals(1, dbSample.getAttachedFiles().size());
+    assertEquals(2, dbSample.getAttachedFiles().size());
+    assertNull(dbSample.getAttachedFiles().get(0).getMediaFileGlobalIdentifier());
+    assertNotNull(dbSample.getAttachedFiles().get(1).getMediaFileGlobalIdentifier());
 
     // copy inventory item
     ApiSampleWithFullSubSamples copiedSample = sampleApiMgr.duplicate(apiSample.getId(), user);
     Sample dbSampleCopy = sampleApiMgr.getSampleById(copiedSample.getId(), user);
-    assertEquals(1, dbSampleCopy.getAttachedFiles().size());
+    assertEquals(2, dbSampleCopy.getAttachedFiles().size());
 
     // delete attachment from original sample
     inventoryFileApiMgr.markInventoryFileAsDeleted(attachedFile.getId(), user);
+    inventoryFileApiMgr.markInventoryFileAsDeleted(attachedGalleryItem.getId(), user);
 
     // verify attachment deleted from original sample
     dbSample = sampleApiMgr.getSampleById(apiSample.getId(), user);
@@ -93,7 +102,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
 
     // verify attachment present on a copy
     dbSampleCopy = sampleApiMgr.getSampleById(copiedSample.getId(), user);
-    assertEquals(1, dbSampleCopy.getAttachedFiles().size());
+    assertEquals(2, dbSampleCopy.getAttachedFiles().size());
   }
 
   @Test

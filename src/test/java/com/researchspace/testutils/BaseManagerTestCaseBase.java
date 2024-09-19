@@ -1973,16 +1973,23 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     return basketApiMgr.createNewBasket("basic basket", globalIds, user);
   }
 
-  protected InventoryFile addFileAttachmentToInventoryItem(GlobalIdentifier globalId, User user)
-      throws IOException {
+  protected InventoryFile addFileAttachmentToInventoryItem(
+      GlobalIdentifier globalIdToAttachTo, User user) throws IOException {
     InventoryFile attachedFile;
     try (InputStream fileIS =
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png")) {
       attachedFile =
           inventoryFileApiMgr.attachNewInventoryFileToInventoryRecord(
-              globalId, "Picture1.png", fileIS, user);
+              globalIdToAttachTo, "Picture1.png", fileIS, user);
     }
     return attachedFile;
+  }
+
+  protected InventoryFile addGalleryFileToInventoryItem(
+      GlobalIdentifier globalIdToAttachTo, User user) throws IOException {
+    EcatImage ecatImage = addImageToGallery(user);
+    return inventoryFileApiMgr.attachGalleryFileToInventoryRecord(
+        globalIdToAttachTo, ecatImage.getOid(), user);
   }
 
   /**

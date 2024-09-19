@@ -34,6 +34,7 @@ import lombok.NoArgsConstructor;
       "globalId",
       "name",
       "parentGlobalId",
+      "mediaFileGlobalId",
       "type",
       "contentMimeType",
       "extension",
@@ -47,6 +48,9 @@ public class ApiInventoryFile extends IdentifiableNameableApiObject {
 
   @JsonProperty("parentGlobalId")
   private String parentGlobalId;
+
+  @JsonProperty("mediaFileGlobalId")
+  private String mediaFileGlobalId;
 
   @JsonProperty("type")
   private InventoryFileType type;
@@ -77,6 +81,7 @@ public class ApiInventoryFile extends IdentifiableNameableApiObject {
     setGlobalId(invFile.getOid().getIdString());
     setName(invFile.getFileName());
     setParentGlobalId(invFile.getConnectedRecordGlobalIdentifier());
+    setMediaFileGlobalId(invFile.getMediaFileGlobalIdentifier());
     setType(invFile.getFileType());
     setContentMimeType(invFile.getContentMimeType());
     setExtension(invFile.getExtension());
