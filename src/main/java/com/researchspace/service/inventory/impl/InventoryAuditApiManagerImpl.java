@@ -40,6 +40,13 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
       // initialised to avoid lazy load exceptions.
       Hibernate.initialize(invRec.getImageFileProperty());
       Hibernate.initialize(invRec.getThumbnailFileProperty());
+
+      if(invRec.getImageFileProperty() != null) {
+        invRec.getImageFileProperty().getContentsHash();
+      }
+      if(invRec.getThumbnailFileProperty() != null) {
+        invRec.getThumbnailFileProperty().getContentsHash();
+      }
       long revisionId = auditedEntity.getRevision().longValue();
       ApiInventoryRecordInfo apiInvRec = ApiInventoryRecordInfo.fromInventoryRecord(invRec);
       apiInvRec.setRevisionId(revisionId);
@@ -57,12 +64,11 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     ApiSample result = null;
     Sample sample = getInventoryRecordRevision(Sample.class, sampleId, revisionId);
     if (sample != null) {
-      result = (ApiSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(sample);
-
       // Hibernate envers loads relationships lazily, so these FileProperties need to be
       // initialised to avoid lazy load exceptions.
-      Hibernate.initialize(result.getImageFileProperty());
-      Hibernate.initialize(result.getThumbnailFileProperty());
+      Hibernate.initialize(sample.getImageFileProperty());
+      Hibernate.initialize(sample.getThumbnailFileProperty());
+      result = (ApiSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(sample);
       result.setRevisionId(revisionId);
       result.setGlobalId(sample.getOidWithVersion().toString());
       for (ApiSubSampleInfo subSample : result.getSubSamples()) {
@@ -77,9 +83,24 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     ApiSubSample result = null;
     SubSample subSample = getInventoryRecordRevision(SubSample.class, subSampleId, revisionId);
     if (subSample != null) {
+      Hibernate.initialize(subSample.getImageFileProperty());
+      Hibernate.initialize(subSample.getThumbnailFileProperty());
+      if(subSample.getImageFileProperty() != null) {
+        subSample.getImageFileProperty().getContentsHash();
+      }
+      if(subSample.getThumbnailFileProperty() != null) {
+        subSample.getThumbnailFileProperty().getContentsHash();
+      }
       result = (ApiSubSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(subSample);
-      ;
       result.setRevisionId(revisionId);
+      Hibernate.initialize(result.getImageFileProperty());
+      Hibernate.initialize(result.getThumbnailFileProperty());
+      if(result.getImageFileProperty() != null) {
+        result.getImageFileProperty().getContentsHash();
+      }
+      if(result.getThumbnailFileProperty() != null) {
+        result.getThumbnailFileProperty().getContentsHash();
+      }
     }
     return result;
   }
@@ -114,6 +135,8 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     AuditedEntity<T> entityRevision = auditManager.getObjectForRevision(cls, recordId, revisionId);
     if (entityRevision != null) {
       invRec = entityRevision.getEntity();
+      Hibernate.initialize(invRec.getImageFileProperty());
+      Hibernate.initialize(invRec.getThumbnailFileProperty());
     }
     return invRec;
   }
