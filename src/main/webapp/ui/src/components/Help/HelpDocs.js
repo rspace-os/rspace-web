@@ -11,6 +11,7 @@ import React, {
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { observer } from "mobx-react-lite";
 import axios from "axios";
+import Intercom from "@intercom/messenger-js-sdk";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -88,7 +89,13 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
         livechatServerHost: string,
         livechatServerKey: string,
         livechatUserId: string,
-      |}>("/analyticsProperties");
+      |}>("/livechatProperties");
+      if (livechatEnabled) {
+        Intercom({
+          app_id: livechatServerKey,
+          user_id: livechatUserId,
+        });
+      }
       setChatEnabled(livechatEnabled);
       loadLighthouse(livechatEnabled);
     })();
