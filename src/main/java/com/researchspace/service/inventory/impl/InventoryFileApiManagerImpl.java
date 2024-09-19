@@ -185,24 +185,28 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     return invFile;
   }
 
+
   public FileProperty getFilePropertyByContentsHash(String contentsHash, User user) {
     Map<String, String> properties = new HashMap<>();
+    // get any usage of the contents hash, as oppose to being restricted by user, since e.g. the
+    // image could belong to a template which wasn't created by the requesting user
     properties.put("contentsHash", contentsHash);
-    FileProperty fileProp =
-        fileStoreMetaManager.findProperties(properties).stream()
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new NotFoundException(
-                        String.format("Image with hash %s not found.", contentsHash)));
+    List<FileProperty> filePropsWithHash = fileStoreMetaManager.findProperties(properties);
 
-    if (userHasReadPermissionsForFile(user, fileProp)) {
-      return fileProp;
-    } else {
-      throw new AuthorizationException(
-          String.format(
-              "User doesn't have permissions to read image file with hash %s.", contentsHash));
+    if(filePropsWithHash.isEmpty()) {
+      throw new NotFoundException(String.format("Image with hash %s not found.", contentsHash));
     }
+
+    for(FileProperty fileProperty: filePropsWithHash) {
+      if(userHasReadPermissionsForFile(user, fileProperty)){
+        return fileProperty;
+      }
+    }
+
+    // FileProperty exists, but the user doesn't have read permissions on any file which uses
+    // the FileProperty
+    throw new AuthorizationException(String.format("User doesn't have permissions to read image "
+        + "file with hash %s.", contentsHash));
   }
 
   /**
@@ -210,8 +214,8 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
    * which reference the FileProperty, then checking if the user has permissions to view any of
    * those files
    */
-  private boolean userHasReadPermissionsForFile(User user, FileProperty fileProp) {
-    List<InventoryRecord> records = inventoryRecordRetriever.recordsUsingImageFile(fileProp);
+  private boolean userHasReadPermissionsForFile(User user, FileProperty fileProperty) {
+    List<InventoryRecord> records = inventoryRecordRetriever.recordsUsingImageFile(fileProperty);
     return records.stream()
         .anyMatch(r -> permissionUtils.canUserReadInventoryRecord(r.getOid(), user));
   }
