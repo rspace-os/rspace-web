@@ -199,7 +199,7 @@ const FileSelector = ({
                 attachments: [
                   ...activeResult.attachments,
                   ...files.map((f) =>
-                    newGalleryAttachment(f, activeResult.permalinkURL, () =>
+                    newGalleryAttachment(f, () =>
                       activeResult.setAttributesDirty({})
                     )
                   ),

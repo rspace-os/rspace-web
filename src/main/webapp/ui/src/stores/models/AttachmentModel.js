@@ -633,11 +633,7 @@ export class NewGalleryAttachment implements Attachment {
   loadingString: boolean = false;
   chemicalString: string = "";
 
-  constructor(
-    attrs: FromGallery,
-    permalinkURL: ?Url,
-    onRemoveCallback: (Attachment) => void
-  ) {
+  constructor(attrs: FromGallery, onRemoveCallback: (Attachment) => void) {
     makeObservable(this, {
       galleryId: observable,
       name: observable,
@@ -662,7 +658,10 @@ export class NewGalleryAttachment implements Attachment {
     this.galleryId = attrs.galleryId;
     this.removed = false;
     this.onRemoveCallback = onRemoveCallback;
-    this.permalinkURL = permalinkURL;
+    this.permalinkURL = `/globalId/${attrs.galleryId}`;
+
+    // this is for the info popup card
+    this.globalId = attrs.galleryId;
   }
 
   async getFile(): Promise<File> {
@@ -754,7 +753,6 @@ export class NewGalleryAttachment implements Attachment {
 
 export const newGalleryAttachment = (
   file: GalleryFile,
-  permalinkURL: ?Url,
   onRemoveCallback: (Attachment) => void
 ): NewGalleryAttachment => {
   return new NewGalleryAttachment(
@@ -765,7 +763,6 @@ export const newGalleryAttachment = (
       galleryId: file.globalId,
       downloadHref: file.downloadHref ?? null,
     },
-    permalinkURL,
     onRemoveCallback
   );
 };
