@@ -272,7 +272,7 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
     if (existingFile.isPresent()) {
       return existingFile.get();
     } else {
-      return inventoryFileApiManager.generateInventoryFileProperty(
+      return inventoryFileApiManager.saveFileAndCreateFileProperty(
           user, fileName, contentsHash, imageIs);
     }
   }

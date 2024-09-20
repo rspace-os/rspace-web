@@ -138,11 +138,11 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     // FileProperty.contentsHash is only relevant to images and the way they are retrieved therefore
     // set to an empty string here.
     String emptyContentsHash = "";
-    return generateInventoryFileProperty(user, filestoreName, emptyContentsHash, inputStream);
+    return saveFileAndCreateFileProperty(user, filestoreName, emptyContentsHash, inputStream);
   }
 
   @Override
-  public FileProperty generateInventoryFileProperty(
+  public FileProperty saveFileAndCreateFileProperty(
       User user, String fileName, String contentsHash, InputStream inputStream) throws IOException {
 
     FileProperty fileProperty = new FileProperty();

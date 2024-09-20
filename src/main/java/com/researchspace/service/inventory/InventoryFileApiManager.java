@@ -22,7 +22,7 @@ public interface InventoryFileApiManager {
       throws IOException;
 
   /** Saves input stream as an inventory record in filestore. */
-  FileProperty generateInventoryFileProperty(
+  FileProperty saveFileAndCreateFileProperty(
       User user, String fileName, String contentsHash, InputStream inputStream) throws IOException;
 
   /** Marks attachment as deleted. */
