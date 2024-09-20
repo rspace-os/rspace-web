@@ -834,7 +834,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     Mockito.verify(mockPublisher, Mockito.times(2))
         .publishEvent(Mockito.any(InventoryEditingEvent.class));
 
-    // images are named as a hash of their contentsq
+    // images are named as a hash of their contents
     String mainImageHash = "f80c29ef57845fbcece93142a9497afe943cf3772e8941f27beba4a38f51c8df";
     String thumbnailHash = "e7bdf239dd7ea19b3e2180de4ca1de09816ef51f15ba6fbe3a6c6003c42e2f72";
     String locationsHash = "28fcb66876c91f599e63aa4daa19f18d5db80c82caeb3add283348fcfaaea800";
