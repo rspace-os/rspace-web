@@ -28,6 +28,11 @@ type CommonAttrs = {|
   size: Bytes,
 |};
 
+/**
+ * This is the shape of the JSON object that the server will respond with to
+ * model an attachment that was created by the user uploading a file from their
+ * device.
+ */
 type FromServer = {|
   ...CommonAttrs,
   globalId: GlobalId,
@@ -35,18 +40,39 @@ type FromServer = {|
   _links: Array<_LINK>,
 |};
 
+/**
+ * This is the shape of the JSON object that the server will respond with to
+ * model an attachment that was created by the user choosing a file that is
+ * already in the Gallery
+ */
 type FromServerFromGallery = {|
   ...FromServer,
   mediaFileGlobalId: string,
 |};
 
+/**
+ * This is the shape of the JSON object that the server will respond with to
+ * model an attachment. It is exported so that other model classes can describe
+ * the shape of the JSON they expect to get from the server where attachments
+ * are just one component part.
+ */
 export type AttachmentJson = FromServer | FromServerFromGallery;
 
+/**
+ * This is the shape of the object that the code below expects to receive from
+ * the react code when a user has selecting a file on their device for use as a
+ * new attachment.
+ */
 type FromUpload = {|
   ...CommonAttrs,
   file: File,
 |};
 
+/**
+ * This is the shape of the object that the code below expects to receive from
+ * the react code when a user chooses a file in the Gallery for use as a new
+ * attachment.
+ */
 type FromGallery = {|
   ...CommonAttrs,
   galleryId: string,
