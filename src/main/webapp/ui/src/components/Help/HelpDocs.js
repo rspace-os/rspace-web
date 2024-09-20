@@ -94,6 +94,7 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
         Intercom({
           app_id: livechatServerKey,
           user_id: livechatUserId,
+          hide_default_launcher: true,
         });
       }
       setChatEnabled(livechatEnabled);
