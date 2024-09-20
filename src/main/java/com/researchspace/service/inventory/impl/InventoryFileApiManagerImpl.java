@@ -92,7 +92,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
     String filestoreName =
         String.format("att_%s_%s", invRecGlobalId.getIdString(), originalFileName);
-    FileProperty fileProp = generateInventoryFileProperty(user, filestoreName, inputStream);
+    FileProperty fileProp = saveFileAndCreateFileProperty(user, filestoreName, inputStream);
 
     InventoryFile invFile = recordFactory.createInventoryFile(originalFileName, fileProp, user);
     invFile.setExtension(MediaUtils.getExtension(originalFileName));
@@ -133,7 +133,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     return invRecGlobalId;
   }
 
-  private FileProperty generateInventoryFileProperty(
+  private FileProperty saveFileAndCreateFileProperty(
       User user, String filestoreName, InputStream inputStream) throws IOException {
     // FileProperty.contentsHash is only relevant to images and the way they are retrieved therefore
     // set to an empty string here.
