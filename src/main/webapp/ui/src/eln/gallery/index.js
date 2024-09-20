@@ -29,6 +29,10 @@ import useUiPreference, {
   PREFERENCES,
   UiPreferences,
 } from "../../util/useUiPreference";
+import RouterNavigationContext from "./components/RouterNavigationContext";
+import { CallableImagePreview } from "./components/CallableImagePreview";
+import { CallablePdfPreview } from "./components/CallablePdfPreview";
+import { CallableAsposePreview } from "./components/CallableAsposePreview";
 
 const WholePage = styled(() => {
   const [searchParams] = useSearchParams();
@@ -68,46 +72,50 @@ const WholePage = styled(() => {
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
 
   return (
-    <Alerts>
-      <AppBar
-        appliedSearchTerm={appliedSearchTerm}
-        setAppliedSearchTerm={setAppliedSearchTerm}
-        setDrawerOpen={setDrawerOpen}
-        drawerOpen={drawerOpen}
-      />
-      <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-        <Sidebar
-          selectedSection={selectedSection}
-          drawerOpen={drawerOpen}
-          setDrawerOpen={setDrawerOpen}
-          path={path}
-          folderId={folderId}
-          refreshListing={refreshListing}
-        />
-        <Box
-          sx={{
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            flexGrow: 1,
-          }}
-        >
-          <MainPanel
-            selectedSection={selectedSection}
-            path={path}
-            clearPath={clearPath}
-            galleryListing={galleryListing}
-            folderId={folderId}
-            refreshListing={refreshListing}
-            key={null}
-            sortOrder={sortOrder}
-            orderBy={orderBy}
-            setSortOrder={setSortOrder}
-            setOrderBy={setOrderBy}
+    <CallableImagePreview>
+      <CallablePdfPreview>
+        <CallableAsposePreview>
+          <AppBar
+            appliedSearchTerm={appliedSearchTerm}
+            setAppliedSearchTerm={setAppliedSearchTerm}
+            setDrawerOpen={setDrawerOpen}
+            drawerOpen={drawerOpen}
           />
-        </Box>
-      </Box>
-    </Alerts>
+          <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+            <Sidebar
+              selectedSection={selectedSection}
+              drawerOpen={drawerOpen}
+              setDrawerOpen={setDrawerOpen}
+              path={path}
+              folderId={folderId}
+              refreshListing={refreshListing}
+            />
+            <Box
+              sx={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                flexGrow: 1,
+              }}
+            >
+              <MainPanel
+                selectedSection={selectedSection}
+                path={path}
+                clearPath={clearPath}
+                galleryListing={galleryListing}
+                folderId={folderId}
+                refreshListing={refreshListing}
+                key={null}
+                sortOrder={sortOrder}
+                orderBy={orderBy}
+                setSortOrder={setSortOrder}
+                setOrderBy={setOrderBy}
+              />
+            </Box>
+          </Box>
+        </CallableAsposePreview>
+      </CallablePdfPreview>
+    </CallableImagePreview>
   );
 })(() => ({
   "@keyframes drop": {
@@ -143,9 +151,13 @@ window.addEventListener("load", () => {
                         <Route
                           path="/newGallery"
                           element={
-                            <GallerySelection>
-                              <WholePage />
-                            </GallerySelection>
+                            <Alerts>
+                              <RouterNavigationContext>
+                                <GallerySelection>
+                                  <WholePage />
+                                </GallerySelection>
+                              </RouterNavigationContext>
+                            </Alerts>
                           }
                         />
                         <Route

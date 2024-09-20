@@ -561,14 +561,19 @@
 <script type="text/template" id="apiKeyDetailsTemplate">
 	{{#enabled}}
     <div class="api-menu__key col-xs-8">
-      {{#revokable}}
-        <strong>Key</strong>: <span id="api-menu__keyValue"> &lt;hidden&gt; </span>
-          <a href="#" id="api-menu__showKey" onclick="return false;">Show Key</a>
-          <a href="#" id="api-menu__hideKey" onclick="return false;">Hide Key</a>
-      {{/revokable}}
-      {{^revokable}}
-        <strong>Key</strong>: Empty.
-      {{/revokable}}
+      {{#key}}
+        Key: {{key}}
+        <br>
+        Be sure to note the key down in a secure manner as it will not be visible again.
+      {{/key}}
+      {{^key}}
+        {{#revokable}}
+          The current key was generated {{ageLabel}}.
+        {{/revokable}}
+        {{^revokable}}
+          There is no API key set.
+        {{/revokable}}
+      {{/key}}
 
       <br />
       See <a href="/public/apiDocs" target="_blank">API Documentation</a>.
@@ -578,7 +583,8 @@
     <div class="api-menu__buttons pull-right">
        {{#regenerable}}
          <div class="api-menu__edit">
-           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRegenerateBtn">Regenerate key</a>
+           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRegenerateBtn">
+            {{#revokable}}Regenerate{{/revokable}}{{^revokable}}Generate{{/revokable}} key</a>
          </div>
          <br>
        {{/regenerable}}
@@ -590,11 +596,6 @@
     </div>
   {{/enabled}}
   {{^enabled}}
-    {{#key}}
-    	<div class="api-menu__key api-menu__key--disabled">
-    		<strong>Key</strong>: {{key}}
-      </div>
-    {{/key}}
     <div class="api-menu__description">
     	{{message}}
     </div>

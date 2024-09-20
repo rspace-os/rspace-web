@@ -138,6 +138,21 @@ const baseTheme = createTheme({
       saturated: "#009ad6",
       placeholderText: "#8babcb",
       background: "#00adef22",
+      dark: "rgba(0, 121, 167, 1)",
+      light: "rgba(51, 189, 242, 1)",
+    },
+    callToAction: {
+      main: hslToHex(
+        COLORS.primary.hue,
+        COLORS.primary.saturation,
+        COLORS.primary.lightness
+      ),
+      contrastText: "#fff",
+      saturated: "#009ad6",
+      placeholderText: "#8babcb",
+      background: "#00adef22",
+      dark: "rgba(0, 121, 167, 1)",
+      light: "rgba(51, 189, 242, 1)",
     },
     secondary: {
       main: "#f50057",

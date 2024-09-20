@@ -4,7 +4,7 @@ import React, { type ComponentType, useState } from "react";
 import { observer } from "mobx-react-lite";
 import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
 import PreviewIcon from "@mui/icons-material/Visibility";
-import ImagePreview from "../../ImagePreview";
+import ImagePreview from "../../../../components/ImagePreview";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";

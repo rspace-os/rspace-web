@@ -174,6 +174,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           saturated: linkColor,
           dark: linkColor,
         },
+        callToAction: {
+          main: baseTheme.palette.callToAction.main,
+        },
         standardIcon: {
           main: interactiveColor,
         },
@@ -393,12 +396,32 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               "&:hover": {
                 borderColor: darken(accentedBackground, hoverDarkenCoefficient),
               },
+            },
+            colorPrimary: {
+              border: accentedBorder,
               [`&.${buttonClasses.disabled}`]: {
                 border: accentedBorder,
                 borderColor: disabledColor,
               },
             },
-            contained: {
+            containedCallToAction: {
+              border: `2px solid ${
+                prefersMoreContrast
+                  ? "black"
+                  : baseTheme.palette.callToAction.main
+              }`,
+              backgroundColor: prefersMoreContrast
+                ? "black"
+                : baseTheme.palette.callToAction.main,
+              color: baseTheme.palette.callToAction.contrastText,
+              "&:hover": {
+                borderColor: baseTheme.palette.callToAction.main,
+              },
+              [`&.${buttonClasses.disabled}`]: {
+                borderColor: darken(disabledColor, 0.1),
+              },
+            },
+            containedPrimary: {
               backgroundColor: mainAccentColor,
               color: contrastTextColor,
               borderColor: mainAccentColor,
@@ -451,10 +474,23 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               // Mui applies its styles
               "&:hover": {
                 [`& .${outlinedInputClasses.notchedOutline}`]: {
-                  borderColor: darken(
+                  /*
+                   * These !importants are needed because when a className is
+                   * applied to a TextField, it is attached to the
+                   * .MuiFormControl-root that wraps .MuiOutlinedInput-root, so
+                   * that would have a higher specificity than this style. As
+                   * such, without the !important it would be impossible for a
+                   * styled component to disable the border when not hovering,
+                   * but keep it when hovering, as it would override all styles
+                   * on the notched outline. With the !important, if a style
+                   * components want to override the hover effect too, they too
+                   * can use !important
+                   */
+                  border: `${accentedBorder} !important`,
+                  borderColor: `${darken(
                     accentedBackground,
                     hoverDarkenCoefficient
-                  ),
+                  )} !important`,
                 },
               },
               [`&:has(.${inputAdornmentClasses.positionStart})`]: {
@@ -467,10 +503,18 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               },
               [`& .${inputAdornmentClasses.root}`]: {
                 height: "100%",
-                paddingLeft: baseTheme.spacing(1.5),
-                paddingRight: baseTheme.spacing(1.5),
-                borderRight: accentedBorder,
-                marginRight: 0,
+                [`&.${inputAdornmentClasses.positionStart}`]: {
+                  paddingLeft: baseTheme.spacing(1.5),
+                  paddingRight: baseTheme.spacing(1.5),
+                  borderRight: accentedBorder,
+                  marginRight: 0,
+                },
+                [`&.${inputAdornmentClasses.positionEnd}`]: {
+                  paddingRight: baseTheme.spacing(1.5),
+                  paddingLeft: baseTheme.spacing(1.5),
+                  borderLeft: accentedBorder,
+                  marginLeft: 0,
+                },
                 [`& .${typographyClasses.root}`]: {
                   textTransform: "uppercase",
                   fontWeight: 700,
@@ -630,6 +674,10 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           styleOverrides: {
             root: {
               borderBottom: accentedBorder,
+            },
+            vertical: {
+              borderBottom: "none",
+              borderRight: accentedBorder,
             },
             withChildren: {
               borderBottom: "none",

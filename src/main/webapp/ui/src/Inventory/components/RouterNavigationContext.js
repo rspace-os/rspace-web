@@ -1,9 +1,9 @@
 //@flow
 import React, { type Node } from "react";
-import NavigateContext from "../stores/contexts/Navigate";
+import NavigateContext from "../../stores/contexts/Navigate";
 import * as ReactRouter from "react-router";
 import { useLocation } from "react-router-dom";
-import useStores from "../stores/use-stores";
+import useStores from "../../stores/use-stores";
 
 type RouterNavigationContextArgs = {|
   children: Node,
