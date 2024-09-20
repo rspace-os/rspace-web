@@ -12,6 +12,7 @@ import { type Person } from "../definitions/Person";
 import { type InventoryRecord } from "./InventoryRecord";
 import { type Tag } from "./Tag";
 import { type LinkableRecord } from "./LinkableRecord";
+import { type GlobalId } from "./BaseRecord";
 
 export type ReadAccessLevel = "full" | "limited" | "public";
 
@@ -39,6 +40,7 @@ export type RecordDetails = {|
   size?: number,
   sample?: InventoryRecord,
   version?: number,
+  galleryFile?: LinkableRecord,
 |};
 
 /**

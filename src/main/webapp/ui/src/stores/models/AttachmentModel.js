@@ -18,6 +18,7 @@ import { type Person } from "../definitions/Person";
 import { type Attachment } from "../definitions/Attachment";
 import { type GlobalId, type Id } from "../definitions/BaseRecord";
 import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
+import { type LinkableRecord } from "../definitions/LinkableRecord";
 
 type AttachmentId = ?number;
 type Bytes = number;
@@ -78,6 +79,51 @@ type FromGallery = {|
   galleryId: string,
   downloadHref: string | null,
 |};
+
+/**
+ * Attachments that were created from Gallery files refer back those files via
+ * the mediaFileGlobalId property. This class facilitates rendering that Global
+ * Id by providing all of the information required to render a Global Id link
+ * including icon, permalink, and tooltip label.
+ */
+class LinkableGalleryFile implements LinkableRecord {
+  globalId: ?string;
+
+  /*
+   * Note that the name and id are not required as part of rendering the Global
+   * Id are simply required for the LinkableRecord interface to be useful in
+   * other circumstances. As such, any random value will suffice for these properties.
+   */
+  id: ?number;
+  name: string;
+
+  constructor({
+    id,
+    globalId,
+    name,
+  }: {|
+    id: number,
+    globalId: string,
+    name: string,
+  |}) {
+    this.id = id;
+    this.globalId = globalId;
+    this.name = name;
+  }
+
+  get recordTypeLabel(): string {
+    return "Gallery File";
+  }
+
+  get iconName(): string {
+    return "attachment";
+  }
+
+  get permalinkURL(): string {
+    if (!this.globalId) throw new Error("Impossible");
+    return `/globalId/${this.globalId}`;
+  }
+}
 
 const chemExtensions = new Set([
   "cdx",
@@ -365,8 +411,18 @@ export class ExistingAttachmentFromGallery extends ExistingAttachment {
       mediaFileGlobalId: observable,
     });
     this.mediaFileGlobalId = mediaFileGlobalId;
-    this.globalId = mediaFileGlobalId;
     this.permalinkURL = `/globalId/${mediaFileGlobalId}`;
+  }
+
+  get recordDetails(): RecordDetails {
+    return {
+      ...super.recordDetails,
+      galleryFile: new LinkableGalleryFile({
+        id: 0,
+        globalId: this.mediaFileGlobalId,
+        name: "foo",
+      }),
+    };
   }
 }
 
@@ -725,9 +781,6 @@ export class NewGalleryAttachment implements Attachment {
     this.removed = false;
     this.onRemoveCallback = onRemoveCallback;
     this.permalinkURL = `/globalId/${attrs.galleryId}`;
-
-    // this is for the info popup card
-    this.globalId = attrs.galleryId;
   }
 
   async getFile(): Promise<File> {
@@ -802,6 +855,11 @@ export class NewGalleryAttachment implements Attachment {
   get recordDetails(): RecordDetails {
     return {
       size: this.size,
+      galleryFile: new LinkableGalleryFile({
+        id: 0,
+        globalId: this.galleryId,
+        name: "foo",
+      }),
     };
   }
 

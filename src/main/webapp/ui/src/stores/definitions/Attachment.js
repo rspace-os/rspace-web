@@ -15,9 +15,14 @@ import { type GlobalId } from "./BaseRecord";
  * facilitate indirect references to files stored in RSpace. The UI then
  * provides the means to upload, preview, and download those attached files.
  * This interface specifies the mechanisms exposed by the attachment model code
- * for use by the UI code.
+ * for use by the UI code. Some special behaviour is defined for Chemistry
+ * files.
  *
- * Some special behaviour is defined for Chemistry files.
+ * Attachments are themselves a type of record, with a Global Id prefix of
+ * "IF", whose job is to associate a file with another Inventory record; either
+ * a Sample/Container/Subsample/Template via their "Attachments" field or via
+ * the Field record of samples and templates where the field type is
+ * "attachment".
  */
 export interface Attachment extends Record {
   imageLink: ?URL;

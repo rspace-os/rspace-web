@@ -210,6 +210,16 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): Node {
                   },
                 ]
               : []),
+            ...(record.recordDetails.galleryFile
+              ? [
+                  {
+                    label: "Gallery File",
+                    value: (
+                      <GlobalId record={record.recordDetails.galleryFile} />
+                    ),
+                  },
+                ]
+              : []),
           ]}
           dividers
         />
