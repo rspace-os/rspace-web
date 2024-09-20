@@ -143,7 +143,7 @@ const chemExtensions = new Set([
 
 /**
  * This is an attachment that is already associated with a particular
- * container/sample/subsample/template, having previously been uploaded.
+ * container/sample/subsample/template/field, having previously been uploaded.
  */
 export class ExistingAttachment implements Attachment {
   id: AttachmentId;
@@ -397,6 +397,11 @@ export class ExistingAttachment implements Attachment {
   }
 }
 
+/**
+ * This is an attachment that is already associated with a particular
+ * container/sample/subsample/template/field, having previously been created
+ * from a gallery file.
+ */
 export class ExistingAttachmentFromGallery extends ExistingAttachment {
   mediaFileGlobalId: string;
 
@@ -426,8 +431,12 @@ export class ExistingAttachmentFromGallery extends ExistingAttachment {
   }
 }
 
+/**
+ * Initialise attachment model classes after they have been received from API
+ * calls.
+ */
 export function newExistingAttachment(
-  attrs: FromServerFromGallery | FromServer,
+  attrs: AttachmentJson,
   permalinkURL: ?Url,
   onRemoveCallback: (Attachment) => void
 ): ExistingAttachment {
@@ -444,8 +453,8 @@ export function newExistingAttachment(
 
 /**
  * This is a new attachment that is to be associated with a particular
- * container/sample/subsample/template, as a result of the user uploading a
- * file.
+ * container/sample/subsample/template/field, as a result of the user uploading
+ * a file.
  */
 export class NewlyUploadedAttachment implements Attachment {
   id: AttachmentId;
@@ -718,6 +727,9 @@ export class NewlyUploadedAttachment implements Attachment {
   }
 }
 
+/**
+ * Initialise a NewUploadedAttachment object from an uploaded File
+ */
 export const newAttachment = (
   file: File,
   permalinkURL: ?Url,
@@ -735,6 +747,11 @@ export const newAttachment = (
   );
 };
 
+/**
+ * This is a new attachment that is to be associated with a particular
+ * container/sample/subsample/template/field, as a result of the user choosing
+ * a Gallery file.
+ */
 export class NewGalleryAttachment implements Attachment {
   galleryId: string;
   name: string;
@@ -875,6 +892,9 @@ export class NewGalleryAttachment implements Attachment {
   }
 }
 
+/**
+ * Initialise a NewGalleryAttachment object from a selected Gallery file.
+ */
 export const newGalleryAttachment = (
   file: GalleryFile,
   onRemoveCallback: (Attachment) => void
