@@ -19,7 +19,7 @@ import {
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
-import { type AttachmentAttrs } from "./AttachmentModel";
+import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import RecordWithQuantity, {
@@ -107,7 +107,7 @@ export type SubSampleAttrs = {|
   lastModified: ?string,
   modifiedByFullName: ?string,
   deleted: boolean,
-  attachments: Array<AttachmentAttrs>,
+  attachments: Array<AttachmentJson>,
   barcodes: Array<BarcodeAttrs>,
   identifiers: Array<IdentifierAttrs>,
   _links: Array<_LINK>,

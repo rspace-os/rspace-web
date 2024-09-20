@@ -3,7 +3,7 @@
 import { action, observable, computed, makeObservable } from "mobx";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import {
-  type AttachmentAttrs,
+  type AttachmentJson,
   newAttachment,
   newExistingAttachment,
 } from "./AttachmentModel";
@@ -53,7 +53,7 @@ export type FieldModelAttrs = {|
   initial?: boolean,
   editing?: boolean,
   columnIndex: ?number,
-  attachment: ?AttachmentAttrs,
+  attachment: ?AttachmentJson,
   mandatory: boolean,
 |};
 

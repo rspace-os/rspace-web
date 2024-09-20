@@ -40,6 +40,8 @@ type FromServerFromGallery = {|
   mediaFileGlobalId: string,
 |};
 
+export type AttachmentJson = FromServer | FromServerFromGallery;
+
 type FromUpload = {|
   ...CommonAttrs,
   file: File,
@@ -50,8 +52,6 @@ type FromGallery = {|
   galleryId: string,
   downloadHref: string | null,
 |};
-
-export type AttachmentAttrs = FromServer | FromUpload;
 
 const chemExtensions = new Set([
   "cdx",
