@@ -181,7 +181,8 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
         .getCurrentSession()
         .createQuery(
             "from Container where imageFileProperty=:fileProperty OR"
-                + " thumbnailFileProperty=:fileProperty OR locationsImageFileProperty=:fileProperty",
+                + " thumbnailFileProperty=:fileProperty OR"
+                + " locationsImageFileProperty=:fileProperty",
             Container.class)
         .setParameter("fileProperty", fileProperty)
         .list();

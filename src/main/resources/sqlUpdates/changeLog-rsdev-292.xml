@@ -7,14 +7,14 @@
     <changeSet id="2024-09-13a" context="run" author="fraser">
         <comment>RSDEV-292: Add file contents hash column to FileProperty table</comment>
         <addColumn tableName="FileProperty">
-            <column name="contentsHash" type="varchar"/>
+            <column name="contentsHash" type="VARCHAR(64)"/>
         </addColumn>
     </changeSet>
 
     <changeSet id="2024-09-13b" context="run" author="fraser">
         <comment>RSDEV-292: Add index to contentsHash column</comment>
         <createIndex indexName="contentsHash_idx" tableName="FileProperty">
-            <column name="contentsHash" type="varchar"/>
+            <column name="contentsHash"/>
         </createIndex>
     </changeSet>
 
