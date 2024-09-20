@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import liquibase.database.Database;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 
 @Slf4j
 public class StoreFileContentsHash_rsdev292 extends AbstractCustomLiquibaseUpdater {
@@ -32,7 +33,7 @@ public class StoreFileContentsHash_rsdev292 extends AbstractCustomLiquibaseUpdat
   protected void doExecute(Database database) {
     List<FileProperty> fileProperties = getAllFileProperties();
     for (FileProperty fileProperty : fileProperties) {
-      if (fileProperty.getContentsHash() == null || fileProperty.getContentsHash().isEmpty()) {
+      if (StringUtils.isBlank(fileProperty.getContentsHash())) {
         try {
           Optional<FileInputStream> fileContents = fileStore.retrieve(fileProperty);
           if (fileContents.isPresent()) {
