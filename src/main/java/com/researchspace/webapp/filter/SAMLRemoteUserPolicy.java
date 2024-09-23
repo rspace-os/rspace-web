@@ -46,7 +46,7 @@ public class SAMLRemoteUserPolicy implements RemoteUserRetrievalPolicy {
     log.debug("SAML attributes: {}", logSamlAttributes(httpRequest).toString());
     log.debug("Remote user:  {}", httpRequest.getRemoteUser());
     Object username = httpRequest.getAttribute(SHIBBOLETH_ID_ATTRIBUTE);
-    log.info("SAML [{}] attribute from HttpRequest: ", SHIBBOLETH_ID_ATTRIBUTE, username);
+    log.info("SAML [{}] attribute from HttpRequest: {}", SHIBBOLETH_ID_ATTRIBUTE, username);
 
     if (username == null) {
       username = httpRequest.getAttribute("eppn");

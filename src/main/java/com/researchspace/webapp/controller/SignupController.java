@@ -18,7 +18,10 @@ import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt;
+import java.io.UnsupportedEncodingException;
 import javax.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
+import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,7 +47,11 @@ public class SignupController extends BaseController {
       "cloud/signup/accountActivationFail";
 
   private @Autowired RoleManager roleManager;
-  private @Autowired RemoteUserRetrievalPolicy remoteUserPolicy;
+
+  @Autowired
+  @Setter(AccessLevel.PACKAGE) // for testing
+  private RemoteUserRetrievalPolicy remoteUserPolicy;
+
   private @Autowired UserValidator userValidator;
   private @Autowired SignupCaptchaVerifier captchaVerifier;
   private @Autowired UserEnablementUtils userEnablementUtils;
@@ -68,7 +75,12 @@ public class SignupController extends BaseController {
   private IPostUserSignup postSignup;
 
   @Value("${user.signup.acceptedDomains}")
+  @Setter(AccessLevel.PACKAGE) // for testing
   private String acceptedSignupDomains;
+
+  @Value("${deployment.sso.recodeIncomingFirstNameLastNameToUtf8}")
+  @Setter(AccessLevel.PACKAGE) // for testing
+  private Boolean deploymentSsoRecodeNamesToUft8;
 
   public SignupController() {
     setCancelView("redirect:login");
@@ -124,14 +136,28 @@ public class SignupController extends BaseController {
     return emailString == null ? "" : emailString;
   }
 
-  private String getLastnameFromRemote(HttpServletRequest req) {
+  protected String getLastnameFromRemote(HttpServletRequest req) {
     String rc = remoteUserPolicy.getOtherRemoteAttributes(req).get("Shib-surName");
-    return rc == null ? "" : rc;
+    return rc == null ? "" : ensureUtf8EncodingForSAMLAttributeValue(rc);
   }
 
-  private String getFirstNameFromRemote(HttpServletRequest req) {
+  protected String getFirstNameFromRemote(HttpServletRequest req) {
     String rc = remoteUserPolicy.getOtherRemoteAttributes(req).get("Shib-givenName");
-    return rc == null ? "" : rc;
+    return rc == null ? "" : ensureUtf8EncodingForSAMLAttributeValue(rc);
+  }
+
+  private String ensureUtf8EncodingForSAMLAttributeValue(String rc) {
+    if (deploymentSsoRecodeNamesToUft8) {
+      try {
+        String recodedFromIso = new String(rc.getBytes("ISO-8859-1"), "UTF-8");
+        if (recodedFromIso.length() < rc.length()) {
+          return recodedFromIso;
+        }
+      } catch (UnsupportedEncodingException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return rc;
   }
 
   private boolean getIsAllowedPiRoleFromRemote(HttpServletRequest req) {
@@ -281,13 +307,4 @@ public class SignupController extends BaseController {
     return (new ModelAndView("usernameReminder/remindUsernameEmailSent")).addObject("email", email);
   }
 
-  /*
-   * ================
-   * for testing
-   * ================
-   */
-
-  void setAcceptedSignupDomains(String acceptedDomains) {
-    this.acceptedSignupDomains = acceptedDomains;
-  }
 }
