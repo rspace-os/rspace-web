@@ -250,7 +250,7 @@ pipeline {
                                 [
                                         $class: 'StringParameterValue',
                                         name: 'AMI',
-                                        value: 'AWS_TOMCAT_AMI'
+                                        value: '$AWS_TOMCAT_AMI'
                                 ],
                                 [
                                         $class: 'StringParameterValue',
