@@ -3,8 +3,10 @@ package com.researchspace.dao.customliquibaseupdates;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.FileProperty;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -53,9 +55,34 @@ public class StoreFileContentsHashForInventoryFileProperties_rsdev292 extends Ab
   }
 
   private List<FileProperty> getAllInventoryFileProperties() {
+    List<FileProperty> fileProperties = new ArrayList<>();
+    fileProperties.addAll(getContainerFileProperties());
+    fileProperties.addAll(getSampleFileProperties());
+    fileProperties.addAll(getSubsampleFileProperties());
+    return fileProperties;
+  }
+
+  private List<FileProperty> getContainerFileProperties(){
     return sessionFactory
         .getCurrentSession()
-        .createQuery("from FileProperty where fileCategory = 'inventory'", FileProperty.class)
+        .createQuery("select imageFileProperty, thumbnailFileProperty, "
+            + "locationsImageFileProperty from Container", FileProperty.class)
+        .list();
+  }
+
+  private List<FileProperty> getSampleFileProperties(){
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("select imageFileProperty, thumbnailFileProperty from Sample",
+            FileProperty.class)
+        .list();
+  }
+
+  private List<FileProperty> getSubsampleFileProperties(){
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("select imageFileProperty, thumbnailFileProperty from SubSample",
+            FileProperty.class)
         .list();
   }
 }
