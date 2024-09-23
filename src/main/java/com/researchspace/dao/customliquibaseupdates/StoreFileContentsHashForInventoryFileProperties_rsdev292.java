@@ -1,21 +1,24 @@
 package com.researchspace.dao.customliquibaseupdates;
 
 import com.researchspace.core.util.CryptoUtils;
+import com.researchspace.dao.customliquibaseupdates.models.ContainerFileProperties;
+import com.researchspace.dao.customliquibaseupdates.models.SampleOrSubsampleFileProperty;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.FileProperty;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import javax.persistence.TypedQuery;
 import liquibase.database.Database;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
 @Slf4j
-public class StoreFileContentsHashForInventoryFileProperties_rsdev292 extends AbstractCustomLiquibaseUpdater {
+public class StoreFileContentsHashForInventoryFileProperties_rsdev292
+    extends AbstractCustomLiquibaseUpdater {
 
   private int fileCounter;
   private FileStore fileStore;
@@ -62,27 +65,61 @@ public class StoreFileContentsHashForInventoryFileProperties_rsdev292 extends Ab
     return fileProperties;
   }
 
-  private List<FileProperty> getContainerFileProperties(){
-    return sessionFactory
-        .getCurrentSession()
-        .createQuery("select imageFileProperty, thumbnailFileProperty, "
-            + "locationsImageFileProperty from Container", FileProperty.class)
-        .list();
+  private List<FileProperty> getContainerFileProperties() {
+    TypedQuery<ContainerFileProperties> q =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(
+                "select new"
+                    + " com.researchspace.dao.customliquibaseupdates.models.ContainerFileProperties(c.imageFileProperty,"
+                    + " c.thumbnailFileProperty, c.locationsImageFileProperty) from Container c",
+                ContainerFileProperties.class);
+    List<ContainerFileProperties> containerFileProperties = q.getResultList();
+
+    List<FileProperty> fileProperties = new ArrayList<>();
+    for (ContainerFileProperties containerFileProperty : containerFileProperties) {
+      fileProperties.add(containerFileProperty.getImageFileProperty());
+      fileProperties.add(containerFileProperty.getThumbnailFileProperty());
+      fileProperties.add(containerFileProperty.getLocationsImageFileProperty());
+    }
+    return fileProperties;
   }
 
-  private List<FileProperty> getSampleFileProperties(){
-    return sessionFactory
-        .getCurrentSession()
-        .createQuery("select imageFileProperty, thumbnailFileProperty from Sample",
-            FileProperty.class)
-        .list();
+  private List<FileProperty> getSampleFileProperties() {
+    TypedQuery<SampleOrSubsampleFileProperty> q =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(
+                "select new"
+                    + " com.researchspace.dao.customliquibaseupdates.models.SampleOrSubsampleFileProperty(s.imageFileProperty,"
+                    + " s.thumbnailFileProperty) from Sample s",
+                SampleOrSubsampleFileProperty.class);
+    List<SampleOrSubsampleFileProperty> sampleFileProperties = q.getResultList();
+
+    return extractSampleOrSubsampleFileProperties(sampleFileProperties);
   }
 
-  private List<FileProperty> getSubsampleFileProperties(){
-    return sessionFactory
-        .getCurrentSession()
-        .createQuery("select imageFileProperty, thumbnailFileProperty from SubSample",
-            FileProperty.class)
-        .list();
+  private List<FileProperty> getSubsampleFileProperties() {
+    TypedQuery<SampleOrSubsampleFileProperty> q =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(
+                "select new"
+                    + " com.researchspace.dao.customliquibaseupdates.models.SampleOrSubsampleFileProperty(s.imageFileProperty,"
+                    + " s.thumbnailFileProperty) from SubSample s",
+                SampleOrSubsampleFileProperty.class);
+    List<SampleOrSubsampleFileProperty> sampleFileProperties = q.getResultList();
+
+    return extractSampleOrSubsampleFileProperties(sampleFileProperties);
+  }
+
+  private static List<FileProperty> extractSampleOrSubsampleFileProperties(
+      List<SampleOrSubsampleFileProperty> sampleFileProperties) {
+    List<FileProperty> fileProperties = new ArrayList<>();
+    for (SampleOrSubsampleFileProperty sampleFileProperty : sampleFileProperties) {
+      fileProperties.add(sampleFileProperty.getImageFileProperty());
+      fileProperties.add(sampleFileProperty.getThumbnailFileProperty());
+    }
+    return fileProperties;
   }
 }
