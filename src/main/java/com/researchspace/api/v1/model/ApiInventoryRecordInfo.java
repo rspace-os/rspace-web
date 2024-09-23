@@ -561,13 +561,13 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   protected abstract String getSelfLinkEndpoint();
 
   void addMainImageLink(UriComponentsBuilder baseUrlBuilder) {
-    String imageType = "image";
+    String imageType = ApiLinkItem.IMAGE_REL;
     String contentsHash = getImageFileProperty().getContentsHash();
     addImageLink(baseUrlBuilder, contentsHash, imageType);
   }
 
   void addThumbnailLink(UriComponentsBuilder baseUrlBuilder) {
-    String imageType = "thumbnail";
+    String imageType = ApiLinkItem.THUMBNAIL_REL;
     String contentsHash = getThumbnailFileProperty().getContentsHash();
     addImageLink(baseUrlBuilder, contentsHash, imageType);
   }

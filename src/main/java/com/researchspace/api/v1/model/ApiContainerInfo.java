@@ -264,7 +264,7 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
   }
 
   void addLocationImageLink(UriComponentsBuilder baseUrlBuilder) {
-    String imageType = "locationsImage";
+    String imageType = ApiLinkItem.LOCATIONS_IMAGE_REL;
     addImageLink(baseUrlBuilder, getLocationsImageFileProperty().getContentsHash(), imageType);
   }
 
