@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -69,7 +68,6 @@ public interface InventoryFilesApi {
   ApiInventoryFile deleteFile(Long id, User user);
 
   @GetMapping("/image/{contentsHash}")
-  ResponseEntity<byte[]> getImageByContentsHash(
-      @PathVariable String contentsHash, @RequestAttribute(name = "user") User user)
+  ResponseEntity<byte[]> getImageByContentsHash(@PathVariable String contentsHash, User user)
       throws IOException;
 }
