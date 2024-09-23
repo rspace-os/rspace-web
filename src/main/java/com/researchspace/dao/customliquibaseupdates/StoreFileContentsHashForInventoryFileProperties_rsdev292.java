@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
 @Slf4j
-public class StoreFileContentsHash_rsdev292 extends AbstractCustomLiquibaseUpdater {
+public class StoreFileContentsHashForInventoryFileProperties_rsdev292 extends AbstractCustomLiquibaseUpdater {
 
   private int fileCounter;
   private FileStore fileStore;
@@ -31,7 +31,7 @@ public class StoreFileContentsHash_rsdev292 extends AbstractCustomLiquibaseUpdat
 
   @Override
   protected void doExecute(Database database) {
-    List<FileProperty> fileProperties = getAllFileProperties();
+    List<FileProperty> fileProperties = getAllInventoryFileProperties();
     for (FileProperty fileProperty : fileProperties) {
       if (StringUtils.isBlank(fileProperty.getContentsHash())) {
         try {
@@ -52,7 +52,7 @@ public class StoreFileContentsHash_rsdev292 extends AbstractCustomLiquibaseUpdat
     }
   }
 
-  private List<FileProperty> getAllFileProperties() {
+  private List<FileProperty> getAllInventoryFileProperties() {
     return sessionFactory
         .getCurrentSession()
         .createQuery("from FileProperty where fileCategory = 'inventory'", FileProperty.class)
