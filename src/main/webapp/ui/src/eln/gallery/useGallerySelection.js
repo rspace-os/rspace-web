@@ -21,7 +21,11 @@ class Selection {
    */
   _state: Map<GalleryFile["id"], GalleryFile>;
 
-  constructor() {
+  #onlyAllowSingleSelection: boolean;
+
+  constructor({
+    onlyAllowSingleSelection = false,
+  }: {| onlyAllowSingleSelection?: boolean |} = {}) {
     makeObservable(this, {
       _state: observable,
       isEmpty: computed,
@@ -32,6 +36,7 @@ class Selection {
       remove: action,
     });
     this._state = new Map<GalleryFile["id"], GalleryFile>();
+    this.#onlyAllowSingleSelection = onlyAllowSingleSelection;
   }
 
   get isEmpty(): boolean {
@@ -39,6 +44,7 @@ class Selection {
   }
 
   get size(): number {
+    if (this.#onlyAllowSingleSelection) return 1;
     return this._state.size;
   }
 
@@ -47,6 +53,7 @@ class Selection {
   }
 
   append(file: GalleryFile) {
+    if (this.#onlyAllowSingleSelection) this.clear();
     this._state.set(file.id, file);
   }
 
@@ -83,8 +90,14 @@ const SelectionContext: Context<Selection> = React.createContext(
   DEFAULT_SELECTION_CONTEXT
 );
 
-export const GallerySelection = ({ children }: {| children: Node |}): Node => (
-  <SelectionContext.Provider value={new Selection()}>
+export const GallerySelection = ({
+  children,
+  ...rest
+}: {|
+  children: Node,
+  onlyAllowSingleSelection?: boolean,
+|}): Node => (
+  <SelectionContext.Provider value={new Selection(rest)}>
     {children}
   </SelectionContext.Provider>
 );

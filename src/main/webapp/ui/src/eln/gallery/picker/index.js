@@ -208,14 +208,16 @@ export default function Wrapper({
   open,
   onClose,
   onSubmit,
+  onlyAllowSingleSelection,
 }: {|
   open: boolean,
   onClose: () => void,
   onSubmit: (RsSet<GalleryFile>) => void,
+  onlyAllowSingleSelection?: boolean,
 |}): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <GallerySelection>
+      <GallerySelection onlyAllowSingleSelection={onlyAllowSingleSelection}>
         <Picker open={open} onClose={onClose} onSubmit={onSubmit} />
       </GallerySelection>
     </ThemeProvider>
