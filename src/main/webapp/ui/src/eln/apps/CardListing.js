@@ -24,7 +24,6 @@ import Figshare from "./integrations/Figshare";
 import GitHub from "./integrations/GitHub";
 import GoogleDrive from "./integrations/GoogleDrive";
 import Jove from "./integrations/Jove";
-import Mendeley from "./integrations/Mendeley";
 import MSTeams from "./integrations/MSTeams";
 import NextCloud from "./integrations/NextCloud";
 import Omero from "./integrations/Omero";
@@ -433,12 +432,6 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
       )}
       {integrationStates.JOVE.mode === mode && (
         <Jove integrationState={integrationStates.JOVE} update={joveUpdate} />
-      )}
-      {integrationStates.MENDELEY.mode === mode && (
-        <Mendeley
-          integrationState={integrationStates.MENDELEY}
-          update={mendeleyUpdate}
-        />
       )}
       {integrationStates.NEXTCLOUD.mode === mode && (
         <NextCloud
