@@ -4,14 +4,14 @@
 //@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
-import AttachmentModel from "../../AttachmentModel";
+import { ExistingAttachment } from "../../AttachmentModel";
 import ApiService from "../../../../common/InvApiService";
 
 jest.mock("../../../stores/RootStore", () => {}); // break import cycle
 
 describe("getFile", () => {
   test("Should memoise the result, i.e. only fetch the file once.", async () => {
-    const attachment = new AttachmentModel(
+    const attachment = new ExistingAttachment(
       {
         id: 1,
         name: "foo.txt",

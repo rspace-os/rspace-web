@@ -2,6 +2,7 @@
 
 import { type Record } from "./Record";
 import { type URL } from "../../util/types";
+import { type GlobalId } from "./BaseRecord";
 
 /*
  * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
@@ -23,7 +24,6 @@ export interface Attachment extends Record {
   loadingImage: boolean;
   loadingString: boolean;
   chemicalString: string;
-  file: ?File;
 
   /*
    * Indicates that the user has chosen to remove the Attachment, but that
@@ -76,4 +76,21 @@ export interface Attachment extends Record {
   +isChemicalFile: boolean;
   +chemistrySupported: boolean;
   +previewSupported: boolean;
+
+  /**
+   * Save any changes to the attachment; uploading new attachments, or deletion
+   * ones that have been marked for removal. Is called after edits to a
+   * sample/container/subsample/template have been saved, and is called for
+   * each attachment of those records and for each field of type attachment,
+   * if a sample or template is being saved.
+   *
+   * @param parentGlobalId This is the Global Id of the record with which the
+   *                       attachment is associated: this could be a
+   *                       container/sample/subsample/template or it could be a
+   *                       field of a sample or template that is of type
+   *                       attachment. When saving new attachments the server
+   *                       needs to know where to attach them.
+   * @return Promise resolves when the network activity has finished.
+   */
+  save(parentGlobalId: GlobalId): Promise<void>;
 }

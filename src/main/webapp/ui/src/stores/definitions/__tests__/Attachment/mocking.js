@@ -38,5 +38,6 @@ export const mockAttachment = ({
     isChemicalFile: true,
     chemistrySupported: true,
     previewSupported: true,
+    save: () => Promise.resolve(),
   };
 };
