@@ -30,6 +30,13 @@ export type Thumbnail = ?URL;
  * implementations; each of which should just return the relevant data.
  */
 export type RecordDetails = {|
+  /*
+   * There are some record types where we don't want to show the Global Id in
+   * the UI because the user need not be aware of it; its essentially just an
+   * implementation detail and may just confuse them. For example, attachments
+   */
+  hideGlobalId?: boolean,
+
   modified?: [string, string],
   owner?: ?string,
   description?: ?string,

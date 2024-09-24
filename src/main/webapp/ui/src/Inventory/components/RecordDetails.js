@@ -65,15 +65,19 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): Node {
           rightAlignDds
           /* some elements are not displayed depending on view (public or limited) */
           content={[
-            {
-              label: "Global ID",
-              value: record.globalId ? (
-                <GlobalId record={record} />
-              ) : (
-                <TableCellBlank />
-              ),
-              reducedPadding: true,
-            },
+            ...(record.recordDetails.hideGlobalId
+              ? []
+              : [
+                  {
+                    label: "Global ID",
+                    value: record.globalId ? (
+                      <GlobalId record={record} />
+                    ) : (
+                      <TableCellBlank />
+                    ),
+                    reducedPadding: true,
+                  },
+                ]),
             ...(hideName
               ? []
               : [

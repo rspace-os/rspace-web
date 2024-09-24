@@ -384,6 +384,7 @@ export class ExistingAttachment implements Attachment {
 
   get recordDetails(): RecordDetails {
     return {
+      hideGlobalId: true,
       size: this.size,
     };
   }
@@ -421,6 +422,7 @@ export class ExistingAttachmentFromGallery extends ExistingAttachment {
 
   get recordDetails(): RecordDetails {
     return {
+      hideGlobalId: true,
       ...super.recordDetails,
       galleryFile: new LinkableGalleryFile({
         id: 0,
@@ -696,6 +698,7 @@ export class NewlyUploadedAttachment implements Attachment {
 
   get recordDetails(): RecordDetails {
     return {
+      hideGlobalId: true,
       size: this.size,
     };
   }
@@ -871,6 +874,7 @@ export class NewGalleryAttachment implements Attachment {
 
   get recordDetails(): RecordDetails {
     return {
+      hideGlobalId: true,
       size: this.size,
       galleryFile: new LinkableGalleryFile({
         id: 0,
