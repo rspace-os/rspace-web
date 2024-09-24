@@ -18,6 +18,7 @@ import TimeField from "../../../../components/Inputs/TimeField";
 import UriField from "../../../../components/Inputs/UriField";
 import { type Field } from "../../../../stores/definitions/Field";
 import Result from "../../../../stores/models/Result";
+import { type GalleryFile } from "../../../../eln/gallery/useGalleryListing";
 
 type FieldsArgs = {|
   onErrorStateChange: (string, boolean) => void,
@@ -72,7 +73,9 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): Node {
                 );
               }}
               attachment={value.attachment}
-              onAttachmentChange={(file) => field.setAttachment(file)}
+              onAttachmentChange={(file: GalleryFile | File) => {
+                field.setAttachment(file);
+              }}
             />
           )}
         />

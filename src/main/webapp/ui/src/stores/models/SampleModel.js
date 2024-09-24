@@ -33,7 +33,7 @@ import ResultCollection, {
 import RsSet from "../../util/set";
 import { blobToBase64 } from "../../util/files";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
-import { type AttachmentAttrs } from "./AttachmentModel";
+import { type AttachmentJson } from "./AttachmentModel";
 import { type CoreFetcherArgs } from "../definitions/Search";
 import {
   type Id,
@@ -129,7 +129,7 @@ export type SampleAttrs = {|
   lastModified: ?string,
   modifiedByFullName: ?string,
   deleted: boolean,
-  attachments: Array<AttachmentAttrs>,
+  attachments: Array<AttachmentJson>,
   barcodes: Array<BarcodeAttrs>,
   identifiers: Array<IdentifierAttrs>,
   sharingMode: SharingMode,

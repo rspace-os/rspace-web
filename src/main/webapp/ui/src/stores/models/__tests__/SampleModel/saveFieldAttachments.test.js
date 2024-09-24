@@ -22,6 +22,7 @@ describe("saveFieldAttachments", () => {
         fields: [
           {
             id: 1,
+            globalId: "IF1",
             type: "attachment",
             columnIndex: 1,
             mandatory: false,

@@ -61,6 +61,9 @@ export type Theme = {|
       attachment: {|
         fg: string,
       |},
+      gallery: {|
+        fg: string,
+      |},
     |},
     standardIcon: Color,
     sidebar: {|
@@ -215,6 +218,9 @@ const baseTheme = createTheme({
       },
       attachment: {
         fg: "#e64a19",
+      },
+      gallery: {
+        fg: "#a768c6",
       },
     },
     standardIcon: {

@@ -41,7 +41,7 @@ import {
 } from "../definitions/PermissionedData";
 import { type BlobUrl } from "../stores/ImageStore";
 import getRootStore from "../stores/RootStore";
-import { type AttachmentAttrs } from "./AttachmentModel";
+import { type AttachmentJson } from "./AttachmentModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import LocationModel, { type LocationAttrs } from "./LocationModel";
 import { Movable } from "./Movable";
@@ -129,7 +129,7 @@ export type ContainerAttrs = {|
   lastModified: ?string,
   modifiedByFullName: ?string,
   deleted: boolean,
-  attachments: Array<AttachmentAttrs>,
+  attachments: Array<AttachmentJson>,
   barcodes: Array<BarcodeAttrs>,
   identifiers: Array<IdentifierAttrs>,
   sharingMode: SharingMode,
@@ -165,7 +165,7 @@ const DEFAULT_CONTAINER = {
   deleted: false,
   lastModified: null,
   modifiedByFullName: null,
-  attachments: ([]: Array<AttachmentAttrs>),
+  attachments: ([]: Array<AttachmentJson>),
   barcodes: ([]: Array<BarcodeAttrs>),
   identifiers: ([]: Array<IdentifierAttrs>),
   sharingMode: "OWNER_GROUPS",

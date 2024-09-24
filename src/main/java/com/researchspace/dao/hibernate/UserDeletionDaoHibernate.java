@@ -409,8 +409,14 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     execute(
         userId,
         session,
+        "update InventoryFile invf left join BaseRecord br on invf.mediaFile_id = br.id "
+            + "set invf.mediaFile_id = NULL where br.owner_id=:id");
+    execute(
+        userId,
+        session,
         "update EcatImage ei left join BaseRecord br on ei.id = br.id "
             + "set ei.originalImage_id = NULL where br.owner_id=:id");
+
     for (String recordTable1 : RecordTables1) {
       executeDeleteByRecordOwner(userId, session, recordTable1, "id");
       executeDeleteByRecordOwner(userId, session, recordTable1 + "_AUD", "id");

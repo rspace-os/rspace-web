@@ -31,7 +31,7 @@ import {
 import { type BlobUrl } from "../stores/ImageStore";
 import getRootStore from "../stores/RootStore";
 import { mkAlert, type Alert } from "../contexts/Alert";
-import { ExistingAttachment } from "./AttachmentModel";
+import { newExistingAttachment } from "./AttachmentModel";
 import ExtraFieldModel from "./ExtraFieldModel";
 import {
   type ExtraFieldAttrs,
@@ -363,7 +363,7 @@ export default class Result
     this.permittedActions = new Set(params.permittedActions);
     this.attachments = (params.attachments ?? []).map(
       (a) =>
-        new ExistingAttachment(a, this.permalinkURL, () =>
+        newExistingAttachment(a, this.permalinkURL, () =>
           this.setAttributesDirty({})
         )
     );

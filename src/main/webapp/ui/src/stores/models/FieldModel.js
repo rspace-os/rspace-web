@@ -3,9 +3,10 @@
 import { action, observable, computed, makeObservable } from "mobx";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import {
-  ExistingAttachment,
-  type AttachmentAttrs,
+  type AttachmentJson,
   newAttachment,
+  newGalleryAttachment,
+  newExistingAttachment,
 } from "./AttachmentModel";
 import {
   apiStringToFieldType,
@@ -29,6 +30,7 @@ import {
   IsValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
+import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
 
 const formatOption = (option: OptionValue): Option => ({
   value: option,
@@ -53,7 +55,7 @@ export type FieldModelAttrs = {|
   initial?: boolean,
   editing?: boolean,
   columnIndex: ?number,
-  attachment: ?AttachmentAttrs,
+  attachment: ?AttachmentJson,
   mandatory: boolean,
 |};
 
@@ -170,7 +172,7 @@ export default class FieldModel implements Field {
     // have to do this setAttributes after because this.permalinkURL needs to be set
     if (attachment)
       this.setAttributes({
-        attachment: new ExistingAttachment(
+        attachment: newExistingAttachment(
           attachment,
           this.owner.id ? this.permalinkURL : "",
           (a) => {
@@ -254,18 +256,26 @@ export default class FieldModel implements Field {
     return this.content.toString() ?? "";
   }
 
-  setAttachment(file: File): void {
+  setAttachment(file: File | GalleryFile): void {
     if (this.attachment) this.attachment.remove();
 
     this.setAttributesDirty({
-      attachment: newAttachment(
-        file,
-        this.owner.id ? this.permalinkURL : "",
-        (attachment) => {
-          if (!this.originalAttachment) this.originalAttachment = attachment;
-          this.setAttributesDirty({});
-        }
-      ),
+      attachment:
+        file instanceof File
+          ? newAttachment(
+              file,
+              this.owner.id ? this.permalinkURL : "",
+              (attachment) => {
+                if (!this.originalAttachment)
+                  this.originalAttachment = attachment;
+                this.setAttributesDirty({});
+              }
+            )
+          : newGalleryAttachment(file, (attachment) => {
+              if (!this.originalAttachment)
+                this.originalAttachment = attachment;
+              this.setAttributesDirty({});
+            }),
     });
   }
 
