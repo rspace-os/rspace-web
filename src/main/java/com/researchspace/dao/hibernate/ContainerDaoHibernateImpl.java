@@ -4,6 +4,7 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.ContainerDao;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -172,5 +173,18 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
       workbenchId = getWorkbenchForUser(user).getId();
     }
     return workbenchId;
+  }
+
+  @Override
+  public List<Container> getAllUsingImage(FileProperty fileProperty) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from Container where imageFileProperty=:fileProperty OR"
+                + " thumbnailFileProperty=:fileProperty OR"
+                + " locationsImageFileProperty=:fileProperty",
+            Container.class)
+        .setParameter("fileProperty", fileProperty)
+        .list();
   }
 }

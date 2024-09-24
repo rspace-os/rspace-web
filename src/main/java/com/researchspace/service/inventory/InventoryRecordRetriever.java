@@ -4,12 +4,15 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordT
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SubSampleDao;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
+import java.util.ArrayList;
+import java.util.List;
 import javax.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -155,5 +158,13 @@ public class InventoryRecordRetriever {
   /** Get workbench of given user. */
   public Container getWorkbenchForUser(User user) {
     return containerDao.getWorkbenchForUser(user);
+  }
+
+  public List<InventoryRecord> recordsUsingImageFile(FileProperty fileProperty) {
+    List<InventoryRecord> recordsUsingImageFile = new ArrayList<>();
+    recordsUsingImageFile.addAll(containerDao.getAllUsingImage(fileProperty));
+    recordsUsingImageFile.addAll(sampleDao.getAllUsingImage(fileProperty));
+    recordsUsingImageFile.addAll(subSampleDao.getAllUsingImage(fileProperty));
+    return recordsUsingImageFile;
   }
 }

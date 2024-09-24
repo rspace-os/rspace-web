@@ -4,16 +4,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryFile;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.User;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
+import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import javax.imageio.ImageIO;
 import org.junit.Before;
 import org.junit.Test;
@@ -132,6 +137,78 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     BufferedImage buffered = ImageIO.read(in);
     assertEquals(200, buffered.getHeight());
     assertEquals(200, buffered.getWidth());
+  }
+
+  @Test
+  public void retrieveImageViaFilenameSuccess() throws Exception {
+    // create basic sample
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    String apiKey = createNewApiKeyForUser(user);
+
+    // update sample with image
+    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    String imageBytes = Arrays.toString(imageFile.readAllBytes());
+    sample.setNewBase64Image(imageBytes);
+    sampleApiMgr.updateApiSample(sample, user);
+
+    // retrieve image via filename
+    String contentsHash = CryptoUtils.hashWithSha256inHex(imageBytes);
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKey, "/files/image/{contentsHash}", user, contentsHash))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    String responseImage = result.getResponse().getContentAsString();
+    assertNotNull(responseImage);
+  }
+
+  @Test
+  public void retrieveImageViaFilenameReturnsUnauthorizedWhenNotPermitted() throws Exception {
+    // create basic sample
+    User user1 = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user1);
+
+    // update sample with image
+    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    String imageBytes = Arrays.toString(imageFile.readAllBytes());
+    sample.setNewBase64Image(imageBytes);
+    sampleApiMgr.updateApiSample(sample, user1);
+
+    // try to retrieve image as user2, who isn't authorised
+    User user2 = createInitAndLoginAnyUser();
+    String user2ApiKey = createNewApiKeyForUser(user2);
+    String fileName = CryptoUtils.hashWithSha256inHex(imageBytes);
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, user2ApiKey, "/files/image/{fileName}", user1, fileName))
+            .andExpect(status().isUnauthorized())
+            .andReturn();
+    assertEquals(
+        String.format("User doesn't have permissions to read image file with hash %s.", fileName),
+        result.getResolvedException().getMessage());
+  }
+
+  @Test
+  public void retrieveNonExistentImageReturnsNotFound() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    String apikey = createNewApiKeyForUser(user);
+    String nonExistentFile = "abc123.some.file";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apikey, "/files/image/{fileName}", user, nonExistentFile))
+            .andExpect(status().isNotFound())
+            .andReturn();
+
+    assertEquals(
+        "Image with hash abc123.some.file not found.", result.getResolvedException().getMessage());
   }
 
   private MockMultipartFile picture1() throws IOException {

@@ -16,6 +16,7 @@ import com.researchspace.service.AuditManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,9 +32,12 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     List<?> entityRevisions = auditManager.getRevisionsForEntity(cls, currentInvRec.getId());
 
     ApiInventoryRecordRevisionList apiRevisions = new ApiInventoryRecordRevisionList();
-    for (int i = 0; i < entityRevisions.size(); i++) {
-      AuditedEntity<?> auditedEntity = (AuditedEntity<?>) entityRevisions.get(i);
+    for (Object entityRevision : entityRevisions) {
+      AuditedEntity<?> auditedEntity = (AuditedEntity<?>) entityRevision;
       InventoryRecord invRec = (InventoryRecord) auditedEntity.getEntity();
+
+      initialiseInventoryRecordRelationships(invRec);
+
       long revisionId = auditedEntity.getRevision().longValue();
       ApiInventoryRecordInfo apiInvRec = ApiInventoryRecordInfo.fromInventoryRecord(invRec);
       apiInvRec.setRevisionId(revisionId);
@@ -51,6 +55,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     ApiSample result = null;
     Sample sample = getInventoryRecordRevision(Sample.class, sampleId, revisionId);
     if (sample != null) {
+      initialiseInventoryRecordRelationships(sample);
       result = (ApiSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(sample);
       result.setRevisionId(revisionId);
       result.setGlobalId(sample.getOidWithVersion().toString());
@@ -66,8 +71,8 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     ApiSubSample result = null;
     SubSample subSample = getInventoryRecordRevision(SubSample.class, subSampleId, revisionId);
     if (subSample != null) {
+      initialiseInventoryRecordRelationships(subSample);
       result = (ApiSubSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(subSample);
-      ;
       result.setRevisionId(revisionId);
     }
     return result;
@@ -105,5 +110,22 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
       invRec = entityRevision.getEntity();
     }
     return invRec;
+  }
+
+  /***
+   * Hibernate envers lazily loads all entity relationships regardless of the fetch type defined
+   * in the entity mappings. Therefore, these FileProperty fields need to be explicitly initialised to
+   * avoid lazy initialisation issues when attempting to access the file properties.
+   * Subsamples in particular need to have the FileProperty fields of a connected sample initialised
+   */
+  private void initialiseInventoryRecordRelationships(InventoryRecord record) {
+    Hibernate.initialize(record.getImageFileProperty());
+    Hibernate.initialize(record.getThumbnailFileProperty());
+    if (record.isSubSample()) {
+      Sample connectedSample = ((SubSample) record).getSample();
+      if (connectedSample != null) {
+        initialiseInventoryRecordRelationships(connectedSample);
+      }
+    }
   }
 }

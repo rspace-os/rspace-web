@@ -306,5 +306,4 @@ public class SignupController extends BaseController {
 
     return (new ModelAndView("usernameReminder/remindUsernameEmailSent")).addObject("email", email);
   }
-
 }

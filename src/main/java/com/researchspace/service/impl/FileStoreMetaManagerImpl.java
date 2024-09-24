@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 public class FileStoreMetaManagerImpl extends GenericManagerImpl<FileProperty, Long>
     implements FileStoreMetaManager {
 
-  private FileMetadataDao fileDao;
+  private final FileMetadataDao fileDao;
 
   public FileStoreMetaManagerImpl(@Autowired FileMetadataDao userDao) {
     this.dao = userDao;
@@ -33,8 +33,8 @@ public class FileStoreMetaManagerImpl extends GenericManagerImpl<FileProperty, L
   /**
    * Retrieve FileProperty
    *
-   * @param wheres, key=column. For using Constants of FileProperty,
-   * @return a set of FileProperty objects
+   * @param searchCriteria, key=column. For using Constants of FileProperty,
+   * @return a list of FileProperty objects
    */
   @Override
   public List<FileProperty> findProperties(Map<String, String> searchCriteria) {

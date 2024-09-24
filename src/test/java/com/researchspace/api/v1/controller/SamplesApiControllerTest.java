@@ -4,6 +4,7 @@ import static com.researchspace.api.v1.controller.SamplesApiControllerMVCIT.NUM_
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,9 +45,12 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +67,11 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   @Autowired private SampleApiManager sampleApiMgr;
   private BindingResult mockBindingResult = mock(BindingResult.class);
   private User testUser;
+
+  private static final String PIC1_MAIN_IMAGE_CONTENT_HASH =
+      "b1c4808af0cd7e946d9a5cbac42cd9e0e7bae46f3bff0698ef08d94519360498";
+  private static final String PIC1_THUMBNAIL_CONTENT_HASH =
+      "9ffa3fa76ae55473cdc319ae72218c1cd375fca2f75c63ff782b6b26bc2debbe";
 
   @Before
   public void setUp() {
@@ -378,8 +387,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     // check fields and values assignment
     assertEquals(NUM_FIELDS_IN_COMPLEX_SAMPLE, createdSample.getFields().size());
     assertEquals("3.14", createdSample.getFields().get(0).getContent());
-    assertEquals(
-        null,
+    assertNull(
         createdSample
             .getFields()
             .get(1)
@@ -666,5 +674,95 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
     ApiSample sample = samplesApi.getSampleRevision(basicSample.getId(), 1L, testUser);
     assertNull(sample);
+  }
+
+  @Test
+  public void contentsHashSetInFileProperty() throws Exception {
+    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    String imageBytes = Arrays.toString(imageFile.readAllBytes());
+
+    ApiSample updatedSample = updateSampleWithImage(imageBytes);
+
+    assertEquals(
+        PIC1_MAIN_IMAGE_CONTENT_HASH, updatedSample.getImageFileProperty().getContentsHash());
+    assertEquals(
+        PIC1_THUMBNAIL_CONTENT_HASH, updatedSample.getThumbnailFileProperty().getContentsHash());
+  }
+
+  @Test
+  public void linksUrlsCreatedWithContentsHash() throws Exception {
+    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    String imageBytes = Arrays.toString(imageFile.readAllBytes());
+
+    ApiSample updatedSample = updateSampleWithImage(imageBytes);
+
+    String expectedFileEndpoint = "/api/inventory/v1/files/image/";
+    assertTrue(
+        assertLinksContainsUrl(
+            updatedSample.getLinks(), expectedFileEndpoint + PIC1_MAIN_IMAGE_CONTENT_HASH));
+    assertTrue(
+        assertLinksContainsUrl(
+            updatedSample.getLinks(), expectedFileEndpoint + PIC1_THUMBNAIL_CONTENT_HASH));
+  }
+
+  private ApiSample updateSampleWithImage(String image) throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user, "A Sample");
+
+    sample.setNewBase64Image(image);
+    return samplesApi.updateSample(sample.getId(), sample, mockBindingResult, user);
+  }
+
+  private boolean assertLinksContainsUrl(List<ApiLinkItem> links, String url) {
+    return links.stream().map(ApiLinkItem::getLink).anyMatch(link -> link.contains(url));
+  }
+
+  @Test
+  public void sameUserUploadingSameImageUsesSameFileProperty() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample1 = createBasicSampleForUser(user, "Sample 1");
+
+    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    String imageBytes = Arrays.toString(imageFile.readAllBytes());
+    sample1.setNewBase64Image(imageBytes);
+    ApiSample updatedSample1 =
+        samplesApi.updateSample(sample1.getId(), sample1, mockBindingResult, user);
+
+    ApiSampleWithFullSubSamples sample2 = createBasicSampleForUser(user, "Sample 2");
+    sample2.setNewBase64Image(imageBytes);
+    ApiSample updatedSample2 =
+        samplesApi.updateSample(sample2.getId(), sample2, mockBindingResult, user);
+
+    assertEquals(
+        updatedSample1.getImageFileProperty().getId(),
+        updatedSample2.getImageFileProperty().getId());
+    assertEquals(
+        updatedSample1.getThumbnailFileProperty().getId(),
+        updatedSample2.getThumbnailFileProperty().getId());
+  }
+
+  @Test
+  public void differentUserUploadingSameImageGeneratesNewFileProperty() throws Exception {
+    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    String imageBytes = Arrays.toString(imageFile.readAllBytes());
+
+    User user1 = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample1 = createBasicSampleForUser(user1, "Sample 1");
+    sample1.setNewBase64Image(imageBytes);
+    ApiSample updatedSample1 =
+        samplesApi.updateSample(sample1.getId(), sample1, mockBindingResult, user1);
+
+    User user2 = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample2 = createBasicSampleForUser(user2, "Sample 2");
+    sample2.setNewBase64Image(imageBytes);
+    ApiSample updatedSample2 =
+        samplesApi.updateSample(sample2.getId(), sample2, mockBindingResult, user2);
+
+    assertNotEquals(
+        updatedSample1.getImageFileProperty().getId(),
+        updatedSample2.getImageFileProperty().getId());
+    assertNotEquals(
+        updatedSample1.getThumbnailFileProperty().getId(),
+        updatedSample2.getThumbnailFileProperty().getId());
   }
 }

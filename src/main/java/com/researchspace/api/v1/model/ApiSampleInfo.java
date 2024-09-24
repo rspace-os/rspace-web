@@ -194,18 +194,8 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
 
       if (!isCustomImage()) {
         if (isTemplateImageAvailable()) {
-          addLink(
-              buildInventoryImageLink(
-                  ApiLinkItem.THUMBNAIL_REL,
-                  baseUrlBuilder,
-                  getTemplateId(),
-                  BaseApiInventoryController.SAMPLE_TEMPLATES_ENDPOINT));
-          addLink(
-              buildInventoryImageLink(
-                  ApiLinkItem.IMAGE_REL,
-                  baseUrlBuilder,
-                  getTemplateId(),
-                  BaseApiInventoryController.SAMPLE_TEMPLATES_ENDPOINT));
+          addMainImageLink(baseUrlBuilder);
+          addThumbnailLink(baseUrlBuilder);
         } else {
           addLink(iconLink, ApiLinkItem.THUMBNAIL_REL);
           addLink(iconLink, ApiLinkItem.IMAGE_REL);
