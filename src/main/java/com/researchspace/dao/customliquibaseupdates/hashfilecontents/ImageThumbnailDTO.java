@@ -11,12 +11,7 @@ class ImageThumbnailDTO {
   public ImageThumbnailDTO() {}
 
   public ImageThumbnailDTO(FileProperty imageFileProperty, FileProperty thumbnailFileProperty) {
-    if (imageFileProperty != null) {
-      this.imageFileProperty = imageFileProperty;
-    }
-
-    if (thumbnailFileProperty != null) {
-      this.thumbnailFileProperty = thumbnailFileProperty;
-    }
+    this.imageFileProperty = imageFileProperty;
+    this.thumbnailFileProperty = thumbnailFileProperty;
   }
 }
