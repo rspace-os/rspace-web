@@ -6,7 +6,7 @@
   <changeSet id="2024-09-13c" context="run, dev-test" author="fraser">
     <comment>RSDEV-292: Populate new contentsHash column for existing files</comment>
     <customChange
-      class="com.researchspace.dao.customliquibaseupdates.StoreFileContentsHashForInventoryFileProperties_rsdev292">
+      class="com.researchspace.dao.customliquibaseupdates.hashfilecontents.StoreFileContentsHashForInventoryFileProperties_rsdev292">
     </customChange>
   </changeSet>
 

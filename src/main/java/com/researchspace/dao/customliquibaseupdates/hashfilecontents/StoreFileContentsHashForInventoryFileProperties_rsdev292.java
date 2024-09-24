@@ -1,8 +1,7 @@
-package com.researchspace.dao.customliquibaseupdates;
+package com.researchspace.dao.customliquibaseupdates.hashfilecontents;
 
 import com.researchspace.core.util.CryptoUtils;
-import com.researchspace.dao.customliquibaseupdates.models.ContainerFileProperties;
-import com.researchspace.dao.customliquibaseupdates.models.SampleOrSubsampleFileProperty;
+import com.researchspace.dao.customliquibaseupdates.AbstractCustomLiquibaseUpdater;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.FileProperty;
 import java.io.FileInputStream;
@@ -11,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import javax.persistence.TypedQuery;
 import liquibase.database.Database;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -61,64 +59,70 @@ public class StoreFileContentsHashForInventoryFileProperties_rsdev292
     List<FileProperty> fileProperties = new ArrayList<>();
     fileProperties.addAll(getContainerFileProperties());
     fileProperties.addAll(getSampleFileProperties());
-    fileProperties.addAll(getSubsampleFileProperties());
+    fileProperties.addAll(getSubSampleFileProperties());
     return fileProperties;
   }
 
   private List<FileProperty> getContainerFileProperties() {
-    TypedQuery<ContainerFileProperties> q =
+    List<ImageThumbnailDTO> imageAndThumbnails =
         sessionFactory
             .getCurrentSession()
             .createQuery(
                 "select new"
-                    + " com.researchspace.dao.customliquibaseupdates.models.ContainerFileProperties(c.imageFileProperty,"
-                    + " c.thumbnailFileProperty, c.locationsImageFileProperty) from Container c",
-                ContainerFileProperties.class);
-    List<ContainerFileProperties> containerFileProperties = q.getResultList();
+                    + " com.researchspace.dao.customliquibaseupdates.hashfilecontents.ImageThumbnailDTO(c.imageFileProperty,"
+                    + " c.thumbnailFileProperty) from Container c",
+                ImageThumbnailDTO.class)
+            .list();
 
-    List<FileProperty> fileProperties = new ArrayList<>();
-    for (ContainerFileProperties containerFileProperty : containerFileProperties) {
-      fileProperties.add(containerFileProperty.getImageFileProperty());
-      fileProperties.add(containerFileProperty.getThumbnailFileProperty());
-      fileProperties.add(containerFileProperty.getLocationsImageFileProperty());
-    }
+    // locationsImageFilProperty selected separately as it's often null, and trying to create
+    // a DTO with image, thumbnail and location images in the case where location was null
+    // wouldn't create a DTO entity even if image and thumbnail were present, so some FileProperty
+    // would be missed.
+    List<FileProperty> locations =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery("select locationsImageFileProperty from Container", FileProperty.class)
+            .list();
+
+    List<FileProperty> fileProperties = extractFilePropertiesFromDTO(imageAndThumbnails);
+    fileProperties.addAll(locations);
     return fileProperties;
   }
 
   private List<FileProperty> getSampleFileProperties() {
-    TypedQuery<SampleOrSubsampleFileProperty> q =
+    List<ImageThumbnailDTO> sampleFileProperties =
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                "select new"
-                    + " com.researchspace.dao.customliquibaseupdates.models.SampleOrSubsampleFileProperty(s.imageFileProperty,"
+                "select new com.researchspace.dao.customliquibaseupdates"
+                    + ".hashfilecontents.ImageThumbnailDTO(s.imageFileProperty,"
                     + " s.thumbnailFileProperty) from Sample s",
-                SampleOrSubsampleFileProperty.class);
-    List<SampleOrSubsampleFileProperty> sampleFileProperties = q.getResultList();
+                ImageThumbnailDTO.class)
+            .list();
 
-    return extractSampleOrSubsampleFileProperties(sampleFileProperties);
+    return extractFilePropertiesFromDTO(sampleFileProperties);
   }
 
-  private List<FileProperty> getSubsampleFileProperties() {
-    TypedQuery<SampleOrSubsampleFileProperty> q =
+  private List<FileProperty> getSubSampleFileProperties() {
+    List<ImageThumbnailDTO> subSampleFileProperties =
         sessionFactory
             .getCurrentSession()
             .createQuery(
                 "select new"
-                    + " com.researchspace.dao.customliquibaseupdates.models.SampleOrSubsampleFileProperty(s.imageFileProperty,"
+                    + " com.researchspace.dao.customliquibaseupdates.hashfilecontents.ImageThumbnailDTO(s.imageFileProperty,"
                     + " s.thumbnailFileProperty) from SubSample s",
-                SampleOrSubsampleFileProperty.class);
-    List<SampleOrSubsampleFileProperty> sampleFileProperties = q.getResultList();
+                ImageThumbnailDTO.class)
+            .list();
 
-    return extractSampleOrSubsampleFileProperties(sampleFileProperties);
+    return extractFilePropertiesFromDTO(subSampleFileProperties);
   }
 
-  private static List<FileProperty> extractSampleOrSubsampleFileProperties(
-      List<SampleOrSubsampleFileProperty> sampleFileProperties) {
+  private static List<FileProperty> extractFilePropertiesFromDTO(
+      List<ImageThumbnailDTO> imageThumbnailDTOs) {
     List<FileProperty> fileProperties = new ArrayList<>();
-    for (SampleOrSubsampleFileProperty sampleFileProperty : sampleFileProperties) {
-      fileProperties.add(sampleFileProperty.getImageFileProperty());
-      fileProperties.add(sampleFileProperty.getThumbnailFileProperty());
+    for (ImageThumbnailDTO imageThumbnailDTO : imageThumbnailDTOs) {
+      fileProperties.add(imageThumbnailDTO.getImageFileProperty());
+      fileProperties.add(imageThumbnailDTO.getThumbnailFileProperty());
     }
     return fileProperties;
   }

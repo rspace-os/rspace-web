@@ -1,17 +1,16 @@
-package com.researchspace.dao.customliquibaseupdates.models;
+package com.researchspace.dao.customliquibaseupdates.hashfilecontents;
 
 import com.researchspace.model.FileProperty;
 import lombok.Data;
 
 @Data
-public class SampleOrSubsampleFileProperty {
+class ImageThumbnailDTO {
   FileProperty imageFileProperty;
   FileProperty thumbnailFileProperty;
 
-  public SampleOrSubsampleFileProperty() {}
+  public ImageThumbnailDTO() {}
 
-  public SampleOrSubsampleFileProperty(
-      FileProperty imageFileProperty, FileProperty thumbnailFileProperty) {
+  public ImageThumbnailDTO(FileProperty imageFileProperty, FileProperty thumbnailFileProperty) {
     if (imageFileProperty != null) {
       this.imageFileProperty = imageFileProperty;
     }
