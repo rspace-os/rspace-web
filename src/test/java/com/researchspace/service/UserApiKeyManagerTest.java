@@ -57,7 +57,7 @@ public class UserApiKeyManagerTest extends SpringTransactionalTest {
   public void findByKey() {
     String keyStr = CLEAR_16CHARS_KEY;
     UserApiKey apiKeySaved = new UserApiKey(anyUser, keyStr);
-    apiKeySaved.setApiKey(CryptoUtils.encodeBCrypt(keyStr));
+    apiKeySaved.setApiKey(CryptoUtils.hashToken(keyStr));
     apiMgr.save(apiKeySaved);
     assertEquals(anyUser, apiMgr.findUserByKey(keyStr).get());
   }
