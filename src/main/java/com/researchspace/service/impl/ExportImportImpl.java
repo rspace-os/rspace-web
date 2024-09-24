@@ -335,16 +335,23 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       User exporter,
       PostArchiveCompletion postArchiveCompleter)
       throws Exception {
-    createTopLevelExportFolder(expCfg);
-    ExportSelection userSelection =
-        ExportSelection.createUserExportSelection(toExport.getUsername());
     expCfg.setExporter(exporter);
     expCfg.setProgressMonitor(ProgressMonitor.NULL_MONITOR);
-    Supplier<ExportRecordList> rcdList =
-        () -> archivePlanner.createExportRecordList(expCfg, userSelection);
-    ArchiveResult result =
-        doSynchUserArchive(expCfg, baseURL, postArchiveCompleter, userSelection, rcdList);
-    return new AsyncResult<>(result);
+    try {
+      createTopLevelExportFolder(expCfg);
+      ExportSelection userSelection =
+          ExportSelection.createUserExportSelection(toExport.getUsername());
+      Supplier<ExportRecordList> rcdList =
+          () -> archivePlanner.createExportRecordList(expCfg, userSelection);
+      ArchiveResult result =
+          doSynchUserArchive(expCfg, baseURL, postArchiveCompleter, userSelection, rcdList);
+      return new AsyncResult<>(result);
+    } catch (Exception e) {
+      log.warn("Unable to perform export: {}", e.getMessage());
+      String exportName = "user-" + toExport.getUsername();
+      postArchiveExportFailure(exportName, expCfg.getExporter(), e.getMessage());
+      throw e;
+    }
   }
 
   @Override
