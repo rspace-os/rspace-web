@@ -16,15 +16,21 @@ import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FileDuplicateStrategy;
+import com.researchspace.service.FileStoreMetaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.InventoryRecordRetriever;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -45,6 +51,12 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
   @Autowired
   @Qualifier("compositeFileStore")
   private FileStore fileStore;
+
+  @Autowired private FileStoreMetaManager fileStoreMetaManager;
+
+  @Autowired private InventoryRecordRetriever inventoryRecordRetriever;
+
+  @Autowired private InventoryPermissionUtils permissionUtils;
 
   @Override
   public boolean exists(long id) {
@@ -86,7 +98,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
     String filestoreName =
         String.format("att_%s_%s", globalIdToAttachTo.getIdString(), originalFileName);
-    FileProperty fileProp = generateInventoryFileProperty(user, filestoreName, inputStream);
+    FileProperty fileProp = saveFileAndCreateFileProperty(user, filestoreName, inputStream);
 
     InventoryFile invFile = recordFactory.createInventoryFile(originalFileName, fileProp, user);
     invFile.setExtension(MediaUtils.getExtension(originalFileName));
@@ -147,9 +159,17 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     return invRecGlobalId;
   }
 
+  private FileProperty saveFileAndCreateFileProperty(
+      User user, String filestoreName, InputStream inputStream) throws IOException {
+    // FileProperty.contentsHash is only relevant to images and the way they are retrieved therefore
+    // set to an empty string here.
+    String emptyContentsHash = "";
+    return saveFileAndCreateFileProperty(user, filestoreName, emptyContentsHash, inputStream);
+  }
+
   @Override
-  public FileProperty generateInventoryFileProperty(
-      User user, String fileName, InputStream inputStream) throws IOException {
+  public FileProperty saveFileAndCreateFileProperty(
+      User user, String fileName, String contentsHash, InputStream inputStream) throws IOException {
 
     FileProperty fileProperty = new FileProperty();
     fileProperty.setFileCategory(INVENTORY_FILESTORE_CATEGORY);
@@ -161,12 +181,13 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     fileProperty.setFileOwner(user.getUsername());
     fileProperty.setFileUser(user.getUsername());
     fileProperty.setFileVersion("1");
+    fileProperty.setContentsHash(contentsHash);
     // we always save locally on initial upload
     fileProperty.setRoot(fileStore.getCurrentLocalFileStoreRoot());
 
     URI uri = fileStore.save(fileProperty, inputStream, fileName, FileDuplicateStrategy.AS_NEW);
     log.debug("File property {} created at URI {}", fileProperty.getId(), uri);
-    log.info("URI is {}", fileProperty.getAbsolutePathUri().toString());
+    log.info("URI is {}", fileProperty.getAbsolutePathUri());
 
     return fileProperty;
   }
@@ -188,5 +209,40 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     }
 
     return invFile;
+  }
+
+  public FileProperty getFilePropertyByContentsHash(String contentsHash, User user) {
+    Map<String, String> properties = new HashMap<>();
+    // get any usage of the contents hash, rather than also being restricted by user, since e.g. the
+    // image could belong to a template which wasn't created by the requesting user
+    properties.put("contentsHash", contentsHash);
+    List<FileProperty> filePropsWithHash = fileStoreMetaManager.findProperties(properties);
+
+    if (filePropsWithHash.isEmpty()) {
+      throw new NotFoundException(String.format("Image with hash %s not found.", contentsHash));
+    }
+
+    for (FileProperty fileProperty : filePropsWithHash) {
+      if (userHasReadPermissionsForFile(user, fileProperty)) {
+        return fileProperty;
+      }
+    }
+
+    // FileProperty exists, but the user doesn't have read permissions on any file which uses
+    // the FileProperty
+    throw new AuthorizationException(
+        String.format(
+            "User doesn't have permissions to read image " + "file with hash %s.", contentsHash));
+  }
+
+  /**
+   * Check the user has permission to read the image file by retrieving all the InventoryRecords
+   * which reference the FileProperty, then checking if the user has permissions to view any of
+   * those files
+   */
+  private boolean userHasReadPermissionsForFile(User user, FileProperty fileProperty) {
+    List<InventoryRecord> records = inventoryRecordRetriever.recordsUsingImageFile(fileProperty);
+    return records.stream()
+        .anyMatch(r -> permissionUtils.canUserReadInventoryRecord(r.getOid(), user));
   }
 }

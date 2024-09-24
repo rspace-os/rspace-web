@@ -4,6 +4,7 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.SubSampleDao;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -93,5 +94,17 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
     List<SubSample> limitedSubSamples = subSampleQueryWithParams.list();
 
     return new SearchResultsImpl<>(limitedSubSamples, pgCrit, allSubSamplesCount);
+  }
+
+  @Override
+  public List<SubSample> getAllUsingImage(FileProperty fileProperty) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from SubSample where imageFileProperty=:fileProperty OR"
+                + " thumbnailFileProperty=:fileProperty",
+            SubSample.class)
+        .setParameter("fileProperty", fileProperty)
+        .list();
   }
 }

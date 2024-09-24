@@ -4,6 +4,7 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.SampleDao;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -296,6 +297,18 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     FullTextSession fssn = Search.getFullTextSession(ssnx);
     sample.getSubSamples().forEach(fssn::index);
     return save(sample);
+  }
+
+  @Override
+  public List<Sample> getAllUsingImage(FileProperty fileProperty) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from Sample where imageFileProperty=:fileProperty OR"
+                + " thumbnailFileProperty=:fileProperty",
+            Sample.class)
+        .setParameter("fileProperty", fileProperty)
+        .list();
   }
 
   /*

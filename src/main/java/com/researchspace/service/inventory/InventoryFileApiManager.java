@@ -26,9 +26,11 @@ public interface InventoryFileApiManager {
       GlobalIdentifier globalIdToAttachTo, GlobalIdentifier galleryFileGlobalId, User user);
 
   /** Saves input stream as an inventory record in filestore. */
-  FileProperty generateInventoryFileProperty(User user, String fileName, InputStream inputStream)
-      throws IOException;
+  FileProperty saveFileAndCreateFileProperty(
+      User user, String fileName, String contentsHash, InputStream inputStream) throws IOException;
 
   /** Marks attachment as deleted. */
   InventoryFile markInventoryFileAsDeleted(Long id, User user);
+
+  FileProperty getFilePropertyByContentsHash(String fileName, User user);
 }

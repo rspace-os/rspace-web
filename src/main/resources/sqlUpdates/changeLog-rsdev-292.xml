@@ -1,0 +1,21 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2024-09-13a" context="run" author="fraser">
+        <comment>RSDEV-292: Add file contents hash column to FileProperty table</comment>
+        <addColumn tableName="FileProperty">
+            <column name="contentsHash" type="VARCHAR(64)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2024-09-13b" context="run" author="fraser">
+        <comment>RSDEV-292: Add index to contentsHash column</comment>
+        <createIndex indexName="contentsHash_idx" tableName="FileProperty">
+            <column name="contentsHash"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -301,7 +301,7 @@ public abstract class AbstractContentInitializer
     String base64image =
         "data:image/png;base64," + new String(Base64.encodeBase64(bytes), StandardCharsets.UTF_8);
 
-    sampleApiMgr.setPreviewImageForInvRecord(template, base64image, user);
+    sampleApiMgr.createImagesForRecord(template, base64image, user);
     sampleDao.save(template);
   }
 

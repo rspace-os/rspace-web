@@ -2017,8 +2017,6 @@ paths:
 
 
         Requires chemistry conversion service to be properly configured and available.
-
-
       produces:
         - application/json
       tags:
@@ -2028,6 +2026,28 @@ paths:
       responses:
         '200':
           description: Chemical details object
+
+  '/files/image/{contentsHash}':
+    get:
+      summary: Gets the file data for the image file with the given contents hash.
+      description: >
+        Gets the contents of the file matching the contentsHash. Contents hash is used here to improve
+        cache-ability of the images since any images which are the same in any container, sample, or 
+        sub-samples will have the same hash.
+      produces:
+        - application/json
+        - application/octet-stream
+      tags:
+        - Image Files
+      parameters:
+        - $ref: '#/parameters/contentsHashParam'
+      responses:
+        '200':
+          description: Image file bytes
+        '401':
+          description: Not authorised to read the image file
+        '404':
+          description: Image file with given contents hash not found
 
   '/attachments':
     post:
@@ -3525,6 +3545,12 @@ parameters:
           - type: CONTAINER
             cType: LIST
             name: myContainer
+  contentsHashParam:
+    name: contentsHash
+    in: path
+    description: the sha256 hash of the contents of the file to be retrieved.
+    required: true
+    type: string
 responses:
   UnprocessableQuery:
     description: Query could not be processed.

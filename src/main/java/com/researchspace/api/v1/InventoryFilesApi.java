@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,4 +66,8 @@ public interface InventoryFilesApi {
 
   @DeleteMapping(value = "/{id}")
   ApiInventoryFile deleteFile(Long id, User user);
+
+  @GetMapping("/image/{contentsHash}")
+  ResponseEntity<byte[]> getImageByContentsHash(@PathVariable String contentsHash, User user)
+      throws IOException;
 }

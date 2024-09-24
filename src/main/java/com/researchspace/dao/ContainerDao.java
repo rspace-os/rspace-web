@@ -2,10 +2,12 @@ package com.researchspace.dao;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
+import java.util.List;
 
 /** For DAO operations on Inventory Container. */
 public interface ContainerDao extends GenericDao<Container, Long> {
@@ -61,4 +63,6 @@ public interface ContainerDao extends GenericDao<Container, Long> {
    * @return
    */
   Long getWorkbenchIdForUser(User user);
+
+  List<Container> getAllUsingImage(FileProperty fileProperty);
 }

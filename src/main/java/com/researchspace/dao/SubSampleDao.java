@@ -2,9 +2,11 @@ package com.researchspace.dao;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SubSample;
+import java.util.List;
 
 /** For DAO operations on Inventory SubSample. */
 public interface SubSampleDao extends GenericDao<SubSample, Long> {
@@ -22,4 +24,6 @@ public interface SubSampleDao extends GenericDao<SubSample, Long> {
       String ownedBy,
       InventorySearchDeletedOption deletedItemsOption,
       User user);
+
+  List<SubSample> getAllUsingImage(FileProperty fileProperty);
 }
