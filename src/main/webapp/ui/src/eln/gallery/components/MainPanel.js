@@ -1181,6 +1181,7 @@ function GalleryMainPanel({
               sx={{
                 mt: 0.75,
               }}
+              flexWrap="nowrap"
             >
               <Grid item sx={{ maxWidth: "100% !important" }}>
                 <Stack direction="row" spacing={0.5} alignItems="center">
