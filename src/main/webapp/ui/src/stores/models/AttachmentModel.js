@@ -116,7 +116,7 @@ class LinkableGalleryFile implements LinkableRecord {
   }
 
   get iconName(): string {
-    return "attachment";
+    return "gallery";
   }
 
   get permalinkURL(): string {
