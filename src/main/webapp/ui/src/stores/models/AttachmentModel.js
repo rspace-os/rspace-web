@@ -800,7 +800,7 @@ export class NewGalleryAttachment implements Attachment {
     this.permalinkURL = `/globalId/${attrs.galleryId}`;
   }
 
-  async getFile(): Promise<File> {
+  getFile(): Promise<File> {
     return Promise.reject(new Error("Not implemented"));
   }
 
