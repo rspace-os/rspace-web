@@ -1761,7 +1761,7 @@ export const UsersPage = (): Node => {
                 <Grid item>
                   <Box height={4}></Box>
                 </Grid>
-                <Grid item>
+                <Grid item sx={{ width: "100%" }}>
                   {FetchingData.match(userListing, {
                     loading: () => (
                       <Typography variant="body2" sx={{ height: "36px" }}>
@@ -1783,7 +1783,7 @@ export const UsersPage = (): Node => {
                     selectedIds={rowSelectionModel}
                     fetchedListing={userListing}
                   />
-                  <div>
+                  <div style={{ width: "100%" }}>
                     <DataGrid
                       aria-label="users"
                       autoHeight
