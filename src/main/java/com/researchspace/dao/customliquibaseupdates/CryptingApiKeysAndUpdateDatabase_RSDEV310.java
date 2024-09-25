@@ -32,7 +32,7 @@ public class CryptingApiKeysAndUpdateDatabase_RSDEV310 extends AbstractCustomLiq
         .filter(userKey -> userKey.getApiKey().length() <= 32)
         .forEach(
             userKeyToUpdate -> {
-              userKeyToUpdate.setApiKey(CryptoUtils.encodeBCrypt(userKeyToUpdate.getApiKey()));
+              userKeyToUpdate.setApiKey(CryptoUtils.hashToken(userKeyToUpdate.getApiKey()));
               userApiKeyDao.save(userKeyToUpdate);
               recordsUpdated++;
             });

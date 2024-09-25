@@ -3,7 +3,6 @@ package com.researchspace.service.impl;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.dao.UserApiKeyDao;
-import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.UserApiKey;
 import com.researchspace.service.UserApiKeyManager;
@@ -19,7 +18,6 @@ public class UserApiKeyManagerImpl extends GenericManagerImpl<UserApiKey, Long>
     implements UserApiKeyManager {
 
   private UserApiKeyDao apiDao;
-  private UserDao userDao;
 
   public UserApiKeyManagerImpl(UserApiKeyDao apikeyDao) {
     super(apikeyDao);
@@ -28,10 +26,7 @@ public class UserApiKeyManagerImpl extends GenericManagerImpl<UserApiKey, Long>
 
   @Override
   public Optional<User> findUserByKey(String apiKey) {
-    return apiDao.getAll().stream()
-        .filter(userApiKey -> CryptoUtils.matchBCrypt(apiKey, userApiKey.getApiKey()))
-        .map(UserApiKey::getUser)
-        .findFirst();
+    return apiDao.getBySimpleNaturalId(CryptoUtils.hashToken(apiKey)).map(UserApiKey::getUser);
   }
 
   @Override
@@ -42,10 +37,10 @@ public class UserApiKeyManagerImpl extends GenericManagerImpl<UserApiKey, Long>
     // if the user already had an ApiKey THEN regenerate it
     if (keyForUser.isPresent()) {
       userApiKey = keyForUser.get();
-      userApiKey.setApiKey(CryptoUtils.encodeBCrypt(apiKey));
+      userApiKey.setApiKey(CryptoUtils.hashToken(apiKey));
       userApiKey.setCreated(new Date());
     } else { // if the user has not got an ApiKey THEN generate it
-      userApiKey = new UserApiKey(user, CryptoUtils.encodeBCrypt(apiKey));
+      userApiKey = new UserApiKey(user, CryptoUtils.hashToken(apiKey));
     }
 
     userApiKey = apiDao.save(userApiKey);
@@ -76,7 +71,7 @@ public class UserApiKeyManagerImpl extends GenericManagerImpl<UserApiKey, Long>
 
   @Override
   public UserApiKey hashAndSaveApiKeyForUser(User user, UserApiKey apiKey) {
-    UserApiKey apiKeyToSave = new UserApiKey(user, CryptoUtils.encodeBCrypt(apiKey.getApiKey()));
+    UserApiKey apiKeyToSave = new UserApiKey(user, CryptoUtils.hashToken(apiKey.getApiKey()));
     apiKeyToSave = apiDao.save(apiKeyToSave);
     return new UserApiKey(apiKeyToSave.getId(), user, apiKey.getApiKey());
   }
