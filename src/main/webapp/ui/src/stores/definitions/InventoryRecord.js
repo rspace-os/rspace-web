@@ -61,6 +61,17 @@ export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
   return "SAMPLE_TEMPLATE";
 }
 
+export type CreateOption = {|
+  label: string,
+  explanation: string,
+  parametersLabel: string,
+  onSubmit: () => void,
+|};
+
+export interface CreateFrom {
+  +createOptions: $ReadOnlyArray<CreateOption>;
+}
+
 /*
  * This is the base definition of all Inventory records. In other words, this
  * is the minimum definition of what it means to be a record in the Inventory
@@ -75,7 +86,11 @@ export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
  * and methods, as documented, have behaviours that are dependent on these two
  * different views.
  */
-export interface InventoryRecord extends Record, Editable, HasChildren {
+export interface InventoryRecord
+  extends Record,
+    Editable,
+    HasChildren,
+    CreateFrom {
   /*
    * These properties are simply shared by all record classes.
    */
