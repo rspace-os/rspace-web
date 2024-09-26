@@ -34,8 +34,23 @@ function NumberOfSubSamples({
   onErrorStateChange,
   sample,
 }: NumberOfSubSamplesArgs): Node {
+  /*
+   * When tapping the "Create" context button for a container, the user has the
+   * option to create a sample with respect to the container. The user can
+   * select a single location and is then re-directed to the create-sample
+   * form. Because only one location is selectable, it is important that the
+   * create-sample form only allows the user to create a single subsample.
+   */
+  const withSpecifiedLocations: boolean =
+    sample.newSampleSubSampleTargetLocations?.some(
+      ({ location }: SubSampleTargetLocation) =>
+        Object.keys(location).length > 0
+    ) ?? false;
+  const fixedNumberOfSubSamples: boolean =
+    sample.beingCreatedInContainer && withSpecifiedLocations;
+
   const [valid, setValid] = useState(true);
-  const [count, setCount] = useState("2");
+  const [count, setCount] = useState(fixedNumberOfSubSamples ? "1" : "2");
   const [type, setType] = useState<"SINGULAR" | "MANY">("SINGULAR");
 
   const handleChange = ({
@@ -63,14 +78,6 @@ function NumberOfSubSamples({
   const errorMessage = valid
     ? ""
     : `Must be an integer value of at least ${MIN} and no more than ${MAX}.`;
-
-  const withSpecifiedLocations: boolean = // inImaGridContainer
-    sample.newSampleSubSampleTargetLocations?.some(
-      ({ location }: SubSampleTargetLocation) =>
-        Object.keys(location).length > 0
-    ) ?? false;
-  const fixedNumberOfSubSamples: boolean =
-    sample.beingCreatedInContainer && withSpecifiedLocations;
 
   return (
     <>
@@ -131,6 +138,11 @@ function NumberOfSubSamples({
       {type === "MANY" && (
         <NestedFormField
           helperText={errorMessage}
+          explanation={
+            fixedNumberOfSubSamples
+              ? "You can create and move additional subsamples into the container once the sample is created."
+              : ""
+          }
           label={`Number of ${sample.subSampleAlias.plural}`}
           error={!valid}
           value={count}
