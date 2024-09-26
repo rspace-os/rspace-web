@@ -189,12 +189,17 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       User exporter,
       URI baseURL,
       PostArchiveCompletion postArchiveCompleter) {
-    preArchiveSelection(expCfg, exporter);
-    Supplier<ExportRecordList> exportListSupplier =
-        () -> archivePlanner.createExportRecordList(expCfg, exportSelection);
-    ArchiveResult result =
-        doArchiveSelection(expCfg, exporter, baseURL, postArchiveCompleter, exportListSupplier);
-    return new AsyncResult<>(result);
+    try {
+      preArchiveSelection(expCfg, exporter);
+      Supplier<ExportRecordList> exportListSupplier =
+          () -> archivePlanner.createExportRecordList(expCfg, exportSelection);
+      ArchiveResult result =
+          doArchiveSelection(expCfg, exporter, baseURL, postArchiveCompleter, exportListSupplier);
+      return new AsyncResult<>(result);
+    } catch (ExportFailureException e) {
+      postArchiveExportFailure(expCfg.getDescription(), expCfg.getExporter(), e.getMessage());
+      throw e;
+    }
   }
 
   @Override
@@ -233,6 +238,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     try {
       createTopLevelExportFolder(expCfg);
     } catch (IOException ie) {
+      log.error("Unable to export.", ie);
+      postArchiveExportFailure(expCfg.getArchiveType(), user, ie.getMessage());
       throw new ExportFailureException("Could not create archive folder", ie);
     }
     expCfg.setExporter(user);
@@ -466,6 +473,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       return new AsyncResult<>(ecatdoc);
     } catch (IOException e) {
       log.error("Error performing export.", e);
+      postArchiveExportFailure(expCfg.getExportName(), expCfg.getExporter(), e.getMessage());
     }
     return null;
   }
@@ -625,7 +633,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   @Override
-  public void handlePossibleRollbackAsync(Future<EcatDocumentFile> doc) throws IOException {
+  public void handlePossibleRollbackAsync(
+      Future<EcatDocumentFile> doc, String exportName, User exporter) {
     try {
       doc.get();
     } catch (Exception e) {
@@ -633,6 +642,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
           "Export failed: {} - root cause is {}",
           e.getMessage(),
           e.getCause() != null ? e.getCause().getMessage() : "unknown");
+      postArchiveExportFailure(exportName, exporter, e.getMessage());
     }
   }
 }
