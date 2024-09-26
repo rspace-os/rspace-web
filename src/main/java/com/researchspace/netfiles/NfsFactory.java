@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 /** Class providing various Net File Store implementations depending on deployment.properties */
 @Component
 public class NfsFactory {
+    
+  private static final int IRODS_DEFAULT_PORT = 1247;
 
   private static final Logger log = LoggerFactory.getLogger(NfsFactory.class);
 
@@ -89,10 +91,12 @@ public class NfsFactory {
           fileSystem.getClientOption(NfsFileSystemOption.SFTP_SERVER_PUBLIC_KEY));
     }
     if (NfsClientType.IRODS.equals(clientType)) {
+      int irodsPort;
+      irodsPort = (StringUtils.isBlank(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT))) ? IRODS_DEFAULT_PORT : Integer.parseInt(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT));
       return new IRODSClient(
           new IRODSAccount(
               fileSystem.getUrl(),
-              Integer.parseInt(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT)),
+              irodsPort,
               nfsusername,
               nfspassword,
               fileSystem.getClientOption(NfsFileSystemOption.IRODS_HOME_DIR),
