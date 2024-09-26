@@ -33,6 +33,9 @@ describe("Apps page", () => {
         data: null,
         error: "",
       });
+      mockAxios.onGet("livechatProperties").reply(200, {
+        livechatEnabled: false,
+      });
 
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
