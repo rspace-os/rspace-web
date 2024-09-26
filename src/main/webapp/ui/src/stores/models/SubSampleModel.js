@@ -15,6 +15,7 @@ import {
   type RecordType,
   type Action,
   type InventoryRecord,
+  type SharingMode,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
@@ -443,6 +444,17 @@ export default class SubSampleModel
 
   get usableInLoM(): boolean {
     return true;
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    return [
+      {
+        label: "Subsample, by splitting",
+        explanation: "New subsamples will be created by diving the quantity of this subsample equally amontst them",
+        parametersLabel: "Number of new subsamples",
+        onSubmit: () => {},
+      }
+    ];
   }
 }
 
