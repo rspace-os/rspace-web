@@ -36,7 +36,11 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
   }, [linkedDocuments.documents]);
 
   return (
-    <Box component="section" sx={{ mt: 0.5 }} flexGrow={1}>
+    <Box
+      component="section"
+      sx={{ mt: 0.5, "--DataGrid-overlayHeight": "40px" }}
+      flexGrow={1}
+    >
       <Typography variant="h6" component="h4">
         Linked Documents
       </Typography>

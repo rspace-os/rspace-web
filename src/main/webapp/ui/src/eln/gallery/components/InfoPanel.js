@@ -784,7 +784,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
       {selection
         .asSet()
         .only.map((f) => (
-          <CardContent sx={{ p: 1, pr: 0.5, height: "100%" }} key={null}>
+          <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
             <InfoPanelContent file={f} />
           </CardContent>
         ))
