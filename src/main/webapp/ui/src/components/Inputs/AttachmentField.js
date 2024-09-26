@@ -23,6 +23,7 @@ import type { Attachment } from "../../stores/definitions/Attachment";
 import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
 import UploadIcon from "@mui/icons-material/Publish";
 import BigIconButton from "../BigIconButton";
+import Result from "../../util/result";
 
 const GalleryPicker = React.lazy(() => import("../../eln/gallery/picker"));
 
@@ -190,6 +191,15 @@ function AttachmentField<
                     setGalleryDialogOpen(false);
                   }}
                   onlyAllowSingleSelection
+                  validateSelection={(file) =>
+                    file.isSnippet
+                      ? Result.Error([
+                          new Error(
+                            "Snippets cannot be attached to Inventory records."
+                          ),
+                        ])
+                      : Result.Ok(null)
+                  }
                 />
               </React.Suspense>
             )}

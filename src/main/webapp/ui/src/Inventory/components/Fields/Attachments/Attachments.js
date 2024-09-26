@@ -42,6 +42,7 @@ import BigIconButton from "../../../../components/BigIconButton";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import UploadIcon from "@mui/icons-material/Publish";
+import Result from "../../../../util/result";
 
 const GalleryPicker = React.lazy(() =>
   import("../../../../eln/gallery/picker")
@@ -207,6 +208,15 @@ const FileSelector = ({
               });
               setGalleryDialogOpen(false);
             }}
+            validateSelection={(file) =>
+              file.isSnippet
+                ? Result.Error([
+                    new Error(
+                      "Snippets cannot be attached to Inventory records."
+                    ),
+                  ])
+                : Result.Ok(null)
+            }
           />
         </React.Suspense>
       )}

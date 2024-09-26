@@ -65,10 +65,12 @@ const Picker = observer(
     open,
     onClose,
     onSubmit,
+    validateSelection,
   }: {|
     open: boolean,
     onClose: () => void,
     onSubmit: (RsSet<GalleryFile>) => void,
+    validateSelection: (GalleryFile) => Result<null>,
   |}) => {
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
@@ -177,7 +179,9 @@ const Picker = observer(
                     <ValidatingSubmitButton
                       validationResult={
                         selection.size > 0
-                          ? Result.Ok(null)
+                          ? Result.all(
+                              ...selection.asSet().map(validateSelection)
+                            ).map(() => null)
                           : Result.Error([
                               new Error("Select at least one file to proceed."),
                             ])
@@ -209,16 +213,23 @@ export default function Wrapper({
   onClose,
   onSubmit,
   onlyAllowSingleSelection,
+  validateSelection = () => Result.Ok(null),
 }: {|
   open: boolean,
   onClose: () => void,
   onSubmit: (RsSet<GalleryFile>) => void,
   onlyAllowSingleSelection?: boolean,
+  validateSelection?: (GalleryFile) => Result<null>,
 |}): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
       <GallerySelection onlyAllowSingleSelection={onlyAllowSingleSelection}>
-        <Picker open={open} onClose={onClose} onSubmit={onSubmit} />
+        <Picker
+          open={open}
+          onClose={onClose}
+          onSubmit={onSubmit}
+          validateSelection={validateSelection}
+        />
       </GallerySelection>
     </ThemeProvider>
   );
