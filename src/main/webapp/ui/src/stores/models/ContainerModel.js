@@ -30,6 +30,7 @@ import {
   type RecordType,
   type Action,
   type SharingMode,
+  type CreateOption,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
@@ -1112,6 +1113,23 @@ export default class ContainerModel
       ...super.dataAttachedToRecordCreatedAnaylticsEvent,
       cType: this.cType,
     };
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    return [
+      {
+        label: "Container",
+        explanation: "The container will be automatically added to this container.",
+        parametersLabel: "Location",
+        onSubmit: () => {}
+      },
+      {
+        label: "Sample",
+        explanation: "The subsample will be automatically added to this container.",
+        parametersLabel: "Location",
+        onSubmit: () => {}
+      }
+    ];
   }
 }
 

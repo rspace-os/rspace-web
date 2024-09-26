@@ -23,6 +23,7 @@ import {
   type State,
   type ApiRecordType,
   type SharingMode,
+  type CreateOption,
 } from "../definitions/InventoryRecord";
 import {
   type AdjustableTableRow,
@@ -1700,5 +1701,9 @@ export default class Result
 
   get showBarcode(): boolean {
     return true;
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    return [];
   }
 }

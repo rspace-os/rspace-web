@@ -46,6 +46,7 @@ import {
   type RecordType,
   type Action,
   type SharingMode,
+  type CreateOption,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type _LINK } from "../../common/ApiServiceBase";
@@ -837,6 +838,10 @@ export default class SampleModel
           ? Array(this.newSampleSubSamplesCount).fill(firstLocation)
           : this.newSampleSubSampleTargetLocations,
     };
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    return [];
   }
 }
 

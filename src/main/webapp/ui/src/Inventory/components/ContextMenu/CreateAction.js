@@ -7,7 +7,7 @@ import ContextMenuAction, {
 import useStores from "../../../stores/use-stores";
 import { Observer } from "mobx-react-lite";
 import AddBoxIcon from "@mui/icons-material/AddBox";
-import CreateInContextDialog from "../../Mixed/CreateDialog";
+import CreateDialog from "./CreateDialog";
 import FromSampleDialog from "../../Template/FromSampleDialog";
 import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -95,11 +95,10 @@ const CreateAction: ComponentType<CreateActionArgs> = forwardRef(
             ref={ref}
           >
             {canCreate && contextMatches() && (
-              <CreateInContextDialog
+              <CreateDialog
                 open={contextMatches()}
                 onClose={onCloseHandler}
-                selectedResult={selectedResults[0]}
-                menuID={menuID}
+                existingRecord={selectedResults[0]}
               />
             )}
             {canCreateTemplate && contextForTemplateMatches() && (
