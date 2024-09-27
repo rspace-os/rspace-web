@@ -225,3 +225,15 @@ that has a distinct constant value for each branch of the union, thereby
 supporting refinement. It is the closest thing that JavaScript with Flow type
 annotations has to the tagged unions of pure functional programming languages.
 For more information, see [the Flow docs](https://flow.org/en/docs/types/unions/#toc-disjoint-object-unions).
+
+### Dynamic dispatch
+
+The process of selecting which implementation of some code to execute at runtime.
+The canonical example is the nominal subtyping of class hierarchies in
+languages like Java, or the prototypical inheritance in JavaScript, however the
+principle applies anywhere where executable code is not statically known at
+compile time, such as through dependency injection or by passing higher-order
+functions. [React contexts](#context) are a way of dynamically dispatching
+based on where a component is rendered within the component tree, providing
+different implementations of an interface based on which context is within
+scope where the component is rendered.
