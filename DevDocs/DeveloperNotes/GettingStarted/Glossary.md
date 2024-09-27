@@ -83,4 +83,9 @@ Barcodes, including QR codes, are used extensively in the labatory setting to
 associate digitally recorded information with physical items, including test tubes
 and frozen samples. Printing and scanning labels is a common part of the workflow
 of our customers, and as such Inventory provides some capabilities to work
-cohesively with these workflows. 
+cohesively with these workflows.
+
+### Basket
+
+Heterogenous collections of Inventory records that are persisted across sessions,
+facilitating bulk operations.
