@@ -94,3 +94,17 @@ facilitating bulk operations.
 
 A per-user location for subsamples and containers. Designed to be analogous to the
 user's workspace in the labatory.
+
+### Breakpoint
+
+Key functionality of a debugging tool that stops the execution of the code at a
+predefined point.
+
+A defined width of the browser's viewport, typically measured in pixels, with
+respect to which styles that responsively adapt user interface are defined.
+These breakpoints are typically chosen to categorise viewport sizes into
+phones, tablets, and common window sizes on desktops and laptops but this is
+rather arbitrary as there are phones larger than the smallest tablets and 
+windows can be resized to various dimensions. Most UI code is abstracted away
+from the particular device and is simply concerned with whichever is the 
+largest breakpoint smaller than the viewport's current width.
