@@ -18,3 +18,10 @@ in the naming of code constructs and in the comments surrounding them.
 update state that is being managed by mobx. When the state is updated, any
 computed properties that are being observed are re-computed and any observing
 react components are re-rendered.
+
+### Alt-text
+
+A string that is associated with an image so that blind users using screen
+readers can have the contents of the image described to them. For more
+information, [see the MDN documentation on the `alt` attribute of
+HTMLImageElements](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/alt).
