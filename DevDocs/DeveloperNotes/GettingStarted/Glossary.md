@@ -129,3 +129,10 @@ The degree to which adjacent elements are displayed using colours that are
 sufficiently different so as to be easily distinguished. This is a critical
 aspect of [accessible design](#accessibility), and is discussed at length in
 [Accessibility.md](./Accessibility.md).
+
+### Component Tree
+
+The tree data structure created by react components calling other react components.
+From the perspective of our code, mostly MUI components, with only some HTML elements,
+are the leaf nodes. The component tree can be interactively explored with the
+[react developer tools](https://react.dev/learn/react-developer-tools).
