@@ -189,4 +189,9 @@ abstractions over applications of the generic low-level react APIs like
 useEffect and [contexts](#context). For more information, see
 [the react docs](https://react.dev/learn/reusing-logic-with-custom-hooks).
 
+## D
 
+### DataGrid
+
+[DataGrid](https://mui.com/x/react-data-grid/) is a complex react component
+provided by MUI for displaying tabular data.
