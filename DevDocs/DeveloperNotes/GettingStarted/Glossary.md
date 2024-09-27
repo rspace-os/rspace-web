@@ -122,3 +122,10 @@ they have gone on to become a key part of the design language of modern Web deve
 
 [clsx](https://www.npmjs.com/package/clsx) is a utility library for constructing
 HTML class attributes with conditional logic.
+
+### Colour contrast
+
+The degree to which adjacent elements are displayed using colours that are
+sufficiently different so as to be easily distinguished. This is a critical
+aspect of [accessible design](#accessibility), and is discussed at length in
+[Accessibility.md](./Accessibility.md).
