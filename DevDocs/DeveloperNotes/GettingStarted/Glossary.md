@@ -191,6 +191,13 @@ useEffect and [contexts](#context). For more information, see
 
 ## D
 
+### Data Management Plan
+
+A [Data Management Plan](https://en.wikipedia.org/wiki/Data_management_plan)
+(abbreviated DMP) is a document prepared prior to beginning research for
+describing how the data will be handled, any relevant metadata, and how the
+data will be prepared for archiving and preservation.
+
 ### DataGrid
 
 [DataGrid](https://mui.com/x/react-data-grid/) is a complex react component
