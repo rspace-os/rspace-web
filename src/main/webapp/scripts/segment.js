@@ -4,6 +4,30 @@ if (typeof window.currentUser === "undefined") {
   window.currentUser = "";
 }
 
+_loadLiveChat = function (analyticsEnaled, analyticsServerType) {
+  if(!analyticsEnaled || analyticsServerType === "posthog") {
+
+    // setup intercom independently of segment
+    fetch("/session/ajax/livechatProperties")
+      .then(res => res.json())
+      .then(props => {
+        var APP_ID = props.livechatServerKey;
+        window.intercomSettings = {
+          api_base: "https://api-iam.intercom.io",
+          app_id: APP_ID,
+          hide_default_launcher: true,
+        };
+
+        // this code is taken from the intercom docs
+        // https://developers.intercom.com/installing-intercom/web/installation
+        (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/' + APP_ID;var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s, x);};if(document.readyState==='complete'){l();}else if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();
+    });
+
+    return;
+  }
+  // if segment is being used for analytics, then intercom will be loaded via it
+}
+
 _loadAnalytics = function (analyticsServerType, analyticsServerHost, analyticsServerKey, analyticsUserId) {
   console.log("Loading analytics");
 
@@ -23,22 +47,6 @@ _loadAnalytics = function (analyticsServerType, analyticsServerHost, analyticsSe
     window.analytics = {
       track: (event, data) => posthog.capture(event, data),
     };
-
-    // 4. setup intercom independently of segment
-    fetch("/session/ajax/livechatProperties")
-      .then(res => res.json())
-      .then(props => {
-        var APP_ID = props.livechatServerKey;
-        window.intercomSettings = {
-          api_base: "https://api-iam.intercom.io",
-          app_id: APP_ID,
-          hide_default_launcher: true,
-        };
-
-        // this code is taken from the intercom docs
-        // https://developers.intercom.com/installing-intercom/web/installation
-        (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/' + APP_ID;var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s, x);};if(document.readyState==='complete'){l();}else if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();
-    });
 
     return;
   }
@@ -141,6 +149,7 @@ $(document).ready(function () {
         analyticsData.analyticsUserId,
       );
     }
+    _loadLiveChat(analyticsData.analyticsEnabled, analyticsData.analyticsServerType);
   } else {
     console.log("no saved analytics config, retrieving...");
 
@@ -164,6 +173,7 @@ $(document).ready(function () {
           analyticsData.analyticsUserId,
         );
       }
+      _loadLiveChat(analyticsData.analyticsEnabled, analyticsData.analyticsServerType);
     });
     analyticsProps.fail(function () {
       console.log("couldn't retrieve analytics properties");
