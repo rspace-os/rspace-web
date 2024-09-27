@@ -11,6 +11,7 @@ _loadLiveChat = function (analyticsEnaled, analyticsServerType) {
     fetch("/session/ajax/livechatProperties")
       .then(res => res.json())
       .then(props => {
+        if (!props.livechatEnabled) return;
         var APP_ID = props.livechatServerKey;
         window.intercomSettings = {
           api_base: "https://api-iam.intercom.io",
