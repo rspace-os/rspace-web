@@ -237,3 +237,13 @@ functions. [React contexts](#context) are a way of dynamically dispatching
 based on where a component is rendered within the component tree, providing
 different implementations of an interface based on which context is within
 scope where the component is rendered.
+
+## E
+
+### Electronic Lab Notebooks
+
+Often abbreviated as 'ELN', these are pieces of software designed to replace
+the traditional notebooks that scientists and researchers kept in laboratories
+to record experimental results. In addition to being central to collaboration
+and a reference for future publishing, they also form a key part of the
+evidence in enforcing intellectual property rights.
