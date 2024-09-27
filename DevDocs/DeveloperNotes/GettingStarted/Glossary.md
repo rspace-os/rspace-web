@@ -117,3 +117,8 @@ A card is a region of the user interface that contains semantically related elem
 defined with either a border or drop shadow. Popularised by [Google's Material design](https://m3.material.io/)
 ([see Cards as they were originally designed in version 1 of Material design](https://m1.material.io/components/cards.html)),
 they have gone on to become a key part of the design language of modern Web development.
+
+### clsx
+
+[clsx](https://www.npmjs.com/package/clsx) is a utility library for constructing
+HTML class attributes with conditional logic.
