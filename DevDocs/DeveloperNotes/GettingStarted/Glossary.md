@@ -268,3 +268,8 @@ replicate them across multiple records.
 
 [Fast-check](https://fast-check.dev/) is a property-based testing library for
 JavaScript.
+
+### Flow
+
+[Flow](https://flow.org/) is a static type checker for JavaScript. It's very
+similar to TypeScript, and the reason we use Flow is largely historical.
