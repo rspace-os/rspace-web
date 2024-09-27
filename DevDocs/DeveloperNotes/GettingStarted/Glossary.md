@@ -177,7 +177,8 @@ like alerting, navigation, and modal dialogs. For more information, see
 In addition to the standard fields that we provide, like description, tags,
 and expiry date, samples can have additional fields of various types. These
 are defined on a sample template and are inherited by any samples created by
-that template. There is no way other way to additional custom fields.
+that template. There is no way other way to additional custom fields, although
+[extra fields](#extra-field) can be added to samples on an ad-hoc basis.
 
 ### Custom hook
 
@@ -253,3 +254,10 @@ evidence in enforcing intellectual property rights.
 A static analysis tool for identifying potentially problematic patterns in
 JavaScript code. Via its plugin system, it can also be used to enforce code
 style.
+
+### Extra field
+
+In addition to the standard fields that we provide, like description, tags,
+and expiry date, all Inventory records can have additional fields. These
+are defined in an ad-hoc manner on a per-record basis with no mechanism for
+replicate them across multiple records.
