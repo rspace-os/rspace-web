@@ -279,7 +279,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
     return analyticsEnabled;
   }
 
-  public String getAnalyticsServerType(){
+  public String getAnalyticsServerType() {
     return analyticsServerType;
   }
 
