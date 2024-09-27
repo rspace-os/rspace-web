@@ -391,6 +391,7 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
     return getSession()
         .createQuery("from FileProperty where contentsHash = :contentsHash", FileProperty.class)
         .setParameter("contentsHash", contentsHash)
+        .setMaxResults(1)
         .getSingleResult();
   }
 }

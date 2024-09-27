@@ -316,8 +316,8 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     return sessionFactory
         .getCurrentSession()
         .createQuery(
-            "from Sample where STemplate.imageFileProperty=:fileProperty OR"
-                + " STemplate.thumbnailFileProperty=:fileProperty",
+            "from Sample where template = true and (imageFileProperty=:fileProperty OR "
+                + "thumbnailFileProperty=:fileProperty)",
             Sample.class)
         .setParameter("fileProperty", fileProperty)
         .list();
