@@ -1,7 +1,7 @@
 # Jest
 
 We use [Jest](https://jestjs.io/) to perform unit testing on the front-end
-JavaScript codebase, primarily for Inventory. Before commiting to develop, it
+JavaScript codebase, primarily for Inventory. Before commiting to main, it
 is best to ensure that all of the tests continue to pass.
 
 ## Running
