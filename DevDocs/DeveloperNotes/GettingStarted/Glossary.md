@@ -5,6 +5,10 @@ in the naming of code constructs and in the comments surrounding them.
 
 ## A
 
+### -Args
+
+Any type ending in "Args" describes the shape of the props expected by a react component.
+
 ### A11y
 
 See [accessibility](#accessibility).
