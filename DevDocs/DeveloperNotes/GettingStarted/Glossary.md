@@ -49,3 +49,10 @@ the MDN documentation.](https://developer.mozilla.org/en-US/docs/Web/Accessibili
 Aspose is a third-party service for converting between common document formats.
 We mostly use it to generate PDFs of word, excel, and other office documents.
 [For more information, see Aspose's website.](https://products.aspose.app/)
+
+### axe
+
+Axe is a collection of testing tools for validating [accessibility](#accessibility) compliance.
+There is a core library and variety of tools built on top including browser
+extensions and automated testing packages.
+[For more information, see axe's website](https://www.deque.com/axe/)
