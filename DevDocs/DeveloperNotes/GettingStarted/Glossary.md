@@ -273,3 +273,13 @@ JavaScript.
 
 [Flow](https://flow.org/) is a static type checker for JavaScript. It's very
 similar to TypeScript, and the reason we use Flow is largely historical.
+
+### FlowExpectedError
+
+See [Flow suppression](#flow-supression).
+
+### Flow suppression
+
+> A suppression is a special kind of comment that you can place on the line
+> before a type error. It tells Flow not to report that error when checking
+> your code. — [Flow](https://flow.org/en/docs/errors/)
