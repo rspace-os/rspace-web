@@ -172,3 +172,9 @@ and exposing global functions that abstract reusable page-wide functionality
 like alerting, navigation, and modal dialogs. For more information, see
 [the react docs](https://react.dev/learn/passing-data-deeply-with-context).
 
+### Custom field
+
+In addition to the standard fields that we provide, like description, tags,
+and expiry date, samples can have additional fields of various types. These
+are defined on a sample template and are inherited by any samples created by
+that template. There is no way other way to additional custom fields.
