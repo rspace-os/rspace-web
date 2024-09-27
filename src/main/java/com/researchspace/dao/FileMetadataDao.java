@@ -126,4 +126,8 @@ public interface FileMetadataDao extends GenericDao<FileProperty, Long> {
    * @return
    */
   FileStoreRoot getCurrentFileStoreRoot(boolean external);
+
+  boolean doesUserOwnDocWithHash(User user, String contentsHash);
+
+  FileProperty getImageFileByHash(String contentsHash);
 }

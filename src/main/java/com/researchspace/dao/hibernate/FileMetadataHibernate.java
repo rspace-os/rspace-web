@@ -337,4 +337,61 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
             .list();
     return results.isEmpty() ? null : results.get(0);
   }
+
+  @Override
+  public boolean doesUserOwnDocWithHash(User user, String contentsHash) {
+    long sampleHits =
+        (long)
+            getSession()
+                .createQuery(
+                    "select count(*) from Sample where owner = :user and"
+                        + " (imageFileProperty.contentsHash = :contentsHash or"
+                        + " thumbnailFileProperty.contentsHash = :contentsHash) ")
+                .setParameter("user", user)
+                .setParameter("contentsHash", contentsHash)
+                .getSingleResult();
+    if (sampleHits > 0) {
+      return true;
+    }
+
+    long subSampleHits =
+        (long)
+            getSession()
+                .createQuery(
+                    "select count(*) from SubSample where sample.owner = :user and"
+                        + " (imageFileProperty.contentsHash = :contentsHash or"
+                        + " thumbnailFileProperty.contentsHash = :contentsHash) ")
+                .setParameter("user", user)
+                .setParameter("contentsHash", contentsHash)
+                .getSingleResult();
+    if (subSampleHits > 0) {
+      return true;
+    }
+
+    long containerHits =
+        (long)
+            getSession()
+                .createQuery(
+                    "select count(*) from Container where owner = :user and"
+                        + " (imageFileProperty.contentsHash = :contentsHash or"
+                        + " thumbnailFileProperty.contentsHash = :contentsHash or"
+                        + " locationsImageFileProperty.contentsHash = :contentsHash) ")
+                .setParameter("user", user)
+                .setParameter("contentsHash", contentsHash)
+                .getSingleResult();
+    if (containerHits > 0) {
+      return true;
+    }
+
+    return false;
+  }
+
+  @Override
+  public FileProperty getImageFileByHash(String contentsHash) {
+    return getSession()
+        .createQuery("from FileProperty where contentsHash = :contentsHash", FileProperty.class)
+        .setParameter("contentsHash", contentsHash)
+        .setMaxResults(1)
+        .getSingleResult();
+  }
 }
