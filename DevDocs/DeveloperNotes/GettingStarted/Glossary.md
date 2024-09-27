@@ -37,3 +37,9 @@ example `fc.string()` generates random strings and has the type
 all manner of possible JavaScript objects. For more information, [see the
 fast-check documentation on
 Arbitraries](https://fast-check.dev/docs/introduction/getting-started/#arbitrary)
+
+### aria-
+
+Aria-* attributes are HTML attributes for adding additional information for 
+accessibility technologies like screen readers. [For more information on ARIA, see
+the MDN documentation.](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA)
