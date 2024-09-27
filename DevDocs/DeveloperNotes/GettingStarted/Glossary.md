@@ -108,3 +108,12 @@ rather arbitrary as there are phones larger than the smallest tablets and
 windows can be resized to various dimensions. Most UI code is abstracted away
 from the particular device and is simply concerned with whichever is the 
 largest breakpoint smaller than the viewport's current width.
+
+## C
+
+### Card
+
+A card is a region of the user interface that contains semantically related elements,
+defined with either a border or drop shadow. Popularised by [Google's Material design](https://m3.material.io/)
+([see Cards as they were originally designed in version 1 of Material design](https://m1.material.io/components/cards.html)),
+they have gone on to become a key part of the design language of modern Web development.
