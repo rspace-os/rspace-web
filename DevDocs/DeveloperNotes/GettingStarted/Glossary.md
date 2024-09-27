@@ -89,3 +89,8 @@ cohesively with these workflows.
 
 Heterogenous collections of Inventory records that are persisted across sessions,
 facilitating bulk operations.
+
+### Bench
+
+A per-user location for subsamples and containers. Designed to be analogous to the
+user's workspace in the labatory.
