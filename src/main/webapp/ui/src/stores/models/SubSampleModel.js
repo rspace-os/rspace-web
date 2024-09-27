@@ -16,6 +16,7 @@ import {
   type Action,
   type InventoryRecord,
   type SharingMode,
+  type CreateOption,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
@@ -62,6 +63,7 @@ import {
   IsValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
+import { SplitCount } from "../../Inventory/components/ContextMenu/CreateDialog";
 
 type SubSampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -140,6 +142,9 @@ export default class SubSampleModel
   immediateParentContainer: ?ContainerModel;
   lastNonWorkbenchParent: ?string;
   lastMoveDate: ?Date;
+  createOptionsParametersState: {|
+    split: { count: number, validState: boolean }
+  |};
 
   constructor(factory: Factory, params: SubSampleAttrs) {
     super(factory);
@@ -153,6 +158,7 @@ export default class SubSampleModel
       immediateParentContainer: observable,
       lastNonWorkbenchParent: observable,
       lastMoveDate: observable,
+      createOptionsParametersState: observable,
       createNote: action,
       paramsForBackend: override,
       updateFieldsState: override,
@@ -169,6 +175,8 @@ export default class SubSampleModel
 
     if (this.recordType === "subSample")
       this.populateFromJson(factory, params, {});
+
+    this.createOptionsParametersState = { split: { count: 2, validState: true }};
   }
 
   populateFromJson(
@@ -450,9 +458,16 @@ export default class SubSampleModel
     return [
       {
         label: "Subsample, by splitting",
-        explanation: "New subsamples will be created by diving the quantity of this subsample equally amontst them",
+        explanation: "New subsamples will be created by diving the quantity of this subsample equally amongst them.",
         parametersLabel: "Number of new subsamples",
-        onSubmit: () => {},
+        parametersComponent: (state: {| count: number, validState: boolean |}) => <SplitCount state={state} />,
+        parametersState: this.createOptionsParametersState.split,
+        onSubmit: (record: InventoryRecord, { count }: {| count: number |}) => {
+          return getRootStore().searchStore.search.splitRecord(
+            count,
+            record
+          );
+        },
       }
     ];
   }

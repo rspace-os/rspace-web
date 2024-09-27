@@ -61,11 +61,13 @@ export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
   return "SAMPLE_TEMPLATE";
 }
 
-export type CreateOption = {|
+export type CreateOption<T> = {|
   label: string,
   explanation: string,
   parametersLabel: string,
-  onSubmit: () => void,
+  parametersComponent: (T) => Node,
+  parametersState: T,
+  onSubmit: (InventoryRecord, T) => void,
 |};
 
 export interface CreateFrom {
