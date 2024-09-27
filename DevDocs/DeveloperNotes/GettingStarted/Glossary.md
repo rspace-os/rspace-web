@@ -261,3 +261,10 @@ In addition to the standard fields that we provide, like description, tags,
 and expiry date, all Inventory records can have additional fields. These
 are defined in an ad-hoc manner on a per-record basis with no mechanism for
 replicate them across multiple records.
+
+## F
+
+### fast-check
+
+[Fast-check](https://fast-check.dev/) is a property-based testing library for
+JavaScript.
