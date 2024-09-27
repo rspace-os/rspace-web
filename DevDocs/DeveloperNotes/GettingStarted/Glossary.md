@@ -160,3 +160,15 @@ A CSS feature for selecting elements based on their surrounding container.
 > size of the element's container. If, for example, a container has less
 > space available in the surrounding context, you can hide certain elements
 > or use smaller fonts. — [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries)
+
+### Context
+
+A react context defines a region of the [component tree](#component-tree)
+within which a particular set of values are globally available. They are an
+incredibly powerful feature that goes beyond just avoiding prop drilling:
+facilitating dynamic dispatching based on where a component is rendered
+in component tree, providing seams that can be mocked in a test environment,
+and exposing global functions that abstract reusable page-wide functionality
+like alerting, navigation, and modal dialogs. For more information, see
+[the react docs](https://react.dev/learn/passing-data-deeply-with-context).
+
