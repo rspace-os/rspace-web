@@ -101,4 +101,6 @@ public interface SampleDao extends GenericDao<Sample, Long> {
   void resetDefaultTemplateOwner();
 
   List<Sample> getAllUsingImage(FileProperty fileProperty);
+
+  List<Sample> getAllTemplatesUsingImage(FileProperty fileProperty);
 }

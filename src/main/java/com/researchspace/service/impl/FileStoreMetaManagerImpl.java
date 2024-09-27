@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.FileStoreRoot;
+import com.researchspace.model.User;
 import com.researchspace.service.FileStoreMetaManager;
 import java.util.List;
 import java.util.Map;
@@ -39,5 +40,15 @@ public class FileStoreMetaManagerImpl extends GenericManagerImpl<FileProperty, L
   @Override
   public List<FileProperty> findProperties(Map<String, String> searchCriteria) {
     return fileDao.findProperties(searchCriteria);
+  }
+
+  @Override
+  public boolean doesUserOwnDocWithHash(User user, String contentsHash) {
+    return fileDao.doesUserOwnDocWithHash(user, contentsHash);
+  }
+
+  @Override
+  public FileProperty getByHash(String contentsHash) {
+    return fileDao.getImageFileByHash(contentsHash);
   }
 }

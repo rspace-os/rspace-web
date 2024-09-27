@@ -311,6 +311,18 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
         .list();
   }
 
+  @Override
+  public List<Sample> getAllTemplatesUsingImage(FileProperty fileProperty) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from Sample where STemplate.imageFileProperty=:fileProperty OR"
+                + " STemplate.thumbnailFileProperty=:fileProperty",
+            Sample.class)
+        .setParameter("fileProperty", fileProperty)
+        .list();
+  }
+
   /*
    * ============
    *  for tests
