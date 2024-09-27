@@ -11,3 +11,10 @@ in the naming of code constructs and in the comments surrounding them.
 > and then "y") in web development means enabling as many people as possible to
 > use websites, even when those people's abilities are limited in some way. —
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/Accessibility)
+
+### Action
+
+[Mobx actions](https://mobx.js.org/actions.html) are functions or methods that
+update state that is being managed by mobx. When the state is updated, any
+computed properties that are being observed are re-computed and any observing
+react components are re-rendered.
