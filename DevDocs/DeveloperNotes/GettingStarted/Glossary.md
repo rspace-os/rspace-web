@@ -217,3 +217,11 @@ validate and report on the dependencies between modules.
 > an active dialog is typically visually obscured or dimmed so it is difficult
 > to discern, and in some implementations, attempts to interact with the inert
 > content cause the dialog to close. — [ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)
+
+### Disjoint object union
+
+A Flow type where each value of the type is an object and there is a property
+that has a distinct constant value for each branch of the union, thereby
+supporting refinement. It is the closest thing that JavaScript with Flow type
+annotations has to the tagged unions of pure functional programming languages.
+For more information, see [the Flow docs](https://flow.org/en/docs/types/unions/#toc-disjoint-object-unions).
