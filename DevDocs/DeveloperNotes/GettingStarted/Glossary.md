@@ -43,3 +43,9 @@ Arbitraries](https://fast-check.dev/docs/introduction/getting-started/#arbitrary
 Aria-* attributes are HTML attributes for adding additional information for 
 accessibility technologies like screen readers. [For more information on ARIA, see
 the MDN documentation.](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA)
+
+### Aspose
+
+Aspose is a third-party service for converting between common document formats.
+We mostly use it to generate PDFs of word, excel, and other office documents.
+[For more information, see Aspose's website.](https://products.aspose.app/)
