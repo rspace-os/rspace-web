@@ -99,7 +99,7 @@ E.g.,
  
     `mysql -v  -uroot -ppassword < createTestUpdateDB.sql`
 
-This should create a database called **testLiquibaseUpdate** and populate it with your a baseline schema from rs-dbbaseline-utf8 schema.
+This should create a database called **testLiquibaseUpdate** and populate it with your baseline schema from rs-dbbaseline-utf8 schema.
 
 **Note:** if the database is already populated then drop it before running the above script. Login to mysql shell, then:
 `drop database testLiquibaseUpdate;`

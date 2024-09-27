@@ -42,7 +42,9 @@ In VSCode JavaScript and TypeScript are tighly coupled. VSCode intellisense and 
 features for JavaScript are dependent on TypeScript. When Flow is enabled, this
 results in double type annotations on hover and double autocomplete suggestions.
 Generally, the top type pop-up annotation comes from Flow and the bottom one from
-TypeScript. At the moment it is not possible to disable the double annotation pop-ups  without disabling TypeScript and hence disabling some important IDE features.
+TypeScript. At the moment it is not possible to disable the double annotation
+pop-ups  without disabling TypeScript and hence disabling some important IDE
+features.
 
 #### VSCode __recommendations__
 - Additional plugins:
@@ -105,7 +107,7 @@ the code has already been loaded in the main bundle then there is no need to
 dynamically loaded the same code again but it does mean that it is very easy to
 inadvertently break some lazy loading through spooky action at a distance.
 
-Let's say we have a component called BigInfrequentUsedFeature that is lazy loaded
+Let's say we have a component called BigInfrequentlyUsedFeature that is lazy loaded
 ```
   const LazyBigInfrequentlyUsedFeature = lazy(() => import("./BigInfrequentlyUsedFeature"));
 ```

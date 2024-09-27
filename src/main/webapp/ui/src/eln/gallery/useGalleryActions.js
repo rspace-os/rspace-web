@@ -14,6 +14,8 @@ import {
 } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
+const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
+
 export opaque type Destination =
   | {| key: "root" |}
   | {| key: "folder", folder: GalleryFile |};
@@ -61,6 +63,19 @@ export function useGalleryActions(): {|
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
 
+  /*
+   * We create these axios objects because the global axios object is polluted
+   * in Inventory to make the network calls relative to /inventory
+   */
+  const galleryApi = axios.create({
+    baseURL: "/gallery/ajax",
+    timeout: ONE_MINUTE_IN_MS,
+  });
+  const structuredDocumentApi = axios.create({
+    baseURL: "/workspace/editor/structuredDocument/ajax",
+    timeout: ONE_MINUTE_IN_MS,
+  });
+
   async function uploadFiles(
     path: $ReadOnlyArray<GalleryFile>,
     parentId: Id,
@@ -82,15 +97,11 @@ export function useGalleryActions(): {|
           const formData = new FormData();
           formData.append("xfile", file);
           formData.append("targetFolderId", targetFolderId);
-          return axios.post<FormData, mixed>(
-            "gallery/ajax/uploadFile",
-            formData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
-          );
+          return galleryApi.post<FormData, mixed>("uploadFile", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
         })
       );
 
@@ -148,8 +159,8 @@ export function useGalleryActions(): {|
       formData.append("folderName", name);
       formData.append("parentId", parentFolderId);
       formData.append("isMedia", "true");
-      const data = await axios.post<FormData, mixed>(
-        "gallery/ajax/createFolder",
+      const data = await galleryApi.post<FormData, mixed>(
+        "createFolder",
         formData,
         {
           headers: {
@@ -235,8 +246,8 @@ export function useGalleryActions(): {|
           for (const file of files)
             formData.append("filesId[]", idToString(file.id));
           formData.append("mediaType", section);
-          const data = await axios.post<FormData, mixed>(
-            "gallery/ajax/moveGalleriesElements",
+          const data = await galleryApi.post<FormData, mixed>(
+            "moveGalleriesElements",
             formData,
             {
               headers: {
@@ -283,8 +294,8 @@ export function useGalleryActions(): {|
     for (const file of files)
       formData.append("idsToDelete[]", idToString(file.id));
     try {
-      const data = await axios.post<FormData, mixed>(
-        "gallery/ajax/deleteElementFromGallery",
+      const data = await galleryApi.post<FormData, mixed>(
+        "deleteElementFromGallery",
         formData,
         {
           headers: {
@@ -332,8 +343,8 @@ export function useGalleryActions(): {|
       );
     }
     try {
-      const data = await axios.post<FormData, mixed>(
-        "gallery/ajax/copyGalleries",
+      const data = await galleryApi.post<FormData, mixed>(
+        "copyGalleries",
         formData,
         {
           headers: {
@@ -381,8 +392,8 @@ export function useGalleryActions(): {|
       file.transformFilename(() => newName)
     );
     try {
-      const data = await axios.post<FormData, mixed>(
-        "workspace/editor/structuredDocument/ajax/rename",
+      const data = await structuredDocumentApi.post<FormData, mixed>(
+        "rename",
         formData,
         {
           headers: {
@@ -428,8 +439,8 @@ export function useGalleryActions(): {|
     formData.append("xfile", newFile);
     formData.append("targetFolderId", idToString(folderId));
     try {
-      const { data } = await axios.post<FormData, mixed>(
-        "gallery/ajax/uploadFile",
+      const { data } = await galleryApi.post<FormData, mixed>(
+        "uploadFile",
         formData,
         {
           headers: {
@@ -483,8 +494,8 @@ export function useGalleryActions(): {|
       })
     );
     try {
-      const data = await axios.post<FormData, mixed>(
-        "workspace/editor/structuredDocument/ajax/description",
+      const data = await structuredDocumentApi.post<FormData, mixed>(
+        "description",
         formData,
         {
           headers: {

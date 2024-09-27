@@ -382,6 +382,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     // create complex sample with attachments
     ApiSampleWithFullSubSamples complexSample = createComplexSampleForUser(toDelete);
     addFileAttachmentToInventoryItem(new GlobalIdentifier(complexSample.getGlobalId()), toDelete);
+    addGalleryFileToInventoryItem(new GlobalIdentifier(complexSample.getGlobalId()), toDelete);
     addFileAttachmentToInventoryItem(
         new GlobalIdentifier(complexSample.getSubSamples().get(0).getGlobalId()), toDelete);
 

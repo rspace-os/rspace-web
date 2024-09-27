@@ -45,7 +45,7 @@ import { useAsposePreview } from "./CallableAsposePreview";
  * to trigger the opening and closing of the floating info panel that is shown
  * on small viewports. When the panel is closed only the trigger region is shown.
  */
-const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
+export const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
 /*
  * To reduce the amount of visual noise, some components have a minimal stying
@@ -245,6 +245,7 @@ const NameFieldForLargeViewports = styled(
                   onClick={() => {
                     setName(file.name);
                   }}
+                  sx={{ px: 0.75 }}
                 >
                   Cancel
                 </Button>
@@ -253,6 +254,7 @@ const NameFieldForLargeViewports = styled(
                   variant="contained"
                   color="callToAction"
                   type="submit"
+                  sx={{ px: 0.75 }}
                 >
                   Save
                 </Button>
@@ -782,7 +784,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
       {selection
         .asSet()
         .only.map((f) => (
-          <CardContent sx={{ p: 1, pr: 0.5, height: "100%" }} key={null}>
+          <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
             <InfoPanelContent file={f} />
           </CardContent>
         ))
@@ -814,6 +816,11 @@ export const InfoPanelForSmallViewports: ComponentType<{|
       sx={{
         display: { xs: "block", md: "none" },
         touchAction: "none",
+      }}
+      SwipeAreaProps={{
+        sx: {
+          display: { xs: "block", md: "none" },
+        },
       }}
       onClose={() => {
         setMobileInfoPanelOpen(false);

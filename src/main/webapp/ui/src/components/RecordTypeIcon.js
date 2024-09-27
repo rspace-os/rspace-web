@@ -16,6 +16,7 @@ import {
   faQuestionCircle,
   faLayerGroup,
   faPaperclip,
+  faImage,
 } from "@fortawesome/free-solid-svg-icons";
 library.add(
   faFile,
@@ -24,7 +25,8 @@ library.add(
   faBox,
   faQuestionCircle,
   faLayerGroup,
-  faPaperclip
+  faPaperclip,
+  faImage
 );
 import { type RecordIconData } from "../stores/definitions/BaseRecord";
 
@@ -102,6 +104,15 @@ export default function RecordTypeIcon({
           size="1x"
           icon="file"
           color={color ?? theme.palette.record.document.fg}
+        />
+      );
+      break;
+    case "gallery":
+      icon = (
+        <FontAwesomeIcon
+          size="1x"
+          icon="image"
+          color={color ?? theme.palette.record.gallery.fg}
         />
       );
       break;

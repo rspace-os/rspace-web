@@ -40,13 +40,15 @@ const MoveDialog = ({
   refreshListing,
 }: MoveDialogArgs): Node => {
   const { isViewportVerySmall } = useViewportDimensions();
-  const { galleryListing } = useGalleryListing({
-    section,
-    searchTerm: "",
-    path: [],
-    orderBy: "name",
-    sortOrder: "ASC",
-  });
+
+  const { galleryListing, refreshListing: refreshListingInsideDialog } =
+    useGalleryListing({
+      section,
+      searchTerm: "",
+      path: [],
+      orderBy: "name",
+      sortOrder: "ASC",
+    });
   const { moveFiles } = useGalleryActions();
   const [pathString, setPathString] = React.useState("");
   const selection = useGallerySelection({
@@ -59,6 +61,7 @@ const MoveDialog = ({
 
   React.useEffect(() => {
     if (!open) setPathString("");
+    if (open) refreshListingInsideDialog();
   }, [open]);
 
   const [topLevelLoading, setTopLevelLoading] = React.useState(false);

@@ -5,12 +5,7 @@ import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { ThemeProvider, styled, lighten } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
-import {
-  COLOR,
-  SELECTED_OR_FOCUS_BLUE,
-  parseGallerySectionFromUrlSearchParams,
-  GALLERY_SECTION,
-} from "./common";
+import { COLOR, SELECTED_OR_FOCUS_BLUE, GALLERY_SECTION } from "./common";
 import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
@@ -23,7 +18,7 @@ import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
-import { BrowserRouter, Navigate, useSearchParams } from "react-router-dom";
+import { BrowserRouter, Navigate } from "react-router-dom";
 import { Routes, Route } from "react-router";
 import useUiPreference, {
   PREFERENCES,
@@ -33,19 +28,13 @@ import RouterNavigationContext from "./components/RouterNavigationContext";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
+import { useSearchParamState } from "../../util/useSearchParamState";
 
 const WholePage = styled(() => {
-  const [searchParams] = useSearchParams();
-  const [selectedSection, setSelectedSection] = React.useState(
-    parseGallerySectionFromUrlSearchParams(searchParams).orElse(
-      GALLERY_SECTION.IMAGES
-    )
-  );
-  React.useEffect(() => {
-    parseGallerySectionFromUrlSearchParams(searchParams).do((mediaType) => {
-      setSelectedSection(mediaType);
-    });
-  }, [searchParams]);
+  const [searchParams, setSelectedSection] = useSearchParamState({
+    mediaType: GALLERY_SECTION.IMAGES,
+  });
+  const selectedSection = searchParams.mediaType;
 
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
@@ -84,6 +73,9 @@ const WholePage = styled(() => {
           <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
             <Sidebar
               selectedSection={selectedSection}
+              setSelectedSection={(mediaType) => {
+                setSelectedSection({ mediaType });
+              }}
               drawerOpen={drawerOpen}
               setDrawerOpen={setDrawerOpen}
               path={path}

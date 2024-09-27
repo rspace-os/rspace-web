@@ -2,6 +2,7 @@
 
 import { type Record } from "./Record";
 import { type URL } from "../../util/types";
+import { type GlobalId } from "./BaseRecord";
 
 /*
  * The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
@@ -14,16 +15,20 @@ import { type URL } from "../../util/types";
  * facilitate indirect references to files stored in RSpace. The UI then
  * provides the means to upload, preview, and download those attached files.
  * This interface specifies the mechanisms exposed by the attachment model code
- * for use by the UI code.
+ * for use by the UI code. Some special behaviour is defined for Chemistry
+ * files.
  *
- * Some special behaviour is defined for Chemistry files.
+ * Attachments are themselves a type of record, with a Global Id prefix of
+ * "IF", whose job is to associate a file with another Inventory record; either
+ * a Sample/Container/Subsample/Template via their "Attachments" field or via
+ * the Field record of samples and templates where the field type is
+ * "attachment".
  */
 export interface Attachment extends Record {
   imageLink: ?URL;
   loadingImage: boolean;
   loadingString: boolean;
   chemicalString: string;
-  file: ?File;
 
   /*
    * Indicates that the user has chosen to remove the Attachment, but that
@@ -76,4 +81,21 @@ export interface Attachment extends Record {
   +isChemicalFile: boolean;
   +chemistrySupported: boolean;
   +previewSupported: boolean;
+
+  /**
+   * Save any changes to the attachment; uploading new attachments, or deletion
+   * ones that have been marked for removal. Is called after edits to a
+   * sample/container/subsample/template have been saved, and is called for
+   * each attachment of those records and for each field of type attachment,
+   * if a sample or template is being saved.
+   *
+   * @param parentGlobalId This is the Global Id of the record with which the
+   *                       attachment is associated: this could be a
+   *                       container/sample/subsample/template or it could be a
+   *                       field of a sample or template that is of type
+   *                       attachment. When saving new attachments the server
+   *                       needs to know where to attach them.
+   * @return Promise resolves when the network activity has finished.
+   */
+  save(parentGlobalId: GlobalId): Promise<void>;
 }

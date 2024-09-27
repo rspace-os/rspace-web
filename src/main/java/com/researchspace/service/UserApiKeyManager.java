@@ -40,7 +40,7 @@ public interface UserApiKeyManager extends GenericManager<UserApiKey, Long> {
   long calculateApiKeyAgeForUser(User user);
 
   /**
-   * Perform the bCrypt hashing of the apiKey for a given user before saving the object on the
+   * Perform the SHA256 hashing of the apiKey for a given user before saving the object on the
    * database
    *
    * @param user

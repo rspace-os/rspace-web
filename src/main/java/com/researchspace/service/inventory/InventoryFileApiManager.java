@@ -16,10 +16,14 @@ public interface InventoryFileApiManager {
   /** Retrieve Inventory File with given id */
   InventoryFile getInventoryFileById(Long id, User user);
 
-  /** Save input stream as attachment to inventory record. */
+  /** Save input stream as attachment to inventory record or sample attachment field. */
   InventoryFile attachNewInventoryFileToInventoryRecord(
-      GlobalIdentifier parentInvRecordGlobalId, String fileName, InputStream inputStream, User user)
+      GlobalIdentifier globalIdToAttachTo, String fileName, InputStream inputStream, User user)
       throws IOException;
+
+  /** Connect Gallery file to inventory record or sample attachment field. */
+  InventoryFile attachGalleryFileToInventoryRecord(
+      GlobalIdentifier globalIdToAttachTo, GlobalIdentifier galleryFileGlobalId, User user);
 
   /** Saves input stream as an inventory record in filestore. */
   FileProperty saveFileAndCreateFileProperty(

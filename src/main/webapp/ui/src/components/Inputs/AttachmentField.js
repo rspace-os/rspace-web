@@ -12,7 +12,6 @@ import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import FileField from "../../components/Inputs/FileField";
 import NoValue from "../../components/NoValue";
-import AddButton from "../../components/AddButton";
 import AttachmentTableRow from "../../Inventory/components/Fields/Attachments/AttachmentTableRow";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import Grid from "@mui/material/Grid";
@@ -21,21 +20,22 @@ import AlertTitle from "@mui/material/AlertTitle";
 import type { HasEditableFields } from "../../stores/definitions/Editable";
 import { type BlobUrl } from "../../stores/stores/ImageStore";
 import type { Attachment } from "../../stores/definitions/Attachment";
+import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
+import UploadIcon from "@mui/icons-material/Publish";
+import BigIconButton from "../BigIconButton";
+import Result from "../../util/result";
+
+const GalleryPicker = React.lazy(() => import("../../eln/gallery/picker"));
 
 const useStyles = makeStyles()(() => ({
-  row: {
-    alignItems: "center",
-    width: "100%",
-  },
   descriptionText: {
     fontSize: "14px",
   },
 }));
 
 export type AttachmentFieldArgs<FieldOwner> = {|
-  // required
   attachment: ?Attachment,
-  onAttachmentChange: (File) => void,
+  onAttachmentChange: (File | GalleryFile) => void,
   onChange: ({| target: HTMLInputElement |}) => void,
   value: string, // for description
 
@@ -45,9 +45,15 @@ export type AttachmentFieldArgs<FieldOwner> = {|
    */
   fieldOwner: FieldOwner,
 
-  // optional
   disabled?: boolean,
+
+  /*
+   * There are times when we want to allow the user to provide a description of
+   * an attachment whilst not being able to attach any actual files, for
+   * example on templates. That is when this prop should be true.
+   */
   disableFileUpload?: boolean,
+
   error?: boolean,
   helperText?: string,
   noValueLabel?: ?string,
@@ -77,8 +83,9 @@ function AttachmentField<
 }: AttachmentFieldArgs<FieldOwner>): Node {
   const { classes } = useStyles();
   const { trackingStore } = useStores();
+  const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
 
-  const onFileSelection = ({ file }: { file: File, ... }) => {
+  const onFileSelection = (file: File | GalleryFile) => {
     onAttachmentChange(file);
 
     trackingStore.trackEvent("AddedFieldAttachment", {
@@ -132,38 +139,70 @@ function AttachmentField<
           </Box>
         )}
       </Grid>
-      {!disableFileUpload && (
-        <Grid item>
-          <Grid container direction="row" className={classes.row}>
+      {!disableFileUpload && !disabled && (
+        /* this should be disabled, no? what is disableFileUpload? */ <Grid
+          item
+          sx={{ mt: 1 }}
+        >
+          <Grid container direction="column" spacing={1}>
             <Grid item>
               <FileField
                 accept="*"
-                buttonLabel="Add Attachment"
-                onChange={onFileSelection}
+                buttonLabel="Upload"
+                onChange={({ file }) => onFileSelection(file)}
                 showSelectedFilename={false}
-                icon={<AttachFileIcon />}
+                icon={<UploadIcon />}
                 loading={false}
                 error={false}
                 disabled={disabled}
-                triggerButton={({ id }) => (
-                  // this label is not for a11y, but just to make the button trigger the FileField
-                  <label htmlFor={id}>
-                    <AddButton
-                      disabled={disabled}
-                      title={
-                        disabled
-                          ? `Press Edit to ${
-                              attachment ? "replace the" : "select a"
-                            } file`
-                          : attachment
-                          ? "Replace file"
-                          : "Select a file to attach"
-                      }
-                    />
-                  </label>
-                )}
+                explanatoryText="Upload a file from your device."
+                containerProps={{
+                  wrap: "nowrap",
+                  alignItems: "stretch",
+                  flexDirection: "column",
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Grid item>
+                      <BigIconButton
+                        onClick={() => {
+                          setGalleryDialogOpen(true);
+                        }}
+                        icon={<AttachFileIcon />}
+                        label="Browse Gallery"
+                        explanatoryText="Link to existing items in the Gallery."
+                      />
+                    </Grid>
+                  ),
+                }}
               />
             </Grid>
+            {galleryDialogOpen && (
+              <React.Suspense fallback={<></>}>
+                <GalleryPicker
+                  open={true}
+                  onClose={() => {
+                    setGalleryDialogOpen(false);
+                  }}
+                  onSubmit={(files) => {
+                    files.only.do((file) => {
+                      onFileSelection(file);
+                    });
+                    setGalleryDialogOpen(false);
+                  }}
+                  onlyAllowSingleSelection
+                  validateSelection={(file) =>
+                    file.isSnippet
+                      ? Result.Error([
+                          new Error(
+                            "Snippets cannot be attached to Inventory records."
+                          ),
+                        ])
+                      : Result.Ok(null)
+                  }
+                />
+              </React.Suspense>
+            )}
             <Grid item>
               {!attachment && (
                 <Box pl={2}>
