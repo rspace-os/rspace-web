@@ -5,6 +5,10 @@ in the naming of code constructs and in the comments surrounding them.
 
 ## A
 
+### A11y
+
+See [accessibility](#accessibility).
+
 ### Accessibility
 
 > Accessibility (often abbreviated to A11y — as in, "a", then 11 characters,
