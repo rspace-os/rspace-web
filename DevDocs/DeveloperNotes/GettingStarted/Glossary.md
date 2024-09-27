@@ -247,3 +247,9 @@ the traditional notebooks that scientists and researchers kept in laboratories
 to record experimental results. In addition to being central to collaboration
 and a reference for future publishing, they also form a key part of the
 evidence in enforcing intellectual property rights.
+
+### Eslint
+
+A static analysis tool for identifying potentially problematic patterns in
+JavaScript code. Via its plugin system, it can also be used to enforce code
+style.
