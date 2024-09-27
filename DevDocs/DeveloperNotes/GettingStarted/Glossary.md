@@ -269,6 +269,13 @@ replicate them across multiple records.
 [Fast-check](https://fast-check.dev/) is a property-based testing library for
 JavaScript.
 
+### Field
+
+A piece of editable data associated with an Inventory record, such as name,
+description, or expiry date. For the additional fields that samples inherit
+from templates, see [custom field](#custom-field). For additional fields that
+the user can add to any record, see [extra field](#extra-field).
+
 ### Flow
 
 [Flow](https://flow.org/) is a static type checker for JavaScript. It's very
