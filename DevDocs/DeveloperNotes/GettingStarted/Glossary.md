@@ -144,3 +144,10 @@ whose value is automatically derived by mobx from the object's observable state.
 They are implemented using [getters](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get),
 and are typed using Flow as [read-only properties](https://flow.org/en/docs/lang/variance/#toc-covariance).
 For [more information on mobx computeds, see their documentation](https://mobx.js.org/computeds.html).
+
+### Container
+
+An Inventory record that models all manner of physical containers in the labatory,
+from freezers to well-plates. It can also be used to model logical groupings of
+items that exist in the same physical location, or items that have not yet been
+placed in such a location.
