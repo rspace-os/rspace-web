@@ -136,3 +136,11 @@ The tree data structure created by react components calling other react componen
 From the perspective of our code, mostly MUI components, with only some HTML elements,
 are the leaf nodes. The component tree can be interactively explored with the
 [react developer tools](https://react.dev/learn/react-developer-tools).
+
+### Computed Property
+
+Computed properties are the properties of JavaScript object or instances of classes
+whose value is automatically derived by mobx from the object's observable state.
+They are implemented using [getters](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get),
+and are typed using Flow as [read-only properties](https://flow.org/en/docs/lang/variance/#toc-covariance).
+For [more information on mobx computeds, see their documentation](https://mobx.js.org/computeds.html).
