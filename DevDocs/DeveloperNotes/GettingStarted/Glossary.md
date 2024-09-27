@@ -178,3 +178,15 @@ In addition to the standard fields that we provide, like description, tags,
 and expiry date, samples can have additional fields of various types. These
 are defined on a sample template and are inherited by any samples created by
 that template. There is no way other way to additional custom fields.
+
+### Custom hook
+
+A function that is executed from within a react component or another custom
+hook and has access to all of the react runtime's environment. By convention,
+they always start with "use". They are very useful for separating view logic
+from models and API calls, as well as for creating application-specific
+abstractions over applications of the generic low-level react APIs like
+useEffect and [contexts](#context). For more information, see
+[the react docs](https://react.dev/learn/reusing-logic-with-custom-hooks).
+
+
