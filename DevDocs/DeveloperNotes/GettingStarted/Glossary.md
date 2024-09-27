@@ -74,3 +74,13 @@ is widely available we continue to use axios as it easily mocked with
 away the JSON serialisation/deserialisation, has built-in support for timeouts 
 without having to use AbortControllers, and exposes upload/download progress for 
 enhancing the user experience.
+
+## B
+
+### Barcodes
+
+Barcodes, including QR codes, are used extensively in the labatory setting to
+associate digitally recorded information with physical items, including test tubes
+and frozen samples. Printing and scanning labels is a common part of the workflow
+of our customers, and as such Inventory provides some capabilities to work
+cohesively with these workflows. 
