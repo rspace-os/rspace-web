@@ -56,3 +56,13 @@ Axe is a collection of testing tools for validating [accessibility](#accessibili
 There is a core library and variety of tools built on top including browser
 extensions and automated testing packages.
 [For more information, see axe's website](https://www.deque.com/axe/)
+
+### axios
+
+[Axios](https://axios-http.com/docs/intro) is a promise-based HTTP client library.
+Whilst the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
+is widely available we continue to use axios as it easily mocked with
+[axios-mock-adapter](https://www.npmjs.com/package/axios-mock-adapter), abstracts 
+away the JSON serialisation/deserialisation, has built-in support for timeouts 
+without having to use AbortControllers, and exposes upload/download progress for 
+enhancing the user experience.
