@@ -290,3 +290,17 @@ See [Flow suppression](#flow-supression).
 > A suppression is a special kind of comment that you can place on the line
 > before a type error. It tells Flow not to report that error when checking
 > your code. — [Flow](https://flow.org/en/docs/errors/)
+
+### Form
+
+> Web forms are one of the main points of interaction between a user and a
+> website or application. Forms allow users to enter data, which is generally
+> sent to a web server for processing and storage (see Sending form data later
+> in the module), or used on the client-side to immediately update the
+> interface in some way (for example, add another item to a list, or show or
+> hide a UI feature). — [MDN](https://developer.mozilla.org/en-US/docs/Learn/Forms/Your_first_form#what_are_web_forms)
+
+In terms of the RSpace ELN, a form is a template for a document. The user can
+define ahead of a time a format to record their experimental data and easily
+create new documents of the same structure, ensuring that experimental results
+are recorded consistently.
