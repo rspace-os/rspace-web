@@ -151,3 +151,12 @@ An Inventory record that models all manner of physical containers in the labator
 from freezers to well-plates. It can also be used to model logical groupings of
 items that exist in the same physical location, or items that have not yet been
 placed in such a location.
+
+### Container Queries
+
+A CSS feature for selecting elements based on their surrounding container.
+
+> Container queries enable you to apply styles to an element based on the
+> size of the element's container. If, for example, a container has less
+> space available in the surrounding context, you can hide certain elements
+> or use smaller fonts. — [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries)
