@@ -27,6 +27,10 @@ update state that is being managed by mobx. When the state is updated, any
 computed properties that are being observed are re-computed and any observing
 react components are re-rendered.
 
+### Aliquot
+
+An often used term for a fraction of a sample; a common alias of subsample.
+
 ### Alt-text
 
 A string that is associated with an image so that blind users using screen
