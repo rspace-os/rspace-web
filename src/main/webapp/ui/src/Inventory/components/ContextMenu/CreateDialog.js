@@ -30,6 +30,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import { observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
+import NoValue from "../../../components/NoValue";
 
 type CreateDialogProps = {|
   existingRecord: CreateFrom & BaseRecord,
@@ -151,6 +152,9 @@ function CreateDialog({
                       setSelectedCreateOptionIndex(index);
                     }}
                   >
+                    {existingRecord.createOptions.length === 0 && (
+                      <NoValue label="No options available." />
+                    )}
                     {existingRecord.createOptions.map(
                       ({ label, explanation }, index) => (
                         <FormControlLabel
