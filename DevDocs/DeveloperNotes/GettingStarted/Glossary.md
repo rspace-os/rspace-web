@@ -327,3 +327,9 @@ record type. Some Global Ids are exposed in the user interface, where they form
 the basis of permalinks and may be referenced across the product, but many more
 are hidden from view as they offer no such benefit and would only serve to
 increase the visual noise.
+
+### Grid Container
+
+A type of [container](#container) that requires that all of its contents be
+arranged in the two-dimensional grid of a predefined size. This is typically
+used for modelling well-plates.
