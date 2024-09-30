@@ -459,3 +459,16 @@ the UI.
 A collection of Inventory records attached to the field of an ELN document for
 recording which samples, and their quantities, that were used as part of an
 experiment.
+
+## M
+
+### Material UI
+
+An open-source component library, loosely based on [Google's Material Design](https://m3.material.io/),
+maintained by [MUI](#mui). See [their documentation](https://mui.com/material-ui/getting-started/)
+for more information.
+
+### MUI
+
+The team that develops and maintains [Material UI](#material-ui), amongst other
+projects.
