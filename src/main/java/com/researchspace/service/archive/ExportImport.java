@@ -83,8 +83,7 @@ public interface ExportImport {
       throws IOException;
 
   @Async(value = "archiveTaskExecutor")
-  void handlePossibleRollbackAsync(
-      Future<EcatDocumentFile> doc, String someExportName, User exporter) throws IOException;
+  void handlePossibleRollbackAsync(Future<EcatDocumentFile> doc) throws IOException;
 
   /** EXports one or more records identified by exportIds to PDF, synchronously. */
   EcatDocumentFile synchExportFromSelection(

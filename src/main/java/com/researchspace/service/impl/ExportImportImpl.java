@@ -197,7 +197,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
           doArchiveSelection(expCfg, exporter, baseURL, postArchiveCompleter, exportListSupplier);
       return new AsyncResult<>(result);
     } catch (ExportFailureException e) {
-      postArchiveExportFailure(expCfg.getDescription(), expCfg.getExporter(), e.getMessage());
+      log.error("Unable to export.", e);
+      postArchiveExportFailure(expCfg.getArchiveType(), exporter, e.getMessage());
       throw e;
     }
   }
@@ -238,8 +239,6 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     try {
       createTopLevelExportFolder(expCfg);
     } catch (IOException ie) {
-      log.error("Unable to export.", ie);
-      postArchiveExportFailure(expCfg.getArchiveType(), user, ie.getMessage());
       throw new ExportFailureException("Could not create archive folder", ie);
     }
     expCfg.setExporter(user);
@@ -354,7 +353,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
           doSynchUserArchive(expCfg, baseURL, postArchiveCompleter, userSelection, rcdList);
       return new AsyncResult<>(result);
     } catch (Exception e) {
-      log.warn("Unable to perform export: {}", e.getMessage());
+      log.error("Unable to export.", e);
       String exportName = "user-" + toExport.getUsername();
       postArchiveExportFailure(exportName, expCfg.getExporter(), e.getMessage());
       throw e;
@@ -486,7 +485,13 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       URI baseURL,
       PostArchiveCompletion postArchiveCompleter)
       throws Exception {
-    createTopLevelExportFolder(expCfg);
+    try {
+      createTopLevelExportFolder(expCfg);
+    } catch (IOException ie) {
+      log.error("Unable to export.", ie);
+      postArchiveExportFailure(expCfg.getArchiveType(), exporter, ie.getMessage());
+      throw new ExportFailureException("Could not create archive folder", ie);
+    }
     ExportSelection exportSelection = configureGroupExportCfg(expCfg, exporter, groupId);
     ArchiveResult result =
         doGroupArchive(
@@ -633,8 +638,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   @Override
-  public void handlePossibleRollbackAsync(
-      Future<EcatDocumentFile> doc, String exportName, User exporter) {
+  public void handlePossibleRollbackAsync(Future<EcatDocumentFile> doc) throws IOException {
     try {
       doc.get();
     } catch (Exception e) {
@@ -642,7 +646,6 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
           "Export failed: {} - root cause is {}",
           e.getMessage(),
           e.getCause() != null ? e.getCause().getMessage() : "unknown");
-      postArchiveExportFailure(exportName, exporter, e.getMessage());
     }
   }
 }

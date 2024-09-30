@@ -498,8 +498,7 @@ public class ExportController extends BaseController {
                   exportSelection.getExportTypes(),
                   exportToFileConfig,
                   exporter);
-          exportManager.handlePossibleRollbackAsync(
-              futureExportDocument, "some export name", exporter);
+          exportManager.handlePossibleRollbackAsync(futureExportDocument);
           break;
         case USER:
           if (isWordExport(exportToFileConfig)) {
