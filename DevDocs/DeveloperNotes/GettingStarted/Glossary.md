@@ -312,3 +312,9 @@ are recorded consistently.
 The Gallery is a section of the ELN for storing and organising files and other
 ancillary data, organised by category of file type. For more information, see
 [our user documentation on the Gallery](https://documentation.researchspace.com/article/sl6mo1i9do-the-gallery).
+
+### Geolocation
+
+A geolocation is the digital description of the real-world location of an
+object. It is often used in the context of IGSNs, in which case for more
+information see the [DataCite documentation on GeoLocation](https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/geolocation/)
