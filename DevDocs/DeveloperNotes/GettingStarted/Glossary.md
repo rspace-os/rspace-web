@@ -407,3 +407,9 @@ fashion. In the UI and user-facing documentation, these are often described as
 > An invariant is a logical assertion that is always held to be true during a
 > certain phase of execution of a computer program.
 >   — [Wikipedia](https://en.wikipedia.org/wiki/Invariant_(mathematics)#Invariants_in_computer_science)
+
+### iRODS
+
+A third-party service that provides virtualised file storage, offering a single
+point of entry for data stored in various locations. For more information, see
+[their website](https://irods.org/).
