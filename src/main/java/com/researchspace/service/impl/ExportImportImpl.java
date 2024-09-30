@@ -196,7 +196,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       ArchiveResult result =
           doArchiveSelection(expCfg, exporter, baseURL, postArchiveCompleter, exportListSupplier);
       return new AsyncResult<>(result);
-    } catch (ExportFailureException e) {
+    } catch (Exception e) {
       log.error("Unable to export.", e);
       postArchiveExportFailure(expCfg.getArchiveType(), exporter, e.getMessage());
       throw e;
@@ -472,7 +472,6 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       return new AsyncResult<>(ecatdoc);
     } catch (IOException e) {
       log.error("Error performing export.", e);
-      postArchiveExportFailure(expCfg.getExportName(), expCfg.getExporter(), e.getMessage());
     }
     return null;
   }
@@ -487,10 +486,10 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       throws Exception {
     try {
       createTopLevelExportFolder(expCfg);
-    } catch (IOException ie) {
-      log.error("Unable to export.", ie);
-      postArchiveExportFailure(expCfg.getArchiveType(), exporter, ie.getMessage());
-      throw new ExportFailureException("Could not create archive folder", ie);
+    } catch (Exception e) {
+      log.error("Unable to export.", e);
+      postArchiveExportFailure(expCfg.getArchiveType(), exporter, e.getMessage());
+      throw e;
     }
     ExportSelection exportSelection = configureGroupExportCfg(expCfg, exporter, groupId);
     ArchiveResult result =
