@@ -492,6 +492,11 @@ wherein modifications to the props or state held by contexts automatically
 triggers a re-render; with Mobx updates to deeply nested values in objects also
 triggering re-rendering.
 
+### Modal
+
+A modal window disables user interaction with the main window but keeps it
+visible.
+
 ### MUI
 
 The team that develops and maintains [Material UI](#material-ui), amongst other
