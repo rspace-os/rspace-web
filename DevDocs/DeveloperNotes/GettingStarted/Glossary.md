@@ -393,3 +393,11 @@ See [their website](https://www.intercom.com/) and their
 
 4. For the interface that the server exposes to the clients, like Web browser,
    see [API](#application-programming-interface).
+
+### Integration
+
+A core part of the value-add of the RSpace product is the number of
+integrations with various third-party services, thereby allowing researchers to
+utilise the other software tools that they are using in a collaborative
+fashion. In the UI and user-facing documentation, these are often described as
+"apps".
