@@ -15,7 +15,6 @@ import {
   type RecordType,
   type Action,
   type InventoryRecord,
-  type SharingMode,
   type CreateOption,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
@@ -64,6 +63,7 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import { SplitCount } from "../../Inventory/components/ContextMenu/CreateDialog";
+import * as Parsers from "../../util/parsers";
 
 type SubSampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -460,9 +460,12 @@ export default class SubSampleModel
         label: "Subsample, by splitting",
         explanation: "New subsamples will be created by diving the quantity of this subsample equally amongst them.",
         parametersLabel: "Number of new subsamples",
-        parametersComponent: (state: {| count: number, validState: boolean |}) => <SplitCount state={state} />,
+        parametersComponent: (state: { validState: boolean, ...}) => <SplitCount state={state} />,
         parametersState: this.createOptionsParametersState.split,
-        onSubmit: (record: InventoryRecord, { count }: {| count: number |}) => {
+        onSubmit: async (record: InventoryRecord, state: { ... }) => {
+          const count = Parsers.getValueWithKey("count")(state)
+            .flatMap(Parsers.isNumber)
+            .elseThrow();
           return getRootStore().searchStore.search.splitRecord(
             count,
             record
