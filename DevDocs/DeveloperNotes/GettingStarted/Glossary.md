@@ -345,3 +345,14 @@ i.e. what we would colloquially call a character.
 A type of [container](#container) that requires that all of its contents be
 arranged in the two-dimensional grid of a predefined size. This is typically
 used for modelling well-plates.
+
+## I
+
+### Identifier
+
+See persistent identifier
+
+### IGSN
+
+The International Generic Sample Number, or IGSN, is the standard persistent
+identifier for samples.
