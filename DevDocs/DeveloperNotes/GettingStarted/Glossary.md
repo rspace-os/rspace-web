@@ -259,6 +259,12 @@ to record experimental results. In addition to being central to collaboration
 and a reference for future publishing, they also form a key part of the
 evidence in enforcing intellectual property rights.
 
+### Endpoint
+
+The location of a resource of a Web [API](#application-programming-interface).
+Typically expressed as a URL, accepts search parameters and/or a body, and
+returns a response with a status code and a body.
+
 ### Eslint
 
 A static analysis tool for identifying potentially problematic patterns in
