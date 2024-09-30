@@ -200,6 +200,11 @@ abstractions over applications of the generic low-level react APIs like
 useEffect and [contexts](#context). For more information, see
 [the react docs](https://react.dev/learn/reusing-logic-with-custom-hooks).
 
+### Cypress
+
+A JavaScript testing framework and test runner, for end-to-end tests.
+See [the Cypress website](https://www.cypress.io/) for more information.
+
 ## D
 
 ### Data Management Plan
@@ -413,3 +418,10 @@ fashion. In the UI and user-facing documentation, these are often described as
 A third-party service that provides virtualised file storage, offering a single
 point of entry for data stored in various locations. For more information, see
 [their website](https://irods.org/).
+
+## J
+
+### Jest
+
+A JavaScript testing framework and test runner, for unit tests.
+See [the Jest website](https://jestjs.io/) for more information.
