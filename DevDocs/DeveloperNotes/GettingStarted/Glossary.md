@@ -432,3 +432,16 @@ See [the Jest website](https://jestjs.io/) for more information.
 
 A piece of data with a name, a collection of which form an associative array
 like a JavaScript object.
+
+## L
+
+### Lighthouse
+
+1. A Google Chrome tool for auditing Web pages for performance,
+   [accessibility](#acessibility), and other metrics.
+   See [the documentation for Lighthouse](https://developer.chrome.com/docs/lighthouse/)
+   for more information.
+
+2. A UI widget provided by HelpDocs that allows users to browse documentation
+   from within a Web application. For their documentation, see
+   [the lighthouse section of the HelpDocs website](https://www.helpdocs.io/lighthouse).
