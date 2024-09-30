@@ -360,3 +360,10 @@ See persistent identifier
 
 The International Generic Sample Number, or IGSN, is the standard persistent
 identifier for samples.
+
+### Intercom
+
+A third-party service that provides a messaging widget for communicating
+directly to support from within a web application.
+See [their website](https://www.intercom.com/) and their
+[developer documentation](https://developers.intercom.com/docs) for more information.
