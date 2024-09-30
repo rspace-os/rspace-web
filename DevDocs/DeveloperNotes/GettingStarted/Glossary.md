@@ -327,6 +327,12 @@ See [Flow suppression](#flow-supression).
    easily create new documents of the same structure, ensuring that
    experimental results are recorded consistently.
 
+### Functional Reactive Programming
+
+Functional reactive programming is a hybrid programming paradigm where
+declarative constructs are used to declare the data flows, using the constructs
+of functional programming to tie it all together.
+
 ## G
 
 ### Gallery
@@ -474,6 +480,17 @@ A CSS feature that allow styles to be conditionally applied based on the user's
 device: viewport dimensions, orientation, and preferences. See the [MDN
 docs](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries)
 for more information.
+
+### Mobx
+
+A JavaScript library that applies the principle of functional reactive
+programming to state management. Their docs can be found at
+[mobx.js.org](https://mobx.js.org/).  Whilst Mobx is not a React-specific tool,
+the [mobx-react-lite](https://www.npmjs.com/package/mobx-react-lite) glue
+library effectively makes Mobx an extension of the declarative React system
+wherein modifications to the props or state held by contexts automatically
+triggers a re-render; with Mobx updates to deeply nested values in objects also
+triggering re-rendering.
 
 ### MUI
 
