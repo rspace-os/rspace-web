@@ -303,6 +303,7 @@ See [Flow suppression](#flow-supression).
 
 ### Form
 
+1. A form in the generic sense,
 > Web forms are one of the main points of interaction between a user and a
 > website or application. Forms allow users to enter data, which is generally
 > sent to a web server for processing and storage (see Sending form data later
@@ -310,10 +311,10 @@ See [Flow suppression](#flow-supression).
 > interface in some way (for example, add another item to a list, or show or
 > hide a UI feature). — [MDN](https://developer.mozilla.org/en-US/docs/Learn/Forms/Your_first_form#what_are_web_forms)
 
-In terms of the RSpace ELN, a form is a template for a document. The user can
-define ahead of a time a format to record their experimental data and easily
-create new documents of the same structure, ensuring that experimental results
-are recorded consistently.
+2. In terms of the RSpace ELN, a form is a template for a document. The user
+   can define ahead of a time a format to record their experimental data and
+   easily create new documents of the same structure, ensuring that
+   experimental results are recorded consistently.
 
 ## G
 
@@ -370,19 +371,19 @@ See [their website](https://www.intercom.com/) and their
 
 ### Interface
 
-That which a given module of code exposes to the rest of the system, which is
-to say
+1. That which a given module of code exposes to the rest of the system, which is
+   to say
 > [An] interface consists of everything that a developer working in a different
 > module must know in order to use the given module.
 >   — A Philosophy of Software Design.
 
-An [interface in Flow](https://flow.org/en/docs/types/interfaces/) is the same
-as Java: an abstract definition of a class that declares what the classes that
-implement it expose to the rest of the system. There is no way to have an
-object that is not an instance of a class to implement an interface, there an
-object type alias must be used instead.
+2. An [interface in Flow](https://flow.org/en/docs/types/interfaces/) is the same
+   as Java: an abstract definition of a class that declares what the classes
+   that implement it expose to the rest of the system. There is no way to have
+   an object that is not an instance of a class to implement an interface,
+   there an object type alias must be used instead.
 
-For the interface exposed to user, see [User Interface](#user-interface).
+3. For the interface exposed to user, see [User Interface](#user-interface).
 
-For the interface that the server exposes to the clients, like Web browser, see
-[API](#application-programming-interface).
+4. For the interface that the server exposes to the clients, like Web browser,
+   see [API](#application-programming-interface).
