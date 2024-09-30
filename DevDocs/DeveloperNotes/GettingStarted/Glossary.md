@@ -123,6 +123,12 @@ they have gone on to become a key part of the design language of modern Web deve
 [clsx](https://www.npmjs.com/package/clsx) is a utility library for constructing
 HTML class attributes with conditional logic.
 
+### Code point
+
+A numerical value in the Unicode codespace that may or may not have an assigned
+meaning. Multiple code points form [grapheme clusters](#grapheme-cluster).
+[For more information, see the Code Point entry of the Unicode glossary](https://www.unicode.org/glossary/#code_point).
+
 ### Colour contrast
 
 The degree to which adjacent elements are displayed using colours that are
@@ -327,6 +333,12 @@ record type. Some Global Ids are exposed in the user interface, where they form
 the basis of permalinks and may be referenced across the product, but many more
 are hidden from view as they offer no such benefit and would only serve to
 increase the visual noise.
+
+### Grapheme Cluster
+
+One or more Unicode [code points](#code-point) that form a ["horizontally
+segmented unit of text"](https://www.unicode.org/glossary/#grapheme_cluster),
+i.e. what we would colloquially call a character.
 
 ### Grid Container
 
