@@ -4,6 +4,20 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog 
 
+# 2.3.0 2024-09-30
+
+### ELN Features
+
+- RSDEV-267 when sysadmin deletes a user who created shared forms, transfer the forms to sysadmin
+- RSDEV-310 users' API keys are now stored hashed on the database, and only displayed plaintext immediately after creation
+
+### Inventory Features
+
+- RSDEV-174 Gallery files can be now attached to Inventory items
+- RSDEV-292 new API endpoint for retrieving images/thumbnails by their contentsHash, for better performance
+- RSDEV-308 UX improvments around subsample deletion
+- RSDEV-340 persisting more of UI state, e.g. single-column toggle
+
 # 2.2.0 2024-08-30
 
 ### ELN Features
