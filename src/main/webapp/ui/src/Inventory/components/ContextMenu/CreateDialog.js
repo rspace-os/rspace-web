@@ -1,8 +1,10 @@
 //@flow
 
 import React, { type Node, type ComponentType } from "react";
-import { type CreateFrom } from "../../../stores/definitions/InventoryRecord";
-import { type BaseRecord } from "../../../stores/definitions/BaseRecord";
+import {
+  type CreateFrom,
+  type InventoryRecord,
+} from "../../../stores/definitions/InventoryRecord";
 import docLinks from "../../../assets/DocLinks";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Dialog from "@mui/material/Dialog";
@@ -31,18 +33,23 @@ import { observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import NoValue from "../../../components/NoValue";
+import * as Parsers from "../../../util/parsers";
 
 type CreateDialogProps = {|
-  existingRecord: CreateFrom & BaseRecord,
+  existingRecord: CreateFrom & InventoryRecord,
   open: boolean,
   onClose: () => void,
 |};
 
 export const SplitCount: ComponentType<{|
-  state: {| count: number, validState: boolean |},
+  state: { validState: boolean, ... },
 |}> = observer(({ state }): Node => {
   const MIN = 2;
   const MAX = 100;
+
+  const count = Parsers.getValueWithKey("count")(state)
+    .flatMap(Parsers.isNumber)
+    .elseThrow();
 
   return (
     <Box>
@@ -50,9 +57,10 @@ export const SplitCount: ComponentType<{|
         <NumberField
           name="copies"
           autoFocus
-          value={state.count}
+          value={count}
           onChange={({ target }) => {
             runInAction(() => {
+              // $FlowExpectedError[prop-missing]
               state.count = parseInt(target.value, 10);
               state.validState = target.checkValidity() && target.value !== "";
             });
