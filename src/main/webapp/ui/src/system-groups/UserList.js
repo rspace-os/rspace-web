@@ -61,8 +61,10 @@ export default function UserList(props): Node {
   }
 
   function filterVisibleUsers(search) {
-    let visible = props.users.filter((u) =>
-      stripDiacritics(userLabel(u)).toUpperCase().includes(search.toUpperCase())
+    const visible = props.users.filter((u) =>
+      stripDiacritics(userLabel(u))
+        .toUpperCase()
+        .includes(stripDiacritics(search.toUpperCase()))
     );
     setVisibleUsers(visible);
     unselectFilteredUsers(visible);

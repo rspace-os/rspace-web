@@ -40,7 +40,7 @@ class UserList extends React.Component {
         }`
       )
         .toUpperCase()
-        .includes(this.state.searchTerm.toUpperCase())
+        .includes(stripDiacritics(this.state.searchTerm.toUpperCase()))
     );
   };
 
