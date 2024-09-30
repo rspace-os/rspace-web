@@ -401,3 +401,9 @@ integrations with various third-party services, thereby allowing researchers to
 utilise the other software tools that they are using in a collaborative
 fashion. In the UI and user-facing documentation, these are often described as
 "apps".
+
+### Invariant
+
+> An invariant is a logical assertion that is always held to be true during a
+> certain phase of execution of a computer program.
+>   — [Wikipedia](https://en.wikipedia.org/wiki/Invariant_(mathematics)#Invariants_in_computer_science)
