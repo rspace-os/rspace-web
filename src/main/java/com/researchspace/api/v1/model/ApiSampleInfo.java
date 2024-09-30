@@ -193,7 +193,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
       addLink(ApiLinkItem.builder().link(iconLink).rel(ApiLinkItem.ICON_REL).build());
 
       if (!isCustomImage()) {
-        if (isTemplateImageAvailable()) {
+        if (isTemplateImageAvailable() && getImageFileProperty() != null && getThumbnailFileProperty() != null) {
           addMainImageLink(baseUrlBuilder);
           addThumbnailLink(baseUrlBuilder);
         } else {
