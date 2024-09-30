@@ -304,3 +304,11 @@ In terms of the RSpace ELN, a form is a template for a document. The user can
 define ahead of a time a format to record their experimental data and easily
 create new documents of the same structure, ensuring that experimental results
 are recorded consistently.
+
+## G
+
+### Gallery
+
+The Gallery is a section of the ELN for storing and organising files and other
+ancillary data, organised by category of file type. For more information, see
+[our user documentation on the Gallery](https://documentation.researchspace.com/article/sl6mo1i9do-the-gallery).
