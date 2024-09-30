@@ -468,6 +468,13 @@ An open-source component library, loosely based on [Google's Material Design](ht
 maintained by [MUI](#mui). See [their documentation](https://mui.com/material-ui/getting-started/)
 for more information.
 
+### Media query
+
+A CSS feature that allow styles to be conditionally applied based on the user's
+device: viewport dimensions, orientation, and preferences. See the [MDN
+docs](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries)
+for more information.
+
 ### MUI
 
 The team that develops and maintains [Material UI](#material-ui), amongst other
