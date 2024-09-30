@@ -318,3 +318,12 @@ ancillary data, organised by category of file type. For more information, see
 A geolocation is the digital description of the real-world location of an
 object. It is often used in the context of IGSNs, in which case for more
 information see the [DataCite documentation on GeoLocation](https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/geolocation/)
+
+### Global Id
+
+A string that uniquely describes a record on a single instance of RSpace. They
+are of the form `[A-Z][A-Z][0-9]+`, where the two-character prefix denotes the
+record type. Some Global Ids are exposed in the user interface, where they form
+the basis of permalinks and may be referenced across the product, but many more
+are hidden from view as they offer no such benefit and would only serve to
+increase the visual noise.
