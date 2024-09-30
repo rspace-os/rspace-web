@@ -497,6 +497,11 @@ triggering re-rendering.
 A modal window disables user interaction with the main window but keeps it
 visible.
 
+### Model
+
+A domain-specific data structure for co-locating related information e.g. a
+person class that has properties for name and age.
+
 ### MUI
 
 The team that develops and maintains [Material UI](#material-ui), amongst other
