@@ -445,3 +445,11 @@ like a JavaScript object.
 2. A UI widget provided by HelpDocs that allows users to browse documentation
    from within a Web application. For their documentation, see
    [the lighthouse section of the HelpDocs website](https://www.helpdocs.io/lighthouse).
+
+### List Container
+
+A type of [container](#container) that enforces no constraint on how the
+contents are organised. Whilst the name would suggest there is an order, the
+user has no control over this and thus the container is more analogous to a
+set than an array — the name deriving from how the contents are displayed in
+the UI.
