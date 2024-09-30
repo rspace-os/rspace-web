@@ -453,3 +453,9 @@ contents are organised. Whilst the name would suggest there is an order, the
 user has no control over this and thus the container is more analogous to a
 set than an array — the name deriving from how the contents are displayed in
 the UI.
+
+### List of Materials
+
+A collection of Inventory records attached to the field of an ELN document for
+recording which samples, and their quantities, that were used as part of an
+experiment.
