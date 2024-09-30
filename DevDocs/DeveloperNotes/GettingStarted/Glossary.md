@@ -502,6 +502,17 @@ visible.
 A domain-specific data structure for co-locating related information e.g. a
 person class that has properties for name and age.
 
+### Module
+
+1. In the generic sense, a module is a unit of code that is relatively
+   independent of other modules. It has an implementation which hides from the
+   rest of the codebase and an interface that it exposes.
+
+2. JavaScript modules, specifically, have a long and complicated history. This
+   project uses Webpack so we use [ECMAScript modules](https://webpack.js.org/guides/ecma-script-modules/)
+   using [ES2015 import statements](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import)
+   and export to expose only some code constructs to the rest of the codebase.
+
 ### MUI
 
 The team that develops and maintains [Material UI](#material-ui), amongst other
