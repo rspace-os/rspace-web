@@ -367,3 +367,22 @@ A third-party service that provides a messaging widget for communicating
 directly to support from within a web application.
 See [their website](https://www.intercom.com/) and their
 [developer documentation](https://developers.intercom.com/docs) for more information.
+
+### Interface
+
+That which a given module of code exposes to the rest of the system, which is
+to say
+> [An] interface consists of everything that a developer working in a different
+> module must know in order to use the given module.
+>   — A Philosophy of Software Design.
+
+An [interface in Flow](https://flow.org/en/docs/types/interfaces/) is the same
+as Java: an abstract definition of a class that declares what the classes that
+implement it expose to the rest of the system. There is no way to have an
+object that is not an instance of a class to implement an interface, there an
+object type alias must be used instead.
+
+For the interface exposed to user, see [User Interface](#user-interface).
+
+For the interface that the server exposes to the clients, like Web browser, see
+[API](#application-programming-interface).
