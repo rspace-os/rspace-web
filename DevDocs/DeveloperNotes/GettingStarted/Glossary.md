@@ -425,3 +425,10 @@ point of entry for data stored in various locations. For more information, see
 
 A JavaScript testing framework and test runner, for unit tests.
 See [the Jest website](https://jestjs.io/) for more information.
+
+## K
+
+### Key-value pair
+
+A piece of data with a name, a collection of which form an associative array
+like a JavaScript object.
