@@ -368,6 +368,16 @@ A type of [container](#container) that requires that all of its contents be
 arranged in the two-dimensional grid of a predefined size. This is typically
 used for modelling well-plates.
 
+## H
+
+### Higher Order Component
+
+Also known as a HoC, these are functions that takes as argument a React
+component and return a new React component. Given the fact that 
+[the only official documentation on HoCs](https://legacy.reactjs.org/docs/higher-order-components.html)
+is from the legacy docs, one can only assume that they are a deprecated feature
+that should be avoided.
+
 ## I
 
 ### Identifier
@@ -517,3 +527,20 @@ person class that has properties for name and age.
 
 The team that develops and maintains [Material UI](#material-ui), amongst other
 projects.
+
+## O
+
+### Observable
+
+A piece of state — the properties on objects, the contents of arrays and sets,
+and much else — that is being managed by Mobx and when modified results in the
+propagation of those values to the [computed properties](#computed-property)
+that are derived from them and the [observing react components](#observer)
+re-rendering.
+
+### Observer
+
+A React component that has had the `observer` [HoC](#higher-order-component)
+from [Mobx](#mobx) applied such that modifications to the state managed by Mobx
+result in the react component being re-rendered. For more information, see
+[the Mobx documentation](https://mobx.js.org/react-integration.html).
