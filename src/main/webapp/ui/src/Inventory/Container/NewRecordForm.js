@@ -152,7 +152,7 @@ export default function NewRecordForm(): Node {
           sectionName="attachments"
           recordType="container"
         >
-          <AttachmentsField />
+          <AttachmentsField fieldOwner={activeResult} />
         </StepperPanel>
         <StepperPanel
           title="Access Permissions"
