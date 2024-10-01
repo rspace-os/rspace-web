@@ -80,7 +80,7 @@ import {
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import * as ArrayUtils  from "../../util/ArrayUtils";
-import { SplitCount, TemplateName } from "../../Inventory/components/ContextMenu/CreateDialog";
+import { SplitCount, TemplateName, TemplateFields } from "../../Inventory/components/ContextMenu/CreateDialog";
 
 type SampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -221,7 +221,7 @@ export default class SampleModel
   templateVersion: ?number;
   createOptionsParametersState: {|
     split: { count: number, validState: boolean },
-    template: { name: string, validState: boolean },
+    template: { name: string, fields: RsSet<Field>, validState: boolean },
   |};
 
   constructor(factory: Factory, params: SampleAttrs = { ...DEFAULT_SAMPLE }) {
@@ -270,7 +270,7 @@ export default class SampleModel
 
     if (this.recordType === "sample") {
       this.populateFromJson(factory, params, DEFAULT_SAMPLE);
-      this.createOptionsParametersState = { split: { count: 2, validState: true }, template: { name: "", validState: true }};
+      this.createOptionsParametersState = { split: { count: 2, validState: true }, template: { name: "", fields: new RsSet([]), validState: true }};
     }
 
     // searching with parentGlobalId of an item you have no permission to (public view) will just return an empty array for results
@@ -854,8 +854,10 @@ export default class SampleModel
         label: "Subsample, by splitting the current subsample",
         explanation: this.subSamples.length === 1 ? "New subsamples will be created by diving the quantity of the existing subsample equally amongst them." : "Cannot split a sample with more than one subsample; try opening this create dialog from a particular subsample.",
         disabled: this.subSamples.length > 1,
-        parametersLabel: "Number of new subsamples",
-        parametersComponent: () => <SplitCount state={this.createOptionsParametersState.split} />,
+        parameters: [{
+          label: "Number of new subsamples",
+          component: () => <SplitCount state={this.createOptionsParametersState.split} />,
+        }],
         parametersState: this.createOptionsParametersState.split,
         onSubmit: () => {
           if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
@@ -868,8 +870,13 @@ export default class SampleModel
       {
         label: "Template",
         explanation: "Create a template from this sample, to easily create more samples.",
-        parametersLabel: "Name",
-        parametersComponent: () => <TemplateName state={this.createOptionsParametersState.template} />,
+        parameters: [{
+          label: "Name",
+          component: () => <TemplateName state={this.createOptionsParametersState.template} />,
+        },{
+          label: "Field",
+          component: () => <TemplateFields state={this.createOptionsParametersState.template} />,
+        }],
         parametersState: this.createOptionsParametersState.template,
         onSubmit: () => {
           return getRootStore().searchStore.search.createTemplateFromSample(

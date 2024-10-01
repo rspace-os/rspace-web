@@ -1120,16 +1120,20 @@ export default class ContainerModel
       {
         label: "Container",
         explanation: "The container will be automatically added to this container.",
-        parametersLabel: "Location",
-        parametersComponent: () => <></>,
+        parameters: [{
+          label: "Location",
+          component: () => <></>,
+        }],
         parametersState: { validState: true },
         onSubmit: () => Promise.resolve(),
       },
       {
         label: "Sample",
         explanation: "The subsample will be automatically added to this container.",
-        parametersLabel: "Location",
-        parametersComponent: () => <></>,
+        parameters: [{
+          label: "Location",
+          component: () => <></>,
+        }],
         parametersState: { validState: true },
         onSubmit: () => Promise.resolve(),
       }

@@ -66,8 +66,10 @@ export type CreateOption = {|
   explanation: string,
   onSubmit: () => Promise<void>,
   disabled?: boolean,
-  parametersLabel?: string,
-  parametersComponent?: () => Node,
+  parameters?: $ReadOnlyArray<{|
+    label: string,
+    component: () => Node,
+  |}>,
   parametersState?: { validState: boolean, ... },
 |};
 
