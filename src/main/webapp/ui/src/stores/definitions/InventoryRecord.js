@@ -64,6 +64,7 @@ export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
 export type CreateOption = {|
   label: string,
   explanation: string,
+  disabled?: boolean,
   parametersLabel: string,
   parametersComponent: (state: { validState: boolean, ... }) => Node,
   parametersState: { validState: boolean, ... },
