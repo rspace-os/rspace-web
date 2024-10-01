@@ -370,6 +370,13 @@ used for modelling well-plates.
 
 ## H
 
+### Handle
+
+An abstract reference to a resource; often an identifier or a pointer in a
+table to which the code that holds the handle has no access, but may equally be
+any other value that the code is prevented from inspecting. Common examples
+include file descriptors, network sockets, and process identifiers.
+
 ### Higher Order Component
 
 Also known as a HoC, these are functions that takes as argument a React
@@ -544,3 +551,18 @@ A React component that has had the `observer` [HoC](#higher-order-component)
 from [Mobx](#mobx) applied such that modifications to the state managed by Mobx
 result in the react component being re-rendered. For more information, see
 [the Mobx documentation](https://mobx.js.org/react-integration.html).
+
+### Opaque type alias
+
+This is a type whose name is exported to the rest of the codebase but whose
+definition is kept hidden. This means that [modules](#module) other than the
+one in which it is defined can only treat the value as a [handle](#handle)
+whose value cannot be inspected; values can only be created by the defining
+module and then may only be operated on by the same module. This sounds
+limiting but is a powerful feature in enforcing constraints on a generic type:
+by exporting a smart constructor that performs validation logic we ensure that
+only valid values are allowed; using this we can define types such as a
+numerical that requires that the value not be negative or an array that is not
+empty. [Flow's documentation on opaque type aliases](https://flow.org/en/docs/types/opaque-types/)
+doesn't provide much help about why and when to use them, but it does explain
+the syntax.
