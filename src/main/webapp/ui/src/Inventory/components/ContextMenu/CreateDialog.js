@@ -34,12 +34,35 @@ import { runInAction } from "mobx";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import NoValue from "../../../components/NoValue";
 import * as Parsers from "../../../util/parsers";
+import StringField from "../../../components/Inputs/StringField";
 
 type CreateDialogProps = {|
   existingRecord: CreateFrom & InventoryRecord,
   open: boolean,
   onClose: () => void,
 |};
+
+export const TemplateName: ComponentType<{|
+  state: { validState: boolean, ... },
+|}> = observer(({ state }): Node => {
+  const name = Parsers.getValueWithKey("name")(state)
+    .flatMap(Parsers.isString)
+    .elseThrow();
+
+  return (
+    <StringField
+      value={name}
+      onChange={({ target }) => {
+        runInAction(() => {
+          // $FlowExpectedError[prop-missing]
+          state.name = target.value;
+          state.validState = state.validState && target.value.length > 0;
+        });
+      }}
+      variant="outlined"
+    />
+  );
+});
 
 export const SplitCount: ComponentType<{|
   state: { validState: boolean, ... },
