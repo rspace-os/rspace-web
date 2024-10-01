@@ -13,6 +13,7 @@ import {
   type RecordType,
   type InventoryRecord,
   type LockStatus,
+  type CreateOption,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
@@ -605,5 +606,20 @@ export default class TemplateModel extends SampleModel implements Template {
 
   get usableInLoM(): boolean {
     return false;
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    return [
+      {
+        label: "Sample",
+        explanation:
+          "Tapping create will open the new sample form, with this template pre-populated.",
+        onSubmit: async () => {
+          const newSample: SampleModel =
+            await getRootStore().searchStore.createNewSample();
+          await newSample.setTemplate(this);
+        },
+      },
+    ];
   }
 }
