@@ -80,6 +80,7 @@ import {
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import * as ArrayUtils  from "../../util/ArrayUtils";
+import { SplitCount } from "../../Inventory/components/ContextMenu/CreateDialog";
 
 type SampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -218,6 +219,9 @@ export default class SampleModel
   subSampleAlias: Alias;
   templateId: Id;
   templateVersion: ?number;
+  createOptionsParametersState: {|
+    split: { count: number, validState: boolean }
+  |};
 
   constructor(factory: Factory, params: SampleAttrs = { ...DEFAULT_SAMPLE }) {
     super(factory);
@@ -235,6 +239,7 @@ export default class SampleModel
       search: observable,
       subSampleAlias: observable,
       templateId: observable,
+      createOptionsParametersState: observable,
       overrideFields: action,
       saveFieldAttachments: action,
       overrideTemp: action,
@@ -262,8 +267,10 @@ export default class SampleModel
       enforceMandatoryFields: computed,
     });
 
-    if (this.recordType === "sample")
+    if (this.recordType === "sample") {
       this.populateFromJson(factory, params, DEFAULT_SAMPLE);
+      this.createOptionsParametersState = { split: { count: 2, validState: true }};
+    }
 
     // searching with parentGlobalId of an item you have no permission to (public view) will just return an empty array for results
     this.search = new Search({
@@ -841,7 +848,26 @@ export default class SampleModel
   }
 
   get createOptions(): $ReadOnlyArray<CreateOption> {
-    return [];
+    return [
+      {
+        label: "Subsample, by splitting the current subsample",
+        explanation: this.subSamples.length === 1 ? "New subsamples will be created by diving the quantity of the existing subsample equally amongst them." : "Cannot split a sample with more than one subsample; try opening this create dialog from a particular subsample.",
+        disabled: this.subSamples.length > 1,
+        parametersLabel: "Number of new subsamples",
+        parametersComponent: (state: { validState: boolean, ...}) => <SplitCount state={state} />,
+        parametersState: this.createOptionsParametersState.split,
+        onSubmit: async (record: InventoryRecord, state: { ... }) => {
+          const count = Parsers.getValueWithKey("count")(state)
+            .flatMap(Parsers.isNumber)
+            .elseThrow();
+          if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
+          return getRootStore().searchStore.search.splitRecord(
+            count,
+            this.subSamples[0],
+          );
+        },
+      }
+    ];
   }
 }
 
