@@ -458,8 +458,10 @@ export default class SubSampleModel
       {
         label: "Subsample, by splitting",
         explanation: "New subsamples will be created by diving the quantity of this subsample equally amongst them.",
-        parametersLabel: "Number of new subsamples",
-        parametersComponent: () => <SplitCount state={this.createOptionsParametersState.split} />,
+        parameters: [{
+          label: "Number of new subsamples",
+          component: () => <SplitCount state={this.createOptionsParametersState.split} />,
+        }],
         parametersState: this.createOptionsParametersState.split,
         onSubmit: () => {
           return getRootStore().searchStore.search.splitRecord(
