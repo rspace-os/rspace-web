@@ -164,11 +164,12 @@ function CreateDialog({
                       <NoValue label="No options available." />
                     )}
                     {existingRecord.createOptions.map(
-                      ({ label, explanation }, index) => (
+                      ({ label, explanation, disabled }, index) => (
                         <FormControlLabel
                           key={index}
                           value={index}
                           control={<Radio />}
+                          disabled={disabled}
                           label={
                             <>
                               <OptionHeading>{label}</OptionHeading>
