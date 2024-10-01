@@ -34,6 +34,10 @@ import { runInAction } from "mobx";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import NoValue from "../../../components/NoValue";
 import StringField from "../../../components/Inputs/StringField";
+import RsSet from "../../../util/set";
+import { type Field } from "../../../stores/definitions/Field";
+import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 
 type CreateDialogProps = {|
   existingRecord: CreateFrom & InventoryRecord,
@@ -56,6 +60,12 @@ export const TemplateName: ComponentType<{|
       variant="outlined"
     />
   );
+});
+
+export const TemplateFields: ComponentType<{|
+  state: { validState: boolean, fields: RsSet<Field> },
+|}> = observer(({ state }): Node => {
+  return <span>field table</span>;
 });
 
 export const SplitCount: ComponentType<{|
@@ -108,6 +118,11 @@ function CreateDialog({
 }: CreateDialogProps): Node {
   const [selectedCreateOptionIndex, setSelectedCreateOptionIndex] =
     React.useState<null | number>(null);
+  const [activeStep, setActiveStep] = React.useState<number>(0);
+
+  React.useEffect(() => {
+    if (activeStep === 0) setSelectedCreateOptionIndex(null);
+  }, [activeStep]);
 
   const handleSubmit = () => {
     void (async () => {
@@ -134,10 +149,7 @@ function CreateDialog({
         }}
       >
         <DialogContent>
-          <Stepper
-            activeStep={selectedCreateOptionIndex ? 1 : 0}
-            orientation="vertical"
-          >
+          <Stepper activeStep={activeStep} orientation="vertical">
             <Step>
               <StepLabel
                 optional={
@@ -145,6 +157,7 @@ function CreateDialog({
                     <Button
                       onClick={() => {
                         setSelectedCreateOptionIndex(null);
+                        setActiveStep(0);
                       }}
                     >
                       Change
@@ -167,6 +180,7 @@ function CreateDialog({
                     value={selectedCreateOptionIndex}
                     onChange={(_event, index) => {
                       setSelectedCreateOptionIndex(index);
+                      setActiveStep(1);
                     }}
                   >
                     {existingRecord.createOptions.length === 0 && (
@@ -197,23 +211,49 @@ function CreateDialog({
             </Step>
             {selectedCreateOptionIndex !== null &&
               existingRecord.createOptions[selectedCreateOptionIndex]
-                .parametersLabel &&
-              existingRecord.createOptions[selectedCreateOptionIndex]
-                .parametersComponent && (
-                <Step>
-                  <StepLabel>
-                    {
-                      existingRecord.createOptions[selectedCreateOptionIndex]
-                        .parametersLabel
-                    }
-                  </StepLabel>
+                .parameters &&
+              existingRecord.createOptions[
+                selectedCreateOptionIndex
+              ].parameters.map(({ label, component }, index) => (
+                <Step key={index}>
+                  <StepLabel>{label}</StepLabel>
                   <StepContent>
-                    {existingRecord.createOptions[
-                      selectedCreateOptionIndex
-                    ].parametersComponent()}
+                    <Grid container direction="column" spacing={1}>
+                      <Grid item>{component()}</Grid>
+                      <Grid item>
+                        <Stack spacing={1} direction="row">
+                          {index <
+                            (
+                              existingRecord.createOptions[
+                                selectedCreateOptionIndex
+                              ].parameters ?? []
+                            ).length -
+                              1 && (
+                            <Button
+                              color="primary"
+                              variant="contained"
+                              disableElevation
+                              onClick={() => {
+                                setActiveStep(activeStep + 1);
+                              }}
+                            >
+                              Next
+                            </Button>
+                          )}
+                          <Button
+                            variant="outlined"
+                            onClick={() => {
+                              setActiveStep(activeStep - 1);
+                            }}
+                          >
+                            Back
+                          </Button>
+                        </Stack>
+                      </Grid>
+                    </Grid>
                   </StepContent>
                 </Step>
-              )}
+              ))}
           </Stepper>
         </DialogContent>
         <DialogActions>
@@ -223,6 +263,11 @@ function CreateDialog({
             onClick={handleSubmit}
             disabled={
               !selectedCreateOptionIndex ||
+              activeStep <
+                (
+                  existingRecord.createOptions[selectedCreateOptionIndex]
+                    .parameters ?? []
+                ).length ||
               !(
                 existingRecord.createOptions[selectedCreateOptionIndex]
                   .parametersState?.validState ?? true
