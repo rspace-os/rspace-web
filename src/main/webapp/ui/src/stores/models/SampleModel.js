@@ -221,7 +221,17 @@ export default class SampleModel
   templateVersion: ?number;
   createOptionsParametersState: {|
     split: { count: number, validState: boolean },
-    template: { name: string, fields: RsSet<Field>, validState: boolean },
+    template: {
+      name: string,
+      copyFieldContent: $ReadOnlyArray<{|
+        id: Id,
+        name: string,
+        content: string,
+        hasContent: boolean,
+        selected: boolean,
+      |}>,
+      validState: boolean
+    },
   |};
 
   constructor(factory: Factory, params: SampleAttrs = { ...DEFAULT_SAMPLE }) {
@@ -270,7 +280,6 @@ export default class SampleModel
 
     if (this.recordType === "sample") {
       this.populateFromJson(factory, params, DEFAULT_SAMPLE);
-      this.createOptionsParametersState = { split: { count: 2, validState: true }, template: { name: "", fields: new RsSet([]), validState: true }};
     }
 
     // searching with parentGlobalId of an item you have no permission to (public view) will just return an empty array for results
@@ -306,6 +315,29 @@ export default class SampleModel
     this.subSampleAlias = params.subSampleAlias;
     this.templateId = params.templateId;
     this.templateVersion = params.templateVersion ?? 1;
+      this.createOptionsParametersState = {
+        split: { count: 2, validState: true },
+        template: {
+          name: "",
+          copyFieldContent: [
+            ...this.fields.map(f => ({
+              id: f.id,
+              name: f.name,
+              content: f.renderContentAsString,
+              hasContent: f.hasContent,
+              selected: false
+            })),
+            ...this.extraFields.map(e => ({
+              id: e.id,
+              name: e.name,
+              content: e.content,
+              hasContent: e.hasContent,
+              selected: false
+            }))
+          ],
+          validState: true
+        }
+      };
   }
 
   get recordType(): RecordType {
@@ -882,7 +914,7 @@ export default class SampleModel
           return getRootStore().searchStore.search.createTemplateFromSample(
             this.createOptionsParametersState.template.name,
             this,
-            new RsSet(),
+            new RsSet(this.createOptionsParametersState.template.copyFieldContent.filter(({ selected }) => selected).map(({ id }) => id)),
           );
         },
       }
