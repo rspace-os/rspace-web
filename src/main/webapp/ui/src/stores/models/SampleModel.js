@@ -856,7 +856,7 @@ export default class SampleModel
         parametersLabel: "Number of new subsamples",
         parametersComponent: (state: { validState: boolean, ...}) => <SplitCount state={state} />,
         parametersState: this.createOptionsParametersState.split,
-        onSubmit: async (record: InventoryRecord, state: { ... }) => {
+        onSubmit: async (state: { ... }) => {
           const count = Parsers.getValueWithKey("count")(state)
             .flatMap(Parsers.isNumber)
             .elseThrow();

@@ -102,8 +102,8 @@ function CreateDialog({
       if (!selectedCreateOptionIndex)
         throw new Error("Cannot submit until an option is chosen");
       await existingRecord.createOptions[selectedCreateOptionIndex].onSubmit(
-        existingRecord,
-        existingRecord.createOptions[selectedCreateOptionIndex].parametersState
+        existingRecord.createOptions[selectedCreateOptionIndex]
+          .parametersState ?? {}
       );
       onClose();
     })();
@@ -186,24 +186,30 @@ function CreateDialog({
                 </FormControl>
               </StepContent>
             </Step>
-            {selectedCreateOptionIndex !== null && (
-              <Step>
-                <StepLabel>
-                  {
-                    existingRecord.createOptions[selectedCreateOptionIndex]
-                      .parametersLabel
-                  }
-                </StepLabel>
-                <StepContent>
-                  {existingRecord.createOptions[
-                    selectedCreateOptionIndex
-                  ].parametersComponent(
-                    existingRecord.createOptions[selectedCreateOptionIndex]
-                      .parametersState
-                  )}
-                </StepContent>
-              </Step>
-            )}
+            {selectedCreateOptionIndex !== null &&
+              existingRecord.createOptions[selectedCreateOptionIndex]
+                .parametersLabel &&
+              existingRecord.createOptions[selectedCreateOptionIndex]
+                .parametersComponent &&
+              existingRecord.createOptions[selectedCreateOptionIndex]
+                .parametersState && (
+                <Step>
+                  <StepLabel>
+                    {
+                      existingRecord.createOptions[selectedCreateOptionIndex]
+                        .parametersLabel
+                    }
+                  </StepLabel>
+                  <StepContent>
+                    {existingRecord.createOptions[
+                      selectedCreateOptionIndex
+                    ].parametersComponent(
+                      existingRecord.createOptions[selectedCreateOptionIndex]
+                        .parametersState
+                    )}
+                  </StepContent>
+                </Step>
+              )}
           </Stepper>
         </DialogContent>
         <DialogActions>
@@ -213,8 +219,10 @@ function CreateDialog({
             onClick={handleSubmit}
             disabled={
               !selectedCreateOptionIndex ||
-              !existingRecord.createOptions[selectedCreateOptionIndex]
-                .parametersState.validState
+              !(
+                existingRecord.createOptions[selectedCreateOptionIndex]
+                  .parametersState?.validState ?? true
+              )
             }
             loading={false}
           />
