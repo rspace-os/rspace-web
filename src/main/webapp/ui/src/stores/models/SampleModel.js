@@ -80,7 +80,7 @@ import {
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import * as ArrayUtils  from "../../util/ArrayUtils";
-import { SplitCount } from "../../Inventory/components/ContextMenu/CreateDialog";
+import { SplitCount, TemplateName } from "../../Inventory/components/ContextMenu/CreateDialog";
 
 type SampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -220,7 +220,8 @@ export default class SampleModel
   templateId: Id;
   templateVersion: ?number;
   createOptionsParametersState: {|
-    split: { count: number, validState: boolean }
+    split: { count: number, validState: boolean },
+    template: { name: string, validState: boolean },
   |};
 
   constructor(factory: Factory, params: SampleAttrs = { ...DEFAULT_SAMPLE }) {
@@ -269,7 +270,7 @@ export default class SampleModel
 
     if (this.recordType === "sample") {
       this.populateFromJson(factory, params, DEFAULT_SAMPLE);
-      this.createOptionsParametersState = { split: { count: 2, validState: true }};
+      this.createOptionsParametersState = { split: { count: 2, validState: true }, template: { name: "", validState: true }};
     }
 
     // searching with parentGlobalId of an item you have no permission to (public view) will just return an empty array for results
@@ -864,6 +865,20 @@ export default class SampleModel
           return getRootStore().searchStore.search.splitRecord(
             count,
             this.subSamples[0],
+          );
+        },
+      },
+      {
+        label: "Template",
+        explanation: "Create a template from this sample, to easily create more samples.",
+        parametersLabel: "Name",
+        parametersComponent: (state: { validState: boolean, ...}) => <TemplateName state={state} />,
+        parametersState: this.createOptionsParametersState.template,
+        onSubmit: () => {
+          return getRootStore().searchStore.search.createTemplateFromSample(
+            this.createOptionsParametersState.template.name,
+            this,
+            new RsSet(),
           );
         },
       }
