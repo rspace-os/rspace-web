@@ -64,10 +64,10 @@ export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
 export type CreateOption = {|
   label: string,
   explanation: string,
-  onSubmit: ({ ... }) => Promise<void>,
+  onSubmit: () => Promise<void>,
   disabled?: boolean,
   parametersLabel?: string,
-  parametersComponent?: (state: { validState: boolean, ... }) => Node,
+  parametersComponent?: () => Node,
   parametersState?: { validState: boolean, ... },
 |};
 

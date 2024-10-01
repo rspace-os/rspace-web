@@ -63,7 +63,6 @@ import {
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
 import { SplitCount } from "../../Inventory/components/ContextMenu/CreateDialog";
-import * as Parsers from "../../util/parsers";
 
 type SubSampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -460,14 +459,11 @@ export default class SubSampleModel
         label: "Subsample, by splitting",
         explanation: "New subsamples will be created by diving the quantity of this subsample equally amongst them.",
         parametersLabel: "Number of new subsamples",
-        parametersComponent: (state: { validState: boolean, ...}) => <SplitCount state={state} />,
+        parametersComponent: () => <SplitCount state={this.createOptionsParametersState.split} />,
         parametersState: this.createOptionsParametersState.split,
-        onSubmit: async (state: { ... }) => {
-          const count = Parsers.getValueWithKey("count")(state)
-            .flatMap(Parsers.isNumber)
-            .elseThrow();
+        onSubmit: () => {
           return getRootStore().searchStore.search.splitRecord(
-            count,
+            this.createOptionsParametersState.split.count,
             this
           );
         },
