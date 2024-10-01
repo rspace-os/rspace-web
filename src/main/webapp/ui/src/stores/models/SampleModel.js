@@ -855,15 +855,12 @@ export default class SampleModel
         explanation: this.subSamples.length === 1 ? "New subsamples will be created by diving the quantity of the existing subsample equally amongst them." : "Cannot split a sample with more than one subsample; try opening this create dialog from a particular subsample.",
         disabled: this.subSamples.length > 1,
         parametersLabel: "Number of new subsamples",
-        parametersComponent: (state: { validState: boolean, ...}) => <SplitCount state={state} />,
+        parametersComponent: () => <SplitCount state={this.createOptionsParametersState.split} />,
         parametersState: this.createOptionsParametersState.split,
-        onSubmit: async (state: { ... }) => {
-          const count = Parsers.getValueWithKey("count")(state)
-            .flatMap(Parsers.isNumber)
-            .elseThrow();
+        onSubmit: () => {
           if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
           return getRootStore().searchStore.search.splitRecord(
-            count,
+            this.createOptionsParametersState.split.count,
             this.subSamples[0],
           );
         },
@@ -872,7 +869,7 @@ export default class SampleModel
         label: "Template",
         explanation: "Create a template from this sample, to easily create more samples.",
         parametersLabel: "Name",
-        parametersComponent: (state: { validState: boolean, ...}) => <TemplateName state={state} />,
+        parametersComponent: () => <TemplateName state={this.createOptionsParametersState.template} />,
         parametersState: this.createOptionsParametersState.template,
         onSubmit: () => {
           return getRootStore().searchStore.search.createTemplateFromSample(

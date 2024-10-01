@@ -33,7 +33,6 @@ import { observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import NoValue from "../../../components/NoValue";
-import * as Parsers from "../../../util/parsers";
 import StringField from "../../../components/Inputs/StringField";
 
 type CreateDialogProps = {|
@@ -43,18 +42,13 @@ type CreateDialogProps = {|
 |};
 
 export const TemplateName: ComponentType<{|
-  state: { validState: boolean, ... },
+  state: { validState: boolean, name: string },
 |}> = observer(({ state }): Node => {
-  const name = Parsers.getValueWithKey("name")(state)
-    .flatMap(Parsers.isString)
-    .elseThrow();
-
   return (
     <StringField
-      value={name}
+      value={state.name}
       onChange={({ target }) => {
         runInAction(() => {
-          // $FlowExpectedError[prop-missing]
           state.name = target.value;
           state.validState = state.validState && target.value.length > 0;
         });
@@ -65,14 +59,10 @@ export const TemplateName: ComponentType<{|
 });
 
 export const SplitCount: ComponentType<{|
-  state: { validState: boolean, ... },
+  state: { validState: boolean, count: number },
 |}> = observer(({ state }): Node => {
   const MIN = 2;
   const MAX = 100;
-
-  const count = Parsers.getValueWithKey("count")(state)
-    .flatMap(Parsers.isNumber)
-    .elseThrow();
 
   return (
     <Box>
@@ -80,10 +70,9 @@ export const SplitCount: ComponentType<{|
         <NumberField
           name="copies"
           autoFocus
-          value={count}
+          value={state.count}
           onChange={({ target }) => {
             runInAction(() => {
-              // $FlowExpectedError[prop-missing]
               state.count = parseInt(target.value, 10);
               state.validState = target.checkValidity() && target.value !== "";
             });
@@ -124,10 +113,7 @@ function CreateDialog({
     void (async () => {
       if (!selectedCreateOptionIndex)
         throw new Error("Cannot submit until an option is chosen");
-      await existingRecord.createOptions[selectedCreateOptionIndex].onSubmit(
-        existingRecord.createOptions[selectedCreateOptionIndex]
-          .parametersState ?? {}
-      );
+      await existingRecord.createOptions[selectedCreateOptionIndex].onSubmit();
       onClose();
     })();
   };
@@ -213,9 +199,7 @@ function CreateDialog({
               existingRecord.createOptions[selectedCreateOptionIndex]
                 .parametersLabel &&
               existingRecord.createOptions[selectedCreateOptionIndex]
-                .parametersComponent &&
-              existingRecord.createOptions[selectedCreateOptionIndex]
-                .parametersState && (
+                .parametersComponent && (
                 <Step>
                   <StepLabel>
                     {
@@ -226,10 +210,7 @@ function CreateDialog({
                   <StepContent>
                     {existingRecord.createOptions[
                       selectedCreateOptionIndex
-                    ].parametersComponent(
-                      existingRecord.createOptions[selectedCreateOptionIndex]
-                        .parametersState
-                    )}
+                    ].parametersComponent()}
                   </StepContent>
                 </Step>
               )}
