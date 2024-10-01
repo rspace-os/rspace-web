@@ -189,12 +189,18 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       User exporter,
       URI baseURL,
       PostArchiveCompletion postArchiveCompleter) {
-    preArchiveSelection(expCfg, exporter);
-    Supplier<ExportRecordList> exportListSupplier =
-        () -> archivePlanner.createExportRecordList(expCfg, exportSelection);
-    ArchiveResult result =
-        doArchiveSelection(expCfg, exporter, baseURL, postArchiveCompleter, exportListSupplier);
-    return new AsyncResult<>(result);
+    try {
+      preArchiveSelection(expCfg, exporter);
+      Supplier<ExportRecordList> exportListSupplier =
+          () -> archivePlanner.createExportRecordList(expCfg, exportSelection);
+      ArchiveResult result =
+          doArchiveSelection(expCfg, exporter, baseURL, postArchiveCompleter, exportListSupplier);
+      return new AsyncResult<>(result);
+    } catch (Exception e) {
+      log.error("Unable to export.", e);
+      postArchiveExportFailure(expCfg.getArchiveType(), exporter, e.getMessage());
+      throw e;
+    }
   }
 
   @Override
@@ -335,16 +341,23 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       User exporter,
       PostArchiveCompletion postArchiveCompleter)
       throws Exception {
-    createTopLevelExportFolder(expCfg);
-    ExportSelection userSelection =
-        ExportSelection.createUserExportSelection(toExport.getUsername());
     expCfg.setExporter(exporter);
     expCfg.setProgressMonitor(ProgressMonitor.NULL_MONITOR);
-    Supplier<ExportRecordList> rcdList =
-        () -> archivePlanner.createExportRecordList(expCfg, userSelection);
-    ArchiveResult result =
-        doSynchUserArchive(expCfg, baseURL, postArchiveCompleter, userSelection, rcdList);
-    return new AsyncResult<>(result);
+    try {
+      createTopLevelExportFolder(expCfg);
+      ExportSelection userSelection =
+          ExportSelection.createUserExportSelection(toExport.getUsername());
+      Supplier<ExportRecordList> rcdList =
+          () -> archivePlanner.createExportRecordList(expCfg, userSelection);
+      ArchiveResult result =
+          doSynchUserArchive(expCfg, baseURL, postArchiveCompleter, userSelection, rcdList);
+      return new AsyncResult<>(result);
+    } catch (Exception e) {
+      log.error("Unable to export.", e);
+      String exportName = "user-" + toExport.getUsername();
+      postArchiveExportFailure(exportName, expCfg.getExporter(), e.getMessage());
+      throw e;
+    }
   }
 
   @Override
@@ -471,7 +484,13 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       URI baseURL,
       PostArchiveCompletion postArchiveCompleter)
       throws Exception {
-    createTopLevelExportFolder(expCfg);
+    try {
+      createTopLevelExportFolder(expCfg);
+    } catch (Exception e) {
+      log.error("Unable to export.", e);
+      postArchiveExportFailure(expCfg.getArchiveType(), exporter, e.getMessage());
+      throw e;
+    }
     ExportSelection exportSelection = configureGroupExportCfg(expCfg, exporter, groupId);
     ArchiveResult result =
         doGroupArchive(

@@ -122,7 +122,8 @@ public class InventoryMoveHelper {
             targetLocation.getId(), targetLocation.getCoordX(), targetLocation.getCoordY());
     if (targetDbLocationOpt.isPresent()) {
       ContainerLocation targetDbLocation = targetDbLocationOpt.get();
-      if (targetDbLocation.getId() != null) { // could be null for grid location that is not saved to db yet
+      if (targetDbLocation.getId()
+          != null) { // could be null for grid location that is not saved to db yet
         Long currentLocationId =
             dbRecord.getParentLocation() == null ? null : dbRecord.getParentLocation().getId();
         if (targetDbLocation.getId().equals(currentLocationId)) {
