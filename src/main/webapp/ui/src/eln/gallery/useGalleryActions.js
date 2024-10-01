@@ -40,7 +40,7 @@ export function useGalleryActions(): {|
       destination: Destination,
       section: string,
     |}) => Promise<void>,
-    toDestinationWithPath: (string, string) => Promise<void>,
+    toDestinationWithFolder: (string, GalleryFile) => Promise<void>,
   |},
   deleteFiles: (RsSet<GalleryFile>) => Promise<void>,
   duplicateFiles: (RsSet<GalleryFile>) => Promise<void>,
@@ -203,7 +203,7 @@ export function useGalleryActions(): {|
       destination: Destination,
       section: string,
     |}) => Promise<void>,
-    toDestinationWithPath: (string, string) => Promise<void>,
+    toDestinationWithFolder: (string, GalleryFile) => Promise<void>,
   |} {
     return {
       to: async ({
@@ -234,15 +234,15 @@ export function useGalleryActions(): {|
             ? `/${section}/`
             : destination.folder.pathAsString();
         await moveFiles(files).toDestinationWithPath(section, path);
+        // what's the id of the root folder?
       },
-      toDestinationWithPath: async (
+      toDestinationWithFolder: async (
         section: string,
-        path: string
+        destinationFolder: GalleryFile
       ): Promise<void> => {
         try {
-          if (path === "") throw new Error("Path cannot be empty");
           const formData = new FormData();
-          formData.append("target", path);
+          formData.append("target", idToString(destinationFolder.id));
           for (const file of files)
             formData.append("filesId[]", idToString(file.id));
           formData.append("mediaType", section);

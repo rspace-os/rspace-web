@@ -12,9 +12,6 @@ import Result from "../../../util/result";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import Grid from "@mui/material/Grid";
 import TreeView from "./TreeView";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
@@ -50,17 +47,9 @@ const MoveDialog = ({
       sortOrder: "ASC",
     });
   const { moveFiles } = useGalleryActions();
-  const [pathString, setPathString] = React.useState("");
-  const selection = useGallerySelection({
-    onChange: (sel) => {
-      sel.asSet().only.do((file) => {
-        setPathString(file.pathAsString());
-      });
-    },
-  });
+  const selection = useGallerySelection();
 
   React.useEffect(() => {
-    if (!open) setPathString("");
     if (open) refreshListingInsideDialog();
   }, [open]);
 
@@ -105,79 +94,68 @@ const MoveDialog = ({
         })}
       </DialogContent>
       <DialogActions>
-        <Grid container spacing={1} direction="column">
-          <Grid item>
-            <TextField
-              value={pathString}
-              onChange={({ target: { value } }) => {
-                setPathString(value);
-              }}
-              fullWidth
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">Path</InputAdornment>
-                ),
-              }}
-              placeholder="Tap a folder or type a path here"
-            />
-          </Grid>
-          <Grid item>
-            <Stack direction="row" spacing={1}>
-              <SubmitSpinnerButton
-                onClick={() => {
-                  setTopLevelLoading(true);
-                  void moveFiles(selectedFiles)
-                    .to({
-                      destination: rootDestination(),
-                      section,
-                    })
-                    .then(() => {
-                      setTopLevelLoading(false);
-                      refreshListing();
-                      onClose();
-                    });
-                }}
-                disabled={topLevelLoading}
-                loading={topLevelLoading}
-                label="Make top-level"
-              />
-              <Box flexGrow={1}></Box>
-              <Button
-                onClick={() => {
+        <Stack direction="row" spacing={1}>
+          <SubmitSpinnerButton
+            onClick={() => {
+              setTopLevelLoading(true);
+              void moveFiles(selectedFiles)
+                .to({
+                  destination: rootDestination(),
+                  section,
+                })
+                .then(() => {
+                  setTopLevelLoading(false);
+                  refreshListing();
                   onClose();
-                }}
-              >
-                Cancel
-              </Button>
-              <ValidatingSubmitButton
-                loading={submitLoading}
-                onClick={() => {
-                  setSubmitLoading(true);
-                  void moveFiles(selectedFiles)
-                    .toDestinationWithPath(section, pathString)
-                    .then(() => {
-                      setSubmitLoading(false);
-                      refreshListing();
-                      onClose();
-                    });
-                }}
-                validationResult={(() => {
-                  const files = selection.asSet();
-                  if (files.isEmpty && pathString === "")
-                    return Result.Error([new Error("No folder is selected.")]);
-                  if (files.size > 1)
-                    return Result.Error([
-                      new Error("More than one folder is selected."),
-                    ]);
-                  return Result.Ok(null);
-                })()}
-              >
-                Move
-              </ValidatingSubmitButton>
-            </Stack>
-          </Grid>
-        </Grid>
+                });
+            }}
+            disabled={topLevelLoading}
+            loading={topLevelLoading}
+            label="Make top-level"
+          />
+          <Box flexGrow={1}></Box>
+          <Button
+            onClick={() => {
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+          <ValidatingSubmitButton
+            loading={submitLoading}
+            onClick={() => {
+              setSubmitLoading(true);
+              const destinationFolder = selection
+                .asSet()
+                .only.toResult(
+                  () =>
+                    new Error(
+                      "Impossible; submit button requires a selection of one"
+                    )
+                )
+                .elseThrow();
+              void moveFiles(selectedFiles)
+                .toDestinationWithFolder(section, destinationFolder)
+                .then(() => {
+                  setSubmitLoading(false);
+                  refreshListing();
+                  onClose();
+                });
+            }}
+            validationResult={(() => {
+              const files = selection.asSet();
+              if (files.isEmpty)
+                return Result.Error([new Error("No folder is selected.")]);
+              if (files.size > 1)
+                return Result.Error([
+                  new Error("More than one folder is selected."),
+                ]);
+              return Result.Ok(null);
+            })()}
+          >
+            Move
+          </ValidatingSubmitButton>
+        </Stack>
       </DialogActions>
     </Dialog>
   );
@@ -188,7 +166,7 @@ export default (
 ): Node => {
   const selection = useGallerySelection();
   return (
-    <GallerySelection>
+    <GallerySelection onlyAllowSingleSelection>
       <MoveDialog {...props} selectedFiles={selection.asSet()} />
     </GallerySelection>
   );

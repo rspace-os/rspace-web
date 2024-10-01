@@ -139,7 +139,7 @@ function initMoveGalleriesDialog() {
 					var data = {
 						filesId: filesId,
 						mediaType: $('#mediaTypeSelected').val(),
-						target: $("#galleries-folder-move-path").text()
+						target: $("#galleries-folder-move-path").text() // this needs to be the folder id
 					};
 
 					RS.blockPage("Moving...");

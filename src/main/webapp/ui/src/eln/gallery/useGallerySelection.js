@@ -2,7 +2,7 @@
 
 import React, { type Node, type Context } from "react";
 import { type GalleryFile } from "./useGalleryListing";
-import { makeObservable, action, observable, computed, autorun } from "mobx";
+import { makeObservable, action, observable, computed } from "mobx";
 import RsSet from "../../util/set";
 
 /*
@@ -102,16 +102,6 @@ export const GallerySelection = ({
   </SelectionContext.Provider>
 );
 
-export function useGallerySelection({
-  onChange,
-}: {| onChange?: (Selection) => void |} = {}): Selection {
-  const selection = React.useContext(SelectionContext);
-
-  React.useEffect(() => {
-    autorun(() => {
-      onChange?.(selection);
-    });
-  }, [selection]);
-
-  return selection;
+export function useGallerySelection(): Selection {
+  return React.useContext(SelectionContext);
 }
