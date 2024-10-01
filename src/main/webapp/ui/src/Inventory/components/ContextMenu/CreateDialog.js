@@ -34,9 +34,15 @@ import { runInAction } from "mobx";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import NoValue from "../../../components/NoValue";
 import StringField from "../../../components/Inputs/StringField";
-import RsSet from "../../../util/set";
-import { type Field } from "../../../stores/definitions/Field";
+import { type Id } from "../../../stores/definitions/BaseRecord";
 import Grid from "@mui/material/Grid";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Checkbox from "@mui/material/Checkbox";
 import Stack from "@mui/material/Stack";
 
 type CreateDialogProps = {|
@@ -63,9 +69,75 @@ export const TemplateName: ComponentType<{|
 });
 
 export const TemplateFields: ComponentType<{|
-  state: { validState: boolean, fields: RsSet<Field> },
+  state: {
+    validState: boolean,
+    copyFieldContent: $ReadOnlyArray<{|
+      id: Id,
+      name: string,
+      content: string,
+      hasContent: boolean,
+      selected: boolean,
+    |}>,
+  },
 |}> = observer(({ state }): Node => {
-  return <span>field table</span>;
+  if (state.copyFieldContent.length === 0)
+    return <NoValue label="No fields." />;
+  return (
+    <TableContainer>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell variant="head" padding="checkbox">
+              <Checkbox
+                indeterminate={
+                  state.copyFieldContent.some(({ selected }) => selected) &&
+                  !state.copyFieldContent.every(({ selected }) => selected)
+                }
+                checked={state.copyFieldContent.every(
+                  ({ selected }) => selected
+                )}
+                onChange={({ target: { checked } }) => {
+                  runInAction(() => {
+                    state.copyFieldContent.forEach((f) => {
+                      f.selected = checked;
+                    });
+                  });
+                }}
+              />
+            </TableCell>
+            <TableCell width="70%">Field</TableCell>
+            <TableCell width="30%">Default Value</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {state.copyFieldContent.map((f) => (
+            <TableRow key={f.id}>
+              <TableCell variant="head" padding="checkbox">
+                <Checkbox
+                  checked={f.selected}
+                  onChange={({ target: { checked } }) => {
+                    runInAction(() => {
+                      f.selected = checked;
+                    });
+                  }}
+                  color="default"
+                  disabled={!f.hasContent}
+                />
+              </TableCell>
+              <TableCell>{f.name}</TableCell>
+              <TableCell
+                style={{
+                  opacity: f.selected ? 1.0 : 0.3,
+                }}
+              >
+                {f.content}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
 });
 
 export const SplitCount: ComponentType<{|
