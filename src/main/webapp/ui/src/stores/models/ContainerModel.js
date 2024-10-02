@@ -1122,6 +1122,7 @@ export default class ContainerModel
         explanation: "The container will be automatically added to this container.",
         parameters: [{
           label: "Location",
+          explanation: "Specify a location for where the new container should be placed.",
           component: () => <></>,
         }],
         parametersState: { validState: true },
@@ -1132,6 +1133,7 @@ export default class ContainerModel
         explanation: "The subsample will be automatically added to this container.",
         parameters: [{
           label: "Location",
+          explanation: "Specify a location for where the new sample's one subsample should be placed.",
           component: () => <></>,
         }],
         parametersState: { validState: true },
