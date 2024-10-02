@@ -155,6 +155,11 @@ They are implemented using [getters](https://developer.mozilla.org/en-US/docs/We
 and are typed using Flow as [read-only properties](https://flow.org/en/docs/lang/variance/#toc-covariance).
 For [more information on mobx computeds, see their documentation](https://mobx.js.org/computeds.html).
 
+### Conjuction
+
+The monoidal operator that reduces a set of booleans down to a single
+boolean, only returning a truthful state when all of the inputs are true.
+
 ### Container
 
 An Inventory record that models all manner of physical containers in the labatory,
@@ -241,6 +246,11 @@ that has a distinct constant value for each branch of the union, thereby
 supporting refinement. It is the closest thing that JavaScript with Flow type
 annotations has to the tagged unions of pure functional programming languages.
 For more information, see [the Flow docs](https://flow.org/en/docs/types/unions/#toc-disjoint-object-unions).
+
+### Disjuction
+
+The monoidal operator that reduces a set of booleans down to a single
+boolean, returning a truthful state when any of the inputs are true.
 
 ### Dynamic dispatch
 
