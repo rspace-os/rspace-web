@@ -238,7 +238,7 @@ function NewRecordForm(): Node {
           sectionName="attachments"
           recordType="sample"
         >
-          <AttachmentsField />
+          <AttachmentsField fieldOwner={activeResult} />
         </StepperPanel>
         <StepperPanel
           icon="sample"
