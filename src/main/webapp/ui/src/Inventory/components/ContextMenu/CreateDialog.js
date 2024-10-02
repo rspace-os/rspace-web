@@ -201,7 +201,7 @@ function CreateDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         Create new items
         <HelpLinkIcon
