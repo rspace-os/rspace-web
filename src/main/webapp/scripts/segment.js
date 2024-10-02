@@ -4,8 +4,8 @@ if (typeof window.currentUser === "undefined") {
   window.currentUser = "";
 }
 
-_loadLiveChat = function (analyticsEnaled, analyticsServerType) {
-  if(!analyticsEnaled || analyticsServerType === "posthog") {
+_loadLiveChat = function (analyticsEnabled, analyticsServerType) {
+  if(!analyticsEnabled || analyticsServerType === "posthog") {
 
     // setup intercom independently of segment
     fetch("/session/ajax/livechatProperties")
