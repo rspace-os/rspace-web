@@ -593,3 +593,10 @@ Also called a PID, these are long-lasting identifiers to assets, digital or
 otherwise. The key thing to understand is that the identifiers themselves are
 only as persistent as the service that resolves them. [Permalinks](#permalink)
 and [IGSNs](#igsn) are a form of PIDs.
+
+### Picker
+
+A picker is a UI element that allows the user to select an option from a set of
+predefined values, typically presented in a manner that is specific to the type
+of data being chosen: e.g. a calendar for dates. Other common examples include
+time and files.
