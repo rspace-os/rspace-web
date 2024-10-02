@@ -354,8 +354,9 @@ ancillary data, organised by category of file type. For more information, see
 ### Geolocation
 
 A geolocation is the digital description of the real-world location of an
-object. It is often used in the context of IGSNs, in which case for more
-information see the [DataCite documentation on GeoLocation](https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/geolocation/)
+object. It is often used in the context of [IGSNs](#igsn), in which case for
+more information see the
+[DataCite documentation on GeoLocation](https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/geolocation/)
 
 ### Global Id
 
@@ -403,8 +404,8 @@ See persistent identifier
 
 ### IGSN
 
-The International Generic Sample Number, or IGSN, is the standard persistent
-identifier for samples.
+The International Generic Sample Number, or IGSN, is the standard
+[persistent identifier](#persistent-identifier) for samples.
 
 ### Intercom
 
@@ -581,6 +582,14 @@ the syntax.
 
 ### Permalink
 
-> A permalink or permanent link is a URL that is intended to remain unchanged
+A type of [PID](#persitent-identifier), a
+> permalink or permanent link is a URL that is intended to remain unchanged
 > for many years into the future, yielding a hyperlink that is less susceptible
 > to link rot. — [Wikipedia](https://en.wikipedia.org/wiki/Permalink)
+
+### Persistent Identifier
+
+Also called a PID, these are long-lasting identifiers to assets, digital or
+otherwise. The key thing to understand is that the identifiers themselves are
+only as persistent as the service that resolves them. [Permalinks](#permalink)
+and [IGSNs](#igsn) are a form of PIDs.
