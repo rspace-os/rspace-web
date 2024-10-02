@@ -614,3 +614,8 @@ given type. Polymorphism is perhaps the most important tool is building
 scalable, maintainable, and robust software as it is a mechanism for decoupling
 functionality and allowing additions to the codebase to continue without being
 slowed down by the volume of the existing code.
+
+### Posthog
+
+A third-party tool for collecting and analysing analytics data from across a
+fleet of deployed servers. Their website is [posthog.com](posthog.com).
