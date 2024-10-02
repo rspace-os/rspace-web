@@ -17,7 +17,6 @@ import StepLabel from "@mui/material/StepLabel";
 import StepContent from "@mui/material/StepContent";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
-import FormHelperText from "@mui/material/FormHelperText";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import RadioGroup from "@mui/material/RadioGroup";
 import Radio from "@mui/material/Radio";
@@ -44,6 +43,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Checkbox from "@mui/material/Checkbox";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 
 type CreateDialogProps = {|
   existingRecord: CreateFrom & InventoryRecord,
@@ -173,11 +173,6 @@ export const SplitCount: ComponentType<{|
             step: 1,
           }}
         />
-        {/* FormHelperText used rather than NumberField's helperText prop so that the text is always shown, not only when there's an error. */}
-        <FormHelperText error={!state.validState}>
-          {`The total number of subsamples wanted, including the source (min ${MIN}
-        , max ${MAX})`}
-        </FormHelperText>
       </FormControl>
     </Box>
   );
@@ -286,9 +281,12 @@ function CreateDialog({
                 .parameters &&
               existingRecord.createOptions[
                 selectedCreateOptionIndex
-              ].parameters.map(({ label, component }, index) => (
+              ].parameters.map(({ label, component, explanation }, index) => (
                 <Step key={index}>
-                  <StepLabel>{label}</StepLabel>
+                  <StepLabel>
+                    {label}
+                    <Typography variant="body2">{explanation}</Typography>
+                  </StepLabel>
                   <StepContent>
                     <Grid container direction="column" spacing={1}>
                       <Grid item>{component()}</Grid>

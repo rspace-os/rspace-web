@@ -888,6 +888,7 @@ export default class SampleModel
         disabled: this.subSamples.length > 1,
         parameters: [{
           label: "Number of new subsamples",
+          explanation: "The total number of subsamples wanted, including the source (min 2, max 100)",
           component: () => <SplitCount state={this.createOptionsParametersState.split} />,
         }],
         parametersState: this.createOptionsParametersState.split,
@@ -904,9 +905,11 @@ export default class SampleModel
         explanation: "Create a template from this sample, to easily create more samples.",
         parameters: [{
           label: "Name",
+          explanation: "A name for the new template",
           component: () => <TemplateName state={this.createOptionsParametersState.template} />,
         },{
           label: "Field",
+          explanation: "All of these fields will be copied to the new template, select which ones should have their value copied over too.",
           component: () => <TemplateFields state={this.createOptionsParametersState.template} />,
         }],
         parametersState: this.createOptionsParametersState.template,

@@ -460,6 +460,7 @@ export default class SubSampleModel
         explanation: "New subsamples will be created by diving the quantity of this subsample equally amongst them.",
         parameters: [{
           label: "Number of new subsamples",
+          explanation: "The total number of subsamples wanted, including the source (min 2, max 100)",
           component: () => <SplitCount state={this.createOptionsParametersState.split} />,
         }],
         parametersState: this.createOptionsParametersState.split,
