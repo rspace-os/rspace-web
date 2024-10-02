@@ -1709,7 +1709,7 @@
       </exclusions>
     </dependency>
     <dependency>
-        <groupId>com.github.rspace-os</groupId>
+        <groupId>com.github.ll4strw</groupId>
         <artifactId>rspace-core-model</artifactId>
         <version>${rspace-core-model.version}</version>
         <exclusions>
@@ -1736,7 +1736,7 @@
         </exclusions>
     </dependency>
     <dependency>
-        <groupId>com.github.rspace-os</groupId>
+        <groupId>com.github.ll4strw</groupId>
         <artifactId>rspace-core-model</artifactId>
         <version>${rspace-core-model.version}</version>
         <scope>test</scope>
@@ -2024,7 +2024,8 @@
     <dependency>
         <groupId>org.irods.jargon</groupId>
         <artifactId>jargon-core</artifactId>
-        <version>4.3.2.5-RELEASE</version>
+        <!--<version>4.3.2.5-RELEASE</version>-->
+	<version>4.3.4.0-RELEASE</version>
         <exclusions>
             <exclusion>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -2923,7 +2924,8 @@
     <jstl.version>1.1.2</jstl.version>
     <lucene.version>5.5.5</lucene.version>
     <netty.version>4.1.63.Final</netty.version>
-    <rspace-core-model.version>2.1.0</rspace-core-model.version>
+    <!--<rspace-core-model.version>2.1.0</rspace-core-model.version>-->
+    <rspace-core-model.version>0.0.1</rspace-core-model.version>
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>

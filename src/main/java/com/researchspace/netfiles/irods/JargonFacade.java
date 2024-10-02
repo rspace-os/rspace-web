@@ -26,6 +26,7 @@ import org.irods.jargon.core.query.CollectionAndDataObjectListingEntry;
 public class JargonFacade {
 
   private IRODSAccessObjectFactory accessObjectFactory;
+  public IRODSFileSystem iRODSFs;
 
   private enum IRODSFileSystemSingletonHolder {
     INSTANCE();
@@ -46,8 +47,8 @@ public class JargonFacade {
 
   public JargonFacade() {
     try {
-      this.accessObjectFactory =
-          IRODSFileSystemSingletonHolder.INSTANCE.getIRodFileSystem().getIRODSAccessObjectFactory();
+      this.iRODSFs = IRODSFileSystemSingletonHolder.INSTANCE.getIRodFileSystem();
+      this.accessObjectFactory = iRODSFs.getIRODSAccessObjectFactory();
     } catch (JargonException e) {
       log.error("Error Constructing JargonFacade: ", e);
     }
