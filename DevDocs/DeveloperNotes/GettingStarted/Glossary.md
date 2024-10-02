@@ -600,3 +600,17 @@ A picker is a UI element that allows the user to select an option from a set of
 predefined values, typically presented in a manner that is specific to the type
 of data being chosen: e.g. a calendar for dates. Other common examples include
 time and files.
+
+### Polymorphism
+
+The ability to present the same interface for different underlying forms and to
+operate on such data in an abstract way based only on the information that is
+available. To name but three types, sub-typing polymorphism allows code to be
+presented with any class that implements a specific interface; ad-hoc
+polymorphism allows for particular functions to be defined on several different
+types, such as addition over both integers and floats; parametric polymorphism
+allows for abstract data structures to be defined that can handle values of any
+given type. Polymorphism is perhaps the most important tool is building
+scalable, maintainable, and robust software as it is a mechanism for decoupling
+functionality and allowing additions to the codebase to continue without being
+slowed down by the volume of the existing code.
