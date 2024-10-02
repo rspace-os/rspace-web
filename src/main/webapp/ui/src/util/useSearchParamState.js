@@ -23,28 +23,5 @@ export function useSearchParamState<
     return tmp;
   }
 
-  const [state, setState] = React.useState<T>(
-    calculateState(searchParams, fallback)
-  );
-
-  /*
-   * If the browser changes the searchParams -- such as because the user taps
-   * the back button -- or the JS code changes the fallback object, then we
-   * should synchronise those changes
-   */
-  React.useEffect(() => {
-    setState(calculateState(searchParams, fallback));
-  }, [searchParams, fallback]);
-
-  return [
-    state,
-    (newValue: T) => {
-      setState(newValue);
-      /*
-       * If the JS code changes the state then we should synchronise those
-       * changes back to the URL.
-       */
-      setSearchParams(newValue);
-    },
-  ];
+  return [calculateState(searchParams, fallback), setSearchParams];
 }
