@@ -135,6 +135,18 @@
                     <spring:message code="system.netfilesystem.details.client.irods.port" /></label></td>
                 <td><input id="fileSystemIrodsPort" type="text" style="width: 20em" /></td>
              </tr>
+	     
+            <tr class="fileSystemDetailsIrodsCsnegRow">
+                <td><label for="fileSystemIrodsCsneg">
+                    <spring:message code="system.netfilesystem.details.client.irods.csneg" /></label></td>
+                <td><input id="fileSystemIrodsCsneg" type="text" style="width: 20em" /></td>
+             </tr>
+
+
+
+
+
+
             <tr class="fileSystemDetailsSftpRow">
                 <td><label for="fileSystemSftpServerPublicKey">
                     <spring:message code="system.netfilesystem.details.client.sftp.server.public.key" /></label></td>
@@ -162,6 +174,18 @@
                     <spring:message code="system.netfilesystem.details.auth.pubkey.registration.dialog.url" /></label></td>
                 <td><input id="fileSystemPubKeyRegistrationUrl" type="text" style="width: 20em" /></td>
             </tr>
+
+	                <tr class="fileSystemDetailsIrodsAuthRow">
+                <td><label><spring:message code="system.netfilesystem.details.client.irods.auth" /></label></td>
+                <td>
+                    <label><input type="radio" id="iRODSfileSystemAuthTypeNative" name="iRODSfileSystemAuthType" value="NATIVE" required>
+                        <span id="iRODSfileSystemAuthTypeNativeSpan"><spring:message code="system.netfilesystem.details.client.irods.auth.native" /></span></label>
+                    <label><input type="radio" id="iRODSfileSystemAuthTypePAM" name="iRODSfileSystemAuthType" value="PAM">
+                        <span id="iRODSfileSystemAuthTypePAMSpan"><spring:message code="system.netfilesystem.details.client.irods.auth.pam" /></span></label>
+
+                </td>
+            </tr>
+
             <tr>
                 <td><label><spring:message code="system.netfilesystem.details.status" /></label></td>
                 <td>
