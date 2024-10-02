@@ -26,7 +26,8 @@ If 'aspose.app' is set, then:
   
 #### Analytics
 
-1. If `analytics.enabled` is 'true' then `analytics.server.host` and `analytics.server.key` must be set
+1. If `analytics.enabled` is 'true' then `analytics.server.key` must be set.
+2. If `livechat.enabled` is 'true' then `livechat.server.key` must be set.
 
 ####  File system properties
 
