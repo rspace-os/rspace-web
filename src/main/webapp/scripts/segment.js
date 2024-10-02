@@ -11,7 +11,14 @@ _loadLiveChat = function (analyticsEnabled, analyticsServerType) {
     fetch("/session/ajax/livechatProperties")
       .then(res => res.json())
       .then(props => {
-        if (!props.livechatEnabled) return;
+        if (!props.livechatEnabled) {
+          document.dispatchEvent(
+            new CustomEvent("livechatEnabled", {
+              detail: { value: false },
+            })
+          );
+          return;
+        }
         var APP_ID = props.livechatServerKey;
         window.intercomSettings = {
           api_base: "https://api-iam.intercom.io",
@@ -22,6 +29,12 @@ _loadLiveChat = function (analyticsEnabled, analyticsServerType) {
         // this code is taken from the intercom docs
         // https://developers.intercom.com/installing-intercom/web/installation
         (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/' + APP_ID;var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s, x);};if(document.readyState==='complete'){l();}else if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();
+
+        document.dispatchEvent(
+          new CustomEvent("livechatEnabled", {
+            detail: { value: props.livechatEnabled },
+          })
+        );
     });
 
     return;
@@ -119,6 +132,12 @@ _loadAnalytics = function (analyticsServerType, analyticsServerHost, analyticsSe
         }
     })();
 
+    // there is no way to have segment and not have intercom
+    document.dispatchEvent(
+      new CustomEvent("livechatEnabled", {
+        detail: { value: true },
+      })
+    );
   } catch (e) {
     console.warn("Analytics.js exception at: " + document.URL);
     console.log(e);
@@ -132,12 +151,6 @@ $(document).ready(function () {
 
   if (isAnalyticsDataCurrent) {
     const analyticsData = JSON.parse(RS.loadSessionSetting("analyticsData"));
-
-    document.dispatchEvent(
-      new CustomEvent("analyticsEnabled", {
-        detail: { value: analyticsData.analyticsenabled },
-      })
-    );
 
     if (analyticsData.analyticsEnabled) {
       console.log(
@@ -158,12 +171,6 @@ $(document).ready(function () {
     window.currentUser = analyticsProps.currentUser;
 
     analyticsProps.done(function (analyticsData) {
-      document.dispatchEvent(
-        new CustomEvent("analyticsEnabled", {
-          detail: { value: analyticsData.analyticsEnabled },
-        })
-      );
-
       RS.saveSessionSetting("analyticsData", JSON.stringify(analyticsData));
 
       if (analyticsData.analyticsEnabled) {
