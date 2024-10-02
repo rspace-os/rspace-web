@@ -68,6 +68,7 @@ export type CreateOption = {|
   disabled?: boolean,
   parameters?: $ReadOnlyArray<{|
     label: string,
+    explanation: string,
     component: () => Node,
   |}>,
   parametersState?: { validState: boolean, ... },
