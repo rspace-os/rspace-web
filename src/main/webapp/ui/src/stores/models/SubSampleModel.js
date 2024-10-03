@@ -142,7 +142,7 @@ export default class SubSampleModel
   lastNonWorkbenchParent: ?string;
   lastMoveDate: ?Date;
   createOptionsParametersState: {|
-    split: { count: number, validState: boolean }
+    split: { count: number }
   |};
 
   constructor(factory: Factory, params: SubSampleAttrs) {
@@ -175,7 +175,7 @@ export default class SubSampleModel
     if (this.recordType === "subSample")
       this.populateFromJson(factory, params, {});
 
-    this.createOptionsParametersState = { split: { count: 2, validState: true }};
+    this.createOptionsParametersState = { split: { count: 2 }};
   }
 
   populateFromJson(
@@ -462,6 +462,7 @@ export default class SubSampleModel
           label: "Number of new subsamples",
           explanation: "The total number of subsamples wanted, including the source (min 2, max 100)",
           component: () => <SplitCount state={this.createOptionsParametersState.split} />,
+          validState: () => this.createOptionsParametersState.split.count >= 2 && this.createOptionsParametersState.split.count <= 100,
         }],
         parametersState: this.createOptionsParametersState.split,
         onSubmit: () => {

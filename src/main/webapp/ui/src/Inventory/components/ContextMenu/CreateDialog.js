@@ -52,7 +52,7 @@ type CreateDialogProps = {|
 |};
 
 export const TemplateName: ComponentType<{|
-  state: { validState: boolean, name: string },
+  state: { name: string },
 |}> = observer(({ state }): Node => {
   return (
     <StringField
@@ -60,7 +60,6 @@ export const TemplateName: ComponentType<{|
       onChange={({ target }) => {
         runInAction(() => {
           state.name = target.value;
-          state.validState = state.validState && target.value.length > 0;
         });
       }}
       variant="outlined"
@@ -70,7 +69,6 @@ export const TemplateName: ComponentType<{|
 
 export const TemplateFields: ComponentType<{|
   state: {
-    validState: boolean,
     copyFieldContent: $ReadOnlyArray<{|
       id: Id,
       name: string,
@@ -141,7 +139,7 @@ export const TemplateFields: ComponentType<{|
 });
 
 export const SplitCount: ComponentType<{|
-  state: { validState: boolean, count: number },
+  state: { count: number },
 |}> = observer(({ state }): Node => {
   const MIN = 2;
   const MAX = 100;
@@ -156,10 +154,8 @@ export const SplitCount: ComponentType<{|
           onChange={({ target }) => {
             runInAction(() => {
               state.count = parseInt(target.value, 10);
-              state.validState = target.checkValidity() && target.value !== "";
             });
           }}
-          error={!state.validState}
           variant="outlined"
           size="small"
           InputProps={{
@@ -281,49 +277,52 @@ function CreateDialog({
                 .parameters &&
               existingRecord.createOptions[
                 selectedCreateOptionIndex
-              ].parameters.map(({ label, component, explanation }, index) => (
-                <Step key={index}>
-                  <StepLabel>
-                    {label}
-                    <Typography variant="body2">{explanation}</Typography>
-                  </StepLabel>
-                  <StepContent>
-                    <Grid container direction="column" spacing={1}>
-                      <Grid item>{component()}</Grid>
-                      <Grid item>
-                        <Stack spacing={1} direction="row">
-                          {index <
-                            (
-                              existingRecord.createOptions[
-                                selectedCreateOptionIndex
-                              ].parameters ?? []
-                            ).length -
-                              1 && (
+              ].parameters.map(
+                ({ label, component, explanation, validState }, index) => (
+                  <Step key={index}>
+                    <StepLabel>
+                      {label}
+                      <Typography variant="body2">{explanation}</Typography>
+                    </StepLabel>
+                    <StepContent>
+                      <Grid container direction="column" spacing={1}>
+                        <Grid item>{component()}</Grid>
+                        <Grid item>
+                          <Stack spacing={1} direction="row">
+                            {index <
+                              (
+                                existingRecord.createOptions[
+                                  selectedCreateOptionIndex
+                                ].parameters ?? []
+                              ).length -
+                                1 && (
+                              <Button
+                                color="primary"
+                                variant="contained"
+                                disableElevation
+                                onClick={() => {
+                                  setActiveStep(activeStep + 1);
+                                }}
+                                disabled={!validState()}
+                              >
+                                Next
+                              </Button>
+                            )}
                             <Button
-                              color="primary"
-                              variant="contained"
-                              disableElevation
+                              variant="outlined"
                               onClick={() => {
-                                setActiveStep(activeStep + 1);
+                                setActiveStep(activeStep - 1);
                               }}
                             >
-                              Next
+                              Back
                             </Button>
-                          )}
-                          <Button
-                            variant="outlined"
-                            onClick={() => {
-                              setActiveStep(activeStep - 1);
-                            }}
-                          >
-                            Back
-                          </Button>
-                        </Stack>
+                          </Stack>
+                        </Grid>
                       </Grid>
-                    </Grid>
-                  </StepContent>
-                </Step>
-              ))}
+                    </StepContent>
+                  </Step>
+                )
+              )}
           </Stepper>
         </DialogContent>
         <DialogActions>
@@ -338,10 +337,10 @@ function CreateDialog({
                   existingRecord.createOptions[selectedCreateOptionIndex]
                     .parameters ?? []
                 ).length ||
-              !(
+              (
                 existingRecord.createOptions[selectedCreateOptionIndex]
-                  .parametersState?.validState ?? true
-              )
+                  .parameters ?? []
+              ).some(({ validState }) => !validState())
             }
             loading={false}
           />
