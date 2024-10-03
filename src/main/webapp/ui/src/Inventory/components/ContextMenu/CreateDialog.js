@@ -51,15 +51,15 @@ type CreateDialogProps = {|
   onClose: () => void,
 |};
 
-export const TemplateName: ComponentType<{|
-  state: { name: string },
+const Name: ComponentType<{|
+  state: { value: string },
 |}> = observer(({ state }): Node => {
   return (
     <StringField
-      value={state.name}
+      value={state.value}
       onChange={({ target }) => {
         runInAction(() => {
-          state.name = target.value;
+          state.value = target.value;
         });
       }}
       variant="outlined"
@@ -67,7 +67,7 @@ export const TemplateName: ComponentType<{|
   );
 });
 
-export const TemplateFields: ComponentType<{|
+const Fields: ComponentType<{|
   state: {
     copyFieldContent: $ReadOnlyArray<{|
       id: Id,
@@ -138,8 +138,8 @@ export const TemplateFields: ComponentType<{|
   );
 });
 
-export const SplitCount: ComponentType<{|
-  state: { count: number },
+const SplitCount: ComponentType<{|
+  state: { copies: number, ... },
 |}> = observer(({ state }): Node => {
   const MIN = 2;
   const MAX = 100;
@@ -150,10 +150,10 @@ export const SplitCount: ComponentType<{|
         <NumberField
           name="copies"
           autoFocus
-          value={state.count}
+          value={state.copies}
           onChange={({ target }) => {
             runInAction(() => {
-              state.count = parseInt(target.value, 10);
+              state.copies = parseInt(target.value, 10);
             });
           }}
           variant="outlined"
@@ -278,7 +278,7 @@ function CreateDialog({
               existingRecord.createOptions[
                 selectedCreateOptionIndex
               ].parameters.map(
-                ({ label, component, explanation, validState }, index) => (
+                ({ label, explanation, state, validState }, index) => (
                   <Step key={index}>
                     <StepLabel>
                       {label}
@@ -286,7 +286,14 @@ function CreateDialog({
                     </StepLabel>
                     <StepContent>
                       <Grid container direction="column" spacing={1}>
-                        <Grid item>{component()}</Grid>
+                        <Grid item>
+                          {state.key === "split" && (
+                            <SplitCount state={state} />
+                          )}
+                          {state.key === "name" && <Name state={state} />}
+                          {state.key === "location" && <>TODO</>}
+                          {state.key === "fields" && <Fields state={state} />}
+                        </Grid>
                         <Grid item>
                           <Stack spacing={1} direction="row">
                             {index <
