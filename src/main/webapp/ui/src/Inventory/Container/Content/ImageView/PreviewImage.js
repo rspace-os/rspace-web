@@ -105,6 +105,8 @@ function PreviewImage(): Node {
           }
           container.stopSelection({
             selectionLimit: search.uiConfig.selectionLimit,
+            allowSelectingEmptyLocations:
+              search.uiConfig.allowSelectingEmptyLocations,
           });
         }}
         onMouseMove={(e: MouseEvent) => {
