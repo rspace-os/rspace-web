@@ -200,6 +200,7 @@ const LocationPicker: ComponentType<{|
         allowedSearchModules: (new Set([]): AllowedSearchModules),
         allowedTypeFilters: (new Set([]): AllowedTypeFilters),
         hideContentsOfChip: true,
+        selectionLimit: 1,
       },
       factory: new AlwaysNewFactory(),
     })

@@ -116,6 +116,12 @@ export type UiConfig = {|
    * to not show a button to remove the parentGlobalId parameter.
    */
   hideContentsOfChip: boolean,
+
+  /**
+   * The maximum number of locations of containers that the user is allowed to
+   * select.
+   */
+  selectionLimit: number,
 |};
 
 export type PermalinkType =

@@ -115,6 +115,7 @@ export default class MoveStore {
         uiConfig: {
           allowedTypeFilters: new Set(["CONTAINER"]),
           selectionMode: "SINGLE",
+          selectionLimit: Infinity,
         },
         callbacks: {
           setActiveResult: (r) => {
@@ -127,6 +128,8 @@ export default class MoveStore {
                 r.cType === "WORKBENCH"
                   ? "NONE"
                   : "MULTIPLE";
+              r.contentSearch.uiConfig.selectionLimit =
+                this.selectedResults.length;
             }
           },
         },
