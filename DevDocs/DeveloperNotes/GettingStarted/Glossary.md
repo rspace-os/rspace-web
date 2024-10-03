@@ -297,8 +297,8 @@ replicate them across multiple records.
 
 ### fast-check
 
-[Fast-check](https://fast-check.dev/) is a property-based testing library for
-JavaScript.
+[Fast-check](https://fast-check.dev/) is a
+[property-based testing](#property-based-testing) library for JavaScript.
 
 ### Field
 
@@ -397,6 +397,11 @@ is from the legacy docs, one can only assume that they are a deprecated feature
 that should be avoided.
 
 ## I
+
+### Idempotence
+
+The property of a function that invoking it twice has no effect more than
+calling it once; naturally this means that it must be [pure](#pure).
 
 ### Identifier
 
@@ -646,3 +651,24 @@ should be decoupled from those at top and bottom; in that case, use a
 ### Props
 
 The arguments, passed as an object, to a react component.
+
+### Property-based testing
+
+A testing technique where the code under test is not asserted against a known
+example, but instead the test runtime generates a set of values that conform to
+the inputs of the system and a property is asserted about all of the outputs.
+For example, that applying a sort function is the same as apply it twice
+(idempotence), or applying a reverse functions twice is the same as never
+calling it at all. A great introduction to property based testing is
+[this blog series by Scott Wlaschin](https://fsharpforfunandprofit.com/posts/property-based-testing/)
+
+### Pure
+
+A function is pure if its output can be solely determined by inspecting its
+inputs; that in principle it could be replaced with a (potentially infinite)
+lookup table. Naturally this means it can have no side effects: no network
+activity, no logging, no user input, no mutation, no global variables, no
+randomness -- just inputs and outputs. This includes mathematical operations
+like addition, array operations like map and filter, and most other utility
+functions. What makes them so great is that they are really easy to test and
+very ameneable to [property-based testing](#property-based-testing).
