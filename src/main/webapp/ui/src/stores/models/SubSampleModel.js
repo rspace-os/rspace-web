@@ -62,7 +62,6 @@ import {
   IsValid,
   type ValidationResult,
 } from "../../components/ValidatingSubmitButton";
-import { SplitCount } from "../../Inventory/components/ContextMenu/CreateDialog";
 
 type SubSampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -142,7 +141,7 @@ export default class SubSampleModel
   lastNonWorkbenchParent: ?string;
   lastMoveDate: ?Date;
   createOptionsParametersState: {|
-    split: { count: number }
+    split: {| key: "split",  copies: number |}
   |};
 
   constructor(factory: Factory, params: SubSampleAttrs) {
@@ -175,7 +174,7 @@ export default class SubSampleModel
     if (this.recordType === "subSample")
       this.populateFromJson(factory, params, {});
 
-    this.createOptionsParametersState = { split: { count: 2 }};
+    this.createOptionsParametersState = { split: { key: "split", copies: 2 }};
   }
 
   populateFromJson(
@@ -461,13 +460,12 @@ export default class SubSampleModel
         parameters: [{
           label: "Number of new subsamples",
           explanation: "The total number of subsamples wanted, including the source (min 2, max 100)",
-          component: () => <SplitCount state={this.createOptionsParametersState.split} />,
-          validState: () => this.createOptionsParametersState.split.count >= 2 && this.createOptionsParametersState.split.count <= 100,
+          state: this.createOptionsParametersState.split,
+          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
         }],
-        parametersState: this.createOptionsParametersState.split,
         onSubmit: () => {
           return getRootStore().searchStore.search.splitRecord(
-            this.createOptionsParametersState.split.count,
+            this.createOptionsParametersState.split.copies,
             this
           );
         },

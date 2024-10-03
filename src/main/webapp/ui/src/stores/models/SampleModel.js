@@ -80,7 +80,6 @@ import {
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import * as ArrayUtils  from "../../util/ArrayUtils";
-import { SplitCount, TemplateName, TemplateFields } from "../../Inventory/components/ContextMenu/CreateDialog";
 
 type SampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -220,9 +219,10 @@ export default class SampleModel
   templateId: Id;
   templateVersion: ?number;
   createOptionsParametersState: {|
-    split: { count: number },
-    template: {
-      name: string,
+    split: {| key: "split",  copies: number |},
+    name: {| key: "name", value: string |},
+    fields: {|
+      key: "fields",
       copyFieldContent: $ReadOnlyArray<{|
         id: Id,
         name: string,
@@ -230,7 +230,7 @@ export default class SampleModel
         hasContent: boolean,
         selected: boolean,
       |}>,
-    },
+    |},
   |};
 
   constructor(factory: Factory, params: SampleAttrs = { ...DEFAULT_SAMPLE }) {
@@ -315,9 +315,10 @@ export default class SampleModel
     this.templateId = params.templateId;
     this.templateVersion = params.templateVersion ?? 1;
       this.createOptionsParametersState = {
-        split: { count: 2 },
-        template: {
-          name: "",
+        split: { key: "split", copies: 2 },
+        name: { key: "name", value: "" },
+        fields: {
+          key: "fields",
           copyFieldContent: [
             ...this.fields.map(f => ({
               id: f.id,
@@ -887,14 +888,13 @@ export default class SampleModel
         parameters: [{
           label: "Number of new subsamples",
           explanation: "The total number of subsamples wanted, including the source (min 2, max 100)",
-          component: () => <SplitCount state={this.createOptionsParametersState.split} />,
-          validState: () => this.createOptionsParametersState.split.count >= 2 && this.createOptionsParametersState.split.count <= 100,
+          state: this.createOptionsParametersState.split,
+          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
         }],
-        parametersState: this.createOptionsParametersState.split,
         onSubmit: () => {
           if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
           return getRootStore().searchStore.search.splitRecord(
-            this.createOptionsParametersState.split.count,
+            this.createOptionsParametersState.split.copies,
             this.subSamples[0],
           );
         },
@@ -905,20 +905,19 @@ export default class SampleModel
         parameters: [{
           label: "Name",
           explanation: "A name for the new template. At least two characters.",
-          component: () => <TemplateName state={this.createOptionsParametersState.template} />,
-          validState: () => this.createOptionsParametersState.template.name.length > 2,
+          state: this.createOptionsParametersState.name,
+          validState: () => this.createOptionsParametersState.name.value.length > 2,
         },{
           label: "Field",
           explanation: "All of these fields will be copied to the new template, select which ones should have their value copied over too.",
-          component: () => <TemplateFields state={this.createOptionsParametersState.template} />,
+          state: this.createOptionsParametersState.fields,
           validState: () => true,
         }],
-        parametersState: this.createOptionsParametersState.template,
         onSubmit: () => {
           return getRootStore().searchStore.search.createTemplateFromSample(
-            this.createOptionsParametersState.template.name,
+            this.createOptionsParametersState.name.value,
             this,
-            new RsSet(this.createOptionsParametersState.template.copyFieldContent.filter(({ selected }) => selected).map(({ id }) => id)),
+            new RsSet(this.createOptionsParametersState.fields.copyFieldContent.filter(({ selected }) => selected).map(({ id }) => id)),
           );
         },
       }
