@@ -1124,8 +1124,9 @@ export default class ContainerModel
           label: "Location",
           explanation: "Specify a location for where the new container should be placed.",
           component: () => <></>,
+          validState: () => true,
         }],
-        parametersState: { validState: true },
+        parametersState: {},
         onSubmit: () => Promise.resolve(),
       },
       {
@@ -1135,8 +1136,9 @@ export default class ContainerModel
           label: "Location",
           explanation: "Specify a location for where the new sample's one subsample should be placed.",
           component: () => <></>,
+          validState: () => true,
         }],
-        parametersState: { validState: true },
+        parametersState: {},
         onSubmit: () => Promise.resolve(),
       }
     ];
