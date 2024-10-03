@@ -138,6 +138,8 @@ export default class MoveStore {
                * it is here that we apply the restrictions on selection
                */
               r.contentSearch.uiConfig.allowSelectingEmptyLocations = true;
+              r.contentSearch.uiConfig.selectionLimit =
+                this.selectedResults.length;
             }
           },
         },
