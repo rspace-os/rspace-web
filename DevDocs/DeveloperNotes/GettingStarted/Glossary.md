@@ -636,8 +636,13 @@ enabled, although we often do when it is not enabled anyway.
 
 ### Prop drilling
 
-The repeated passing of props untouched through a chain of react components so
-that an component high up in the [component tree](#component-tree) may pass
-data to a component many levels below. Whilst somewhat clumsy and messy, this
-practice is especially egregious when the components in the middle should be
-decoupled from those at top and bottom; in that case, use a [context](#context).
+The repeated passing of [props](#props) untouched through a chain of react
+components so that an component high up in the [component tree](#component-tree)
+may pass data to a component many levels below. Whilst somewhat clumsy and
+messy, this practice is especially egregious when the components in the middle
+should be decoupled from those at top and bottom; in that case, use a
+[context](#context).
+
+### Props
+
+The arguments, passed as an object, to a react component.
