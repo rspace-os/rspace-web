@@ -220,7 +220,7 @@ export default class SampleModel
   templateId: Id;
   templateVersion: ?number;
   createOptionsParametersState: {|
-    split: { count: number, validState: boolean },
+    split: { count: number },
     template: {
       name: string,
       copyFieldContent: $ReadOnlyArray<{|
@@ -230,7 +230,6 @@ export default class SampleModel
         hasContent: boolean,
         selected: boolean,
       |}>,
-      validState: boolean
     },
   |};
 
@@ -316,7 +315,7 @@ export default class SampleModel
     this.templateId = params.templateId;
     this.templateVersion = params.templateVersion ?? 1;
       this.createOptionsParametersState = {
-        split: { count: 2, validState: true },
+        split: { count: 2 },
         template: {
           name: "",
           copyFieldContent: [
@@ -335,7 +334,6 @@ export default class SampleModel
               selected: false
             }))
           ],
-          validState: true
         }
       };
   }
@@ -890,6 +888,7 @@ export default class SampleModel
           label: "Number of new subsamples",
           explanation: "The total number of subsamples wanted, including the source (min 2, max 100)",
           component: () => <SplitCount state={this.createOptionsParametersState.split} />,
+          validState: () => this.createOptionsParametersState.split.count >= 2 && this.createOptionsParametersState.split.count <= 100,
         }],
         parametersState: this.createOptionsParametersState.split,
         onSubmit: () => {
@@ -905,12 +904,14 @@ export default class SampleModel
         explanation: "Create a template from this sample, to easily create more samples.",
         parameters: [{
           label: "Name",
-          explanation: "A name for the new template",
+          explanation: "A name for the new template. At least two characters.",
           component: () => <TemplateName state={this.createOptionsParametersState.template} />,
+          validState: () => this.createOptionsParametersState.template.name.length > 2,
         },{
           label: "Field",
           explanation: "All of these fields will be copied to the new template, select which ones should have their value copied over too.",
           component: () => <TemplateFields state={this.createOptionsParametersState.template} />,
+          validState: () => true,
         }],
         parametersState: this.createOptionsParametersState.template,
         onSubmit: () => {

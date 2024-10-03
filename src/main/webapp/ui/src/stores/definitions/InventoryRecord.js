@@ -70,8 +70,9 @@ export type CreateOption = {|
     label: string,
     explanation: string,
     component: () => Node,
+    validState: () => boolean,
   |}>,
-  parametersState?: { validState: boolean, ... },
+  parametersState?: { ... },
 |};
 
 export interface CreateFrom {
