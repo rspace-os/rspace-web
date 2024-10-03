@@ -623,3 +623,13 @@ fleet of deployed servers. Their website is [posthog.com](posthog.com).
 ### Predicate
 
 A function that returns a boolean value.
+
+### Prefers Contrast
+
+One of the user preferences that browsers expose to Web pages is whether the
+user has enabled a prefers contrast mode in their device settings. This
+instructs the Web page to alter the colours to increase the
+[contrast](#colour-contrast) between adjacent elements. We take the approach
+that it is necessary, and only necessary, to meet the AAA level of compliance
+with the colour contrast success criteria of WCAG when this preference is
+enabled, although we often do when it is not enabled anyway.
