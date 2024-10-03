@@ -289,8 +289,6 @@ export default class ContainerModel
       dimensions: computed,
       selectedLocations: computed,
       selectedResults: computed,
-      shallowSelected: computed,
-      shallowUnselected: computed,
       rows: computed,
       columns: computed,
       sortedLocations: computed,
@@ -499,16 +497,16 @@ export default class ContainerModel
     return this.results.filter((c) => c.selected);
   }
 
-  get shallowSelected(): Array<Location> {
+  shallowSelected(opts: {| allowSelectingEmptyLocations: boolean |}): Array<Location> {
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
-    return locations.filter((l: Location) => l.isShallowSelected);
+    return locations.filter((l: Location) => l.isShallowSelected(opts));
   }
 
-  get shallowUnselected(): Array<Location> {
+  shallowUnselected(opts: {| allowSelectingEmptyLocations: boolean |}): Array<Location> {
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
-    return locations.filter((l: Location) => l.isShallowUnselected);
+    return locations.filter((l: Location) => l.isShallowUnselected(opts));
   }
 
   get rows(): Array<{ value: number, label: string | number }> {
@@ -807,7 +805,7 @@ export default class ContainerModel
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
     locations
-      .filter((loc) => loc.isShallow && loc.isSelectable)
+      .filter((loc) => loc.isShallow({ allowSelectingEmptyLocations: opts.allowSelectingEmptyLocations }) && loc.isSelectable({ allowSelectingEmptyLocations: opts.allowSelectingEmptyLocations }))
       .map((loc) => this.onSelect(loc, opts));
     this.selectionMode = false;
   }
@@ -821,7 +819,7 @@ export default class ContainerModel
       location.toggleSelected(false);
     } else {
       const canSelectOneMore = selectedLocations.length + 1 <= opts.selectionLimit;
-      const canSelectThisLocation = location.isSelectable;
+      const canSelectThisLocation = location.isSelectable({ allowSelectingEmptyLocations: opts.allowSelectingEmptyLocations });
 
       if (opts.allowSelectingEmptyLocations) {
         if (canSelectOneMore && canSelectThisLocation) {
