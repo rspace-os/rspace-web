@@ -46,13 +46,9 @@ export default class LocationModel implements Location {
       setPosition: action,
       setDimensions: action,
       isGreyedOut: computed,
-      isShallow: computed,
-      isShallowSelected: computed,
-      isShallowUnselected: computed,
       siblings: computed,
       isSiblingSelected: computed,
       allSiblingsSelected: computed,
-      isSelectable: computed,
       name: computed,
       paramsForBackend: computed,
       hasContent: computed,
@@ -85,17 +81,17 @@ export default class LocationModel implements Location {
     );
   }
 
-  get isShallow(): boolean {
-    //if (!getRootStore().moveStore.isMoving) {
-    ///*
-    //* Outside of the move dialog, allow empty locations to be selected.
-    //* This way, you can clear a selection of empty locations (typically
-    //* created by drag-and-drop) by dragging the selection dragger over the
-    //* table/image, whilst still being able to quickly select just the filled
-    //* locations by dragging over all of the locations, filled or not.
-    //*/
-    //if (!this.content && !this.selected) return false;
-    //}
+  isShallow(opts: {| allowSelectingEmptyLocations: boolean |}): boolean {
+    if (!opts.allowSelectingEmptyLocations) {
+      /*
+       * Outside of the move dialog, allow empty locations to be selected.
+       * This way, you can clear a selection of empty locations (typically
+       * created by drag-and-drop) by dragging the selection dragger over the
+       * table/image, whilst still being able to quickly select just the filled
+       * locations by dragging over all of the locations, filled or not.
+       */
+      if (!this.content && !this.selected) return false;
+    }
     if (this.isGreyedOut) return false;
 
     const cont = this.parentContainer;
@@ -116,12 +112,16 @@ export default class LocationModel implements Location {
     );
   }
 
-  get isShallowSelected(): boolean {
-    return this.isShallow && !this.selected;
+  isShallowSelected(opts: {|
+    allowSelectingEmptyLocations: boolean,
+  |}): boolean {
+    return this.isShallow(opts) && !this.selected;
   }
 
-  get isShallowUnselected(): boolean {
-    return this.isShallow && this.selected;
+  isShallowUnselected(opts: {|
+    allowSelectingEmptyLocations: boolean,
+  |}): boolean {
+    return this.isShallow(opts) && this.selected;
   }
 
   get siblings(): Array<Location> {
@@ -159,11 +159,11 @@ export default class LocationModel implements Location {
     return this.siblings.every((loc) => loc.selected);
   }
 
-  get isSelectable(): boolean {
-    return true;
-    if (getRootStore().moveStore.isMoving)
+  isSelectable(opts: {| allowSelectingEmptyLocations: boolean |}): boolean {
+    if (opts.allowSelectingEmptyLocations)
       return (
         !this.hasContent ||
+        // is this necessary?
         // $FlowExpectedError[incompatible-call] this.hasContent ensures this.content instanceof Result
         getRootStore().moveStore.isRecordMoving(this.content)
       );

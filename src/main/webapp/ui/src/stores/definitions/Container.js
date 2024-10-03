@@ -44,10 +44,10 @@ export interface Location extends Point {
   setDimensions(number, number): void;
 
   +siblings: Array<Location>;
-  +isShallow: boolean;
-  +isShallowSelected: boolean;
-  +isSelectable: boolean;
-  +isShallowUnselected: boolean;
+  isShallow({| allowSelectingEmptyLocations: boolean |}): boolean;
+  isShallowSelected({| allowSelectingEmptyLocations: boolean |}): boolean;
+  isSelectable({| allowSelectingEmptyLocations: boolean |}): boolean;
+  isShallowUnselected({| allowSelectingEmptyLocations: boolean |}): boolean;
   +isSiblingSelected: ?boolean;
   +isGreyedOut: boolean;
   +name: ?string;
