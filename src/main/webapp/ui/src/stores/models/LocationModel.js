@@ -160,13 +160,7 @@ export default class LocationModel implements Location {
   }
 
   isSelectable(opts: {| allowSelectingEmptyLocations: boolean |}): boolean {
-    if (opts.allowSelectingEmptyLocations)
-      return (
-        !this.hasContent ||
-        // is this necessary?
-        // $FlowExpectedError[incompatible-call] this.hasContent ensures this.content instanceof Result
-        getRootStore().moveStore.isRecordMoving(this.content)
-      );
+    if (opts.allowSelectingEmptyLocations) return !this.hasContent;
     return !this.isGreyedOut;
   }
 
