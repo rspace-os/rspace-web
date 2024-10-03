@@ -9,6 +9,7 @@ import Checkbox from "@mui/material/Checkbox";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
+import { stripDiacritics } from "../../../util/StringUtils";
 
 class UserList extends React.Component {
   constructor(props) {
@@ -33,9 +34,13 @@ class UserList extends React.Component {
 
   visibleUsers = () => {
     return this.props.users.filter((user) =>
-      `${user.username} ${user.displayName ? user.displayName : user.fullName}`
+      stripDiacritics(
+        `${user.username} ${
+          user.displayName ? user.displayName : user.fullName
+        }`
+      )
         .toUpperCase()
-        .includes(this.state.searchTerm.toUpperCase())
+        .includes(stripDiacritics(this.state.searchTerm.toUpperCase()))
     );
   };
 
