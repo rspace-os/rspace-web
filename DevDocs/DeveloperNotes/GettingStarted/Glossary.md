@@ -633,3 +633,11 @@ instructs the Web page to alter the colours to increase the
 that it is necessary, and only necessary, to meet the AAA level of compliance
 with the colour contrast success criteria of WCAG when this preference is
 enabled, although we often do when it is not enabled anyway.
+
+### Prop drilling
+
+The repeated passing of props untouched through a chain of react components so
+that an component high up in the [component tree](#component-tree) may pass
+data to a component many levels below. Whilst somewhat clumsy and messy, this
+practice is especially egregious when the components in the middle should be
+decoupled from those at top and bottom; in that case, use a [context](#context).
