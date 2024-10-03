@@ -22,6 +22,7 @@ import { type AdjustableTableRowOptions } from "./Tables";
 import { type CoreFetcherArgs } from "./Search";
 import { type Tag } from "./Tag";
 import { type Alert } from "../contexts/Alert";
+import { type Container } from "./Container";
 
 export type State = "create" | "edit" | "preview";
 export type Action = "LIMITED_READ" | "READ" | "UPDATE" | "CHANGE_OWNER";
@@ -71,7 +72,7 @@ export type CreateOption = {|
     explanation: string,
     state: | {| key: "split", copies: number |}
       | {| key: "name", value: string |}
-      | {| key: "location", value: "TODO" |}
+      | {| key: "location", container: Container |}
       | {|
           key: "fields",
           copyFieldContent: $ReadOnlyArray<{|

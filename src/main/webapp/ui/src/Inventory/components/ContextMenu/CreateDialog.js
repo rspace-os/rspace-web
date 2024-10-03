@@ -44,6 +44,20 @@ import TableRow from "@mui/material/TableRow";
 import Checkbox from "@mui/material/Checkbox";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import SearchView from "../../Search/SearchView";
+import SearchContext from "../../../stores/contexts/Search";
+import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
+import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
+import {
+  type AllowedSearchModules,
+  type AllowedTypeFilters,
+} from "../../../stores/definitions/Search";
+import {
+  type Container,
+  cTypeToDefaultSearchView,
+} from "../../../stores/definitions/Container";
+import { menuIDs } from "../../../util/menuIDs";
+import Search from "../../../stores/models/Search";
 
 type CreateDialogProps = {|
   existingRecord: CreateFrom & InventoryRecord,
@@ -174,6 +188,43 @@ const SplitCount: ComponentType<{|
   );
 });
 
+const LocationPicker: ComponentType<{|
+  state: { container: Container },
+|}> = observer(({ state }): Node => {
+  const [search] = React.useState<Search>(
+    new Search({
+      fetcherParams: {
+        parentGlobalId: state.container.globalId,
+      },
+      uiConfig: {
+        allowedSearchModules: (new Set([]): AllowedSearchModules),
+        allowedTypeFilters: (new Set([]): AllowedTypeFilters),
+        hideContentsOfChip: true,
+      },
+      factory: new AlwaysNewFactory(),
+    })
+  );
+
+  // is there really no way to do this without a useEffect?
+  React.useEffect(() => {
+    void search.setSearchView(cTypeToDefaultSearchView(state.container.cType));
+  }, [state.container]);
+
+  return (
+    <SearchContext.Provider
+      value={{
+        search,
+        scopedResult: state.container,
+        differentSearchForSettingActiveResult: search,
+      }}
+    >
+      <AlwaysNewWindowNavigationContext>
+        <SearchView contextMenuId={menuIDs.NONE} />
+      </AlwaysNewWindowNavigationContext>
+    </SearchContext.Provider>
+  );
+});
+
 function CreateDialog({
   existingRecord,
   open,
@@ -291,7 +342,9 @@ function CreateDialog({
                             <SplitCount state={state} />
                           )}
                           {state.key === "name" && <Name state={state} />}
-                          {state.key === "location" && <>TODO</>}
+                          {state.key === "location" && (
+                            <LocationPicker state={state} />
+                          )}
                           {state.key === "fields" && <Fields state={state} />}
                         </Grid>
                         <Grid item>

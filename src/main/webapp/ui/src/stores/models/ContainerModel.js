@@ -1123,7 +1123,7 @@ export default class ContainerModel
         parameters: [{
           label: "Location",
           explanation: "Specify a location for where the new container should be placed.",
-          state: { key: "location", value: "TODO" },
+          state: { key: "location", container: this },
           validState: () => true,
         }],
         onSubmit: () => Promise.resolve(),
@@ -1134,7 +1134,7 @@ export default class ContainerModel
         parameters: [{
           label: "Location",
           explanation: "Specify a location for where the new sample's one subsample should be placed.",
-          state: { key: "location", value: "TODO" },
+          state: { key: "location", container: this },
           validState: () => true,
         }],
         onSubmit: () => Promise.resolve(),
