@@ -69,33 +69,33 @@ export default class LocationModel implements Location {
   get isGreyedOut(): boolean {
     if (getRootStore().createStore.creationContext) return this.hasContent;
     const search = this.parentContainer.contentSearch;
-    if (search.fetcher.query || search.fetcher.resultType !== "ALL" || search.fetcher.owner) {
+    if (
+      search.fetcher.query ||
+      search.fetcher.resultType !== "ALL" ||
+      search.fetcher.owner
+    ) {
       // search inside container is being performed
-      if(!this.content) return true;
+      if (!this.content) return true;
       const content = this.content;
-      return (
-        !search.isInResults(content) ||
-        search.alwaysFilterOut(content)
-      );
-    } else {
-      // search inside container is not being performed
-      return (
-        this.content instanceof Result && search.alwaysFilterOut(this.content)
-      );
+      return !search.isInResults(content) || search.alwaysFilterOut(content);
     }
+    // search inside container is not being performed
+    return (
+      this.content instanceof Result && search.alwaysFilterOut(this.content)
+    );
   }
 
   get isShallow(): boolean {
-    if (!getRootStore().moveStore.isMoving) {
-      /*
-       * Outside of the move dialog, allow empty locations to be selected.
-       * This way, you can clear a selection of empty locations (typically
-       * created by drag-and-drop) by dragging the selection dragger over the
-       * table/image, whilst still being able to quickly select just the filled
-       * locations by dragging over all of the locations, filled or not.
-       */
-      if (!this.content && !this.selected) return false;
-    }
+    //if (!getRootStore().moveStore.isMoving) {
+    ///*
+    //* Outside of the move dialog, allow empty locations to be selected.
+    //* This way, you can clear a selection of empty locations (typically
+    //* created by drag-and-drop) by dragging the selection dragger over the
+    //* table/image, whilst still being able to quickly select just the filled
+    //* locations by dragging over all of the locations, filled or not.
+    //*/
+    //if (!this.content && !this.selected) return false;
+    //}
     if (this.isGreyedOut) return false;
 
     const cont = this.parentContainer;
@@ -103,7 +103,7 @@ export default class LocationModel implements Location {
       return false;
     }
 
-    let topLeftX = Math.min(cont.selectionStart.x, cont.selectionEnd.x),
+    const topLeftX = Math.min(cont.selectionStart.x, cont.selectionEnd.x),
       topLeftY = Math.min(cont.selectionStart.y, cont.selectionEnd.y),
       bottomRightX = Math.max(cont.selectionStart.x, cont.selectionEnd.x),
       bottomRightY = Math.max(cont.selectionStart.y, cont.selectionEnd.y);
@@ -160,6 +160,7 @@ export default class LocationModel implements Location {
   }
 
   get isSelectable(): boolean {
+    return true;
     if (getRootStore().moveStore.isMoving)
       return (
         !this.hasContent ||
@@ -197,9 +198,8 @@ export default class LocationModel implements Location {
           "Impossible state: sample of content's subsample should always have a valid colour within the parent container"
         );
       return uniqueColor;
-    } else {
-      return "white";
     }
+    return "white";
   }
 
   setAttributes(params: LocationAttrs) {
