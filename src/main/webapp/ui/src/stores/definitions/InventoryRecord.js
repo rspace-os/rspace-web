@@ -69,10 +69,21 @@ export type CreateOption = {|
   parameters?: $ReadOnlyArray<{|
     label: string,
     explanation: string,
-    component: () => Node,
+    state: | {| key: "split", copies: number |}
+      | {| key: "name", value: string |}
+      | {| key: "location", value: "TODO" |}
+      | {|
+          key: "fields",
+          copyFieldContent: $ReadOnlyArray<{|
+            id: Id,
+            name: string,
+            content: string,
+            hasContent: boolean,
+            selected: boolean,
+          |}>,
+        |},
     validState: () => boolean,
   |}>,
-  parametersState?: { ... },
 |};
 
 export interface CreateFrom {
