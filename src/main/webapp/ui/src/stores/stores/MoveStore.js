@@ -115,7 +115,12 @@ export default class MoveStore {
         uiConfig: {
           allowedTypeFilters: new Set(["CONTAINER"]),
           selectionMode: "SINGLE",
+          /*
+           * Note that this is the search on the left side of the move dialog,
+           * not the right panel
+           */
           selectionLimit: Infinity,
+          allowSelectingEmptyLocations: false,
         },
         callbacks: {
           setActiveResult: (r) => {
@@ -128,8 +133,11 @@ export default class MoveStore {
                 r.cType === "WORKBENCH"
                   ? "NONE"
                   : "MULTIPLE";
-              r.contentSearch.uiConfig.selectionLimit =
-                this.selectedResults.length;
+              /*
+               * This is the search in the right panel of the move dialog, so
+               * it is here that we apply the restrictions on selection
+               */
+              r.contentSearch.uiConfig.allowSelectingEmptyLocations = true;
             }
           },
         },

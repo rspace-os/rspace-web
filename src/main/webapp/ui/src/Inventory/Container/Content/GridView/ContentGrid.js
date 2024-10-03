@@ -171,6 +171,8 @@ const LoadedContent = observer(
             }
             container.stopSelection({
               selectionLimit: search.uiConfig.selectionLimit,
+              allowSelectingEmptyLocations:
+                search.uiConfig.allowSelectingEmptyLocations,
             });
           }}
           ref={tableRef}

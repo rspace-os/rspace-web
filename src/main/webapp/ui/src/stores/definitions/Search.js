@@ -122,6 +122,14 @@ export type UiConfig = {|
    * select.
    */
   selectionLimit: number,
+
+  /**
+   * Typically, we only allow the selection of container locations that have
+   * contents, but in some circumstances we want to allow the user to select
+   * the locations themselves, such as when moving items into those empty
+   * locations -- that is when this flag should be true.
+   */
+  allowSelectingEmptyLocations: boolean,
 |};
 
 export type PermalinkType =
