@@ -130,6 +130,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   highlightActiveResult: true,
   hideContentsOfChip: false,
   selectionLimit: Infinity,
+  allowSelectingEmptyLocations: false,
 };
 
 export default class Search implements SearchInterface {
