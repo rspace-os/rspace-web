@@ -120,7 +120,7 @@ export default class MoveStore {
            * not the right panel
            */
           selectionLimit: Infinity,
-          allowSelectingEmptyLocations: false,
+          onlyAllowSelectingEmptyLocations: false,
         },
         callbacks: {
           setActiveResult: (r) => {
@@ -137,7 +137,7 @@ export default class MoveStore {
                * This is the search in the right panel of the move dialog, so
                * it is here that we apply the restrictions on selection
                */
-              r.contentSearch.uiConfig.allowSelectingEmptyLocations = true;
+              r.contentSearch.uiConfig.onlyAllowSelectingEmptyLocations = true;
               r.contentSearch.uiConfig.selectionLimit =
                 this.selectedResults.length;
             }

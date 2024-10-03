@@ -87,13 +87,13 @@ type Class = mixed;
 const selectionStyle = (
   location: Location,
   classes: { [string]: string },
-  allowSelectingEmptyLocations: boolean
+  onlyAllowSelectingEmptyLocations: boolean
 ): Class => {
-  if (location.isShallowUnselected({ allowSelectingEmptyLocations })) {
+  if (location.isShallowUnselected({ onlyAllowSelectingEmptyLocations })) {
     return classes.shallowUnselected;
   }
-  if (location.isShallowSelected({ allowSelectingEmptyLocations })) {
-    return location.isSelectable({ allowSelectingEmptyLocations })
+  if (location.isShallowSelected({ onlyAllowSelectingEmptyLocations })) {
+    return location.isSelectable({ onlyAllowSelectingEmptyLocations })
       ? classes.shallowSelected
       : classes.shallowSelectedUnselectable;
   }
@@ -114,7 +114,7 @@ const wrapperClasses = (
     selectionStyle(
       location,
       classes,
-      search.uiConfig.allowSelectingEmptyLocations
+      search.uiConfig.onlyAllowSelectingEmptyLocations
     ),
   ]);
   if (location.parentContainer.cType === "GRID") ret.add(classes.gridCell);

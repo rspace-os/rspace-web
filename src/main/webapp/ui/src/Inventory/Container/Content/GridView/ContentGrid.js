@@ -203,8 +203,8 @@ const LoadedContent = observer(
             }
             container.stopSelection({
               selectionLimit: search.uiConfig.selectionLimit,
-              allowSelectingEmptyLocations:
-                search.uiConfig.allowSelectingEmptyLocations,
+              onlyAllowSelectingEmptyLocations:
+                search.uiConfig.onlyAllowSelectingEmptyLocations,
             });
           }}
           ref={tableRef}
