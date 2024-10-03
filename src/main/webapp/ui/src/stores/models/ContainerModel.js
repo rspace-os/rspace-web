@@ -820,10 +820,10 @@ export default class ContainerModel
     if (location.selected) {
       location.toggleSelected(false);
     } else {
-      const restrainedSelect = getRootStore().moveStore.isMoving;
-      const canSelectOneMore =
-        selectedLocations.length + 1 <=
-        getRootStore().moveStore.selectedResults.length;
+      const restrainedSelect = true; // getRootStore().moveStore.isMoving;
+      const canSelectOneMore = true;//
+        //selectedLocations.length + 1 <=
+        //getRootStore().moveStore.selectedResults.length;
       const canSelectThisLocation = location.isSelectable;
 
       if (restrainedSelect) {
@@ -1122,22 +1122,42 @@ export default class ContainerModel
         explanation: "The container will be automatically added to this container.",
         parameters: [{
           label: "Location",
-          explanation: "Specify a location for where the new container should be placed.",
+          explanation: "Specify a single location for where the new container should be placed.",
           state: { key: "location", container: this },
-          validState: () => true,
+          validState: () => this.selectedLocations?.length === 1,
         }],
-        onSubmit: () => Promise.resolve(),
+        onSubmit: async () => {
+          if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
+          const location = this.selectedLocations[0];
+          await getRootStore().searchStore.createNewContainer({
+            parentContainers: [this],
+            parentLocation: {
+              coordX: location.coordX,
+              coordY: location.coordY
+            }
+          });
+        },
       },
       {
         label: "Sample",
         explanation: "The subsample will be automatically added to this container.",
         parameters: [{
           label: "Location",
-          explanation: "Specify a location for where the new sample's one subsample should be placed.",
+          explanation: "Specify a single location for where the new sample's one subsample should be placed.",
           state: { key: "location", container: this },
-          validState: () => true,
+          validState: () => this.selectedLocations?.length === 1,
         }],
-        onSubmit: () => Promise.resolve(),
+        onSubmit: async () => {
+          if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
+          const location = this.selectedLocations[0];
+          await getRootStore().searchStore.createNewSample({
+            parentContainers: [this],
+            parentLocation: {
+              coordX: location.coordX,
+              coordY: location.coordY
+            }
+          });
+        },
       }
     ];
   }
