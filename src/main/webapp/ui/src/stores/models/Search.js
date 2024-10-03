@@ -129,6 +129,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   selectionMode: "MULTIPLE",
   highlightActiveResult: true,
   hideContentsOfChip: false,
+  selectionLimit: Infinity,
 };
 
 export default class Search implements SearchInterface {

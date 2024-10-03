@@ -803,16 +803,16 @@ export default class ContainerModel
     }
   }
 
-  stopSelection(): void {
+  stopSelection(opts: {| selectionLimit: number |}): void {
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
     locations
       .filter((loc) => loc.isShallow && loc.isSelectable)
-      .map((loc) => this.onSelect(loc));
+      .map((loc) => this.onSelect(loc, opts));
     this.selectionMode = false;
   }
 
-  onSelect(location: Location): void {
+  onSelect(location: Location, opts: {| selectionLimit: number |}): void {
     if (!this.selectedLocations)
       throw new Error("Locations of container must be known.");
     const selectedLocations = this.selectedLocations;
@@ -821,9 +821,7 @@ export default class ContainerModel
       location.toggleSelected(false);
     } else {
       const restrainedSelect = true; // getRootStore().moveStore.isMoving;
-      const canSelectOneMore = true;//
-        //selectedLocations.length + 1 <=
-        //getRootStore().moveStore.selectedResults.length;
+      const canSelectOneMore = selectedLocations.length + 1 <= opts.selectionLimit;
       const canSelectThisLocation = location.isSelectable;
 
       if (restrainedSelect) {

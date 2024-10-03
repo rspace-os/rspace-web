@@ -103,7 +103,9 @@ function PreviewImage(): Node {
             container.startSelection(mouseDownPoint.event);
             setMouseDownPoint(null);
           }
-          container.stopSelection();
+          container.stopSelection({
+            selectionLimit: search.uiConfig.selectionLimit,
+          });
         }}
         onMouseMove={(e: MouseEvent) => {
           if (noSelection) return;
