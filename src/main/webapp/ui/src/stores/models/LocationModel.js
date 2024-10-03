@@ -81,8 +81,8 @@ export default class LocationModel implements Location {
     );
   }
 
-  isShallow(opts: {| allowSelectingEmptyLocations: boolean |}): boolean {
-    if (!opts.allowSelectingEmptyLocations) {
+  isShallow(opts: {| onlyAllowSelectingEmptyLocations: boolean |}): boolean {
+    if (!opts.onlyAllowSelectingEmptyLocations) {
       /*
        * Outside of the move dialog, allow empty locations to be selected.
        * This way, you can clear a selection of empty locations (typically
@@ -113,13 +113,13 @@ export default class LocationModel implements Location {
   }
 
   isShallowSelected(opts: {|
-    allowSelectingEmptyLocations: boolean,
+    onlyAllowSelectingEmptyLocations: boolean,
   |}): boolean {
     return this.isShallow(opts) && !this.selected;
   }
 
   isShallowUnselected(opts: {|
-    allowSelectingEmptyLocations: boolean,
+    onlyAllowSelectingEmptyLocations: boolean,
   |}): boolean {
     return this.isShallow(opts) && this.selected;
   }
@@ -159,8 +159,8 @@ export default class LocationModel implements Location {
     return this.siblings.every((loc) => loc.selected);
   }
 
-  isSelectable(opts: {| allowSelectingEmptyLocations: boolean |}): boolean {
-    if (opts.allowSelectingEmptyLocations) return !this.hasContent;
+  isSelectable(opts: {| onlyAllowSelectingEmptyLocations: boolean |}): boolean {
+    if (opts.onlyAllowSelectingEmptyLocations) return !this.hasContent;
     return !this.isGreyedOut;
   }
 

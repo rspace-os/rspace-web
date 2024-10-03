@@ -129,7 +129,7 @@ export type UiConfig = {|
    * the locations themselves, such as when moving items into those empty
    * locations -- that is when this flag should be true.
    */
-  allowSelectingEmptyLocations: boolean,
+  onlyAllowSelectingEmptyLocations: boolean,
 |};
 
 export type PermalinkType =
