@@ -795,3 +795,9 @@ experiment. [Aliquot](#aliquot) is an alias for subsample in many settings.
 ### Tagged union
 
 See [disjoint object union](#disjoint-object-union).
+
+### Toast
+
+A temporarily displayed alert that signals the successful or unsuccessful
+completion of a task by popping up just as a toaster pops the toast up when its
+done.
