@@ -728,3 +728,8 @@ links, and other landmarks.
 > editing in that place — Michael Feathers; Working Effectively with Legacy
 > Systems
 For more information, see [this article by Martin Fowler on the topic of seams](https://martinfowler.com/bliki/LegacySeam.html).
+
+### Segment
+
+A third-party tool for collecting and analysing analytics data from across a
+fleet of deployed servers. Their website is [segment.com](https://segment.com/).
