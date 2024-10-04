@@ -709,3 +709,15 @@ allowing users to export their work in various different formats.
 A specimen or small quantity of a substance that it is to be used as part of an
 experiment. It may be a divisible quantity measured by its weight or volume, or
 be constituted of a discrete number of pieces or units.
+
+### Screen reader
+
+A piece of software that audibly describes the visual aspects of another piece
+of software. Typically included as part of the operating system, the most
+popular amongst the visually impaired community, JAWS, is a separate program.
+The tools rely on semantic information about the user interface elements being
+exposed to them by the software that they describe and without this information
+the user interface is substantially harder to use for those that rely on screen
+readers. It should also be noted that screen reader users navigate Web pages
+significantly different to sighted users, preferring to navigate by headings,
+links, and other landmarks.
