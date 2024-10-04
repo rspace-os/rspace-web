@@ -147,6 +147,12 @@ sufficiently different so as to be easily distinguished. This is a critical
 aspect of [accessible design](#accessibility), and is discussed at length in
 [Accessibility.md](./Accessibility.md).
 
+### Complect
+
+To interweave, to entwine, or to braid; to make more complex by tightly
+coupling together. [Rich Hickey's talk Simple Made Easy](https://youtu.be/LKtk3HCgTa8?feature=shared&t=1896)
+explains the idea in some depth.
+
 ### Component Tree
 
 The tree data structure created by react components calling other react components.
