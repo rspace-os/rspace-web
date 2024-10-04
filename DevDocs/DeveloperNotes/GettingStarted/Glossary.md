@@ -842,3 +842,8 @@ zoom does not change the layout viewport -- only the visual viewport -- and
 neither does opening a virtual keyboard. For more information, see
 [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Viewport_concepts)
 
+### Visual Container
+
+A type of [container](#container) that enforces that its contents be placed in
+predefined locations marked on an uploaded image. Useful for describing where
+items of note are in photos or other images taken by laboratory equipment.
