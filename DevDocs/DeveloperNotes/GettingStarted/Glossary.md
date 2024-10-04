@@ -865,3 +865,11 @@ easier to use.
 2. The JavaScript operator that evaluates the passed expression and returns
    undefined. A helpful little tool for explicitly discarding a promise, i.e.
    the opposite of `await`.
+
+## W
+
+### WCAG
+
+The Web Content Accessibility Guidelines is an international standard
+(currently on version 2.2) on ensuring that Web content is accessible to people
+with disabilities.
