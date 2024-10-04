@@ -733,3 +733,10 @@ For more information, see [this article by Martin Fowler on the topic of seams](
 
 A third-party tool for collecting and analysing analytics data from across a
 fleet of deployed servers. Their website is [segment.com](https://segment.com/).
+
+### Side-effect
+
+The observable effect of a computation that is independent of its input
+parameters and return value. This includes reading from global state,
+randomness, input/output, logging, or anything else that isn't returning a
+value.
