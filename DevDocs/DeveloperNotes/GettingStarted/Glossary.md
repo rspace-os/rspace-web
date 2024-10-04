@@ -812,3 +812,10 @@ consistent. To do this, a type variable is defined which is used to refer to
 the type of the elements of the list; the type check then makes sure that this
 type is used consistently. The [Flow documentation on Generics][https://flow.org/en/docs/types/generics/)
 describes how to define such data structures that have a type variable.
+
+### Template
+
+An Inventory record that defines how new samples of a particular type should be
+created, in particular what fields the sample should have for recording
+sample-specific metadata. This ensures that all members of a lab are recording
+sample data consistently.
