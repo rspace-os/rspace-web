@@ -9,7 +9,10 @@ import "@testing-library/jest-dom";
 import CreateDialog from "../CreateDialog";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-import { makeMockSubSample } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
+import {
+  makeMockSubSample,
+  subsampleAttrs,
+} from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 
 beforeEach(() => {
@@ -41,7 +44,7 @@ describe("CreateDialog", () => {
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
     });
-    test("Samples", () => {
+    test("Samples, when there is one subsample", () => {
       const sample = makeMockSample({});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -53,6 +56,12 @@ describe("CreateDialog", () => {
         </ThemeProvider>
       );
 
+      expect(
+        screen.getByRole("radio", {
+          name: /Subsample, by splitting the current subsample/,
+        })
+      ).toBeEnabled();
+
       fireEvent.click(
         screen.getByRole("radio", {
           name: /Subsample, by splitting the current subsample/,
@@ -63,6 +72,26 @@ describe("CreateDialog", () => {
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
+    });
+    test("Samples, when there are multiple subsamples", () => {
+      const sample = makeMockSample({
+        subSamples: [subsampleAttrs(), subsampleAttrs()],
+      });
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={sample}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Subsample, by splitting the current subsample/,
+        })
+      ).toBeDisabled();
     });
   });
 });
