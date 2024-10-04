@@ -62,29 +62,31 @@ export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
   return "SAMPLE_TEMPLATE";
 }
 
+export type CreateOptionParameter = {|
+  label: string,
+  explanation: string,
+  state: | {| key: "split", copies: number |}
+    | {| key: "name", value: string |}
+    | {| key: "location", container: Container |}
+    | {|
+        key: "fields",
+        copyFieldContent: $ReadOnlyArray<{|
+          id: Id,
+          name: string,
+          content: string,
+          hasContent: boolean,
+          selected: boolean,
+        |}>,
+      |},
+  validState: () => boolean,
+|};
+
 export type CreateOption = {|
   label: string,
   explanation: string,
   onSubmit: () => Promise<void>,
   disabled?: boolean,
-  parameters?: $ReadOnlyArray<{|
-    label: string,
-    explanation: string,
-    state: | {| key: "split", copies: number |}
-      | {| key: "name", value: string |}
-      | {| key: "location", container: Container |}
-      | {|
-          key: "fields",
-          copyFieldContent: $ReadOnlyArray<{|
-            id: Id,
-            name: string,
-            content: string,
-            hasContent: boolean,
-            selected: boolean,
-          |}>,
-        |},
-    validState: () => boolean,
-  |}>,
+  parameters?: $ReadOnlyArray<CreateOptionParameter>,
 |};
 
 export interface CreateFrom {
