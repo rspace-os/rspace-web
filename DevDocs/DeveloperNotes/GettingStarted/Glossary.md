@@ -701,3 +701,11 @@ allowing users to export their work in various different formats.
 > is consistent with user expectations of that type of object. ARIA roles can
 > be used to describe elements that don't natively exist in HTML or exist but
 > don't yet have full browser support. — [MDN](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles)
+
+## S
+
+### Sample
+
+A specimen or small quantity of a substance that it is to be used as part of an
+experiment. It may be a divisible quantity measured by its weight or volume, or
+be constituted of a discrete number of pieces or units.
