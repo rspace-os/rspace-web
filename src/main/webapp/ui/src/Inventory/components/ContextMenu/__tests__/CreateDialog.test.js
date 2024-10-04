@@ -14,6 +14,7 @@ import {
   subsampleAttrs,
 } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
+import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -90,6 +91,106 @@ describe("CreateDialog", () => {
       expect(
         screen.getByRole("radio", {
           name: /Subsample, by splitting the current subsample/,
+        })
+      ).toBeDisabled();
+    });
+  });
+  describe("New container in container", () => {
+    test("Success case", () => {
+      const container = makeMockContainer({
+        canStoreContainers: true,
+        canStoreSamples: true,
+      });
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={container}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Container/,
+        })
+      ).toBeEnabled();
+
+      fireEvent.click(
+        screen.getByRole("radio", {
+          name: /Container/,
+        })
+      );
+    });
+    test("Cannot store containers", () => {
+      const container = makeMockContainer({
+        canStoreContainers: false,
+        canStoreSamples: true,
+      });
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={container}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Container/,
+        })
+      ).toBeDisabled();
+    });
+  });
+  describe("New sample in container", () => {
+    test("Success case", () => {
+      const container = makeMockContainer({
+        canStoreContainers: true,
+        canStoreSamples: true,
+      });
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={container}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Sample/,
+        })
+      ).toBeEnabled();
+
+      fireEvent.click(
+        screen.getByRole("radio", {
+          name: /Sample/,
+        })
+      );
+    });
+    test("Cannot store samples", () => {
+      const container = makeMockContainer({
+        canStoreContainers: true,
+        canStoreSamples: false,
+      });
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={container}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Sample/,
         })
       ).toBeDisabled();
     });

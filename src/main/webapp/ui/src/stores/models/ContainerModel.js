@@ -1121,6 +1121,7 @@ export default class ContainerModel
           state: { key: "location", container: this },
           validState: () => this.selectedLocations?.length === 1,
         }],
+        disabled: !this.canStoreContainers,
         onSubmit: async () => {
           if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
           const location = this.selectedLocations[0];
@@ -1142,6 +1143,7 @@ export default class ContainerModel
           state: { key: "location", container: this },
           validState: () => this.selectedLocations?.length === 1,
         }],
+        disabled: !this.canStoreSamples,
         onSubmit: async () => {
           if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
           const location = this.selectedLocations[0];
