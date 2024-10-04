@@ -10,6 +10,7 @@ import CreateDialog from "../CreateDialog";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { makeMockSubSample } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
+import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -33,6 +34,29 @@ describe("CreateDialog", () => {
 
       fireEvent.click(
         screen.getByRole("radio", { name: /Subsample, by splitting/ })
+      );
+
+      expect(
+        screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
+      ).toBeVisible();
+      expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
+    });
+    test("Samples", () => {
+      const sample = makeMockSample({});
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={sample}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      fireEvent.click(
+        screen.getByRole("radio", {
+          name: /Subsample, by splitting the current subsample/,
+        })
       );
 
       expect(
