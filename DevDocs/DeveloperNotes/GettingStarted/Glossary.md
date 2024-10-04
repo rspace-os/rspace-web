@@ -856,3 +856,12 @@ one with low visual noise — is easier to absorb and is less intimidating,
 especially to new users. Hiding infrequently used actions from view may result
 in an interface that feels more approachable and is ultimately considered to be
 easier to use.
+
+### void
+
+1. The Flow type of JavaScript's `undefined`; the return type of a function
+   that doesn't explicitly return a value.
+
+2. The JavaScript operator that evaluates the passed expression and returns
+   undefined. A helpful little tool for explicitly discarding a promise, i.e.
+   the opposite of `await`.
