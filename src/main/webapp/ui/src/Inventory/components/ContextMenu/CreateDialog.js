@@ -234,68 +234,72 @@ const LocationPicker: ComponentType<{|
   );
 });
 
-function ParameterField({
-  label,
-  explanation,
-  state,
-  validState,
-  activeStep,
-  setActiveStep,
-  showNextButton,
-  ...rest
-}: {|
-  ...CreateOptionParameter,
-  activeStep: number,
-  setActiveStep: (number) => void,
-  showNextButton: boolean,
-|}) {
-  const fieldId = React.useId();
-  return (
-    <Step {...rest}>
-      <StepLabel>
-        <label htmlFor={fieldId}>{label}</label>
-        <Typography variant="body2">{explanation}</Typography>
-      </StepLabel>
-      <StepContent>
-        <Grid container direction="column" spacing={1}>
-          <Grid item>
-            {state.key === "split" && <SplitCount id={fieldId} state={state} />}
-            {state.key === "name" && <Name id={fieldId} state={state} />}
-            {state.key === "location" && (
-              <LocationPicker id={fieldId} state={state} />
-            )}
-            {state.key === "fields" && <Fields id={fieldId} state={state} />}
-          </Grid>
-          <Grid item>
-            <Stack spacing={1} direction="row">
-              {showNextButton && (
-                <Button
-                  color="primary"
-                  variant="contained"
-                  disableElevation
-                  onClick={() => {
-                    setActiveStep(activeStep + 1);
-                  }}
-                  disabled={!validState()}
-                >
-                  Next
-                </Button>
+const ParameterField = observer(
+  ({
+    label,
+    explanation,
+    state,
+    validState,
+    activeStep,
+    setActiveStep,
+    showNextButton,
+    ...rest
+  }: {|
+    ...CreateOptionParameter,
+    activeStep: number,
+    setActiveStep: (number) => void,
+    showNextButton: boolean,
+  |}) => {
+    const fieldId = React.useId();
+    return (
+      <Step {...rest}>
+        <StepLabel>
+          <label htmlFor={fieldId}>{label}</label>
+          <Typography variant="body2">{explanation}</Typography>
+        </StepLabel>
+        <StepContent>
+          <Grid container direction="column" spacing={1}>
+            <Grid item>
+              {state.key === "split" && (
+                <SplitCount id={fieldId} state={state} />
               )}
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setActiveStep(activeStep - 1);
-                }}
-              >
-                Back
-              </Button>
-            </Stack>
+              {state.key === "name" && <Name id={fieldId} state={state} />}
+              {state.key === "location" && (
+                <LocationPicker id={fieldId} state={state} />
+              )}
+              {state.key === "fields" && <Fields id={fieldId} state={state} />}
+            </Grid>
+            <Grid item>
+              <Stack spacing={1} direction="row">
+                {showNextButton && (
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    disableElevation
+                    onClick={() => {
+                      setActiveStep(activeStep + 1);
+                    }}
+                    disabled={!validState()}
+                  >
+                    Next
+                  </Button>
+                )}
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setActiveStep(activeStep - 1);
+                  }}
+                >
+                  Back
+                </Button>
+              </Stack>
+            </Grid>
           </Grid>
-        </Grid>
-      </StepContent>
-    </Step>
-  );
-}
+        </StepContent>
+      </Step>
+    );
+  }
+);
 
 function CreateDialog({
   existingRecord,
