@@ -721,3 +721,10 @@ the user interface is substantially harder to use for those that rely on screen
 readers. It should also be noted that screen reader users navigate Web pages
 significantly different to sighted users, preferring to navigate by headings,
 links, and other landmarks.
+
+### Seam
+
+> a seam is a place where you can alter behavior in your program without
+> editing in that place — Michael Feathers; Working Effectively with Legacy
+> Systems
+For more information, see [this article by Martin Fowler on the topic of seams](https://martinfowler.com/bliki/LegacySeam.html).
