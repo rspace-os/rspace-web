@@ -160,6 +160,14 @@ For [more information on mobx computeds, see their documentation](https://mobx.j
 The monoidal operator that reduces a set of booleans down to a single
 boolean, only returning a truthful state when all of the inputs are true.
 
+### Constructor
+
+1. A function that is tasked with taking some disparate pieces of data and
+   instantiating an object that encapsulates them all.
+
+2. A special method of ES6 classes that is invoked by the `new` keyword. A
+   class may only have one.
+
 ### Container
 
 An Inventory record that models all manner of physical containers in the labatory,
@@ -740,3 +748,8 @@ The observable effect of a computation that is independent of its input
 parameters and return value. This includes reading from global state,
 randomness, input/output, logging, or anything else that isn't returning a
 value.
+
+### Smart constructor
+
+A [constructor function](#constructor) that may or may not instantiate the
+object it is tasked with depending on whether the inputs pass some validation.
