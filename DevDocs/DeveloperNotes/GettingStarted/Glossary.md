@@ -789,3 +789,9 @@ experiment. [Aliquot](#aliquot) is an alias for subsample in many settings.
 
 > The sx prop is a shortcut for defining custom styles that have access to the
 > theme. — [MUI](https://mui.com/system/getting-started/the-sx-prop/)
+
+## T
+
+### Tagged union
+
+See [disjoint object union](#disjoint-object-union).
