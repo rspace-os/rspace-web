@@ -801,3 +801,14 @@ See [disjoint object union](#disjoint-object-union).
 A temporarily displayed alert that signals the successful or unsuccessful
 completion of a task by popping up just as a toaster pops the toast up when its
 done.
+
+### Type variable
+
+Also referred to as a type parameter, is a generic type that is referred to in
+the abstract throughout the definition of another code construct. For example,
+to define a list data structure, one must handle the appending of new elements
+and the removal of arbitrary ones, all whilst ensuring that the types remain
+consistent. To do this, a type variable is defined which is used to refer to
+the type of the elements of the list; the type check then makes sure that this
+type is used consistently. The [Flow documentation on Generics][https://flow.org/en/docs/types/generics/)
+describes how to define such data structures that have a type variable.
