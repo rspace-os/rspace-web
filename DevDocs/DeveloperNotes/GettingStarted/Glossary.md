@@ -90,7 +90,7 @@ enhancing the user experience.
 
 ### Barcodes
 
-Barcodes, including QR codes, are used extensively in the labatory setting to
+Barcodes, including QR codes, are used extensively in the laboratory setting to
 associate digitally recorded information with physical items, including test tubes
 and frozen samples. Printing and scanning labels is a common part of the workflow
 of our customers, and as such Inventory provides some capabilities to work
@@ -104,7 +104,7 @@ facilitating bulk operations.
 ### Bench
 
 A per-user location for subsamples and containers. Designed to be analogous to the
-user's workspace in the labatory.
+user's workspace in the laboratory.
 
 ### Breakpoint
 
@@ -183,7 +183,7 @@ boolean, only returning a truthful state when all of the inputs are true.
 
 ### Container
 
-An Inventory record that models all manner of physical containers in the labatory,
+An Inventory record that models all manner of physical containers in the laboratory,
 from freezers to well-plates. It can also be used to model logical groupings of
 items that exist in the same physical location, or items that have not yet been
 placed in such a location.
