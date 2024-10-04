@@ -672,3 +672,14 @@ randomness -- just inputs and outputs. This includes mathematical operations
 like addition, array operations like map and filter, and most other utility
 functions. What makes them so great is that they are really easy to test and
 very ameneable to [property-based testing](#property-based-testing).
+
+## R
+
+### Reduced motion
+
+One of the user preferences that browsers expose to Web pages is whether the
+user has enabled a reduced motion mode in their device settings. This instructs
+the Web page to remove any unnecessary motion, including animations and
+transitions. There are very few places in RSpace where motion is a key part of
+the functionality so in the vast majority of cases we should be disabling all
+motion when this is enabled.
