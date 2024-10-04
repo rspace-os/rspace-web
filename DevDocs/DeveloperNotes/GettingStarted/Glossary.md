@@ -693,3 +693,11 @@ therefore be version controlled with git.
 sharing beyond a particular institution, enabling collaboration across the
 scientific community. RSpace integrations with number of repository services,
 allowing users to export their work in various different formats.
+
+### Role
+
+> ARIA roles provide semantic meaning to content, allowing screen readers and
+> other tools to present and support interaction with an object in a way that
+> is consistent with user expectations of that type of object. ARIA roles can
+> be used to describe elements that don't natively exist in HTML or exist but
+> don't yet have full browser support. — [MDN](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles)
