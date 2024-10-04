@@ -683,3 +683,13 @@ the Web page to remove any unnecessary motion, including animations and
 transitions. There are very few places in RSpace where motion is a key part of
 the functionality so in the vast majority of cases we should be disabling all
 motion when this is enabled.
+
+### Repository
+
+1. A directory in a filesystem with a .git directory and whose contents can
+therefore be version controlled with git.
+
+2. A third-party service that publishes documents and other datasets for
+sharing beyond a particular institution, enabling collaboration across the
+scientific community. RSpace integrations with number of repository services,
+allowing users to export their work in various different formats.
