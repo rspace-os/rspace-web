@@ -67,10 +67,12 @@ type CreateDialogProps = {|
 |};
 
 const Name: ComponentType<{|
+  id: string,
   state: { value: string },
-|}> = observer(({ state }): Node => {
+|}> = observer(({ id, state }): Node => {
   return (
     <StringField
+      id={id}
       value={state.value}
       onChange={({ target }) => {
         runInAction(() => {
@@ -83,6 +85,7 @@ const Name: ComponentType<{|
 });
 
 const Fields: ComponentType<{|
+  id: string,
   state: {
     copyFieldContent: $ReadOnlyArray<{|
       id: Id,
@@ -92,7 +95,7 @@ const Fields: ComponentType<{|
       selected: boolean,
     |}>,
   },
-|}> = observer(({ state }): Node => {
+|}> = observer(({ id: _id, state }): Node => {
   if (state.copyFieldContent.length === 0)
     return <NoValue label="No fields." />;
   return (
@@ -154,8 +157,9 @@ const Fields: ComponentType<{|
 });
 
 const SplitCount: ComponentType<{|
+  id: string,
   state: { copies: number, ... },
-|}> = observer(({ state }): Node => {
+|}> = observer(({ id, state }): Node => {
   const MIN = 2;
   const MAX = 100;
 
@@ -163,6 +167,7 @@ const SplitCount: ComponentType<{|
     <Box>
       <FormControl>
         <NumberField
+          id={id}
           name="copies"
           autoFocus
           value={state.copies}
@@ -190,8 +195,9 @@ const SplitCount: ComponentType<{|
 });
 
 const LocationPicker: ComponentType<{|
+  id: string,
   state: { container: Container },
-|}> = observer(({ state }): Node => {
+|}> = observer(({ id: _id, state }): Node => {
   const [search] = React.useState<Search>(
     new Search({
       fetcherParams: {
@@ -243,21 +249,22 @@ function ParameterField({
   setActiveStep: (number) => void,
   showNextButton: boolean,
 |}) {
+  const fieldId = React.useId();
   return (
     <Step {...rest}>
       <StepLabel>
-        {label}
+        <label htmlFor={fieldId}>{label}</label>
         <Typography variant="body2">{explanation}</Typography>
       </StepLabel>
       <StepContent>
         <Grid container direction="column" spacing={1}>
           <Grid item>
-            {state.key === "split" && <SplitCount state={state} />}
-            {state.key === "name" && <Name state={state} />}
+            {state.key === "split" && <SplitCount id={fieldId} state={state} />}
+            {state.key === "name" && <Name id={fieldId} state={state} />}
             {state.key === "location" && (
-              <LocationPicker state={state} />
+              <LocationPicker id={fieldId} state={state} />
             )}
-            {state.key === "fields" && <Fields state={state} />}
+            {state.key === "fields" && <Fields id={fieldId} state={state} />}
           </Grid>
           <Grid item>
             <Stack spacing={1} direction="row">
