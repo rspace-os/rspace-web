@@ -819,3 +819,13 @@ An Inventory record that defines how new samples of a particular type should be
 created, in particular what fields the sample should have for recording
 sample-specific metadata. This ensures that all members of a lab are recording
 sample data consistently.
+
+## U
+
+### Unicode
+
+A text encoding standard that has become to de facto standard on the Web, with
+UTF-8 in use for data in transmission and UTF-16 for JavaScript strings.
+Unicode supports essentially every language with a written form and as such is
+quite complex so that it can capture all of the complexities and idiosyncracies
+of human language.
