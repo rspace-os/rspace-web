@@ -873,3 +873,10 @@ easier to use.
 The Web Content Accessibility Guidelines is an international standard
 (currently on version 2.2) on ensuring that Web content is accessible to people
 with disabilities.
+
+### Webpack
+
+A third-party tool for bundling JavaScript modules into a single script that
+can be downloaded by the user's browser. As part of this bundling process,
+other operations can be included with the use of plugins such as stripping out
+type annotations, converting JSX syntax, and minification.
