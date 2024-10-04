@@ -20,6 +20,12 @@ See [accessibility](#accessibility).
 > use websites, even when those people's abilities are limited in some way. —
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/Accessibility)
 
+### Accessibility Technologies
+
+Third party tools — both hardware and software — that enhance the experience
+for users with disabilities; the most common examples being
+[screen readers](#screen-reader) and braille keyboards.
+
 ### Action
 
 [Mobx actions](https://mobx.js.org/actions.html) are functions or methods that
@@ -749,6 +755,18 @@ The observable effect of a computation that is independent of its input
 parameters and return value. This includes reading from global state,
 randomness, input/output, logging, or anything else that isn't returning a
 value.
+
+### Single Page Application
+
+SPAs are an architectural model for designing Web sites that is based around
+using JavaScript to dynamically alter the content of the page rather than
+navigating to a series of different Web pages. This has the advantage of
+supporting long-lived state that is typical of installed applications including
+alerting toasts, caches, and background refresh. It has the disadvantage that
+the developer is required to reimplement much of the functionality that the
+browser provides by default and may result in a degraded
+experience for those using [accessibility technologies](#accessibility-technologies)
+and slower performance overall.
 
 ### Smart constructor
 
