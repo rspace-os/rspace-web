@@ -29,7 +29,8 @@ react components are re-rendered.
 
 ### Aliquot
 
-An often used term for a fraction of a sample; a common alias of subsample.
+An often used term for a fraction of a [sample](#sample); a common alias of
+[subsample](#subsample).
 
 ### Alt-text
 
@@ -753,3 +754,8 @@ value.
 
 A [constructor function](#constructor) that may or may not instantiate the
 object it is tasked with depending on whether the inputs pass some validation.
+
+### Subsample
+
+A fraction of a [sample](#sample) that is used in a particular execution of an
+experiment. [Aliquot](#aliquot) is an alias for subsample in many settings.
