@@ -829,3 +829,16 @@ UTF-8 in use for data in transmission and UTF-16 for JavaScript strings.
 Unicode supports essentially every language with a written form and as such is
 quite complex so that it can capture all of the complexities and idiosyncracies
 of human language.
+
+## V
+
+### Viewport
+
+The layout viewport is the part of the browser window that display's the
+document, before any adjustment is made for zooming or virtual keyboards.
+Naturally, this can change during the lifetime of the page if the size of the
+window changes, the device is rotated, or a textual zoom is applied. A pinch
+zoom does not change the layout viewport -- only the visual viewport -- and
+neither does opening a virtual keyboard. For more information, see
+[MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Viewport_concepts)
+
