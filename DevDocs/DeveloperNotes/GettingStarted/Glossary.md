@@ -742,6 +742,7 @@ links, and other landmarks.
 > a seam is a place where you can alter behavior in your program without
 > editing in that place — Michael Feathers; Working Effectively with Legacy
 > Systems
+
 For more information, see [this article by Martin Fowler on the topic of seams](https://martinfowler.com/bliki/LegacySeam.html).
 
 ### Segment
