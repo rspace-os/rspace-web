@@ -15,6 +15,7 @@ import {
 } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -193,6 +194,66 @@ describe("CreateDialog", () => {
           name: /Sample/,
         })
       ).toBeDisabled();
+    });
+  });
+  describe("New sample from template", () => {
+    test("Success case", () => {
+      const template = makeMockTemplate({});
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={template}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Sample/,
+        })
+      ).toBeEnabled();
+
+      fireEvent.click(
+        screen.getByRole("radio", {
+          name: /Sample/,
+        })
+      );
+    });
+  });
+  describe("New template from sample", () => {
+    test("No fields", () => {
+      const sample = makeMockSample({});
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={sample}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Template/,
+        })
+      ).toBeEnabled();
+
+      fireEvent.click(
+        screen.getByRole("radio", {
+          name: /Template/,
+        })
+      );
+
+      fireEvent.change(screen.getByRole("textbox", { name: /name/i }), {
+        target: { value: "New template" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /next/i }));
+
+      expect(screen.getByText("No fields.")).toBeVisible();
+      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
     });
   });
 });
