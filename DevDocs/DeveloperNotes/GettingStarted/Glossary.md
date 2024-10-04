@@ -880,3 +880,10 @@ A third-party tool for bundling JavaScript modules into a single script that
 can be downloaded by the user's browser. As part of this bundling process,
 other operations can be included with the use of plugins such as stripping out
 type annotations, converting JSX syntax, and minification.
+
+### Well-plate
+
+Also known as a microplate, they are standard laboratory equipment that are
+essentially a grid of tiny test tubes. They come in a series of standard
+dimensions and are typically modelled by our Inventory system with the use of
+[grid containers](#grid-container).
