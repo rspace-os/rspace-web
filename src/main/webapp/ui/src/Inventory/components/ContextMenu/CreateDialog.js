@@ -219,6 +219,7 @@ const LocationPicker: ComponentType<{|
     void search.setSearchView(cTypeToDefaultSearchView(state.container.cType));
   }, [state.container]);
 
+  if (state.container.cType === "LIST") return null;
   return (
     <SearchContext.Provider
       value={{

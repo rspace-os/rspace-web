@@ -145,7 +145,7 @@ describe("CreateDialog", () => {
     });
   });
   describe("New container in container", () => {
-    test("Success case", () => {
+    test("Success case for list container", () => {
       const container = makeMockContainer({
         canStoreContainers: true,
         canStoreSamples: true,
@@ -171,6 +171,11 @@ describe("CreateDialog", () => {
           name: /Container/,
         })
       );
+
+      expect(
+        screen.getByText("No location selection required for list containers.")
+      ).toBeVisible();
+      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
     });
     test("Cannot store containers", () => {
       const container = makeMockContainer({
@@ -195,7 +200,7 @@ describe("CreateDialog", () => {
     });
   });
   describe("New sample in container", () => {
-    test("Success case", () => {
+    test("Success case for list containers", () => {
       const container = makeMockContainer({
         canStoreContainers: true,
         canStoreSamples: true,
@@ -221,6 +226,11 @@ describe("CreateDialog", () => {
           name: /Sample/,
         })
       );
+
+      expect(
+        screen.getByText("No location selection required for list containers.")
+      ).toBeVisible();
+      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
     });
     test("Cannot store samples", () => {
       const container = makeMockContainer({

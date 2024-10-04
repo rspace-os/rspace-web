@@ -1117,9 +1117,9 @@ export default class ContainerModel
         explanation: "The container will be automatically added to this container.",
         parameters: [{
           label: "Location",
-          explanation: "Specify a single location for where the new container should be placed.",
+          explanation: this.cType === "LIST" ? "No location selection required for list containers." : "Specify a single location for where the new container should be placed.",
           state: { key: "location", container: this },
-          validState: () => this.selectedLocations?.length === 1,
+          validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
         }],
         disabled: !this.canStoreContainers,
         onSubmit: async () => {
@@ -1139,9 +1139,9 @@ export default class ContainerModel
         explanation: "The subsample will be automatically added to this container.",
         parameters: [{
           label: "Location",
-          explanation: "Specify a single location for where the new sample's one subsample should be placed.",
+          explanation: this.cType === "LIST" ? "No location selection required for list containers." : "Specify a single location for where the new container should be placed.",
           state: { key: "location", container: this },
-          validState: () => this.selectedLocations?.length === 1,
+          validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
         }],
         disabled: !this.canStoreSamples,
         onSubmit: async () => {
