@@ -777,3 +777,8 @@ object it is tasked with depending on whether the inputs pass some validation.
 
 A fraction of a [sample](#sample) that is used in a particular execution of an
 experiment. [Aliquot](#aliquot) is an alias for subsample in many settings.
+
+### sx
+
+> The sx prop is a shortcut for defining custom styles that have access to the
+> theme. — [MUI](https://mui.com/system/getting-started/the-sx-prop/)
