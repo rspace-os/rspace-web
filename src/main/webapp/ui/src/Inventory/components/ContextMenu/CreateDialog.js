@@ -3,6 +3,7 @@
 import React, { type Node, type ComponentType } from "react";
 import {
   type CreateFrom,
+  type CreateOptionParameter,
   type InventoryRecord,
 } from "../../../stores/definitions/InventoryRecord";
 import docLinks from "../../../assets/DocLinks";
@@ -227,6 +228,68 @@ const LocationPicker: ComponentType<{|
   );
 });
 
+function ParameterField({
+  label,
+  explanation,
+  state,
+  validState,
+  activeStep,
+  setActiveStep,
+  showNextButton,
+  ...rest
+}: {|
+  ...CreateOptionParameter,
+  activeStep: number,
+  setActiveStep: (number) => void,
+  showNextButton: boolean,
+|}) {
+  return (
+    <Step {...rest}>
+      <StepLabel>
+        {label}
+        <Typography variant="body2">{explanation}</Typography>
+      </StepLabel>
+      <StepContent>
+        <Grid container direction="column" spacing={1}>
+          <Grid item>
+            {state.key === "split" && <SplitCount state={state} />}
+            {state.key === "name" && <Name state={state} />}
+            {state.key === "location" && (
+              <LocationPicker state={state} />
+            )}
+            {state.key === "fields" && <Fields state={state} />}
+          </Grid>
+          <Grid item>
+            <Stack spacing={1} direction="row">
+              {showNextButton && (
+                <Button
+                  color="primary"
+                  variant="contained"
+                  disableElevation
+                  onClick={() => {
+                    setActiveStep(activeStep + 1);
+                  }}
+                  disabled={!validState()}
+                >
+                  Next
+                </Button>
+              )}
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setActiveStep(activeStep - 1);
+                }}
+              >
+                Back
+              </Button>
+            </Stack>
+          </Grid>
+        </Grid>
+      </StepContent>
+    </Step>
+  );
+}
+
 function CreateDialog({
   existingRecord,
   open,
@@ -332,57 +395,23 @@ function CreateDialog({
                 selectedCreateOptionIndex
               ].parameters.map(
                 ({ label, explanation, state, validState }, index) => (
-                  <Step key={index}>
-                    <StepLabel>
-                      {label}
-                      <Typography variant="body2">{explanation}</Typography>
-                    </StepLabel>
-                    <StepContent>
-                      <Grid container direction="column" spacing={1}>
-                        <Grid item>
-                          {state.key === "split" && (
-                            <SplitCount state={state} />
-                          )}
-                          {state.key === "name" && <Name state={state} />}
-                          {state.key === "location" && (
-                            <LocationPicker state={state} />
-                          )}
-                          {state.key === "fields" && <Fields state={state} />}
-                        </Grid>
-                        <Grid item>
-                          <Stack spacing={1} direction="row">
-                            {index <
-                              (
-                                existingRecord.createOptions[
-                                  selectedCreateOptionIndex
-                                ].parameters ?? []
-                              ).length -
-                                1 && (
-                              <Button
-                                color="primary"
-                                variant="contained"
-                                disableElevation
-                                onClick={() => {
-                                  setActiveStep(activeStep + 1);
-                                }}
-                                disabled={!validState()}
-                              >
-                                Next
-                              </Button>
-                            )}
-                            <Button
-                              variant="outlined"
-                              onClick={() => {
-                                setActiveStep(activeStep - 1);
-                              }}
-                            >
-                              Back
-                            </Button>
-                          </Stack>
-                        </Grid>
-                      </Grid>
-                    </StepContent>
-                  </Step>
+                  <ParameterField
+                    label={label}
+                    explanation={explanation}
+                    state={state}
+                    validState={validState}
+                    activeStep={activeStep}
+                    setActiveStep={setActiveStep}
+                    showNextButton={
+                      index <
+                      (
+                        existingRecord.createOptions[selectedCreateOptionIndex]
+                          .parameters ?? []
+                      ).length -
+                        1
+                    }
+                    key={index}
+                  />
                 )
               )}
           </Stepper>
