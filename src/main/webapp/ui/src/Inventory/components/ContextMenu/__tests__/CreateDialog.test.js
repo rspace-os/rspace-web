@@ -46,6 +46,29 @@ describe("CreateDialog", () => {
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
     });
+    test("Subsamples, with too many copies", () => {
+      const subsample = makeMockSubSample({});
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={subsample}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      fireEvent.click(
+        screen.getByRole("radio", { name: /Subsample, by splitting/ })
+      );
+
+      fireEvent.input(
+        screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
+        { target: { value: 200 } }
+      );
+
+      expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
+    });
     test("Samples, when there is one subsample", () => {
       const sample = makeMockSample({});
       render(
@@ -74,6 +97,31 @@ describe("CreateDialog", () => {
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
+    });
+    test("Samples, with too many copies", () => {
+      const sample = makeMockSample({});
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={sample}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      fireEvent.click(
+        screen.getByRole("radio", {
+          name: /Subsample, by splitting the current subsample/,
+        })
+      );
+
+      fireEvent.input(
+        screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
+        { target: { value: 200 } }
+      );
+
+      expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
     test("Samples, when there are multiple subsamples", () => {
       const sample = makeMockSample({
@@ -254,6 +302,36 @@ describe("CreateDialog", () => {
 
       expect(screen.getByText("No fields.")).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
+    });
+    test("Name that's too short", () => {
+      const sample = makeMockSample({});
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={sample}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Template/,
+        })
+      ).toBeEnabled();
+
+      fireEvent.click(
+        screen.getByRole("radio", {
+          name: /Template/,
+        })
+      );
+
+      fireEvent.change(screen.getByRole("textbox", { name: /name/i }), {
+        target: { value: "x" },
+      });
+
+      expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
     });
   });
 });
