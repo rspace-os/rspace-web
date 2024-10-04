@@ -847,3 +847,12 @@ neither does opening a virtual keyboard. For more information, see
 A type of [container](#container) that enforces that its contents be placed in
 predefined locations marked on an uploaded image. Useful for describing where
 items of note are in photos or other images taken by laboratory equipment.
+
+### Visual noise
+
+The degree to which a user interface element or a change to that interface adds
+cognitive burden to the user. A clean, simple interface with ample whitespace —
+one with low visual noise — is easier to absorb and is less intimidating,
+especially to new users. Hiding infrequently used actions from view may result
+in an interface that feels more approachable and is ultimately considered to be
+easier to use.
