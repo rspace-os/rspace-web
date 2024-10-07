@@ -372,6 +372,146 @@ export function useGalleryListing({
     return ret;
   }
 
+  function parseGalleryFiles(data: mixed) {
+    return Parsers.objectPath(["data", "items", "results"], data)
+      .flatMap(Parsers.isArray)
+      .map((array) => {
+        if (array.length === 0) return ([]: $ReadOnlyArray<GalleryFile>);
+        return Result.all(
+          ...array.map((m) =>
+            Parsers.isObject(m)
+              .flatMap(Parsers.isNotNull)
+              .flatMap((obj) => {
+                try {
+                  const id = Parsers.getValueWithKey("id")(obj)
+                    .flatMap(Parsers.isNumber)
+                    .elseThrow();
+
+                  const globalId = Parsers.getValueWithKey("oid")(obj)
+                    .flatMap(Parsers.isObject)
+                    .flatMap(Parsers.isNotNull)
+                    .flatMap(Parsers.getValueWithKey("idString"))
+                    .flatMap(Parsers.isString)
+                    .elseThrow();
+
+                  const name = Parsers.getValueWithKey("name")(obj)
+                    .flatMap(Parsers.isString)
+                    .elseThrow();
+
+                  const ownerName = Parsers.getValueWithKey("ownerFullName")(
+                    obj
+                  )
+                    .flatMap(Parsers.isString)
+                    .orElse("Unknown owner");
+
+                  const description = Parsers.getValueWithKey("description")(
+                    obj
+                  )
+                    .flatMap(Parsers.isString)
+                    .map((d) => {
+                      if (d === "") return Description.Empty();
+                      return Description.Present(d);
+                    })
+                    .orElseTry(() =>
+                      Parsers.getValueWithKey("description")(obj)
+                        .flatMap(Parsers.isNull)
+                        .map(() => Description.Empty())
+                    )
+                    .orElse(Description.Missing());
+
+                  const creationDate = Parsers.getValueWithKey("creationDate")(
+                    obj
+                  )
+                    .flatMap(Parsers.isNumber)
+                    .flatMap(Parsers.parseDate)
+                    .elseThrow();
+
+                  const modificationDate = Parsers.getValueWithKey(
+                    "modificationDate"
+                  )(obj)
+                    .flatMap(Parsers.isNumber)
+                    .flatMap(Parsers.parseDate)
+                    .elseThrow();
+
+                  const type = Parsers.getValueWithKey("type")(obj)
+                    .flatMap(Parsers.isString)
+                    .elseThrow();
+
+                  const extension = Parsers.getValueWithKey("extension")(obj)
+                    .flatMap((e) =>
+                      Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
+                    )
+                    .elseThrow();
+
+                  const thumbnailId = Parsers.getValueWithKey("thumbnailId")(
+                    obj
+                  )
+                    .flatMap((t) =>
+                      Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
+                    )
+                    .elseThrow();
+
+                  const size = Parsers.getValueWithKey("size")(obj)
+                    .flatMap(Parsers.isNumber)
+                    .elseThrow();
+
+                  const version = Parsers.getValueWithKey("version")(obj)
+                    .flatMap(Parsers.isNumber)
+                    .elseThrow();
+
+                  return Result.Ok(
+                    mkGalleryFile({
+                      id,
+                      globalId,
+                      name,
+                      ownerName,
+                      description,
+                      creationDate,
+                      modificationDate,
+                      type,
+                      extension,
+                      thumbnailId,
+                      size,
+                      version,
+                    })
+                  );
+                } catch (e) {
+                  return Result.Error<GalleryFile>([e]);
+                }
+              })
+          )
+        ).orElseGet<$ReadOnlyArray<GalleryFile>>((errors) => {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not process Gallery content.",
+              message: "Please try refreshing.",
+            })
+          );
+          errors.forEach((e) => {
+            console.error(e);
+          });
+          return [];
+        });
+      })
+      .orElseGet(() => {
+        Parsers.isObject(data)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+          .flatMap(Parsers.isString)
+          .do((exceptionMessage) => {
+            addAlert(
+              mkAlert({
+                variant: "error",
+                title: "Error retrieving gallery files.",
+                message: exceptionMessage,
+              })
+            );
+          });
+        return ([]: $ReadOnlyArray<GalleryFile>);
+      });
+  }
+
   async function getGalleryFiles(): Promise<void> {
     selection.clear();
     setGalleryListing([]);
@@ -400,147 +540,7 @@ export function useGalleryListing({
           .map((x) => x) // possibly a bug in Flow
       );
 
-      setGalleryListing(
-        Parsers.objectPath(["data", "items", "results"], data)
-          .flatMap(Parsers.isArray)
-          .map((array) => {
-            if (array.length === 0) return ([]: $ReadOnlyArray<GalleryFile>);
-            return Result.all(
-              ...array.map((m) =>
-                Parsers.isObject(m)
-                  .flatMap(Parsers.isNotNull)
-                  .flatMap((obj) => {
-                    try {
-                      const id = Parsers.getValueWithKey("id")(obj)
-                        .flatMap(Parsers.isNumber)
-                        .elseThrow();
-
-                      const globalId = Parsers.getValueWithKey("oid")(obj)
-                        .flatMap(Parsers.isObject)
-                        .flatMap(Parsers.isNotNull)
-                        .flatMap(Parsers.getValueWithKey("idString"))
-                        .flatMap(Parsers.isString)
-                        .elseThrow();
-
-                      const name = Parsers.getValueWithKey("name")(obj)
-                        .flatMap(Parsers.isString)
-                        .elseThrow();
-
-                      const ownerName = Parsers.getValueWithKey(
-                        "ownerFullName"
-                      )(obj)
-                        .flatMap(Parsers.isString)
-                        .orElse("Unknown owner");
-
-                      const description = Parsers.getValueWithKey(
-                        "description"
-                      )(obj)
-                        .flatMap(Parsers.isString)
-                        .map((d) => {
-                          if (d === "") return Description.Empty();
-                          return Description.Present(d);
-                        })
-                        .orElseTry(() =>
-                          Parsers.getValueWithKey("description")(obj)
-                            .flatMap(Parsers.isNull)
-                            .map(() => Description.Empty())
-                        )
-                        .orElse(Description.Missing());
-
-                      const creationDate = Parsers.getValueWithKey(
-                        "creationDate"
-                      )(obj)
-                        .flatMap(Parsers.isNumber)
-                        .flatMap(Parsers.parseDate)
-                        .elseThrow();
-
-                      const modificationDate = Parsers.getValueWithKey(
-                        "modificationDate"
-                      )(obj)
-                        .flatMap(Parsers.isNumber)
-                        .flatMap(Parsers.parseDate)
-                        .elseThrow();
-
-                      const type = Parsers.getValueWithKey("type")(obj)
-                        .flatMap(Parsers.isString)
-                        .elseThrow();
-
-                      const extension = Parsers.getValueWithKey("extension")(
-                        obj
-                      )
-                        .flatMap((e) =>
-                          Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
-                        )
-                        .elseThrow();
-
-                      const thumbnailId = Parsers.getValueWithKey(
-                        "thumbnailId"
-                      )(obj)
-                        .flatMap((t) =>
-                          Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
-                        )
-                        .elseThrow();
-
-                      const size = Parsers.getValueWithKey("size")(obj)
-                        .flatMap(Parsers.isNumber)
-                        .elseThrow();
-
-                      const version = Parsers.getValueWithKey("version")(obj)
-                        .flatMap(Parsers.isNumber)
-                        .elseThrow();
-
-                      return Result.Ok(
-                        mkGalleryFile({
-                          id,
-                          globalId,
-                          name,
-                          ownerName,
-                          description,
-                          creationDate,
-                          modificationDate,
-                          type,
-                          extension,
-                          thumbnailId,
-                          size,
-                          version,
-                        })
-                      );
-                    } catch (e) {
-                      return Result.Error<GalleryFile>([e]);
-                    }
-                  })
-              )
-            ).orElseGet<$ReadOnlyArray<GalleryFile>>((errors) => {
-              addAlert(
-                mkAlert({
-                  variant: "error",
-                  title: "Could not process Gallery content.",
-                  message: "Please try refreshing.",
-                })
-              );
-              errors.forEach((e) => {
-                console.error(e);
-              });
-              return [];
-            });
-          })
-          .orElseGet(() => {
-            Parsers.isObject(data)
-              .flatMap(Parsers.isNotNull)
-              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-              .flatMap(Parsers.isString)
-              .do((exceptionMessage) => {
-                addAlert(
-                  mkAlert({
-                    variant: "error",
-                    title: "Error retrieving gallery files.",
-                    message: exceptionMessage,
-                  })
-                );
-              });
-            return [];
-          })
-      );
+      setGalleryListing(parseGalleryFiles(data));
     } catch (e) {
       console.error(e);
     } finally {
