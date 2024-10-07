@@ -33,6 +33,7 @@ import com.researchspace.service.impl.license.NoCheckLicenseService;
 import com.researchspace.spring.taskexecutors.ShiroThreadBindingSubjectThreadPoolExecutor;
 import com.researchspace.webapp.filter.EASERemoteUserPolicy;
 import com.researchspace.webapp.filter.MockRemoteUserPolicy;
+import com.researchspace.webapp.filter.OpenIdRemoteUserPolicy;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import com.researchspace.webapp.filter.SAMLRemoteUserPolicy;
 import java.nio.file.Files;
@@ -282,6 +283,8 @@ public class ProductionConfig extends BaseConfig {
   protected RemoteUserRetrievalPolicy remoteUserRetrievalPolicy() {
     if ("SAML".equals(deploymentSsoType)) {
       return new SAMLRemoteUserPolicy();
+    } else if ("openid".equals(deploymentSsoType)) {
+      return new OpenIdRemoteUserPolicy();
     } else if ("TEST".equals(deploymentSsoType)) {
       return new MockRemoteUserPolicy();
     } else {

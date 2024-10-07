@@ -17,6 +17,7 @@ import com.researchspace.service.SignupCaptchaVerifier;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
+import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
 import com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt;
 import java.io.UnsupportedEncodingException;
 import javax.servlet.http.HttpServletRequest;
@@ -117,7 +118,7 @@ public class SignupController extends BaseController {
       // if these aren't set remotely they will set empty string.
       // if they are set, then the signup form will be pre-populated
       user.setEmail(getEmailFromRemote(request));
-      user.setLastName(getLastnameFromRemote(request));
+      user.setLastName(getLastNameFromRemote(request));
       user.setFirstName(getFirstNameFromRemote(request));
       // RSPAC-2588 optional param from SSO deciding if PI role should be selectable
       model.addObject("isAllowedPiRole", getIsAllowedPiRoleFromRemote(request));
@@ -129,21 +130,25 @@ public class SignupController extends BaseController {
   }
 
   private String getEmailFromRemote(HttpServletRequest req) {
-    String emailString = remoteUserPolicy.getOtherRemoteAttributes(req).get("mail");
-    if (StringUtils.isBlank(emailString)) {
-      emailString = remoteUserPolicy.getOtherRemoteAttributes(req).get("Shib-email");
-    }
+    String emailString =
+        remoteUserPolicy.getOtherRemoteAttributes(req).get(RemoteUserAttribute.EMAIL);
     return emailString == null ? "" : emailString;
   }
 
-  protected String getLastnameFromRemote(HttpServletRequest req) {
-    String rc = remoteUserPolicy.getOtherRemoteAttributes(req).get("Shib-surName");
+  protected String getFirstNameFromRemote(HttpServletRequest req) {
+    String rc = remoteUserPolicy.getOtherRemoteAttributes(req).get(RemoteUserAttribute.FIRST_NAME);
     return rc == null ? "" : ensureUtf8EncodingForSAMLAttributeValue(rc);
   }
 
-  protected String getFirstNameFromRemote(HttpServletRequest req) {
-    String rc = remoteUserPolicy.getOtherRemoteAttributes(req).get("Shib-givenName");
+  protected String getLastNameFromRemote(HttpServletRequest req) {
+    String rc = remoteUserPolicy.getOtherRemoteAttributes(req).get(RemoteUserAttribute.LAST_NAME);
     return rc == null ? "" : ensureUtf8EncodingForSAMLAttributeValue(rc);
+  }
+
+  private boolean getIsAllowedPiRoleFromRemote(HttpServletRequest req) {
+    String rc =
+        remoteUserPolicy.getOtherRemoteAttributes(req).get(RemoteUserAttribute.IS_ALLOWED_PI_ROLE);
+    return "true".equals(rc);
   }
 
   private String ensureUtf8EncodingForSAMLAttributeValue(String rc) {
@@ -158,11 +163,6 @@ public class SignupController extends BaseController {
       }
     }
     return rc;
-  }
-
-  private boolean getIsAllowedPiRoleFromRemote(HttpServletRequest req) {
-    String rc = remoteUserPolicy.getOtherRemoteAttributes(req).get("isAllowedPiRole");
-    return "true".equals(rc);
   }
 
   boolean isSsoSignupAllowed(String remoteUser) {

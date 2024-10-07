@@ -100,18 +100,18 @@ public class SignupControllerTest {
     mockIso8859Request.setAttribute("Shib-givenName", "MÃ¦ck");
     mockIso8859Request.setAttribute("Shib-surName", "SchÃ¸dt-Å»Ä\u0099bski");
     assertEquals("Mæck", signupCtrller.getFirstNameFromRemote(mockIso8859Request));
-    assertEquals("Schødt-Żębski", signupCtrller.getLastnameFromRemote(mockIso8859Request));
+    assertEquals("Schødt-Żębski", signupCtrller.getLastNameFromRemote(mockIso8859Request));
 
     // check if still works for utf8 chars
     MockHttpServletRequest mockUtf8Request = new MockHttpServletRequest();
     mockUtf8Request.setAttribute("Shib-givenName", "Mæck");
     mockUtf8Request.setAttribute("Shib-surName", "Schødt-Żębski");
     assertEquals("Mæck", signupCtrller.getFirstNameFromRemote(mockUtf8Request));
-    assertEquals("Schødt-Żębski", signupCtrller.getLastnameFromRemote(mockUtf8Request));
+    assertEquals("Schødt-Żębski", signupCtrller.getLastNameFromRemote(mockUtf8Request));
 
     // confirm no conversion if encoding is disabled in deployment property
     signupCtrller.setDeploymentSsoRecodeNamesToUft8(false);
     assertEquals("MÃ¦ck", signupCtrller.getFirstNameFromRemote(mockIso8859Request));
-    assertEquals("SchÃ¸dt-Å»Ä\u0099bski", signupCtrller.getLastnameFromRemote(mockIso8859Request));
+    assertEquals("SchÃ¸dt-Å»Ä\u0099bski", signupCtrller.getLastNameFromRemote(mockIso8859Request));
   }
 }

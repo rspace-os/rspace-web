@@ -410,7 +410,7 @@ These optional settings will enable you to import user data from LDAP, or enable
 ### SSO configuration
 Set these properties to configure RSpace to run in SSO mode e.g. for Shibboleth integration. There may be further integration work needed with Apache headers/redirects etc. to get this working.
 * **deployment.standalone** true /false. Set to false to enable SSO integration. Default is true.
-* **deployment.sso.type=SAML** if single sign-on is configured (if deployment.standalone=false) , this property switches authentication filter to SAML.
+* **deployment.sso.type** if single sign-on is configured (if deployment.standalone=false), this property must switch authentication filter to 'SAML' (default) or 'openid'.
 * **deployment.sso.logout.url** the URL to redirect to after logout from RSpace. There is no default. If this is not set, users will get an error page after logging out.
 * **user.signup.acceptedDomains**  restricts self sign-up for users in SSO environments.
 * **deployment.sso.ssoInfoVariant** Sets a custom "RSpace doesn't know you " page when self-signup is disabled. Default is unset. Requires custom page for RSpace.

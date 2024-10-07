@@ -70,7 +70,6 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
     User u = createAndSaveSsoTestUser();
     assertFalse(hasRemoteUserUsernameSet());
     remoteUserPolicy.setUsername(u.getUsername());
-    remoteUserPolicy.setPassword(RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD);
     assertTrue(filter.isAccessAllowed(req, resp, null));
     assertTrue(hasRemoteUserUsernameSet());
 
