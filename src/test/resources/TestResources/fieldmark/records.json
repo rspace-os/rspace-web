@@ -1,0 +1,293 @@
+{
+  "records": [
+    {
+      "project_id": "1726126204618-rspace-igsn-demo",
+      "record_id": "rec-ae48f602-c9c4-4e9e-ae3b-6ecf65706e87",
+      "revision_id": "frev-626c2f84-3ceb-4a46-8bd3-b2cc7af0f081",
+      "type": "Primary",
+      "data": {
+        "Field-ID": "00010",
+        "hridPrimary-Next-Section": "Sample-45-00010",
+        "Survey-Number": 45,
+        "IGSN-QR-Code": "1",
+        "Sample-Location": {
+          "type": "Feature",
+          "properties": {
+            "timestamp": 1728314965500,
+            "altitude": 40.929553510506395,
+            "speed": -1,
+            "heading": -1,
+            "accuracy": 27.826936716066943,
+            "altitude_accuracy": 30
+          },
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -4.290634804694207,
+              55.88700753938906
+            ]
+          }
+        },
+        "New-Text-Field": "In glasgow mryhill",
+        "Description": "This is the stone with the fossil inside ",
+        "Sample-Photograph": [
+          {}
+        ],
+        "Length-mm": 15,
+        "Width-mm": 10,
+        "Thickness-mm": 3,
+        "fieldNames": [],
+        "views": []
+      },
+      "updated_by": "dev@researchspace.com",
+      "updated": "2024-10-07T15:30:54.514Z",
+      "created": "2024-10-07T15:25:16.724Z",
+      "created_by": "dev@researchspace.com",
+      "annotations": {
+        "Field-ID": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "hridPrimary-Next-Section": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Survey-Number": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "IGSN-QR-Code": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Sample-Location": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "New-Text-Field": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Description": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Sample-Photograph": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Length-mm": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Width-mm": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Thickness-mm": {
+          "annotation": "",
+          "uncertainty": false
+        }
+      },
+      "field_types": {
+        "Field-ID": "faims-core::String",
+        "hridPrimary-Next-Section": "faims-core::String",
+        "Survey-Number": "faims-core::Integer",
+        "IGSN-QR-Code": "faims-core::String",
+        "Sample-Location": "faims-pos::Location",
+        "New-Text-Field": "faims-core::String",
+        "Description": "faims-core::String",
+        "Sample-Photograph": "faims-attachment::Files",
+        "Length-mm": "faims-core::Integer",
+        "Width-mm": "faims-core::Integer",
+        "Thickness-mm": "faims-core::Integer",
+        "fieldNames": "??:??",
+        "views": "??:??",
+        "updateField": "??:??"
+      },
+      "relationship": {},
+      "deleted": false
+    },
+    {
+      "project_id": "1726126204618-rspace-igsn-demo",
+      "record_id": "rec-e881323c-d3cb-4393-9784-07b86585675b",
+      "revision_id": "frev-60539129-2188-4d05-a493-cbc85207a75c",
+      "type": "Primary",
+      "data": {
+        "Field-ID": "00008",
+        "hridPrimary-Next-Section": "Sample-1-00008",
+        "Survey-Number": 1,
+        "IGSN-QR-Code": "1",
+        "Sample-Location": null,
+        "New-Text-Field": "glasgow",
+        "Description": "rock hard",
+        "Sample-Photograph": [
+          {}
+        ],
+        "Length-mm": 15,
+        "Width-mm": 54,
+        "Thickness-mm": 3,
+        "fieldNames": [],
+        "views": []
+      },
+      "updated_by": "dev@researchspace.com",
+      "updated": "2024-10-02T13:30:46.936Z",
+      "created": "2024-10-02T13:22:22.747Z",
+      "created_by": "dev@researchspace.com",
+      "annotations": {
+        "Field-ID": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "hridPrimary-Next-Section": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Survey-Number": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "IGSN-QR-Code": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Sample-Location": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "New-Text-Field": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Description": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Sample-Photograph": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Length-mm": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Width-mm": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Thickness-mm": {
+          "annotation": "",
+          "uncertainty": false
+        }
+      },
+      "field_types": {
+        "Field-ID": "faims-core::String",
+        "hridPrimary-Next-Section": "faims-core::String",
+        "Survey-Number": "faims-core::Integer",
+        "IGSN-QR-Code": "faims-core::String",
+        "Sample-Location": "faims-pos::Location",
+        "New-Text-Field": "faims-core::String",
+        "Description": "faims-core::String",
+        "Sample-Photograph": "faims-attachment::Files",
+        "Length-mm": "faims-core::Integer",
+        "Width-mm": "faims-core::Integer",
+        "Thickness-mm": "faims-core::Integer",
+        "fieldNames": "??:??",
+        "views": "??:??"
+      },
+      "relationship": {},
+      "deleted": false
+    },
+    {
+      "project_id": "1726126204618-rspace-igsn-demo",
+      "record_id": "rec-5eb53c21-d7f8-41a7-a8b5-4900e46cf8e0",
+      "revision_id": "frev-953d2317-0111-4cb4-81e0-b0e1cb5262b0",
+      "type": "Primary",
+      "data": {
+        "Field-ID": "00009",
+        "hridPrimary-Next-Section": "Sample-12-00009",
+        "Survey-Number": 12,
+        "IGSN-QR-Code": "1",
+        "Sample-Location": null,
+        "New-Text-Field": "Rome",
+        "Description": "Arcdheological interest area",
+        "Sample-Photograph": [
+          {}
+        ],
+        "Length-mm": 18,
+        "Width-mm": 88,
+        "Thickness-mm": 5,
+        "fieldNames": [],
+        "views": []
+      },
+      "updated_by": "dev@researchspace.com",
+      "updated": "2024-10-03T09:19:00.656Z",
+      "created": "2024-10-03T09:19:00.656Z",
+      "created_by": "dev@researchspace.com",
+      "annotations": {
+        "Field-ID": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "hridPrimary-Next-Section": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Survey-Number": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "IGSN-QR-Code": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Sample-Location": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "New-Text-Field": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Description": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Sample-Photograph": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Length-mm": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Width-mm": {
+          "annotation": "",
+          "uncertainty": false
+        },
+        "Thickness-mm": {
+          "annotation": "",
+          "uncertainty": false
+        }
+      },
+      "field_types": {
+        "Field-ID": "faims-core::String",
+        "hridPrimary-Next-Section": "faims-core::String",
+        "Survey-Number": "faims-core::Integer",
+        "IGSN-QR-Code": "faims-core::String",
+        "Sample-Location": "faims-pos::Location",
+        "New-Text-Field": "faims-core::String",
+        "Description": "faims-core::String",
+        "Sample-Photograph": "faims-attachment::Files",
+        "Length-mm": "faims-core::Integer",
+        "Width-mm": "faims-core::Integer",
+        "Thickness-mm": "faims-core::Integer",
+        "fieldNames": "??:??",
+        "views": "??:??",
+        "updateField": "??:??"
+      },
+      "relationship": {},
+      "deleted": false
+    }
+  ]
+}

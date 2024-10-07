@@ -1843,6 +1843,60 @@ paths:
         '200':
           description: Import results.
 
+  /fieldmark/notebooks:
+    get:
+      summary: List Fieldmark notebooks that could be imported by the current user
+      description: >-
+        Return the list of Fieldmark notebooks that are readable by the current RSpace user.
+        
+        The pre-requisite is that user enables Fieldmark App on RSpace Apps page, and saves their Fieldmark API token.
+      produces:
+        - application/json
+      tags:
+        - Import
+      responses:
+        '200':
+          description: >-
+            Returns a list of notebook Ids for the given user
+
+  /import/fieldmark/notebook:
+    post:
+      summary: >-
+        Import a notebook from Fieldmark into the RSpace Inventory
+      description: >-
+        Import a notebook from Fieldmark into the RSpace Inventory by mapping:
+         - Fieldmark notebook to a RSpace Container
+         - Fieldmark Record to a RSpace Sample
+        
+        
+        It will also create a RSpace Sample Template for all the Samples created.
+        
+        
+        NOTE: At the moment this import supports ONLY Fieldmark notebook with a single FormID
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Import
+      parameters:
+        - name: notebookId
+          in: body
+          description: >-
+                        The ID for the Fieldmark notebook. 
+                        The notebook ID is returned in `project_id` property 
+                        of the `/fieldmark/notebooks` response.
+          required: true
+          schema:
+            $ref: '#/definitions/FieldmarkApiImportRequest'
+      responses:
+        '201':
+          description: >-
+            The Fieldmark notebook has been correctly imported into RSpace
+          schema:
+            $ref: '#/definitions/FieldmarkApiImportResult'
+
+
   '/export':
     post:
       summary: Export Containers, Samples and SubSamples as CSV files
@@ -1947,7 +2001,7 @@ paths:
            * `parentGlobalId` property pointing to the inventory item, or sample field, for which this attachment is uploaded.
            * `fileName` (optional) property containing a name for the file. If not present, the name connected with an uploaded stream will be used
 
-        ## Examples of the `fileSettings` object
+        #### Examples of the `fileSettings` object
 
         | fileSettings | Explanation |
 
@@ -2697,6 +2751,8 @@ definitions:
           subSamples:
             $ref: '#/definitions/SubSampleList'
 
+
+
   ApiTagInfo:
     description: Information about an RSpace inventory Tag
     properties:
@@ -2788,6 +2844,36 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/ApiTagInfo'
+
+  FieldmarkApiImportRequest:
+    description: Representation of Fieldmark Api import request
+    properties:
+      notebookId:
+        type: string
+        description: Unique identifier Fieldmark notebook
+        example: "1726126204618-rspace-igsn-demo"
+  FieldmarkApiImportResult:
+    description: Representation of Fieldmark Api import result
+    properties:
+      containerGlobalId:
+        type: string
+        description: Unique Global RSpace identifier for the created container
+        example: "IC196609"
+      containerName:
+        type: string
+        description: Name of the container
+        example: "Container RSpace IGSN Demo - 2024-11-28 12:29:40"
+      sampleTemplateGlobalId:
+        type: string
+        description: Unique Global RSpace identifier for the created container
+        example: "IT163840"
+      sampleGlobalIds:
+        type: integer
+        description: Global RSpace identifiers for the created samples
+        items:
+          type: string
+        example: [ "SA163841", "SA163842", "SA163843" ]
+
 
   ContainerInfo:
     description: Basic information about Inventory Container.

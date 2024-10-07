@@ -64,6 +64,13 @@ public class API_MVC_TestBase extends MVCTestBase {
         .header("apiKey", apiKey);
   }
 
+  protected MockHttpServletRequestBuilder createBuilderForInventoryGet(
+      API_VERSION version, String apiKey, String suffixUrl, User user, Object... pathVars) {
+    return MockMvcRequestBuilders.get(createInventoryUrl(version, suffixUrl), pathVars)
+        .principal(createPrincipal(user))
+        .header("apiKey", apiKey);
+  }
+
   protected MockHttpServletRequestBuilder createBuilderForAnonymousGet(
       API_VERSION version, String suffixUrl, Object... pathVars) {
     return MockMvcRequestBuilders.get(createUrl(version, suffixUrl), pathVars);
@@ -102,6 +109,13 @@ public class API_MVC_TestBase extends MVCTestBase {
     return MockMvcRequestBuilders.post(createUrl(version, suffixUrl))
         .principal(createPrincipal(user))
         .header("apiKey", apiKey);
+  }
+
+  protected MockHttpServletRequestBuilder createBuilderForInventoryPostWithJSONBody(
+      String apiKey, String suffixUrl, User user, Object toPost) {
+    String body = getStringBody(toPost);
+    return preparePostOrPutRequestBody(
+        post(createInventoryUrl(API_VERSION.ONE, suffixUrl)), body, user, apiKey);
   }
 
   protected MockHttpServletRequestBuilder createBuilderForPostWithJSONBody(
@@ -146,6 +160,10 @@ public class API_MVC_TestBase extends MVCTestBase {
 
   protected String createUrl(API_VERSION version, String suffixUrl) {
     return "/api/v" + version.getVersion() + "/" + suffixUrl;
+  }
+
+  protected String createInventoryUrl(API_VERSION version, String suffixUrl) {
+    return "/api/inventory/v" + version.getVersion() + "/" + suffixUrl;
   }
 
   protected Principal createPrincipal(User user) {
