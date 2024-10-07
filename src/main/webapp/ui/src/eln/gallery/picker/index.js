@@ -78,13 +78,13 @@ const Picker = observer(
     const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
       PREFERENCES.GALLERY_SORT_BY,
       {
-        defaultValue: "name",
+        defaultValue: "modificationDate",
       }
     );
     const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(
       PREFERENCES.GALLERY_SORT_ORDER,
       {
-        defaultValue: "ASC",
+        defaultValue: "DESC",
       }
     );
     const [selectedSection, setSelectedSection] =
