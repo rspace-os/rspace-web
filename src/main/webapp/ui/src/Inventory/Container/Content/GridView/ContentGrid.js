@@ -201,11 +201,7 @@ const LoadedContent = observer(
               );
               setMouseDownPoint(null);
             }
-            container.stopSelection({
-              selectionLimit: search.uiConfig.selectionLimit,
-              onlyAllowSelectingEmptyLocations:
-                search.uiConfig.onlyAllowSelectingEmptyLocations,
-            });
+            container.stopSelection(search);
           }}
           ref={tableRef}
         >
