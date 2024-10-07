@@ -95,7 +95,6 @@ const contextActions = ({
             as={as}
             disabled={disableAllActions}
             closeMenu={closeMenu}
-            menuID={menuID}
           />
         ),
         hidden: hideInPickerAndWhenNotAllCurrent,
