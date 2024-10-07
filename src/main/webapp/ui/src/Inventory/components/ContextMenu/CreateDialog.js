@@ -217,6 +217,9 @@ const LocationPicker: ComponentType<{|
   // is there really no way to do this without a useEffect?
   React.useEffect(() => {
     void search.setSearchView(cTypeToDefaultSearchView(state.container.cType));
+    runInAction(() => {
+      search.alwaysFilterOut = () => true;
+    });
   }, [state.container]);
 
   if (state.container.cType === "LIST") return null;

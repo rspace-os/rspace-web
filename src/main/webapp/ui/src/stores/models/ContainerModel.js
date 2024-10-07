@@ -497,16 +497,16 @@ export default class ContainerModel
     return this.results.filter((c) => c.selected);
   }
 
-  shallowSelected(opts: {| onlyAllowSelectingEmptyLocations: boolean |}): Array<Location> {
+  shallowSelected(search: Search): Array<Location> {
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
-    return locations.filter((l: Location) => l.isShallowSelected(opts));
+    return locations.filter((l: Location) => l.isShallowSelected(search));
   }
 
-  shallowUnselected(opts: {| onlyAllowSelectingEmptyLocations: boolean |}): Array<Location> {
+  shallowUnselected(search: Search): Array<Location> {
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
-    return locations.filter((l: Location) => l.isShallowUnselected(opts));
+    return locations.filter((l: Location) => l.isShallowUnselected(search));
   }
 
   get rows(): Array<{ value: number, label: string | number }> {
@@ -801,16 +801,16 @@ export default class ContainerModel
     }
   }
 
-  stopSelection(opts: {| selectionLimit: number, onlyAllowSelectingEmptyLocations: boolean |}): void {
+  stopSelection(search: SearchInterface): void {
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
     locations
-      .filter((loc) => loc.isShallow({ onlyAllowSelectingEmptyLocations: opts.onlyAllowSelectingEmptyLocations }) && loc.isSelectable({ onlyAllowSelectingEmptyLocations: opts.onlyAllowSelectingEmptyLocations }))
-      .map((loc) => this.onSelect(loc, opts));
+      .filter((loc) => loc.isShallow(search) && loc.isSelectable(search))
+      .map((loc) => this.onSelect(loc, search));
     this.selectionMode = false;
   }
 
-  onSelect(location: Location, opts: {| selectionLimit: number, onlyAllowSelectingEmptyLocations: boolean |}): void {
+  onSelect(location: Location, search: SearchInterface): void {
     if (!this.selectedLocations)
       throw new Error("Locations of container must be known.");
     const selectedLocations = this.selectedLocations;
@@ -818,10 +818,10 @@ export default class ContainerModel
     if (location.selected) {
       location.toggleSelected(false);
     } else {
-      const canSelectOneMore = selectedLocations.length + 1 <= opts.selectionLimit;
-      const canSelectThisLocation = location.isSelectable({ onlyAllowSelectingEmptyLocations: opts.onlyAllowSelectingEmptyLocations });
+      const canSelectOneMore = selectedLocations.length + 1 <= search.uiConfig.selectionLimit;
+      const canSelectThisLocation = location.isSelectable(search);
 
-      if (opts.onlyAllowSelectingEmptyLocations) {
+      if (search.uiConfig.onlyAllowSelectingEmptyLocations) {
         if (canSelectOneMore && canSelectThisLocation) {
           location.toggleSelected(true);
         }
