@@ -353,10 +353,12 @@ See [Flow suppression](#flow-supression).
 > interface in some way (for example, add another item to a list, or show or
 > hide a UI feature). — [MDN](https://developer.mozilla.org/en-US/docs/Learn/Forms/Your_first_form#what_are_web_forms)
 
-2. In terms of the RSpace ELN, a form is a template for a document. The user
-   can define ahead of a time a format to record their experimental data and
-   easily create new documents of the same structure, ensuring that
-   experimental results are recorded consistently.
+2. In terms of the RSpace ELN, a form is a starting point for a document with
+   a defined structure. The user can define ahead of a time a format to record
+   their experimental data and easily create new documents of the same
+   structure, ensuring that experimental results are recorded consistently.
+   Not to be confused with [templates](#template) which are designed for
+   creating new documents with pre-defined content.
 
 ### Functional Reactive Programming
 
@@ -796,6 +798,17 @@ experiment. [Aliquot](#aliquot) is an alias for subsample in many settings.
 
 See [disjoint object union](#disjoint-object-union).
 
+### Template
+
+1. An Inventory record that defines how new samples of a particular type should be
+   created, in particular what fields the sample should have for recording
+   sample-specific metadata. This ensures that all members of a lab are recording
+   sample data consistently.
+
+2. A type of ELN document with pre-populated fields from which other documents
+   may quickly be created. Not to be confused with [forms](#form) which are just
+   the structure of common document types.
+
 ### Toast
 
 A temporarily displayed alert that signals the successful or unsuccessful
@@ -812,13 +825,6 @@ consistent. To do this, a type variable is defined which is used to refer to
 the type of the elements of the list; the type check then makes sure that this
 type is used consistently. The [Flow documentation on Generics][https://flow.org/en/docs/types/generics/)
 describes how to define such data structures that have a type variable.
-
-### Template
-
-An Inventory record that defines how new samples of a particular type should be
-created, in particular what fields the sample should have for recording
-sample-specific metadata. This ensures that all members of a lab are recording
-sample data consistently.
 
 ## U
 
