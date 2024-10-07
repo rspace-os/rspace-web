@@ -7,7 +7,6 @@ import UnitStore from "../../UnitStore";
 import SearchStore from "../../SearchStore";
 import PeopleStore from "../../PeopleStore";
 import MoveStore from "../../MoveStore";
-import CreateStore from "../../CreateStore";
 import TrackingStore from "../../TrackingStore";
 import ImportStore from "../../ImportStore";
 import ImageStore from "../../ImageStore";
@@ -35,9 +34,6 @@ export const makeMockRootStore = (mockData: ?MockStores): StoreContainer => ({
   // $FlowExpectedError[incompatible-cast] Pretend its a MoveStore
   // $FlowExpectedError[incompatible-use] Pretend its a MoveStore
   moveStore: (mockData.moveStore: MoveStore) ?? {},
-  // $FlowExpectedError[incompatible-cast] Pretend its a CreateStore
-  // $FlowExpectedError[incompatible-use] Pretend its a CreateStore
-  createStore: (mockData.createStore: CreateStore) ?? {},
   // $FlowExpectedError[incompatible-cast] Pretend its a TrackingStore
   // $FlowExpectedError[incompatible-use] Pretend its a TrackingStore
   trackingStore: (mockData.trackingStore: TrackingStore) ?? {},
