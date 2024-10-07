@@ -11,6 +11,7 @@ import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.JOVE_APP_NAME;
@@ -54,7 +55,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @RunWith(ConditionalTestRunner.class)
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 26;
+  final int TOTAL_INTEGRATIONS = 27;
   Principal mockPrincipal = null;
 
   @Before
@@ -110,6 +111,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(ZENODO_APP_NAME, new String[] {});
     expectedOptions.put(OMERO_APP_NAME, new String[] {});
     expectedOptions.put(DIGITAL_COMMONS_DATA_APP_NAME, new String[] {});
+    expectedOptions.put(FIELDMARK_APP_NAME, new String[] {});
 
     for (var info : infos.values()) {
       String integrationName = (String) info.get("name");

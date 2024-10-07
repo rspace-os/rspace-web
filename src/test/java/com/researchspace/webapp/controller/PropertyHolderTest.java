@@ -51,4 +51,11 @@ public class PropertyHolderTest {
 
     assertEquals("https://baseurl.com", holder.getDigitalCommonsDataBaseUrl());
   }
+
+  @Test
+  public void testGetFieldmakrProperties() {
+    holder.setFieldmarkBaseUrl("https://base.fieldmark.com");
+
+    assertEquals("https://base.fieldmark.com", holder.getFieldmarkBaseUrl());
+  }
 }
