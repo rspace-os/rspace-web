@@ -611,7 +611,8 @@ export function useGalleryListing({
               loadMore:
                 page + 1 < totalPages
                   ? Optional.present(loadMore)
-                  : Optional.empty(),
+                  : // if this is Optional.empty then we get an error when tapping "Load More"
+                    Optional.empty(),
             }
           : { tag: "empty", reason: emptyReason() },
     },

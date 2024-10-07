@@ -32,6 +32,7 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
 import { Optional } from "../../../util/optional";
+import Button from "@mui/material/Button";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -127,8 +128,9 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       loading: () => null,
       error: (error) => <>{error}</>,
       success: (listing) =>
-        listing.tag === "list"
-          ? listing.list.map((f, i) =>
+        listing.tag === "list" ? (
+          <>
+            {listing.list.map((f, i) =>
               filter(f) ? (
                 <CustomTreeItem
                   file={f}
@@ -144,8 +146,12 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   orderBy={orderBy}
                 />
               ) : null
-            )
-          : null,
+            )}
+            {listing.loadMore
+              .map((loadMore) => <Button onClick={loadMore}>Load More</Button>)
+              .orElse(null)}
+          </>
+        ) : null,
     });
   }
 );
@@ -477,6 +483,9 @@ const TreeView = ({
           />
         ) : null
       )}
+      {listing.loadMore
+        .map((loadMore) => <Button onClick={loadMore}>Load More</Button>)
+        .orElse(null)}
     </SimpleTreeView>
   );
 };
