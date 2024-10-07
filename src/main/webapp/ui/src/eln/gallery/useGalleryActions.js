@@ -233,8 +233,50 @@ export function useGalleryActions(): {|
           destination.key === "root"
             ? `/${section}/`
             : destination.folder.pathAsString();
-        await moveFiles(files).toDestinationWithPath(section, path);
-        // what's the id of the root folder?
+        try {
+          const formData = new FormData();
+          formData.append("target", "0");
+          for (const file of files)
+            formData.append("filesId[]", idToString(file.id));
+          formData.append("mediaType", section);
+          const data = await galleryApi.post<FormData, mixed>(
+            "moveGalleriesElements",
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+          addAlert(
+            Parsers.objectPath(["data", "exceptionMessage"], data)
+              .flatMap(Parsers.isString)
+              .map((exceptionMessage) =>
+                mkAlert({
+                  title: `Failed to move item.`,
+                  message: exceptionMessage,
+                  variant: "error",
+                })
+              )
+              .orElse(
+                mkAlert({
+                  message: `Successfully moved item${
+                    files.size > 0 ? "s" : ""
+                  }.`,
+                  variant: "success",
+                })
+              )
+          );
+        } catch (e) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: `Failed to move item${files.size > 0 ? "s" : ""}.`,
+              message: e.message,
+            })
+          );
+          throw e;
+        }
       },
       toDestinationWithFolder: async (
         section: string,

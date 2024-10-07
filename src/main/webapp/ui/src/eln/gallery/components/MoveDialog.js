@@ -61,9 +61,11 @@ const MoveDialog = observer(
     function computeValidation() {
       const files = selection.asSet();
       if (files.isEmpty)
-        return Result.Error([new Error("No folder is selected.")]);
+        return Result.Error<null>([new Error("No folder is selected.")]);
       if (files.size > 1)
-        return Result.Error([new Error("More than one folder is selected.")]);
+        return Result.Error<null>([
+          new Error("More than one folder is selected."),
+        ]);
       return Result.Ok(null);
     }
 
