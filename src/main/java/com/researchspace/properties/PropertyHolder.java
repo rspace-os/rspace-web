@@ -272,8 +272,15 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${analytics.enabled}")
   private String analyticsEnabled;
 
+  @Value("${analytics.server.type}")
+  private String analyticsServerType;
+
   public String getAnalyticsEnabled() {
     return analyticsEnabled;
+  }
+
+  public String getAnalyticsServerType(){
+    return analyticsServerType;
   }
 
   public void setAnalyticsEnabled(String analyticsEnabled) {

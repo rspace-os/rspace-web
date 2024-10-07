@@ -67,6 +67,7 @@
     "@fortawesome/free-regular-svg-icons": "=6.1.1",
     "@fortawesome/free-solid-svg-icons": "=6.1.1",
     "@fortawesome/react-fontawesome": "=0.2.0",
+    "@intercom/messenger-js-sdk": "^0.0.14",
     "@mui/icons-material": "=5.15.10",
     "@mui/lab": "^5.0.0-alpha.170",
     "@mui/material": "=5.15.14",

@@ -20,7 +20,26 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping("/session")
 public class SessionController extends BaseController {
+
   private @Autowired TimezoneAdjuster timeZone;
+
+  @Value("${analytics.server.type}")
+  private String analyticsServerType;
+
+  @Value("${analytics.server.host}")
+  private String analyticsServerHost;
+
+  @Value("${analytics.server.key}")
+  private String analyticsServerKey;
+
+  @Value("${livechat.enabled}")
+  private String livechatEnabled;
+
+  @Value("${livechat.server.key}")
+  private String livechatKey;
+
+  @Value("${livechat.server.host}")
+  private String livechatHost;
 
   @PostMapping("/ajax/timezone")
   @ResponseBody
@@ -48,12 +67,6 @@ public class SessionController extends BaseController {
     return new AjaxReturnObject<>(response, null);
   }
 
-  @Value("${posthog.client.id}")
-  private String posthogClientId;
-
-  @Value("${posthog.server.url}")
-  private String posthogServerUrl;
-
   @GetMapping("/ajax/analyticsProperties")
   @ResponseBody
   public Map<String, Object> getAnalyticsProps(HttpSession session) {
@@ -67,12 +80,27 @@ public class SessionController extends BaseController {
 
     if (analyticsEnabled) {
       result.put("analyticsUserId", session.getAttribute("analyticsUserId"));
-      result.put(
-          "analyticsServerKey", session.getServletContext().getAttribute("analyticsServerKey"));
+      result.put("analyticsServerKey", analyticsServerKey);
+      result.put("analyticsServerType", analyticsServerType);
+      result.put("analyticsServerHost", analyticsServerHost);
     }
-    if (StringUtils.isNotEmpty(posthogServerUrl) && StringUtils.isNotEmpty(posthogClientId)) {
-      result.put("posthogClientId", posthogClientId);
-      result.put("posthogServerUrl", posthogServerUrl);
+    return result;
+  }
+
+  @GetMapping("/ajax/livechatProperties")
+  @ResponseBody
+  public Map<String, Object> getLivechatProps() {
+
+    User user = userManager.getAuthenticatedUserInSession();
+    Map<String, Object> result = new HashMap<>();
+
+    Boolean isLiveChatEnabled = Boolean.valueOf(livechatEnabled);
+    result.put("livechatEnabled", isLiveChatEnabled);
+    result.put("currentUser", user.getUsername());
+
+    if (isLiveChatEnabled) {
+      result.put("livechatServerHost", livechatHost);
+      result.put("livechatServerKey", livechatKey);
     }
     return result;
   }

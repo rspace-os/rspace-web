@@ -160,26 +160,23 @@ export default function Analytics({ children }: AnalyticsArgs): Node {
       const {
         data: {
           analyticsEnabled,
+          analyticsServerType,
+          analyticsServerHost,
           analyticsServerKey,
           analyticsUserId,
-          posthogClientId,
-          posthogServerUrl,
         },
       } = await api.current.get<{|
         analyticsEnabled: boolean,
+        analyticsServerType: "posthog" | "segment",
+        analyticsServerHost: string,
         analyticsServerKey: string,
         analyticsUserId: string,
-        posthogClientId?: string,
-        posthogServerUrl?: string,
       |}>("/analyticsProperties");
       if (analyticsEnabled) {
-        if (
-          typeof posthogClientId !== "undefined" &&
-          typeof posthogServerUrl !== "undefined"
-        ) {
+        if (analyticsServerType === "posthog") {
           setPostHogEnable(true);
-          posthog.init(posthogClientId, {
-            api_host: posthogServerUrl,
+          posthog.init(analyticsServerKey, {
+            api_host: analyticsServerHost,
           });
           runInAction(() => {
             analyticsContext.isAvailable = true;
