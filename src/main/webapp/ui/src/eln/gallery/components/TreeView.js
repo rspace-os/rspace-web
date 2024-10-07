@@ -31,6 +31,7 @@ import { useFileImportDropZone } from "../../../components/useFileImportDragAndD
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
+import { Optional } from "../../../util/optional";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -334,7 +335,7 @@ type TreeViewArgs = {|
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
-        loadMore: () => Promise<void>,
+        loadMore: Optional<() => Promise<void>>,
       |},
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: GallerySection,

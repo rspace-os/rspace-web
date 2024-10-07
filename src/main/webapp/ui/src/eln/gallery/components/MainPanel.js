@@ -88,6 +88,7 @@ import {
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import { Optional } from "../../../util/optional";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -439,7 +440,7 @@ const GridView = observer(
       | {|
           tag: "list",
           list: $ReadOnlyArray<GalleryFile>,
-          loadMore: () => Promise<void>,
+          loadMore: Optional<() => Promise<void>>,
         |},
   |}) => {
     const dndContext = useDndContext();
@@ -693,7 +694,9 @@ const GridView = observer(
             />
           ))}
         </Grid>
-        <Button onClick={listing.loadMore}>Load More</Button>
+        {listing.loadMore
+          .map((loadMore) => <Button onClick={loadMore}>Load More</Button>)
+          .orElse(null)}
       </>
     );
   }
@@ -1050,7 +1053,11 @@ type GalleryMainPanelArgs = {|
   clearPath: () => void,
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
+    | {|
+        tag: "list",
+        list: $ReadOnlyArray<GalleryFile>,
+        loadMore: Optional<() => Promise<void>>,
+      |}
   >,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,

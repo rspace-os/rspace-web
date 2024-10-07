@@ -13,6 +13,7 @@ import {
 } from "../../util/files";
 import { useGallerySelection } from "./useGallerySelection";
 import { observable, runInAction } from "mobx";
+import { Optional } from "../../util/optional";
 
 export opaque type Id = number;
 export function idToString(id: Id): string {
@@ -256,7 +257,7 @@ export function useGalleryListing({
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
-        loadMore: () => Promise<void>,
+        loadMore: Optional<() => Promise<void>>,
       |}
   >,
   refreshListing: () => void,
@@ -269,6 +270,8 @@ export function useGalleryListing({
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
+  const [page, setPage] = React.useState<number>(0);
+  const [totalPages, setTotalPages] = React.useState<number>(0);
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
     defaultPath ?? []
   );
@@ -574,6 +577,7 @@ export function useGalleryListing({
       });
 
       setGalleryListing([...galleryListing, ...parseGalleryFiles(data)]);
+      setPage(page + 1);
     } catch (e) {
       console.error(e);
     }
@@ -601,7 +605,14 @@ export function useGalleryListing({
       tag: "success",
       value:
         galleryListing.length > 0
-          ? { tag: "list", list: galleryListing, loadMore }
+          ? {
+              tag: "list",
+              list: galleryListing,
+              loadMore:
+                page + 1 < totalPages
+                  ? Optional.present(loadMore)
+                  : Optional.empty(),
+            }
           : { tag: "empty", reason: emptyReason() },
     },
     path,
