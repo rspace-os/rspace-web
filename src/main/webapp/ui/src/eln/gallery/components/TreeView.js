@@ -331,7 +331,11 @@ const CustomTreeItem = observer(
 
 type TreeViewArgs = {|
   listing: | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
+    | {|
+        tag: "list",
+        list: $ReadOnlyArray<GalleryFile>,
+        loadMore: () => Promise<void>,
+      |},
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: GallerySection,
   refreshListing: () => void,

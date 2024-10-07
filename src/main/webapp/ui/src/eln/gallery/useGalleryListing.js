@@ -253,7 +253,11 @@ export function useGalleryListing({
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
+    | {|
+        tag: "list",
+        list: $ReadOnlyArray<GalleryFile>,
+        loadMore: () => Promise<void>,
+      |}
   >,
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
@@ -540,11 +544,38 @@ export function useGalleryListing({
           .map((x) => x) // possibly a bug in Flow
       );
 
+      setTotalPages(
+        Parsers.objectPath(["data", "items", "totalPages"], data)
+          .flatMap(Parsers.isNumber)
+          .orElse(1)
+      );
+
       setGalleryListing(parseGalleryFiles(data));
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMore(): Promise<void> {
+    setPage(page + 1);
+    try {
+      const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
+        params: new URLSearchParams({
+          mediatype: section,
+          currentFolderId:
+            path.length > 0 ? `${path[path.length - 1].id}` : "0",
+          name: searchTerm,
+          pageNumber: `${page + 1}`,
+          sortOrder,
+          orderBy,
+        }),
+      });
+
+      setGalleryListing([...galleryListing, ...parseGalleryFiles(data)]);
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -570,7 +601,7 @@ export function useGalleryListing({
       tag: "success",
       value:
         galleryListing.length > 0
-          ? { tag: "list", list: galleryListing }
+          ? { tag: "list", list: galleryListing, loadMore }
           : { tag: "empty", reason: emptyReason() },
     },
     path,
