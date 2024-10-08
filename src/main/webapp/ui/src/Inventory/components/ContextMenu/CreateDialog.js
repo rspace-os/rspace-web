@@ -354,6 +354,8 @@ function CreateDialog({
                 optional={
                   selectedCreateOptionIndex !== null && (
                     <Button
+                      variant="outlined"
+                      sx={{ mt: 0.5 }}
                       onClick={() => {
                         setSelectedCreateOptionIndex(null);
                         setActiveStep(0);
