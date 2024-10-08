@@ -220,6 +220,8 @@ export default class SampleModel
   templateVersion: ?number;
   createOptionsParametersState: {|
     split: {| key: "split",  copies: number |},
+    newSubsamplesCount: {| key: "newSubsamplesCount", count: number |},
+    newSubsamplesQuantity: {| key: "newSubsamplesQuantity", quantity: number, quantityLabel: string |},
     name: {| key: "name", value: string |},
     fields: {|
       key: "fields",
@@ -335,7 +337,9 @@ export default class SampleModel
               selected: false
             }))
           ],
-        }
+        },
+      newSubsamplesCount: { key: "newSubsamplesCount", count: 1 },
+      newSubsamplesQuantity: { key: "newSubsamplesQuantity", quantity: 1, quantityLabel: this.quantityUnitLabel },
       };
   }
 
