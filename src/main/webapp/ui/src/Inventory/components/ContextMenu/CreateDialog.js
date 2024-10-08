@@ -263,6 +263,77 @@ const LocationPicker: ComponentType<{|
   );
 });
 
+const NewSubsampleCount: ComponentType<{|
+  id: string,
+  state: { count: number },
+|}> = observer(({ id, state }): Node => {
+  return (
+    <Box>
+      <FormControl>
+        <NumberField
+          id={id}
+          name="count"
+          autoFocus
+          value={state.count}
+          onChange={({ target }) => {
+            runInAction(() => {
+              state.count = parseInt(target.value, 10);
+            });
+          }}
+          variant="outlined"
+          size="small"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">Count</InputAdornment>
+            ),
+          }}
+          inputProps={{
+            min: 1,
+            max: 100,
+            step: 1,
+          }}
+        />
+      </FormControl>
+    </Box>
+  );
+});
+
+const NewSubsampleQuantity: ComponentType<{|
+  id: string,
+  state: { quantity: number, quantityLabel: string },
+|}> = observer(({ id, state }): Node => {
+  return (
+    <Box>
+      <FormControl>
+        <NumberField
+          id={id}
+          name="quantity"
+          autoFocus
+          value={state.quantity}
+          onChange={({ target }) => {
+            runInAction(() => {
+              state.quantity = parseInt(target.value, 10);
+            });
+          }}
+          variant="outlined"
+          size="small"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                {state.quantityLabel}
+              </InputAdornment>
+            ),
+          }}
+          inputProps={{
+            min: 0,
+            step: 0.001,
+          }}
+        />
+      </FormControl>
+    </Box>
+  );
+});
+
 const ParameterField = observer(
   ({
     label,
@@ -326,8 +397,12 @@ const ParameterField = observer(
                   {state.key === "fields" && (
                     <Fields id={fieldId} state={state} />
                   )}
-                  {/* new subsamples count field */}
-                  {/* new subsamples quantity */}
+                  {state.key === "newSubsamplesCount" && (
+                    <NewSubsampleCount id={fieldId} state={state} />
+                  )}
+                  {state.key === "newSubsamplesQuantity" && (
+                    <NewSubsampleQuantity id={fieldId} state={state} />
+                  )}
                 </Grid>
                 <Grid item>
                   <Stack spacing={1} direction="row">

@@ -91,7 +91,11 @@ export type CreateOptionParameter = {|
         |}>,
       |}
     | {| key: "newSubsamplesCount", count: number |}
-    | {| key: "newSubsamplesQuantity", quantity: number |},
+    | {|
+        key: "newSubsamplesQuantity",
+        quantity: number,
+        quantityLabel: string,
+      |},
 
   /**
    * The user is prevented from moving to the next step if the current step is
