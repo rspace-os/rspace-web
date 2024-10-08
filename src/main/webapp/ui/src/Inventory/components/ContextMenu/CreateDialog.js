@@ -326,6 +326,8 @@ const ParameterField = observer(
                   {state.key === "fields" && (
                     <Fields id={fieldId} state={state} />
                   )}
+                  {/* new subsamples count field */}
+                  {/* new subsamples quantity */}
                 </Grid>
                 <Grid item>
                   <Stack spacing={1} direction="row">
