@@ -89,6 +89,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { Optional } from "../../../util/optional";
+import LoadMoreButton from "./LoadMoreButton";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -695,7 +696,11 @@ const GridView = observer(
           ))}
         </Grid>
         {listing.loadMore
-          .map((loadMore) => <Button onClick={loadMore}>Load More</Button>)
+          .map((loadMore) => (
+            <Box sx={{ mt: 1 }}>
+              <LoadMoreButton onClick={loadMore} />
+            </Box>
+          ))
           .orElse(null)}
       </>
     );

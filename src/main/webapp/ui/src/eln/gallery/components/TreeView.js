@@ -33,6 +33,7 @@ import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
 import { Optional } from "../../../util/optional";
 import Button from "@mui/material/Button";
+import LoadMoreButton from "./LoadMoreButton";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -148,7 +149,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
               ) : null
             )}
             {listing.loadMore
-              .map((loadMore) => <Button onClick={loadMore}>Load More</Button>)
+              .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
               .orElse(null)}
           </>
         ) : null,
@@ -484,7 +485,7 @@ const TreeView = ({
         ) : null
       )}
       {listing.loadMore
-        .map((loadMore) => <Button onClick={loadMore}>Load More</Button>)
+        .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
         .orElse(null)}
     </SimpleTreeView>
   );
