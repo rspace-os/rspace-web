@@ -179,6 +179,11 @@ describe("CreateDialog", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /create/i }));
     });
+    /*
+     * Writing a test for picking locations in grid and visual containers is
+     * near enough impossible due to the need for extensive mocking and
+     * accessibility issues
+     */
     test("Cannot store containers", () => {
       const container = makeMockContainer({
         canStoreContainers: false,
@@ -235,6 +240,11 @@ describe("CreateDialog", () => {
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
       fireEvent.click(screen.getByRole("button", { name: /create/i }));
     });
+    /*
+     * Writing a test for picking locations in grid and visual containers is
+     * near enough impossible due to the need for extensive mocking and
+     * accessibility issues
+     */
     test("Cannot store samples", () => {
       const container = makeMockContainer({
         canStoreContainers: true,
