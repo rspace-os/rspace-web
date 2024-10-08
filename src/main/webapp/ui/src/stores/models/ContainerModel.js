@@ -1123,6 +1123,10 @@ export default class ContainerModel
         }],
         disabled: !this.canStoreContainers,
         onSubmit: async () => {
+          if (this.cType === "LIST") await getRootStore().searchStore.createNewContainer({
+            parentContainers: [this],
+            parentLocation: {},
+          })
           if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
           const location = this.selectedLocations[0];
           await getRootStore().searchStore.createNewContainer({
@@ -1145,6 +1149,10 @@ export default class ContainerModel
         }],
         disabled: !this.canStoreSamples,
         onSubmit: async () => {
+          if (this.cType === "LIST") await getRootStore().searchStore.createNewSample({
+            parentContainers: [this],
+            parentLocation: {},
+          })
           if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
           const location = this.selectedLocations[0];
           await getRootStore().searchStore.createNewSample({
