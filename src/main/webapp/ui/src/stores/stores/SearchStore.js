@@ -38,10 +38,15 @@ export type SavedSearch = {|
 
 export type NewInContainerParams = {
   parentContainers: Array<ContainerModel>,
-  parentLocation: {
-    coordX: number,
-    coordY: number,
-  },
+  /*
+   * An empty object is used to denote that a location does not need to be
+   * specified when the parent container is a list container
+   */
+  parentLocation: | {|
+        coordX: number,
+        coordY: number,
+      |}
+    | {||},
 };
 
 const SAVED_SEARCHES: ?Array<SavedSearch> = JSON.parse(

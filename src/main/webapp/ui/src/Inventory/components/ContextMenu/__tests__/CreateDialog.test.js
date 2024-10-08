@@ -176,6 +176,8 @@ describe("CreateDialog", () => {
         screen.getByText("No location selection required for list containers.")
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
+
+      fireEvent.click(screen.getByRole("button", { name: /create/i }));
     });
     test("Cannot store containers", () => {
       const container = makeMockContainer({
@@ -231,6 +233,7 @@ describe("CreateDialog", () => {
         screen.getByText("No location selection required for list containers.")
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
+      fireEvent.click(screen.getByRole("button", { name: /create/i }));
     });
     test("Cannot store samples", () => {
       const container = makeMockContainer({
