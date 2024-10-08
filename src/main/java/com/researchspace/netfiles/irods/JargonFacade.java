@@ -17,6 +17,7 @@ import org.irods.jargon.core.pub.io.IRODSFile;
 import org.irods.jargon.core.pub.io.IRODSFileFactory;
 import org.irods.jargon.core.pub.io.IRODSFileInputStream;
 import org.irods.jargon.core.query.CollectionAndDataObjectListingEntry;
+import org.irods.jargon.core.query.MetaDataAndDomainData;
 
 /**
  * This facade provides a simplified interface with the Jargon(iRODS) library needed for the {@link
@@ -93,6 +94,13 @@ public class JargonFacade {
       throws JargonException {
     DataObjectAO ao = accessObjectFactory.getDataObjectAO(irodsAccount);
     return ao.findById(Math.toIntExact(id));
+  }
+
+  public List<MetaDataAndDomainData> getIRODSDataObjectAVUsByPath(
+      String path, IRODSAccount irodsAccount) throws JargonException {
+    path = getAbsoluteIrodsPath(path, irodsAccount);
+    DataObjectAO ao = accessObjectFactory.getDataObjectAO(irodsAccount);
+    return ao.findMetadataValuesForDataObject(path);
   }
 
   public Collection getIRODSCollectionByPath(String path, IRODSAccount irodsAccount)
