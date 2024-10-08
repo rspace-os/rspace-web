@@ -220,6 +220,8 @@ export default class SampleModel
   templateVersion: ?number;
   createOptionsParametersState: {|
     split: {| key: "split",  copies: number |},
+    newSubsamplesCount: {| key: "newSubsamplesCount", count: number |},
+    newSubsamplesQuantity: {| key: "newSubsamplesQuantity", quantity: number |},
     name: {| key: "name", value: string |},
     fields: {|
       key: "fields",
@@ -335,7 +337,9 @@ export default class SampleModel
               selected: false
             }))
           ],
-        }
+        },
+      newSubsamplesCount: { key: "newSubsamplesCount", count: 1 },
+      newSubsamplesQuantity: { key: "newSubsamplesQuantity", quantity: 1 },
       };
   }
 
@@ -882,7 +886,7 @@ export default class SampleModel
   get createOptions(): $ReadOnlyArray<CreateOption> {
     return [
       {
-        label: "Subsample, by splitting the current subsample",
+        label: "Subsamples, by splitting the current subsample",
         explanation: this.subSamples.length === 1 ? "New subsamples will be created by dividing the quantity of the existing subsample equally amongst them." : "Cannot split a sample with more than one subsample; try opening this create dialog from a particular subsample.",
         disabled: this.subSamples.length > 1,
         parameters: [{
@@ -900,6 +904,28 @@ export default class SampleModel
             this.createOptionsParametersState.split.copies,
             this.subSamples[0],
           );
+        },
+      },
+      {
+        label: "Subsamples, by creating new quantity",
+        explanation: "New subsamples will be created by declaring new quantity",
+        parameters: [{
+          label: "Number of new subsamples",
+          explanation: "Minimum 1, maximum 100",
+          state: this.createOptionsParametersState.newSubsamplesCount,
+          validState: () => true,
+        }, {
+          label: "Quantity per subsample",
+          explanation: "The amount of new quantity of this sample allocated to each new subsample. The quantity of this sample will be increased by this amount multiplied by the new number of new subsamples.",
+          state: this.createOptionsParametersState.newSubsamplesQuantity,
+          validState: () => true,
+        }],
+        onReset: () => {
+          this.createOptionsParametersState.newSubsamplesCount.count = 1;
+          this.createOptionsParametersState.newSubsamplesQuantity.quantity = 1;
+        },
+        onSubmit: () => {
+          return Promise.resolve();
         },
       },
       {

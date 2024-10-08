@@ -89,7 +89,9 @@ export type CreateOptionParameter = {|
           hasContent: boolean,
           selected: boolean,
         |}>,
-      |},
+      |}
+    | {| key: "newSubsamplesCount", count: number |}
+    | {| key: "newSubsamplesQuantity", quantity: number |},
 
   /**
    * The user is prevented from moving to the next step if the current step is
