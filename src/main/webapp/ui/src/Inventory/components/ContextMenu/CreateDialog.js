@@ -319,10 +319,6 @@ function CreateDialog({
     React.useState<null | number>(null);
   const [activeStep, setActiveStep] = React.useState<number>(0);
 
-  React.useEffect(() => {
-    if (activeStep === 0) setSelectedCreateOptionIndex(null);
-  }, [activeStep]);
-
   const handleSubmit = () => {
     void (async () => {
       if (!selectedCreateOptionIndex)
@@ -434,7 +430,10 @@ function CreateDialog({
                     state={state}
                     validState={validState}
                     activeStep={activeStep}
-                    setActiveStep={setActiveStep}
+                    setActiveStep={(s) => {
+                      setActiveStep(s);
+                      if (s === 0) setSelectedCreateOptionIndex(null);
+                    }}
                     showNextButton={
                       index <
                       (
