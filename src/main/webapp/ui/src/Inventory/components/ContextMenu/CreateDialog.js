@@ -258,7 +258,12 @@ const ParameterField = observer(
     return (
       <Step {...rest}>
         <StepLabel>
-          <label htmlFor={fieldId}>{label}</label>
+          <label
+            htmlFor={fieldId}
+            style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}
+          >
+            {label}
+          </label>
           <Typography variant="body2">{explanation}</Typography>
         </StepLabel>
         <StepContent>
@@ -359,10 +364,12 @@ function CreateDialog({
                   )
                 }
               >
-                {selectedCreateOptionIndex
-                  ? existingRecord.createOptions[selectedCreateOptionIndex]
-                      .label
-                  : "Create What?"}
+                <span style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}>
+                  {selectedCreateOptionIndex
+                    ? existingRecord.createOptions[selectedCreateOptionIndex]
+                        .label
+                    : "Create What?"}
+                </span>
               </StepLabel>
               <StepContent>
                 <FormControl>
@@ -390,7 +397,8 @@ function CreateDialog({
                               sx={{
                                 // align radio button with option heading
                                 mb: "auto",
-                                pt: 0.5,
+                                p: 0.5,
+                                mr: 0.5,
                               }}
                             />
                           }
