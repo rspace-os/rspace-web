@@ -385,7 +385,15 @@ function CreateDialog({
                         <FormControlLabel
                           key={index}
                           value={index}
-                          control={<Radio />}
+                          control={
+                            <Radio
+                              sx={{
+                                // align radio button with option heading
+                                mb: "auto",
+                                pt: 0.5,
+                              }}
+                            />
+                          }
                           disabled={disabled}
                           label={
                             <>
