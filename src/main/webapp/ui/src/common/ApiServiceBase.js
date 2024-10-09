@@ -42,9 +42,21 @@ class ApiServiceBase {
     if (
       error.config &&
       error.response &&
-      401 === error.response.status &&
+      error.response.status === 401 &&
       !(error.config.data && !error.config.data.__isRetryRequest)
     ) {
+      if (
+        /\/userform\/ajax\/inventoryOauthToken/.test(error.request.responseURL)
+      ) {
+        /*
+         * Prevent the infinite loop caused by a 401 on /inventoryOauthToken
+         * resulting in another call to authenticate(), which calls
+         * /inventoryOauthToken, by redirecting the user to the login screen as
+         * they are probably logged out.
+         */
+        window.location = "/login";
+        return;
+      }
       return getRootStore()
         .authStore.authenticate()
         .then(() => {
@@ -60,9 +72,8 @@ class ApiServiceBase {
             return this.api(error.config);
           }
         });
-    } else {
-      return Promise.reject(error);
     }
+    return Promise.reject(error);
   }
 
   setAuthorizationHeader() {
