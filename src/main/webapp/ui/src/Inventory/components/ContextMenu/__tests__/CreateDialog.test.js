@@ -94,13 +94,13 @@ describe("CreateDialog", () => {
 
       expect(
         screen.getByRole("radio", {
-          name: /Subsample, by splitting the current subsample/,
+          name: /Subsamples, by splitting the existing subsample/,
         })
       ).toBeEnabled();
 
       fireEvent.click(
         screen.getByRole("radio", {
-          name: /Subsample, by splitting the current subsample/,
+          name: /Subsamples, by splitting the existing subsample/,
         })
       );
 
@@ -123,7 +123,7 @@ describe("CreateDialog", () => {
 
       fireEvent.click(
         screen.getByRole("radio", {
-          name: /Subsample, by splitting the current subsample/,
+          name: /Subsamples, by splitting the existing subsample/,
         })
       );
 
@@ -150,7 +150,7 @@ describe("CreateDialog", () => {
 
       expect(
         screen.getByRole("radio", {
-          name: /Subsample, by splitting the current subsample/,
+          name: /Subsamples, by splitting the existing subsample/,
         })
       ).toBeDisabled();
     });
