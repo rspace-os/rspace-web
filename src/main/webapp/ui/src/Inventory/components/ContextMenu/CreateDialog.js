@@ -344,13 +344,21 @@ function CreateDialog({
   const [selectedCreateOptionIndex, setSelectedCreateOptionIndex] =
     React.useState<null | number>(null);
   const [activeStep, setActiveStep] = React.useState<number>(0);
+  const [submitting, setSubmitting] = React.useState(false);
 
   const handleSubmit = () => {
     void (async () => {
       if (!selectedCreateOptionIndex)
         throw new Error("Cannot submit until an option is chosen");
-      await existingRecord.createOptions[selectedCreateOptionIndex].onSubmit();
-      onClose();
+      setSubmitting(true);
+      try {
+        await existingRecord.createOptions[
+          selectedCreateOptionIndex
+        ].onSubmit();
+        onClose();
+      } finally {
+        setSubmitting(false);
+      }
     })();
   };
 
@@ -480,6 +488,7 @@ function CreateDialog({
             label="Create"
             onClick={handleSubmit}
             disabled={
+              submitting ||
               !selectedCreateOptionIndex ||
               activeStep <
                 (
@@ -491,7 +500,7 @@ function CreateDialog({
                   .parameters ?? []
               ).some(({ validState }) => !validState())
             }
-            loading={false}
+            loading={submitting}
           />
         </DialogActions>
       </form>
