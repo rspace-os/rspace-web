@@ -569,6 +569,12 @@ person class that has properties for name and age.
    using [ES2015 import statements](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import)
    and export to expose only some code constructs to the rest of the codebase.
 
+### Mount
+
+When a component is added to the component tree and so react renders the
+component and adds nodes to the DOM, as opposed to further renderings where the
+existing nodes are just mutated.
+
 ### MUI
 
 The team that develops and maintains [Material UI](#material-ui), amongst other
@@ -835,6 +841,11 @@ UTF-8 in use for data in transmission and UTF-16 for JavaScript strings.
 Unicode supports essentially every language with a written form and as such is
 quite complex so that it can capture all of the complexities and idiosyncracies
 of human language.
+
+### Unmount
+
+When a react component is removed from the component tree and react removes the
+DOM nodes.
 
 ## V
 
