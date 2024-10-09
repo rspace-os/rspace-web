@@ -59,6 +59,7 @@ import {
 } from "../../../stores/definitions/Container";
 import { menuIDs } from "../../../util/menuIDs";
 import Search from "../../../stores/models/Search";
+import Collapse from "@mui/material/Collapse";
 
 /*
  * The create dialog allows users to create new Inventory records with respect
@@ -282,72 +283,82 @@ const ParameterField = observer(
   |}) => {
     const fieldId = React.useId();
     return (
-      <Step {...rest}>
-        <StepLabel>
-          <label
-            htmlFor={fieldId}
-            style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}
-          >
-            {label}
-          </label>
-          <Typography variant="body2">{explanation}</Typography>
-        </StepLabel>
-        <StepContent>
-          <Grid
-            container
-            /*
-             * This nowrap is a result of a very odd bug. Without it, across
-             * various browsers and devices, the "Back" button below would be
-             * rendered on top of the grid when LocationPicker is rendered for
-             * grid containers. For some reason, the `div.MuiGrid-item` wrapping
-             * the table would have a fixed height despite there not being such
-             * styles applied. The `div.MuiTableContainer-root` within would have
-             * the expected height but the next `div.MuiGrid-item` containing the
-             * "Back" button would be rendered over it. No idea, very strange,
-             * but this does fix it.
-             */
-            flexWrap="nowrap"
-            direction="column"
-            spacing={1}
-          >
-            <Grid item>
-              {state.key === "split" && (
-                <SplitCount id={fieldId} state={state} />
-              )}
-              {state.key === "name" && <Name id={fieldId} state={state} />}
-              {state.key === "location" && (
-                <LocationPicker id={fieldId} state={state} />
-              )}
-              {state.key === "fields" && <Fields id={fieldId} state={state} />}
-            </Grid>
-            <Grid item>
-              <Stack spacing={1} direction="row">
-                {showNextButton && (
-                  <Button
-                    color="primary"
-                    variant="contained"
-                    disableElevation
-                    onClick={() => {
-                      setActiveStep(activeStep + 1);
-                    }}
-                    disabled={!validState()}
-                  >
-                    Next
-                  </Button>
-                )}
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setActiveStep(activeStep - 1);
-                  }}
-                >
-                  Back
-                </Button>
-              </Stack>
-            </Grid>
-          </Grid>
-        </StepContent>
-      </Step>
+      <>
+        {/*
+         * We animate in as soon as the paramter is mounted but unfortunately
+         * there's no easy way to animate out when unmounted.
+         */}
+        <Collapse in appear>
+          <Step {...rest}>
+            <StepLabel>
+              <label
+                htmlFor={fieldId}
+                style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}
+              >
+                {label}
+              </label>
+              <Typography variant="body2">{explanation}</Typography>
+            </StepLabel>
+            <StepContent>
+              <Grid
+                container
+                /*
+                 * This nowrap is a result of a very odd bug. Without it, across
+                 * various browsers and devices, the "Back" button below would be
+                 * rendered on top of the grid when LocationPicker is rendered for
+                 * grid containers. For some reason, the `div.MuiGrid-item` wrapping
+                 * the table would have a fixed height despite there not being such
+                 * styles applied. The `div.MuiTableContainer-root` within would have
+                 * the expected height but the next `div.MuiGrid-item` containing the
+                 * "Back" button would be rendered over it. No idea, very strange,
+                 * but this does fix it.
+                 */
+                flexWrap="nowrap"
+                direction="column"
+                spacing={1}
+              >
+                <Grid item>
+                  {state.key === "split" && (
+                    <SplitCount id={fieldId} state={state} />
+                  )}
+                  {state.key === "name" && <Name id={fieldId} state={state} />}
+                  {state.key === "location" && (
+                    <LocationPicker id={fieldId} state={state} />
+                  )}
+                  {state.key === "fields" && (
+                    <Fields id={fieldId} state={state} />
+                  )}
+                </Grid>
+                <Grid item>
+                  <Stack spacing={1} direction="row">
+                    {showNextButton && (
+                      <Button
+                        color="primary"
+                        variant="contained"
+                        disableElevation
+                        onClick={() => {
+                          setActiveStep(activeStep + 1);
+                        }}
+                        disabled={!validState()}
+                      >
+                        Next
+                      </Button>
+                    )}
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setActiveStep(activeStep - 1);
+                      }}
+                    >
+                      Back
+                    </Button>
+                  </Stack>
+                </Grid>
+              </Grid>
+            </StepContent>
+          </Step>
+        </Collapse>
+      </>
     );
   }
 );
@@ -419,7 +430,26 @@ function CreateDialog({
                     : "Create What?"}
                 </span>
               </StepLabel>
-              <StepContent>
+              {/*
+               * We disable the animation here when going back to the first
+               * step otherwise the UI is pretty janky when the user taps the
+               * "Back" or "Change" buttons: the parameter steps below
+               * immediately unmount but the slower animation of this step
+               * showing caused the content to jump up and down. By disabling
+               * the animation we avoid this jankiness.
+               *
+               * Various attempts were made to animate the parameters step
+               * closing but due to the way that the Stepper component works
+               * this was difficult. Keeping them in the DOM and hiding/showing
+               * them with Collapse instead of using conditional rendering
+               * resulted in the step numbers incrementing across the various
+               * options so that if the first option had two parameters the
+               * parameter for the second option would be displayed with a
+               * number 3.
+               */}
+              <StepContent
+                transitionDuration={selectedCreateOptionIndex ? 300 : 0}
+              >
                 <FormControl>
                   <FormLabel sx={{ fontWeight: 400 }}>
                     What kind of record would you like to create from{" "}
