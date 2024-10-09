@@ -225,7 +225,7 @@ public class GalleryController extends BaseController {
     // It's a trick to show parent folder on the
     Folder galleryItemParent = recordManager.getGallerySubFolderForUser(mediatype, user);
 
-    boolean isOnRoot = (galleryItemParent.getId() == currentFolderId) || (currentFolderId == 0);
+    boolean isOnRoot = isOnGalleryRoot(currentFolderId, galleryItemParent);
 
     GalleryData galleryData = new GalleryData(isOnRoot);
     if (isOnRoot) {
@@ -605,7 +605,7 @@ public class GalleryController extends BaseController {
    *
    * @param filesId
    * @param mediatype
-   * @param path
+   * @param targetFolderId
    * @return <code>true</code> on success
    */
   @PostMapping("/ajax/moveGalleriesElements")
@@ -613,13 +613,19 @@ public class GalleryController extends BaseController {
   public AjaxReturnObject<Boolean> moveGalleriesElements(
       @RequestParam("filesId[]") Long[] filesId,
       @RequestParam("mediaType") String mediatype,
-      @RequestParam("target") String path) {
+      @RequestParam("target") Long targetFolderId) {
 
     if (filesId.length > MAX_IDS_TO_PROCESS) {
       return generateTooManyItemsFailureMsg();
     }
     User user = userManager.getAuthenticatedUserInSession();
-    Folder target = folderManager.getMediaFolderFromURLPath(path, user);
+
+    Folder galleryItemParent = recordManager.getGallerySubFolderForUser(mediatype, user);
+
+    if (isOnGalleryRoot(targetFolderId, galleryItemParent)) {
+      targetFolderId = galleryItemParent.getId();
+    }
+    Folder target = folderManager.getFolder(targetFolderId, user);
 
     for (Long id : filesId) {
       if (!target.getId().equals(id)) {
@@ -627,6 +633,11 @@ public class GalleryController extends BaseController {
       }
     }
     return new AjaxReturnObject<Boolean>(true, null);
+  }
+
+  private static boolean isOnGalleryRoot(long currentFolderId, Folder galleryItemParent) {
+    // As per convention UI/Backend if the currentFolder 0 then is root folder
+    return galleryItemParent.getId().equals(currentFolderId) || (currentFolderId == 0L);
   }
 
   private AjaxReturnObject<Boolean> generateTooManyItemsFailureMsg() {

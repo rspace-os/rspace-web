@@ -96,6 +96,7 @@ function copyGalleries() {
 }
 
 function initMoveGalleriesDialog() {
+	let selectedDestinationId = null;
 	$(document).ready(function () {
 		RS.switchToBootstrapButton();
 		$('#moveGalleries').dialog({
@@ -112,6 +113,7 @@ function initMoveGalleriesDialog() {
 					multiFolder: false
 				}, function (file, type) {
 					if ("directory" == type) {
+						selectedDestinationId = file.slice(0,-1);
 						var currDir$ = $('#galleries-folder-tree').find("a[rel='" + file + "']");
 						// get parents, then reverse order
 						var parents$ = $(currDir$.parents("li").get().reverse());
@@ -139,7 +141,7 @@ function initMoveGalleriesDialog() {
 					var data = {
 						filesId: filesId,
 						mediaType: $('#mediaTypeSelected').val(),
-						target: $("#galleries-folder-move-path").text()
+						target: selectedDestinationId,
 					};
 
 					RS.blockPage("Moving...");

@@ -297,13 +297,17 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     Folder audioFolder =
         recordMgr.getGallerySubFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, subject);
     final String AUDIOSUBFOLDER_NAME = "subFolderOfAudio";
-    createSubFolder(audioFolder, AUDIOSUBFOLDER_NAME, subject);
+    Folder newSubfolder = createSubFolder(audioFolder, AUDIOSUBFOLDER_NAME, subject);
 
     AjaxReturnObject<Boolean> rc =
         galleryController.moveGalleriesElements(
-            new Long[] {audioFileId},
-            MediaUtils.AUDIO_MEDIA_FLDER_NAME,
-            "/" + MediaUtils.AUDIO_MEDIA_FLDER_NAME + "/" + AUDIOSUBFOLDER_NAME);
+            new Long[] {audioFileId}, MediaUtils.AUDIO_MEDIA_FLDER_NAME, newSubfolder.getId());
+    assertTrue(rc.getData());
+
+    // move the audio to the Root folder
+    rc =
+        galleryController.moveGalleriesElements(
+            new Long[] {audioFileId}, MediaUtils.AUDIO_MEDIA_FLDER_NAME, 0L);
     assertTrue(rc.getData());
 
     /* one more check, let's ensure the controller doesn't allow selectedMediaId and fieldId
