@@ -293,7 +293,23 @@ const ParameterField = observer(
           <Typography variant="body2">{explanation}</Typography>
         </StepLabel>
         <StepContent>
-          <Grid container direction="column" spacing={1}>
+          <Grid
+            container
+            /*
+             * This nowrap is a result of a very odd bug. Without it, across
+             * various browsers and devices, the "Back" button below would be
+             * rendered on top of the grid when LocationPicker is rendered for
+             * grid containers. For some reason, the `div.MuiGrid-item` wrapping
+             * the table would have a fixed height despite there not being such
+             * styles applied. The `div.MuiTableContainer-root` within would have
+             * the expected height but the next `div.MuiGrid-item` containing the
+             * "Back" button would be rendered over it. No idea, very strange,
+             * but this does fix it.
+             */
+            flexWrap="nowrap"
+            direction="column"
+            spacing={1}
+          >
             <Grid item>
               {state.key === "split" && (
                 <SplitCount id={fieldId} state={state} />
