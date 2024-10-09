@@ -216,8 +216,8 @@ const LocationPicker: ComponentType<{|
   id: string,
   state: { container: Container },
 |}> = observer(({ id: _id, state }): Node => {
-  const [search] = React.useState<Search>(
-    new Search({
+  const search = React.useMemo(() => {
+    const s = new Search({
       fetcherParams: {
         parentGlobalId: state.container.globalId,
       },
@@ -229,16 +229,24 @@ const LocationPicker: ComponentType<{|
         onlyAllowSelectingEmptyLocations: true,
       },
       factory: new AlwaysNewFactory(),
-    })
-  );
-
-  // is there really no way to do this without a useEffect?
-  React.useEffect(() => {
-    void search.setSearchView(cTypeToDefaultSearchView(state.container.cType));
-    runInAction(() => {
-      search.alwaysFilterOut = () => true;
     });
-  }, [state.container]);
+    void s.setSearchView(cTypeToDefaultSearchView(state.container.cType));
+    runInAction(() => {
+      s.alwaysFilterOut = () => true;
+    });
+    return s;
+    /*
+     * You might think that this useMemo should run whenever `state.container`
+     * changes, after all `state` is an observable value and when it changes so
+     * should the UI. However, the only way to change `state.container` is to
+     * close the create dialog and open it again with a different container
+     * selected. Not only will this unmount the whole dialog including this form
+     * field but even just changing the selected option (i.e. choosing to create
+     * a sample inside the container instead of another container) will result in
+     * an unmounting and remounting.
+     */
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (state.container.cType === "LIST") return null;
   return (
