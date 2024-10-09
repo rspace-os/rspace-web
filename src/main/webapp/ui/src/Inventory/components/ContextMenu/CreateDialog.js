@@ -60,6 +60,24 @@ import {
 import { menuIDs } from "../../../util/menuIDs";
 import Search from "../../../stores/models/Search";
 
+/*
+ * The create dialog allows users to create new Inventory records with respect
+ * to an existing one; from splitting subsamples into multiple smaller
+ * subsamples, to creating new containers directly inside of existing
+ * containers, to defining new templates to easily re-create a complex sample.
+ *
+ * The module contains both the dialog itself as well as a series of smaller
+ * components that whilst they are not exported their use is configured
+ * externally: each model class that implements InventoryRecord defines a set
+ * of options that are presented by this dialog; each option defines a series
+ * of steps, each with a reference to a form component that is defined here.
+ * These configured options provide explanative text, validation logic, and
+ * ultimately provide the code that is run when the dialog is submitted --
+ * wherein either a network call is made to create the new object or the user
+ * is redirect to a part of the UI where they can further customised the new
+ * record.
+ */
+
 type CreateDialogProps = {|
   existingRecord: CreateFrom & InventoryRecord,
   open: boolean,
