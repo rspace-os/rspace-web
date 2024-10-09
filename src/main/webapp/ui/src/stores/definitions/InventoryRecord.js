@@ -104,9 +104,9 @@ export type CreateOptionParameter = {|
  * The create dialog (../../Inventory/components/ContextMenu/CreateDialog.js)
  * presents the user with a series of contextual options for creating new
  * records with respect to the current record e.g. splitting a subsample.
- * This type defines a single such option, instructing the create dialog only
- * all the necessary parameters to collect from the user and how to proceed
- * when the dialog is submitted.
+ * This type defines a single such option, instructing the create dialog what
+ * information to collect from the user and how to proceed when the dialog is
+ * submitted.
  */
 export type CreateOption = {|
   /**
