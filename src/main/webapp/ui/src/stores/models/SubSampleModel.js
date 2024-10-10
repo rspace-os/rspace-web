@@ -463,6 +463,9 @@ export default class SubSampleModel
           state: this.createOptionsParametersState.split,
           validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
         }],
+        onReset: () => {
+          this.createOptionsParametersState.split.copies = 2;
+        },
         onSubmit: () => {
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,

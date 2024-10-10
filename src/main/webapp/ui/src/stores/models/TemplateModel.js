@@ -614,6 +614,9 @@ export default class TemplateModel extends SampleModel implements Template {
         label: "Sample",
         explanation:
           "Tapping create will open the new sample form, with this template pre-populated.",
+        onReset: () => {
+          // nothing to reset
+        },
         onSubmit: async () => {
           const newSample: SampleModel =
             await getRootStore().searchStore.createNewSample();
