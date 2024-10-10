@@ -17,7 +17,6 @@ import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import StepContent from "@mui/material/StepContent";
 import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import RadioGroup from "@mui/material/RadioGroup";
 import Radio from "@mui/material/Radio";
@@ -372,6 +371,7 @@ function CreateDialog({
     React.useState<null | number>(null);
   const [activeStep, setActiveStep] = React.useState<number>(0);
   const [submitting, setSubmitting] = React.useState(false);
+  const firstStepId = React.useId();
 
   const handleSubmit = () => {
     void (async () => {
@@ -391,19 +391,19 @@ function CreateDialog({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        Create new items
-        <HelpLinkIcon
-          link={docLinks.createDialog}
-          title="Info on creating new items."
-        />
-      </DialogTitle>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleSubmit();
         }}
       >
+        <DialogTitle>
+          Create new items from <strong>{existingRecord.name}</strong>
+          <HelpLinkIcon
+            link={docLinks.createDialog}
+            title="Info on creating new items."
+          />
+        </DialogTitle>
         <DialogContent>
           <Stepper activeStep={activeStep} orientation="vertical">
             <Step>
@@ -423,12 +423,12 @@ function CreateDialog({
                   )
                 }
               >
-                <span style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}>
-                  {selectedCreateOptionIndex
-                    ? existingRecord.createOptions[selectedCreateOptionIndex]
-                        .label
-                    : "Create What?"}
-                </span>
+                <label
+                  htmlFor={firstStepId}
+                  style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}
+                >
+                  Type of item to create
+                </label>
               </StepLabel>
               {/*
                * We disable the animation here when going back to the first
@@ -451,11 +451,8 @@ function CreateDialog({
                 transitionDuration={selectedCreateOptionIndex ? 300 : 0}
               >
                 <FormControl>
-                  <FormLabel sx={{ fontWeight: 400 }}>
-                    What kind of record would you like to create from{" "}
-                    <strong>{existingRecord.name}</strong>?
-                  </FormLabel>
                   <RadioGroup
+                    id={firstStepId}
                     value={selectedCreateOptionIndex}
                     onChange={(_event, index) => {
                       setSelectedCreateOptionIndex(index);
