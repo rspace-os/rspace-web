@@ -116,6 +116,20 @@ export type UiConfig = {|
    * to not show a button to remove the parentGlobalId parameter.
    */
   hideContentsOfChip: boolean,
+
+  /**
+   * The maximum number of locations of containers that the user is allowed to
+   * select.
+   */
+  selectionLimit: number,
+
+  /**
+   * Typically, we only allow the selection of container locations that have
+   * contents, but in some circumstances we want to allow the user to select
+   * the locations themselves, such as when moving items into those empty
+   * locations -- that is when this flag should be true.
+   */
+  onlyAllowSelectingEmptyLocations: boolean,
 |};
 
 export type PermalinkType =

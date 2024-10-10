@@ -16,6 +16,8 @@ import {
 } from "../../../stores/definitions/Container";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import * as DragAndDrop from "./DragAndDrop";
+import SearchContext from "../../../stores/contexts/Search";
+import { type Search } from "../../../stores/definitions/Search";
 
 const border = (color: string, isImportant: boolean = false) =>
   `3px solid ${color}${isImportant ? " !important" : ""}`;
@@ -85,13 +87,14 @@ type Class = mixed;
 
 const selectionStyle = (
   location: Location,
-  classes: { [string]: string }
+  classes: { [string]: string },
+  search: Search
 ): Class => {
-  if (location.isShallowUnselected) {
+  if (location.isShallowUnselected(search)) {
     return classes.shallowUnselected;
   }
-  if (location.isShallowSelected) {
-    return location.isSelectable
+  if (location.isShallowSelected(search)) {
+    return location.isSelectable(search)
       ? classes.shallowSelected
       : classes.shallowSelectedUnselectable;
   }
@@ -106,10 +109,14 @@ const wrapperClasses = (
   classes: { [string]: string },
   globalClasses: { greyOut: string, ... }
 ): string => {
-  const ret = new Set([classes.wrapper, selectionStyle(location, classes)]);
+  const { search } = React.useContext(SearchContext);
+  const ret = new Set([
+    classes.wrapper,
+    selectionStyle(location, classes, search),
+  ]);
   if (location.parentContainer.cType === "GRID") ret.add(classes.gridCell);
   if (location.parentContainer.cType === "IMAGE") ret.add(classes.imageCell);
-  if (location.isGreyedOut) ret.add(globalClasses.greyOut);
+  if (location.isGreyedOut(search)) ret.add(globalClasses.greyOut);
   return [...ret].join(" ");
 };
 

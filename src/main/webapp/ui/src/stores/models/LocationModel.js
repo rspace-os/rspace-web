@@ -7,6 +7,7 @@ import SubSampleModel from "./SubSampleModel";
 import { action, computed, observable, makeObservable } from "mobx";
 import { type Location, type Container } from "../definitions/Container";
 import { type SubSample } from "../definitions/SubSample";
+import { type Search } from "../definitions/Search";
 
 export type LocationAttrs = {|
   id: ?number,
@@ -45,14 +46,9 @@ export default class LocationModel implements Location {
       selectOnlyThis: action,
       setPosition: action,
       setDimensions: action,
-      isGreyedOut: computed,
-      isShallow: computed,
-      isShallowSelected: computed,
-      isShallowUnselected: computed,
       siblings: computed,
       isSiblingSelected: computed,
       allSiblingsSelected: computed,
-      isSelectable: computed,
       name: computed,
       paramsForBackend: computed,
       hasContent: computed,
@@ -66,27 +62,27 @@ export default class LocationModel implements Location {
    * e.g. based on ownership, the locations that don't apply get greyed-out to
    * highlight those that do apply
    */
-  get isGreyedOut(): boolean {
-    if (getRootStore().createStore.creationContext) return this.hasContent;
-    const search = this.parentContainer.contentSearch;
-    if (search.fetcher.query || search.fetcher.resultType !== "ALL" || search.fetcher.owner) {
+  isGreyedOut(search: Search): boolean {
+    const parentSearch = this.parentContainer.contentSearch;
+    if (
+      search === parentSearch &&
+      (parentSearch.fetcher.query ||
+        parentSearch.fetcher.resultType !== "ALL" ||
+        parentSearch.fetcher.owner)
+    ) {
       // search inside container is being performed
-      if(!this.content) return true;
+      if (!this.content) return true;
       const content = this.content;
-      return (
-        !search.isInResults(content) ||
-        search.alwaysFilterOut(content)
-      );
-    } else {
-      // search inside container is not being performed
-      return (
-        this.content instanceof Result && search.alwaysFilterOut(this.content)
-      );
+      return !search.isInResults(content) || search.alwaysFilterOut(content);
     }
+    // search inside container is not being performed i.e. move or create dialogs
+    return (
+      this.content instanceof Result && search.alwaysFilterOut(this.content)
+    );
   }
 
-  get isShallow(): boolean {
-    if (!getRootStore().moveStore.isMoving) {
+  isShallow(search: Search): boolean {
+    if (!search.uiConfig.onlyAllowSelectingEmptyLocations) {
       /*
        * Outside of the move dialog, allow empty locations to be selected.
        * This way, you can clear a selection of empty locations (typically
@@ -96,14 +92,14 @@ export default class LocationModel implements Location {
        */
       if (!this.content && !this.selected) return false;
     }
-    if (this.isGreyedOut) return false;
+    if (this.isGreyedOut(search)) return false;
 
     const cont = this.parentContainer;
     if (!cont.selectionMode || !cont.selectionStart || !cont.selectionEnd) {
       return false;
     }
 
-    let topLeftX = Math.min(cont.selectionStart.x, cont.selectionEnd.x),
+    const topLeftX = Math.min(cont.selectionStart.x, cont.selectionEnd.x),
       topLeftY = Math.min(cont.selectionStart.y, cont.selectionEnd.y),
       bottomRightX = Math.max(cont.selectionStart.x, cont.selectionEnd.x),
       bottomRightY = Math.max(cont.selectionStart.y, cont.selectionEnd.y);
@@ -116,12 +112,12 @@ export default class LocationModel implements Location {
     );
   }
 
-  get isShallowSelected(): boolean {
-    return this.isShallow && !this.selected;
+  isShallowSelected(search: Search): boolean {
+    return this.isShallow(search) && !this.selected;
   }
 
-  get isShallowUnselected(): boolean {
-    return this.isShallow && this.selected;
+  isShallowUnselected(search: Search): boolean {
+    return this.isShallow(search) && this.selected;
   }
 
   get siblings(): Array<Location> {
@@ -159,14 +155,10 @@ export default class LocationModel implements Location {
     return this.siblings.every((loc) => loc.selected);
   }
 
-  get isSelectable(): boolean {
-    if (getRootStore().moveStore.isMoving)
-      return (
-        !this.hasContent ||
-        // $FlowExpectedError[incompatible-call] this.hasContent ensures this.content instanceof Result
-        getRootStore().moveStore.isRecordMoving(this.content)
-      );
-    return !this.isGreyedOut;
+  isSelectable(search: Search): boolean {
+    if (search.uiConfig.onlyAllowSelectingEmptyLocations)
+      return !this.hasContent;
+    return !this.isGreyedOut(search);
   }
 
   get name(): ?string {
@@ -197,9 +189,8 @@ export default class LocationModel implements Location {
           "Impossible state: sample of content's subsample should always have a valid colour within the parent container"
         );
       return uniqueColor;
-    } else {
-      return "white";
     }
+    return "white";
   }
 
   setAttributes(params: LocationAttrs) {
