@@ -13,6 +13,9 @@ jest.mock("../../../stores/RootStore", () => () => ({
   uiStore: {
     setVisiblePanel: () => {},
   },
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
 }));
 
 describe("method: setSelected", () => {

@@ -11,7 +11,11 @@ import { sampleAttrs } from "./mocking";
 import { subsampleAttrs } from "../SubSampleModel/mocking";
 
 jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
-jest.mock("../../../stores/RootStore", () => {}); // break import cycle
+jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+}));
 
 describe("action: populateFromJson", () => {
   describe("When called, it should", () => {

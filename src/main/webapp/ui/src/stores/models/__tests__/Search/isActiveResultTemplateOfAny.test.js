@@ -15,6 +15,9 @@ jest.mock("../../../stores/RootStore", () => () => ({
       globalId: "IT1",
     },
   },
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
 }));
 
 describe("isActiveResultTemplateOfAny", () => {

@@ -7,7 +7,11 @@ import "@testing-library/jest-dom";
 import { makeMockSample } from "./mocking";
 
 jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
+jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+}));
 
 describe("permalinkURL", () => {
   test("When the sample has not yet been saved, the permalinkURL should be null.", () => {
