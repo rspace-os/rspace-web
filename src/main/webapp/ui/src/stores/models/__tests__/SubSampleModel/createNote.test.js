@@ -21,6 +21,9 @@ jest.mock("../../../stores/RootStore", () => () => ({
     setDirty: () => {},
     unsetDirty: () => {},
   },
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
 }));
 jest.mock("../../../../common/InvApiService", () => ({
   post: jest.fn(() => ({ data: { notes: [] } })),
