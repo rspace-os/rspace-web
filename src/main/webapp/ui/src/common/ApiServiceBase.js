@@ -23,9 +23,9 @@ export type _LINK = {|
 
 const toast = mkAlert({
   variant: "warning",
-  title: "Could not authenticate with API",
+  title: "Could not authenticate via API",
   message:
-    "Some functionality will not be available until an authenticated session can be established. Please try logging-in again in another window or else contact support.",
+    "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
   isInfinite: true,
 });
 
