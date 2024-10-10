@@ -18,6 +18,7 @@ import Dropbox from "./integrations/Dropbox";
 import Dryad from "./integrations/Dryad";
 import Egnyte from "./integrations/Egnyte";
 import Evernote from "./integrations/Evernote";
+import Fieldmark from "./integrations/Fieldmark";
 import Figshare from "./integrations/Figshare";
 import GitHub from "./integrations/GitHub";
 import GoogleDrive from "./integrations/GoogleDrive";
@@ -169,6 +170,16 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
     (newState: IntegrationStates["EVERNOTE"]) => {
       void runInAction(async () => {
         integrationStates.EVERNOTE = await update("EVERNOTE", newState);
+      });
+    },
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [update]
+  );
+
+  const fieldmarkUpdate = React.useCallback(
+    (newState: IntegrationStates["FIELDMARK"]) => {
+      void runInAction(async () => {
+        integrationStates.FIELDMARK = await update("FIELDMARK", newState);
       });
     },
     //eslint-disable-next-line react-hooks/exhaustive-deps
@@ -392,6 +403,12 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
         <Evernote
           integrationState={integrationStates.EVERNOTE}
           update={evernoteUpdate}
+        />
+      )}
+      {integrationStates.FIELDMARK.mode === mode && (
+        <Fieldmark
+          integrationState={integrationStates.FIELDMARK}
+          update={fieldmarkUpdate}
         />
       )}
       {integrationStates.FIGSHARE.mode === mode && (
