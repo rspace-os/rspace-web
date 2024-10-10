@@ -883,7 +883,7 @@ export default class SampleModel
     return [
       {
         label: "Subsample, by splitting the current subsample",
-        explanation: this.subSamples.length === 1 ? "New subsamples will be created by diving the quantity of the existing subsample equally amongst them." : "Cannot split a sample with more than one subsample; try opening this create dialog from a particular subsample.",
+        explanation: this.subSamples.length === 1 ? "New subsamples will be created by dividing the quantity of the existing subsample equally amongst them." : "Cannot split a sample with more than one subsample; try opening this create dialog from a particular subsample.",
         disabled: this.subSamples.length > 1,
         parameters: [{
           label: "Number of new subsamples",
