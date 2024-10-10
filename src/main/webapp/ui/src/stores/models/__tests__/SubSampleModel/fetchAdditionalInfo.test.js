@@ -20,6 +20,9 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
   trackingStore: {
     trackEvent: () => {},
   },
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
 }));
 
 describe("fetchAdditionalInfo", () => {

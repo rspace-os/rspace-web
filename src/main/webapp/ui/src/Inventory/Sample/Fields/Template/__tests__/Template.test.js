@@ -35,6 +35,9 @@ jest.mock("../../../../../stores/stores/RootStore", () => () => ({
     addAlert: () => {},
     setVisiblePanel: () => {},
   },
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
   peopleStore: {
     currentUser: {
       id: 1,
