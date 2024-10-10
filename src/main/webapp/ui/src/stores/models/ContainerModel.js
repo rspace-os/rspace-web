@@ -1122,6 +1122,9 @@ export default class ContainerModel
           validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
         }],
         disabled: !this.canStoreContainers,
+        onReset: () => {
+          // nothing to reset
+        },
         onSubmit: async () => {
           if (this.cType === "LIST") await getRootStore().searchStore.createNewContainer({
             parentContainers: [this],
@@ -1148,6 +1151,9 @@ export default class ContainerModel
           validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
         }],
         disabled: !this.canStoreSamples,
+        onReset: ( ) => {
+          // nothing to reset
+        },
         onSubmit: async () => {
           if (this.cType === "LIST") await getRootStore().searchStore.createNewSample({
             parentContainers: [this],

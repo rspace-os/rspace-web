@@ -130,6 +130,21 @@ export type CreateOption = {|
   explanation: string,
 
   /**
+   * Each option in the create dialog can have a series of steps that require
+   * that the user provide some parameters to the creation of the new
+   * record(s). This might be the new record's name, the number of new records
+   * to be created, or anything else that the user must specify.
+   */
+  parameters?: $ReadOnlyArray<CreateOptionParameter>,
+
+  /**
+   * When called, the paramters MUST be put back into their initial values.
+   * This is called when the create dialog is closed so that when the user
+   * opens the dialog again the state is returned to an initial state.
+   */
+  onReset: () => void,
+
+  /**
    * When the create dialog is submitted, this function will be invoked. It
    * COULD make a network to create the new record. It COULD redirect the user
    * to another part of the UI to collect more information. Whatever it does it
@@ -137,14 +152,6 @@ export type CreateOption = {|
    * clear how much work remains before the new record will be finalised.
    */
   onSubmit: () => Promise<void>,
-
-  /**
-   * Each option in the create dialog can have a series of steps that require
-   * that the user provide some parameters to the creation of the new
-   * record(s). This might be the new record's name, the number of new records
-   * to be created, or anything else that the user must specify.
-   */
-  parameters?: $ReadOnlyArray<CreateOptionParameter>,
 |};
 
 export interface CreateFrom {

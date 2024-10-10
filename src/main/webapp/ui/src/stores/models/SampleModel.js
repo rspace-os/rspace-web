@@ -891,6 +891,9 @@ export default class SampleModel
           state: this.createOptionsParametersState.split,
           validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
         }],
+        onReset: () => {
+          this.createOptionsParametersState.split.copies = 2;
+        },
         onSubmit: () => {
           if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
           return getRootStore().searchStore.search.splitRecord(
@@ -913,6 +916,25 @@ export default class SampleModel
           state: this.createOptionsParametersState.fields,
           validState: () => true,
         }],
+        onReset: () => {
+          this.createOptionsParametersState.name.value = "";
+          this.createOptionsParametersState.fields.copyFieldContent = [
+              ...this.fields.map(f => ({
+                id: f.id,
+                name: f.name,
+                content: f.renderContentAsString,
+                hasContent: f.hasContent,
+                selected: false
+              })),
+              ...this.extraFields.map(e => ({
+                id: e.id,
+                name: e.name,
+                content: e.content,
+                hasContent: e.hasContent,
+                selected: false
+              }))
+            ];
+        },
         onSubmit: () => {
           return getRootStore().searchStore.search.createTemplateFromSample(
             this.createOptionsParametersState.name.value,
