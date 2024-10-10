@@ -62,6 +62,8 @@ const CreateAction: ComponentType<CreateActionArgs> = forwardRef(
             ref={ref}
           >
             <CreateDialog
+              // the key causes the local state to be cleared when closing
+              key={openCreateDialog ? 1 : 0}
               open={openCreateDialog}
               onClose={onCloseHandler}
               existingRecord={selectedResults[0]}
