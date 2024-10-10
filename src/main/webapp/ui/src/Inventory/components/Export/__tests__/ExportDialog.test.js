@@ -18,7 +18,11 @@ import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore
 
 // break import cycles
 jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
+jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+}));
 
 describe("Export Tests", () => {
   let openDialog = true; // if false, then dialog is null
@@ -82,7 +86,7 @@ describe("Export Tests", () => {
   });
 
   describe("ExportDialog with selected results", () => {
-    it("renders, has radio options (and help text) for samples", () => {
+    test("renders, has radio options (and help text) for samples", () => {
       render(
         <storesContext.Provider
           value={makeMockRootStore({
@@ -109,7 +113,7 @@ describe("Export Tests", () => {
       expect(screen.getByText(defaultSamplesHint)).toBeInTheDocument();
     });
 
-    it("renders, has radio options for exportMode, samples and containers", () => {
+    test("renders, has radio options for exportMode, samples and containers", () => {
       render(
         <storesContext.Provider
           value={makeMockRootStore({

@@ -17,6 +17,17 @@ import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
 
+jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+  searchStore: {
+    search: null,
+    createNewContainer: () => {},
+    createNewSample: () => {},
+  },
+}));
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
