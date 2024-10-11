@@ -92,7 +92,6 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
@@ -851,9 +850,8 @@ public class UserProfileController extends BaseController {
 
   @ResponseBody
   @GetMapping("/ajax/inventoryOauthToken")
-  public AjaxReturnObject<String> getInventoryOauthToken(Principal principal, HttpServletResponse resp) {
+  public AjaxReturnObject<String> getInventoryOauthToken(Principal principal) {
     User user = userManager.getUserByUsername(principal.getName());
-    resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
     Retry retry = Retry.of("jwtTokenGeneration", retryConfigForNewJwtTokenCreation);
     Callable<NewOAuthTokenResponse> updateWithRetry =
