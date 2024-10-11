@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 /** Translates OpenId claims form httpRequest headers into user information */
 @Slf4j
-@Setter(AccessLevel.PACKAGE)
+@Setter(AccessLevel.PROTECTED)
 public class OpenIdRemoteUserPolicy extends AbstractSsoRemoteUserPolicy {
 
   private static final String ADDITIONAL_CLAIMS_SEPARATOR = ".";

@@ -281,11 +281,11 @@ public class ProductionConfig extends BaseConfig {
 
   @Bean
   protected RemoteUserRetrievalPolicy remoteUserRetrievalPolicy() {
-    if ("SAML".equals(deploymentSsoType)) {
+    if ("SAML".equalsIgnoreCase(deploymentSsoType)) {
       return new SAMLRemoteUserPolicy();
-    } else if ("openid".equals(deploymentSsoType)) {
+    } else if ("openid".equalsIgnoreCase(deploymentSsoType)) {
       return new OpenIdRemoteUserPolicy();
-    } else if ("TEST".equals(deploymentSsoType)) {
+    } else if ("TEST".equalsIgnoreCase(deploymentSsoType)) {
       return new MockRemoteUserPolicy();
     } else {
       return new EASERemoteUserPolicy();
