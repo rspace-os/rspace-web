@@ -6,7 +6,7 @@ import React, {
   type Node,
   type ComponentType,
 } from "react";
-import { observer } from "mobx-react-lite";
+import { observer, useLocalObservable } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -24,6 +24,7 @@ import ContainerModel from "../../../../stores/models/ContainerModel";
 import { type Location } from "../../../../stores/definitions/Container";
 import Snackbar from "@mui/material/Snackbar";
 import * as DragAndDrop from "../DragAndDrop";
+import { runInAction } from "mobx";
 
 const useStyles = makeStyles()((theme) => ({
   table: {
@@ -75,6 +76,8 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 function LoadedContent({ container }: {| container: ContainerModel |}) {
+  const columnsUnderHover = useLocalObservable(() => new Set<number>());
+
   /*
    * This coordinate specifies the roving tab-index.
    * When user tabs to the table, initially the first cell has focus.
@@ -298,11 +301,21 @@ function LoadedContent({ container }: {| container: ContainerModel |}) {
                 ref={topLeftCellRef}
                 onMouseDown={preventEventBubbling()}
               ></TableCell>
-              {container.columns.map((column) => (
+              {container.columns.map((column, columnIndex) => (
                 <TableCell
                   key={column.label}
                   align="center"
                   onMouseDown={preventEventBubbling()}
+                  onMouseEnter={() => {
+                    runInAction(() => {
+                      columnsUnderHover.add(columnIndex);
+                    });
+                  }}
+                  onMouseLeave={() => {
+                    runInAction(() => {
+                      columnsUnderHover.delete(columnIndex);
+                    });
+                  }}
                 >
                   {column.label}
                 </TableCell>
@@ -321,12 +334,14 @@ function LoadedContent({ container }: {| container: ContainerModel |}) {
                   {row.label}
                 </TableCell>
                 {container.initializedLocations &&
-                  container.columns.map((col) => (
+                  container.columns.map((col, index) => (
                     <GridCell
                       width={`calc(100% / ${container.columns.length})`}
                       key={`row-${row.value}-col-${col.value}`}
                       location={findLocation(col, row)}
                       parentRef={tableRef}
+                      columnsUnderHover={columnsUnderHover}
+                      columnIndex={index}
                     >
                       <LocationContent
                         location={findLocation(col, row)}
