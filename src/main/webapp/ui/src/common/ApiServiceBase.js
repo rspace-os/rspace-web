@@ -9,6 +9,8 @@ import { when } from "mobx";
 import getRootStore from "../stores/stores/RootStore";
 import JwtService from "./JwtService";
 import { type URL } from "../util/types";
+import { sleep } from "../util/Util";
+import { mkAlert } from "../stores/contexts/Alert";
 
 type JSON =
   | {}
@@ -18,6 +20,14 @@ export type _LINK = {|
   link: URL,
   rel: string,
 |};
+
+const toast = mkAlert({
+  variant: "warning",
+  title: "Could not authenticate via API",
+  message:
+    "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
+  isInfinite: true,
+});
 
 // Axios wrapper for making requests to RSpace APIs
 class ApiServiceBase {
@@ -38,31 +48,41 @@ class ApiServiceBase {
     );
   }
 
-  on401Retry(error: any): mixed {
+  async on401Retry(error: any): mixed {
     if (
       error.config &&
       error.response &&
-      401 === error.response.status &&
+      error.response.status === 401 &&
       !(error.config.data && !error.config.data.__isRetryRequest)
     ) {
-      return getRootStore()
-        .authStore.authenticate()
-        .then(() => {
-          // Axios constructs url as baseURL + url(resource) and leaves the baseURL in config,
-          // which then results in baseURL + baseURL + url(resource) as the url for axios request below.
-          error.config.baseURL = "";
-          error.config.data = { __isRetryRequest: true };
+      if (
+        /\/userform\/ajax\/inventoryOauthToken/.test(error.request.responseURL)
+      ) {
+        /*
+         * Prevent the immediate infinite loop caused by a 401 on
+         * /inventoryOauthToken resulting in another call to authenticate(),
+         * which calls /inventoryOauthToken. We keep trying in case the user
+         * logs-in in another window but only once every 10 seconds so as not
+         * to cause too much overhead on both client and server.
+         */
+        getRootStore().uiStore.removeAlert(toast);
+        getRootStore().uiStore.addAlert(toast);
+        await sleep(10 * 1000);
+      }
+      await getRootStore().authStore.authenticate();
+      getRootStore().uiStore.removeAlert(toast);
+      // Axios constructs url as baseURL + url(resource) and leaves the baseURL in config,
+      // which then results in baseURL + baseURL + url(resource) as the url for axios request below.
+      error.config.baseURL = "";
+      error.config.data = { __isRetryRequest: true };
 
-          error.config.headers.Authorization =
-            "Bearer " + JwtService.getToken();
+      error.config.headers.Authorization = "Bearer " + JwtService.getToken();
 
-          if (getRootStore().authStore.isAuthenticated) {
-            return this.api(error.config);
-          }
-        });
-    } else {
-      return Promise.reject(error);
+      if (getRootStore().authStore.isAuthenticated) {
+        return this.api(error.config);
+      }
     }
+    throw error;
   }
 
   setAuthorizationHeader() {
