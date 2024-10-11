@@ -52,7 +52,7 @@ const calculateLocationGeometry = (
   }
 };
 
-type GridCellArgs = {|
+export type GridCellArgs = {|
   children: Node,
 
   /**
@@ -77,6 +77,7 @@ type GridCellArgs = {|
 
   columnsUnderHover: Set<number>,
   columnIndex: number,
+  hoverEffect: boolean,
 |};
 
 function GridCell({
@@ -86,6 +87,7 @@ function GridCell({
   width,
   columnsUnderHover,
   columnIndex,
+  hoverEffect,
 }: GridCellArgs): Node {
   const cellRef = useRef<?HTMLElement>(null);
 
@@ -130,7 +132,7 @@ function GridCell({
           columnsUnderHover.delete(columnIndex);
         });
       }}
-      hoverEffect={columnsUnderHover.has(columnIndex)}
+      hoverEffect={hoverEffect}
     >
       <DragAndDrop.Dropzone location={location}>
         {children}
