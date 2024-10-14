@@ -37,7 +37,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): Node {
         name="Fieldmark"
         integrationState={integrationState}
         explanatoryText="Available soon."
-        //explanatoryText="Collect structured, geospatial, instrument and multimedia data into notebooks for easy importing into Inventory."
+        //explanatoryText="Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory."
         image={FieldmarktIcon}
         color={COLOR}
         update={(newMode) =>
@@ -46,7 +46,12 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): Node {
         helpLinkText="Fieldmark integration docs"
         website="fieldnote.au/fieldmark"
         docLink="fieldmark"
-        usageText="You can import you notebooks of data into Inventory."
+        usageText={
+          <>
+            You can import your <strong>Fieldmark</strong> notebooks into
+            Inventory
+          </>
+        }
         setupSection={
           <>
             <ol>
@@ -55,7 +60,10 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): Node {
               </li>
               <li>Copy the API Token into the field below, and Save.</li>
               <li>Enable the integration.</li>
-              <li>Use the import button in Inventory to choose a notebook.</li>
+              <li>
+                Use the import button in Inventory, and select Fieldmark to
+                browse notebooks for import.
+              </li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
