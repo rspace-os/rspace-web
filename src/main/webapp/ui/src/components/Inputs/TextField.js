@@ -50,7 +50,7 @@ export default function TextField(props: TextFieldArgs): Node {
         plugins: ["autolink", "lists", "link", "charmap", "autoresize"],
         toolbar:
           "undo redo | blocks | bold italic backcolor link | \
-             bullist numlist outdent indent | removeformat",
+             bullist numlist | removeformat",
         paste_block_drop: true,
       }}
     />
