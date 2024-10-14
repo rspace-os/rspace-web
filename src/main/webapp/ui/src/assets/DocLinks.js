@@ -68,6 +68,7 @@ const docLinks: { [string]: URL } = {
   taggingUsers: mkDocLink("zw6o5uh4qv"),
   irods: mkDocLink("xt21074dln"),
   dcd: mkDocLink("jj6grnzbdl"),
+  ascenscia: mkDocLink("8ftzyor8mi"),
 };
 
 export default docLinks;

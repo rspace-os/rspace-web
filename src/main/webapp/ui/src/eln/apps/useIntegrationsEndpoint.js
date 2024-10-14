@@ -28,7 +28,13 @@ export type OptionsId = string;
  * accurately model the particular credentials it requires.
  */
 export type IntegrationState<Credentials> = {|
-  mode: "UNAVAILABLE" | "DISABLED" | "ENABLED",
+  /**
+   * UNAVAILABLE : When the sysadmin has not allowed the integration.
+   * DISABLED    : Sysadmin has allowed it but the user has not enabled it.
+   * ENABLED     : Sysadmin has allowed it and the user has enabled it.
+   * EXTERNAL    : The app is a third-party integrating with RSpace.
+   */
+  mode: "UNAVAILABLE" | "DISABLED" | "ENABLED" | "EXTERNAL",
   credentials: Credentials,
 |};
 
@@ -52,6 +58,7 @@ export type IntegrationState<Credentials> = {|
  */
 export type IntegrationStates = {|
   ARGOS: IntegrationState<{||}>,
+  ASCENSCIA: IntegrationState<null>,
   BOX: IntegrationState<{|
     BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">,
     "box.api.enabled": Optional<boolean>,
@@ -510,6 +517,10 @@ function decodeIntegrationStates(data: {
 }): IntegrationStates {
   return {
     ARGOS: decodeArgos(data.ARGOS),
+    ASCENSCIA: {
+      mode: "EXTERNAL",
+      credentials: null
+    },
     BOX: decodeBox(data.BOX),
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),

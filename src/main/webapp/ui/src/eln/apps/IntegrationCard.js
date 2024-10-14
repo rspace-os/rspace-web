@@ -507,17 +507,19 @@ function IntegrationCard<Credentials>({
           >
             Close
           </Button>
-          <Button
-            onClick={() => {
-              if (mode === "ENABLED") {
-                update("DISABLED");
-              } else {
-                update("ENABLED");
-              }
-            }}
-          >
-            {mode === "ENABLED" ? "DISABLE" : "ENABLE"}
-          </Button>
+          {integrationState.mode !== "EXTERNAL" && (
+            <Button
+              onClick={() => {
+                if (mode === "ENABLED") {
+                  update("DISABLED");
+                } else {
+                  update("ENABLED");
+                }
+              }}
+            >
+              {mode === "ENABLED" ? "DISABLE" : "ENABLE"}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </ThemeProvider>

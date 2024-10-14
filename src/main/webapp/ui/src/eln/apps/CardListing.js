@@ -8,6 +8,7 @@ import {
 } from "./useIntegrationsEndpoint";
 import Grid from "@mui/material/Grid";
 import Argos from "./integrations/Argos";
+import Ascenscia from "./integrations/Ascenscia";
 import Box from "./integrations/Box";
 import Clustermarket from "./integrations/Clustermarket";
 import Dataverse from "./integrations/Dataverse";
@@ -337,6 +338,7 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
           update={argosUpdate}
         />
       )}
+      {integrationStates.ASCENSCIA.mode === mode && <Ascenscia />}
       {integrationStates.BOX.mode === mode && (
         <Box integrationState={integrationStates.BOX} update={boxUpdate} />
       )}
