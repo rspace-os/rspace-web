@@ -49,8 +49,8 @@ export default function TextField(props: TextFieldArgs): Node {
         menubar: false,
         plugins: ["autolink", "lists", "link", "charmap", "autoresize"],
         toolbar:
-          "undo redo | blocks | bold italic backcolor link | \
-             bullist numlist | removeformat",
+          "undo redo blocks bold italic backcolor link \
+             bullist numlist removeformat",
         paste_block_drop: true,
       }}
     />
