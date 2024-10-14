@@ -14,12 +14,15 @@ import TableContainer from "@mui/material/TableContainer";
 import { type Location } from "../../../../stores/definitions/Container";
 import { styled } from "@mui/material/styles";
 import * as DragAndDrop from "../DragAndDrop";
+import { runInAction } from "mobx";
 
 const StyledCell = styled(
-  React.forwardRef(({ width: _width, ...rest }, ref) => (
-    <TableCell {...rest} ref={ref} />
-  ))
-)(({ theme, width }) => ({
+  React.forwardRef(
+    ({ width: _width, hoverEffect: _hoverEffect, ...rest }, ref) => (
+      <TableCell {...rest} ref={ref} />
+    )
+  )
+)(({ theme, width, hoverEffect }) => ({
   color: "grey",
   borderBottom: "none",
   "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
@@ -30,6 +33,7 @@ const StyledCell = styled(
    */
   padding: "3px !important",
   width,
+  background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",
 }));
 
 const calculateLocationGeometry = (
@@ -48,7 +52,7 @@ const calculateLocationGeometry = (
   }
 };
 
-type GridCellArgs = {|
+export type GridCellArgs = {|
   children: Node,
 
   /**
@@ -70,6 +74,10 @@ type GridCellArgs = {|
    * `calc(100% / ${X})` where `X` is the number cells in the row.
    */
   width: string,
+
+  columnsUnderHover: Set<number>,
+  columnIndex: number,
+  hoverEffect: boolean,
 |};
 
 function GridCell({
@@ -77,6 +85,9 @@ function GridCell({
   children,
   parentRef,
   width,
+  columnsUnderHover,
+  columnIndex,
+  hoverEffect,
 }: GridCellArgs): Node {
   const cellRef = useRef<?HTMLElement>(null);
 
@@ -111,6 +122,17 @@ function GridCell({
       onFocus={() => {
         location.toggleSelected(true);
       }}
+      onMouseEnter={() => {
+        runInAction(() => {
+          columnsUnderHover.add(columnIndex);
+        });
+      }}
+      onMouseLeave={() => {
+        runInAction(() => {
+          columnsUnderHover.delete(columnIndex);
+        });
+      }}
+      hoverEffect={hoverEffect}
     >
       <DragAndDrop.Dropzone location={location}>
         {children}

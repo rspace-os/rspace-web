@@ -6,7 +6,7 @@ import React, {
   type Node,
   type ComponentType,
 } from "react";
-import { observer } from "mobx-react-lite";
+import { observer, useLocalObservable } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -14,7 +14,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import LocationContent from "../LocationContent";
-import GridCell from "./GridCell";
+import GridCell, { type GridCellArgs } from "./GridCell";
 import SearchContext from "../../../../stores/contexts/Search";
 import TableContainer from "@mui/material/TableContainer";
 import Dragger from "../Dragger";
@@ -24,6 +24,36 @@ import ContainerModel from "../../../../stores/models/ContainerModel";
 import { type Location } from "../../../../stores/definitions/Container";
 import Snackbar from "@mui/material/Snackbar";
 import * as DragAndDrop from "../DragAndDrop";
+import { runInAction } from "mobx";
+
+/**
+ * This component is a performance improvement for the columnar hover effect.
+ * If every GridCell were to check whether its columnIndex is in
+ * columnsUnderHover then every GridCell would have to re-render whenever
+ * columnsUnderHover changed. Instead, we only re-render the GridCells whose
+ * columnIndex has either been added or removed from columnsUnderHover since
+ * the last render, reducing the performance characteristics thusly:
+ *
+ * Before:
+ *    timeToRender(GridCell) * numOfRows * numOfColumns
+ *
+ * After:
+ *    (timeToRender(WrappedGridCell) * numOfRows * numOfColumns) +
+ *    (timeToRender(GridCell) * numOfRows * 2)
+ *
+ * Given that GridCell is a lot more costly to render with all of its
+ * drag-and-drop functionality, plus the LocationContent that is passed as its
+ * children, this works out to reduce the amount of time a re-render takes and
+ * results in the hover effect remaining closer to the user's cursor.
+ * We have to use this wrapper component because ContentGrid itself defines
+ * columnsUnderHover and thus doesn't re-render when it is mutated.
+ */
+const WrappedGridCell = observer(
+  (props: $Diff<GridCellArgs, {| hoverEffect: boolean |}>) => {
+    const hoverEffect = props.columnsUnderHover.has(props.columnIndex);
+    return <GridCell {...props} hoverEffect={hoverEffect} />;
+  }
+);
 
 const useStyles = makeStyles()((theme) => ({
   table: {
@@ -75,6 +105,8 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 function LoadedContent({ container }: {| container: ContainerModel |}) {
+  const columnsUnderHover = useLocalObservable(() => new Set<number>());
+
   /*
    * This coordinate specifies the roving tab-index.
    * When user tabs to the table, initially the first cell has focus.
@@ -298,11 +330,21 @@ function LoadedContent({ container }: {| container: ContainerModel |}) {
                 ref={topLeftCellRef}
                 onMouseDown={preventEventBubbling()}
               ></TableCell>
-              {container.columns.map((column) => (
+              {container.columns.map((column, columnIndex) => (
                 <TableCell
                   key={column.label}
                   align="center"
                   onMouseDown={preventEventBubbling()}
+                  onMouseEnter={() => {
+                    runInAction(() => {
+                      columnsUnderHover.add(columnIndex);
+                    });
+                  }}
+                  onMouseLeave={() => {
+                    runInAction(() => {
+                      columnsUnderHover.delete(columnIndex);
+                    });
+                  }}
                 >
                   {column.label}
                 </TableCell>
@@ -321,12 +363,14 @@ function LoadedContent({ container }: {| container: ContainerModel |}) {
                   {row.label}
                 </TableCell>
                 {container.initializedLocations &&
-                  container.columns.map((col) => (
-                    <GridCell
+                  container.columns.map((col, index) => (
+                    <WrappedGridCell
                       width={`calc(100% / ${container.columns.length})`}
                       key={`row-${row.value}-col-${col.value}`}
                       location={findLocation(col, row)}
                       parentRef={tableRef}
+                      columnsUnderHover={columnsUnderHover}
+                      columnIndex={index}
                     >
                       <LocationContent
                         location={findLocation(col, row)}
@@ -342,7 +386,7 @@ function LoadedContent({ container }: {| container: ContainerModel |}) {
                           focusCoord?.y === row.value
                         }
                       />
-                    </GridCell>
+                    </WrappedGridCell>
                   ))}
               </TableRow>
             ))}
