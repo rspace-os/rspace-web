@@ -143,6 +143,9 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${deployment.sso.logout.url}")
   private String ssoLogoutUrl;
 
+  @Value("${deployment.sso.idp.logout.url}")
+  private String ssoIdpLogoutUrl;
+
   @Value("${deployment.sso.adminLogin.enabled}")
   private Boolean ssoAdminLoginEnabled;
 
@@ -390,6 +393,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public String getSSOLogoutUrl() {
     return ssoLogoutUrl;
+  }
+
+  @Override
+  public String getSSOIdpLogoutUrl() {
+    return ssoIdpLogoutUrl;
   }
 
   @Override

@@ -79,16 +79,16 @@
 	<mvc:view-controller path="/import/archiveImport" view-name="import/archiveImport" />
 	<mvc:view-controller path="/import/archiveImportReport" view-name="import/archiveImportReport" />
 	<mvc:view-controller path="/styleGuide" view-name="styleGuide/styleGuide" />
-    <mvc:view-controller path="/tools" view-name="tools/tools" />
+	<mvc:view-controller path="/tools" view-name="tools/tools" />
 	<mvc:view-controller path="/admin" view-name="admin/admin" />
 	<mvc:view-controller path="/public/signupConfirmation" view-name="public/signupConfirmation" />
 	<mvc:view-controller path="/public/awaitingAuthorisation" view-name="public/awaitingAuthorisation" />
 	<mvc:view-controller path="/public/accountDisabled" view-name="public/accountDisabled" />
 	<mvc:view-controller path="/public/requestPasswordReset" view-name="public/requestPasswordReset" />
 	<mvc:view-controller path="/public/requestUsernameReminder" view-name="public/requestUsernameReminder" />
-    <mvc:view-controller path="/public/maintenanceInProgress" view-name="public/maintenanceInProgress" />
+	<mvc:view-controller path="/public/maintenanceInProgress" view-name="public/maintenanceInProgress" />
 	<mvc:view-controller path="/public/terms" view-name="public/terms" />
-    <mvc:view-controller path="/public/ssoinfo" view-name="public/ssoinfo" />
+	<mvc:view-controller path="/public/ssoinfo" view-name="public/ssoinfo" />
 	<mvc:view-controller path="/public/ssologout" view-name="public/ssologout" />
 	<mvc:view-controller path="/public/ipAddressInvalid" view-name="public/ipAddressInvalid" />
 	<mvc:view-controller path="/public/apiDocs" view-name="public/apiDocs" />
@@ -96,7 +96,7 @@
 	<mvc:view-controller path="/admin/cloud/createCloudGroupSuccess" view-name="admin/cloud/createCloudGroupSuccess" />
 	<mvc:view-controller path="/cloud/signup/cloudSignupConfirmation" view-name="cloud/signup/cloudSignupConfirmation" />
 	<mvc:view-controller path="/cloud/signup/accountActivationComplete" view-name="cloud/signup/accountActivationComplete" />
-    <mvc:view-controller path="/cloud/verifyEmailChange/emailChangeConfirmed" view-name="cloud/verifyEmailChange/emailChangeConfirmed" />
+	<mvc:view-controller path="/cloud/verifyEmailChange/emailChangeConfirmed" view-name="cloud/verifyEmailChange/emailChangeConfirmed" />
 	<mvc:view-controller path="/cloud/resendConfirmationEmail/resendFailure" view-name="cloud/resendConfirmationEmail/resendFailure" />
 	<mvc:view-controller path="/cloud/resendConfirmationEmail/resendSuccess" view-name="cloud/resendConfirmationEmail/resendSuccess" />
 

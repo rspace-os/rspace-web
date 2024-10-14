@@ -52,6 +52,11 @@ public interface IPropertyHolder extends Versionable {
   String getSSOLogoutUrl();
 
   /**
+   * @return address which completely logs user out of their SSO IDP
+   */
+  String getSSOIdpLogoutUrl();
+
+  /**
    * Returns boolean value of <code>deployment.sso.adminLogin.enabled</code> property.
    *
    * @return
