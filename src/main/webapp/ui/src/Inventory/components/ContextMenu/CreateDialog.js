@@ -382,7 +382,7 @@ function CreateDialog({
         await existingRecord.createOptions[
           selectedCreateOptionIndex
         ].onSubmit();
-        onClose();
+        handleClose();
       } finally {
         setSubmitting(false);
       }
