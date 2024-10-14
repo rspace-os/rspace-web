@@ -320,11 +320,10 @@ function App(): Node {
                               </Typography>
                             </Divider>
                             <Typography variant="body1" sx={{ mb: 2 }}>
-                              The following Apps are integrations with RSpace
-                              built by third-parties. ResearchSpace has not
-                              developed and does not support these integrations
-                              and so does not provide any guarantee of
-                              functionality as described.
+                              These RSpace applications have been built by
+                              partners or other external software developers.
+                              Note, ResearchSpace does not provide direct
+                              support for these integrations.
                             </Typography>
                           </Grid>
                           <Grid item mt={0.5} xs={12}>

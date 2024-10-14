@@ -5,6 +5,8 @@ import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import AscensciaIcon from "../icons/Ascenscia.svg";
 import { observer } from "mobx-react-lite";
+import docLinks from "../../../assets/DocLinks";
+import Link from "@mui/material/Link";
 
 export const COLOR = {
   hue: 243,
@@ -24,15 +26,23 @@ function Ascenscia(): Node {
         explanatoryText="A highly specialized voice assistant mobile application for scientific labs."
         image={AscensciaIcon}
         color={COLOR}
-        usageText="The software solution acts as a personal assistant for scientists in the labs to mediate their interactions with Electronic Lab Notebook outside of the lab."
+        usageText="The software solution acts as a personal assistant for scientists in the labs to mediate their interactions with Electronic Lab Notebooks outside of the lab."
         helpLinkText="Ascenscia integration docs"
         website="ascenscia.ai"
         docLink="ascenscia"
         setupSection={
           <ol>
-            <li>In MyRSpace, generate an API key.</li>
-            <li>Enter your API key on Ascenscia&apos;s &quot;RSpace login&quot;page".</li>
-            <li>Start using Ascenscia.</li>
+            <li>In My RSpace → My Profile, generate an API key.</li>
+            <li>
+              Enter your API key on the RSpace login page in the Ascenscia app.
+            </li>
+            <li>
+              See{" "}
+              <Link href={docLinks.ascenscia} target="_blank" rel="noreferrer">
+                usage documentation
+              </Link>{" "}
+              on how to use Ascenscia with RSpace.
+            </li>
           </ol>
         }
         update={() => {}}
