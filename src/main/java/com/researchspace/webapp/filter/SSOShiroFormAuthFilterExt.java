@@ -5,6 +5,7 @@ import com.researchspace.auth.SSOAuthenticationToken;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.webapp.controller.SignupController;
+import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
 import java.io.IOException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -100,10 +101,10 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
         return false;
       }
 
-      boolean maintenanceLogin =
+      boolean maintenancePermitsLogin =
           maintenanceLoginAuthorizer.isLoginPermitted(httpRequest, response, user);
       boolean userEnabled = accountEnabledAuthorizer.isLoginPermitted(request, response, user);
-      if (maintenanceLogin && userEnabled) {
+      if (maintenancePermitsLogin && userEnabled) {
         AuthenticationToken token = new SSOAuthenticationToken(user.getUsername());
         Subject subject = SecurityUtils.getSubject();
         subject.login(token); // not call onLogSucess methods at all
@@ -146,7 +147,9 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
     // RSPAC-2588
     if (properties.isSSOSelfDeclarePiEnabled()) {
       String isAllowedPiRoleParam =
-          remoteUserPolicy.getOtherRemoteAttributes(request).get("isAllowedPiRole");
+          remoteUserPolicy
+              .getOtherRemoteAttributes(request)
+              .get(RemoteUserAttribute.IS_ALLOWED_PI_ROLE);
       if (StringUtils.isEmpty(isAllowedPiRoleParam)) {
         log.info(
             "deployment property 'deployment.sso.selfDeclarePI.enabled' is set to true, "
