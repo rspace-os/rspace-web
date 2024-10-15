@@ -306,7 +306,7 @@ function App(): Node {
                       </section>
                     </Grid>
                     <Grid item sx={{ mb: 6 }}>
-                      <section aria-labelledby="third-party rspace integrations">
+                      <section aria-labelledby="third-party-rspace-integrations">
                         <Grid container>
                           <Grid item width={"100%"} sx={{ mb: 2 }}>
                             <Divider>
