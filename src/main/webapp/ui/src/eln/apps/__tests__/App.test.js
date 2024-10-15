@@ -71,6 +71,7 @@ describe("Apps page", () => {
       { level: 2, content: "Enabled" },
       { level: 2, content: "Disabled" },
       { level: 2, content: "Unavailable" },
+      { level: 2, content: "Third-party RSpace Integrations" },
     ]);
   });
 });
