@@ -1,10 +1,16 @@
 /*
  * @jest-environment jsdom
  */
-//@flow strict
+//@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import {
+  render,
+  cleanup,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { axe, toHaveNoViolations } from "jest-axe";
 import App from "../App";
@@ -14,6 +20,7 @@ import * as axios from "axios";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import "../../../../__mocks__/matchMedia";
+import allIntegrationsAreDisabled from "./allIntegrationsAreDisabled.json";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -73,5 +80,32 @@ describe("Apps page", () => {
       { level: 2, content: "Unavailable" },
       { level: 2, content: "Third-party RSpace Integrations" },
     ]);
+  });
+
+  describe("Third-party section", () => {
+    test.only("Ascenscia should also be shown in this section", async () => {
+      mockAxios.onGet("livechatProperties").reply(200, {
+        livechatEnabled: false,
+      });
+      mockAxios
+        .onGet("integration/allIntegrations")
+        .reply(200, allIntegrationsAreDisabled);
+
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <App />
+        </ThemeProvider>
+      );
+
+      await waitFor(() => {
+        expect(
+          within(
+            screen.getByRole("region", {
+              name: /Third-party RSpace Integrations/,
+            })
+          ).getByRole("button", { name: /Ascenscia/ })
+        ).toBeVisible();
+      });
+    });
   });
 });
