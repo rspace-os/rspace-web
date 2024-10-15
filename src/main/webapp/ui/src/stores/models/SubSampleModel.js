@@ -459,7 +459,7 @@ export default class SubSampleModel
         explanation: "New subsamples will be created by diving the quantity of this subsample equally amongst them.",
         parameters: [{
           label: "Number of new subsamples",
-          explanation: "The total number of subsamples wanted, including the source (Between 2 and 100)",
+          explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
           state: this.createOptionsParametersState.split,
           validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
         }],
