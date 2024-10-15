@@ -51,6 +51,7 @@ export default function StyledTinyMceEditor({ init, ...props }: any): Node {
          */
         highlight_on_focus: true,
 
+        branding: false,
         skin: false,
         content_css: false,
         content_style: [init.content_style || "", customStyles].join("\n"),
