@@ -299,6 +299,9 @@ function ExportDialog({
         Parsers.isObject(response)
           .flatMap(Parsers.isNotNull)
           .flatMap(Parsers.getValueWithKey("data"))
+          .flatMap(Parsers.isObject)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("data"))
           .flatMap(Parsers.isArray)
           .flatMap((data) => Result.all(...data.map(Parsers.isString)))
           .map((data) =>
@@ -319,9 +322,14 @@ function ExportDialog({
               parseEncodedTags(data.flatMap((str) => str.split(",")))
             )
           )
+          .mapError(([e]) => {
+            console.error(e);
+            return e;
+          })
           .orElse<Array<Tag>>([])
       )
-      .catch(() => {
+      .catch((e) => {
+        console.error(e);
         return ([]: Array<Tag>);
       })
       .finally(() => {

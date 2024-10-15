@@ -3,6 +3,7 @@
  */
 //@flow
 /* eslint-env jest */
+import "../../../__mocks__/matchMedia";
 import React, { useState } from "react";
 import {
   render,
@@ -22,6 +23,15 @@ import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan";
 import each from "jest-each";
 import { type UseState } from "../../util/types";
 import Alerts from "../../components/Alerts/Alerts";
+import { sleep } from "../../util/Util";
+
+window.fetch = jest.fn(() =>
+  Promise.resolve({
+    status: 200,
+    ok: true,
+    json: () => Promise.resolve({}),
+  })
+);
 
 const mockAxios = new MockAdapter(axios);
 
@@ -287,6 +297,71 @@ describe("ExportDialog", () => {
           ).toBeVisible();
         });
       });
+    });
+  });
+
+  describe("Controlled vocabulary terms", () => {
+    // passes on its own, fails when run together
+    test("Tags should be pre-populated from the tags on the documents", async () => {
+      mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
+        {
+          repoName: "app.zenodo",
+          subjects: [],
+          license: {
+            licenseRequired: true,
+            otherLicensePermitted: false,
+            licenses: [
+              {
+                licenseDefinition: {
+                  url: "https://creativecommons.org/publicdomain/zero/1.0/",
+                  name: "CC-0",
+                },
+                defaultLicense: null,
+              },
+            ],
+          },
+          otherProperties: [],
+          linkedDMPs: null,
+          options: {
+            ZENODO_USER_TOKEN:
+              "************************************************************",
+          },
+          displayName: "Zenodo",
+        },
+      ]);
+      mockAxios.onPost("/export/ajax/exportRecordTagsPdfsAndDocs").reply(200, {
+        data: [
+          "BT-20 cell__RSP_EXTONT_URL_DELIM__http:__rspactags_forsl____rspactags_forsl__purl.obolibrary.org__rspactags_forsl__obo__rspactags_forsl__BTO_0001466__RSP_EXTONT_NAME_DELIM__test__RSP_EXTONT_VERSION_DELIM__1",
+        ],
+        error: null,
+        success: true,
+        errorMsg: null,
+      });
+      const { setProps } = renderExportDialog();
+      act(() => {
+        setProps({
+          open: true,
+          selection: {
+            type: "selection",
+            exportTypes: ["NORMAL"],
+            exportNames: ["foo"],
+            exportIds: ["1"],
+          },
+        });
+      });
+
+      fireEvent.click(await screen.findByRole("radio", { name: /PDF/ }));
+      fireEvent.click(
+        screen.getByRole("checkbox", { name: /Export to a repository/ })
+      );
+      fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+      expect(await screen.findByRole("textbox", { name: /File name/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+      expect(await screen.findByRole("radio", { name: /Zenodo/ }));
+
+      await sleep(1000);
+
+      expect(screen.getByRole("button", { name: /BT-20/ })).toBeVisible();
     });
   });
   describe("Completing the export, makes the right call to /export/ajax/exportArchive", () => {
