@@ -21,11 +21,15 @@ import "tinymce/plugins/quickbars";
 import "tinymce/plugins/autoresize";
 
 const customStyles =
+  `.mce-content-body {
+    font-family: "Roboto", "Helvetica", sans-serif;
+  }` +
   `.mce-content-body:not(.mce-content-readonly) {
   border-radius: 4px;
   padding: 0px 14px;
   word-break: break-word;
-}` + `.tox-editor-header { position: static !important; }`;
+}` +
+  `.tox-editor-header { position: static !important; }`;
 
 export default function StyledTinyMceEditor({ init, ...props }: any): Node {
   return (
