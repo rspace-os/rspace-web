@@ -887,7 +887,7 @@ export default class SampleModel
         disabled: this.subSamples.length > 1,
         parameters: [{
           label: "Number of new subsamples",
-          explanation: "The total number of subsamples wanted, including the source (Between 2 and 100)",
+          explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
           state: this.createOptionsParametersState.split,
           validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
         }],
@@ -911,7 +911,7 @@ export default class SampleModel
           state: this.createOptionsParametersState.name,
           validState: () => this.createOptionsParametersState.name.value.length > 2,
         },{
-          label: "Field",
+          label: "Field default values",
           explanation: "All of the sample fields will be included in the template. Select which fields should also retain their current value as a default field value.",
           state: this.createOptionsParametersState.fields,
           validState: () => true,
