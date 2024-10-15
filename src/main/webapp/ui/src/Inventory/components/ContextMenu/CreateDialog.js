@@ -133,7 +133,7 @@ const Fields: ComponentType<{|
                 onChange={({ target: { checked } }) => {
                   runInAction(() => {
                     state.copyFieldContent.forEach((f) => {
-                      f.selected = checked;
+                      f.selected = checked && f.hasContent;
                     });
                   });
                 }}
@@ -154,7 +154,6 @@ const Fields: ComponentType<{|
                       f.selected = checked;
                     });
                   }}
-                  color="default"
                   disabled={!f.hasContent}
                 />
               </TableCell>
