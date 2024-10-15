@@ -60,6 +60,7 @@ define(function() {
 
         _printCategory('Inventory');
         _printSettings([ 'inventory.available' ]);
+        //_printSettings([ 'fieldmark.available' ]);
 
         _printCategory('Communication');
         _printSettings([ 'msteams.available' ]);

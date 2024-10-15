@@ -86,6 +86,9 @@ export type IntegrationStates = {|
     EGNYTE_DOMAIN: Optional<string>,
   |}>,
   EVERNOTE: IntegrationState<{||}>,
+  FIELDMARK: IntegrationState<{|
+    FIELDMARK_USER_TOKEN: Optional<string>,
+  |}>,
   FIGSHARE: IntegrationState<{|
     ACCESS_TOKEN: Optional<string>,
   |}>,
@@ -335,6 +338,18 @@ function decodeEvernote(data: FetchedState): IntegrationStates["EVERNOTE"] {
   return { mode: parseState(data), credentials: {} };
 }
 
+function decodeFieldmark(data: FetchedState): IntegrationStates["FIELDMARK"] {
+  return {
+    mode: parseState(data),
+    credentials: {
+      FIELDMARK_USER_TOKEN: parseCredentialString(
+        data.options,
+        "FIELDMARK_USER_TOKEN"
+      ),
+    },
+  };
+}
+
 function decodeFigshare(data: FetchedState): IntegrationStates["FIGSHARE"] {
   return {
     mode: parseState(data),
@@ -521,6 +536,7 @@ function decodeIntegrationStates(data: {
     DRYAD: decodeDryad(data.DRYAD),
     EGNYTE: decodeEgnyte(data.EGNYTE),
     EVERNOTE: decodeEvernote(data.EVERNOTE),
+    FIELDMARK: decodeFieldmark(data.FIELDMARK),
     FIGSHARE: decodeFigshare(data.FIGSHARE),
     GITHUB: decodeGitHub(data.GITHUB),
     GOOGLEDRIVE: decodeGoogleDrive(data.GOOGLEDRIVE),
@@ -714,6 +730,21 @@ const encodeIntegrationState = <I: Integration>(
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {},
+    };
+  }
+  if (integration === "FIELDMARK") {
+    return {
+      name: "FIELDMARK",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      // $FlowExpectedError[prop-missing]
+      // $FlowExpectedError[incompatible-type]
+      // $FlowExpectedError[incompatible-use]
+      options: data.credentials.FIELDMARK_USER_TOKEN.map((token) => ({
+        FIELDMARK_USER_TOKEN: token,
+      })).orElse({
+        FIELDMARK_USER_TOKEN: "",
+      }),
     };
   }
   if (integration === "FIGSHARE") {
@@ -1085,6 +1116,8 @@ export function useIntegrationsEndpoint(): {|
               return decodeEgnyte(responseData.data);
             case "EVERNOTE":
               return decodeEvernote(responseData.data);
+            case "FIELDMARK":
+              return decodeFieldmark(responseData.data);
             case "FIGSHARE":
               return decodeFigshare(responseData.data);
             case "GITHUB":
@@ -1187,6 +1220,8 @@ export function useIntegrationsEndpoint(): {|
           return decodeEgnyte(response.data.data);
         case "EVERNOTE":
           return decodeEvernote(response.data.data);
+        case "FIELDMARK":
+          return decodeFieldmark(response.data.data);
         case "FIGSHARE":
           return decodeFigshare(response.data.data);
         case "GITHUB":

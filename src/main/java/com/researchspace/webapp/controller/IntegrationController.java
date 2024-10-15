@@ -10,6 +10,7 @@ import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
 import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.JOVE_APP_NAME;
@@ -138,10 +139,12 @@ public class IntegrationController extends BaseController {
     rc.put(DRYAD_APP_NAME, integrationsHandler.getIntegration(user, DRYAD_APP_NAME));
     rc.put(ARGOS_APP_NAME, integrationsHandler.getIntegration(user, ARGOS_APP_NAME));
     rc.put(ZENODO_APP_NAME, integrationsHandler.getIntegration(user, ZENODO_APP_NAME));
+    rc.put(FIELDMARK_APP_NAME, integrationsHandler.getIntegration(user, FIELDMARK_APP_NAME));
     rc.put(OMERO_APP_NAME, integrationsHandler.getIntegration(user, OMERO_APP_NAME));
     rc.put(
         DIGITAL_COMMONS_DATA_APP_NAME,
         integrationsHandler.getIntegration(user, DIGITAL_COMMONS_DATA_APP_NAME));
+
     return rc;
   }
 
