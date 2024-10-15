@@ -219,7 +219,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Setter
   private String digitalCommonsDataBaseUrl;
 
-  @Value("${fieldmark.base.url}")
+  @Value("${fieldmark.api.url}")
   @Getter
   @Setter
   private String fieldmarkBaseUrl;
