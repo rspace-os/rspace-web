@@ -433,6 +433,14 @@ function CreateDialog({
                   style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}
                 >
                   Type of item to create
+                  {selectedCreateOptionIndex !== null && (
+                    <Typography variant="body2">
+                      {
+                        existingRecord.createOptions[selectedCreateOptionIndex]
+                          .label
+                      }
+                    </Typography>
+                  )}
                 </label>
               </StepLabel>
               {/*
