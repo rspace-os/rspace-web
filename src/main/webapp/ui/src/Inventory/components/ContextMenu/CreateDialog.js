@@ -312,7 +312,7 @@ const NewSubsampleQuantity: ComponentType<{|
           value={state.quantity}
           onChange={({ target }) => {
             runInAction(() => {
-              state.quantity = parseInt(target.value, 10);
+              state.quantity = parseFloat(target.value);
             });
           }}
           variant="outlined"
