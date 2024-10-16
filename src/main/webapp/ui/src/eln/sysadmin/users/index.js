@@ -365,6 +365,7 @@ const PiAction = ({
   const [open, setOpen] = React.useState(false);
   const [password, setPassword] = React.useState("");
   const { addAlert } = React.useContext(AlertContext);
+  const verificationPasswordNeeded = true;
 
   const allowedPiAction: Result<{| user: User, action: "revoke" | "grant" |}> =
     selectedUser
@@ -470,27 +471,36 @@ const PiAction = ({
                     : "Revoke PI role from user"}
                 </DialogTitle>
                 <DialogContent>
-                  <DialogContentText variant="body2" sx={{ mb: 2 }}>
-                    To{" "}
-                    {action === "grant"
-                      ? "grant the PI role to"
-                      : "revoke the PI role from"}{" "}
-                    <strong>
-                      {selectedUser.map((u) => u.fullName).orElse("")}
-                    </strong>{" "}
-                    please re-enter your password.
-                  </DialogContentText>
-                  <TextField
-                    type="password"
-                    autoComplete="current-password"
-                    size="small"
-                    label="Password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                    }}
-                    fullWidth
-                  />
+                  {verificationPasswordNeeded ? (
+                    <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                      Please set your verification password in My RSpace before
+                      performing this action.
+                    </DialogContentText>
+                  ) : (
+                    <>
+                      <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                        To{" "}
+                        {action === "grant"
+                          ? "grant the PI role to"
+                          : "revoke the PI role from"}{" "}
+                        <strong>
+                          {selectedUser.map((u) => u.fullName).orElse("")}
+                        </strong>{" "}
+                        please re-enter your password.
+                      </DialogContentText>
+                      <TextField
+                        type="password"
+                        autoComplete="current-password"
+                        size="small"
+                        label="Password"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                        }}
+                        fullWidth
+                      />
+                    </>
+                  )}
                 </DialogContent>
                 <DialogActions>
                   <Button
