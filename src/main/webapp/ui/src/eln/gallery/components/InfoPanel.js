@@ -776,7 +776,22 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 errors.forEach((e) => {
                   console.info(e);
                 });
-                return null;
+                return (
+                  <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
+                    <ActionButton
+                      onClick={() => {
+                        // do nothing
+                      }}
+                      disabled
+                      label="Preview"
+                      sx={{
+                        borderRadius: 1,
+                        px: 1.125,
+                        py: 0.25,
+                      }}
+                    />
+                  </Grid>
+                );
               })
           )
           .orElse(null)}
