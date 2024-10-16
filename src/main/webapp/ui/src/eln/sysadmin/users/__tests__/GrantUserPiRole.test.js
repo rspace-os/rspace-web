@@ -10,6 +10,8 @@ import {
   screen,
   fireEvent,
   within,
+  act,
+  waitFor,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { UsersPage } from "..";
@@ -58,7 +60,9 @@ describe("Grant User PI Role", () => {
       </StyledEngineProvider>
     );
 
-    await sleep(1000);
+    await act(() => {
+      return sleep(1000);
+    });
 
     const checkbox = within(
       await screen.findByRole("row", { name: /user8h/ })
@@ -74,6 +78,54 @@ describe("Grant User PI Role", () => {
     expect(
       within(screen.getByRole("dialog")).getByText(
         "Please set your verification password in My RSpace before performing this action."
+      )
+    ).toBeVisible();
+  });
+  test("When `checkVerificationPasswordNeeded` returns false, a message should not be shown.", async () => {
+    const createObjectURL = jest
+      .fn<[Blob], string>()
+      .mockImplementation(() => "");
+    window.URL.createObjectURL = createObjectURL;
+    window.URL.revokeObjectURL = jest.fn();
+
+    mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
+
+    mockAxios
+      .onGet("/export/ajax/defaultPDFConfig")
+      .reply(200, { ...PDF_CONFIG });
+
+    mockAxios
+      .onGet("/vfpwd/ajax/checkVerificationPasswordNeeded")
+      .reply(200, { data: false });
+
+    render(
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={materialTheme}>
+          <UsersPage />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    );
+
+    await act(() => {
+      return sleep(1000);
+    });
+
+    const checkbox = within(
+      await screen.findByRole("row", { name: /user8h/ })
+    ).getByRole("checkbox");
+
+    fireEvent.click(checkbox);
+
+    fireEvent.click(screen.getByRole("button", { name: /Actions/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /Grant PI role/ }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeVisible();
+    });
+
+    expect(
+      within(screen.getByRole("dialog")).getByText(
+        "To grant the PI role to please re-enter your password."
       )
     ).toBeVisible();
   });
