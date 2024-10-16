@@ -8,6 +8,7 @@ import { useDeploymentProperty } from "../useDeploymentProperty";
 import useCollabora from "./useCollabora";
 import useOfficeOnline from "./useOfficeOnline";
 import { supportedAsposeFile } from "./components/CallableAsposePreview";
+import { type URL } from "../../util/types";
 
 export function useOpen(): (file: GalleryFile) => Result<() => void> {
   return (file) => {
@@ -21,7 +22,7 @@ export function useOpen(): (file: GalleryFile) => Result<() => void> {
 
 export function useImagePreviewOfGalleryFile(): (
   file: GalleryFile
-) => Result<string> {
+) => Result<URL> {
   return (file) => {
     if (file.isImage && file.downloadHref) return Result.Ok(file.downloadHref);
     return Result.Error([new Error("Not an image")]);
@@ -99,4 +100,50 @@ export function useAsposePreviewOfGalleryFile(): (
       .flatMap(() => supportedAsposeFile(file))
       .map(() => null);
   };
+}
+
+export default function usePrimaryAction(): (
+  file: GalleryFile
+) => Result<
+  | {| tag: "open", open: () => void |}
+  | {| tag: "image", downloadHref: string |}
+  | {| tag: "collabora", url: string |}
+  | {| tag: "officeonline", url: string |}
+  | {| tag: "pdf", downloadHref: string |}
+  | {| tag: "aspose" |}
+> {
+  const canOpenAsFolder = useOpen();
+  const canPreviewAsImage = useImagePreviewOfGalleryFile();
+  const canEditWithCollabora = useCollaboraEdit();
+  const canEditWithOfficeOnline = useOfficeOnlineEdit();
+  const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
+  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+
+  return (file) =>
+    canOpenAsFolder(file)
+      .map((open) => ({ tag: "open", open }))
+      .orElseTry(() =>
+        canPreviewAsImage(file).map((downloadHref) => ({
+          tag: "image",
+          downloadHref,
+        }))
+      )
+      .orElseTry(() =>
+        canEditWithCollabora(file).map((url) => ({ tag: "collabora", url }))
+      )
+      .orElseTry(() =>
+        canEditWithOfficeOnline(file).map((url) => ({
+          tag: "officeonline",
+          url,
+        }))
+      )
+      .orElseTry(() =>
+        canPreviewAsPdf(file).map((downloadHref) => ({
+          tag: "pdf",
+          downloadHref,
+        }))
+      )
+      .orElseTry(() =>
+        canPreviewWithAspose(file).map(() => ({ tag: "aspose" }))
+      );
 }
