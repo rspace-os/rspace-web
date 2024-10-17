@@ -18,18 +18,17 @@ import "tinymce/plugins/link";
 import "tinymce/plugins/lists";
 import "tinymce/plugins/media";
 import "tinymce/plugins/quickbars";
+import "tinymce/plugins/autoresize";
 
 const customStyles =
+  `.mce-content-body {
+    font-family: "Roboto", "Helvetica", sans-serif;
+  }` +
   `.mce-content-body:not(.mce-content-readonly) {
   border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.23);
   padding: 0px 14px;
   word-break: break-word;
 }` +
-  `.mce-content-body:focus {
-    outline: none !important;
-    border: 2px solid #00adef;
-  };` +
   `.tox-editor-header { position: static !important; }`;
 
 export default function StyledTinyMceEditor({ init, ...props }: any): Node {
@@ -37,6 +36,22 @@ export default function StyledTinyMceEditor({ init, ...props }: any): Node {
     <Editor
       init={{
         ...init,
+
+        // see https://www.tiny.cloud/docs/tinymce/latest/autoresize/
+        autoresize: true,
+        min_height: 100,
+        max_height: 500,
+
+        /*
+         * This uses the default tinymce blue, which is a bit
+         * darker than our primary blue. Unfortunately, the only way to change
+         * this seems to be by defining a custom skin, which doesn't seem worth
+         * it for such a small thing.
+         * https://www.tiny.cloud/docs/tinymce/latest/content-appearance/#using-highlight_on_focus-with-custom-skins
+         */
+        highlight_on_focus: true,
+
+        branding: false,
         skin: false,
         content_css: false,
         content_style: [init.content_style || "", customStyles].join("\n"),
