@@ -85,6 +85,7 @@ import createAccentedTheme from "../../../accentedTheme";
 import UserAliasIcon from "@mui/icons-material/ContactEmergency";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
+import useCheckVerificationPasswordNeeded from "../../../common/useCheckVerificationPasswordNeeded";
 
 const Panel = ({
   anchorEl,
@@ -365,6 +366,7 @@ const PiAction = ({
   const [open, setOpen] = React.useState(false);
   const [password, setPassword] = React.useState("");
   const { addAlert } = React.useContext(AlertContext);
+  const verificationPasswordNeeded = useCheckVerificationPasswordNeeded();
 
   const allowedPiAction: Result<{| user: User, action: "revoke" | "grant" |}> =
     selectedUser
@@ -470,27 +472,49 @@ const PiAction = ({
                     : "Revoke PI role from user"}
                 </DialogTitle>
                 <DialogContent>
-                  <DialogContentText variant="body2" sx={{ mb: 2 }}>
-                    To{" "}
-                    {action === "grant"
-                      ? "grant the PI role to"
-                      : "revoke the PI role from"}{" "}
-                    <strong>
-                      {selectedUser.map((u) => u.fullName).orElse("")}
-                    </strong>{" "}
-                    please re-enter your password.
-                  </DialogContentText>
-                  <TextField
-                    type="password"
-                    autoComplete="current-password"
-                    size="small"
-                    label="Password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                    }}
-                    fullWidth
-                  />
+                  {FetchingData.match(verificationPasswordNeeded, {
+                    loading: () => (
+                      <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                        Loading
+                      </DialogContentText>
+                    ),
+                    error: (errorMsg) => (
+                      <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                        ERROR: {errorMsg}
+                      </DialogContentText>
+                    ),
+                    success: (veriPwdNeeded) =>
+                      veriPwdNeeded ? (
+                        <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                          Please set your verification password in My RSpace
+                          before performing this action.
+                        </DialogContentText>
+                      ) : (
+                        <>
+                          <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                            To{" "}
+                            {action === "grant"
+                              ? "grant the PI role to"
+                              : "revoke the PI role from"}{" "}
+                            <strong>
+                              {selectedUser.map((u) => u.fullName).orElse("")}
+                            </strong>{" "}
+                            please re-enter your password.
+                          </DialogContentText>
+                          <TextField
+                            type="password"
+                            autoComplete="current-password"
+                            size="small"
+                            label="Password"
+                            value={password}
+                            onChange={(e) => {
+                              setPassword(e.target.value);
+                            }}
+                            fullWidth
+                          />
+                        </>
+                      ),
+                  })}
                 </DialogContent>
                 <DialogActions>
                   <Button
