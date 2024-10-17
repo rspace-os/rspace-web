@@ -12,6 +12,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.api.v1.model.ApiSubSampleSearchResult;
 import com.researchspace.model.User;
+import com.researchspace.service.inventory.impl.SubSampleCreateNewConfig;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import java.io.IOException;
 import java.util.List;
@@ -39,6 +40,12 @@ public interface SubSamplesApi {
       User user)
       throws BindException;
 
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  List<ApiSubSample> createNewSubSamplesForSample(
+      @RequestBody @Valid SubSampleCreateNewConfig config, BindingResult errors, User user)
+      throws BindException;
+
   @GetMapping(value = "/{id}")
   ApiSubSample getSubSampleById(Long id, User user);
 
@@ -58,14 +65,6 @@ public interface SubSamplesApi {
   @GetMapping("/{id}/thumbnail/{unused}")
   ResponseEntity<byte[]> getSubSampleThumbnail(Long id, User user) throws IOException;
 
-  /**
-   * Duplicates an inventory item
-   *
-   * @param globalId
-   * @param user
-   * @return
-   * @throws BindException
-   */
   @PostMapping("/{id}/actions/duplicate")
   @ResponseStatus(HttpStatus.CREATED)
   ApiInventoryRecordInfo duplicate(Long id, User user);

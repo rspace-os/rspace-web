@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfoWithSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
@@ -166,7 +167,20 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl
   }
 
   @Override
-  public ApiSubSample createNewApiSubSample(
+  public List<ApiSubSample> createNewSubSamplesForSample(
+      Long sampleId, Integer subSamplesCount, ApiQuantityInfo subSampleQuantity, User user) {
+
+    List<ApiSubSample> result = new ArrayList<>();
+    for (int i = 0; i < subSamplesCount; i++) {
+      ApiSubSample subSampleToCreate = new ApiSubSample("newSubSample#" + (i + 1));
+      subSampleToCreate.setQuantity(subSampleQuantity);
+      result.add(addNewApiSubSampleToSample(subSampleToCreate, sampleId, user));
+    }
+    return result;
+  }
+
+  @Override
+  public ApiSubSample addNewApiSubSampleToSample(
       ApiSubSample incomingSubSample, Long sampleId, User user) {
 
     Sample dbSample = sampleApiMgr.getSampleById(sampleId, user);

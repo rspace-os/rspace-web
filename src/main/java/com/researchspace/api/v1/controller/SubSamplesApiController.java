@@ -12,6 +12,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import com.researchspace.service.inventory.impl.SubSampleCreateNewConfig;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import java.io.IOException;
 import java.util.List;
@@ -62,6 +63,25 @@ public class SubSamplesApiController extends BaseApiInventoryController implemen
     apiSearchResult.addNavigationLinks(getInventoryApiBaseURIBuilder(), apiPgCrit, srchConfig);
 
     return apiSearchResult;
+  }
+
+  @Override
+  public List<ApiSubSample> createNewSubSamplesForSample(
+      @RequestBody @Valid SubSampleCreateNewConfig config,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    validateSubSampleCreateInput(config, errors, user);
+    throwBindExceptionIfErrors(errors);
+
+    return subSampleApiMgr.createNewSubSamplesForSample(
+        config.getSampleId(), config.getNumSubSamples(), config.getSingleSubSampleQuantity(), user);
+  }
+
+  private void validateSubSampleCreateInput(
+      SubSampleCreateNewConfig config, BindingResult errors, User user) {
+    // todo: full validation
   }
 
   @Override
