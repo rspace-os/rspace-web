@@ -6,6 +6,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import axios from "axios";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as Parsers from "../../../util/parsers";
+import * as ArrayUtils from "../../../util/ArrayUtils";
 import Result from "../../../util/result";
 
 /*
@@ -93,6 +94,13 @@ export function CallableAsposePreview({
             Parsers.isObject(data)
               .flatMap(Parsers.isNotNull)
               .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+              .flatMap(Parsers.isString)
+              .do((msg) => {
+                throw new Error(msg);
+              });
+            Parsers.objectPath(["error", "errorMessages"], data)
+              .flatMap(Parsers.isArray)
+              .flatMap(ArrayUtils.head)
               .flatMap(Parsers.isString)
               .do((msg) => {
                 throw new Error(msg);
