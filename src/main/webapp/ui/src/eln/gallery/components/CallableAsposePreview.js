@@ -24,7 +24,7 @@ import Result from "../../../util/result";
  */
 
 const AsposePreviewContext = React.createContext({
-  setFile: (_file: GalleryFile) => {},
+  setFile: (_file: GalleryFile) => Promise.resolve(),
   loading: false,
 });
 
@@ -36,7 +36,7 @@ export function useAsposePreview(): {|
   /**
    * Preview the document at this GalleryFile.
    */
-  openAsposePreview: (GalleryFile) => void,
+  openAsposePreview: (GalleryFile) => Promise<void>,
 
   loading: boolean,
 |} {
@@ -63,63 +63,53 @@ export function CallableAsposePreview({
 }: {|
   children: Node,
 |}): Node {
-  const [file, setFile] = React.useState<null | GalleryFile>(null);
   const [loading, setLoading] = React.useState(false);
   const { openPdfPreview } = usePdfPreview();
   const { addAlert } = React.useContext(AlertContext);
 
-  React.useEffect(() => {
-    if (file) {
-      void (async () => {
-        setLoading(true);
-        try {
-          const { data } = await axios.get<mixed>(
-            "/Streamfile/ajax/convert/" +
-              idToString(file.id) +
-              "?outputFormat=pdf"
-          );
-          const fileName = Parsers.isObject(data)
-            .flatMap(Parsers.isNotNull)
-            .flatMap(Parsers.getValueWithKey("data"))
-            .flatMap(Parsers.isString)
-            .orElse(null);
-          if (fileName) {
-            openPdfPreview(
-              "/Streamfile/direct/" +
-                idToString(file.id) +
-                "?fileName=" +
-                fileName
-            );
-          } else {
-            Parsers.isObject(data)
-              .flatMap(Parsers.isNotNull)
-              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-              .flatMap(Parsers.isString)
-              .do((msg) => {
-                throw new Error(msg);
-              });
-            Parsers.objectPath(["error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head)
-              .flatMap(Parsers.isString)
-              .do((msg) => {
-                throw new Error(msg);
-              });
-          }
-        } catch (e) {
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: "Could not generate preview.",
-              message: e.message ?? "Unknown reason",
-            })
-          );
-        } finally {
-          setLoading(false);
-        }
-      })();
+  const setFile = async (file: GalleryFile) => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get<mixed>(
+        "/Streamfile/ajax/convert/" + idToString(file.id) + "?outputFormat=pdf"
+      );
+      const fileName = Parsers.isObject(data)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.getValueWithKey("data"))
+        .flatMap(Parsers.isString)
+        .orElse(null);
+      if (fileName) {
+        openPdfPreview(
+          "/Streamfile/direct/" + idToString(file.id) + "?fileName=" + fileName
+        );
+      } else {
+        Parsers.isObject(data)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+          .flatMap(Parsers.isString)
+          .do((msg) => {
+            throw new Error(msg);
+          });
+        Parsers.objectPath(["error", "errorMessages"], data)
+          .flatMap(Parsers.isArray)
+          .flatMap(ArrayUtils.head)
+          .flatMap(Parsers.isString)
+          .do((msg) => {
+            throw new Error(msg);
+          });
+      }
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Could not generate preview.",
+          message: e.message ?? "Unknown reason",
+        })
+      );
+    } finally {
+      setLoading(false);
     }
-  }, [file]);
+  };
 
   return (
     <>

@@ -606,7 +606,7 @@ const AsposePreviewButton = ({ file }: {| file: GalleryFile |}) => {
       <ActionButton
         disabled={loading}
         onClick={() => {
-          openAsposePreview(file);
+          void openAsposePreview(file);
         }}
         label={loading ? "Loading" : "Preview"}
         sx={{

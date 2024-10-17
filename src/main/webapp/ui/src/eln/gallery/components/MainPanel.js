@@ -667,7 +667,7 @@ const GridView = observer(
                     )
                     .orElseTry(() =>
                       canPreviewWithAspose(file).map(() => () => {
-                        openAsposePreview(file);
+                        void openAsposePreview(file);
                       })
                     )
                     .orElse(() => {})();
