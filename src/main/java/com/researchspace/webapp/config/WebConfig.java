@@ -123,10 +123,11 @@ public class WebConfig extends WebMvcConfigurationSupport {
     registry
         .addViewController("/public/ssoinfoUsernameConflict")
         .setViewName("public/ssoinfoUsernameConflict");
+    registry
+        .addViewController("/public/ssoinfoUsernameNotAlias")
+        .setViewName("public/ssoinfoUsernameNotAlias");
     registry.addViewController("/public/ipAddressInvalid").setViewName("public/ipAddressInvalid");
-
     registry.addViewController("/public/apiDocs").setViewName("public/apiDocs");
-
     registry.addViewController("/audit/auditing").setViewName("audit/auditing");
 
     registry

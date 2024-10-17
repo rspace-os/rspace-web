@@ -67,21 +67,23 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   public void testExistingUserAccessAllowed() throws UserExistsException {
     propertyHolder.setUserSignup("false");
 
-    User u = createAndSaveSsoTestUser();
+    User user = createAndSaveSsoTestUser();
     assertFalse(hasRemoteUserUsernameSet());
-    remoteUserPolicy.setUsername(u.getUsername());
+    remoteUserPolicy.setUsername(user.getUsername());
     assertTrue(filter.isAccessAllowed(req, resp, null));
     assertTrue(hasRemoteUserUsernameSet());
 
     // can login using usernameAlias
+    user.setUsernameAlias("testAlias");
+    userMgr.saveUser(user);
     logoutAndResetMockRequestResponse();
-    remoteUserPolicy.setUsername(u.getUsernameAlias());
+    remoteUserPolicy.setUsername(user.getUsernameAlias());
     assertTrue(filter.isAccessAllowed(req, resp, null));
     assertTrue(hasRemoteUserUsernameSet());
 
     // confirm access rejected for unknown login/alias
     logoutAndResetMockRequestResponse();
-    remoteUserPolicy.setUsername(u.getUsername() + "unknown");
+    remoteUserPolicy.setUsername(user.getUsername() + "unknown");
     assertFalse(filter.isAccessAllowed(req, resp, null));
     assertTrue(hasRemoteUserUsernameSet());
   }
@@ -154,6 +156,27 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void ssoRemoteUsernameMatchingUserWhoAlsoHasAnAliasRedirectedToErrorPage()
+      throws UserExistsException {
+    User u = createAndSaveSsoTestUser();
+    u.setUsernameAlias("testAlias");
+    userMgr.saveUser(u);
+
+    remoteUserPolicy.setUsername(u.getUsername());
+    req.setRequestURI("/login");
+    assertFalse(filter.isAccessAllowed(req, resp, null));
+    assertEquals(
+        "sso username matching username of user with alias should redirected to info page",
+        SSOShiroFormAuthFilterExt.SSOINFO_USERNAMENOTALIAS_URL,
+        resp.getHeaderValue("Location"));
+
+    // confirm that user can login with alias
+    logoutAndResetMockRequestResponse();
+    remoteUserPolicy.setUsername(u.getUsernameAlias());
+    assertTrue(filter.isAccessAllowed(req, resp, null));
+  }
+
+  @Test
   public void ssoRemoteUsernameMatchingBackdoorUsernameRedirectedToConflictPage()
       throws UserExistsException {
     User u = createAndSaveSsoTestUser();
@@ -194,9 +217,9 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   private User createAndSaveSsoTestUser() throws UserExistsException {
     User u = TestFactory.createAnyUser("ssoTestUser");
     u.setEmail(u.getUsername() + "@rs.com");
-    u.setUsernameAlias("ssoTestAlias");
     u.setPassword(SSO_DUMMY_PASSWORD);
     u = userMgr.saveNewUser(u);
     return u;
   }
+
 }
