@@ -146,7 +146,7 @@ pipeline {
             steps {
                 echo 'Running Jest tests'
                 dir('src/main/webapp/ui') {
-                    sh 'npm run test -- --maxWorkers=2'
+                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2'
                 }
             }
             post {
