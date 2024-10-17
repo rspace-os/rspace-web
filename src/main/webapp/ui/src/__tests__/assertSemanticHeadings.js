@@ -55,12 +55,10 @@ expect.extend({
       actualRootNode,
       NodeFilter.SHOW_ELEMENT,
       {
-        acceptNode: function (node) {
+        acceptNode(node) {
           // $FlowExpectedError[cannot-resolve-name]
-          if(node instanceof SVGElement)
-            return NodeFilter.FILTER_SKIP;
-          if (!(node instanceof HTMLElement))
-            throw new Error("Not an element");
+          if (node instanceof SVGElement) return NodeFilter.FILTER_SKIP;
+          if (!(node instanceof HTMLElement)) throw new Error("Not an element");
           return /^H\d$/.test(node.tagName)
             ? NodeFilter.FILTER_ACCEPT
             : NodeFilter.FILTER_SKIP;
@@ -85,6 +83,19 @@ expect.extend({
         content: tw.currentNode.textContent,
       });
     }
+
+    if (actualHeadings.length > expectedHeadings.length)
+      return {
+        pass: false,
+        message: () => "There are more actual headings than expected headings.",
+      };
+
+    if (expectedHeadings.length > actualHeadings.length)
+      return {
+        pass: false,
+        message: () =>
+          "There are fewer actual headings than expected headings.",
+      };
 
     const mismatches: Array<string> = ArrayUtils.mapOptional<
       Optional<string>,
@@ -113,11 +124,10 @@ expect.extend({
         pass: false,
         message: () => mismatches[0],
       };
-    } else {
-      return {
-        pass: true,
-        message: () => "",
-      };
     }
+    return {
+      pass: true,
+      message: () => "",
+    };
   },
 });

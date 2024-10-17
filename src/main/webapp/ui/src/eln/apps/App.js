@@ -29,7 +29,6 @@ import HelpFab from "../../components/Help/Fab";
 import { DialogBoundary } from "../../components/DialogBoundary";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
-import AlertTitle from "@mui/material/AlertTitle";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { getByKey } from "../../util/optional";
 import { useDeploymentProperty } from "../useDeploymentProperty";
@@ -296,6 +295,42 @@ function App(): Node {
                               success: (integrationStates) => (
                                 <CardListing
                                   mode="UNAVAILABLE"
+                                  integrationStates={integrationStates}
+                                />
+                              ),
+                              loading: () => <LoadingSkeleton />,
+                              error: () => <ErrorMessage />,
+                            })}
+                          </Grid>
+                        </Grid>
+                      </section>
+                    </Grid>
+                    <Grid item sx={{ mb: 6 }}>
+                      <section aria-labelledby="third-party-rspace-integrations">
+                        <Grid container>
+                          <Grid item width={"100%"} sx={{ mb: 2 }}>
+                            <Divider>
+                              <Typography
+                                variant="h5"
+                                component="h2"
+                                sx={{ p: 1, mb: 1 }}
+                                id="third-party-rspace-integrations"
+                              >
+                                Third-party RSpace Integrations
+                              </Typography>
+                            </Divider>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                              These RSpace applications have been built by
+                              partners or other external software developers.
+                              Note, ResearchSpace does not provide direct
+                              support for these integrations.
+                            </Typography>
+                          </Grid>
+                          <Grid item mt={0.5} xs={12}>
+                            {FetchingData.match(allStates, {
+                              success: (integrationStates) => (
+                                <CardListing
+                                  mode="EXTERNAL"
                                   integrationStates={integrationStates}
                                 />
                               ),

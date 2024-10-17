@@ -142,7 +142,10 @@ describe("IntegrationCard", () => {
   });
 
   test("When tapped, the enable button should invoke update.", () => {
-    const update = jest.fn<["ENABLED" | "DISABLED" | "UNAVAILABLE"], void>();
+    const update = jest.fn<
+      ["ENABLED" | "DISABLED" | "UNAVAILABLE" | "EXTERNAL"],
+      void,
+    >();
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -170,7 +173,10 @@ describe("IntegrationCard", () => {
   });
 
   test("When tapped, the disable button should invoke update.", () => {
-    const update = jest.fn<["ENABLED" | "DISABLED" | "UNAVAILABLE"], void>();
+    const update = jest.fn<
+      ["ENABLED" | "DISABLED" | "UNAVAILABLE" | "EXTERNAL"],
+      void,
+    >();
 
     render(
       <ThemeProvider theme={materialTheme}>
