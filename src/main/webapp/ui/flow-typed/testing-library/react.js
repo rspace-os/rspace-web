@@ -45,6 +45,9 @@ declare module "@testing-library/react" {
 
     getByDisplayValue(string | number): Element,
   |};
+
+  declare export var queries: Queries;
+
   declare export function render<T: { ...Queries, ... } = Queries>(
     Node,
     ?{|
