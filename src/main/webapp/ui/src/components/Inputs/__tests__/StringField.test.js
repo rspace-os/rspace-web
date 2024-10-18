@@ -5,7 +5,7 @@
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, type Element } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import StringField from "../StringField";
 import TextField from "@mui/material/TextField";
@@ -57,7 +57,7 @@ describe("StringField", () => {
         disabled: typeof undefined | boolean,
         value: string,
         noValueLabel: typeof undefined | string,
-        expectFn: (container: Node) => void,
+        expectFn: (container: Element) => void,
       |}) => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>

@@ -165,7 +165,7 @@ describe("GitHub", () => {
       const newReposTable = screen.getAllByRole("table")[1];
       expect(
         await within(newReposTable).findTableCell({
-          columnHeader: "Repository Name",
+          columnHeading: "Repository Name",
           rowIndex: 0,
         })
       ).toHaveTextContent("a repo");
@@ -306,14 +306,14 @@ describe("GitHub", () => {
       const connectedReposTable = screen.getAllByRole("table")[0];
       expect(
         await within(connectedReposTable).findTableCell({
-          columnHeader: "Repository Name",
+          columnHeading: "Repository Name",
           rowIndex: 0,
         })
       ).toHaveTextContent("a repo");
 
       expect(
         await within(allReposTable).findTableCell({
-          columnHeader: "Repository Name",
+          columnHeading: "Repository Name",
           rowIndex: 0,
         })
       ).toHaveTextContent("There are no available repositories.");

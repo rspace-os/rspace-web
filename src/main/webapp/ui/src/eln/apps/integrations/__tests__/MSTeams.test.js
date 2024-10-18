@@ -46,7 +46,7 @@ describe("MSTeams", () => {
       const table = screen.getByRole("table");
       expect(
         await within(table).findTableCell({
-          columnHeader: "Channel Connector Name",
+          columnHeading: "Channel Connector Name",
           rowIndex: 0,
         })
       ).toHaveTextContent("foo");

@@ -266,7 +266,7 @@ describe("DMPDialog", () => {
 
         await act(() => {
           within(screen.getByRole("listbox"))
-            .getByRole("option", { name: 5 })
+            .getByRole("option", { name: "5" })
             .click();
         });
 
