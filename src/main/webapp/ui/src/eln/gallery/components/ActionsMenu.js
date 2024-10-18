@@ -331,19 +331,21 @@ function ActionsMenu({
     return Result.Error([new Error("Not yet available.")]);
   };
 
-  const editingAllowed = (): Result<null> => {
-    return selection
+  const editingAllowed = computed(() =>
+    selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
       .flatMap((file) => {
         if (file.isImage)
-          return Result.Error([new Error("Not yet implemented.")]);
+          return Result.Error<null>([new Error("Not yet implemented.")]);
         return canEditWithCollabora(file)
           .orElseTry(() => canEditWithOfficeOnline(file))
           .map(() => Result.Error<null>([new Error("Not yet implemented.")]))
-          .orElseGet(() => Result.Error([new Error("Cannot edit this item.")]));
-      });
-  };
+          .orElseGet(() =>
+            Result.Error<null>([new Error("Cannot edit this item.")])
+          );
+      })
+  );
 
   const exportAllowed = (): Result<null> => {
     return Result.Ok(null);
@@ -410,7 +412,8 @@ function ActionsMenu({
         />
         <NewMenuItem
           title="Edit"
-          subheader={editingAllowed()
+          subheader={editingAllowed
+            .get()
             .map(() => "")
             .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
@@ -420,7 +423,7 @@ function ActionsMenu({
             setActionsMenuAnchorEl(null);
           }}
           compact
-          disabled={editingAllowed().isError}
+          disabled={editingAllowed.get().isError}
         />
         <NewMenuItem
           title="Duplicate"
