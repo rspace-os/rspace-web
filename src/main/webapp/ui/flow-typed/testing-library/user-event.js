@@ -7,8 +7,6 @@ declare module "@testing-library/user-event" {
     click(Element): void,
   |};
 
-  //declare export function setup(): User;
-
   declare export default {|
     setup(): User,
   |};
