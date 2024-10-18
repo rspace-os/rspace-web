@@ -296,6 +296,22 @@ function ActionsMenu({
       .flatMap(canOpenAsFolder);
   });
 
+  const editingAllowed = computed(() =>
+    selection
+      .asSet()
+      .only.toResult(() => new Error("Too many items selected."))
+      .flatMap((file) => {
+        if (file.isImage)
+          return Result.Error<null>([new Error("Not yet implemented.")]);
+        return canEditWithCollabora(file)
+          .orElseTry(() => canEditWithOfficeOnline(file))
+          .map(() => Result.Error<null>([new Error("Not yet implemented.")]))
+          .orElseGet(() =>
+            Result.Error<null>([new Error("Cannot edit this item.")])
+          );
+      })
+  );
+
   const duplicateAllowed = (): Result<null> => {
     if (selection.asSet().some((f) => f.isSystemFolder))
       return Result.Error([new Error("Cannot duplicate system folders.")]);
@@ -330,22 +346,6 @@ function ActionsMenu({
       return Result.Error([new Error("Only snippets may be shared.")]);
     return Result.Error([new Error("Not yet available.")]);
   };
-
-  const editingAllowed = computed(() =>
-    selection
-      .asSet()
-      .only.toResult(() => new Error("Too many items selected."))
-      .flatMap((file) => {
-        if (file.isImage)
-          return Result.Error<null>([new Error("Not yet implemented.")]);
-        return canEditWithCollabora(file)
-          .orElseTry(() => canEditWithOfficeOnline(file))
-          .map(() => Result.Error<null>([new Error("Not yet implemented.")]))
-          .orElseGet(() =>
-            Result.Error<null>([new Error("Cannot edit this item.")])
-          );
-      })
-  );
 
   const exportAllowed = (): Result<null> => {
     return Result.Ok(null);
