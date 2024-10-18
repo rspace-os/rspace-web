@@ -15,6 +15,7 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import { observer } from "mobx-react-lite";
 import { type GalleryFile, idToString, type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
@@ -38,6 +39,9 @@ import EventBoundary from "../../../components/EventBoundary";
 import * as Parsers from "../../../util/parsers";
 import * as FetchingData from "../../../util/fetchingData";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import {
+  useOpen,
+} from "../primaryActionHooks";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -273,11 +277,19 @@ function ActionsMenu({
   const { deleteFiles, duplicateFiles } = useGalleryActions();
   const selection = useGallerySelection();
   const theme = useTheme();
+  const canOpenAsFolder = useOpen();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
+
+  const openAllowed = (): Result<() => void> => {
+    return selection
+      .asSet()
+      .only.toResult(() => new Error("Too many items selected."))
+      .flatMap(canOpenAsFolder);
+  };
 
   const duplicateAllowed = (): Result<null> => {
     if (selection.asSet().some((f) => f.isSystemFolder))
@@ -367,6 +379,23 @@ function ActionsMenu({
         }}
         keepMounted
       >
+        <NewMenuItem
+          title="Open"
+          subheader={openAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
+          backgroundColor={COLOR.background}
+          foregroundColor={COLOR.contrastText}
+          avatar={<FolderOpenIcon />}
+          onClick={() => {
+            openAllowed().do((open) => {
+              open();
+              setActionsMenuAnchorEl(null);
+            });
+          }}
+          disabled={openAllowed().isError}
+          compact
+        />
         <NewMenuItem
           title="Duplicate"
           subheader={duplicateAllowed()

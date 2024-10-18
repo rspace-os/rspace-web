@@ -16,7 +16,7 @@ export function useOpen(): (file: GalleryFile) => Result<() => void> {
       const f = file.open;
       return Result.Ok(() => f());
     }
-    return Result.Error([new Error("Not a folder")]);
+    return Result.Error([new Error("Not a folder.")]);
   };
 }
 
