@@ -116,10 +116,11 @@ async function findTableCell(
 const allQueries = { ...queries, findTableCell, getIndexOfTableCell };
 const customRender: typeof render = (ui, options) =>
   render(ui, { queries: { ...queries, findTableCell }, ...options });
+
 const customWithin = (
   element: Element,
-  moreQueries: ?{ ... }
-): { ...Queries, findTableCell: ({| columnHeading: string, rowIndex: number |}) => Promise<Element>, getIndexOfTableCell: (string | RegExp) => number, ...  } => within(element, { ...allQueries, ...moreQueries });
+  //$FlowExpectedError[incompatible-return] Jest partially applied the custom queries with the element passed to `within`
+): {| ...Queries, findTableCell: ({| columnHeading: string, rowIndex: number |}) => Promise<Element>, getIndexOfTableCell: (string | RegExp) => number |} => within(element, { ...allQueries });
 
 // re-export everything
 export * from "@testing-library/react";
