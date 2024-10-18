@@ -115,6 +115,7 @@ async function findTableCell(
 
 const allQueries = { ...queries, findTableCell, getIndexOfTableCell };
 const customRender: typeof render = (ui, options) =>
+  //$FlowExpectedError[extra-arg] Only here are we allowed to pass additional queries
   render(ui, { queries: { ...queries, findTableCell }, ...options });
 
 const customWithin = (

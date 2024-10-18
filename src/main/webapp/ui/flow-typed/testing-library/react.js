@@ -48,18 +48,13 @@ declare module "@testing-library/react" {
 
   declare export var queries: Queries;
 
-  declare export function render<T: { ...Queries, ... } = Queries>(
-    Node,
-    ?{|
-      queries: T,
-    |}
-  ): {
-    ...T,
+  declare export function render(Node): {|
+    ...Queries,
     container: {|
       ...Queries,
     |} & Element,
     baseElement: Element,
-  };
+  |};
 
   declare export var screen: {|
     ...Queries,
