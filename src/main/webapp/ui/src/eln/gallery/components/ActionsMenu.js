@@ -16,6 +16,7 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import GroupIcon from "@mui/icons-material/Group";
 import EditIcon from "@mui/icons-material/Edit";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 import { type GalleryFile, idToString, type Id } from "../useGalleryListing";
@@ -42,9 +43,15 @@ import * as FetchingData from "../../../util/fetchingData";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import {
   useOpen,
+  useImagePreviewOfGalleryFile,
   useCollaboraEdit,
   useOfficeOnlineEdit,
+  usePdfPreviewOfGalleryFile,
+  useAsposePreviewOfGalleryFile,
 } from "../primaryActionHooks";
+import { useImagePreview } from "./CallableImagePreview";
+import { usePdfPreview } from "./CallablePdfPreview";
+import { useAsposePreview } from "./CallableAsposePreview";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -281,8 +288,14 @@ function ActionsMenu({
   const selection = useGallerySelection();
   const theme = useTheme();
   const canOpenAsFolder = useOpen();
+  const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
+  const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
+  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  const { openImagePreview } = useImagePreview();
+  const { openPdfPreview } = usePdfPreview();
+  const { openAsposePreview } = useAsposePreview();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
@@ -310,6 +323,26 @@ function ActionsMenu({
             Result.Error<null>([new Error("Cannot edit this item.")])
           );
       })
+  );
+
+  const viewAllowed = computed(() =>
+    selection
+      .asSet()
+      .only.toResult(() => new Error("Too many items selected."))
+      .flatMap((file) =>
+        canPreviewAsImage(file)
+          .map((downloadHref) => ({ key: "image", downloadHref }))
+          .orElseTry(() =>
+            canPreviewAsPdf(file).map((downloadHref) => ({
+              key: "pdf",
+              downloadHref,
+            }))
+          )
+          .orElseTry(() =>
+            canPreviewWithAspose(file).map(() => ({ key: "aspose", file }))
+          )
+          .mapError(() => new Error("Cannot view this item."))
+      )
   );
 
   const duplicateAllowed = (): Result<null> => {
@@ -424,6 +457,29 @@ function ActionsMenu({
           }}
           compact
           disabled={editingAllowed.get().isError}
+        />
+        <NewMenuItem
+          title="View"
+          subheader={viewAllowed
+            .get()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
+          backgroundColor={COLOR.background}
+          foregroundColor={COLOR.contrastText}
+          avatar={<VisibilityIcon />}
+          onClick={() => {
+            viewAllowed.get().do((viewAction) => {
+              if (viewAction.key === "image")
+                openImagePreview(viewAction.downloadHref);
+              if (viewAction.key === "pdf")
+                openPdfPreview(viewAction.downloadHref);
+              if (viewAction.key === "aspose")
+                void openAsposePreview(viewAction.file);
+            });
+            setActionsMenuAnchorEl(null);
+          }}
+          compact
+          disabled={viewAllowed.get().isError}
         />
         <NewMenuItem
           title="Duplicate"
