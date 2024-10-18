@@ -14,7 +14,7 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import GroupIcon from "@mui/icons-material/Group";
-import CropIcon from "@mui/icons-material/Crop";
+import EditIcon from "@mui/icons-material/Edit";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
@@ -42,6 +42,8 @@ import * as FetchingData from "../../../util/fetchingData";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import {
   useOpen,
+  useCollaboraEdit,
+  useOfficeOnlineEdit,
 } from "../primaryActionHooks";
 
 /**
@@ -279,6 +281,8 @@ function ActionsMenu({
   const selection = useGallerySelection();
   const theme = useTheme();
   const canOpenAsFolder = useOpen();
+  const canEditWithCollabora = useCollaboraEdit();
+  const canEditWithOfficeOnline = useOfficeOnlineEdit();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
@@ -327,12 +331,18 @@ function ActionsMenu({
     return Result.Error([new Error("Not yet available.")]);
   };
 
-  const imageEditingAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
-    if (selection.asSet().some((f) => !f.isImage))
-      return Result.Error([new Error("Only images may be edited.")]);
-    return Result.Error([new Error("Not yet available.")]);
+  const editingAllowed = (): Result<null> => {
+    return selection
+      .asSet()
+      .only.toResult(() => new Error("Too many items selected."))
+      .flatMap((file) => {
+        if (file.isImage)
+          return Result.Error([new Error("Not yet implemented.")]);
+        return canEditWithCollabora(file)
+          .orElseTry(() => canEditWithOfficeOnline(file))
+          .map(() => Result.Error<null>([new Error("Not yet implemented.")]))
+          .orElseGet(() => Result.Error([new Error("Cannot edit this item.")]));
+      });
   };
 
   const exportAllowed = (): Result<null> => {
@@ -397,6 +407,20 @@ function ActionsMenu({
           }}
           disabled={openAllowed.get().isError}
           compact
+        />
+        <NewMenuItem
+          title="Edit"
+          subheader={editingAllowed()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
+          backgroundColor={COLOR.background}
+          foregroundColor={COLOR.contrastText}
+          avatar={<EditIcon />}
+          onClick={() => {
+            setActionsMenuAnchorEl(null);
+          }}
+          compact
+          disabled={editingAllowed().isError}
         />
         <NewMenuItem
           title="Duplicate"
@@ -535,20 +559,6 @@ function ActionsMenu({
             allowFileStores={false}
           />
         </EventBoundary>
-        <NewMenuItem
-          title="Edit"
-          subheader={imageEditingAllowed()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<CropIcon />}
-          onClick={() => {
-            setActionsMenuAnchorEl(null);
-          }}
-          compact
-          disabled={imageEditingAllowed().isError}
-        />
         <NewMenuItem
           title="Share"
           subheader={sharingSnippetsAllowed()
