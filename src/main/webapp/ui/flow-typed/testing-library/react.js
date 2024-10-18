@@ -43,7 +43,7 @@ declare module "@testing-library/react" {
 
     getByTestId(string): Element,
 
-    getByDisplayValue(string): Element,
+    getByDisplayValue(string | number): Element,
   |};
   declare export function render<T: { ...Queries, ... } = Queries>(
     Node,
@@ -63,10 +63,10 @@ declare module "@testing-library/react" {
     debug: typeof console.debug,
   |};
 
-  declare export function within<MoreQueries: { ... } = {}>(
+  declare export function within<MoreQueries: { ... } = {||}>(
     Element,
     ?MoreQueries
-  ): { ...Queries, ...MoreQueries };
+  ): Queries & {| ...Queries, ...MoreQueries |};
 
   // use user-event instead in almost all cases
   declare export var fireEvent: {|
@@ -76,7 +76,7 @@ declare module "@testing-library/react" {
       Element,
       {|
         target?: {|
-          value: string,
+          value?: string | number,
           checkValidity?: () => boolean,
         |},
         name?: string,
