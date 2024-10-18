@@ -17,6 +17,7 @@ import GroupIcon from "@mui/icons-material/Group";
 import CropIcon from "@mui/icons-material/Crop";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import { observer } from "mobx-react-lite";
+import { computed } from "mobx";
 import { type GalleryFile, idToString, type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
@@ -284,12 +285,12 @@ function ActionsMenu({
   const [irodsOpen, setIrodsOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
 
-  const openAllowed = (): Result<() => void> => {
+  const openAllowed = computed(() => {
     return selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
       .flatMap(canOpenAsFolder);
-  };
+  });
 
   const duplicateAllowed = (): Result<null> => {
     if (selection.asSet().some((f) => f.isSystemFolder))
@@ -381,19 +382,20 @@ function ActionsMenu({
       >
         <NewMenuItem
           title="Open"
-          subheader={openAllowed()
+          subheader={openAllowed
+            .get()
             .map(() => "")
             .orElseGet(([e]) => e.message)}
           backgroundColor={COLOR.background}
           foregroundColor={COLOR.contrastText}
           avatar={<FolderOpenIcon />}
           onClick={() => {
-            openAllowed().do((open) => {
+            openAllowed.get().do((open) => {
               open();
               setActionsMenuAnchorEl(null);
             });
           }}
-          disabled={openAllowed().isError}
+          disabled={openAllowed.get().isError}
           compact
         />
         <NewMenuItem
