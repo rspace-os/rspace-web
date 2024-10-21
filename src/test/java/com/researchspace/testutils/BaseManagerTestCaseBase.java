@@ -75,8 +75,8 @@ import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.InventoryFile;
+import com.researchspace.model.inventory.InventorySeriesNamingHelper;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSeriesHelper2;
 import com.researchspace.model.netfiles.NetFilesTestFactory;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -1688,7 +1688,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
             BulkApiOperationType.CREATE, new ArrayList<>(), true, user);
     for (int i = 1; i <= numberOfSamples; i++) {
       String sampleName =
-          SampleSeriesHelper2.getSerialNameForSample(sampleBaseName, i, numberOfSamples);
+          InventorySeriesNamingHelper.getSerialNameForSample(sampleBaseName, i, numberOfSamples);
       bulkOpConfig.getRecords().add(new ApiSampleWithFullSubSamples(sampleName));
     }
     ApiInventoryBulkOperationResult sampleCreationResult =
