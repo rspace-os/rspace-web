@@ -16,6 +16,7 @@ import {
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../stores/stores/RootStore", () => () => ({
   unitStore: {
@@ -366,6 +367,57 @@ describe("CreateDialog", () => {
       });
 
       expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
+    });
+  });
+  describe("New subsamples without splitting", () => {
+    test("Success case", async () => {
+      const user = userEvent.setup();
+      const sample = makeMockSample({});
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={sample}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Subsamples, by creating new ones/,
+        })
+      ).toBeEnabled();
+
+      await user.click(
+        screen.getByRole("radio", {
+          name: /Subsamples, by creating new ones/,
+        })
+      );
+
+      expect(
+        screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
+      ).toBeVisible();
+      await user.type(
+        screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
+        "4"
+      );
+
+      expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
+      expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
+
+      expect(screen.getByRole("button", { name: /next/i })).toBeVisible();
+      await user.click(screen.getByRole("button", { name: /next/i }));
+
+      expect(
+        screen.getByRole("spinbutton", { name: /Quantity per subsample/i })
+      ).toBeVisible();
+
+      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
+      await user.type(
+        screen.getByRole("spinbutton", { name: /Quantity per subsample/i }),
+        "4"
+      );
     });
   });
 });
