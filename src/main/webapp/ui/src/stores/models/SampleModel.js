@@ -904,7 +904,16 @@ export default class SampleModel
           this.createOptionsParametersState.newSubsamplesQuantity.quantity = 1;
         },
         onSubmit: () => {
-          return Promise.resolve();
+          if (!this.quantity) throw new Error("Don't know what the sample's current quantity is");
+          const unitId = this.quantity.unitId;
+          return getRootStore().searchStore.search.createNewSubsamples({
+            sample: this,
+            numberOfNewSubsamples: this.createOptionsParametersState.newSubsamplesCount.count,
+            quantityPerSubsample: {
+              numericValue: this.createOptionsParametersState.newSubsamplesQuantity.quantity,
+              unitId,
+            },
+          });
         },
       },
       {
