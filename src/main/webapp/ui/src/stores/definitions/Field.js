@@ -38,6 +38,7 @@ export interface Field extends BaseRecord {
 
   +paramsForBackend: { ... };
   +hasContent: boolean;
+  +renderContentAsString: string;
 
   validate(): ValidationResult;
   setAttributesDirty({ ... }): void;

@@ -44,12 +44,12 @@ export interface Location extends Point {
   setDimensions(number, number): void;
 
   +siblings: Array<Location>;
-  +isShallow: boolean;
-  +isShallowSelected: boolean;
-  +isSelectable: boolean;
-  +isShallowUnselected: boolean;
+  isShallow(Search): boolean;
+  isShallowSelected(Search): boolean;
+  isSelectable(Search): boolean;
+  isShallowUnselected(Search): boolean;
   +isSiblingSelected: ?boolean;
-  +isGreyedOut: boolean;
+  isGreyedOut(Search): boolean;
   +name: ?string;
   +hasContent: boolean;
   +uniqueColor: string;

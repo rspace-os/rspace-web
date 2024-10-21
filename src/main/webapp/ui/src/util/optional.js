@@ -261,7 +261,7 @@ export function lift4<A, B, C, D, E>(
  */
 export function getByKey<Key: string, Value>(
   key: Key,
-  obj: { [Key]: Value }
+  obj: { +[Key]: Value }
 ): Optional<Value> {
   if (key in obj) return Optional.present(obj[key]);
   return Optional.empty();

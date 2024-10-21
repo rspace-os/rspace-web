@@ -7,65 +7,32 @@ import ContextMenuAction, {
 import useStores from "../../../stores/use-stores";
 import { Observer } from "mobx-react-lite";
 import AddBoxIcon from "@mui/icons-material/AddBox";
-import CreateInContextDialog from "../../Mixed/CreateDialog";
-import FromSampleDialog from "../../Template/FromSampleDialog";
+import CreateDialog from "./CreateDialog";
 import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import ContainerModel from "../../../stores/models/ContainerModel";
-import SampleModel from "../../../stores/models/SampleModel";
-import TemplateModel from "../../../stores/models/TemplateModel";
-import { menuIDs } from "../../../util/menuIDs";
 
 type CreateActionArgs = {|
   as: ContextMenuRenderOptions,
   disabled: string,
   selectedResults: Array<InventoryRecord>,
-  menuID: $Values<typeof menuIDs>,
   closeMenu: () => void,
 |};
 
 const CreateAction: ComponentType<CreateActionArgs> = forwardRef(
-  (
-    { as, disabled, selectedResults, menuID, closeMenu }: CreateActionArgs,
-    ref
-  ) => {
-    const { createStore } = useStores();
+  ({ as, disabled, selectedResults, closeMenu }: CreateActionArgs, ref) => {
+    const [openCreateDialog, setOpenCreateDialog] = React.useState(false);
 
     const isFullContainer = (): boolean =>
       selectedResults[0] instanceof ContainerModel && selectedResults[0].isFull;
 
-    /* prevent multiple CreateDialog renders (or Dialog with wrong record) */
-    const contextMatches = (): boolean =>
-      createStore.creationContext === menuID ||
-      createStore.creationContext === "containerLocation";
-
-    const contextForTemplateMatches = (): boolean =>
-      createStore.templateCreationContext === menuID;
-
-    const canCreate: boolean =
-      selectedResults.length === 1 && !isFullContainer();
-
-    const canCreateTemplate: boolean =
-      selectedResults[0] instanceof SampleModel &&
-      !(selectedResults[0] instanceof TemplateModel);
-
     const onClick = () => {
-      createStore.setCreationContext(menuID);
-    };
-
-    const closeDialog = async () => {
-      if (selectedResults[0] instanceof ContainerModel)
-        selectedResults[0].toggleAllLocations(false);
-      createStore.setCreationContext("");
+      setOpenCreateDialog(true);
     };
 
     const onCloseHandler = () => {
-      void closeDialog();
+      setOpenCreateDialog(false);
       closeMenu();
-    };
-
-    const fromSampleDialogCloseHandler = () => {
-      createStore.setTemplateCreationContext("");
     };
 
     const disabledHelp = match<void, string>([
@@ -94,23 +61,13 @@ const CreateAction: ComponentType<CreateActionArgs> = forwardRef(
             as={as}
             ref={ref}
           >
-            {canCreate && contextMatches() && (
-              <CreateInContextDialog
-                open={contextMatches()}
-                onClose={onCloseHandler}
-                selectedResult={selectedResults[0]}
-                menuID={menuID}
-              />
-            )}
-            {canCreateTemplate && contextForTemplateMatches() && (
-              <FromSampleDialog
-                open={contextForTemplateMatches()}
-                // $FlowExpectedError[incompatible-type] if canCreateTemplate, result is a sample (not a template)
-                sample={selectedResults[0]}
-                onCancel={fromSampleDialogCloseHandler}
-                onSubmit={fromSampleDialogCloseHandler}
-              />
-            )}
+            <CreateDialog
+              // the key causes the local state to be cleared when closing
+              key={openCreateDialog ? 1 : 0}
+              open={openCreateDialog}
+              onClose={onCloseHandler}
+              existingRecord={selectedResults[0]}
+            />
           </ContextMenuAction>
         )}
       </Observer>
