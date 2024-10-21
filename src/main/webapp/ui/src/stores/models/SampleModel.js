@@ -221,7 +221,7 @@ export default class SampleModel
   createOptionsParametersState: {|
     split: {| key: "split",  copies: number |},
     newSubsamplesCount: {| key: "newSubsamplesCount", count: number |},
-    newSubsamplesQuantity: {| key: "newSubsamplesQuantity", quantity: number, quantityLabel: string |},
+    newSubsamplesQuantity: {| key: "newSubsamplesQuantity", quantity: number | "", quantityLabel: string |},
     name: {| key: "name", value: string |},
     fields: {|
       key: "fields",
@@ -897,7 +897,7 @@ export default class SampleModel
           label: "Quantity per subsample",
           explanation: "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
           state: this.createOptionsParametersState.newSubsamplesQuantity,
-          validState: () => true,
+          validState: () => this.createOptionsParametersState.newSubsamplesQuantity.quantity !== "",
         }],
         onReset: () => {
           this.createOptionsParametersState.newSubsamplesCount.count = 1;

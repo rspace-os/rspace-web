@@ -93,7 +93,7 @@ export type CreateOptionParameter = {|
     | {| key: "newSubsamplesCount", count: number |}
     | {|
         key: "newSubsamplesQuantity",
-        quantity: number,
+        quantity: number | "",
         quantityLabel: string,
       |},
 
