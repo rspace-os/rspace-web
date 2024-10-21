@@ -300,7 +300,7 @@ const NewSubsampleCount: ComponentType<{|
 
 const NewSubsampleQuantity: ComponentType<{|
   id: string,
-  state: { quantity: number, quantityLabel: string },
+  state: { quantity: number | "", quantityLabel: string },
 |}> = observer(({ id, state }): Node => {
   return (
     <Box>
@@ -310,9 +310,18 @@ const NewSubsampleQuantity: ComponentType<{|
           name="quantity"
           autoFocus
           value={state.quantity}
+          error={state.quantity === ""}
           onChange={({ target }) => {
             runInAction(() => {
-              state.quantity = parseFloat(target.value);
+              /*
+               * The saved value can be either a number or an empty string,
+               * which is just to allow for the field to be temporarily cleared
+               * whilst entering a different number. The should should be
+               * prohibited from submitting if the field is empty.
+               */
+              const newValue = parseFloat(target.value);
+              if (target.checkValidity())
+                state.quantity = isNaN(newValue) ? "" : newValue;
             });
           }}
           variant="outlined"
