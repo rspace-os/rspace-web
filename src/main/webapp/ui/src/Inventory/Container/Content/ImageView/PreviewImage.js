@@ -103,7 +103,7 @@ function PreviewImage(): Node {
             container.startSelection(mouseDownPoint.event);
             setMouseDownPoint(null);
           }
-          container.stopSelection();
+          container.stopSelection(search);
         }}
         onMouseMove={(e: MouseEvent) => {
           if (noSelection) return;

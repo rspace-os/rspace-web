@@ -10,7 +10,11 @@ import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleMod
 import Breadcrumbs from "../Breadcrumbs";
 
 jest.mock("../../../common/InvApiService", () => {});
-jest.mock("../../../stores/stores/RootStore", () => () => ({}));
+jest.mock("../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();

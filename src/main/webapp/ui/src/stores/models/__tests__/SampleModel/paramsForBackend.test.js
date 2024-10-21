@@ -6,7 +6,11 @@
 import { makeMockSample, makeMockSampleWithASubsample } from "./mocking";
 
 jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../stores/RootStore", () => () => ({}));
+jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+}));
 
 describe("computed: paramsForBackend", () => {
   /*

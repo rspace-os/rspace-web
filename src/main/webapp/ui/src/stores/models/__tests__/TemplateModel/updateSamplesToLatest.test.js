@@ -14,10 +14,13 @@ import InvApiService from "../../../../common/InvApiService";
  * reference to the same object. It is stored using var to make sure that the
  * mocks below aren't hoiseted above.
  */
-var mockRootStore = {
+const mockRootStore = {
   uiStore: {
     confirm: jest.fn(() => Promise.resolve(true)),
     addAlert: jest.fn(() => {}),
+  },
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
   },
 };
 

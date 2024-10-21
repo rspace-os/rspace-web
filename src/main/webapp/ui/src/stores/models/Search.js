@@ -60,6 +60,7 @@ import {
 import { type Sample } from "../definitions/Sample";
 import { InvalidState, UserCancelledAction } from "../../util/error";
 import { type Basket } from "../definitions/Basket";
+import { type SubSample } from "../definitions/SubSample";
 import { noProgress } from "../../util/progress";
 import {
   IsInvalid,
@@ -128,6 +129,8 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   selectionMode: "MULTIPLE",
   highlightActiveResult: true,
   hideContentsOfChip: false,
+  selectionLimit: Infinity,
+  onlyAllowSelectingEmptyLocations: false,
 };
 
 export default class Search implements SearchInterface {
@@ -796,7 +799,7 @@ export default class Search implements SearchInterface {
     }
   }
 
-  async splitRecord(copies: number, subsample: InventoryRecord): Promise<void> {
+  async splitRecord(copies: number, subsample: SubSample): Promise<void> {
     if (!(subsample instanceof SubSampleModel))
       throw new Error("Can only split SubSamples");
     this.setProcessingContextActions(true);
