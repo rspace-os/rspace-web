@@ -67,6 +67,7 @@ import {
   IsValid,
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
+import { type Quantity } from "./RecordWithQuantity";
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
@@ -1045,6 +1046,50 @@ export default class Search implements SearchInterface {
         })
       );
       console.error("Could not create template from sample.", error);
+      throw error;
+    }
+  }
+
+  async createNewSubsamples(opts: {|
+    sample: Sample,
+    numberOfNewSubsamples: number,
+    quantityPerSubsample: Quantity,
+  |}): Promise<void> {
+    const { uiStore } = getRootStore();
+    try {
+      const { data } = await ApiService.post<
+        {|
+          sampleId: number,
+          numSubSamples: string,
+          singleSubSampleQuantity: Quantity,
+        |},
+        mixed
+      >("subSamples", {
+        sampleId: opts.sample.id,
+        numSubSamples: `${opts.numberOfNewSubsamples}`,
+        singleSubSampleQuantity: opts.quantityPerSubsample,
+      });
+      uiStore.addAlert(
+        mkAlert({
+          message: "Successfully created new subsamples.",
+          variant: "success",
+          // TODO: details
+        })
+      );
+      // TODO: refresh UI
+    } catch (error) {
+      uiStore.addAlert(
+        mkAlert({
+          title: "Subsample creation failed.",
+          message:
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          variant: "error",
+          details: error.response?.data.errors.map((e) => ({
+            title: e,
+            variant: "error",
+          })),
+        })
+      );
       throw error;
     }
   }
