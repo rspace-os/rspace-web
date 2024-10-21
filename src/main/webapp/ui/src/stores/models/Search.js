@@ -1063,7 +1063,7 @@ export default class Search implements SearchInterface {
           numSubSamples: string,
           singleSubSampleQuantity: Quantity,
         |},
-        mixed
+        $ReadOnlyArray<SubSampleAttrs>
       >("subSamples", {
         sampleId: opts.sample.id,
         numSubSamples: `${opts.numberOfNewSubsamples}`,
@@ -1076,11 +1076,23 @@ export default class Search implements SearchInterface {
           ? searchStore.search.fetcher.performInitialSearch()
           : Promise.resolve(),
       ]);
+
+      const factory = this.factory.newFactory();
+      const successfullyCreated = data.map((record) => {
+        const newRecord = factory.newRecord(record);
+        newRecord.populateFromJson(factory, record);
+        return newRecord;
+      });
+
       uiStore.addAlert(
         mkAlert({
           message: "Successfully created new subsamples.",
           variant: "success",
-          // TODO: details
+          details: successfullyCreated.map((r) => ({
+            title: r.name,
+            variant: "success",
+            record: r,
+          })),
         })
       );
     } catch (error) {
