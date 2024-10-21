@@ -427,5 +427,38 @@ describe("CreateDialog", () => {
         "4"
       );
     });
+    test("Clearing the quantity field disables the submit button", async () => {
+      const user = userEvent.setup();
+      const sample = makeMockSample({});
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog
+            existingRecord={sample}
+            open={true}
+            onClose={() => {}}
+          />
+        </ThemeProvider>
+      );
+
+      expect(
+        screen.getByRole("radio", {
+          name: /Subsamples, by creating new ones/,
+        })
+      ).toBeEnabled();
+
+      await user.click(
+        screen.getByRole("radio", {
+          name: /Subsamples, by creating new ones/,
+        })
+      );
+
+      await user.click(screen.getByRole("button", { name: /next/i }));
+
+      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
+      await user.clear(
+        screen.getByRole("spinbutton", { name: /Quantity per subsample/i })
+      );
+      expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
+    });
   });
 });
