@@ -13,6 +13,7 @@ import BatchEditingItemsTable from "../BatchEditingItemsTable";
 import "../../../../../__mocks__/matchMedia.js";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -23,10 +24,11 @@ afterEach(cleanup);
 describe("BatchEditingItemsTable", () => {
   test("Table body should have as many rows as records that are passed.", () => {
     fc.assert(
-      fc.property(
+      fc.asyncProperty(
         fc.tuple(arbRsSet(arbitraryRecord), fc.string()),
-        ([records, label]) => {
+        async ([records, label]) => {
           fc.pre(records.map(({ globalId }) => globalId).size === records.size);
+          const user = userEvent.setup();
           cleanup();
           render(
             <ThemeProvider theme={materialTheme}>
@@ -34,9 +36,7 @@ describe("BatchEditingItemsTable", () => {
             </ThemeProvider>
           );
 
-          act(() => {
-            screen.getByRole("button").click();
-          });
+          await user.click(screen.getByRole("button"));
           // + 1 for the table head
           expect(screen.queryAllByRole("row").length).toEqual(records.size + 1);
         }

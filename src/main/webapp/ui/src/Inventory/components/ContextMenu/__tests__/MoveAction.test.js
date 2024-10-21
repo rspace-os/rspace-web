@@ -18,6 +18,7 @@ import MoveAction from "../MoveAction";
 import MoveDialog from "../../MoveToTarget/MoveDialog";
 import "__mocks__/matchMedia";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../Search/SearchView", () => jest.fn(() => <></>));
 jest.mock("@mui/material/Dialog", () =>
@@ -34,7 +35,8 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("MoveAction", () => {
-  test("After the dialog is closed, the overflow context menu should have been closed.", () => {
+  test("After the dialog is closed, the overflow context menu should have been closed.", async () => {
+    const user = userEvent.setup();
     let rootStore: StoreContainer;
     rootStore = makeMockRootStore(
       observable({
@@ -77,12 +79,8 @@ describe("MoveAction", () => {
       </ThemeProvider>
     );
 
-    act(() => {
-      screen.getAllByRole("button", { name: "Move" })[0].click();
-    });
-    act(() => {
-      screen.getByRole("button", { name: "Cancel" }).click();
-    });
+    await user.click(screen.getAllByRole("button", { name: "Move" })[0]);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(closeMenu).toHaveBeenCalled();
   });

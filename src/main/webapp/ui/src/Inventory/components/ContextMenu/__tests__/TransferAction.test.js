@@ -11,6 +11,7 @@ import Dialog from "@mui/material/Dialog";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("@mui/material/Dialog", () =>
   jest.fn(({ children }) => {
@@ -27,6 +28,7 @@ afterEach(cleanup);
 
 describe("TransferAction", () => {
   test("Dialog should close when cancel is tapped.", async () => {
+    const user = userEvent.setup();
     render(
       <ThemeProvider theme={materialTheme}>
         <TransferAction
@@ -45,9 +47,7 @@ describe("TransferAction", () => {
       );
     });
 
-    act(() => {
-      screen.getAllByText("Transfer")[0].click();
-    });
+    await user.click(screen.getAllByText("Transfer")[0]);
 
     await waitFor(() => {
       expect(Dialog).toHaveBeenCalledWith(
@@ -56,9 +56,7 @@ describe("TransferAction", () => {
       );
     });
 
-    act(() => {
-      screen.getByText("Cancel").click();
-    });
+    await user.click(screen.getByText("Cancel"));
 
     await waitFor(() => {
       expect(Dialog).toHaveBeenLastCalledWith(

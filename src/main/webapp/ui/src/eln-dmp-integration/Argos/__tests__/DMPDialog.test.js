@@ -5,13 +5,7 @@
 /* eslint-env jest */
 import "../../../../__mocks__/matchMedia.js";
 import React from "react";
-import {
-  cleanup,
-  screen,
-  waitFor,
-  act,
-  fireEvent,
-} from "@testing-library/react";
+import { cleanup, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
 import DMPDialog from "../DMPDialog";
@@ -20,6 +14,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 import { within, render } from "../../../__tests__/customQueries";
 import { take, incrementForever } from "../../../util/iterators";
+import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -81,6 +76,7 @@ describe("DMPDialog", () => {
     "Importing a selected DMP should call the import endpoint.",
     async () => {
       jest.clearAllMocks();
+      const user = userEvent.setup();
       mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
         data: {
           totalCount: 2,
@@ -117,22 +113,18 @@ describe("DMPDialog", () => {
         // i.e. the table body has been rendered
       });
 
-      await act(async () => {
-        (
-          await within(
-            await within(screen.getByRole("grid")).findTableCell({
-              columnHeading: "Select",
-              rowIndex: 0,
-            })
-          ).findByRole("radio")
-        ).click();
-      });
+      await user.click(
+        await within(
+          await within(screen.getByRole("grid")).findTableCell({
+            columnHeading: "Select",
+            rowIndex: 0,
+          })
+        ).findByRole("radio")
+      );
 
       mockAxios.resetHistory();
 
-      await act(async () => {
-        (await screen.findByRole("button", { name: "Import" })).click();
-      });
+      await user.click(await screen.findByRole("button", { name: "Import" }));
 
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].url).toBe(
@@ -146,6 +138,7 @@ describe("DMPDialog", () => {
     test(
       "Next and previous page buttons should make the right API calls.",
       async () => {
+        const user = userEvent.setup();
         mockAxios.resetHistory();
         mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
           data: {
@@ -176,21 +169,17 @@ describe("DMPDialog", () => {
           { timeout: 2000 }
         );
 
-        await act(() => {
-          screen
-            .getByRole("button", {
-              name: "Go to next page",
-            })
-            .click();
-        });
+        await user.click(
+          screen.getByRole("button", {
+            name: "Go to next page",
+          })
+        );
 
-        await act(() => {
-          screen
-            .getByRole("button", {
-              name: "Go to previous page",
-            })
-            .click();
-        });
+        await user.click(
+          screen.getByRole("button", {
+            name: "Go to previous page",
+          })
+        );
 
         expect(mockAxios.history.get.length).toBe(3);
         expect(
@@ -207,6 +196,7 @@ describe("DMPDialog", () => {
     test(
       "Changing the page size should make the right API call.",
       async () => {
+        const user = userEvent.setup();
         jest.clearAllMocks();
         mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
           data: {
@@ -264,11 +254,9 @@ describe("DMPDialog", () => {
 
         fireEvent.mouseDown(screen.getByRole("combobox"));
 
-        await act(() => {
-          within(screen.getByRole("listbox"))
-            .getByRole("option", { name: 5 })
-            .click();
-        });
+        await user.click(
+          within(screen.getByRole("listbox")).getByRole("option", { name: "5" })
+        );
 
         expect(mockAxios.history.get.length).toBe(2);
         expect(
@@ -287,6 +275,7 @@ describe("DMPDialog", () => {
     test(
       "Label filter should make the right API call.",
       async () => {
+        const user = userEvent.setup();
         jest.clearAllMocks();
         mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
           data: {
@@ -327,13 +316,11 @@ describe("DMPDialog", () => {
           { timeout: 2000 }
         );
 
-        await act(() => {
-          screen
-            .getByRole("button", {
-              name: "Label",
-            })
-            .click();
-        });
+        await user.click(
+          screen.getByRole("button", {
+            name: "Label",
+          })
+        );
 
         // first type in the label filter, and then press enter
         fireEvent.input(screen.getByRole("textbox"), {

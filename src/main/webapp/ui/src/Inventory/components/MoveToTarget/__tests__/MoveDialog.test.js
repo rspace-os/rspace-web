@@ -31,6 +31,7 @@ import fc from "fast-check";
 import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../Search/SearchView", () => jest.fn(() => <></>));
 jest.mock("@mui/material/Dialog", () =>
@@ -50,6 +51,7 @@ afterEach(cleanup);
 
 describe("MoveDialog", () => {
   test("When cancel is pressed, the dialog should close.", async () => {
+    const user = userEvent.setup();
     let rootStore: StoreContainer;
     rootStore = makeMockRootStore(
       observable({
@@ -89,9 +91,7 @@ describe("MoveDialog", () => {
       expect.anything()
     );
 
-    act(() => {
-      screen.getByRole("button", { name: "Cancel" }).click();
-    });
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     await waitFor(() => {
       expect(rootStore.moveStore.isMoving).toBe(false);

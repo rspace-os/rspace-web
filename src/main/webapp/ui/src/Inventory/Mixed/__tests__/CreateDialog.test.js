@@ -28,6 +28,7 @@ import SearchContext from "../../../stores/contexts/Search";
 import Search from "../../../stores/models/Search";
 import { mockFactory } from "../../../stores/definitions/__tests__/Factory/mocking";
 import each from "jest-each";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -158,24 +159,21 @@ describe("CreateInContextDialog", () => {
   });
 
   describe("When CreateDialog is rendered", () => {
-    const getCreateButton = () =>
-      screen.getByRole("button", {
-        name: /CREATE/i,
-      });
-    const getCancelButton = () =>
-      screen.getByRole("button", {
-        name: /CANCEL/i,
-      });
-
-    test("Cancel button exists and can be clicked", () => {
+    test("Cancel button exists and can be clicked", async () => {
+      const user = userEvent.setup();
       const onClose = jest.fn<[], void>();
       render(<Dialog selectedResult={mockContainer} onClose={onClose} />);
 
-      getCancelButton().click();
+      await user.click(
+        screen.getByRole("button", {
+          name: /CANCEL/i,
+        })
+      );
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
-    test("Create button calls the right action/method (createNewContainer case)", () => {
+    test("Create button calls the right action/method (createNewContainer case)", async () => {
+      const user = userEvent.setup();
       render(<Dialog selectedResult={mockContainer} onClose={() => {}} />);
 
       // with selectedResult={mockContainer}, createNewContainer will be the default option
@@ -184,11 +182,16 @@ describe("CreateInContextDialog", () => {
         "createNewContainer"
       );
 
-      getCreateButton().click();
+      await user.click(
+        screen.getByRole("button", {
+          name: /CREATE/i,
+        })
+      );
       expect(createContainerSpy).toHaveBeenCalledTimes(1);
     });
 
-    test("Create button calls the right action/method (createNewSample case)", () => {
+    test("Create button calls the right action/method (createNewSample case)", async () => {
+      const user = userEvent.setup();
       render(<Dialog selectedResult={mockContainer} onClose={() => {}} />);
 
       // with selectedResult={mockContainer}, createNewSample will be the second option
@@ -199,11 +202,16 @@ describe("CreateInContextDialog", () => {
 
       fireEvent.click(screen.getByTestId("option-radio-ic-2"));
 
-      getCreateButton().click();
+      await user.click(
+        screen.getByRole("button", {
+          name: /CREATE/i,
+        })
+      );
       expect(createSampleSpy).toHaveBeenCalledTimes(1);
     });
 
-    test("Create button calls the right action/method (setTemplateCreationContext case)", () => {
+    test("Create button calls the right action/method (setTemplateCreationContext case)", async () => {
+      const user = userEvent.setup();
       render(<Dialog selectedResult={mockSample} onClose={() => {}} />);
 
       // with selectedResult={mockSample}, setTemplateCreationContext will be the default option
@@ -212,11 +220,16 @@ describe("CreateInContextDialog", () => {
         "setTemplateCreationContext"
       );
 
-      getCreateButton().click();
+      await user.click(
+        screen.getByRole("button", {
+          name: /CREATE/i,
+        })
+      );
       expect(createTemplateSpy).toHaveBeenCalledTimes(1);
     });
 
-    test("Create button calls the right action/method (createNewSampleFromTemplate case)", () => {
+    test("Create button calls the right action/method (createNewSampleFromTemplate case)", async () => {
+      const user = userEvent.setup();
       render(<Dialog selectedResult={mockTemplate} onClose={() => {}} />);
 
       // with selectedResult={mockTemplate}, createNewSample will be the default option
@@ -225,12 +238,17 @@ describe("CreateInContextDialog", () => {
         "createNewSample"
       );
 
-      getCreateButton().click();
+      await user.click(
+        screen.getByRole("button", {
+          name: /CREATE/i,
+        })
+      );
       expect(createSampleFromTemplateSpy).toHaveBeenCalledTimes(1);
       expect(createSampleFromTemplateSpy).toHaveBeenCalledWith();
     });
 
-    test("Create button calls the right action/method (split subSample case)", () => {
+    test("Create button calls the right action/method (split subSample case)", async () => {
+      const user = userEvent.setup();
       render(<Dialog selectedResult={mockSubSample} onClose={() => {}} />);
 
       // with selectedResult={mockSubSample}, splitRecord will be the default option. that method is on search.
@@ -239,7 +257,11 @@ describe("CreateInContextDialog", () => {
         "splitRecord"
       );
 
-      getCreateButton().click();
+      await user.click(
+        screen.getByRole("button", {
+          name: /CREATE/i,
+        })
+      );
       expect(splitSubSampleSpy).toHaveBeenCalledTimes(1);
     });
   });

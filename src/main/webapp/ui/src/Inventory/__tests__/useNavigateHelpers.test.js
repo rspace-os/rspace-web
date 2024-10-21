@@ -10,6 +10,7 @@ import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/
 import NavigateContext from "../../stores/contexts/Navigate";
 import Search from "../../stores/models/Search";
 import useNavigateHelpers from "../useNavigateHelpers";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -19,7 +20,8 @@ afterEach(cleanup);
 
 describe("useNavigateHelpers", () => {
   describe("navigateToRecord should", () => {
-    test("call setActiveResult", () => {
+    test("call setActiveResult", async () => {
+      const user = userEvent.setup();
       const mockContainer = makeMockContainer();
       const FunctionComponent = () => {
         const { navigateToRecord } = useNavigateHelpers();
@@ -46,14 +48,15 @@ describe("useNavigateHelpers", () => {
           <FunctionComponent />
         </NavigateContext.Provider>
       );
-      screen.getByText("Click me.").click();
+      await user.click(screen.getByText("Click me."));
 
       expect(setActiveResultSpy).toBeCalledWith(mockContainer);
     });
   });
 
   describe("navigateToSearch should", () => {
-    test("not call setActiveResult", () => {
+    test("not call setActiveResult", async () => {
+      const user = userEvent.setup();
       const mockSearchParams = { query: "foo" };
       const FunctionComponent = () => {
         const { navigateToSearch } = useNavigateHelpers();
@@ -85,7 +88,7 @@ describe("useNavigateHelpers", () => {
           <FunctionComponent />
         </NavigateContext.Provider>
       );
-      screen.getByText("Click me.").click();
+      await user.click(screen.getByText("Click me."));
 
       expect(setActiveResultSpy).not.toBeCalled();
     });

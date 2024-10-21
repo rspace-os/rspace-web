@@ -25,6 +25,7 @@ import { assertNotNull } from "../../../../../util/__tests__/helpers";
 import { type StoreContainer } from "../../../../../stores/stores/RootStore";
 import ContainerModel from "../../../../../stores/models/ContainerModel";
 import * as ArrayUtils from "../../../../../util/ArrayUtils";
+import userEvent from "@testing-library/user-event";
 
 function makeRootStoreWithGridContainer(): {|
   rootStore: StoreContainer,
@@ -55,7 +56,8 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("GridDimensions", () => {
-  test("Each of the standard dimension menu options sets the rows and columns to a valid number.", () => {
+  test("Each of the standard dimension menu options sets the rows and columns to a valid number.", async () => {
+    const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -70,20 +72,20 @@ describe("GridDimensions", () => {
     const menuOptions = within(screen.getByRole("listbox"))
       .getAllByRole("option")
       .map((o) => o.textContent);
-    act(() => {
-      within(screen.getByRole("listbox"))
-        .getByRole("option", { name: "Custom" })
-        .click();
-    });
+    await user.click(
+      within(screen.getByRole("listbox")).getByRole("option", {
+        name: "Custom",
+      })
+    );
 
     // for each menu option, assert it sets the rows and cols to valid values
-    menuOptions.forEach((option) => {
+    for (const option of menuOptions) {
       fireEvent.mouseDown(screen.getByRole("combobox"));
-      act(() => {
-        within(screen.getByRole("listbox"))
-          .getByRole("option", { name: option })
-          .click();
-      });
+      await user.click(
+        within(screen.getByRole("listbox")).getByRole("option", {
+          name: option,
+        })
+      );
 
       const rows = parseInteger(
         screen.getByRole("spinbutton", { name: "rows" }).value
@@ -98,10 +100,11 @@ describe("GridDimensions", () => {
       expect(columns).not.toBeNull();
       expect(columns).toBeGreaterThanOrEqual(2);
       expect(columns).toBeLessThanOrEqual(24);
-    });
+    }
   });
 
-  test("Choosing custom should not change the dimensions.", () => {
+  test("Choosing custom should not change the dimensions.", async () => {
+    const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -123,11 +126,11 @@ describe("GridDimensions", () => {
     );
 
     // tap that menu option, setting the rows and columns
-    act(() => {
-      within(screen.getByRole("listbox"))
-        .getByRole("option", { name: menuOption })
-        .click();
-    });
+    await user.click(
+      within(screen.getByRole("listbox")).getByRole("option", {
+        name: menuOption,
+      })
+    );
     const rowsBefore = parseInteger(
       screen.getByRole("spinbutton", { name: "rows" }).value
     ).orElse(null);
@@ -139,11 +142,11 @@ describe("GridDimensions", () => {
 
     // choose "custom"
     fireEvent.mouseDown(screen.getByRole("combobox"));
-    act(() => {
-      within(screen.getByRole("listbox"))
-        .getByRole("option", { name: "Custom" })
-        .click();
-    });
+    await user.click(
+      within(screen.getByRole("listbox")).getByRole("option", {
+        name: "Custom",
+      })
+    );
 
     // assert that the values have not changed
     const rowsAfter = parseInteger(
@@ -158,7 +161,8 @@ describe("GridDimensions", () => {
     expect(columnsBefore).toEqual(columnsAfter);
   });
 
-  test("Changing rows sets menu to Custom", () => {
+  test("Changing rows sets menu to Custom", async () => {
+    const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -179,11 +183,11 @@ describe("GridDimensions", () => {
       ).orElse(null)
     );
     expect(menuOption).not.toBeNull();
-    act(() => {
-      within(screen.getByRole("listbox"))
-        .getByRole("option", { name: menuOption })
-        .click();
-    });
+    await user.click(
+      within(screen.getByRole("listbox")).getByRole("option", {
+        name: menuOption,
+      })
+    );
 
     // change the rows
     const rowsBefore = parseInteger(
@@ -198,7 +202,8 @@ describe("GridDimensions", () => {
     expect(screen.getByRole("combobox")).toBeVisible();
   });
 
-  test("Changing columns sets menu to Custom", () => {
+  test("Changing columns sets menu to Custom", async () => {
+    const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -219,11 +224,11 @@ describe("GridDimensions", () => {
       ).orElse(null)
     );
     expect(menuOption).not.toBeNull();
-    act(() => {
-      within(screen.getByRole("listbox"))
-        .getByRole("option", { name: menuOption })
-        .click();
-    });
+    await user.click(
+      within(screen.getByRole("listbox")).getByRole("option", {
+        name: menuOption,
+      })
+    );
 
     // change the columns
     const columnsBefore = parseInteger(
@@ -239,7 +244,8 @@ describe("GridDimensions", () => {
     expect(screen.getByRole("combobox")).toBeVisible();
   });
 
-  test("The multiplication of the rows and columns should equal the size quoted in the menu item.", () => {
+  test("The multiplication of the rows and columns should equal the size quoted in the menu item.", async () => {
+    const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -255,20 +261,20 @@ describe("GridDimensions", () => {
       .getAllByRole("option")
       .map((o) => o.textContent)
       .filter((o) => o !== "Custom");
-    act(() => {
-      within(screen.getByRole("listbox"))
-        .getByRole("option", { name: "Custom" })
-        .click();
-    });
+    await user.click(
+      within(screen.getByRole("listbox")).getByRole("option", {
+        name: "Custom",
+      })
+    );
 
     // for each menu option, assert that the rows and colunmns, when multiplied, are the number quoted by the option
-    menuOptions.forEach((option) => {
+    for (const option of menuOptions) {
       fireEvent.mouseDown(screen.getByRole("combobox"));
-      act(() => {
-        within(screen.getByRole("listbox"))
-          .getByRole("option", { name: option })
-          .click();
-      });
+      await user.click(
+        within(screen.getByRole("listbox")).getByRole("option", {
+          name: option,
+        })
+      );
 
       const rows = parseInteger(
         screen.getByRole("spinbutton", { name: "rows" }).value
@@ -280,7 +286,7 @@ describe("GridDimensions", () => {
       expect(option).toMatch(
         new RegExp(`${assertNotNull(rows) * assertNotNull(columns)}`)
       );
-    });
+    }
   });
 
   test("The first option, the most popular, should be 96-well plate.", () => {
@@ -302,7 +308,8 @@ describe("GridDimensions", () => {
     expect(assertNotNull(menuOption)).toMatch(/96 well plate/);
   });
 
-  test("Selecting 96-well should save cols: 12 and rows: 8.", () => {
+  test("Selecting 96-well should save cols: 12 and rows: 8.", async () => {
+    const user = userEvent.setup();
     const { rootStore, gridContainer } = makeRootStoreWithGridContainer();
     const spy = jest.spyOn(gridContainer, "setAttributesDirty");
     render(
@@ -315,20 +322,21 @@ describe("GridDimensions", () => {
 
     fireEvent.mouseDown(screen.getByRole("combobox"));
 
-    act(() => {
-      within(screen.getByRole("listbox"))
-        .getByRole("option", { name: "96 well plate" })
-        .click();
-    });
+    await user.click(
+      within(screen.getByRole("listbox")).getByRole("option", {
+        name: "96 well plate",
+      })
+    );
 
     expect(spy).toHaveBeenCalledWith({
       gridLayout: expect.objectContaining({ columnsNumber: 12, rowsNumber: 8 }),
     });
   });
 
-  test("When a menu option is chosen, the same values should be passed to setAttributesDirty as displayed in the numerical fields.", () => {
+  test("When a menu option is chosen, the same values should be passed to setAttributesDirty as displayed in the numerical fields.", async () => {
+    const user = userEvent.setup();
     fc.assert(
-      fc.property(fc.nat(), (unboundedIndex) => {
+      fc.asyncProperty(fc.nat(), async (unboundedIndex) => {
         cleanup();
         const { rootStore, gridContainer } = makeRootStoreWithGridContainer();
         render(
@@ -355,11 +363,11 @@ describe("GridDimensions", () => {
             gridLayout = newGridLayout;
           });
 
-        act(() => {
-          within(screen.getByRole("listbox"))
-            .getByRole("option", { name: option })
-            .click();
-        });
+        await user.click(
+          within(screen.getByRole("listbox")).getByRole("option", {
+            name: option,
+          })
+        );
 
         const rows = parseInteger(
           screen.getByRole("spinbutton", { name: "rows" }).value
