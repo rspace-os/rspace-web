@@ -1055,7 +1055,7 @@ export default class Search implements SearchInterface {
     numberOfNewSubsamples: number,
     quantityPerSubsample: Quantity,
   |}): Promise<void> {
-    const { uiStore } = getRootStore();
+    const { uiStore, searchStore } = getRootStore();
     try {
       const { data } = await ApiService.post<
         {|
@@ -1069,6 +1069,13 @@ export default class Search implements SearchInterface {
         numSubSamples: `${opts.numberOfNewSubsamples}`,
         singleSubSampleQuantity: opts.quantityPerSubsample,
       });
+      await Promise.all([
+        opts.sample.fetchAdditionalInfo(),
+        opts.sample.refreshAssociatedSearch(),
+        searchStore.search.fetcher.parentGlobalId === opts.sample.globalId
+          ? searchStore.search.fetcher.performInitialSearch()
+          : Promise.resolve(),
+      ]);
       uiStore.addAlert(
         mkAlert({
           message: "Successfully created new subsamples.",
@@ -1076,7 +1083,6 @@ export default class Search implements SearchInterface {
           // TODO: details
         })
       );
-      // TODO: refresh UI
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
