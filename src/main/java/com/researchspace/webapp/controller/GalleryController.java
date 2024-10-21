@@ -210,8 +210,9 @@ public class GalleryController extends BaseController {
    *
    * @param mediatype the type of media to load, one of the tab names in the media gallery.
    * @param currentFolderId - the parent folder id, or 0 if we're looking up root media file
+   * @param foldersOnly when true returns only folders, otherwise gallery items and folders
    * @param pgCrit pagination number
-   * @param filterCriteria
+   * @param filterCriteria additional gallery filter criteria used to filter by name
    * @return AjaxReturnObject of {@link GalleryData} objects for populating media gallery.
    */
   @GetMapping("/getUploadedFiles")
@@ -219,6 +220,8 @@ public class GalleryController extends BaseController {
   public AjaxReturnObject<GalleryData> getUploadedFiles(
       @RequestParam("mediatype") String mediatype,
       @RequestParam("currentFolderId") long currentFolderId,
+      @RequestParam(value = "foldersOnly", required = false, defaultValue = "false")
+          boolean foldersOnly,
       PaginationCriteria<BaseRecord> pgCrit,
       GalleryFilterCriteria filterCriteria) {
     User user = userManager.getAuthenticatedUserInSession();
@@ -247,13 +250,11 @@ public class GalleryController extends BaseController {
 
     int numberOfRecords = getNumberOfRecordsOnGalleryPage(isOnRoot);
     pgCrit.setResultsPerPage(numberOfRecords);
+    RecordTypeFilter recordTypeFilter =
+        foldersOnly ? RecordTypeFilter.MOVE_DIALOGFILTER : RecordTypeFilter.GALLERY_FILTER;
     ISearchResults<BaseRecord> records =
         recordManager.getGalleryItems(
-            galleryItemParent.getId(),
-            pgCrit,
-            filterCriteria,
-            RecordTypeFilter.GALLERY_FILTER,
-            user);
+            galleryItemParent.getId(), pgCrit, filterCriteria, recordTypeFilter, user);
     if (records == null) {
       return new AjaxReturnObject<>(galleryData, null);
     }

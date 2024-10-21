@@ -32,7 +32,6 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
-import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
@@ -64,7 +63,6 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
   private @Autowired GalleryController galleryController;
   private @Autowired RecordManager recordManager;
-  private @Autowired MediaManager mediaManager;
   private @Autowired RSChemElementManager rsChemElementManager;
   public @Rule TemporaryFolder tempIndexFolder = new TemporaryFolder();
   @Autowired FileIndexSearcher searcher;
@@ -210,7 +208,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     // now order by name, should be OK
     AjaxReturnObject<GalleryData> data =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(data.getData());
 
     EcatImage image1 = addImageToGallery(owner);
@@ -218,7 +217,11 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     recordMgr.renameRecord(newname, image1.getId(), owner);
     data =
         galleryController.getUploadedFiles(
-            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, new GalleryFilterCriteria(newname));
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME,
+            0,
+            false,
+            pgcrit,
+            new GalleryFilterCriteria(newname));
     assertEquals(1, data.getData().getItems().getHits().intValue());
   }
 
@@ -228,7 +231,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     initialiseIndexFolder();
     User subject = createInitAndLoginAnyUser();
     AjaxReturnObject<GalleryData> res =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(res.getData());
 
     final int initialImgSize = res.getData().getItems().getHits();
@@ -237,7 +241,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     uploadImageToGallery();
 
     AjaxReturnObject<GalleryData> res2 =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertEquals(
         initialImgSize + 1,
         res2.getData().getItems().getHits().intValue()); // 3 images + shared folder
@@ -245,7 +250,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     // Assert unknown file format goes to MiscelleaneousDocument Folder
     AjaxReturnObject<GalleryData> miscResult =
-        galleryController.getUploadedFiles(MediaUtils.MISC_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.MISC_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(miscResult.getData());
     assertTrue(miscResult.getData().isOnRoot());
 
@@ -260,7 +266,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     galleryController.uploadFile(mu, null, null, field.getId());
 
     AjaxReturnObject<GalleryData> miscResult2 =
-        galleryController.getUploadedFiles(MediaUtils.MISC_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.MISC_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertEquals(
         initialMiscSize + 1,
         miscResult2.getData().getItems().getHits().intValue()); // 1 file + shared folder
@@ -274,7 +281,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     assertEquals(1, numAttachments);
 
     AjaxReturnObject<GalleryData> audioCount =
-        galleryController.getUploadedFiles(MediaUtils.AUDIO_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.AUDIO_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(audioCount.getData());
     final int initialAudioSize = audioCount.getData().getItems().getHits();
 
@@ -288,7 +296,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     galleryController.uploadFile(mfAudio, null, null, null);
     AjaxReturnObject<GalleryData> res3 =
-        galleryController.getUploadedFiles(MediaUtils.AUDIO_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.AUDIO_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertEquals(initialAudioSize + 1, res3.getData().getItems().getHits().intValue());
 
     Long audioFileId = assertAudioFileAdded(res3);
@@ -344,7 +353,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     mockPrincipal = user::getUsername;
 
     AjaxReturnObject<GalleryData> res =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(res.getData());
     final int initialImgCount = res.getData().getItems().getHits().intValue();
 
@@ -388,7 +398,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     // ensure just one new file in the gallery
     AjaxReturnObject<GalleryData> res2 =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(res2.getData());
     final int finalImgSize = res2.getData().getItems().getHits().intValue();
     assertEquals(initialImgCount + 1, finalImgSize);
@@ -401,7 +412,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     mockPrincipal = user::getUsername;
 
     AjaxReturnObject<GalleryData> res =
-        galleryController.getUploadedFiles(CHEMISTRY_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(CHEMISTRY_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(res.getData());
     final int initialChemCount = res.getData().getItems().getHits();
 
@@ -459,7 +470,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     // ensure just one new file in the gallery
     AjaxReturnObject<GalleryData> res2 =
-        galleryController.getUploadedFiles(CHEMISTRY_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(CHEMISTRY_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(res2.getData());
     final int finalChemSize = res2.getData().getItems().getHits();
     assertEquals(initialChemCount + 1, finalChemSize);
@@ -681,6 +692,38 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     assertEquals(1, getRecordCountInFolderForUser(chemistryFolder.getId()));
     assertNotNull(chemistryFile);
     assertNotNull(chemistryFile.getChemString());
+  }
+
+  @Test
+  public void testFoldersOnlyShouldOnlyContainFolders() throws IOException {
+    User user = createInitAndLoginAnyUser();
+    populateDocsFolder(user);
+    AjaxReturnObject<GalleryData> data =
+        galleryController.getUploadedFiles(DOCUMENT_MEDIA_FLDER_NAME, 0, true, pgcrit, null);
+    assertEquals(5, data.getData().getItems().getHits().intValue());
+    assertTrue(
+        data.getData().getItems().getResults().stream()
+            .allMatch(folderItem -> folderItem.getType().equals("Folder")));
+  }
+
+  @Test
+  public void testFoldersOnlyFalseShouldShowAllItems() throws IOException {
+    User user = createInitAndLoginAnyUser();
+    populateDocsFolder(user);
+    AjaxReturnObject<GalleryData> data =
+        galleryController.getUploadedFiles(DOCUMENT_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
+    assertEquals(10, data.getData().getItems().getHits().intValue());
+  }
+
+  private void populateDocsFolder(User user) throws IOException {
+    Folder parentFolder = recordManager.getGallerySubFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, user);
+    int i = 0;
+    while (i < 5) {
+      folderMgr.createNewFolder(parentFolder.getId(), "some folder", user);
+      mediaMgr.saveNewDocument(
+          "some-file.docx", new ByteArrayInputStream(new byte[2]), user, parentFolder, null);
+      i++;
+    }
   }
 
   private Snippet getMostRecentlyCreatedSnippet() throws Exception {
