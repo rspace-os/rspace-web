@@ -10,6 +10,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -27,7 +28,8 @@ describe("IconButtonWithTooltip", () => {
 
     screen.getByLabelText("foo");
   });
-  test("onClick functions correctly.", () => {
+  test("onClick functions correctly.", async () => {
+    const user = userEvent.setup();
     const onClick = jest.fn<[Event], void>();
 
     render(
@@ -40,7 +42,7 @@ describe("IconButtonWithTooltip", () => {
       </ThemeProvider>
     );
 
-    screen.getByRole("button").click();
+    await user.click(screen.getByRole("button"));
 
     expect(onClick).toHaveBeenCalled();
   });

@@ -10,6 +10,7 @@ import "@testing-library/jest-dom";
 import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory/mocking";
 import FieldCard from "../FieldCard";
 import { type BarcodeRecord } from "../../../../../stores/definitions/Barcode";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../../common/InvApiService", () => {});
 jest.mock("../../../../../stores/stores/RootStore", () => () => ({}));
@@ -22,7 +23,8 @@ afterEach(cleanup);
 
 describe("FieldCard", () => {
   describe("Has a delete button", () => {
-    test("That behaves correctly when tapped when deletedCopy returns an object.", () => {
+    test("That behaves correctly when tapped when deletedCopy returns an object.", async () => {
+      const user = userEvent.setup();
       const setFieldsDirty = jest.fn<
         [{ barcodes: Array<BarcodeRecord> }],
         void
@@ -82,13 +84,14 @@ describe("FieldCard", () => {
         />
       );
 
-      screen.getByRole("button", { name: "Remove" }).click();
+      await user.click(screen.getByRole("button", { name: "Remove" }));
 
       expect(setFieldsDirty).toHaveBeenCalledWith({
         barcodes: [expect.objectContaining({ id: 1, deleted: true })],
       });
     });
-    test("That behaves correctly when tapped when deletedCopy returns null.", () => {
+    test("That behaves correctly when tapped when deletedCopy returns null.", async () => {
+      const user = userEvent.setup();
       const setFieldsDirty = jest.fn<
         [{ barcodes: Array<BarcodeRecord> }],
         void
@@ -128,7 +131,7 @@ describe("FieldCard", () => {
         />
       );
 
-      screen.getByRole("button", { name: "Remove" }).click();
+      await user.click(screen.getByRole("button", { name: "Remove" }));
 
       expect(setFieldsDirty).toHaveBeenCalledWith({
         barcodes: [],

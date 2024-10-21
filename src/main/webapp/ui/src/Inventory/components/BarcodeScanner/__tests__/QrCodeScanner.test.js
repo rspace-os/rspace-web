@@ -9,6 +9,7 @@ import "@testing-library/jest-dom";
 import "../../../../../__mocks__/barcode-detection-api";
 import QrCodeScanner from "../QrCodeScanner";
 import { type BarcodeInput } from "../BarcodeScannerSkeleton";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("qr-scanner");
 
@@ -19,16 +20,15 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("QrCodeScanner", () => {
-  test("Should scan correctly.", () => {
+  test("Should scan correctly.", async () => {
+    const user = userEvent.setup();
     const onScan = jest.fn<[BarcodeInput], void>();
 
     render(
       <QrCodeScanner onClose={() => {}} onScan={onScan} buttonPrefix="Scan" />
     );
 
-    act(() => {
-      screen.getByText("Scan").click();
-    });
+    await user.click(screen.getByText("Scan"));
 
     expect(onScan).toHaveBeenCalledWith({
       rawValue: "foo",

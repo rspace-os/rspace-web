@@ -10,6 +10,7 @@ import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootSt
 import { storesContext } from "../../../../../stores/stores-context";
 import PreviewAction from "../PreviewAction";
 import { mockAttachment } from "../../../../../stores/definitions/__tests__/Attachment/mocking";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../../common/InvApiService", () => {});
 jest.mock("../../../../../stores/stores/RootStore", () => () => ({}));
@@ -22,6 +23,7 @@ afterEach(cleanup);
 
 describe("PreviewAction", () => {
   test("An error should be shown if the image cannot be fetched.", async () => {
+    const user = userEvent.setup();
     const rootStore = makeMockRootStore({
       uiStore: {
         addAlert: () => {},
@@ -40,9 +42,9 @@ describe("PreviewAction", () => {
         <PreviewAction attachment={attachment} />
       </storesContext.Provider>
     );
-    act(() => {
-      screen.getByRole("button", { name: "Preview file as image" }).click();
-    });
+    await user.click(
+      screen.getByRole("button", { name: "Preview file as image" })
+    );
 
     await waitFor(() => {
       expect(addAlertMock).toHaveBeenCalledWith(

@@ -4,9 +4,6 @@ declare module "@testing-library/react" {
   import type { Node } from "react";
 
   declare export type Element = {|
-    // avoid using
-    click(): void,
-
     checked: boolean,
     value: string,
     textContent: string,

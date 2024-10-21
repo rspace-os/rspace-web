@@ -14,6 +14,7 @@ import SynchroniseFormSections from "../SynchroniseFormSections";
 import FormSectionsContext, {
   type AllowedFormTypes,
 } from "../../../../stores/contexts/FormSections";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../common/InvApiService", () => {});
 jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
@@ -65,7 +66,8 @@ describe("StepperPanel", () => {
   });
 
   describe("Expands and collapses properly", () => {
-    test("Expand button works correctly", () => {
+    test("Expand button works correctly", async () => {
+      const user = userEvent.setup();
       const setExpanded = jest.fn<[AllowedFormTypes, string, boolean], void>();
       render(
         <ThemeProvider theme={materialTheme}>
@@ -83,12 +85,11 @@ describe("StepperPanel", () => {
         </ThemeProvider>
       );
 
-      act(() => {
-        screen.getByLabelText("Expand section").click();
-      });
+      await user.click(screen.getByLabelText("Expand section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", true);
     });
-    test("Collapse button works correctly", () => {
+    test("Collapse button works correctly", async () => {
+      const user = userEvent.setup();
       const setExpanded = jest.fn<[AllowedFormTypes, string, boolean], void>();
       render(
         <ThemeProvider theme={materialTheme}>
@@ -106,9 +107,7 @@ describe("StepperPanel", () => {
         </ThemeProvider>
       );
 
-      act(() => {
-        screen.getByLabelText("Collapse section").click();
-      });
+      await user.click(screen.getByLabelText("Collapse section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", false);
     });
   });
@@ -141,30 +140,24 @@ describe("StepperPanel", () => {
       );
     }
 
-    test("Collapse all", () => {
+    test("Collapse all", async () => {
+      const user = userEvent.setup();
       const setAllExpanded = jest.fn<[string, boolean], void>();
       render(<TestComponent setAllExpanded={setAllExpanded} openInit={true} />);
 
-      act(() => {
-        screen.getByLabelText("Collapse section").click();
-      });
-      act(() => {
-        screen.getByRole("button", { name: "Collapse All" }).click();
-      });
+      await user.click(screen.getByLabelText("Collapse section"));
+      await user.click(screen.getByRole("button", { name: "Collapse All" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", false);
     });
-    test("Expand all", () => {
+    test("Expand all", async () => {
+      const user = userEvent.setup();
       const setAllExpanded = jest.fn<[string, boolean], void>();
       render(
         <TestComponent setAllExpanded={setAllExpanded} openInit={false} />
       );
 
-      act(() => {
-        screen.getByLabelText("Expand section").click();
-      });
-      act(() => {
-        screen.getByRole("button", { name: "Expand All" }).click();
-      });
+      await user.click(screen.getByLabelText("Expand section"));
+      await user.click(screen.getByRole("button", { name: "Expand All" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", true);
     });
   });

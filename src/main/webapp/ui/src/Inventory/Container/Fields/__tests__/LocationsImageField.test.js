@@ -21,6 +21,7 @@ import materialTheme from "../../../../theme";
 import LocationsImageField from "../LocationsImageField";
 import ImageField from "../../../../components/Inputs/ImageField";
 import LocationsImageMarkersDialog from "../LocationsImageMarkersDialog";
+import userEvent from "@testing-library/user-event";
 
 let storeImageFunction;
 
@@ -70,7 +71,7 @@ const mockRootStore = (
         removeAlert: jest.fn(),
       },
       searchStore: {
-        activeResult: activeResult,
+        activeResult,
       },
     }),
     activeResult,
@@ -277,7 +278,8 @@ describe("LocationImageField", () => {
    * dialog to provide markers as to where items are located in the image.
    */
   describe("When the 'Edit Locations' button is tapped there should", () => {
-    test("be a LocationsImageMarkersDialog that opens.", () => {
+    test("be a LocationsImageMarkersDialog that opens.", async () => {
+      const user = userEvent.setup();
       const [rootStore, container] = mockRootStore();
       container.locationsImage = "someImage";
 
@@ -290,9 +292,7 @@ describe("LocationImageField", () => {
       );
 
       const editLocationsButtons = screen.getByText("Edit Locations");
-      act(() => {
-        editLocationsButtons.click();
-      });
+      await user.click(editLocationsButtons);
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: true, close: expect.any(Function) },
         expect.anything()
@@ -301,7 +301,8 @@ describe("LocationImageField", () => {
   });
 
   describe('When the "Close" button inside the LocationsImageMarkersDialog is tapped', () => {
-    test("The dialog should close.", () => {
+    test("The dialog should close.", async () => {
+      const user = userEvent.setup();
       const [rootStore, container] = mockRootStore({
         trackingStore: {
           trackEvent: () => {},
@@ -318,10 +319,8 @@ describe("LocationImageField", () => {
       );
 
       const editLocationsButtons = screen.getByText("Edit Locations");
-      act(() => {
-        editLocationsButtons.click();
-        screen.getByText("Close").click();
-      });
+      await user.click(editLocationsButtons);
+      await user.click(screen.getByText("Close"));
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: false, close: expect.any(Function) },
         expect.anything()
