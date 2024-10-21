@@ -1101,16 +1101,22 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("5 g", basicSample.getQuantity().toQuantityInfo().toPlainString());
 
     // create 2 new subsamples, 3 mg quantity each
-    subSampleApiMgr.createNewSubSamplesForSample(
-        basicSample.getId(),
-        2,
-        new ApiQuantityInfo(BigDecimal.valueOf(3), RSUnitDef.MILLI_GRAM),
-        testUser);
+    List<ApiSubSample> newSubSamples =
+        subSampleApiMgr.createNewSubSamplesForSample(
+            basicSample.getId(),
+            9,
+            new ApiQuantityInfo(BigDecimal.valueOf(3), RSUnitDef.MILLI_GRAM),
+            testUser);
+    assertEquals(9, newSubSamples.size());
+    // naming should start with 2, as the sample had one subsample before
+    assertEquals("mySample.02", newSubSamples.get(0).getName());
+    assertEquals("mySample.03", newSubSamples.get(1).getName());
+    assertEquals("mySample.10", newSubSamples.get(8).getName());
 
     // new subsample present in sample
     ApiSample reloadedSample = sampleApiMgr.getApiSampleById(basicSample.getId(), testUser);
-    assertEquals(3, reloadedSample.getSubSamplesCount());
-    assertEquals("5.006 g", reloadedSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(10, reloadedSample.getSubSamplesCount());
+    assertEquals("5.027 g", reloadedSample.getQuantity().toQuantityInfo().toPlainString());
   }
 
   @Test

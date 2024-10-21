@@ -58,8 +58,8 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     List<Map> createdSubSamples = getFromJsonResponseBody(addNewSubSamplesResult, List.class);
     assertEquals(2, createdSubSamples.size());
-    assertEquals("newSubSample#1", createdSubSamples.get(0).get("name"));
-    assertEquals("newSubSample#2", createdSubSamples.get(1).get("name"));
+    assertEquals("mySample.02", createdSubSamples.get(0).get("name"));
+    assertEquals("mySample.03", createdSubSamples.get(1).get("name"));
 
     ApiSampleInfo updatedBasicSample = sampleApiMgr.getApiSampleById(basicSample.getId(), anyUser);
     assertEquals(3, updatedBasicSample.getSubSamplesCount());
@@ -67,7 +67,9 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     // add one more subsample, with specified quantity
     String oneNewSubSampleWithQuantityConfigJson =
-        "{ \"sampleId\" : " + basicSample.getId() + ", \"numSubSamples\": 1, "
+        "{ \"sampleId\" : "
+            + basicSample.getId()
+            + ", \"numSubSamples\": 1, "
             + "\"singleSubSampleQuantity\": { \"numericValue\": 5, \"unitId\": 6 } }";
     MvcResult addOneSubSampleWithQuantityResult =
         mockMvc
@@ -78,12 +80,11 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     createdSubSamples = getFromJsonResponseBody(addOneSubSampleWithQuantityResult, List.class);
     assertEquals(1, createdSubSamples.size());
-    assertEquals("newSubSample#1", createdSubSamples.get(0).get("name"));
+    assertEquals("mySample.04", createdSubSamples.get(0).get("name"));
 
     updatedBasicSample = sampleApiMgr.getApiSampleById(basicSample.getId(), anyUser);
     assertEquals(4, updatedBasicSample.getSubSamplesCount());
     assertEquals("7.005 g", updatedBasicSample.getQuantity().toQuantityInfo().toPlainString());
-
   }
 
   @Test
