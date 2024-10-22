@@ -1381,6 +1381,7 @@ function GalleryMainPanel({
                         refreshListing={refreshListing}
                         sortOrder={sortOrder}
                         orderBy={orderBy}
+                        foldersOnly={false}
                       />
                     ),
                   })}

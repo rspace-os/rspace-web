@@ -90,6 +90,7 @@ type TreeItemContentArgs = {|
   disableDragAndDrop?: boolean,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
+  foldersOnly: boolean,
 |};
 
 const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
@@ -103,6 +104,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     disableDragAndDrop,
     sortOrder,
     orderBy,
+    foldersOnly,
   }: TreeItemContentArgs): Node => {
     const { galleryListing } = useGalleryListing({
       section,
@@ -110,6 +112,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       path: [...path, file],
       orderBy,
       sortOrder,
+      foldersOnly,
     });
 
     React.useEffect(() => {
@@ -145,6 +148,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   disableDragAndDrop={disableDragAndDrop}
                   sortOrder={sortOrder}
                   orderBy={orderBy}
+                  foldersOnly={foldersOnly}
                 />
               ) : null
             )}
@@ -169,6 +173,7 @@ const CustomTreeItem = observer(
     disableDragAndDrop,
     orderBy,
     sortOrder,
+    foldersOnly,
   }: {|
     file: GalleryFile,
     index: number,
@@ -180,6 +185,7 @@ const CustomTreeItem = observer(
     disableDragAndDrop?: boolean,
     orderBy: "name" | "modificationDate",
     sortOrder: "DESC" | "ASC",
+    foldersOnly: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -329,6 +335,7 @@ const CustomTreeItem = observer(
               disableDragAndDrop={disableDragAndDrop}
               sortOrder={sortOrder}
               orderBy={orderBy}
+              foldersOnly={foldersOnly}
             />
           )}
         </StyledTreeItem>
@@ -351,6 +358,7 @@ type TreeViewArgs = {|
   disableDragAndDrop?: boolean,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
+  foldersOnly?: boolean,
 |};
 
 const TreeView = ({
@@ -362,6 +370,7 @@ const TreeView = ({
   disableDragAndDrop,
   sortOrder,
   orderBy,
+  foldersOnly = false,
 }: TreeViewArgs) => {
   const { addAlert } = React.useContext(AlertContext);
   const selection = useGallerySelection();
@@ -481,6 +490,7 @@ const TreeView = ({
             disableDragAndDrop={disableDragAndDrop}
             sortOrder={sortOrder}
             orderBy={orderBy}
+            foldersOnly={foldersOnly}
           />
         ) : null
       )}

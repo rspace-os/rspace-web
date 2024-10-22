@@ -47,6 +47,7 @@ const MoveDialog = observer(
         path: [],
         orderBy: "name",
         sortOrder: "ASC",
+        foldersOnly: true,
       });
     const { moveFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -101,6 +102,7 @@ const MoveDialog = observer(
                   disableDragAndDrop
                   sortOrder="ASC"
                   orderBy="name"
+                  foldersOnly
                 />
               </Box>
             ),

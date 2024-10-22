@@ -245,12 +245,14 @@ export function useGalleryListing({
   path: defaultPath,
   sortOrder,
   orderBy,
+  foldersOnly,
 }: {|
   section: GallerySection,
   searchTerm: string,
   path?: $ReadOnlyArray<GalleryFile>,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
+  foldersOnly?: boolean,
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
@@ -533,6 +535,7 @@ export function useGalleryListing({
           pageNumber: "0",
           sortOrder,
           orderBy,
+          foldersOnly: foldersOnly ? "true" : "false",
         }),
       });
 
