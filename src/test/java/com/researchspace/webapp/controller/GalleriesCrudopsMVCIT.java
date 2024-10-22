@@ -48,7 +48,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
   public void copyGalleriesTest() throws Exception {
 
     AjaxReturnObject<GalleryData> res =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(res.getData());
 
     final int initialImgSize = res.getData().getItems().getHits().intValue();
@@ -72,7 +73,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     assertNotNull(id);
 
     AjaxReturnObject<GalleryData> fres =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(fres.getData());
 
     final int finalImgSize = fres.getData().getItems().getHits().intValue();
@@ -85,7 +87,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     galleryController.copyGalleries(ids, newNames, new MockPrincipal(user.getUsername()));
 
     AjaxReturnObject<GalleryData> fres2 =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(fres2.getData());
 
     final int finalImgSize2 = fres2.getData().getItems().getHits().intValue();
@@ -105,7 +108,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     logoutAndLoginAs(user);
 
     AjaxReturnObject<GalleryData> res =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(res.getData());
 
     final int initialImgSize = res.getData().getItems().getHits().intValue();
@@ -132,7 +136,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     assertNotNull(name);
 
     AjaxReturnObject<GalleryData> fres =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(fres.getData());
 
     final int finalImgSize = fres.getData().getItems().getHits().intValue();
@@ -141,7 +146,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     strDocumentController.rename(id, "newname", new MockPrincipal(user.getUsername()));
 
     AjaxReturnObject<GalleryData> fres2 =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(fres2.getData());
 
     assertFalse(name.equalsIgnoreCase("newname"));
@@ -157,7 +163,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
         recordMgr.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
 
     AjaxReturnObject<GalleryData> res =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(res.getData());
 
     final int initialImgSize = res.getData().getItems().getHits().intValue();
@@ -178,7 +185,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     assertNotNull(id);
     // check the count has increased by 1
     AjaxReturnObject<GalleryData> fres =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(fres.getData());
 
     final int finalImgSize = fres.getData().getItems().getHits().intValue();
@@ -204,7 +212,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
         new MockHttpServletResponse());
 
     AjaxReturnObject<GalleryData> fres2 =
-        galleryController.getUploadedFiles(MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, pgcrit, null);
+        galleryController.getUploadedFiles(
+            MediaUtils.IMAGES_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertNotNull(fres2.getData());
 
     final int finalImgSize2 = fres2.getData().getItems().getHits().intValue();
