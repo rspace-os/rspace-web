@@ -1,0 +1,16 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+
+    <changeSet id="2024-10-22n" context="run,dev-test" author="nico">
+        <comment>Update label for Digital Commons Data</comment>
+        <update tableName="App">
+            <column name="label" value="Digital Commons Data / Mendeley"></column>
+            <where>name = "app.digitalCommonsData"</where>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>
