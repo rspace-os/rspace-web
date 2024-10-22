@@ -17,6 +17,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
 import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalExportType;
@@ -48,6 +49,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -250,8 +252,23 @@ public class GalleryController extends BaseController {
 
     int numberOfRecords = getNumberOfRecordsOnGalleryPage(isOnRoot);
     pgCrit.setResultsPerPage(numberOfRecords);
+
+    RecordTypeFilter galleryMove = new RecordTypeFilter(EnumSet.of(
+        RecordType.FOLDER,
+            RecordType.ROOT_MEDIA,
+            RecordType.SHARED_GROUP_FOLDER_ROOT,
+            RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT,
+            RecordType.API_INBOX),
+        // excluded
+        EnumSet.of(
+            RecordType.NORMAL_EXAMPLE
+            // removed for APiInbox
+            //RecordType.SYSTEM
+        ));
+
+
     RecordTypeFilter recordTypeFilter =
-        foldersOnly ? RecordTypeFilter.MOVE_DIALOGFILTER : RecordTypeFilter.GALLERY_FILTER;
+        foldersOnly ? galleryMove : RecordTypeFilter.GALLERY_FILTER;
     ISearchResults<BaseRecord> records =
         recordManager.getGalleryItems(
             galleryItemParent.getId(), pgCrit, filterCriteria, recordTypeFilter, user);

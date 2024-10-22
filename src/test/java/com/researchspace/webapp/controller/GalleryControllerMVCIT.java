@@ -697,7 +697,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   @Test
   public void testFoldersOnlyShouldOnlyContainFolders() throws IOException {
     User user = createInitAndLoginAnyUser();
-    populateDocsFolder(user);
+    create5FolderAnd5DocsInGalleryDocFolder(user);
     AjaxReturnObject<GalleryData> data =
         galleryController.getUploadedFiles(DOCUMENT_MEDIA_FLDER_NAME, 0, true, pgcrit, null);
     assertEquals(5, data.getData().getItems().getHits().intValue());
@@ -709,13 +709,13 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   @Test
   public void testFoldersOnlyFalseShouldShowAllItems() throws IOException {
     User user = createInitAndLoginAnyUser();
-    populateDocsFolder(user);
+    create5FolderAnd5DocsInGalleryDocFolder(user);
     AjaxReturnObject<GalleryData> data =
         galleryController.getUploadedFiles(DOCUMENT_MEDIA_FLDER_NAME, 0, false, pgcrit, null);
     assertEquals(10, data.getData().getItems().getHits().intValue());
   }
 
-  private void populateDocsFolder(User user) throws IOException {
+  private void create5FolderAnd5DocsInGalleryDocFolder(User user) throws IOException {
     Folder parentFolder = recordManager.getGallerySubFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, user);
     int i = 0;
     while (i < 5) {
