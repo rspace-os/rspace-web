@@ -63,7 +63,7 @@ function DigitalCommonsData({
         helpLinkText="Digital Commons Data / Menedeley integration docs"
         website="elsevier.digitalcommonsdata.com"
         docLink="dcd"
-        usageText="You can export your files and data directly from RSpace to Digital Commons Data."
+        usageText="You can export your files and data directly from RSpace to Digital Commons Data or Mendeley."
         setupSection={
           <>
             <ol>
