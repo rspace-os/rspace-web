@@ -580,7 +580,6 @@ export function useGalleryListing({
       });
 
       setGalleryListing([...galleryListing, ...parseGalleryFiles(data)]);
-      setPage(page + 1);
     } catch (e) {
       console.error(e);
     }
