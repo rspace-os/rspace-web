@@ -12,7 +12,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.api.v1.model.ApiSubSampleSearchResult;
 import com.researchspace.model.User;
-import com.researchspace.service.inventory.impl.SubSampleCreateNewConfig;
+import com.researchspace.service.inventory.impl.SubSampleApiPostConfig;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import java.io.IOException;
 import java.util.List;
@@ -43,7 +43,7 @@ public interface SubSamplesApi {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   List<ApiSubSample> createNewSubSamplesForSample(
-      @RequestBody @Valid SubSampleCreateNewConfig config, BindingResult errors, User user)
+      @RequestBody @Valid SubSampleApiPostConfig config, BindingResult errors, User user)
       throws BindException;
 
   @GetMapping(value = "/{id}")

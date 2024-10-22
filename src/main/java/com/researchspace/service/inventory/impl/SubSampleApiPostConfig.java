@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SubSampleCreateNewConfig {
+public class SubSampleApiPostConfig {
 
   /** The id of the sample to which new subsamples should be added */
   @Min(1)
-  private Long sampleId;
+  private long sampleId;
 
   /** The total number of new subsamples desired. */
   @Min(1)

@@ -29,28 +29,34 @@ abstract class InventoryRecordValidator {
   @Autowired ApiExtraFieldsHelper extraFieldHelper;
 
   void validateInventoryRecordQuantity(ApiInventoryRecordInfo incomingApiInvRec, Errors errors) {
-    if (incomingApiInvRec.getQuantity() != null) {
-      if (isNegativeQuantity(incomingApiInvRec.getQuantity())) {
-        errors.rejectValue("quantity", "", "Quantity must be positive");
-      }
-      if (isValidUnit(incomingApiInvRec.getQuantity())) {
-        RSUnitDef def = RSUnitDef.getUnitById(incomingApiInvRec.getQuantity().getUnitId());
-        if (!def.isAmount()) {
-          errors.rejectValue(
-              "quantity",
-              "",
-              String.format(
-                  "Quantity unit id [%d] is not pointing to a unit of amount, "
-                      + "it should be an id of a mass, volume or dimensionless unit.",
-                  incomingApiInvRec.getQuantity().getUnitId()));
-        }
-      } else {
+    validateApiQuantityInfo(incomingApiInvRec.getQuantity(), "quantity", errors);
+  }
+
+  void validateApiQuantityInfo(
+      ApiQuantityInfo incomingApiQuantity, String quantityFieldName, Errors errors) {
+    if (incomingApiQuantity == null) {
+      return;
+    }
+
+    if (!isPositiveQuantity(incomingApiQuantity)) {
+      errors.rejectValue(quantityFieldName, "", "'numericValue' of quantity must be positive");
+    }
+    if (isValidUnit(incomingApiQuantity)) {
+      RSUnitDef def = RSUnitDef.getUnitById(incomingApiQuantity.getUnitId());
+      if (!def.isAmount()) {
         errors.rejectValue(
-            "quantity",
+            quantityFieldName,
             "",
             String.format(
-                "Quantity unit id [%d] is invalid", incomingApiInvRec.getQuantity().getUnitId()));
+                "Quantity unit id [%d] is not pointing to a unit of amount, "
+                    + "it should be an id of a mass, volume or dimensionless unit.",
+                incomingApiQuantity.getUnitId()));
       }
+    } else {
+      errors.rejectValue(
+          quantityFieldName,
+          "",
+          String.format("Quantity unit id [%d] is invalid", incomingApiQuantity.getUnitId()));
     }
   }
 
@@ -70,8 +76,9 @@ abstract class InventoryRecordValidator {
     return quantity.getUnitId() != null && RSUnitDef.exists(quantity.getUnitId());
   }
 
-  boolean isNegativeQuantity(ApiQuantityInfo info) {
-    return info.getNumericValue().compareTo(BigDecimal.ZERO) < 0;
+  boolean isPositiveQuantity(ApiQuantityInfo info) {
+    return info.getNumericValue() != null
+        && (info.getNumericValue().compareTo(BigDecimal.ZERO) > 0);
   }
 
   void validateNameTooLong(String value, Errors errors) {
