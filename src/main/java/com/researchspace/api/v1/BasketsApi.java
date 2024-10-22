@@ -26,11 +26,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public interface BasketsApi {
 
   @GetMapping
-  List<ApiBasketInfo> getBasketsForUser(User user) throws BindException;
+  List<ApiBasketInfo> getBasketsForUser(User user);
 
   /** */
   @GetMapping(path = "/{basketId}")
-  ApiBasket getBasketById(Long basketId, User user) throws BindException;
+  ApiBasket getBasketById(Long basketId, User user);
 
   /** */
   @PostMapping
