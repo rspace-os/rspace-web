@@ -88,6 +88,35 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void createMoreSubSamplesValidation() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // validate incoming json
+    String json = "{ }";
+    MvcResult errorResult =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/subSamples", anyUser, json))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(errorResult, ApiError.class);
+    assertApiErrorContainsMessage(error, "sampleId: must be greater than or equal to 1");
+    assertApiErrorContainsMessage(error, "numSubSamples: must be greater than or equal to 1");
+
+    json = "{ \"singleSubSampleQuantity\": { } }";
+    errorResult =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/subSamples", anyUser, json))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    error = getErrorFromJsonResponseBody(errorResult, ApiError.class);
+    assertApiErrorContainsMessage(
+        error, "singleSubSampleQuantity: 'numericValue' of quantity must be positive");
+    assertApiErrorContainsMessage(
+        error, "singleSubSampleQuantity: Quantity unit id [null] is invalid");
+  }
+
+  @Test
   public void saveSubsampleImage() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
