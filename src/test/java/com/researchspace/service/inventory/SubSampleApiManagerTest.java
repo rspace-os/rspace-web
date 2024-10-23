@@ -20,6 +20,7 @@ import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
@@ -1074,14 +1075,14 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void addNewSubSampleToExistingSample() {
+  public void addNewApiSubSampleToExistingSample() {
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(testUser);
     assertEquals(1, basicSample.getSubSamplesCount());
     assertEquals("5 g", basicSample.getQuantity().toQuantityInfo().toPlainString());
 
     ApiSubSample subSampleToSave = new ApiSubSample("addedSubSample");
     ApiSubSample savedSubSample =
-        subSampleApiMgr.createNewApiSubSample(subSampleToSave, basicSample.getId(), testUser);
+        subSampleApiMgr.addNewApiSubSampleToSample(subSampleToSave, basicSample.getId(), testUser);
     assertEquals(subSampleToSave.getName(), savedSubSample.getName());
     assertEquals(basicSample.getGlobalId(), savedSubSample.getSampleInfo().getGlobalId());
     assertTrue(savedSubSample.getParentContainer().isWorkbench());
@@ -1091,6 +1092,31 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     ApiSample reloadedSample = sampleApiMgr.getApiSampleById(basicSample.getId(), testUser);
     assertEquals(2, reloadedSample.getSubSamplesCount());
     assertEquals("6 g", reloadedSample.getQuantity().toQuantityInfo().toPlainString());
+  }
+
+  @Test
+  public void createNewSubSamplesInExistingSample() {
+    ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(testUser);
+    assertEquals(1, basicSample.getSubSamplesCount());
+    assertEquals("5 g", basicSample.getQuantity().toQuantityInfo().toPlainString());
+
+    // create 2 new subsamples, 3 mg quantity each
+    List<ApiSubSample> newSubSamples =
+        subSampleApiMgr.createNewSubSamplesForSample(
+            basicSample.getId(),
+            9,
+            new ApiQuantityInfo(BigDecimal.valueOf(3), RSUnitDef.MILLI_GRAM),
+            testUser);
+    assertEquals(9, newSubSamples.size());
+    // naming should start with 2, as the sample had one subsample before
+    assertEquals("mySample.02", newSubSamples.get(0).getName());
+    assertEquals("mySample.03", newSubSamples.get(1).getName());
+    assertEquals("mySample.10", newSubSamples.get(8).getName());
+
+    // new subsample present in sample
+    ApiSample reloadedSample = sampleApiMgr.getApiSampleById(basicSample.getId(), testUser);
+    assertEquals(10, reloadedSample.getSubSamplesCount());
+    assertEquals("5.027 g", reloadedSample.getQuantity().toQuantityInfo().toPlainString());
   }
 
   @Test

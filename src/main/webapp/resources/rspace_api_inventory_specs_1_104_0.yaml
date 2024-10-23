@@ -5,7 +5,7 @@ info:
   description: >
     Welcome to the RSpace Inventory API.
 
-  version: "1.103"
+  version: "1.104"
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit headers.
   license:
@@ -497,6 +497,35 @@ paths:
       responses:
         '200':
           description: A list of SubSampleInfo objects.
+
+    post:
+      summary: Create one or more SubSamples
+      description: >-
+
+        Creates completely new SubSamples in a given Sample.
+        This action requires `UPDATE` permission to the Sample.
+
+        ## Examples of request body:
+
+        | Body | Explanation |
+
+        | --- | --- |
+
+        `{ "sampleId": 12, "numSubSamples" : "1" }` | Creates one new subsample within sample with id=12, with default quantity |
+        
+        `{ "sampleId": 12, "numSubSamples" : "3", "singleSubSampleQuantity": { "numericValue": 7.33, "unitId": 3 } }` | Creates 2 new subsamples within sample with id=12, each with quantity of 7.3 ml |
+
+      produces:
+        - application/json
+      tags:
+        - SubSamples
+      parameters:
+        - $ref: '#/parameters/subSampleCreateParam'
+      responses:
+        '201':
+          description: A list of newly created subsamples.
+          schema:
+            $ref: '#/definitions/SubSample'
 
   '/subSamples/{subSampleId}':
     get:
@@ -2739,6 +2768,21 @@ definitions:
       numSubSamples: 2
       split: true
 
+  SubSampleCreateNew:
+    description: Configure create new subsamples behaviour.
+    allOf:
+      - properties:
+          sampleId:
+            type: number
+            description: Id of the sample for which to create subsamples.
+          numSubSamples:
+            type: integer
+            format: int64
+            description: The number of subsamples you require, including the original.
+    example:
+      sampleId: 12
+      numSubSamples: 1
+
   TagList:
     description: List of the tag information objects
     type: array
@@ -3292,6 +3336,13 @@ parameters:
     required: false
     schema:
       $ref: '#/definitions/SubSampleSplit'
+  subSampleCreateParam:
+    name: subSampleCreate
+    in: body
+    description: 'Configuration of create action for subsamples'
+    required: false
+    schema:
+      $ref: '#/definitions/SubSampleCreateNew'
   revisionIdParam:
     name: revisionId
     in: path

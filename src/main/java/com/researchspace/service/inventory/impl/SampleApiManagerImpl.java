@@ -33,9 +33,9 @@ import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.InventorySeriesNamingHelper;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSeriesHelper2;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.record.IActiveUserStrategy;
@@ -227,16 +227,19 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
       sample
           .getSubSamples()
           .get(0)
-          .setName(SampleSeriesHelper2.getSerialNameForSubSample(null, sample.getName(), 1, 1));
+          .setName(InventorySeriesNamingHelper.getSerialNameForSubSample(sample.getName(), 1, 1));
     } else {
       // use provided apiSubSamples
       List<SubSample> newSubSamples = new ArrayList<>();
       int subSampleCount = 1;
       int subSampleTotal = apiSubSamples.size();
       for (ApiSubSample apiSubSample : apiSubSamples) {
-        String subSampleName =
-            SampleSeriesHelper2.getSerialNameForSubSample(
-                apiSubSample.getName(), sample.getName(), subSampleCount++, subSampleTotal);
+        String subSampleName = apiSubSample.getName();
+        if (StringUtils.isBlank(subSampleName)) {
+          subSampleName =
+              InventorySeriesNamingHelper.getSerialNameForSubSample(
+                  sample.getName(), subSampleCount++, subSampleTotal);
+        }
         SubSample subSample =
             createSubSampleFromIncomingApiSample(subSampleName, apiSubSample, sample, user);
         newSubSamples.add(subSample);
