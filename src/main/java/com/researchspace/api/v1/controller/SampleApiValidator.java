@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.core.util.TransformerUtils.toList;
 
 import com.researchspace.api.v1.model.ApiSampleInfo;
-import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.units.QuantityInfo;
@@ -53,11 +52,6 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
     if (!def.isTemperature()) {
       errors.rejectValue(field, "errors.inventory.temperature.invalidUnit");
     }
-  }
-
-  void validateQuantities(ApiSampleWithFullSubSamples apiSamplePost, Errors errors) {
-    validateInventoryRecordQuantity(apiSamplePost, errors);
-    validateSubsampleQuantities(() -> apiSamplePost.getSubSamples(), errors);
   }
 
   // use supplier to reuse for ApiSampleFull and ApiSample
