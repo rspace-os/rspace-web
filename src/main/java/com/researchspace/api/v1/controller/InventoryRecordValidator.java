@@ -38,8 +38,8 @@ abstract class InventoryRecordValidator {
       return;
     }
 
-    if (!isPositiveQuantity(incomingApiQuantity)) {
-      errors.rejectValue(quantityFieldName, "", "'numericValue' of quantity must be positive");
+    if (isNegativeQuantity(incomingApiQuantity)) {
+      errors.rejectValue(quantityFieldName, "", "Quantity 'numericValue' must be positive");
     }
     if (isValidUnit(incomingApiQuantity)) {
       RSUnitDef def = RSUnitDef.getUnitById(incomingApiQuantity.getUnitId());
@@ -76,9 +76,9 @@ abstract class InventoryRecordValidator {
     return quantity.getUnitId() != null && RSUnitDef.exists(quantity.getUnitId());
   }
 
-  boolean isPositiveQuantity(ApiQuantityInfo info) {
+  boolean isNegativeQuantity(ApiQuantityInfo info) {
     return info.getNumericValue() != null
-        && (info.getNumericValue().compareTo(BigDecimal.ZERO) > 0);
+        && (info.getNumericValue().compareTo(BigDecimal.ZERO) < 0);
   }
 
   void validateNameTooLong(String value, Errors errors) {
