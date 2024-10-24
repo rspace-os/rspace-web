@@ -100,6 +100,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(errorResult, ApiError.class);
+    assertEquals(2, error.getErrors().size());
     assertApiErrorContainsMessage(error, "sampleId: must be greater than or equal to 1");
     assertApiErrorContainsMessage(error, "numSubSamples: must be greater than or equal to 1");
 
@@ -110,8 +111,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     error = getErrorFromJsonResponseBody(errorResult, ApiError.class);
-    assertApiErrorContainsMessage(
-        error, "singleSubSampleQuantity: 'numericValue' of quantity must be positive");
+    assertEquals(3, error.getErrors().size());
     assertApiErrorContainsMessage(
         error, "singleSubSampleQuantity: Quantity unit id [null] is invalid");
   }
