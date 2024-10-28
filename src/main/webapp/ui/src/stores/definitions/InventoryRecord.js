@@ -22,6 +22,7 @@ import { type AdjustableTableRowOptions } from "./Tables";
 import { type CoreFetcherArgs } from "./Search";
 import { type Tag } from "./Tag";
 import { type Alert } from "../contexts/Alert";
+import { type Container } from "./Container";
 
 export type State = "create" | "edit" | "preview";
 export type Action = "LIMITED_READ" | "READ" | "UPDATE" | "CHANGE_OWNER";
@@ -61,6 +62,102 @@ export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
   return "SAMPLE_TEMPLATE";
 }
 
+export type CreateOptionParameter = {|
+  label: string,
+
+  /**
+   * A brief description of the required information. MUST describe any
+   * conditions on the data that would prevent the user from proceeding to the
+   * next step; see validState below.
+   */
+  explanation: string,
+
+  /**
+   * It is this object that determines the form field that will be presented to
+   * the user in the create dialog. It MUST be an observable object so that
+   * when the form field mutates the value, the component is re-rendered.
+   */
+  state: | {| key: "split", copies: number |}
+    | {| key: "name", value: string |}
+    | {| key: "location", container: Container |}
+    | {|
+        key: "fields",
+        copyFieldContent: $ReadOnlyArray<{|
+          id: Id,
+          name: string,
+          content: string,
+          hasContent: boolean,
+          selected: boolean,
+        |}>,
+      |},
+
+  /**
+   * The user is prevented from moving to the next step if the current step is
+   * in an invalid state. The `explanation` text MUST describe the required
+   * data in sufficient detail so as to make it obvious what the problem is
+   * when this function returns false.
+   */
+  validState: () => boolean,
+|};
+
+/**
+ * The create dialog (../../Inventory/components/ContextMenu/CreateDialog.js)
+ * presents the user with a series of contextual options for creating new
+ * records with respect to the current record e.g. splitting a subsample.
+ * This type defines a single such option, instructing the create dialog what
+ * information to collect from the user and how to proceed when the dialog is
+ * submitted.
+ */
+export type CreateOption = {|
+  /**
+   * A brief description of what new record(s) are to be created. Disambiguiate
+   * with a few words if there are multiple ways of creating the same record
+   * type.
+   */
+  label: string,
+
+  /**
+   * Avoid disabling options where possible. However, where necessary this is
+   * available. When true, `explanation` MUST explain why the user is unable to
+   * use this option.
+   */
+  disabled?: boolean,
+
+  /**
+   * When enabled, this provides a bit more information about how the new
+   * records will be created. If the option is disabled, this MUST explain why.
+   */
+  explanation: string,
+
+  /**
+   * Each option in the create dialog can have a series of steps that require
+   * that the user provide some parameters to the creation of the new
+   * record(s). This might be the new record's name, the number of new records
+   * to be created, or anything else that the user must specify.
+   */
+  parameters?: $ReadOnlyArray<CreateOptionParameter>,
+
+  /**
+   * When called, the paramters MUST be put back into their initial values.
+   * This is called when the create dialog is closed so that when the user
+   * opens the dialog again the state is returned to an initial state.
+   */
+  onReset: () => void,
+
+  /**
+   * When the create dialog is submitted, this function will be invoked. It
+   * COULD make a network to create the new record. It COULD redirect the user
+   * to another part of the UI to collect more information. Whatever it does it
+   * MUST move the user a step toward creating the new record(s) and it MUST be
+   * clear how much work remains before the new record will be finalised.
+   */
+  onSubmit: () => Promise<void>,
+|};
+
+export interface CreateFrom {
+  +createOptions: $ReadOnlyArray<CreateOption>;
+}
+
 /*
  * This is the base definition of all Inventory records. In other words, this
  * is the minimum definition of what it means to be a record in the Inventory
@@ -75,7 +172,11 @@ export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
  * and methods, as documented, have behaviours that are dependent on these two
  * different views.
  */
-export interface InventoryRecord extends Record, Editable, HasChildren {
+export interface InventoryRecord
+  extends Record,
+    Editable,
+    HasChildren,
+    CreateFrom {
   /*
    * These properties are simply shared by all record classes.
    */

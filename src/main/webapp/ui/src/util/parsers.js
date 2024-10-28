@@ -178,8 +178,8 @@ export function isTrue(b: boolean): Result<true> {
  * ```
  */
 export const getValueWithKey =
-  <Key: string>(key: Key): (({ [Key]: mixed }) => Result<mixed>) =>
-  (obj: { [Key]: mixed }): Result<mixed> =>
+  <Key: string>(key: Key): (({ +[Key]: mixed }) => Result<mixed>) =>
+  (obj: { +[Key]: mixed }): Result<mixed> =>
     getByKey(key, obj).toResult(() => new Error(`key '${key}' is missing`));
 
 /**
