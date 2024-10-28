@@ -60,7 +60,7 @@ function DigitalCommonsData({
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
-        helpLinkText="Digital Commons Data / Menedeley integration docs"
+        helpLinkText="Digital Commons Data / Mendeley Data integration docs"
         website="elsevier.digitalcommonsdata.com"
         docLink="dcd"
         usageText="You can export your files and data directly from RSpace to Digital Commons Data or Mendeley Data."
