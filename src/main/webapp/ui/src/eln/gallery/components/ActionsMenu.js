@@ -85,8 +85,6 @@ const UploadNewVersionMenuItem = ({
   }, [newVersionInputRef, onError]);
 
   const uploadNewVersionAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
     return selection
       .asSet()
       .only.toResult(
@@ -282,24 +280,18 @@ function ActionsMenu({
   const [exportOpen, setExportOpen] = React.useState(false);
 
   const duplicateAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
     if (selection.asSet().some((f) => f.isSystemFolder))
       return Result.Error([new Error("Cannot duplicate system folders.")]);
     return Result.Ok(null);
   };
 
   const deleteAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
     if (selection.asSet().some((f) => f.isSystemFolder))
       return Result.Error([new Error("Cannot delete system folders.")]);
     return Result.Ok(null);
   };
 
   const renameAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
     return selection
       .asSet()
       .only.toResult(() => new Error("Only one item may be renamed at once."))
@@ -311,16 +303,12 @@ function ActionsMenu({
   };
 
   const moveToIrodsAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
     if (selection.asSet().some((f) => f.isSystemFolder))
       return Result.Error([new Error("Cannot move system folders to iRODS.")]);
     return Result.Ok(null);
   };
 
   const sharingSnippetsAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
     if (selection.asSet().some((f) => !f.isSnippet))
       return Result.Error([new Error("Only snippets may be shared.")]);
     return Result.Error([new Error("Not yet available.")]);
@@ -335,14 +323,10 @@ function ActionsMenu({
   };
 
   const exportAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
     return Result.Ok(null);
   };
 
   const downloadAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
     return selection
       .asSet()
       .only.toResult(
@@ -356,8 +340,6 @@ function ActionsMenu({
   };
 
   const moveAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
     return Result.Ok(null);
   };
 
