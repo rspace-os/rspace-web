@@ -77,17 +77,10 @@ import {
   InfoPanelForSmallViewports,
   InfoPanelForLargeViewports,
 } from "./InfoPanel";
-import {
-  useOpen,
-  useImagePreviewOfGalleryFile,
-  useCollaboraEdit,
-  useOfficeOnlineEdit,
-  usePdfPreviewOfGalleryFile,
-  useAsposePreviewOfGalleryFile,
-} from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import usePrimaryAction from "../primaryActionHooks";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -443,12 +436,7 @@ const GridView = observer(
     const { openImagePreview } = useImagePreview();
     const { openPdfPreview } = usePdfPreview();
     const { openAsposePreview } = useAsposePreview();
-    const canOpenAsFolder = useOpen();
-    const canPreviewAsImage = useImagePreviewOfGalleryFile();
-    const canEditWithCollabora = useCollaboraEdit();
-    const canEditWithOfficeOnline = useOfficeOnlineEdit();
-    const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
-    const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+    const primaryAction = usePrimaryAction();
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
@@ -644,33 +632,31 @@ const GridView = observer(
                 // to do with a file of this type based on what services are
                 // configured
                 if (e.detail > 1) {
-                  canOpenAsFolder(file)
-                    .orElseTry(() =>
-                      canPreviewAsImage(file).map((url) => () => {
-                        openImagePreview(url);
-                      })
-                    )
-                    .orElseTry(() =>
-                      canEditWithCollabora(file).map((url) => () => {
-                        window.open(url);
-                      })
-                    )
-                    .orElseTry(() =>
-                      canEditWithOfficeOnline(file).map((url) => () => {
-                        window.open(url);
-                      })
-                    )
-                    .orElseTry(() =>
-                      canPreviewAsPdf(file).map((url) => () => {
-                        openPdfPreview(url);
-                      })
-                    )
-                    .orElseTry(() =>
-                      canPreviewWithAspose(file).map(() => () => {
-                        void openAsposePreview(file);
-                      })
-                    )
-                    .orElse(() => {})();
+                  primaryAction(file).do((action) => {
+                    if (action.tag === "open") {
+                      action.open();
+                      return;
+                    }
+                    if (action.tag === "image") {
+                      openImagePreview(action.downloadHref);
+                      return;
+                    }
+                    if (action.tag === "collabora") {
+                      window.open(action.url);
+                      return;
+                    }
+                    if (action.tag === "officeonline") {
+                      window.open(action.url);
+                      return;
+                    }
+                    if (action.tag === "pdf") {
+                      openPdfPreview(action.downloadHref);
+                      return;
+                    }
+                    if (action.tag === "aspose") {
+                      void openAsposePreview(file);
+                    }
+                  });
                   return;
                 }
                 selection.clear();
