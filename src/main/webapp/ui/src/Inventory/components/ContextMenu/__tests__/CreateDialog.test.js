@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import CreateDialog from "../CreateDialog";
 import { ThemeProvider } from "@mui/material/styles";
@@ -16,6 +16,7 @@ import {
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -25,7 +26,8 @@ afterEach(cleanup);
 
 describe("CreateDialog", () => {
   describe("Splitting", () => {
-    test("Subsamples", () => {
+    test("Subsamples", async () => {
+      const user = userEvent.setup();
       const subsample = makeMockSubSample({});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -37,7 +39,7 @@ describe("CreateDialog", () => {
         </ThemeProvider>
       );
 
-      fireEvent.click(
+      await user.click(
         screen.getByRole("radio", { name: /Subsample, by splitting/ })
       );
 
@@ -46,7 +48,8 @@ describe("CreateDialog", () => {
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
     });
-    test("Subsamples, with too many copies", () => {
+    test("Subsamples, with too many copies", async () => {
+      const user = userEvent.setup();
       const subsample = makeMockSubSample({});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -58,18 +61,19 @@ describe("CreateDialog", () => {
         </ThemeProvider>
       );
 
-      fireEvent.click(
+      await user.click(
         screen.getByRole("radio", { name: /Subsample, by splitting/ })
       );
 
-      fireEvent.input(
+      await user.type(
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
-        { target: { value: 200 } }
+        "200"
       );
 
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
-    test("Samples, when there is one subsample", () => {
+    test("Samples, when there is one subsample", async () => {
+      const user = userEvent.setup();
       const sample = makeMockSample({});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -87,7 +91,7 @@ describe("CreateDialog", () => {
         })
       ).toBeEnabled();
 
-      fireEvent.click(
+      await user.click(
         screen.getByRole("radio", {
           name: /Subsample, by splitting the current subsample/,
         })
@@ -98,7 +102,8 @@ describe("CreateDialog", () => {
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
     });
-    test("Samples, with too many copies", () => {
+    test("Samples, with too many copies", async () => {
+      const user = userEvent.setup();
       const sample = makeMockSample({});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -110,15 +115,15 @@ describe("CreateDialog", () => {
         </ThemeProvider>
       );
 
-      fireEvent.click(
+      await user.click(
         screen.getByRole("radio", {
           name: /Subsample, by splitting the current subsample/,
         })
       );
 
-      fireEvent.input(
+      await user.type(
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
-        { target: { value: 200 } }
+        "200"
       );
 
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
@@ -145,7 +150,8 @@ describe("CreateDialog", () => {
     });
   });
   describe("New container in container", () => {
-    test("Success case for list container", () => {
+    test("Success case for list container", async () => {
+      const user = userEvent.setup();
       const container = makeMockContainer({
         canStoreContainers: true,
         canStoreSamples: true,
@@ -166,7 +172,7 @@ describe("CreateDialog", () => {
         })
       ).toBeEnabled();
 
-      fireEvent.click(
+      await user.click(
         screen.getByRole("radio", {
           name: /Container/,
         })
@@ -177,7 +183,7 @@ describe("CreateDialog", () => {
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
 
-      fireEvent.click(screen.getByRole("button", { name: /create/i }));
+      await user.click(screen.getByRole("button", { name: /create/i }));
     });
     /*
      * Writing a test for picking locations in grid and visual containers is
@@ -207,7 +213,8 @@ describe("CreateDialog", () => {
     });
   });
   describe("New sample in container", () => {
-    test("Success case for list containers", () => {
+    test("Success case for list containers", async () => {
+      const user = userEvent.setup();
       const container = makeMockContainer({
         canStoreContainers: true,
         canStoreSamples: true,
@@ -228,7 +235,7 @@ describe("CreateDialog", () => {
         })
       ).toBeEnabled();
 
-      fireEvent.click(
+      await user.click(
         screen.getByRole("radio", {
           name: /Sample/,
         })
@@ -238,7 +245,7 @@ describe("CreateDialog", () => {
         screen.getByText("No location selection required for list containers.")
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
-      fireEvent.click(screen.getByRole("button", { name: /create/i }));
+      await user.click(screen.getByRole("button", { name: /create/i }));
     });
     /*
      * Writing a test for picking locations in grid and visual containers is
@@ -268,7 +275,8 @@ describe("CreateDialog", () => {
     });
   });
   describe("New sample from template", () => {
-    test("Success case", () => {
+    test("Success case", async () => {
+      const user = userEvent.setup();
       const template = makeMockTemplate({});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -286,7 +294,7 @@ describe("CreateDialog", () => {
         })
       ).toBeEnabled();
 
-      fireEvent.click(
+      await user.click(
         screen.getByRole("radio", {
           name: /Sample/,
         })
@@ -294,7 +302,8 @@ describe("CreateDialog", () => {
     });
   });
   describe("New template from sample", () => {
-    test("No fields", () => {
+    test("No fields", async () => {
+      const user = userEvent.setup();
       const sample = makeMockSample({});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -312,21 +321,23 @@ describe("CreateDialog", () => {
         })
       ).toBeEnabled();
 
-      fireEvent.click(
+      await user.click(
         screen.getByRole("radio", {
           name: /Template/,
         })
       );
 
-      fireEvent.change(screen.getByRole("textbox", { name: /name/i }), {
-        target: { value: "New template" },
-      });
-      fireEvent.click(screen.getByRole("button", { name: /next/i }));
+      await user.type(
+        screen.getByRole("textbox", { name: /name/i }),
+        "New template"
+      );
+      await user.click(screen.getByRole("button", { name: /next/i }));
 
       expect(screen.getByText("No fields.")).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
     });
-    test("Name that's too short", () => {
+    test("Name that's too short", async () => {
+      const user = userEvent.setup();
       const sample = makeMockSample({});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -344,15 +355,13 @@ describe("CreateDialog", () => {
         })
       ).toBeEnabled();
 
-      fireEvent.click(
+      await user.click(
         screen.getByRole("radio", {
           name: /Template/,
         })
       );
 
-      fireEvent.change(screen.getByRole("textbox", { name: /name/i }), {
-        target: { value: "x" },
-      });
+      await user.type(screen.getByRole("textbox", { name: /name/i }), "x");
 
       expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
     });
