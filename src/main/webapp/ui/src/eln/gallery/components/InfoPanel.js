@@ -28,14 +28,7 @@ import ImagePreview, {
 import clsx from "clsx";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";
-import {
-  useOpen,
-  useImagePreviewOfGalleryFile,
-  useCollaboraEdit,
-  useOfficeOnlineEdit,
-  usePdfPreviewOfGalleryFile,
-  useAsposePreviewOfGalleryFile,
-} from "../primaryActionHooks";
+import usePrimaryAction from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
@@ -623,12 +616,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const selection = useGallerySelection();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
-  const canOpenAsFolder = useOpen();
-  const canPreviewAsImage = useImagePreviewOfGalleryFile();
-  const canEditWithCollabora = useCollaboraEdit();
-  const canEditWithOfficeOnline = useOfficeOnlineEdit();
-  const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
-  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  const primaryAction = usePrimaryAction();
 
   return (
     <>
@@ -684,93 +672,89 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
         {selection
           .asSet()
           .only.map((file) =>
-            canOpenAsFolder(file)
-              .map((open) => (
-                <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                  <ActionButton
-                    onClick={open}
-                    label="Open"
-                    sx={{
-                      borderRadius: 1,
-                      px: 1.125,
-                      py: 0.25,
-                    }}
-                  />
-                </Grid>
-              ))
-              .orElseTry(() =>
-                canPreviewAsImage(file).map((url) => (
-                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                    <ActionButton
-                      onClick={() => {
-                        openImagePreview(url);
-                      }}
-                      label="Preview"
-                      sx={{
-                        borderRadius: 1,
-                        px: 1.125,
-                        py: 0.25,
-                      }}
-                    />
-                  </Grid>
-                ))
-              )
-              .orElseTry(() =>
-                canEditWithCollabora(file).map((url) => (
-                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                    <ActionButton
-                      onClick={() => {
-                        window.open(url);
-                      }}
-                      label="Edit"
-                      sx={{
-                        borderRadius: 1,
-                        px: 1.125,
-                        py: 0.25,
-                      }}
-                    />
-                  </Grid>
-                ))
-              )
-              .orElseTry(() =>
-                canEditWithOfficeOnline(file).map((url) => (
-                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                    <ActionButton
-                      onClick={() => {
-                        window.open(url);
-                      }}
-                      label="Edit"
-                      sx={{
-                        borderRadius: 1,
-                        px: 1.125,
-                        py: 0.25,
-                      }}
-                    />
-                  </Grid>
-                ))
-              )
-              .orElseTry(() =>
-                canPreviewAsPdf(file).map((url) => (
-                  <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-                    <ActionButton
-                      onClick={() => {
-                        openPdfPreview(url);
-                      }}
-                      label="Preview"
-                      sx={{
-                        borderRadius: 1,
-                        px: 1.125,
-                        py: 0.25,
-                      }}
-                    />
-                  </Grid>
-                ))
-              )
-              .orElseTry(() =>
-                canPreviewWithAspose(file).map(() => (
-                  <AsposePreviewButton key={null} file={file} />
-                ))
-              )
+            primaryAction(file)
+              .map((action) => {
+                if (action.tag === "open")
+                  return (
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                      <ActionButton
+                        onClick={action.open}
+                        label="Open"
+                        sx={{
+                          borderRadius: 1,
+                          px: 1.125,
+                          py: 0.25,
+                        }}
+                      />
+                    </Grid>
+                  );
+                if (action.tag === "image")
+                  return (
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                      <ActionButton
+                        onClick={() => {
+                          openImagePreview(action.downloadHref);
+                        }}
+                        label="Preview"
+                        sx={{
+                          borderRadius: 1,
+                          px: 1.125,
+                          py: 0.25,
+                        }}
+                      />
+                    </Grid>
+                  );
+                if (action.tag === "collabora")
+                  return (
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                      <ActionButton
+                        onClick={() => {
+                          window.open(action.url);
+                        }}
+                        label="Edit"
+                        sx={{
+                          borderRadius: 1,
+                          px: 1.125,
+                          py: 0.25,
+                        }}
+                      />
+                    </Grid>
+                  );
+                if (action.tag === "officeonline")
+                  return (
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                      <ActionButton
+                        onClick={() => {
+                          window.open(action.url);
+                        }}
+                        label="Edit"
+                        sx={{
+                          borderRadius: 1,
+                          px: 1.125,
+                          py: 0.25,
+                        }}
+                      />
+                    </Grid>
+                  );
+                if (action.tag === "pdf")
+                  return (
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                      <ActionButton
+                        onClick={() => {
+                          openPdfPreview(action.downloadHref);
+                        }}
+                        label="Preview"
+                        sx={{
+                          borderRadius: 1,
+                          px: 1.125,
+                          py: 0.25,
+                        }}
+                      />
+                    </Grid>
+                  );
+                if (action.tag === "aspose")
+                  return <AsposePreviewButton key={null} file={file} />;
+              })
               .orElseGet((errors) => {
                 console.info("Could not provide preview");
                 errors.forEach((e) => {

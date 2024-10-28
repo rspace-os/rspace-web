@@ -27,7 +27,6 @@ import {
 } from "mobx";
 import { type InventoryRecord } from "../definitions/InventoryRecord";
 import { type Group } from "../definitions/Group";
-import { type NewInContainerParams } from "../../Inventory/Mixed/CreateDialog";
 import { mkAlert } from "../contexts/Alert";
 import { showToastWhilstPending } from "../../util/alerts";
 import React from "react";
@@ -36,6 +35,19 @@ export type SavedSearch = {|
   ...CoreFetcherArgs,
   name: string,
 |};
+
+export type NewInContainerParams = {
+  parentContainers: Array<ContainerModel>,
+  /*
+   * An empty object is used to denote that a location does not need to be
+   * specified when the parent container is a list container
+   */
+  parentLocation: | {|
+        coordX: number,
+        coordY: number,
+      |}
+    | {||},
+};
 
 const SAVED_SEARCHES: ?Array<SavedSearch> = JSON.parse(
   // $FlowExpectedError[incompatible-call]

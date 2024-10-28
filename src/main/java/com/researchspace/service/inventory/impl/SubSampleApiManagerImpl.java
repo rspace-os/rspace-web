@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfoWithSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
@@ -16,6 +17,7 @@ import com.researchspace.model.events.InventoryEditingEvent;
 import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.InventorySeriesNamingHelper;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.IActiveUserStrategy;
@@ -166,7 +168,28 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl
   }
 
   @Override
-  public ApiSubSample createNewApiSubSample(
+  public List<ApiSubSample> createNewSubSamplesForSample(
+      Long sampleId, Integer newSubSamplesCount, ApiQuantityInfo subSampleQuantity, User user) {
+
+    List<ApiSubSample> result = new ArrayList<>();
+    Sample dbSample = sampleApiMgr.getSampleById(sampleId, user);
+    invPermissions.assertUserCanEditInventoryRecord(dbSample, user);
+
+    int initSubSampleCount = dbSample.getSubSamples().size();
+    for (int i = 0; i < newSubSamplesCount; i++) {
+      int suffixCount = initSubSampleCount + i + 1;
+      String newName =
+          InventorySeriesNamingHelper.getSerialNameForSubSample(
+              dbSample.getName(), suffixCount, initSubSampleCount + newSubSamplesCount);
+      ApiSubSample subSampleToCreate = new ApiSubSample(newName);
+      subSampleToCreate.setQuantity(subSampleQuantity);
+      result.add(addNewApiSubSampleToSample(subSampleToCreate, sampleId, user));
+    }
+    return result;
+  }
+
+  @Override
+  public ApiSubSample addNewApiSubSampleToSample(
       ApiSubSample incomingSubSample, Long sampleId, User user) {
 
     Sample dbSample = sampleApiMgr.getSampleById(sampleId, user);
@@ -276,8 +299,10 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl
     for (int i = 0; i < numCopiesToMake; i++) {
       SubSample copy;
       if (cfg.isSplit()) {
-        final int nameSuffix = i + 2; // rsinv-148
-        copy = origSubSample.copy(ss -> ss.getName() + "." + nameSuffix, newQ, user);
+        final String newName =
+            InventorySeriesNamingHelper.getSerialNameForSubSampleNoZeroPrefix(
+                origSubSample.getName(), i + 2);
+        copy = origSubSample.copy(ss -> newName, newQ, user);
       } else {
         copy = origSubSample.copy(user); // prt-238
       }
@@ -288,7 +313,10 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl
       publisher.publishEvent(new InventoryCreationEvent(copy, user));
     }
     if (cfg.isSplit()) {
-      origSubSample.setName(origSubSample.getName() + ".1");
+      String newName =
+          InventorySeriesNamingHelper.getSerialNameForSubSampleNoZeroPrefix(
+              origSubSample.getName(), 1);
+      origSubSample.setName(newName);
     }
 
     return copied;

@@ -14,6 +14,7 @@ import {
 import { useGallerySelection } from "./useGallerySelection";
 import { observable, runInAction } from "mobx";
 import { Optional } from "../../util/optional";
+import { type URL } from "../../util/types";
 
 export opaque type Id = number;
 export function idToString(id: Id): string {
@@ -95,7 +96,7 @@ export type GalleryFile = {|
   // if the file is a folder, open it
   open?: () => void,
 
-  downloadHref?: string,
+  downloadHref?: URL,
 
   isFolder: boolean,
   isSystemFolder: boolean,
