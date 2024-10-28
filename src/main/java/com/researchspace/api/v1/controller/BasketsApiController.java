@@ -39,15 +39,13 @@ public class BasketsApiController extends BaseApiInventoryController implements 
   }
 
   @Override
-  public List<ApiBasketInfo> getBasketsForUser(@RequestAttribute(name = "user") User user)
-      throws BindException {
+  public List<ApiBasketInfo> getBasketsForUser(@RequestAttribute(name = "user") User user) {
     return basketMgr.getBasketsForUser(user);
   }
 
   @Override
   public ApiBasket getBasketById(
-      @PathVariable Long basketId, @RequestAttribute(name = "user") User user)
-      throws BindException {
+      @PathVariable Long basketId, @RequestAttribute(name = "user") User user) {
     return basketMgr.getBasketById(basketId, user);
   }
 
