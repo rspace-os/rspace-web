@@ -221,5 +221,4 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
     u = userMgr.saveNewUser(u);
     return u;
   }
-
 }

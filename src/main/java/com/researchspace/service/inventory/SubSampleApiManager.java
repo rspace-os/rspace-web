@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.api.v1.model.ApiSubSampleSearchResult;
@@ -44,11 +45,20 @@ public interface SubSampleApiManager extends InventoryApiManager {
   ApiSubSample updateApiSubSample(ApiSubSample incomingSubSample, User user);
 
   /**
+   * @param sampleId id of a parent sample
+   * @param subSamplesCount number of subsamples to create
+   * @param subSampleQuantity quantity of an individual subsample
+   * @return list of newly created subsamples
+   */
+  List<ApiSubSample> createNewSubSamplesForSample(
+      Long sampleId, Integer subSamplesCount, ApiQuantityInfo subSampleQuantity, User user);
+
+  /**
    * @param incomingSubSample details of subsample to create
    * @param sampleId id of a parent sample
    * @return newly created subSample
    */
-  ApiSubSample createNewApiSubSample(ApiSubSample incomingSubSample, Long sampleId, User user);
+  ApiSubSample addNewApiSubSampleToSample(ApiSubSample incomingSubSample, Long sampleId, User user);
 
   ApiSubSample registerApiSubSampleUsage(
       ApiSubSample usedSubSample, QuantityInfo usedQuantity, User user);
