@@ -11,6 +11,7 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import NavigationContext from "../NavigationContext";
 import { storesContext } from "../../../stores/stores-context";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -57,6 +58,7 @@ describe("NavigationContext", () => {
         userDiscards: boolean,
         expectToNavigate: boolean,
       |}) => {
+        const user = userEvent.setup();
         const dummyUseLocation = {
           hash: "",
           pathname: "",
@@ -93,7 +95,7 @@ describe("NavigationContext", () => {
             </NavigateContext.Provider>
           </storesContext.Provider>
         );
-        screen.getByText("Click me").click();
+        user.click(screen.getByText("Click me"));
         await waitFor(() => {
           if (expectToNavigate) {
             expect(navFn).toHaveBeenCalled();

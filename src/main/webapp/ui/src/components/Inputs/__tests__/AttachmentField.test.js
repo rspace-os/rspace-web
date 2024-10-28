@@ -5,7 +5,7 @@
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, type Element } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AttachmentField from "../AttachmentField";
 import TextField from "@mui/material/TextField";
@@ -28,7 +28,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const expectLabel = (text: string) => (container: Node) =>
+const expectLabel = (text: string) => (container: Element) =>
   expect(container).toHaveTextContent(text);
 
 const expectTextField = (value: string) => () =>
@@ -84,7 +84,7 @@ describe("AttachmentField", () => {
         disabled: typeof undefined | boolean,
         value: string,
         noValueLabel: typeof undefined | string,
-        expectFn: (container: Node) => void,
+        expectFn: (container: Element) => void,
       |}) => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>

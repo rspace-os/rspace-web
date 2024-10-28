@@ -46,6 +46,7 @@ import {
   type RecordType,
   type Action,
   type SharingMode,
+  type CreateOption,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type _LINK } from "../../common/ApiServiceBase";
@@ -217,6 +218,20 @@ export default class SampleModel
   subSampleAlias: Alias;
   templateId: Id;
   templateVersion: ?number;
+  createOptionsParametersState: {|
+    split: {| key: "split",  copies: number |},
+    name: {| key: "name", value: string |},
+    fields: {|
+      key: "fields",
+      copyFieldContent: $ReadOnlyArray<{|
+        id: Id,
+        name: string,
+        content: string,
+        hasContent: boolean,
+        selected: boolean,
+      |}>,
+    |},
+  |};
 
   constructor(factory: Factory, params: SampleAttrs = { ...DEFAULT_SAMPLE }) {
     super(factory);
@@ -234,6 +249,7 @@ export default class SampleModel
       search: observable,
       subSampleAlias: observable,
       templateId: observable,
+      createOptionsParametersState: observable,
       overrideFields: action,
       saveFieldAttachments: action,
       overrideTemp: action,
@@ -261,8 +277,9 @@ export default class SampleModel
       enforceMandatoryFields: computed,
     });
 
-    if (this.recordType === "sample")
+    if (this.recordType === "sample") {
       this.populateFromJson(factory, params, DEFAULT_SAMPLE);
+    }
 
     // searching with parentGlobalId of an item you have no permission to (public view) will just return an empty array for results
     this.search = new Search({
@@ -297,6 +314,29 @@ export default class SampleModel
     this.subSampleAlias = params.subSampleAlias;
     this.templateId = params.templateId;
     this.templateVersion = params.templateVersion ?? 1;
+      this.createOptionsParametersState = {
+        split: { key: "split", copies: 2 },
+        name: { key: "name", value: "" },
+        fields: {
+          key: "fields",
+          copyFieldContent: [
+            ...this.fields.map(f => ({
+              id: f.id,
+              name: f.name,
+              content: f.renderContentAsString,
+              hasContent: f.hasContent,
+              selected: false
+            })),
+            ...this.extraFields.map(e => ({
+              id: e.id,
+              name: e.name,
+              content: e.content,
+              hasContent: e.hasContent,
+              selected: false
+            }))
+          ],
+        }
+      };
   }
 
   get recordType(): RecordType {
@@ -837,6 +877,73 @@ export default class SampleModel
           ? Array(this.newSampleSubSamplesCount).fill(firstLocation)
           : this.newSampleSubSampleTargetLocations,
     };
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    return [
+      {
+        label: "Subsample, by splitting the current subsample",
+        explanation: this.subSamples.length === 1 ? "New subsamples will be created by dividing the quantity of the existing subsample equally amongst them." : "Cannot split a sample with more than one subsample; try opening this create dialog from a particular subsample.",
+        disabled: this.subSamples.length > 1,
+        parameters: [{
+          label: "Number of new subsamples",
+          explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
+          state: this.createOptionsParametersState.split,
+          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
+        }],
+        onReset: () => {
+          this.createOptionsParametersState.split.copies = 2;
+        },
+        onSubmit: () => {
+          if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
+          return getRootStore().searchStore.search.splitRecord(
+            this.createOptionsParametersState.split.copies,
+            this.subSamples[0],
+          );
+        },
+      },
+      {
+        label: "Template",
+        explanation: "Create a template from this sample, to easily create similar samples.",
+        parameters: [{
+          label: "Name",
+          explanation: "A name for the new template. At least two characters.",
+          state: this.createOptionsParametersState.name,
+          validState: () => this.createOptionsParametersState.name.value.length > 2,
+        },{
+          label: "Field default values",
+          explanation: "All of the sample fields will be included in the template. Select which fields should also retain their current value as a default field value.",
+          state: this.createOptionsParametersState.fields,
+          validState: () => true,
+        }],
+        onReset: () => {
+          this.createOptionsParametersState.name.value = "";
+          this.createOptionsParametersState.fields.copyFieldContent = [
+              ...this.fields.map(f => ({
+                id: f.id,
+                name: f.name,
+                content: f.renderContentAsString,
+                hasContent: f.hasContent,
+                selected: false
+              })),
+              ...this.extraFields.map(e => ({
+                id: e.id,
+                name: e.name,
+                content: e.content,
+                hasContent: e.hasContent,
+                selected: false
+              }))
+            ];
+        },
+        onSubmit: () => {
+          return getRootStore().searchStore.search.createTemplateFromSample(
+            this.createOptionsParametersState.name.value,
+            this,
+            new RsSet(this.createOptionsParametersState.fields.copyFieldContent.filter(({ selected }) => selected).map(({ id }) => id)),
+          );
+        },
+      }
+    ];
   }
 }
 

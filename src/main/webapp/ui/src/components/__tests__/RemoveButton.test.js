@@ -9,6 +9,7 @@ import "@testing-library/jest-dom";
 import RemoveButton from "../RemoveButton";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -17,7 +18,8 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("RemoveButton", () => {
-  test("Should invoke onClick when clicked.", () => {
+  test("Should invoke onClick when clicked.", async () => {
+    const user = userEvent.setup();
     const onClick = jest.fn<[], void>();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -25,7 +27,7 @@ describe("RemoveButton", () => {
       </ThemeProvider>
     );
 
-    screen.getByRole("button").click();
+    await user.click(screen.getByRole("button"));
 
     expect(onClick).toHaveBeenCalled();
   });

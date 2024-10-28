@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { RecordLink } from "../RecordLink";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
@@ -15,6 +15,7 @@ import {
 import { storesContext } from "../../../stores/stores-context";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -23,7 +24,8 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("RecordLink", () => {
-  test("Clicking a link to a bench should show the search results.", () => {
+  test("Clicking a link to a bench should show the search results.", async () => {
+    const user = userEvent.setup();
     const rootStore = makeMockRootStore({
       uiStore: {
         setVisiblePanel: () => {},
@@ -41,12 +43,11 @@ describe("RecordLink", () => {
         </storesContext.Provider>
       </ThemeProvider>
     );
-    act(() => {
-      screen.getByRole("link", { name: /User User's Bench/ }).click();
-    });
+    await user.click(screen.getByRole("link", { name: /User User's Bench/ }));
     expect(spy).toHaveBeenCalledWith("left");
   });
-  test("Clicking a link to a container should show the container's details.", () => {
+  test("Clicking a link to a container should show the container's details.", async () => {
+    const user = userEvent.setup();
     const rootStore = makeMockRootStore({
       uiStore: {
         setVisiblePanel: () => {},
@@ -64,9 +65,7 @@ describe("RecordLink", () => {
         </storesContext.Provider>
       </ThemeProvider>
     );
-    act(() => {
-      screen.getByRole("link", { name: /A list container/ }).click();
-    });
+    await user.click(screen.getByRole("link", { name: /A list container/ }));
     expect(spy).toHaveBeenCalledWith("right");
   });
 });

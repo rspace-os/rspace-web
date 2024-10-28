@@ -11,6 +11,7 @@ import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mo
 import CustomField from "../CustomField";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -23,7 +24,8 @@ afterEach(cleanup);
 
 describe("CustomField", () => {
   describe("Should be able to delete the field", () => {
-    test("Keep field in existing samples", () => {
+    test("Keep field in existing samples", async () => {
+      const user = userEvent.setup();
       const field = makeMockField({
         type: "choice",
         definition: {
@@ -47,17 +49,14 @@ describe("CustomField", () => {
         </ThemeProvider>
       );
 
-      act(() => {
-        screen.getByRole("button", { name: "Delete field" }).click();
-      });
-      act(() => {
-        screen
-          .getByRole("menuitem", { name: "Keep field in existing samples" })
-          .click();
-      });
+      await user.click(screen.getByRole("button", { name: "Delete field" }));
+      await user.click(
+        screen.getByRole("menuitem", { name: "Keep field in existing samples" })
+      );
       expect(onRemove).toHaveBeenCalledWith(false);
     });
-    test("Remove field in existing samples", () => {
+    test("Remove field in existing samples", async () => {
+      const user = userEvent.setup();
       const field = makeMockField({
         type: "choice",
         definition: {
@@ -81,14 +80,12 @@ describe("CustomField", () => {
         </ThemeProvider>
       );
 
-      act(() => {
-        screen.getByRole("button", { name: "Delete field" }).click();
-      });
-      act(() => {
-        screen
-          .getByRole("menuitem", { name: "Remove field from existing samples" })
-          .click();
-      });
+      await user.click(screen.getByRole("button", { name: "Delete field" }));
+      await user.click(
+        screen.getByRole("menuitem", {
+          name: "Remove field from existing samples",
+        })
+      );
       expect(onRemove).toHaveBeenCalledWith(true);
     });
   });

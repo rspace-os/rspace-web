@@ -15,6 +15,7 @@ import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore
 import { storesContext } from "../../../../stores/stores-context";
 import "__mocks__/resizeObserver";
 import "../../../../../__mocks__/matchMedia.js";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../common/InvApiService", () => ({
   get: () => ({}),
@@ -57,6 +58,7 @@ afterEach(cleanup);
 describe("TemplatePicker", () => {
   describe("Should support saved searches", () => {
     test("Tapping a saved search should change the templates listed", async () => {
+      const user = userEvent.setup();
       const rootStore = makeMockRootStore({
         searchStore: {
           savedSearches: [{ name: "Dummy saved search", query: "foo" }],
@@ -99,12 +101,10 @@ describe("TemplatePicker", () => {
       });
       expect(screen.getByRole("table")).toHaveTextContent("bar");
 
-      act(() => {
-        screen.getByRole("button", { name: "Saved Searches" }).click();
-      });
-      act(() => {
-        screen.getByRole("menuitem", { name: /^Dummy saved search/ }).click();
-      });
+      await user.click(screen.getByRole("button", { name: "Saved Searches" }));
+      await user.click(
+        screen.getByRole("menuitem", { name: /^Dummy saved search/ })
+      );
 
       await waitFor(() => {
         expect(screen.getByRole("table")).toHaveTextContent("foo");

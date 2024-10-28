@@ -10,6 +10,7 @@ import "../../../../../__mocks__/barcode-detection-api";
 import AllBarcodeScanner from "../AllBarcodeScanner";
 import { sleep } from "../../../../util/Util";
 import { type BarcodeInput } from "../BarcodeScannerSkeleton";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -19,6 +20,7 @@ afterEach(cleanup);
 
 describe("AllBarcodeScanner", () => {
   test("Should scan correctly.", async () => {
+    const user = userEvent.setup();
     jest.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() => {});
 
     const onScan = jest.fn<[BarcodeInput], void>();
@@ -40,7 +42,7 @@ describe("AllBarcodeScanner", () => {
       await sleep(1100);
     });
 
-    screen.getByText("Scan").click();
+    await user.click(screen.getByText("Scan"));
 
     /*
      * This mocked value comes from src/main/webapp/ui/__mocks__/barcode-detection-api.js

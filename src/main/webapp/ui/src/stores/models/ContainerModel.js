@@ -30,6 +30,7 @@ import {
   type RecordType,
   type Action,
   type SharingMode,
+  type CreateOption,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type Id, type GlobalId } from "../definitions/BaseRecord";
@@ -288,8 +289,6 @@ export default class ContainerModel
       dimensions: computed,
       selectedLocations: computed,
       selectedResults: computed,
-      shallowSelected: computed,
-      shallowUnselected: computed,
       rows: computed,
       columns: computed,
       sortedLocations: computed,
@@ -498,16 +497,16 @@ export default class ContainerModel
     return this.results.filter((c) => c.selected);
   }
 
-  get shallowSelected(): Array<Location> {
+  shallowSelected(search: Search): Array<Location> {
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
-    return locations.filter((l: Location) => l.isShallowSelected);
+    return locations.filter((l: Location) => l.isShallowSelected(search));
   }
 
-  get shallowUnselected(): Array<Location> {
+  shallowUnselected(search: Search): Array<Location> {
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
-    return locations.filter((l: Location) => l.isShallowUnselected);
+    return locations.filter((l: Location) => l.isShallowUnselected(search));
   }
 
   get rows(): Array<{ value: number, label: string | number }> {
@@ -802,16 +801,16 @@ export default class ContainerModel
     }
   }
 
-  stopSelection(): void {
+  stopSelection(search: SearchInterface): void {
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");
     locations
-      .filter((loc) => loc.isShallow && loc.isSelectable)
-      .map((loc) => this.onSelect(loc));
+      .filter((loc) => loc.isShallow(search) && loc.isSelectable(search))
+      .map((loc) => this.onSelect(loc, search));
     this.selectionMode = false;
   }
 
-  onSelect(location: Location): void {
+  onSelect(location: Location, search: SearchInterface): void {
     if (!this.selectedLocations)
       throw new Error("Locations of container must be known.");
     const selectedLocations = this.selectedLocations;
@@ -819,13 +818,10 @@ export default class ContainerModel
     if (location.selected) {
       location.toggleSelected(false);
     } else {
-      const restrainedSelect = getRootStore().moveStore.isMoving;
-      const canSelectOneMore =
-        selectedLocations.length + 1 <=
-        getRootStore().moveStore.selectedResults.length;
-      const canSelectThisLocation = location.isSelectable;
+      const canSelectOneMore = selectedLocations.length + 1 <= search.uiConfig.selectionLimit;
+      const canSelectThisLocation = location.isSelectable(search);
 
-      if (restrainedSelect) {
+      if (search.uiConfig.onlyAllowSelectingEmptyLocations) {
         if (canSelectOneMore && canSelectThisLocation) {
           location.toggleSelected(true);
         }
@@ -1112,6 +1108,75 @@ export default class ContainerModel
       ...super.dataAttachedToRecordCreatedAnaylticsEvent,
       cType: this.cType,
     };
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    return [
+      {
+        label: "Container",
+        explanation: "The container will be automatically added to this container.",
+        parameters: [{
+          label: "Location",
+          explanation: this.cType === "LIST" ? "No location selection required for list containers." : "Specify a single location for where the new container should be placed.",
+          state: { key: "location", container: this },
+          validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
+        }],
+        disabled: !this.canStoreContainers,
+        onReset: () => {
+          // nothing to reset
+        },
+        onSubmit: async () => {
+          if (this.cType === "LIST") {
+            await getRootStore().searchStore.createNewContainer({
+              parentContainers: [this],
+              parentLocation: {},
+            });
+            return;
+          }
+          if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
+          const location = this.selectedLocations[0];
+          await getRootStore().searchStore.createNewContainer({
+            parentContainers: [this],
+            parentLocation: {
+              coordX: location.coordX,
+              coordY: location.coordY
+            }
+          });
+        },
+      },
+      {
+        label: "Sample",
+        explanation: "The subsample will be automatically added to this container.",
+        parameters: [{
+          label: "Location",
+          explanation: this.cType === "LIST" ? "No location selection required for list containers." : "Specify a single location for where the new container should be placed.",
+          state: { key: "location", container: this },
+          validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
+        }],
+        disabled: !this.canStoreSamples,
+        onReset: ( ) => {
+          // nothing to reset
+        },
+        onSubmit: async () => {
+          if (this.cType === "LIST") {
+            await getRootStore().searchStore.createNewSample({
+              parentContainers: [this],
+              parentLocation: {},
+            });
+            return;
+          }
+          if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
+          const location = this.selectedLocations[0];
+          await getRootStore().searchStore.createNewSample({
+            parentContainers: [this],
+            parentLocation: {
+              coordX: location.coordX,
+              coordY: location.coordY
+            }
+          });
+        },
+      }
+    ];
   }
 }
 

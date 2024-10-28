@@ -8,7 +8,6 @@ import {
   render,
   cleanup,
   screen,
-  fireEvent,
   within,
   act,
   waitFor,
@@ -23,6 +22,7 @@ import * as axios from "axios";
 import USER_LISTING from "./userListing";
 import PDF_CONFIG from "./pdfConfig";
 import { sleep } from "../../../../util/Util";
+import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -38,6 +38,7 @@ describe("Grant User PI Role", () => {
   test(
     "When `checkVerificationPasswordNeeded` returns true, a message should be shown.",
     async () => {
+      const user = userEvent.setup();
       const createObjectURL = jest
         .fn<[Blob], string>()
         .mockImplementation(() => "");
@@ -70,10 +71,10 @@ describe("Grant User PI Role", () => {
         await screen.findByRole("row", { name: /user8h/ })
       ).getByRole("checkbox");
 
-      fireEvent.click(checkbox);
+      await user.click(checkbox);
 
-      fireEvent.click(screen.getByRole("button", { name: /Actions/ }));
-      fireEvent.click(screen.getByRole("menuitem", { name: /Grant PI role/ }));
+      await user.click(screen.getByRole("button", { name: /Actions/ }));
+      await user.click(screen.getByRole("menuitem", { name: /Grant PI role/ }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
@@ -92,6 +93,7 @@ describe("Grant User PI Role", () => {
   test(
     "When `checkVerificationPasswordNeeded` returns false, a message should not be shown.",
     async () => {
+      const user = userEvent.setup();
       const createObjectURL = jest
         .fn<[Blob], string>()
         .mockImplementation(() => "");
@@ -124,10 +126,10 @@ describe("Grant User PI Role", () => {
         await screen.findByRole("row", { name: /user8h/ })
       ).getByRole("checkbox");
 
-      fireEvent.click(checkbox);
+      await user.click(checkbox);
 
-      fireEvent.click(screen.getByRole("button", { name: /Actions/ }));
-      fireEvent.click(screen.getByRole("menuitem", { name: /Grant PI role/ }));
+      await user.click(screen.getByRole("button", { name: /Actions/ }));
+      await user.click(screen.getByRole("menuitem", { name: /Grant PI role/ }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();

@@ -4,11 +4,12 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ZenodoRepo from "../ZenodoRepo";
 import "../../../../__mocks__/matchMedia.js";
 import { type Person } from "../common";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -23,7 +24,8 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ZenodoRepo", () => {
-  test("Upon editing, title should be set to the entered value.", () => {
+  test("Upon editing, title should be set to the entered value.", async () => {
+    const user = userEvent.setup();
     const handleChange = jest.fn<
       [
         { target: { name: "subject" | "title" | "description", value: string } }
@@ -31,29 +33,36 @@ describe("ZenodoRepo", () => {
       void
     >();
 
-    render(
-      <ZenodoRepo
-        handleChange={handleChange}
-        inputValidations={{
-          description: true,
-          title: true,
-          author: true,
-          contact: true,
-          subject: true,
-        }}
-        submitAttempt={false}
-        updatePeople={() => {}}
-        title=""
-        description=""
-        tags={[]}
-        onTagsChange={() => {}}
-        fetchingTags={false}
-      />
-    );
+    const Wrapper = ({ onChange }: {| onChange: typeof handleChange |}) => {
+      const [title, setTitle] = React.useState("");
 
-    fireEvent.change(screen.getByRole("textbox", { name: /Title/ }), {
-      target: { value: "foo" },
-    });
+      return (
+        <ZenodoRepo
+          handleChange={(e) => {
+            if (e.target.name === "title") setTitle(e.target.value);
+            onChange(e);
+          }}
+          inputValidations={{
+            description: true,
+            title: true,
+            author: true,
+            contact: true,
+            subject: true,
+          }}
+          submitAttempt={false}
+          updatePeople={() => {}}
+          title={title}
+          description=""
+          tags={[]}
+          onTagsChange={() => {}}
+          fetchingTags={false}
+        />
+      );
+    };
+
+    render(<Wrapper onChange={handleChange} />);
+
+    await user.type(screen.getByRole("textbox", { name: /Title/ }), "foo");
 
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -65,7 +74,8 @@ describe("ZenodoRepo", () => {
     );
   });
 
-  test("Upon editing, description should be set to the entered value.", () => {
+  test("Upon editing, description should be set to the entered value.", async () => {
+    const user = userEvent.setup();
     const handleChange = jest.fn<
       [
         { target: { name: "subject" | "title" | "description", value: string } }
@@ -73,29 +83,39 @@ describe("ZenodoRepo", () => {
       void
     >();
 
-    render(
-      <ZenodoRepo
-        handleChange={handleChange}
-        inputValidations={{
-          description: true,
-          title: true,
-          author: true,
-          contact: true,
-          subject: true,
-        }}
-        submitAttempt={false}
-        updatePeople={() => {}}
-        title=""
-        description=""
-        tags={[]}
-        onTagsChange={() => {}}
-        fetchingTags={false}
-      />
-    );
+    const Wrapper = ({ onChange }: {| onChange: typeof handleChange |}) => {
+      const [description, setDescription] = React.useState("");
 
-    fireEvent.change(screen.getByRole("textbox", { name: /Description/ }), {
-      target: { value: "foo" },
-    });
+      return (
+        <ZenodoRepo
+          handleChange={(e) => {
+            if (e.target.name === "description") setDescription(e.target.value);
+            onChange(e);
+          }}
+          inputValidations={{
+            description: true,
+            title: true,
+            author: true,
+            contact: true,
+            subject: true,
+          }}
+          submitAttempt={false}
+          updatePeople={() => {}}
+          title=""
+          description={description}
+          tags={[]}
+          onTagsChange={() => {}}
+          fetchingTags={false}
+        />
+      );
+    };
+
+    render(<Wrapper onChange={handleChange} />);
+
+    await user.type(
+      screen.getByRole("textbox", { name: /Description/ }),
+      "foo"
+    );
 
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({

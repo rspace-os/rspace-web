@@ -9,6 +9,7 @@ import "@testing-library/jest-dom";
 import DeleteButton from "../DeleteButton";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -44,26 +45,21 @@ describe("DeleteButton", () => {
     expect(screen.getByLabelText("bar"));
   });
 
-  test("Shows after clicked tooltip.", () => {
+  test("Shows after clicked tooltip.", async () => {
+    const user = userEvent.setup();
     const onClick = jest.fn(() => {});
     renderDeleteButton({ onClick });
-    act(() => {
-      screen.getByRole("button").click();
-    });
+    await user.click(screen.getByRole("button"));
     expect(onClick).toHaveBeenCalled();
     expect(screen.getByLabelText("foo"));
   });
 
-  test("Becomes disabled once clicked.", () => {
+  test("Becomes disabled once clicked.", async () => {
+    const user = userEvent.setup();
     const onClick = jest.fn(() => {});
     renderDeleteButton({ onClick });
 
-    act(() => {
-      screen.getByRole("button").click();
-    });
-    act(() => {
-      screen.getByRole("button").click();
-    });
-    expect(onClick).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button"));
+    expect(screen.getByRole("button")).toBeDisabled();
   });
 });

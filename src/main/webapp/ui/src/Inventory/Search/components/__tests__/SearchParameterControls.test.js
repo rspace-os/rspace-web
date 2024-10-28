@@ -15,6 +15,7 @@ import SearchParameterControls from "../SearchParameterControls";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import "../../../../../__mocks__/matchMedia.js";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../common/InvApiService", () => {});
 jest.mock("../../../../stores/stores/RootStore", () => () => ({
@@ -33,7 +34,6 @@ window.fetch = jest.fn(() =>
   })
 );
 
-
 beforeEach(() => {
   jest.clearAllMocks();
 });
@@ -42,7 +42,8 @@ afterEach(cleanup);
 
 describe("SearchParameterControls", () => {
   describe("Saved searches controls", () => {
-    test("If the search disallows a particular record type, saved searches with that type filter should be disabled.", () => {
+    test("If the search disallows a particular record type, saved searches with that type filter should be disabled.", async () => {
+      const user = userEvent.setup();
       const rootStore = makeMockRootStore({
         searchStore: {
           savedSearches: [{ name: "Test search", resultType: "SAMPLE" }],
@@ -72,9 +73,7 @@ describe("SearchParameterControls", () => {
         </ThemeProvider>
       );
 
-      act(() => {
-        screen.getByRole("button", { name: "Saved Searches" }).click();
-      });
+      await user.click(screen.getByRole("button", { name: "Saved Searches" }));
       expect(
         screen.getByRole("menuitem", { name: /^Test search/ })
       ).toHaveAttribute("aria-disabled", "true");
