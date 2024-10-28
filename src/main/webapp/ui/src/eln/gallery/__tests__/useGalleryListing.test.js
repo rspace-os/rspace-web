@@ -83,7 +83,7 @@ describe("useGalleryListing", () => {
       expect(screen.getByRole("button", { name: /load more/i })).toBeVisible();
     });
 
-    user.click(screen.getByRole("button", { name: /load more/i }));
+    await user.click(screen.getByRole("button", { name: /load more/i }));
 
     await waitFor(() => {
       expect(
@@ -91,10 +91,8 @@ describe("useGalleryListing", () => {
       ).not.toBeInTheDocument();
     });
 
-    // I don't know why the first request is duplicated
-    expect(mockAxios.history.get.length).toBe(3);
+    expect(mockAxios.history.get.length).toBe(2);
     expect(mockAxios.history.get[0].params.get("pageNumber")).toBe("0");
-    expect(mockAxios.history.get[1].params.get("pageNumber")).toBe("0");
-    expect(mockAxios.history.get[2].params.get("pageNumber")).toBe("1");
+    expect(mockAxios.history.get[1].params.get("pageNumber")).toBe("1");
   });
 });

@@ -589,8 +589,21 @@ export function useGalleryListing({
     void getGalleryFiles();
   }, [searchTerm, path, sortOrder, orderBy]);
 
+  /*
+   * Whenever section changes, we want to clear the path so that navigating to
+   * a different section returns you to the root of the folder hierarchy.
+   * However, we don't want to set the path when this custom hook is mounted as
+   * setting the path will invoke the above useEffect again -- in addition to
+   * the time when it is invoked on mount -- resulting in a second GET request
+   * to getUploadedFiles. As such, we use this single flag to ensure that we
+   * only change the path when the section is changed on subsequent re-renders.
+   */
+  const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
-    setPath(defaultPath ?? []);
+    if (mounted) {
+      setPath(defaultPath ?? []);
+    }
+    setMounted(true);
   }, [section]);
 
   if (loading)
