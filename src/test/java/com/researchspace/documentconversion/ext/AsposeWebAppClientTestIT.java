@@ -30,7 +30,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 @ContextConfiguration(classes = AsposeWebAppClientTestIT.class)
-// docker container running aspose-web 0.27.0, this is from point of view of kudu
 @TestPropertySource(properties = "aspose.web.url=http://howler.researchspace.com:8083")
 @Configuration
 @RunWith(ConditionalTestRunner.class)
@@ -40,8 +39,8 @@ public class AsposeWebAppClientTestIT extends AbstractJUnit4SpringContextTests {
 
   AsposeWebAppClient client;
   File wordFile = RSpaceTestUtils.getResource("PowerPasteTesting_RSpace.docx");
-  final int EXPECTED_WORDFILE_TO_PDF_LENGTH = 620482;
-  final int EXPECTED_WORDFILE_TO_HTML_LENGTH = 25378;
+  final int EXPECTED_WORDFILE_TO_PDF_LENGTH = 620471;
+  final int EXPECTED_WORDFILE_TO_HTML_LENGTH = 26210;
   final int EXPECTED_HTML_TO_DOC = 166400;
 
   @Before
@@ -78,7 +77,7 @@ public class AsposeWebAppClientTestIT extends AbstractJUnit4SpringContextTests {
 
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
-  public void htmlToWord() throws IOException {
+  public void htmlToWord() {
     File inputFolder = new File("src/test/resources/TestResources/word2rspace/powerpasteHtml");
     File inputHtml = new File(inputFolder, "PowerPasteTesting_RSpace.html");
     ConversionResult result = client.convert(new ConvertibleFile(inputHtml), "doc");
