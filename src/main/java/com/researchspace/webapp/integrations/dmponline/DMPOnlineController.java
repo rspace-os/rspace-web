@@ -135,7 +135,7 @@ public class DMPOnlineController {
       return null;
     }
     HttpHeaders headers = new HttpHeaders();
-    headers.add("Accept", "application/json");
+    headers.add("Accept", "application/x-www-form-urlencoded;charset=UTF-8");
     headers.add("Content-Type", "application/json");
     HttpEntity<?> entity =
         new HttpEntity<>(
