@@ -325,6 +325,14 @@ function ActionsMenu({
       })
   );
 
+  const viewHidden = computed(() =>
+    selection
+      .asSet()
+      .only.toResult(() => new Error("Too many items selected."))
+      .map((file) => canOpenAsFolder(file).isOk)
+      .orElse(false)
+  );
+
   const viewAllowed = computed(() =>
     selection
       .asSet()
@@ -441,6 +449,31 @@ function ActionsMenu({
             />
           ))
           .orElse(null)}
+        {!viewHidden.get() && (
+          <NewMenuItem
+            title="View"
+            subheader={viewAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            avatar={<VisibilityIcon />}
+            onClick={() => {
+              viewAllowed.get().do((viewAction) => {
+                if (viewAction.key === "image")
+                  openImagePreview(viewAction.downloadHref);
+                if (viewAction.key === "pdf")
+                  openPdfPreview(viewAction.downloadHref);
+                if (viewAction.key === "aspose")
+                  void openAsposePreview(viewAction.file);
+              });
+              setActionsMenuAnchorEl(null);
+            }}
+            compact
+            disabled={viewAllowed.get().isError}
+          />
+        )}
         <NewMenuItem
           title="Edit"
           subheader={editingAllowed
@@ -455,29 +488,6 @@ function ActionsMenu({
           }}
           compact
           disabled={editingAllowed.get().isError}
-        />
-        <NewMenuItem
-          title="View"
-          subheader={viewAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<VisibilityIcon />}
-          onClick={() => {
-            viewAllowed.get().do((viewAction) => {
-              if (viewAction.key === "image")
-                openImagePreview(viewAction.downloadHref);
-              if (viewAction.key === "pdf")
-                openPdfPreview(viewAction.downloadHref);
-              if (viewAction.key === "aspose")
-                void openAsposePreview(viewAction.file);
-            });
-            setActionsMenuAnchorEl(null);
-          }}
-          compact
-          disabled={viewAllowed.get().isError}
         />
         <NewMenuItem
           title="Duplicate"
