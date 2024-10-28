@@ -586,6 +586,7 @@ export function useGalleryListing({
   }
 
   React.useEffect(() => {
+    setPage(0);
     void getGalleryFiles();
   }, [searchTerm, path, sortOrder, orderBy]);
 
