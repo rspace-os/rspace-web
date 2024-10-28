@@ -234,7 +234,7 @@ export default class FieldModel implements Field {
           "Options of custom choice fields must all be distinct."
         );
     }
-    if (this.mandatory && this.owner.enforceMandatoryFields && !this.content)
+    if (this.mandatory && this.owner.enforceMandatoryFields && !this.hasContent)
       return IsInvalid(
         `The mandatory custom field "${this.name}" must have a valid value.`
       );
