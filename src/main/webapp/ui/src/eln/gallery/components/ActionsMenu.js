@@ -14,8 +14,11 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import GroupIcon from "@mui/icons-material/Group";
-import CropIcon from "@mui/icons-material/Crop";
+import EditIcon from "@mui/icons-material/Edit";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { observer } from "mobx-react-lite";
+import { computed } from "mobx";
 import { type GalleryFile, idToString, type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
@@ -38,6 +41,17 @@ import EventBoundary from "../../../components/EventBoundary";
 import * as Parsers from "../../../util/parsers";
 import * as FetchingData from "../../../util/fetchingData";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import {
+  useOpen,
+  useImagePreviewOfGalleryFile,
+  useCollaboraEdit,
+  useOfficeOnlineEdit,
+  usePdfPreviewOfGalleryFile,
+  useAsposePreviewOfGalleryFile,
+} from "../primaryActionHooks";
+import { useImagePreview } from "./CallableImagePreview";
+import { usePdfPreview } from "./CallablePdfPreview";
+import { useAsposePreview } from "./CallableAsposePreview";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -273,11 +287,71 @@ function ActionsMenu({
   const { deleteFiles, duplicateFiles } = useGalleryActions();
   const selection = useGallerySelection();
   const theme = useTheme();
+  const canOpenAsFolder = useOpen();
+  const canPreviewAsImage = useImagePreviewOfGalleryFile();
+  const canEditWithCollabora = useCollaboraEdit();
+  const canEditWithOfficeOnline = useOfficeOnlineEdit();
+  const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
+  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  const { openImagePreview } = useImagePreview();
+  const { openPdfPreview } = usePdfPreview();
+  const { openAsposePreview } = useAsposePreview();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
+
+  const openAllowed = computed(() => {
+    return selection
+      .asSet()
+      .only.toResult(() => new Error("Too many items selected."))
+      .flatMap(canOpenAsFolder);
+  });
+
+  const editingAllowed = computed(() =>
+    selection
+      .asSet()
+      .only.toResult(() => new Error("Too many items selected."))
+      .flatMap((file) => {
+        if (file.isImage)
+          return Result.Error<null>([new Error("Not yet implemented.")]);
+        return canEditWithCollabora(file)
+          .orElseTry(() => canEditWithOfficeOnline(file))
+          .map(() => Result.Error<null>([new Error("Not yet implemented.")]))
+          .orElseGet(() =>
+            Result.Error<null>([new Error("Cannot edit this item.")])
+          );
+      })
+  );
+
+  const viewHidden = computed(() =>
+    selection
+      .asSet()
+      .only.toResult(() => new Error("Too many items selected."))
+      .map((file) => canOpenAsFolder(file).isOk)
+      .orElse(false)
+  );
+
+  const viewAllowed = computed(() =>
+    selection
+      .asSet()
+      .only.toResult(() => new Error("Too many items selected."))
+      .flatMap((file) =>
+        canPreviewAsImage(file)
+          .map((downloadHref) => ({ key: "image", downloadHref }))
+          .orElseTry(() =>
+            canPreviewAsPdf(file).map((downloadHref) => ({
+              key: "pdf",
+              downloadHref,
+            }))
+          )
+          .orElseTry(() =>
+            canPreviewWithAspose(file).map(() => ({ key: "aspose", file }))
+          )
+          .mapError(() => new Error("Cannot view this item."))
+      )
+  );
 
   const duplicateAllowed = (): Result<null> => {
     if (selection.asSet().some((f) => f.isSystemFolder))
@@ -311,14 +385,6 @@ function ActionsMenu({
   const sharingSnippetsAllowed = (): Result<null> => {
     if (selection.asSet().some((f) => !f.isSnippet))
       return Result.Error([new Error("Only snippets may be shared.")]);
-    return Result.Error([new Error("Not yet available.")]);
-  };
-
-  const imageEditingAllowed = (): Result<null> => {
-    if (selection.isEmpty)
-      return Result.Error([new Error("Nothing selected.")]);
-    if (selection.asSet().some((f) => !f.isImage))
-      return Result.Error([new Error("Only images may be edited.")]);
     return Result.Error([new Error("Not yet available.")]);
   };
 
@@ -367,6 +433,62 @@ function ActionsMenu({
         }}
         keepMounted
       >
+        {openAllowed
+          .get()
+          .map((open) => (
+            <NewMenuItem
+              title="Open"
+              backgroundColor={COLOR.background}
+              foregroundColor={COLOR.contrastText}
+              avatar={<FolderOpenIcon />}
+              onClick={() => {
+                open();
+                setActionsMenuAnchorEl(null);
+              }}
+              compact
+            />
+          ))
+          .orElse(null)}
+        {!viewHidden.get() && (
+          <NewMenuItem
+            title="View"
+            subheader={viewAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            avatar={<VisibilityIcon />}
+            onClick={() => {
+              viewAllowed.get().do((viewAction) => {
+                if (viewAction.key === "image")
+                  openImagePreview(viewAction.downloadHref);
+                if (viewAction.key === "pdf")
+                  openPdfPreview(viewAction.downloadHref);
+                if (viewAction.key === "aspose")
+                  void openAsposePreview(viewAction.file);
+              });
+              setActionsMenuAnchorEl(null);
+            }}
+            compact
+            disabled={viewAllowed.get().isError}
+          />
+        )}
+        <NewMenuItem
+          title="Edit"
+          subheader={editingAllowed
+            .get()
+            .map(() => "")
+            .orElseGet(([e]) => e.message)}
+          backgroundColor={COLOR.background}
+          foregroundColor={COLOR.contrastText}
+          avatar={<EditIcon />}
+          onClick={() => {
+            setActionsMenuAnchorEl(null);
+          }}
+          compact
+          disabled={editingAllowed.get().isError}
+        />
         <NewMenuItem
           title="Duplicate"
           subheader={duplicateAllowed()
@@ -504,20 +626,6 @@ function ActionsMenu({
             allowFileStores={false}
           />
         </EventBoundary>
-        <NewMenuItem
-          title="Edit"
-          subheader={imageEditingAllowed()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<CropIcon />}
-          onClick={() => {
-            setActionsMenuAnchorEl(null);
-          }}
-          compact
-          disabled={imageEditingAllowed().isError}
-        />
         <NewMenuItem
           title="Share"
           subheader={sharingSnippetsAllowed()

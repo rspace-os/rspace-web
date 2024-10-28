@@ -601,7 +601,7 @@ const AsposePreviewButton = ({ file }: {| file: GalleryFile |}) => {
         onClick={() => {
           void openAsposePreview(file);
         }}
-        label={loading ? "Loading" : "Preview"}
+        label={loading ? "Loading" : "View"}
         sx={{
           borderRadius: 1,
           px: 1.125,
@@ -695,7 +695,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                         onClick={() => {
                           openImagePreview(action.downloadHref);
                         }}
-                        label="Preview"
+                        label="View"
                         sx={{
                           borderRadius: 1,
                           px: 1.125,
@@ -743,7 +743,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                         onClick={() => {
                           openPdfPreview(action.downloadHref);
                         }}
-                        label="Preview"
+                        label="View"
                         sx={{
                           borderRadius: 1,
                           px: 1.125,
@@ -756,7 +756,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   return <AsposePreviewButton key={null} file={file} />;
               })
               .orElseGet((errors) => {
-                console.info("Could not provide preview");
+                console.info("Could not provide view");
                 errors.forEach((e) => {
                   console.info(e);
                 });
@@ -767,7 +767,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                         // do nothing
                       }}
                       disabled
-                      label="Preview"
+                      label="View"
                       sx={{
                         borderRadius: 1,
                         px: 1.125,
@@ -890,7 +890,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                     onClick={() => {
                       setPreviewOpen(true);
                     }}
-                    label="Preview"
+                    label="View"
                     sx={{
                       borderRadius: 3,
                       px: 2.5,

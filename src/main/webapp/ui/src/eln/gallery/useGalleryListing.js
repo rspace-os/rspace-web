@@ -16,6 +16,7 @@ import { observable, runInAction } from "mobx";
 import { type URL } from "../../util/types";
 
 export opaque type Id = number;
+export const DUMMY_ID: Id = 0; // for use in tests
 export function idToString(id: Id): string {
   return `${id}`;
 }
