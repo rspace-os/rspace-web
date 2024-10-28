@@ -8,7 +8,7 @@
     <changeSet id="2024-10-22n" context="run,dev-test" author="nico">
         <comment>Update label for Digital Commons Data</comment>
         <update tableName="App">
-            <column name="label" value="Digital Commons Data / Mendeley"></column>
+            <column name="label" value="Digital Commons Data / Mendeley Data"></column>
             <where>name = "app.digitalCommonsData"</where>
         </update>
     </changeSet>
