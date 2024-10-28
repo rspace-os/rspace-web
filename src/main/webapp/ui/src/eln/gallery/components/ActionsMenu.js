@@ -425,24 +425,22 @@ function ActionsMenu({
         }}
         keepMounted
       >
-        <NewMenuItem
-          title="Open"
-          subheader={openAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<FolderOpenIcon />}
-          onClick={() => {
-            openAllowed.get().do((open) => {
-              open();
-              setActionsMenuAnchorEl(null);
-            });
-          }}
-          disabled={openAllowed.get().isError}
-          compact
-        />
+        {openAllowed
+          .get()
+          .map((open) => (
+            <NewMenuItem
+              title="Open"
+              backgroundColor={COLOR.background}
+              foregroundColor={COLOR.contrastText}
+              avatar={<FolderOpenIcon />}
+              onClick={() => {
+                open();
+                setActionsMenuAnchorEl(null);
+              }}
+              compact
+            />
+          ))
+          .orElse(null)}
         <NewMenuItem
           title="Edit"
           subheader={editingAllowed
