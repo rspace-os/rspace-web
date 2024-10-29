@@ -76,6 +76,7 @@ const WholePage = styled(() => {
               setSelectedSection={(mediaType) => {
                 setSelectedSection({ mediaType });
                 clearPath();
+                setAppliedSearchTerm("");
               }}
               drawerOpen={drawerOpen}
               setDrawerOpen={setDrawerOpen}
