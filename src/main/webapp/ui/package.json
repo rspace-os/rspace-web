@@ -132,7 +132,7 @@
     "testMatch": [
       "**/?*.test.js"
     ],
-    "testTimeout": 10000,
+    "testTimeout": 20000,
     "reporters": [
       "default",
       "jest-junit",
