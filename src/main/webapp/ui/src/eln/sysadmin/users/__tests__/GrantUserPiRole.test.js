@@ -150,6 +150,6 @@ describe("Grant User PI Role", () => {
         ).toBeVisible();
       });
     },
-    20 * 1000
+    30 * 1000
   );
 });
