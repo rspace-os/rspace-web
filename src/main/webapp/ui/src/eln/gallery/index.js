@@ -75,6 +75,7 @@ const WholePage = styled(() => {
               selectedSection={selectedSection}
               setSelectedSection={(mediaType) => {
                 setSelectedSection({ mediaType });
+                clearPath();
               }}
               drawerOpen={drawerOpen}
               setDrawerOpen={setDrawerOpen}
