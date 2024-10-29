@@ -177,6 +177,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         setSingleUserToken(
             info, user, DIGITAL_COMMONS_DATA_APP_NAME, DIGITAL_COMMONS_DATA_USER_TOKEN);
         return;
+      case DMPONLINE_APP_NAME:
+        setSingleUserToken(info, user, DMPONLINE_APP_NAME, DMPONLINE_USER_TOKEN);
+        return;
       default:
     }
   }
@@ -413,6 +416,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case ARGOS_APP_NAME:
       case ZENODO_APP_NAME:
       case DIGITAL_COMMONS_DATA_APP_NAME:
+      case DMPONLINE_APP_NAME:
       case FIELDMARK_APP_NAME:
         return true;
     }
@@ -428,7 +432,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DMPTOOL_APP_NAME:
       case PYRAT_APP_NAME:
       case JOVE_APP_NAME:
-      case DMPONLINE_APP_NAME:
         return true;
     }
     return false;
