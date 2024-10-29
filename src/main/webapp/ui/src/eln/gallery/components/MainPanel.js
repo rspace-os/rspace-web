@@ -32,7 +32,6 @@ import {
 } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import { doNotAwait, match } from "../../../util/Util";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
   useDroppable,
   useDraggable,
@@ -48,17 +47,12 @@ import GridIcon from "@mui/icons-material/ViewCompact";
 import TreeIcon from "@mui/icons-material/AccountTree";
 import Menu from "@mui/material/Menu";
 import NewMenuItem from "./NewMenuItem";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import Slide from "@mui/material/Slide";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 import ActionsMenu from "./ActionsMenu";
 import RsSet from "../../../util/set";
 import TreeView from "./TreeView";
-import { COLORS as baseThemeColors } from "../../../theme";
 import PlaceholderLabel from "./PlaceholderLabel";
 import SwapVertIcon from "@mui/icons-material/SwapVert";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
@@ -327,101 +321,6 @@ const StyledMenu = styled(Menu)(({ open }) => ({
           transform: "translate(0px, 4px) !important",
         }
       : {}),
-  },
-}));
-
-const ImportDropzone = styled(
-  //eslint-disable-next-line react/display-name
-  React.forwardRef(
-    (
-      {
-        className,
-        folderId,
-        path,
-        refreshListing,
-      }: {|
-        className: string,
-        folderId: FetchingData.Fetched<Id>,
-        path: $ReadOnlyArray<GalleryFile>,
-        refreshListing: () => void,
-      |},
-      ref
-    ) => {
-      const { uploadFiles } = useGalleryActions();
-      const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
-        useFileImportDropZone({
-          onDrop: doNotAwait(async (files) => {
-            const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(
-              () => {
-                throw new Error("Unknown folder id");
-              }
-            );
-            await uploadFiles(path, fId, files);
-            refreshListing();
-          }),
-          stopPropagation: false,
-        });
-
-      return (
-        <Card
-          ref={ref}
-          onDragOver={onDragOver}
-          onDragEnter={onDragEnter}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
-          className={className}
-          sx={
-            over
-              ? {
-                  borderColor: `hsl(${baseThemeColors.primary.hue}deg, 100%, 37%)`,
-                  backgroundColor: `hsl(${baseThemeColors.primary.hue}deg, 50%, 90%)`,
-                  color: `hsl(${baseThemeColors.primary.hue}deg, 100%, 37%) !important`,
-                }
-              : {}
-          }
-        >
-          <ListItem disablePadding>
-            <ListItemIcon>
-              <UploadFileIcon />
-            </ListItemIcon>
-            <ListItemText primary="Drop here to upload" />
-          </ListItem>
-        </Card>
-      );
-    }
-  )
-)(({ theme }) => ({
-  position: "absolute",
-  bottom: 0,
-  height: "100px",
-  left: 0,
-  right: 0,
-  borderRadius: 0,
-  borderLeft: "none",
-  borderRight: "none",
-  borderBottom: "none",
-  textAlign: "center",
-  fontSize: "2em",
-  verticalAlign: "middle",
-  letterSpacing: "0.03em",
-  color: theme.palette.primary.saturated,
-  padding: "20px",
-  "& .MuiListItem-root": {
-    marginLeft: "auto",
-    marginRight: "auto",
-    width: "max-content",
-  },
-  "& .MuiListItemIcon-root": {
-    color: "inherit",
-  },
-  "& .MuiSvgIcon-root": {
-    width: "2em",
-    height: "2em",
-    color: "inherit",
-  },
-  "& .MuiListItemText-primary": {
-    fontSize: "2rem",
-    color: "inherit",
   },
 }));
 
@@ -1070,17 +969,16 @@ function GalleryMainPanel({
   setSortOrder,
   setOrderBy,
 }: GalleryMainPanelArgs): Node {
+  const { uploadFiles } = useGalleryActions();
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
-      onDrop: () => {
-        /*
-         * Do nothing. This dropzone is purely used to open the ImportDropzone
-         * panel, onto which files can then be dropped. The ImportDropzone
-         * component handles the `drop` events and thus the uploading of files
-         * itself. When a file is dropped elsewhere in the DialogContent,
-         * nothing should happen.
-         */
-      },
+      onDrop: doNotAwait(async (files) => {
+        const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(() => {
+          throw new Error("Unknown folder id");
+        });
+        await uploadFiles(path, fId, files);
+        refreshListing();
+      }),
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
   const [viewMode, setViewMode] = useUiPreference(
@@ -1122,7 +1020,8 @@ function GalleryMainPanel({
         pr: 2.5,
         ...(over
           ? {
-              borderColor: SELECTED_OR_FOCUS_BLUE,
+              outline: `3px solid ${SELECTED_OR_FOCUS_BLUE}`,
+              outlineOffset: "-3px",
             }
           : {}),
       }}
@@ -1404,13 +1303,6 @@ function GalleryMainPanel({
               .orElse(null)}
           </Grid>
         </Grid>
-        <Slide direction="up" in={over} mountOnEnter unmountOnExit>
-          <ImportDropzone
-            folderId={folderId}
-            path={path}
-            refreshListing={refreshListing}
-          />
-        </Slide>
         <DragCancelFab />
       </DndContext>
     </DialogContent>
