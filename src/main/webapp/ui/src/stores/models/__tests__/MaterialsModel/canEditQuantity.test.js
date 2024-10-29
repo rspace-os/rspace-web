@@ -11,7 +11,11 @@ import { makeMockSubSample } from "../SubSampleModel/mocking";
 import fc, { type Arbitrary } from "fast-check";
 
 jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
+jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+}));
 
 const arbitraryQuantity: Arbitrary<Quantity> = fc.record({
   unitId: fc.nat(),

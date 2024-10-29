@@ -30,6 +30,9 @@ jest.mock("../../../stores/stores/RootStore", () => () => ({
     isVerySmall: false,
     addAlert: () => {},
   },
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
 }));
 
 beforeEach(() => {

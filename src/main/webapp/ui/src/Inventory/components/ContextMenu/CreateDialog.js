@@ -263,6 +263,86 @@ const LocationPicker: ComponentType<{|
   );
 });
 
+const NewSubsampleCount: ComponentType<{|
+  id: string,
+  state: { count: number },
+|}> = observer(({ id, state }): Node => {
+  return (
+    <Box>
+      <FormControl>
+        <NumberField
+          id={id}
+          name="count"
+          autoFocus
+          value={state.count}
+          onChange={({ target }) => {
+            runInAction(() => {
+              state.count = parseInt(target.value, 10);
+            });
+          }}
+          variant="outlined"
+          size="small"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">Count</InputAdornment>
+            ),
+          }}
+          inputProps={{
+            min: 1,
+            max: 100,
+            step: 1,
+          }}
+        />
+      </FormControl>
+    </Box>
+  );
+});
+
+const NewSubsampleQuantity: ComponentType<{|
+  id: string,
+  state: { quantity: number | "", quantityLabel: string },
+|}> = observer(({ id, state }): Node => {
+  return (
+    <Box>
+      <FormControl>
+        <NumberField
+          id={id}
+          name="quantity"
+          autoFocus
+          value={state.quantity}
+          error={state.quantity === ""}
+          onChange={({ target }) => {
+            runInAction(() => {
+              /*
+               * The saved value can be either a number or an empty string,
+               * which is just to allow for the field to be temporarily cleared
+               * whilst entering a different number. The should should be
+               * prohibited from submitting if the field is empty.
+               */
+              const newValue = parseFloat(target.value);
+              if (target.checkValidity())
+                state.quantity = isNaN(newValue) ? "" : newValue;
+            });
+          }}
+          variant="outlined"
+          size="small"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                {state.quantityLabel}
+              </InputAdornment>
+            ),
+          }}
+          inputProps={{
+            min: 0,
+            step: 0.001,
+          }}
+        />
+      </FormControl>
+    </Box>
+  );
+});
+
 const ParameterField = observer(
   ({
     label,
@@ -325,6 +405,12 @@ const ParameterField = observer(
                   )}
                   {state.key === "fields" && (
                     <Fields id={fieldId} state={state} />
+                  )}
+                  {state.key === "newSubsamplesCount" && (
+                    <NewSubsampleCount id={fieldId} state={state} />
+                  )}
+                  {state.key === "newSubsamplesQuantity" && (
+                    <NewSubsampleQuantity id={fieldId} state={state} />
                   )}
                 </Grid>
                 <Grid item>

@@ -220,6 +220,8 @@ export default class SampleModel
   templateVersion: ?number;
   createOptionsParametersState: {|
     split: {| key: "split",  copies: number |},
+    newSubsamplesCount: {| key: "newSubsamplesCount", count: number |},
+    newSubsamplesQuantity: {| key: "newSubsamplesQuantity", quantity: number | "", quantityLabel: string |},
     name: {| key: "name", value: string |},
     fields: {|
       key: "fields",
@@ -335,7 +337,9 @@ export default class SampleModel
               selected: false
             }))
           ],
-        }
+        },
+      newSubsamplesCount: { key: "newSubsamplesCount", count: 1 },
+      newSubsamplesQuantity: { key: "newSubsamplesQuantity", quantity: 1, quantityLabel: this.quantityUnitLabel },
       };
   }
 
@@ -882,8 +886,39 @@ export default class SampleModel
   get createOptions(): $ReadOnlyArray<CreateOption> {
     return [
       {
-        label: "Subsample, by splitting the current subsample",
-        explanation: this.subSamples.length === 1 ? "New subsamples will be created by dividing the quantity of the existing subsample equally amongst them." : "Cannot split a sample with more than one subsample; try opening this create dialog from a particular subsample.",
+        label: "Subsamples, by creating new ones",
+        explanation: "Additional subsamples will be created with the specified quantity.",
+        parameters: [{
+          label: "Number of new subsamples",
+          explanation: "Between 1 and 100.",
+          state: this.createOptionsParametersState.newSubsamplesCount,
+          validState: () => true,
+        }, {
+          label: "Quantity per subsample",
+          explanation: "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
+          state: this.createOptionsParametersState.newSubsamplesQuantity,
+          validState: () => this.createOptionsParametersState.newSubsamplesQuantity.quantity !== "",
+        }],
+        onReset: () => {
+          this.createOptionsParametersState.newSubsamplesCount.count = 1;
+          this.createOptionsParametersState.newSubsamplesQuantity.quantity = 1;
+        },
+        onSubmit: () => {
+          if (!this.quantity) throw new Error("Don't know what the sample's current quantity is");
+          const unitId = this.quantity.unitId;
+          return getRootStore().searchStore.search.createNewSubsamples({
+            sample: this,
+            numberOfNewSubsamples: this.createOptionsParametersState.newSubsamplesCount.count,
+            quantityPerSubsample: {
+              numericValue: this.createOptionsParametersState.newSubsamplesQuantity.quantity,
+              unitId,
+            },
+          });
+        },
+      },
+      {
+        label: "Subsamples, by splitting the existing subsample",
+        explanation: this.subSamples.length === 1 ? "Subsamples will be created by dividing the existing subsample quantity amongst them." : "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead.",
         disabled: this.subSamples.length > 1,
         parameters: [{
           label: "Number of new subsamples",

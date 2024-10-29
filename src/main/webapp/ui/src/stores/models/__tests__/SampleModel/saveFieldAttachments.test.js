@@ -7,7 +7,11 @@ import "@testing-library/jest-dom";
 import { makeMockSample } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
 
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
+jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+}));
 jest.mock("../../../../common/InvApiService", () => ({
   post: jest.fn(),
 }));

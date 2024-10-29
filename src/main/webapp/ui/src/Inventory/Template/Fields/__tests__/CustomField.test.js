@@ -18,7 +18,11 @@ beforeEach(() => {
 });
 
 jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
+jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+}));
 
 afterEach(cleanup);
 
