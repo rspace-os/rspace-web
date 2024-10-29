@@ -52,7 +52,7 @@ function DigitalCommonsData({
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
-        name="Digital Commons Data"
+        name="Digital Commons Data / Mendeley Data"
         integrationState={integrationState}
         explanatoryText="Export datasets to the data repository, with persistent unique identifiers to enable referencing and citation."
         image={DcdIcon}
@@ -60,21 +60,21 @@ function DigitalCommonsData({
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
-        helpLinkText="Digital Commons Data integration docs"
+        helpLinkText="Digital Commons Data / Mendeley Data integration docs"
         website="elsevier.digitalcommonsdata.com"
         docLink="dcd"
-        usageText="You can export your files and data directly from RSpace to Digital Commons Data."
+        usageText="You can export your files and data directly from RSpace to Digital Commons Data or Mendeley Data."
         setupSection={
           <>
             <ol>
               <li>
                 Click on Connect to authorise RSpace to access your Digital
-                Commons Data account.
+                Commons Data and Mendeley Data account.
               </li>
               <li>Enable the integration.</li>
               <li>
-                Digital Commons Data will now be available as an option in the
-                export dialog.
+                Digital Commons Data / Mendeley Data will now be available as an
+                option in the export dialog.
               </li>
             </ol>
             {connected ? (
