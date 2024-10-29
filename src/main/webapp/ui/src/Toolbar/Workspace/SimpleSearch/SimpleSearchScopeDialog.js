@@ -34,7 +34,7 @@ export default function SimpleSearchScopeDialog(props) {
           />
         ))}
         <DialogContentText style={{ marginTop: "1.5em" }}>
-          Click "Within selected" if you wish to search withing the specified
+          Click "Within selected" if you wish to search within the specified
           records, or "Search everywhere" otherwise.
         </DialogContentText>
       </DialogContent>
