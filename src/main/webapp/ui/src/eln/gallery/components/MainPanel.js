@@ -81,6 +81,8 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
+import { Optional } from "../../../util/optional";
+import LoadMoreButton from "./LoadMoreButton";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -429,7 +431,11 @@ const GridView = observer(
   }: {|
     listing:
       | {| tag: "empty", reason: string |}
-      | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
+      | {|
+          tag: "list",
+          list: $ReadOnlyArray<GalleryFile>,
+          loadMore: Optional<() => Promise<void>>,
+        |},
   |}) => {
     const dndContext = useDndContext();
     const selection = useGallerySelection();
@@ -493,187 +499,196 @@ const GridView = observer(
         </div>
       );
     return (
-      <Grid
-        container
-        spacing={2}
-        onKeyDown={(e) => {
-          if (dndContext.active) return;
-          if (e.key === "Escape") {
+      <>
+        <Grid
+          container
+          spacing={2}
+          onKeyDown={(e) => {
+            if (dndContext.active) return;
+            if (e.key === "Escape") {
+              selection.clear();
+              return;
+            }
+            const newCoord: {
+              [string]: ({ x: number, y: number }) => {
+                x: number,
+                y: number,
+              },
+            } = {
+              ArrowRight: ({ x, y }) => ({
+                x: Math.min(x + 1, cols),
+                y,
+              }),
+              ArrowLeft: ({ x, y }) => ({
+                x: Math.max(x - 1, 0),
+                y,
+              }),
+              ArrowDown: ({ x, y }) => ({
+                x,
+                y: Math.min(y + 1, Math.floor(listing.list.length / cols)),
+              }),
+              ArrowUp: ({ x, y }) => ({
+                x,
+                y: Math.max(y - 1, 0),
+              }),
+            };
+            if (!(e.key in newCoord)) return;
+            e.preventDefault();
+            const { x, y } = newCoord[e.key](tabIndexCoord);
+
+            /*
+             * This check prevents the user from moving passed the end of the
+             * last row if it doesn't fill a complete row or down in a column
+             * that doesn't have `listing.list.length / cols` rows
+             */
+            if (y * cols + (x + 1) > listing.list.length) return;
+
+            const origin = e.shiftKey ? shiftOrigin ?? tabIndexCoord : { x, y };
+            const left = Math.min(x, origin.x);
+            const right = Math.max(x, origin.x);
+            const top = Math.min(y, origin.y);
+            const bottom = Math.max(y, origin.y);
+
             selection.clear();
-            return;
-          }
-          const newCoord: {
-            [string]: ({ x: number, y: number }) => {
-              x: number,
-              y: number,
-            },
-          } = {
-            ArrowRight: ({ x, y }) => ({
-              x: Math.min(x + 1, cols),
-              y,
-            }),
-            ArrowLeft: ({ x, y }) => ({
-              x: Math.max(x - 1, 0),
-              y,
-            }),
-            ArrowDown: ({ x, y }) => ({
-              x,
-              y: Math.min(y + 1, Math.floor(listing.list.length / cols)),
-            }),
-            ArrowUp: ({ x, y }) => ({
-              x,
-              y: Math.max(y - 1, 0),
-            }),
-          };
-          if (!(e.key in newCoord)) return;
-          e.preventDefault();
-          const { x, y } = newCoord[e.key](tabIndexCoord);
-
-          /*
-           * This check prevents the user from moving passed the end of the
-           * last row if it doesn't fill a complete row or down in a column
-           * that doesn't have `listing.list.length / cols` rows
-           */
-          if (y * cols + (x + 1) > listing.list.length) return;
-
-          const origin = e.shiftKey ? shiftOrigin ?? tabIndexCoord : { x, y };
-          const left = Math.min(x, origin.x);
-          const right = Math.max(x, origin.x);
-          const top = Math.min(y, origin.y);
-          const bottom = Math.max(y, origin.y);
-
-          selection.clear();
-          listing.list.forEach((file, i) => {
-            const fileX = i % cols;
-            const fileY = Math.floor(i / cols);
-            if (
-              fileX >= left &&
-              fileX <= right &&
-              fileY >= top &&
-              fileY <= bottom
-            )
-              selection.append(file);
-          });
-
-          setShiftOrigin(e.shiftKey ? shiftOrigin ?? tabIndexCoord : null);
-          setTabIndexCoord({ x, y });
-        }}
-        onFocus={() => {
-          /*
-           * This is so that when the grid first receives tab focus, and thus
-           * no files have been selected, the file card with a tabIndex of 0 is
-           * selected. This way, the selected styling acts as a focus ring.
-           * Pressing the escape key will clear the selection so when the grid
-           * regains focus this will then run again
-           */
-          const { x, y } = tabIndexCoord;
-          if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
-        }}
-      >
-        {listing.list.map((file, index) => (
-          <FileCard
-            ref={
-              index % cols === tabIndexCoord.x &&
-              Math.floor(index / cols) === tabIndexCoord.y
-                ? focusFileCardRef
-                : null
-            }
-            onFocus={() => {
-              setHasFocus(true);
-            }}
-            onBlur={() => {
-              setHasFocus(false);
-            }}
-            selected={selection.includes(file)}
-            file={file}
-            key={idToString(file.id)}
-            index={index}
-            tabIndex={
-              index % cols === tabIndexCoord.x &&
-              Math.floor(index / cols) === tabIndexCoord.y
-                ? 0
-                : -1
-            }
-            onClick={(e) => {
-              if (e.shiftKey) {
-                if (!shiftOrigin) return;
-                const tappedCoord = {
-                  x: index % cols,
-                  y: Math.floor(index / cols),
-                };
-                const toSelect = listing.list.filter((_file, i) => {
-                  const coord = {
-                    x: i % cols,
-                    y: Math.floor(i / cols),
-                  };
-                  return (
-                    coord.x >= Math.min(tappedCoord.x, shiftOrigin.x) &&
-                    coord.x <= Math.max(tappedCoord.x, shiftOrigin.x) &&
-                    coord.y >= Math.min(tappedCoord.y, shiftOrigin.y) &&
-                    coord.y <= Math.max(tappedCoord.y, shiftOrigin.y)
-                  );
-                });
-                selection.clear();
-                toSelect.forEach((f) => {
-                  selection.append(f);
-                });
-                setTabIndexCoord({
-                  x: index % cols,
-                  y: Math.floor(index / cols),
-                });
-              } else if (e.ctrlKey || e.metaKey) {
-                if (selection.includes(file)) {
-                  selection.remove(file);
-                } else {
-                  selection.append(file);
-                }
-              } else {
-                // on double click, try and figure out what the user would want
-                // to do with a file of this type based on what services are
-                // configured
-                if (e.detail > 1) {
-                  primaryAction(file).do((action) => {
-                    if (action.tag === "open") {
-                      action.open();
-                      return;
-                    }
-                    if (action.tag === "image") {
-                      openImagePreview(action.downloadHref);
-                      return;
-                    }
-                    if (action.tag === "collabora") {
-                      window.open(action.url);
-                      return;
-                    }
-                    if (action.tag === "officeonline") {
-                      window.open(action.url);
-                      return;
-                    }
-                    if (action.tag === "pdf") {
-                      openPdfPreview(action.downloadHref);
-                      return;
-                    }
-                    if (action.tag === "aspose") {
-                      void openAsposePreview(file);
-                    }
-                  });
-                  return;
-                }
-                selection.clear();
+            listing.list.forEach((file, i) => {
+              const fileX = i % cols;
+              const fileY = Math.floor(i / cols);
+              if (
+                fileX >= left &&
+                fileX <= right &&
+                fileY >= top &&
+                fileY <= bottom
+              )
                 selection.append(file);
-                setShiftOrigin({
-                  x: index % cols,
-                  y: Math.floor(index / cols),
-                });
-                setTabIndexCoord({
-                  x: index % cols,
-                  y: Math.floor(index / cols),
-                });
+            });
+
+            setShiftOrigin(e.shiftKey ? shiftOrigin ?? tabIndexCoord : null);
+            setTabIndexCoord({ x, y });
+          }}
+          onFocus={() => {
+            /*
+             * This is so that when the grid first receives tab focus, and thus
+             * no files have been selected, the file card with a tabIndex of 0 is
+             * selected. This way, the selected styling acts as a focus ring.
+             * Pressing the escape key will clear the selection so when the grid
+             * regains focus this will then run again
+             */
+            const { x, y } = tabIndexCoord;
+            if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
+          }}
+        >
+          {listing.list.map((file, index) => (
+            <FileCard
+              ref={
+                index % cols === tabIndexCoord.x &&
+                Math.floor(index / cols) === tabIndexCoord.y
+                  ? focusFileCardRef
+                  : null
               }
-            }}
-          />
-        ))}
-      </Grid>
+              onFocus={() => {
+                setHasFocus(true);
+              }}
+              onBlur={() => {
+                setHasFocus(false);
+              }}
+              selected={selection.includes(file)}
+              file={file}
+              key={idToString(file.id)}
+              index={index}
+              tabIndex={
+                index % cols === tabIndexCoord.x &&
+                Math.floor(index / cols) === tabIndexCoord.y
+                  ? 0
+                  : -1
+              }
+              onClick={(e) => {
+                if (e.shiftKey) {
+                  if (!shiftOrigin) return;
+                  const tappedCoord = {
+                    x: index % cols,
+                    y: Math.floor(index / cols),
+                  };
+                  const toSelect = listing.list.filter((_file, i) => {
+                    const coord = {
+                      x: i % cols,
+                      y: Math.floor(i / cols),
+                    };
+                    return (
+                      coord.x >= Math.min(tappedCoord.x, shiftOrigin.x) &&
+                      coord.x <= Math.max(tappedCoord.x, shiftOrigin.x) &&
+                      coord.y >= Math.min(tappedCoord.y, shiftOrigin.y) &&
+                      coord.y <= Math.max(tappedCoord.y, shiftOrigin.y)
+                    );
+                  });
+                  selection.clear();
+                  toSelect.forEach((f) => {
+                    selection.append(f);
+                  });
+                  setTabIndexCoord({
+                    x: index % cols,
+                    y: Math.floor(index / cols),
+                  });
+                } else if (e.ctrlKey || e.metaKey) {
+                  if (selection.includes(file)) {
+                    selection.remove(file);
+                  } else {
+                    selection.append(file);
+                  }
+                } else {
+                  // on double click, try and figure out what the user would want
+                  // to do with a file of this type based on what services are
+                  // configured
+                  if (e.detail > 1) {
+                    primaryAction(file).do((action) => {
+                      if (action.tag === "open") {
+                        action.open();
+                        return;
+                      }
+                      if (action.tag === "image") {
+                        openImagePreview(action.downloadHref);
+                        return;
+                      }
+                      if (action.tag === "collabora") {
+                        window.open(action.url);
+                        return;
+                      }
+                      if (action.tag === "officeonline") {
+                        window.open(action.url);
+                        return;
+                      }
+                      if (action.tag === "pdf") {
+                        openPdfPreview(action.downloadHref);
+                        return;
+                      }
+                      if (action.tag === "aspose") {
+                        void openAsposePreview(file);
+                      }
+                    });
+                    return;
+                  }
+                  selection.clear();
+                  selection.append(file);
+                  setShiftOrigin({
+                    x: index % cols,
+                    y: Math.floor(index / cols),
+                  });
+                  setTabIndexCoord({
+                    x: index % cols,
+                    y: Math.floor(index / cols),
+                  });
+                }
+              }}
+            />
+          ))}
+        </Grid>
+        {listing.loadMore
+          .map((loadMore) => (
+            <Box sx={{ mt: 1 }}>
+              <LoadMoreButton onClick={loadMore} />
+            </Box>
+          ))
+          .orElse(null)}
+      </>
     );
   }
 );
@@ -1029,7 +1044,11 @@ type GalleryMainPanelArgs = {|
   clearPath: () => void,
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
+    | {|
+        tag: "list",
+        list: $ReadOnlyArray<GalleryFile>,
+        loadMore: Optional<() => Promise<void>>,
+      |}
   >,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
@@ -1348,6 +1367,7 @@ function GalleryMainPanel({
                         refreshListing={refreshListing}
                         sortOrder={sortOrder}
                         orderBy={orderBy}
+                        foldersOnly={false}
                       />
                     ),
                   })}

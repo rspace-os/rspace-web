@@ -31,6 +31,9 @@ import { useFileImportDropZone } from "../../../components/useFileImportDragAndD
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
+import { Optional } from "../../../util/optional";
+import Button from "@mui/material/Button";
+import LoadMoreButton from "./LoadMoreButton";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -87,6 +90,7 @@ type TreeItemContentArgs = {|
   disableDragAndDrop?: boolean,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
+  foldersOnly: boolean,
 |};
 
 const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
@@ -100,6 +104,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     disableDragAndDrop,
     sortOrder,
     orderBy,
+    foldersOnly,
   }: TreeItemContentArgs): Node => {
     const { galleryListing } = useGalleryListing({
       section,
@@ -107,6 +112,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       path: [...path, file],
       orderBy,
       sortOrder,
+      foldersOnly,
     });
 
     React.useEffect(() => {
@@ -126,8 +132,9 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       loading: () => null,
       error: (error) => <>{error}</>,
       success: (listing) =>
-        listing.tag === "list"
-          ? listing.list.map((f, i) =>
+        listing.tag === "list" ? (
+          <>
+            {listing.list.map((f, i) =>
               filter(f) ? (
                 <CustomTreeItem
                   file={f}
@@ -141,10 +148,15 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   disableDragAndDrop={disableDragAndDrop}
                   sortOrder={sortOrder}
                   orderBy={orderBy}
+                  foldersOnly={foldersOnly}
                 />
               ) : null
-            )
-          : null,
+            )}
+            {listing.loadMore
+              .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+              .orElse(null)}
+          </>
+        ) : null,
     });
   }
 );
@@ -161,6 +173,7 @@ const CustomTreeItem = observer(
     disableDragAndDrop,
     orderBy,
     sortOrder,
+    foldersOnly,
   }: {|
     file: GalleryFile,
     index: number,
@@ -172,6 +185,7 @@ const CustomTreeItem = observer(
     disableDragAndDrop?: boolean,
     orderBy: "name" | "modificationDate",
     sortOrder: "DESC" | "ASC",
+    foldersOnly: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -321,6 +335,7 @@ const CustomTreeItem = observer(
               disableDragAndDrop={disableDragAndDrop}
               sortOrder={sortOrder}
               orderBy={orderBy}
+              foldersOnly={foldersOnly}
             />
           )}
         </StyledTreeItem>
@@ -331,7 +346,11 @@ const CustomTreeItem = observer(
 
 type TreeViewArgs = {|
   listing: | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |},
+    | {|
+        tag: "list",
+        list: $ReadOnlyArray<GalleryFile>,
+        loadMore: Optional<() => Promise<void>>,
+      |},
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: GallerySection,
   refreshListing: () => void,
@@ -339,6 +358,7 @@ type TreeViewArgs = {|
   disableDragAndDrop?: boolean,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
+  foldersOnly?: boolean,
 |};
 
 const TreeView = ({
@@ -350,6 +370,7 @@ const TreeView = ({
   disableDragAndDrop,
   sortOrder,
   orderBy,
+  foldersOnly = false,
 }: TreeViewArgs) => {
   const { addAlert } = React.useContext(AlertContext);
   const selection = useGallerySelection();
@@ -469,9 +490,13 @@ const TreeView = ({
             disableDragAndDrop={disableDragAndDrop}
             sortOrder={sortOrder}
             orderBy={orderBy}
+            foldersOnly={foldersOnly}
           />
         ) : null
       )}
+      {listing.loadMore
+        .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+        .orElse(null)}
     </SimpleTreeView>
   );
 };

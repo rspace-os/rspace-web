@@ -13,6 +13,7 @@ import {
 } from "../../util/files";
 import { useGallerySelection } from "./useGallerySelection";
 import { observable, runInAction } from "mobx";
+import { Optional } from "../../util/optional";
 import { type URL } from "../../util/types";
 
 export opaque type Id = number;
@@ -246,16 +247,22 @@ export function useGalleryListing({
   path: defaultPath,
   sortOrder,
   orderBy,
+  foldersOnly,
 }: {|
   section: GallerySection,
   searchTerm: string,
   path?: $ReadOnlyArray<GalleryFile>,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
+  foldersOnly?: boolean,
 |}): {|
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
-    | {| tag: "list", list: $ReadOnlyArray<GalleryFile> |}
+    | {|
+        tag: "list",
+        list: $ReadOnlyArray<GalleryFile>,
+        loadMore: Optional<() => Promise<void>>,
+      |}
   >,
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
@@ -267,6 +274,8 @@ export function useGalleryListing({
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
+  const [page, setPage] = React.useState<number>(0);
+  const [totalPages, setTotalPages] = React.useState<number>(0);
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
     defaultPath ?? []
   );
@@ -374,6 +383,146 @@ export function useGalleryListing({
     return ret;
   }
 
+  function parseGalleryFiles(data: mixed) {
+    return Parsers.objectPath(["data", "items", "results"], data)
+      .flatMap(Parsers.isArray)
+      .map((array) => {
+        if (array.length === 0) return ([]: $ReadOnlyArray<GalleryFile>);
+        return Result.all(
+          ...array.map((m) =>
+            Parsers.isObject(m)
+              .flatMap(Parsers.isNotNull)
+              .flatMap((obj) => {
+                try {
+                  const id = Parsers.getValueWithKey("id")(obj)
+                    .flatMap(Parsers.isNumber)
+                    .elseThrow();
+
+                  const globalId = Parsers.getValueWithKey("oid")(obj)
+                    .flatMap(Parsers.isObject)
+                    .flatMap(Parsers.isNotNull)
+                    .flatMap(Parsers.getValueWithKey("idString"))
+                    .flatMap(Parsers.isString)
+                    .elseThrow();
+
+                  const name = Parsers.getValueWithKey("name")(obj)
+                    .flatMap(Parsers.isString)
+                    .elseThrow();
+
+                  const ownerName = Parsers.getValueWithKey("ownerFullName")(
+                    obj
+                  )
+                    .flatMap(Parsers.isString)
+                    .orElse("Unknown owner");
+
+                  const description = Parsers.getValueWithKey("description")(
+                    obj
+                  )
+                    .flatMap(Parsers.isString)
+                    .map((d) => {
+                      if (d === "") return Description.Empty();
+                      return Description.Present(d);
+                    })
+                    .orElseTry(() =>
+                      Parsers.getValueWithKey("description")(obj)
+                        .flatMap(Parsers.isNull)
+                        .map(() => Description.Empty())
+                    )
+                    .orElse(Description.Missing());
+
+                  const creationDate = Parsers.getValueWithKey("creationDate")(
+                    obj
+                  )
+                    .flatMap(Parsers.isNumber)
+                    .flatMap(Parsers.parseDate)
+                    .elseThrow();
+
+                  const modificationDate = Parsers.getValueWithKey(
+                    "modificationDate"
+                  )(obj)
+                    .flatMap(Parsers.isNumber)
+                    .flatMap(Parsers.parseDate)
+                    .elseThrow();
+
+                  const type = Parsers.getValueWithKey("type")(obj)
+                    .flatMap(Parsers.isString)
+                    .elseThrow();
+
+                  const extension = Parsers.getValueWithKey("extension")(obj)
+                    .flatMap((e) =>
+                      Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
+                    )
+                    .elseThrow();
+
+                  const thumbnailId = Parsers.getValueWithKey("thumbnailId")(
+                    obj
+                  )
+                    .flatMap((t) =>
+                      Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
+                    )
+                    .elseThrow();
+
+                  const size = Parsers.getValueWithKey("size")(obj)
+                    .flatMap(Parsers.isNumber)
+                    .elseThrow();
+
+                  const version = Parsers.getValueWithKey("version")(obj)
+                    .flatMap(Parsers.isNumber)
+                    .elseThrow();
+
+                  return Result.Ok(
+                    mkGalleryFile({
+                      id,
+                      globalId,
+                      name,
+                      ownerName,
+                      description,
+                      creationDate,
+                      modificationDate,
+                      type,
+                      extension,
+                      thumbnailId,
+                      size,
+                      version,
+                    })
+                  );
+                } catch (e) {
+                  return Result.Error<GalleryFile>([e]);
+                }
+              })
+          )
+        ).orElseGet<$ReadOnlyArray<GalleryFile>>((errors) => {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not process Gallery content.",
+              message: "Please try refreshing.",
+            })
+          );
+          errors.forEach((e) => {
+            console.error(e);
+          });
+          return [];
+        });
+      })
+      .orElseGet(() => {
+        Parsers.isObject(data)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+          .flatMap(Parsers.isString)
+          .do((exceptionMessage) => {
+            addAlert(
+              mkAlert({
+                variant: "error",
+                title: "Error retrieving gallery files.",
+                message: exceptionMessage,
+              })
+            );
+          });
+        return ([]: $ReadOnlyArray<GalleryFile>);
+      });
+  }
+
   async function getGalleryFiles(): Promise<void> {
     selection.clear();
     setGalleryListing([]);
@@ -388,6 +537,7 @@ export function useGalleryListing({
           pageNumber: "0",
           sortOrder,
           orderBy,
+          foldersOnly: foldersOnly ? "true" : "false",
         }),
       });
 
@@ -402,147 +552,13 @@ export function useGalleryListing({
           .map((x) => x) // possibly a bug in Flow
       );
 
-      setGalleryListing(
-        Parsers.objectPath(["data", "items", "results"], data)
-          .flatMap(Parsers.isArray)
-          .map((array) => {
-            if (array.length === 0) return ([]: $ReadOnlyArray<GalleryFile>);
-            return Result.all(
-              ...array.map((m) =>
-                Parsers.isObject(m)
-                  .flatMap(Parsers.isNotNull)
-                  .flatMap((obj) => {
-                    try {
-                      const id = Parsers.getValueWithKey("id")(obj)
-                        .flatMap(Parsers.isNumber)
-                        .elseThrow();
-
-                      const globalId = Parsers.getValueWithKey("oid")(obj)
-                        .flatMap(Parsers.isObject)
-                        .flatMap(Parsers.isNotNull)
-                        .flatMap(Parsers.getValueWithKey("idString"))
-                        .flatMap(Parsers.isString)
-                        .elseThrow();
-
-                      const name = Parsers.getValueWithKey("name")(obj)
-                        .flatMap(Parsers.isString)
-                        .elseThrow();
-
-                      const ownerName = Parsers.getValueWithKey(
-                        "ownerFullName"
-                      )(obj)
-                        .flatMap(Parsers.isString)
-                        .orElse("Unknown owner");
-
-                      const description = Parsers.getValueWithKey(
-                        "description"
-                      )(obj)
-                        .flatMap(Parsers.isString)
-                        .map((d) => {
-                          if (d === "") return Description.Empty();
-                          return Description.Present(d);
-                        })
-                        .orElseTry(() =>
-                          Parsers.getValueWithKey("description")(obj)
-                            .flatMap(Parsers.isNull)
-                            .map(() => Description.Empty())
-                        )
-                        .orElse(Description.Missing());
-
-                      const creationDate = Parsers.getValueWithKey(
-                        "creationDate"
-                      )(obj)
-                        .flatMap(Parsers.isNumber)
-                        .flatMap(Parsers.parseDate)
-                        .elseThrow();
-
-                      const modificationDate = Parsers.getValueWithKey(
-                        "modificationDate"
-                      )(obj)
-                        .flatMap(Parsers.isNumber)
-                        .flatMap(Parsers.parseDate)
-                        .elseThrow();
-
-                      const type = Parsers.getValueWithKey("type")(obj)
-                        .flatMap(Parsers.isString)
-                        .elseThrow();
-
-                      const extension = Parsers.getValueWithKey("extension")(
-                        obj
-                      )
-                        .flatMap((e) =>
-                          Parsers.isString(e).orElseTry(() => Parsers.isNull(e))
-                        )
-                        .elseThrow();
-
-                      const thumbnailId = Parsers.getValueWithKey(
-                        "thumbnailId"
-                      )(obj)
-                        .flatMap((t) =>
-                          Parsers.isNumber(t).orElseTry(() => Parsers.isNull(t))
-                        )
-                        .elseThrow();
-
-                      const size = Parsers.getValueWithKey("size")(obj)
-                        .flatMap(Parsers.isNumber)
-                        .elseThrow();
-
-                      const version = Parsers.getValueWithKey("version")(obj)
-                        .flatMap(Parsers.isNumber)
-                        .elseThrow();
-
-                      return Result.Ok(
-                        mkGalleryFile({
-                          id,
-                          globalId,
-                          name,
-                          ownerName,
-                          description,
-                          creationDate,
-                          modificationDate,
-                          type,
-                          extension,
-                          thumbnailId,
-                          size,
-                          version,
-                        })
-                      );
-                    } catch (e) {
-                      return Result.Error<GalleryFile>([e]);
-                    }
-                  })
-              )
-            ).orElseGet<$ReadOnlyArray<GalleryFile>>((errors) => {
-              addAlert(
-                mkAlert({
-                  variant: "error",
-                  title: "Could not process Gallery content.",
-                  message: "Please try refreshing.",
-                })
-              );
-              errors.forEach((e) => {
-                console.error(e);
-              });
-              return [];
-            });
-          })
-          .orElseGet(() => {
-            Parsers.isObject(data)
-              .flatMap(Parsers.isNotNull)
-              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-              .flatMap(Parsers.isString)
-              .do((exceptionMessage) => {
-                addAlert(
-                  mkAlert({
-                    variant: "error",
-                    title: "Error retrieving gallery files.",
-                    message: exceptionMessage,
-                  })
-                );
-              });
-            return [];
-          })
+      setTotalPages(
+        Parsers.objectPath(["data", "items", "totalPages"], data)
+          .flatMap(Parsers.isNumber)
+          .orElse(1)
       );
+
+      setGalleryListing(parseGalleryFiles(data));
     } catch (e) {
       console.error(e);
     } finally {
@@ -550,12 +566,47 @@ export function useGalleryListing({
     }
   }
 
+  async function loadMore(): Promise<void> {
+    setPage(page + 1);
+    try {
+      const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
+        params: new URLSearchParams({
+          mediatype: section,
+          currentFolderId:
+            path.length > 0 ? `${path[path.length - 1].id}` : "0",
+          name: searchTerm,
+          pageNumber: `${page + 1}`,
+          sortOrder,
+          orderBy,
+        }),
+      });
+
+      setGalleryListing([...galleryListing, ...parseGalleryFiles(data)]);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   React.useEffect(() => {
+    setPage(0);
     void getGalleryFiles();
   }, [searchTerm, path, sortOrder, orderBy]);
 
+  /*
+   * Whenever section changes, we want to clear the path so that navigating to
+   * a different section returns you to the root of the folder hierarchy.
+   * However, we don't want to set the path when this custom hook is mounted as
+   * setting the path will invoke the above useEffect again -- in addition to
+   * the time when it is invoked on mount -- resulting in a second GET request
+   * to getUploadedFiles. As such, we use this single flag to ensure that we
+   * only change the path when the section is changed on subsequent re-renders.
+   */
+  const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
-    setPath(defaultPath ?? []);
+    if (mounted) {
+      setPath(defaultPath ?? []);
+    }
+    setMounted(true);
   }, [section]);
 
   if (loading)
@@ -572,7 +623,14 @@ export function useGalleryListing({
       tag: "success",
       value:
         galleryListing.length > 0
-          ? { tag: "list", list: galleryListing }
+          ? {
+              tag: "list",
+              list: galleryListing,
+              loadMore:
+                page + 1 < totalPages
+                  ? Optional.present(loadMore)
+                  : Optional.empty(),
+            }
           : { tag: "empty", reason: emptyReason() },
     },
     path,
