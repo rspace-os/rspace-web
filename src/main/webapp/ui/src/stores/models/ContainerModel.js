@@ -1111,17 +1111,29 @@ export default class ContainerModel
   }
 
   get createOptions(): $ReadOnlyArray<CreateOption> {
+    let newContainerExplanation = "The container will be automatically added to this container.";
+    if (!this.canStoreContainers)
+      newContainerExplanation = "Containers cannot be stored inside this container.";
+    if (!this.canEdit)
+      newContainerExplanation = "You do not have permission to edit the contents of this container.";
+
+    let newSampleExplanation = "The subsample will be automatically added to this container.";
+    if (!this.canStoreSamples)
+      newSampleExplanation = "Subsamples cannot be stored inside this container.";
+    if (!this.canEdit)
+      newSampleExplanation = "You do not have permission to edit the contents of this container.";
+
     return [
       {
         label: "Container",
-        explanation: "The container will be automatically added to this container.",
+        explanation: newContainerExplanation,
         parameters: [{
           label: "Location",
           explanation: this.cType === "LIST" ? "No location selection required for list containers." : "Specify a single location for where the new container should be placed.",
           state: { key: "location", container: this },
           validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
         }],
-        disabled: !this.canStoreContainers,
+        disabled: !this.canStoreContainers || !this.canEdit,
         onReset: () => {
           // nothing to reset
         },
@@ -1146,14 +1158,14 @@ export default class ContainerModel
       },
       {
         label: "Sample",
-        explanation: "The subsample will be automatically added to this container.",
+        explanation: newSampleExplanation,
         parameters: [{
           label: "Location",
           explanation: this.cType === "LIST" ? "No location selection required for list containers." : "Specify a single location for where the new container should be placed.",
           state: { key: "location", container: this },
           validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
         }],
-        disabled: !this.canStoreSamples,
+        disabled: !this.canStoreSamples || !this.canEdit,
         onReset: ( ) => {
           // nothing to reset
         },

@@ -884,10 +884,16 @@ export default class SampleModel
   }
 
   get createOptions(): $ReadOnlyArray<CreateOption> {
+    let splitExplanation = "Subsamples will be created by dividing the existing subsample quantity amongst them."; 
+    if (this.subSamples.length > 1)
+      splitExplanation = "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead.";
+    if (!this.canEdit)
+      splitExplanation = "You do not have permission to edit this sample.";
+
     return [
       {
         label: "Subsamples, by creating new ones",
-        explanation: "Additional subsamples will be created with the specified quantity.",
+        explanation: this.canEdit ? "Additional subsamples will be created with the specified quantity." : "You do not have permission to edit this sample.",
         parameters: [{
           label: "Number of new subsamples",
           explanation: "Between 1 and 100.",
@@ -899,6 +905,7 @@ export default class SampleModel
           state: this.createOptionsParametersState.newSubsamplesQuantity,
           validState: () => this.createOptionsParametersState.newSubsamplesQuantity.quantity !== "",
         }],
+        disabled: !this.canEdit,
         onReset: () => {
           this.createOptionsParametersState.newSubsamplesCount.count = 1;
           this.createOptionsParametersState.newSubsamplesQuantity.quantity = 1;
@@ -918,8 +925,8 @@ export default class SampleModel
       },
       {
         label: "Subsamples, by splitting the existing subsample",
-        explanation: this.subSamples.length === 1 ? "Subsamples will be created by dividing the existing subsample quantity amongst them." : "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead.",
-        disabled: this.subSamples.length > 1,
+        explanation: splitExplanation,
+        disabled: this.subSamples.length > 1 || !this.canEdit,
         parameters: [{
           label: "Number of new subsamples",
           explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",

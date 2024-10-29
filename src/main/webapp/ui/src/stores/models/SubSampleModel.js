@@ -456,13 +456,14 @@ export default class SubSampleModel
     return [
       {
         label: "Subsample, by splitting",
-        explanation: "New subsamples will be created by diving the quantity of this subsample equally amongst them.",
+        explanation: this.canEdit ? "New subsamples will be created by diving the quantity of this subsample equally amongst them." : "You do not have permission to edit this subsample.",
         parameters: [{
           label: "Number of new subsamples",
           explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
           state: this.createOptionsParametersState.split,
           validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
         }],
+        disabled: !this.canEdit,
         onReset: () => {
           this.createOptionsParametersState.split.copies = 2;
         },
