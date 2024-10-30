@@ -15,6 +15,7 @@ import {
   DataGrid,
   GridToolbarContainer,
   GridToolbarExportContainer,
+  GridToolbarColumnsButton,
   useGridApiContext,
 } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
@@ -92,6 +93,7 @@ const Toolbar = ({
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
       <Box flexGrow={1}></Box>
+      <GridToolbarColumnsButton variant="outlined" />
       <GridToolbarExportContainer variant="outlined">
         <ExportMenuItem
           onClick={() => {
