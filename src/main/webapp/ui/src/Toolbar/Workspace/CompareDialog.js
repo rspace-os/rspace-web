@@ -144,6 +144,11 @@ function CompareDialog(): Node {
       flex: 1,
       sortable: false,
     }),
+    DataGridColumn.newColumnWithFieldName<Document, _>("globalId", {
+      headerName: "Global ID",
+      flex: 1,
+      sortable: false,
+    }),
   ];
   if (allOfTheSameForm) {
     for (const field of documents[0].fields) {
