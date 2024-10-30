@@ -15,18 +15,26 @@ import { DataGrid } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import createAccentedTheme from "../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
+import Alert from "@mui/material/Alert";
 
 function CompareDialog(): Node {
   const { getToken } = useOauthToken();
   const [documents, setDocuments] = React.useState<null | $ReadOnlyArray<{
     name: string,
     id: number,
+    form: {
+      id: number,
+      ...
+    },
     ...
   }>>(null);
   const [paginationModel, setPaginationModel] = React.useState({
     page: 0,
     pageSize: 100,
   });
+
+  const allOfTheSameForm =
+    new Set((documents ?? []).map(({ form: { id } }) => id)).size === 1;
 
   const columns = [
     DataGridColumn.newColumnWithFieldName<{ name: string, id: number, ... }, _>(
@@ -46,14 +54,16 @@ function CompareDialog(): Node {
       const token = await getToken();
       const docs = await Promise.all(
         event.detail.ids.map(async (id) => {
-          const { data } = await axios.get<{ name: string, id: number, ... }>(
-            `/api/v1/documents/${id}`,
-            {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
-            }
-          );
+          const { data } = await axios.get<{
+            name: string,
+            id: number,
+            form: { id: number, ... },
+            ...
+          }>(`/api/v1/documents/${id}`, {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          });
           return data;
         })
       );
@@ -82,6 +92,14 @@ function CompareDialog(): Node {
               fields to CSV.
             </Typography>
           </Grid>
+          {!allOfTheSameForm && (
+            <Grid item>
+              <Alert severity="info">
+                The fields of the documents are not shown because the documents
+                are not all of the same form.
+              </Alert>
+            </Grid>
+          )}
           <Grid item>
             <DataGrid
               aria-label="documents"
