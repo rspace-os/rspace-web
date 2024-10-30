@@ -11,6 +11,10 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
+import { DataGrid } from "@mui/x-data-grid";
+import { DataGridColumn } from "../../util/table";
+import createAccentedTheme from "../../accentedTheme";
+import { ThemeProvider } from "@mui/material/styles";
 
 function CompareDialog(): Node {
   const { getToken } = useOauthToken();
@@ -19,6 +23,21 @@ function CompareDialog(): Node {
     id: number,
     ...
   }>>(null);
+  const [paginationModel, setPaginationModel] = React.useState({
+    page: 0,
+    pageSize: 100,
+  });
+
+  const columns = [
+    DataGridColumn.newColumnWithFieldName<{ name: string, id: number, ... }, _>(
+      "name",
+      {
+        headerName: "Name",
+        flex: 1,
+        sortable: false,
+      }
+    ),
+  ];
 
   React.useEffect(() => {
     async function handler(
@@ -64,11 +83,27 @@ function CompareDialog(): Node {
             </Typography>
           </Grid>
           <Grid item>
-            {documents.map(({ name, id }) => (
-              <Typography key={id} variant="body1">
-                {name}
-              </Typography>
-            ))}
+            <DataGrid
+              aria-label="documents"
+              autoHeight
+              columns={columns}
+              rows={documents}
+              initialState={{
+                columns: {
+                  columnVisibilityModel: {},
+                },
+              }}
+              density="standard"
+              getRowId={(row: { id: number, ... }) => row.id}
+              hideFooterSelectedRowCount
+              checkboxSelection
+              disableColumnFilter
+              paginationMode="client"
+              paginationModel={paginationModel}
+              onPaginationModelChange={(newPaginationModel) => {
+                setPaginationModel(newPaginationModel);
+              }}
+            />
           </Grid>
         </Grid>
       </DialogContent>
@@ -76,13 +111,43 @@ function CompareDialog(): Node {
   );
 }
 
+const COLOR = {
+  main: {
+    hue: 197,
+    saturation: 50,
+    lightness: 80,
+  },
+  darker: {
+    hue: 197,
+    saturation: 100,
+    lightness: 30,
+  },
+  contrastText: {
+    hue: 200,
+    saturation: 30,
+    lightness: 36,
+  },
+  background: {
+    hue: 200,
+    saturation: 20,
+    lightness: 82,
+  },
+  backgroundContrastText: {
+    hue: 203,
+    saturation: 17,
+    lightness: 35,
+  },
+};
+
 export default function Wrapper(): Node {
   return (
     <ErrorBoundary topOfViewport>
       <Portal>
         <Alerts>
           <DialogBoundary>
-            <CompareDialog />
+            <ThemeProvider theme={createAccentedTheme(COLOR)}>
+              <CompareDialog />
+            </ThemeProvider>
           </DialogBoundary>
         </Alerts>
       </Portal>
