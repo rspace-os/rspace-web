@@ -1010,6 +1010,14 @@ const FileCard = styled(
                       </Grid>
                     </Grid>
                   </Grid>
+                  {file.version > 1 && (
+                    <div
+                      className="versionIndicator"
+                      aria-label={`version ${file.version}`}
+                    >
+                      v{file.version}
+                    </div>
+                  )}
                 </CardActionArea>
               </Card>
             </Grid>
@@ -1020,6 +1028,25 @@ const FileCard = styled(
   )
 )(({ selected, theme }) => ({
   height: "150px",
+  "& .versionIndicator": {
+    position: "absolute",
+    top: "0",
+    right: "0",
+    margin: theme.spacing(0.25),
+    padding: theme.spacing(0.25, 0.5),
+    borderRadius: "5px",
+    color: window.matchMedia("(prefers-contrast: more)").matches
+      ? "rgb(255,255,255)"
+      : `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, ${COLOR.contrastText.lightness}%, 100%)`,
+    border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+    ...(selected
+      ? {
+          borderColor: window.matchMedia("(prefers-contrast: more)").matches
+            ? "black"
+            : theme.palette.callToAction.main,
+        }
+      : {}),
+  },
   ...(selected
     ? {
         border: window.matchMedia("(prefers-contrast: more)").matches
