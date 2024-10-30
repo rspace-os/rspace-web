@@ -34,7 +34,6 @@ import {
   DataGrid,
   GridToolbarContainer,
   GridToolbarColumnsButton,
-  GridToolbarDensitySelector,
   GridToolbarExportContainer,
   useGridApiContext,
 } from "@mui/x-data-grid";
@@ -1378,7 +1377,6 @@ const Toolbar = ({
           if (node) columnMenuRef.current = node;
         }}
       />
-      <GridToolbarDensitySelector variant="outlined" />
       <GridToolbarExportContainer variant="outlined">
         <ExportMenuItem onClick={() => exportAllRows()}>
           Export all rows to CSV
