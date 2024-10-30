@@ -951,7 +951,7 @@ export default class SampleModel
           label: "Name",
           explanation: "A name for the new template. At least two characters.",
           state: this.createOptionsParametersState.name,
-          validState: () => this.createOptionsParametersState.name.value.length > 2,
+          validState: () => this.createOptionsParametersState.name.value.length >= 2,
         },{
           label: "Field default values",
           explanation: "All of the sample fields will be included in the template. Select which fields should also retain their current value as a default field value.",
