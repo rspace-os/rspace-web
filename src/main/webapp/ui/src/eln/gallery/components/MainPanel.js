@@ -17,7 +17,7 @@ import {
   SELECTED_OR_FOCUS_BLUE,
   type GallerySection,
 } from "../common";
-import { styled } from "@mui/material/styles";
+import { styled, alpha } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
@@ -1018,7 +1018,7 @@ const FileCard = styled(
       }
     )
   )
-)(({ selected }) => ({
+)(({ selected, theme }) => ({
   height: "150px",
   ...(selected
     ? {
@@ -1029,7 +1029,12 @@ const FileCard = styled(
           border: window.matchMedia("(prefers-contrast: more)").matches
             ? "2px solid black !important"
             : `${SELECTED_OR_FOCUS_BORDER} !important`,
+          backgroundColor: `${alpha(
+            theme.palette.callToAction.background,
+            0.05
+          )} !important`,
         },
+        backgroundColor: alpha(theme.palette.callToAction.background, 0.05),
       }
     : {}),
   borderRadius: "8px",
