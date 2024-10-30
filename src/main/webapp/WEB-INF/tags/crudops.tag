@@ -98,6 +98,9 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
       <a href="#">Add/Remove Tags</a>
     </li>
 
+    <li class="crudopsAction tagIcon" id="compareRecords" tabindex="0">
+      <a href="#">Compare</a>
+    </li>
   </ul>
 </div>
 

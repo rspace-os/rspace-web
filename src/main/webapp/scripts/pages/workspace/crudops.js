@@ -71,6 +71,7 @@ function setUpCrudOps(args) {
   createMoveDialog(onmove, args.moveparams);
   createRenameDialog();
   createTagDialog();
+  createCompareDialog();
 
   registerCopyRecordsHandler(oncopy);
   registerDeleteRecordsHandler(onDelete);
@@ -456,6 +457,15 @@ function createTagDialog() {
 
     var selected = getSelectedIdsNamesAndTypes();
     window.dispatchEvent(new CustomEvent("OPEN_TAG_DIALOG", { detail: { ids: selected.ids }}));
+  });
+}
+
+function createCompareDialog() {
+  $('body').on('click', '#compareRecords', function (e) {
+    e.preventDefault();
+
+    var selected = getSelectedIdsNamesAndTypes();
+    window.dispatchEvent(new CustomEvent("OPEN_COMPARE_DIALOG", { detail: { ids: selected.ids }}));
   });
 }
 
