@@ -1038,7 +1038,7 @@ const FileCard = styled(
     color: window.matchMedia("(prefers-contrast: more)").matches
       ? "rgb(255,255,255)"
       : `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, ${COLOR.contrastText.lightness}%, 100%)`,
-    border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+    border: `1px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
     ...(selected
       ? {
           borderColor: window.matchMedia("(prefers-contrast: more)").matches
@@ -1061,7 +1061,7 @@ const FileCard = styled(
             0.05
           )} !important`,
         },
-        backgroundColor: alpha(theme.palette.callToAction.background, 0.05),
+        backgroundColor: alpha(theme.palette.callToAction.background, 0.25),
       }
     : {}),
   borderRadius: "8px",
