@@ -215,27 +215,17 @@ export function useGalleryActions(): {|
           | {| key: "folder", folder: GalleryFile |},
         section: string,
       |}): Promise<void> => {
-        if (
-          destination.key === "folder" &&
-          destination.folder.isSnippetFolder
-        ) {
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: "Cannot drag files into SNIPPETS folders.",
-              message:
-                "Share them and they will automatically appear in these folders.",
-            })
+        if (destination.key === "folder")
+          return moveFiles(files).toDestinationWithFolder(
+            section,
+            destination.folder
           );
-          return;
-        }
-        const path =
-          destination.key === "root"
-            ? `/${section}/`
-            : destination.folder.pathAsString();
         try {
           const formData = new FormData();
-          formData.append("target", "0");
+          formData.append(
+            "target",
+            destination.key === "root" ? "0" : destination.folder.id
+          );
           for (const file of files)
             formData.append("filesId[]", idToString(file.id));
           formData.append("mediaType", section);
@@ -282,6 +272,17 @@ export function useGalleryActions(): {|
         section: string,
         destinationFolder: GalleryFile
       ): Promise<void> => {
+        if (destinationFolder.isSnippetFolder) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Cannot drag files into SNIPPETS folders.",
+              message:
+                "Share them and they will automatically appear in these folders.",
+            })
+          );
+          return;
+        }
         try {
           const formData = new FormData();
           formData.append("target", idToString(destinationFolder.id));
