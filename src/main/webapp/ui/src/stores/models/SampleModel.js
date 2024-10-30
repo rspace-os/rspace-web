@@ -898,7 +898,7 @@ export default class SampleModel
           label: "Number of new subsamples",
           explanation: "Between 1 and 100.",
           state: this.createOptionsParametersState.newSubsamplesCount,
-          validState: () => true,
+          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
         }, {
           label: "Quantity per subsample",
           explanation: "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
