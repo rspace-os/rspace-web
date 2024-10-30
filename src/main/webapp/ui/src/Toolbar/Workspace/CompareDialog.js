@@ -25,17 +25,28 @@ import MenuItem from "@mui/material/MenuItem";
 import { doNotAwait } from "../../util/Util";
 import { getByKey } from "../../util/optional";
 import Box from "@mui/material/Box";
+import UserDetails from "../../Inventory/components/UserDetails";
 
 type Document = {
   id: number,
   name: string,
   form: {
     id: number,
+    ...
   },
   fields: $ReadOnlyArray<{
     name: string,
     content: string,
+    ...
   }>,
+  owner: {
+    firstName: string,
+    lastName: string,
+    id: number,
+    username: string,
+    ...
+  },
+  ...
 };
 
 const ExportMenuItem = ({
@@ -148,6 +159,20 @@ function CompareDialog(): Node {
       headerName: "Global ID",
       flex: 1,
       sortable: false,
+    }),
+    DataGridColumn.newColumnWithFieldName<Document, _>("owner", {
+      headerName: "Owner",
+      flex: 1,
+      sortable: false,
+      // for CSVs
+      valueFormatter: (owner) => owner.username,
+      renderCell: ({ row }: { row: Document }) => (
+        <UserDetails
+          userId={row.owner.id}
+          fullName={`${row.owner.firstName} ${row.owner.lastName}`}
+          position={["bottom", "right"]}
+        />
+      ),
     }),
   ];
   if (allOfTheSameForm) {
