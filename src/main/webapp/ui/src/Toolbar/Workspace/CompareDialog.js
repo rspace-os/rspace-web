@@ -46,6 +46,21 @@ function CompareDialog(): Node {
       }
     ),
   ];
+  if (allOfTheSameForm) {
+    for (const field of documents[0].fields) {
+      columns.push(
+        DataGridColumn.newColumnWithValueGetter(
+          field.name,
+          (row, doc) => doc.fields.find((f) => f.name === field.name)?.content,
+          {
+            headerName: field.name,
+            flex: 1,
+            sortable: false,
+          }
+        )
+      );
+    }
+  }
 
   React.useEffect(() => {
     async function handler(
@@ -78,6 +93,8 @@ function CompareDialog(): Node {
   if (!documents) return null;
   return (
     <Dialog
+      fullWidth
+      maxWidth="xl"
       open={true}
       onClose={() => {
         setDocuments(null);
