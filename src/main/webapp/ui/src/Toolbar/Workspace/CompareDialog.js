@@ -11,56 +11,94 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { DataGrid } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridToolbarContainer,
+  GridToolbarExportContainer,
+  useGridApiContext,
+} from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import createAccentedTheme from "../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
 import Alert from "@mui/material/Alert";
+import MenuItem from "@mui/material/MenuItem";
+import { doNotAwait } from "../../util/Util";
+import { getByKey } from "../../util/optional";
+import Box from "@mui/material/Box";
+
+type Document = {
+  id: number,
+  name: string,
+  form: {
+    id: number,
+  },
+  fields: $ReadOnlyArray<{
+    name: string,
+    content: string,
+  }>,
+};
+
+const ExportMenuItem = ({
+  onClick,
+  children,
+  ...rest
+}: {|
+  onClick: () => Promise<void>,
+  children: Node,
+|}) => (
+  <MenuItem
+    onClick={doNotAwait(async () => {
+      await onClick();
+      /*
+       * `hideMenu` is injected by MUI into the children of
+       * `GridToolbarExportContainer`. See
+       * https://github.com/mui/mui-x/blob/2414dcfe87b8bd4507361a80ab43c8d284ddc4de/packages/x-data-grid/src/components/toolbar/GridToolbarExportContainer.tsx#L99
+       * However, if we add `hideMenu` to the type of the `ExportMenuItem`
+       * props then Flow will complain we're not passing it in at the call site
+       */
+      getByKey<"hideMenu", () => void>("hideMenu", rest).do((hideMenu) => {
+        hideMenu();
+      });
+    })}
+  >
+    {children}
+  </MenuItem>
+);
+
+const Toolbar = ({ documents }: {| documents: $ReadOnlyArray<Document> |}) => {
+  const apiRef = useGridApiContext();
+
+  const exportVisibleRows = () => {
+    apiRef.current?.exportDataAsCsv({
+      allColumns: true,
+    });
+  };
+
+  return (
+    <GridToolbarContainer sx={{ width: "100%" }}>
+      <Box flexGrow={1}></Box>
+      <GridToolbarExportContainer variant="outlined">
+        <ExportMenuItem
+          onClick={() => {
+            exportVisibleRows();
+            return Promise.resolve();
+          }}
+        >
+          Export all rows to CSV
+        </ExportMenuItem>
+      </GridToolbarExportContainer>
+    </GridToolbarContainer>
+  );
+};
 
 function CompareDialog(): Node {
   const { getToken } = useOauthToken();
-  const [documents, setDocuments] = React.useState<null | $ReadOnlyArray<{
-    name: string,
-    id: number,
-    form: {
-      id: number,
-      ...
-    },
-    ...
-  }>>(null);
+  const [documents, setDocuments] =
+    React.useState<null | $ReadOnlyArray<Document>>(null);
   const [paginationModel, setPaginationModel] = React.useState({
     page: 0,
     pageSize: 100,
   });
-
-  const allOfTheSameForm =
-    new Set((documents ?? []).map(({ form: { id } }) => id)).size === 1;
-
-  const columns = [
-    DataGridColumn.newColumnWithFieldName<{ name: string, id: number, ... }, _>(
-      "name",
-      {
-        headerName: "Name",
-        flex: 1,
-        sortable: false,
-      }
-    ),
-  ];
-  if (allOfTheSameForm) {
-    for (const field of documents[0].fields) {
-      columns.push(
-        DataGridColumn.newColumnWithValueGetter(
-          field.name,
-          (row, doc) => doc.fields.find((f) => f.name === field.name)?.content,
-          {
-            headerName: field.name,
-            flex: 1,
-            sortable: false,
-          }
-        )
-      );
-    }
-  }
 
   React.useEffect(() => {
     async function handler(
@@ -69,16 +107,14 @@ function CompareDialog(): Node {
       const token = await getToken();
       const docs = await Promise.all(
         event.detail.ids.map(async (id) => {
-          const { data } = await axios.get<{
-            name: string,
-            id: number,
-            form: { id: number, ... },
-            ...
-          }>(`/api/v1/documents/${id}`, {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          });
+          const { data } = await axios.get<Document>(
+            `/api/v1/documents/${id}`,
+            {
+              headers: {
+                Authorization: "Bearer " + token,
+              },
+            }
+          );
           return data;
         })
       );
@@ -91,6 +127,34 @@ function CompareDialog(): Node {
   }, []);
 
   if (!documents) return null;
+
+  const allOfTheSameForm =
+    new Set(documents.map(({ form: { id } }) => id)).size === 1;
+
+  const columns = [
+    DataGridColumn.newColumnWithFieldName<Document, _>("name", {
+      headerName: "Name",
+      flex: 1,
+      sortable: false,
+    }),
+  ];
+  if (allOfTheSameForm) {
+    for (const field of documents[0].fields) {
+      columns.push(
+        DataGridColumn.newColumnWithValueGetter<Document, _>(
+          field.name,
+          (row: mixed, doc: Document) =>
+            doc.fields.find((f) => f.name === field.name)?.content ?? "ERROR",
+          {
+            headerName: field.name,
+            flex: 1,
+            sortable: false,
+          }
+        )
+      );
+    }
+  }
+
   return (
     <Dialog
       fullWidth
@@ -137,6 +201,14 @@ function CompareDialog(): Node {
               paginationModel={paginationModel}
               onPaginationModelChange={(newPaginationModel) => {
                 setPaginationModel(newPaginationModel);
+              }}
+              slots={{
+                toolbar: Toolbar,
+              }}
+              slotProps={{
+                toolbar: {
+                  documents,
+                },
               }}
             />
           </Grid>

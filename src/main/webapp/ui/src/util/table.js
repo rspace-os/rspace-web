@@ -147,7 +147,7 @@ const DataGridColumn = {
     // Unique identifier for the column
     field: Field,
     // $FlowExpectedError[invalid-computed-prop]
-    valueGetter: (Row[Field]) => string,
+    valueGetter: (Row[Field], Row) => string,
     // $FlowExpectedError[invalid-computed-prop]
     rest: ColumnProps<Row, Row[Field]>
   ): Column<Row> {

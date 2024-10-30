@@ -96,7 +96,7 @@ export function DialogBoundary({ children }: {| children: Node |}): Node {
 type DialogArgs<T> = {|
   onClose: () => void,
   open: boolean,
-  maxWidth?: "sm" | "md" | "lg",
+  maxWidth?: "sm" | "md" | "lg" | "xl",
   fullWidth?: boolean,
   fullScreen?: boolean,
   children: Node,

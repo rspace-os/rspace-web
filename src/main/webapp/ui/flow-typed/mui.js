@@ -51,7 +51,7 @@ declare module "@mui/x-data-grid" {
   declare export type Column<Row> = {|
     headerName: string,
     field: string,
-    valueGetter?: (mixed) => mixed,
+    valueGetter?: (mixed, Row) => mixed,
     renderCell?: (params: {
       row: Row,
       value: mixed,
