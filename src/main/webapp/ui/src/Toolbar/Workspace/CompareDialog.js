@@ -65,7 +65,11 @@ const ExportMenuItem = ({
   </MenuItem>
 );
 
-const Toolbar = ({ documents }: {| documents: $ReadOnlyArray<Document> |}) => {
+const Toolbar = ({
+  rowSelectionModel,
+}: {|
+  rowSelectionModel: $ReadOnlyArray<number>,
+|}) => {
   const apiRef = useGridApiContext();
 
   const exportVisibleRows = () => {
@@ -84,7 +88,7 @@ const Toolbar = ({ documents }: {| documents: $ReadOnlyArray<Document> |}) => {
             return Promise.resolve();
           }}
         >
-          Export all rows to CSV
+          Export {rowSelectionModel.length > 0 ? "selected" : "all"} rows to CSV
         </ExportMenuItem>
       </GridToolbarExportContainer>
     </GridToolbarContainer>
@@ -99,6 +103,9 @@ function CompareDialog(): Node {
     page: 0,
     pageSize: 100,
   });
+  const [rowSelectionModel, setRowSelectionModel] = React.useState<
+    $ReadOnlyArray<number>
+  >([]);
 
   React.useEffect(() => {
     async function handler(
@@ -193,7 +200,7 @@ function CompareDialog(): Node {
                 },
               }}
               density="standard"
-              getRowId={(row: { id: number, ... }) => row.id}
+              getRowId={(row: Document) => row.id}
               hideFooterSelectedRowCount
               checkboxSelection
               disableColumnFilter
@@ -202,12 +209,19 @@ function CompareDialog(): Node {
               onPaginationModelChange={(newPaginationModel) => {
                 setPaginationModel(newPaginationModel);
               }}
+              rowSelectionModel={rowSelectionModel}
+              onRowSelectionModelChange={(
+                newRowSelectionModel: $ReadOnlyArray<number>,
+                _details
+              ) => {
+                setRowSelectionModel(newRowSelectionModel);
+              }}
               slots={{
                 toolbar: Toolbar,
               }}
               slotProps={{
                 toolbar: {
-                  documents,
+                  rowSelectionModel,
                 },
               }}
             />
