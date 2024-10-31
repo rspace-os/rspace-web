@@ -19,44 +19,25 @@ const useStyles = makeStyles()((theme, { dividers, rightAlignDds }) => ({
     fontSize: "0.8rem",
     rowGap: "8px",
     margin: 0,
-    "& > span:nth-of-type(n+2)": {
-      borderTop: dividers ? theme.borders.descriptionList : "none",
-    },
   },
   dt: {
     color: theme.palette.text.secondary,
     fontWeight: "600",
     marginRight: theme.spacing(2),
   },
-  span: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: rightAlignDds ? "space-between" : "unset",
-    alignItems: "center",
-    padding: dividers
-      ? theme.spacing(0.75, 1, 0.675)
-      : theme.spacing(0, 0, 1, 0),
-    fontSize: "0.8rem",
-    minHeight: "unset",
-  },
-  spanBelow: {
-    flexDirection: "column",
-  },
   dtBelow: {
-    alignSelf: "flex-start",
+    gridColumnStart: "1",
+    gridColumnEnd: "span 2",
+    marginTop: "-10px",
   },
   ddBelow: {
     gridColumnStart: "1",
-    top: "8px",
-    position: "relative",
+    gridColumnEnd: "span 2",
+    marginTop: "-10px",
   },
   dd: {
-    margin: 0,
+    marginInlineStart: 0,
     justifySelf: "end",
-  },
-  spanReducedPadding: {
-    paddingTop: "3px !important",
-    paddingBottom: "3px !important",
   },
 }));
 
