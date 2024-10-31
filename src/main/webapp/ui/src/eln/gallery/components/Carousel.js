@@ -5,6 +5,7 @@ import { type GalleryFile, idToString } from "../useGalleryListing";
 import { Optional } from "../../../util/optional";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
+import { useGallerySelection } from "../useGallerySelection";
 
 type CarouselArgs = {
   listing:
@@ -18,6 +19,13 @@ type CarouselArgs = {
 
 export default function Carousel({ listing }: CarouselArgs): Node {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
+  const selection = useGallerySelection();
+
+  React.useEffect(() => {
+    setVisibleIndex(0);
+    selection.clear();
+    selection.append(listing.list[0]);
+  }, [listing]);
 
   if (listing.tag === "empty") return "No files";
   return (
@@ -26,7 +34,10 @@ export default function Carousel({ listing }: CarouselArgs): Node {
         <Grid item>
           <Button
             onClick={() => {
-              setVisibleIndex((v) => Math.max(0, v - 1));
+              const newIndex = Math.max(0, visibleIndex - 1);
+              setVisibleIndex(newIndex);
+              selection.clear();
+              selection.append(listing.list[newIndex]);
             }}
           >
             Previous
@@ -36,7 +47,13 @@ export default function Carousel({ listing }: CarouselArgs): Node {
         <Grid item>
           <Button
             onClick={() => {
-              setVisibleIndex((v) => Math.min(listing.list.length - 1, v + 1));
+              const newIndex = Math.min(
+                listing.list.length - 1,
+                visibleIndex + 1
+              );
+              setVisibleIndex(newIndex);
+              selection.clear();
+              selection.append(listing.list[newIndex]);
             }}
           >
             Next
