@@ -1324,7 +1324,12 @@ function GalleryMainPanel({
                     error: (error) => <>{error}</>,
                     success: (listing) => <GridView listing={listing} />,
                   })}
-                {viewMode === "carousel" && <Carousel />}
+                {viewMode === "carousel" &&
+                  FetchingData.match(galleryListing, {
+                    loading: () => <></>,
+                    error: (error) => <>{error}</>,
+                    success: (listing) => <Carousel listing={listing} />,
+                  })}
               </Grid>
             </Grid>
             <Grid item sx={{ mx: 1.5, display: { xs: "none", md: "block" } }}>
