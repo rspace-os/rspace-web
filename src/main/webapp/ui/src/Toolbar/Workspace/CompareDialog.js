@@ -21,7 +21,6 @@ import {
 import { DataGridColumn } from "../../util/table";
 import createAccentedTheme from "../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
-import Alert from "@mui/material/Alert";
 import MenuItem from "@mui/material/MenuItem";
 import { doNotAwait } from "../../util/Util";
 import { getByKey } from "../../util/optional";
@@ -120,6 +119,24 @@ function CompareDialog(): Node {
     $ReadOnlyArray<number>
   >([]);
 
+  const fieldColumns: $ReadOnlyArray<[number, string]> = React.useMemo(() => {
+    if (!documents) return [];
+    const cols = [];
+    for (const doc of documents) {
+      for (const field of doc.fields) {
+        if (
+          cols.findIndex(
+            ([formId, fieldName]: [number, string]) =>
+              formId === doc.form.id && fieldName === field.name
+          ) === -1
+        ) {
+          cols.push([doc.form.id, field.name]);
+        }
+      }
+    }
+    return cols;
+  }, [documents]);
+
   React.useEffect(() => {
     async function handler(
       event: Event & { detail: { ids: $ReadOnlyArray<string> } }
@@ -148,9 +165,6 @@ function CompareDialog(): Node {
 
   if (!documents) return null;
 
-  const allOfTheSameForm =
-    new Set(documents.map(({ form: { id } }) => id)).size === 1;
-
   const columns = [
     DataGridColumn.newColumnWithFieldName<Document, _>("name", {
       headerName: "Name",
@@ -177,21 +191,21 @@ function CompareDialog(): Node {
       ),
     }),
   ];
-  if (allOfTheSameForm) {
-    for (const field of documents[0].fields) {
-      columns.push(
-        DataGridColumn.newColumnWithValueGetter<Document, _>(
-          field.name,
-          (row: mixed, doc: Document) =>
-            doc.fields.find((f) => f.name === field.name)?.content ?? "ERROR",
-          {
-            headerName: field.name,
-            flex: 1,
-            sortable: false,
-          }
-        )
-      );
-    }
+  for (const [formId, fieldName] of fieldColumns) {
+    columns.push(
+      DataGridColumn.newColumnWithValueGetter<Document, _>(
+        `${formId}:${fieldName}`,
+        (row: mixed, doc: Document) => {
+          if (doc.form.id !== formId) return "";
+          return doc.fields.find((f) => f.name === fieldName)?.content ?? "";
+        },
+        {
+          headerName: fieldName,
+          flex: 1,
+          sortable: false,
+        }
+      )
+    );
   }
 
   return (
@@ -212,14 +226,6 @@ function CompareDialog(): Node {
               fields to CSV.
             </Typography>
           </Grid>
-          {!allOfTheSameForm && (
-            <Grid item>
-              <Alert severity="info">
-                The fields of the documents are not shown because the documents
-                are not all of the same form.
-              </Alert>
-            </Grid>
-          )}
           <Grid item>
             <DataGrid
               aria-label="documents"
