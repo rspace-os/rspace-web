@@ -13,7 +13,14 @@ import { type URL } from "../../../util/types";
  * lightroom box by providing a URL that points to an image.
  */
 
-const ImagePreviewContext = React.createContext((_link: URL) => {});
+const ImagePreviewContext = React.createContext(
+  (
+    _link: URL,
+    _opts: ?{
+      caption?: $ReadOnlyArray<string>,
+    }
+  ) => {}
+);
 
 /**
  * Use the callable image preview component to display an image in a fullscreen
@@ -24,7 +31,16 @@ export function useImagePreview(): {|
    * Preview the image to be found at the passed URL. If the image cannot be
    * loaded then nothing happens.
    */
-  openImagePreview: (URL) => void,
+  openImagePreview: (
+    URL,
+    ?{
+      /*
+       * A list of strings, shown from top to bottom, separated by two
+       * `<br />`s, placed at the bottom of the viewport
+       */
+      caption?: $ReadOnlyArray<string>,
+    }
+  ) => void,
 |} {
   const openImagePreview = React.useContext(ImagePreviewContext);
   return {
@@ -38,15 +54,33 @@ export function useImagePreview(): {|
  * to a call to `useImagePreview`'s `openImagePreview`. Just do something like
  *    const { openImagePreview } = useImagePreview();
  *    openImagePreview("http://example.com/image.jpg");
+ *
+ * An caption can also be passed, which is shown at the bottom of the vewport.
+ *    openImagePreview("http://example.com/image.jpg", {
+ *      caption: ["Example image with caption"],
+ *    });
  */
 export function CallableImagePreview({ children }: {| children: Node |}): Node {
   const [link, setLink] = React.useState<null | URL>(null);
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
     null
   );
+  const [caption, setCaption] = React.useState<null | $ReadOnlyArray<string>>(
+    null
+  );
+
   return (
     <>
-      <ImagePreviewContext.Provider value={setLink}>
+      <ImagePreviewContext.Provider
+        value={(url, opts) => {
+          setLink(url);
+          if (opts?.caption) {
+            setCaption(opts.caption);
+          } else {
+            setCaption([]);
+          }
+        }}
+      >
         {children}
       </ImagePreviewContext.Provider>
       {link !== null && (
@@ -57,6 +91,7 @@ export function CallableImagePreview({ children }: {| children: Node |}): Node {
           link={link}
           size={previewSize}
           setSize={(s) => setPreviewSize(s)}
+          caption={caption}
         />
       )}
     </>

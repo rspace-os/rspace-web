@@ -6,6 +6,15 @@ import { Gallery, Item } from "react-photoswipe-gallery";
 import { type URL } from "../util/types";
 import { makeStyles } from "tss-react/mui";
 
+function escapeHtml(unsafe: string) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 const useStyles = makeStyles()(() => ({
   image: {
     height: 0,
@@ -24,6 +33,12 @@ type ImagePreviewArgs = {|
   size: ?PreviewSize,
   setSize: (PreviewSize) => void,
   modal?: boolean,
+
+  /*
+   * A list of strings, shown from top to bottom, separated by two `<br />`s,
+   * placed at the bottom of the viewport
+   */
+  caption?: null | $ReadOnlyArray<string>,
 |};
 
 export default function ImagePreview({
@@ -32,6 +47,7 @@ export default function ImagePreview({
   size,
   setSize,
   modal = true,
+  caption,
 }: ImagePreviewArgs): Node {
   const { classes } = useStyles();
   return (
@@ -48,6 +64,7 @@ export default function ImagePreview({
           closePreview();
         });
       }}
+      withCaption={(caption ?? []).length > 0}
     >
       <Item
         original={link}
@@ -55,6 +72,7 @@ export default function ImagePreview({
         thumbnail={link}
         width={size?.width ?? 100}
         height={size?.height ?? 100}
+        caption={(caption ?? []).map(escapeHtml).join("<br /><br />")}
       >
         {({ ref, open: openFn }) => (
           <img

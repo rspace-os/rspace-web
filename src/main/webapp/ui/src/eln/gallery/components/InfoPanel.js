@@ -693,7 +693,9 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                       <ActionButton
                         onClick={() => {
-                          openImagePreview(action.downloadHref);
+                          openImagePreview(action.downloadHref, {
+                            caption: action.caption,
+                          });
                         }}
                         label="View"
                         sx={{

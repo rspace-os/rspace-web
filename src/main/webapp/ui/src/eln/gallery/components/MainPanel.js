@@ -645,7 +645,9 @@ const GridView = observer(
                         return;
                       }
                       if (action.tag === "image") {
-                        openImagePreview(action.downloadHref);
+                        openImagePreview(action.downloadHref, {
+                          caption: action.caption,
+                        });
                         return;
                       }
                       if (action.tag === "collabora") {

@@ -340,7 +340,18 @@ function ActionsMenu({
       .only.toResult(() => new Error("Too many items selected."))
       .flatMap((file) =>
         canPreviewAsImage(file)
-          .map((downloadHref) => ({ key: "image", downloadHref }))
+          .map((downloadHref) => ({
+            key: "image",
+            downloadHref,
+            caption: [
+              file.description.match({
+                missing: () => "",
+                empty: () => "",
+                present: (desc) => desc,
+              }),
+              file.name,
+            ],
+          }))
           .orElseTry(() =>
             canPreviewAsPdf(file).map((downloadHref) => ({
               key: "pdf",
@@ -463,7 +474,9 @@ function ActionsMenu({
             onClick={() => {
               viewAllowed.get().do((viewAction) => {
                 if (viewAction.key === "image")
-                  openImagePreview(viewAction.downloadHref);
+                  openImagePreview(viewAction.downloadHref, {
+                    caption: viewAction.caption,
+                  });
                 if (viewAction.key === "pdf")
                   openPdfPreview(viewAction.downloadHref);
                 if (viewAction.key === "aspose")
