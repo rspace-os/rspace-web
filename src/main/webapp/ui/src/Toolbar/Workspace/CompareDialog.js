@@ -26,6 +26,8 @@ import { doNotAwait } from "../../util/Util";
 import { getByKey } from "../../util/optional";
 import Box from "@mui/material/Box";
 import UserDetails from "../../Inventory/components/UserDetails";
+import { styled } from "@mui/material/styles";
+import CircularProgress from "@mui/material/CircularProgress";
 
 type Document = {
   id: number,
@@ -48,6 +50,56 @@ type Document = {
   },
   ...
 };
+
+const StyledGridOverlay = styled("div")(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "100%",
+  backgroundColor: "rgba(18, 18, 18, 0.9)",
+  ...theme.applyStyles("light", {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  }),
+}));
+
+function CircularProgressWithLabel(props: { value: number }) {
+  return (
+    <Box sx={{ position: "relative", display: "inline-flex" }}>
+      <CircularProgress variant="determinate" value={props.value} />
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Typography
+          variant="caption"
+          component="div"
+          color="text.primary"
+        >{`${Math.round(props.value)}%`}</Typography>
+      </Box>
+    </Box>
+  );
+}
+
+function CustomLoadingOverlay({
+  loadedCount,
+  documentCount,
+}: {|
+  loadedCount: number,
+  documentCount: number,
+|}) {
+  return (
+    <StyledGridOverlay>
+      <CircularProgressWithLabel value={(loadedCount / documentCount) * 100} />
+      <Box sx={{ mt: 2 }}>Reading documents…</Box>
+    </StyledGridOverlay>
+  );
+}
 
 const ExportMenuItem = ({
   onClick,
@@ -109,8 +161,9 @@ const Toolbar = ({
 
 function CompareDialog(): Node {
   const { getToken } = useOauthToken();
-  const [documents, setDocuments] =
-    React.useState<null | $ReadOnlyArray<Document>>(null);
+  const [documents, setDocuments] = React.useState<$ReadOnlyArray<Document>>(
+    []
+  );
   const [paginationModel, setPaginationModel] = React.useState({
     page: 0,
     pageSize: 100,
@@ -118,9 +171,10 @@ function CompareDialog(): Node {
   const [rowSelectionModel, setRowSelectionModel] = React.useState<
     $ReadOnlyArray<number>
   >([]);
+  const [documentCount, setDocumentCount] = React.useState(0);
+  const [loadedCount, setLoadedCount] = React.useState(0);
 
   const fieldColumns: $ReadOnlyArray<[number, string]> = React.useMemo(() => {
-    if (!documents) return [];
     const cols = [];
     for (const doc of documents) {
       for (const field of doc.fields) {
@@ -141,6 +195,8 @@ function CompareDialog(): Node {
     async function handler(
       event: Event & { detail: { ids: $ReadOnlyArray<string> } }
     ) {
+      setDocumentCount(event.detail.ids.length);
+      setLoadedCount(0);
       const token = await getToken();
       const docs = await Promise.all(
         event.detail.ids.map(async (id) => {
@@ -152,6 +208,7 @@ function CompareDialog(): Node {
               },
             }
           );
+          setLoadedCount((x) => x + 1);
           return data;
         })
       );
@@ -162,8 +219,6 @@ function CompareDialog(): Node {
       window.removeEventListener("OPEN_COMPARE_DIALOG", handler);
     };
   }, []);
-
-  if (!documents) return null;
 
   const columns = [
     DataGridColumn.newColumnWithFieldName<Document, _>("name", {
@@ -212,9 +267,10 @@ function CompareDialog(): Node {
     <Dialog
       fullWidth
       maxWidth="xl"
-      open={true}
+      open={documentCount > 0}
       onClose={() => {
-        setDocuments(null);
+        setDocumentCount(0);
+        setDocuments([]);
       }}
     >
       <DialogTitle>Compare Documents</DialogTitle>
@@ -254,12 +310,18 @@ function CompareDialog(): Node {
               ) => {
                 setRowSelectionModel(newRowSelectionModel);
               }}
+              loading={loadedCount < documentCount}
               slots={{
                 toolbar: Toolbar,
+                loadingOverlay: CustomLoadingOverlay,
               }}
               slotProps={{
                 toolbar: {
                   rowSelectionModel,
+                },
+                loadingOverlay: {
+                  loadedCount,
+                  documentCount,
                 },
               }}
             />
