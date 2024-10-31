@@ -14,9 +14,10 @@ import { styled } from "@mui/material/styles";
 
 const useStyles = makeStyles()((theme, { dividers, rightAlignDds }) => ({
   dl: {
-    display: "flex",
-    flexDirection: "column",
-    flexWrap: "unset",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    fontSize: "0.8rem",
+    rowGap: "8px",
     margin: 0,
     "& > span:nth-of-type(n+2)": {
       borderTop: dividers ? theme.borders.descriptionList : "none",
@@ -45,10 +46,13 @@ const useStyles = makeStyles()((theme, { dividers, rightAlignDds }) => ({
     alignSelf: "flex-start",
   },
   ddBelow: {
-    alignSelf: "flex-end",
+    gridColumnStart: "1",
+    top: "8px",
+    position: "relative",
   },
   dd: {
     margin: 0,
+    justifySelf: "end",
   },
   spanReducedPadding: {
     paddingTop: "3px !important",
@@ -100,14 +104,7 @@ function DescriptionList({
     <Dl className={classes.dl} sx={sx}>
       {content.map(
         ({ label, value, below = false, reducedPadding = false }) => (
-          <span
-            key={label}
-            className={clsx(
-              classes.span,
-              below && classes.spanBelow,
-              reducedPadding && classes.spanReducedPadding
-            )}
-          >
+          <>
             <dt
               className={clsx(
                 classes.dt,
@@ -126,7 +123,7 @@ function DescriptionList({
             >
               {value}
             </dd>
-          </span>
+          </>
         )
       )}
     </Dl>
