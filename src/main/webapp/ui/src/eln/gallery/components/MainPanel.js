@@ -1061,7 +1061,7 @@ const FileCard = styled(
             0.05
           )} !important`,
         },
-        backgroundColor: alpha(theme.palette.callToAction.background, 0.25),
+        backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
       }
     : {}),
   borderRadius: "8px",
