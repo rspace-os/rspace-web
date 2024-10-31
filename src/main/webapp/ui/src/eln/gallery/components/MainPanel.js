@@ -77,6 +77,8 @@ import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { Optional } from "../../../util/optional";
 import LoadMoreButton from "./LoadMoreButton";
+import Carousel from "./Carousel";
+import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -1172,6 +1174,18 @@ function GalleryMainPanel({
                         selection.clear();
                       }}
                     />
+                    <NewMenuItem
+                      title="Carousel"
+                      subheader="Flick through all files to find one."
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={<ViewCarouselIcon />}
+                      onClick={() => {
+                        setViewMode("carousel");
+                        setViewMenuAnchorEl(null);
+                        selection.clear();
+                      }}
+                    />
                   </StyledMenu>
                   <Button
                     variant="outlined"
@@ -1310,6 +1324,7 @@ function GalleryMainPanel({
                     error: (error) => <>{error}</>,
                     success: (listing) => <GridView listing={listing} />,
                   })}
+                {viewMode === "carousel" && <Carousel />}
               </Grid>
             </Grid>
             <Grid item sx={{ mx: 1.5, display: { xs: "none", md: "block" } }}>
