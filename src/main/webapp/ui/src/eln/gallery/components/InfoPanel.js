@@ -754,6 +754,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   );
                 if (action.tag === "aspose")
                   return <AsposePreviewButton key={null} file={file} />;
+                return null;
               })
               .orElseGet((errors) => {
                 console.info("Could not provide view");

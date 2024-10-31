@@ -458,6 +458,7 @@ function ActionsMenu({
                 setActionsMenuAnchorEl(null);
               }}
               compact
+              key={null}
             />
           ))
           .orElse(null)}

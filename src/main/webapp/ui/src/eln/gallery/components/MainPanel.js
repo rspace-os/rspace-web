@@ -584,7 +584,7 @@ const GridView = observer(
         </Grid>
         {listing.loadMore
           .map((loadMore) => (
-            <Box sx={{ mt: 1 }}>
+            <Box key={null} sx={{ mt: 1 }}>
               <LoadMoreButton onClick={loadMore} />
             </Box>
           ))
