@@ -50,11 +50,9 @@ export default function Carousel({ listing }: CarouselArgs): Node {
           position: "relative",
         }}
       >
-        {listing.list
-          .filter((f) => f.isImage)
-          .map((f, i) => (
+        {listing.list.map((f, i) => (
           <img
-            src={f.downloadHref}
+            src={f.isImage ? f.downloadHref : f.thumbnailUrl}
             style={{
               position: "absolute",
               display: i === visibleIndex ? "block" : "none",
