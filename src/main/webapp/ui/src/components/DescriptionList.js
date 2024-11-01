@@ -18,9 +18,9 @@ const useStyles = makeStyles()((theme) => ({
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     fontSize: "0.8rem",
-    rowGap: "8px",
+    rowGap: theme.spacing(1),
     margin: 0,
-    marginBottom: "8px",
+    marginBottom: theme.spacing(1),
   },
   dt: {
     color: theme.palette.text.secondary,
@@ -29,16 +29,16 @@ const useStyles = makeStyles()((theme) => ({
     alignSelf: "center",
   },
   dtReducedPadding: {
-    marginTop: "-8px",
-    marginBottom: "-8px",
+    marginTop: `-${theme.spacing(1)}`,
+    marginBottom: `-${theme.spacing(1)}`,
   },
   dd: {
     marginInlineStart: 0,
     justifySelf: "end",
   },
   ddReducedPadding: {
-    marginTop: "-8px",
-    marginBottom: "-8px",
+    marginTop: `-${theme.spacing(1)}`,
+    marginBottom: `-${theme.spacing(1)}`,
   },
   ddBelow: {
     gridColumn: "1 / span 2",
