@@ -11,8 +11,9 @@ import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
 import { styled } from "@mui/material/styles";
+import Divider from "@mui/material/Divider";
 
-const useStyles = makeStyles()((theme, { dividers, rightAlignDds }) => ({
+const useStyles = makeStyles()((theme, { rightAlignDds }) => ({
   dl: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -74,13 +75,23 @@ function DescriptionList({
   rightAlignDds = false,
   sx,
 }: DescriptionListArgs): Node {
-  const { classes } = useStyles({ dividers, rightAlignDds });
+  const { classes } = useStyles({ rightAlignDds });
 
   return (
     <Dl className={classes.dl} sx={sx}>
       {content.map(
-        ({ label, value, below = false, reducedPadding = false }) => (
+        ({ label, value, below = false, reducedPadding = false }, i) => (
           <>
+            {i > 0 && dividers && (
+              <Divider
+                orientation="horizontal"
+                sx={{
+                  gridColumn: "1 / span 2",
+                }}
+                aria-hidden="true"
+                component="div"
+              />
+            )}
             <dt
               className={clsx(
                 classes.dt,
