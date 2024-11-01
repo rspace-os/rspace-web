@@ -26,14 +26,23 @@ const useStyles = makeStyles()((theme, { rightAlignDds }) => ({
     color: theme.palette.text.secondary,
     fontWeight: "600",
     marginRight: theme.spacing(2),
+    alignSelf: "center",
   },
-  ddBelow: {
-    gridColumn: "1 / span 2",
-    marginTop: "-10px",
+  dtReducedPadding: {
+    marginTop: "-8px",
+    marginBottom: "-8px",
   },
   dd: {
     marginInlineStart: 0,
     justifySelf: "end",
+  },
+  ddReducedPadding: {
+    marginTop: "-8px",
+    marginBottom: "-8px",
+  },
+  ddBelow: {
+    gridColumn: "1 / span 2",
+    marginTop: "-10px",
   },
 }));
 
@@ -95,6 +104,7 @@ function DescriptionList({
             <dt
               className={clsx(
                 classes.dt,
+                reducedPadding && classes.dtReducedPadding,
                 below && classes.dtBelow,
                 below && "below"
               )}
@@ -104,6 +114,7 @@ function DescriptionList({
             <dd
               className={clsx(
                 classes.dd,
+                reducedPadding && classes.ddReducedPadding,
                 below && classes.ddBelow,
                 below && "below"
               )}
