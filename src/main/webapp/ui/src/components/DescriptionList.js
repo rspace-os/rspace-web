@@ -19,20 +19,15 @@ const useStyles = makeStyles()((theme, { dividers, rightAlignDds }) => ({
     fontSize: "0.8rem",
     rowGap: "8px",
     margin: 0,
+    marginBottom: "8px",
   },
   dt: {
     color: theme.palette.text.secondary,
     fontWeight: "600",
     marginRight: theme.spacing(2),
   },
-  dtBelow: {
-    gridColumnStart: "1",
-    gridColumnEnd: "span 2",
-    marginTop: "-10px",
-  },
   ddBelow: {
-    gridColumnStart: "1",
-    gridColumnEnd: "span 2",
+    gridColumn: "1 / span 2",
     marginTop: "-10px",
   },
   dd: {

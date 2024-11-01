@@ -485,10 +485,8 @@ const InfoPanelContent = ({
         ]}
         sx={{
           "& dd.below": {
-            gridColumnStart: "1",
-            position: "relative",
-            top: "-8px",
-            lef: "-4px",
+            justifySelf: "start",
+            width: "100%",
           },
         }}
       />
