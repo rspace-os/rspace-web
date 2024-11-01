@@ -4,6 +4,27 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog 
 
+# 2.4.0 2024-11-01
+
+### ELN Features
+
+- RSDEV-284 RSpace can be now deployed in Single-Sign On environment using 'OpenID Connect' protocol
+- RSDEV-163 separate deployment properties for analytics and live chat, to allow using support chat without passing analytics data
+- RSDEV-378 Apps page describes RSpace integration provided by ascenscia.ai
+
+### ELN Bugfix
+
+- RSDEV-145 XML/HTML export now reports more errors
+- RSDEV-344 'move' action in RSpace Gallery now works correctly for folders having non-unique name
+- RSDEV-357 more robust support for special characters when using filters on some dialogs
+
+### Inventory Features
+
+- RSDEV-314 User can now create/add new subsamples to an existing Sample
+- RSDEV-373 'Gallery' dialog has a pagination mechanism now
+- RSDEV-381 'Gallery' dialog supports new 'open' and 'preview' actions
+- RSDEV-345 text editor is now displayed inlined, rather than floating
+
 # 2.3.0 2024-09-30
 
 ### ELN Features
