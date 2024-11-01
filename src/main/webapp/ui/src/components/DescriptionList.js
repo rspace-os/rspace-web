@@ -13,7 +13,7 @@ import clsx from "clsx";
 import { styled } from "@mui/material/styles";
 import Divider from "@mui/material/Divider";
 
-const useStyles = makeStyles()((theme, { rightAlignDds }) => ({
+const useStyles = makeStyles()((theme) => ({
   dl: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -54,7 +54,6 @@ type DescriptionListArgs = {|
     reducedPadding?: boolean,
   |}>,
   dividers?: boolean,
-  rightAlignDds?: boolean,
   sx?: { ... },
 |};
 
@@ -81,10 +80,9 @@ const Dl = styled("dl")``;
 function DescriptionList({
   content,
   dividers = false,
-  rightAlignDds = false,
   sx,
 }: DescriptionListArgs): Node {
-  const { classes } = useStyles({ rightAlignDds });
+  const { classes } = useStyles();
 
   return (
     <Dl className={classes.dl} sx={sx}>

@@ -465,7 +465,6 @@ const InfoPanelContent = ({
   return (
     <Stack sx={{ height: "100%" }}>
       <DescriptionList
-        rightAlignDds
         content={[
           {
             label: "Global ID",
@@ -495,7 +494,6 @@ const InfoPanelContent = ({
           Details
         </Typography>
         <DescriptionList
-          rightAlignDds
           content={[
             {
               label: "Type",
@@ -541,7 +539,6 @@ const InfoPanelMultipleContent = (): Node => {
     );
   return (
     <DescriptionList
-      rightAlignDds
       content={[
         {
           label: "Total size",
