@@ -17,7 +17,7 @@ import {
   SELECTED_OR_FOCUS_BLUE,
   type GallerySection,
 } from "../common";
-import { styled } from "@mui/material/styles";
+import { styled, alpha } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
@@ -1010,6 +1010,14 @@ const FileCard = styled(
                       </Grid>
                     </Grid>
                   </Grid>
+                  {file.version > 1 && (
+                    <div
+                      className="versionIndicator"
+                      aria-label={`version ${file.version}`}
+                    >
+                      v{file.version}
+                    </div>
+                  )}
                 </CardActionArea>
               </Card>
             </Grid>
@@ -1018,8 +1026,27 @@ const FileCard = styled(
       }
     )
   )
-)(({ selected }) => ({
+)(({ selected, theme }) => ({
   height: "150px",
+  "& .versionIndicator": {
+    position: "absolute",
+    top: "0",
+    right: "0",
+    margin: theme.spacing(0.25),
+    padding: theme.spacing(0.25, 0.5),
+    borderRadius: "5px",
+    color: window.matchMedia("(prefers-contrast: more)").matches
+      ? "rgb(255,255,255)"
+      : `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, ${COLOR.contrastText.lightness}%, 100%)`,
+    border: `1px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+    ...(selected
+      ? {
+          borderColor: window.matchMedia("(prefers-contrast: more)").matches
+            ? "black"
+            : theme.palette.callToAction.main,
+        }
+      : {}),
+  },
   ...(selected
     ? {
         border: window.matchMedia("(prefers-contrast: more)").matches
@@ -1029,7 +1056,12 @@ const FileCard = styled(
           border: window.matchMedia("(prefers-contrast: more)").matches
             ? "2px solid black !important"
             : `${SELECTED_OR_FOCUS_BORDER} !important`,
+          backgroundColor: `${alpha(
+            theme.palette.callToAction.background,
+            0.05
+          )} !important`,
         },
+        backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
       }
     : {}),
   borderRadius: "8px",
