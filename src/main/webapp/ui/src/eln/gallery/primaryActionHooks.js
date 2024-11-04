@@ -106,7 +106,7 @@ export default function usePrimaryAction(): (
   file: GalleryFile
 ) => Result<
   | {| tag: "open", open: () => void |}
-  | {| tag: "image", downloadHref: string |}
+  | {| tag: "image", downloadHref: string, caption: $ReadOnlyArray<string> |}
   | {| tag: "collabora", url: string |}
   | {| tag: "officeonline", url: string |}
   | {| tag: "pdf", downloadHref: string |}
@@ -126,6 +126,14 @@ export default function usePrimaryAction(): (
         canPreviewAsImage(file).map((downloadHref) => ({
           tag: "image",
           downloadHref,
+          caption: [
+            file.description.match({
+              missing: () => "",
+              empty: () => "",
+              present: (desc) => desc,
+            }),
+            file.name,
+          ],
         }))
       )
       .orElseTry(() =>
