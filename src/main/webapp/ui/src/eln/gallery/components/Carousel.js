@@ -88,7 +88,23 @@ export default function Carousel({ listing }: CarouselArgs): Node {
           </Button>
         </Grid>
       </Grid>
-      <Grid item flexGrow={1} sx={{ height: "calc(100% - 60px)" }}>
+      <Grid
+        item
+        flexGrow={1}
+        sx={{
+          /*
+           * This minHeight is necessary to ensure that the image and wrapping
+           * div shrink so that they don't cause scrollbars. Once the user
+           * initiates a zoom then there will be scrollbars, but not before.
+           * The need for a minHeight of 0 is explained in
+           * https://moduscreate.com/blog/how-to-fix-overflow-issues-in-css-flex-layouts/
+           * which references the "Automatic Minimum Size of Flex Items" part of
+           * the flexbox spec:
+           * https://drafts.csswg.org/css-flexbox/#min-size-auto
+           */
+          minHeight: "0",
+        }}
+      >
         <div
           style={{
             borderRadius: "3px",
