@@ -33,6 +33,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
   React.useEffect(() => {
     setVisibleIndex(0);
     selection.clear();
+    //$FlowExpectedError[incompatible-use] We need some kind of non-empty list data structure
     selection.append(listing.list[0]);
   }, [listing]);
 
