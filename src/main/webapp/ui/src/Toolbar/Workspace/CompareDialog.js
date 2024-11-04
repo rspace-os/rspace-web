@@ -28,6 +28,7 @@ import Box from "@mui/material/Box";
 import UserDetails from "../../Inventory/components/UserDetails";
 import { styled } from "@mui/material/styles";
 import CircularProgress from "@mui/material/CircularProgress";
+import * as Parsers from "../../util/parsers";
 
 type Document = {
   id: number,
@@ -48,6 +49,8 @@ type Document = {
     username: string,
     ...
   },
+  created: string,
+  lastModified: string,
   ...
 };
 
@@ -245,6 +248,22 @@ function CompareDialog(): Node {
         />
       ),
     }),
+    DataGridColumn.newColumnWithFieldName<Document, _>("created", {
+      headerName: "Created Date",
+      flex: 1,
+      valueFormatter: (value: string) =>
+        Parsers.parseDate(value)
+          .map((l) => l.toLocaleString())
+          .orElse("—"),
+    }),
+    DataGridColumn.newColumnWithFieldName<Document, _>("lastModified", {
+      headerName: "Modified Date",
+      flex: 1,
+      valueFormatter: (value: string) =>
+        Parsers.parseDate(value)
+          .map((l) => l.toLocaleString())
+          .orElse("—"),
+    }),
   ];
   for (const [formId, fieldName] of fieldColumns) {
     columns.push(
@@ -293,7 +312,10 @@ function CompareDialog(): Node {
               rows={documents}
               initialState={{
                 columns: {
-                  columnVisibilityModel: {},
+                  columnVisibilityModel: {
+                    created: false,
+                    lastModified: false,
+                  },
                 },
               }}
               density="standard"
