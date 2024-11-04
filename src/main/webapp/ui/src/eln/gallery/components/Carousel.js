@@ -6,6 +6,10 @@ import { Optional } from "../../../util/optional";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { useGallerySelection } from "../useGallerySelection";
+import { useImagePreview } from "./CallableImagePreview";
+import { usePdfPreview } from "./CallablePdfPreview";
+import { useAsposePreview } from "./CallableAsposePreview";
+import usePrimaryAction from "../primaryActionHooks";
 
 /*
  * Arbitrary number that determines how much the zoom in and out buttons zoom
@@ -28,6 +32,10 @@ type CarouselArgs = {
 export default function Carousel({ listing }: CarouselArgs): Node {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
+  const { openImagePreview } = useImagePreview();
+  const { openPdfPreview } = usePdfPreview();
+  const { openAsposePreview } = useAsposePreview();
+  const primaryAction = usePrimaryAction();
   const [zoom, setZoom] = React.useState(1);
 
   React.useEffect(() => {
@@ -127,6 +135,11 @@ export default function Carousel({ listing }: CarouselArgs): Node {
           }}
         >
           {listing.list.map((f, i) => (
+            /*
+             * It doesn't matter that this is an accessibility violation
+             * because the same functionality is available in the info panel
+             */
+            //eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
             <img
               src={f.isImage ? f.downloadHref : f.thumbnailUrl}
               style={{
@@ -138,6 +151,35 @@ export default function Carousel({ listing }: CarouselArgs): Node {
                 transformOrigin: "left top",
               }}
               key={idToString(f.id)}
+              onClick={(e) => {
+                if (e.detail > 1) {
+                  primaryAction(f).do((action) => {
+                    if (action.tag === "open") {
+                      action.open();
+                      return;
+                    }
+                    if (action.tag === "image") {
+                      openImagePreview(action.downloadHref);
+                      return;
+                    }
+                    if (action.tag === "collabora") {
+                      window.open(action.url);
+                      return;
+                    }
+                    if (action.tag === "officeonline") {
+                      window.open(action.url);
+                      return;
+                    }
+                    if (action.tag === "pdf") {
+                      openPdfPreview(action.downloadHref);
+                      return;
+                    }
+                    if (action.tag === "aspose") {
+                      void openAsposePreview(f);
+                    }
+                  });
+                }
+              }}
             />
           ))}
         </div>
