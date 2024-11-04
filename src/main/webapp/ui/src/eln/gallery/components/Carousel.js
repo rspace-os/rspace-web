@@ -134,6 +134,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
                 maxWidth: "100%",
                 transform: `scale(${zoom})`,
                 transition: "transform .5s ease-in-out",
+                transformOrigin: "left top",
               }}
               key={idToString(f.id)}
             />
