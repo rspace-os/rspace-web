@@ -273,13 +273,16 @@ function CompareDialog(): Node {
         setDocuments([]);
       }}
     >
-      <DialogTitle>Compare Documents</DialogTitle>
+      <DialogTitle>Export Documents to CSV</DialogTitle>
       <DialogContent>
         <Grid container direction="column" spacing={2}>
           <Grid item>
             <Typography variant="body2">
-              Compare the selected documents and export a table with all of the
-              fields to CSV.
+              Select the documents you want to combine into a single CSV file.
+              Documents with identical structures will be automatically aligned,
+              including form data and content. If documents have different
+              structures, additional columns will be created to accommodate all
+              information.
             </Typography>
           </Grid>
           <Grid item>
