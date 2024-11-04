@@ -62,7 +62,6 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): Node {
       )}
       <Grid item className={classes.grow}>
         <DescriptionList
-          rightAlignDds
           /* some elements are not displayed depending on view (public or limited) */
           content={[
             ...(record.recordDetails.hideGlobalId

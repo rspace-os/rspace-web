@@ -78,7 +78,6 @@ const Details = withStyles<{| record: InventoryRecord |}, { location: string }>(
   })
 )(({ record, classes }) => (
   <DescriptionList
-    rightAlignDds
     content={[
       ...(record.readAccessLevel === "full" && record instanceof ContainerModel
         ? [

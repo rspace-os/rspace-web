@@ -155,7 +155,6 @@ export default function TagListing({
           <Card>
             <CardContent>
               <DescriptionList
-                rightAlignDds
                 content={cardContent(metadataPopup.tag)}
                 dividers={true}
               />
