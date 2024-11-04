@@ -7,6 +7,14 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { useGallerySelection } from "../useGallerySelection";
 
+/*
+ * Arbitrary number that determines how much the zoom in and out buttons zoom
+ * in and out with each tap. Too small of a number and the user has to tap over
+ * and over to reach the level of desired zoom, to much and the user doesn't
+ * have sufficiently fine-grained control.
+ */
+const ZOOM_SCALE_FACTOR = 1.4;
+
 type CarouselArgs = {
   listing:
     | {| tag: "empty", reason: string |}
@@ -55,7 +63,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
         <Grid item>
           <Button
             onClick={() => {
-              setZoom((z) => z + 0.25);
+              setZoom((z) => z * ZOOM_SCALE_FACTOR);
             }}
           >
             Zoom In
@@ -64,7 +72,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
         <Grid item>
           <Button
             onClick={() => {
-              setZoom((z) => z - 0.25);
+              setZoom((z) => z / ZOOM_SCALE_FACTOR);
             }}
           >
             Zoom Out
@@ -125,6 +133,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
                 maxHeight: "100%",
                 maxWidth: "100%",
                 transform: `scale(${zoom})`,
+                transition: "transform .5s ease-in-out",
               }}
               key={idToString(f.id)}
             />
