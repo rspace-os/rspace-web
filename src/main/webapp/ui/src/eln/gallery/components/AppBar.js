@@ -41,7 +41,16 @@ function GalleryAppBar({
   const { isViewportVerySmall, isViewportSmall } = useViewportDimensions();
   const [showTextfield, setShowTextfield] = React.useState(false);
   const searchTextfield = React.useRef();
+
+  /*
+   * We use a copy of the search term string so that edits the user makes are
+   * not immediately passed to useGalleryListing which will immediately make a
+   * network call.
+   */
   const [searchTerm, setSearchTerm] = React.useState("");
+  React.useEffect(() => {
+    setSearchTerm(appliedSearchTerm);
+  }, [appliedSearchTerm]);
 
   return (
     <AppBar position="relative" open={true}>

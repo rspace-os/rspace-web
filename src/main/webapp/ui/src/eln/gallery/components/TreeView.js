@@ -32,8 +32,11 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
 import { Optional } from "../../../util/optional";
-import Button from "@mui/material/Button";
 import LoadMoreButton from "./LoadMoreButton";
+import { useImagePreview } from "./CallableImagePreview";
+import { usePdfPreview } from "./CallablePdfPreview";
+import { useAsposePreview } from "./CallableAsposePreview";
+import usePrimaryAction from "../primaryActionHooks";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -374,6 +377,11 @@ const TreeView = ({
 }: TreeViewArgs) => {
   const { addAlert } = React.useContext(AlertContext);
   const selection = useGallerySelection();
+  const { openImagePreview } = useImagePreview();
+  const { openPdfPreview } = usePdfPreview();
+  const { openAsposePreview } = useAsposePreview();
+  const primaryAction = usePrimaryAction();
+
   const [expandedItems, setExpandedItems] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
   >([]);
@@ -467,6 +475,38 @@ const TreeView = ({
             }
           });
         } else {
+          // on double click, try and figure out what the user would want
+          // to do with a file of this type based on what services are
+          // configured
+          if (event.detail > 1) {
+            MapUtils.get(idMap, itemId).do((file) => {
+              primaryAction(file).do((action) => {
+                if (action.tag === "open") {
+                  action.open();
+                  return;
+                }
+                if (action.tag === "image") {
+                  openImagePreview(action.downloadHref);
+                  return;
+                }
+                if (action.tag === "collabora") {
+                  window.open(action.url);
+                  return;
+                }
+                if (action.tag === "officeonline") {
+                  window.open(action.url);
+                  return;
+                }
+                if (action.tag === "pdf") {
+                  openPdfPreview(action.downloadHref);
+                  return;
+                }
+                if (action.tag === "aspose") {
+                  void openAsposePreview(file);
+                }
+              });
+            });
+          }
           selection.clear();
           if (selected) {
             MapUtils.get(idMap, itemId).do((file) => {
