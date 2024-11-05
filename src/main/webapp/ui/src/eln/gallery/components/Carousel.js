@@ -10,6 +10,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
+import PlaceholderLabel from "./PlaceholderLabel";
 
 /*
  * Arbitrary number that determines how much the zoom in and out buttons zoom
@@ -41,11 +42,11 @@ export default function Carousel({ listing }: CarouselArgs): Node {
   React.useEffect(() => {
     setVisibleIndex(0);
     selection.clear();
-    //$FlowExpectedError[incompatible-use] We need some kind of non-empty list data structure
-    selection.append(listing.list[0]);
+    if (listing.tag === "list") selection.append(listing.list[0]);
   }, [listing]);
 
-  if (listing.tag === "empty") return "No files";
+  if (listing.tag === "empty")
+    return <PlaceholderLabel>{listing.reason}</PlaceholderLabel>;
   return (
     <Grid
       container
