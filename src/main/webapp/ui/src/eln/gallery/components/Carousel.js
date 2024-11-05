@@ -51,7 +51,13 @@ export default function Carousel({ listing }: CarouselArgs): Node {
     <Grid
       container
       direction="column"
-      sx={{ height: "100%" }}
+      sx={{
+        /*
+         * it looks better if the preview panel's bottom border lines up with
+         * the bottom of the InfoPanel divider
+         */
+        height: "calc(100% + 16px)",
+      }}
       spacing={2}
       flexWrap="nowrap"
     >
