@@ -10,6 +10,11 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Divider from "@mui/material/Divider";
 
 /**
  * Much like how `window.open` allows any JS code on the page to trigger the
@@ -98,27 +103,40 @@ export function CallablePdfPreview({ children }: {| children: Node |}): Node {
             </Document>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={() => {
-                setScale(scale + 0.1);
+            <ButtonGroup
+              variant="outlined"
+              sx={{
+                border: "2px solid #cfc9d2",
+                borderRadius: "8px",
               }}
             >
-              Zoom in
-            </Button>
-            <Button
-              onClick={() => {
-                setScale(scale - 0.1);
-              }}
-            >
-              Zoom out
-            </Button>
-            <Button
-              onClick={() => {
-                setScale(1);
-              }}
-            >
-              Reset zoom
-            </Button>
+              <IconButton
+                onClick={() => {
+                  setScale(scale * 1.2);
+                }}
+                aria-label="zoom in"
+                size="small"
+              >
+                <ZoomInIcon />
+              </IconButton>
+              <Divider
+                orientation="vertical"
+                sx={{
+                  height: "26px",
+                  marginTop: "4px",
+                  borderRightWidth: "1px",
+                }}
+              />
+              <IconButton
+                onClick={() => {
+                  setScale(scale / 1.2);
+                }}
+                aria-label="zoom out"
+                size="small"
+              >
+                <ZoomOutIcon />
+              </IconButton>
+            </ButtonGroup>
             <Box flexGrow={1}></Box>
             <Button
               onClick={() => {
