@@ -11,6 +11,11 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
 import PlaceholderLabel from "./PlaceholderLabel";
+import IconButton from "@mui/material/IconButton";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Divider from "@mui/material/Divider";
 
 /*
  * Arbitrary number that determines how much the zoom in and out buttons zoom
@@ -91,9 +96,9 @@ export default function Carousel({ listing }: CarouselArgs): Node {
          * it looks better if the preview panel's bottom border lines up with
          * the bottom of the InfoPanel divider
          */
-        height: "calc(100% + 16px)",
+        height: "calc(100% + 8px)",
       }}
-      spacing={2}
+      spacing={1}
       flexWrap="nowrap"
     >
       <Grid item container direction="row" spacing={1}>
@@ -109,22 +114,40 @@ export default function Carousel({ listing }: CarouselArgs): Node {
         </Grid>
         <Grid item flexGrow={1}></Grid>
         <Grid item>
-          <Button
-            onClick={() => {
-              setZoom((z) => z * ZOOM_SCALE_FACTOR);
+          <ButtonGroup
+            variant="outlined"
+            sx={{
+              border: "2px solid #cfc9d2",
+              borderRadius: "8px",
             }}
           >
-            Zoom In
-          </Button>
-        </Grid>
-        <Grid item>
-          <Button
-            onClick={() => {
-              setZoom((z) => z / ZOOM_SCALE_FACTOR);
-            }}
-          >
-            Zoom Out
-          </Button>
+            <IconButton
+              onClick={() => {
+                setZoom((z) => z * ZOOM_SCALE_FACTOR);
+              }}
+              aria-label="zoom in"
+              size="small"
+            >
+              <ZoomInIcon />
+            </IconButton>
+            <Divider
+              orientation="vertical"
+              sx={{
+                height: "26px",
+                marginTop: "4px",
+                borderRightWidth: "1px",
+              }}
+            />
+            <IconButton
+              onClick={() => {
+                setZoom((z) => z / ZOOM_SCALE_FACTOR);
+              }}
+              aria-label="zoom out"
+              size="small"
+            >
+              <ZoomOutIcon />
+            </IconButton>
+          </ButtonGroup>
         </Grid>
         <Grid item flexGrow={1}></Grid>
         <Grid item>
