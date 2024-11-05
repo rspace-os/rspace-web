@@ -142,6 +142,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
               onClick={() => {
                 setZoom((z) => z / ZOOM_SCALE_FACTOR);
               }}
+              disabled={zoom === 1}
               aria-label="zoom out"
               size="small"
             >
