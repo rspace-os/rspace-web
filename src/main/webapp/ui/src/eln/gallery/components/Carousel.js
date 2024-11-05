@@ -102,6 +102,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
             onClick={() => {
               decrementVisibleIndex();
             }}
+            disabled={visibleIndex === 0}
           >
             Previous
           </Button>
@@ -131,6 +132,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
             onClick={() => {
               incrementVisibleIndex();
             }}
+            disabled={visibleIndex === listing.list.length - 1}
           >
             Next
           </Button>
