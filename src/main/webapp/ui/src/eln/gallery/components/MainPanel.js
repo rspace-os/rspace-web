@@ -1106,10 +1106,12 @@ function GalleryMainPanel({
             item
             container
             direction="row"
-            sx={{ marginTop: 0.75 }}
+            sx={{
+              marginTop: 0.75,
+              minHeight: 0,
+            }}
             flexWrap="nowrap"
             flexGrow="1"
-            height="calc(100% - 56px)"
           >
             <Grid
               item
