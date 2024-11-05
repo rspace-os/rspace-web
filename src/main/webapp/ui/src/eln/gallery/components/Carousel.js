@@ -45,6 +45,41 @@ export default function Carousel({ listing }: CarouselArgs): Node {
     if (listing.tag === "list") selection.append(listing.list[0]);
   }, [listing]);
 
+  function incrementVisibleIndex() {
+    if (listing.tag !== "list") return;
+    if (visibleIndex + 1 < listing.list.length) {
+      const newIndex = visibleIndex + 1;
+      setVisibleIndex(newIndex);
+      setZoom(1);
+      selection.clear();
+      selection.append(listing.list[newIndex]);
+    }
+  }
+
+  function decrementVisibleIndex() {
+    if (listing.tag !== "list") return;
+    if (visibleIndex - 1 >= 0) {
+      const newIndex = visibleIndex - 1;
+      setVisibleIndex(newIndex);
+      setZoom(1);
+      selection.clear();
+      selection.append(listing.list[newIndex]);
+    }
+  }
+
+  React.useEffect(() => {
+    const f = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        incrementVisibleIndex();
+      }
+      if (e.key === "ArrowLeft") {
+        decrementVisibleIndex();
+      }
+    };
+    window.addEventListener("keydown", f);
+    return () => window.removeEventListener("keydown", f);
+  }, [visibleIndex]);
+
   if (listing.tag === "empty")
     return <PlaceholderLabel>{listing.reason}</PlaceholderLabel>;
   return (
@@ -65,11 +100,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
         <Grid item>
           <Button
             onClick={() => {
-              const newIndex = Math.max(0, visibleIndex - 1);
-              setVisibleIndex(newIndex);
-              setZoom(1);
-              selection.clear();
-              selection.append(listing.list[newIndex]);
+              decrementVisibleIndex();
             }}
           >
             Previous
@@ -98,14 +129,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
         <Grid item>
           <Button
             onClick={() => {
-              const newIndex = Math.min(
-                listing.list.length - 1,
-                visibleIndex + 1
-              );
-              setVisibleIndex(newIndex);
-              setZoom(1);
-              selection.clear();
-              selection.append(listing.list[newIndex]);
+              incrementVisibleIndex();
             }}
           >
             Next
