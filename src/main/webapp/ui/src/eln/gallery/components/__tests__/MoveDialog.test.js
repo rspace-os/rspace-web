@@ -14,6 +14,12 @@ import createAccentedTheme from "../../../../accentedTheme";
 import { COLOR } from "../../common";
 import "../../../../../__mocks__/matchMedia";
 
+jest.mock("../CallablePdfPreview", () => ({
+  usePdfPreview: () => ({
+    openPdfPreview: () => {},
+  }),
+}));
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
