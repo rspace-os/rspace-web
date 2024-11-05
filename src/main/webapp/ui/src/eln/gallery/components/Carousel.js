@@ -123,67 +123,92 @@ export default function Carousel({ listing }: CarouselArgs): Node {
           minHeight: "0",
         }}
       >
-        <div
-          style={{
-            borderRadius: "3px",
-            border: "2px solid #d0cad4",
-            position: "relative",
-            height: "100%",
-            overflow: "auto",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          {listing.list.map((f, i) => (
-            /*
-             * It doesn't matter that this is an accessibility violation
-             * because the same functionality is available in the info panel
-             */
-            //eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
+        {listing.list.map((f, i) => (
+          <div
+            role="button"
+            tabIndex={0}
+            style={{
+              borderRadius: "3px",
+              border: "2px solid #d0cad4",
+              position: "relative",
+              height: "100%",
+              overflow: "auto",
+              justifyContent: "center",
+              alignItems: "center",
+              display: i === visibleIndex ? "flex" : "none",
+            }}
+            key={idToString(f.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                primaryAction(f).do((action) => {
+                  if (action.tag === "open") {
+                    action.open();
+                    return;
+                  }
+                  if (action.tag === "image") {
+                    openImagePreview(action.downloadHref);
+                    return;
+                  }
+                  if (action.tag === "collabora") {
+                    window.open(action.url);
+                    return;
+                  }
+                  if (action.tag === "officeonline") {
+                    window.open(action.url);
+                    return;
+                  }
+                  if (action.tag === "pdf") {
+                    openPdfPreview(action.downloadHref);
+                    return;
+                  }
+                  if (action.tag === "aspose") {
+                    void openAsposePreview(f);
+                  }
+                });
+              }
+            }}
+            onClick={(e) => {
+              if (e.detail > 1) {
+                primaryAction(f).do((action) => {
+                  if (action.tag === "open") {
+                    action.open();
+                    return;
+                  }
+                  if (action.tag === "image") {
+                    openImagePreview(action.downloadHref);
+                    return;
+                  }
+                  if (action.tag === "collabora") {
+                    window.open(action.url);
+                    return;
+                  }
+                  if (action.tag === "officeonline") {
+                    window.open(action.url);
+                    return;
+                  }
+                  if (action.tag === "pdf") {
+                    openPdfPreview(action.downloadHref);
+                    return;
+                  }
+                  if (action.tag === "aspose") {
+                    void openAsposePreview(f);
+                  }
+                });
+              }
+            }}
+          >
             <img
               src={f.isImage ? f.downloadHref : f.thumbnailUrl}
               style={{
-                display: i === visibleIndex ? "block" : "none",
                 maxHeight: "100%",
                 maxWidth: "100%",
                 transform: `scale(${zoom})`,
                 transition: "transform .5s ease-in-out",
                 transformOrigin: "left top",
               }}
-              key={idToString(f.id)}
-              onClick={(e) => {
-                if (e.detail > 1) {
-                  primaryAction(f).do((action) => {
-                    if (action.tag === "open") {
-                      action.open();
-                      return;
-                    }
-                    if (action.tag === "image") {
-                      openImagePreview(action.downloadHref);
-                      return;
-                    }
-                    if (action.tag === "collabora") {
-                      window.open(action.url);
-                      return;
-                    }
-                    if (action.tag === "officeonline") {
-                      window.open(action.url);
-                      return;
-                    }
-                    if (action.tag === "pdf") {
-                      openPdfPreview(action.downloadHref);
-                      return;
-                    }
-                    if (action.tag === "aspose") {
-                      void openAsposePreview(f);
-                    }
-                  });
-                }
-              }}
             />
-          ))}
-        </div>
+          </div>
+        ))}
       </Grid>
     </Grid>
   );
