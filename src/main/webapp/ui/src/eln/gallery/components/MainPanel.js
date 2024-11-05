@@ -1185,7 +1185,11 @@ function GalleryMainPanel({
                       onClick={() => {
                         setViewMode("carousel");
                         setViewMenuAnchorEl(null);
-                        selection.clear();
+                        /*
+                         * We don't clear the selection because we want
+                         * carousel view to default to the selected file,
+                         * if there is one
+                         */
                       }}
                     />
                   </StyledMenu>

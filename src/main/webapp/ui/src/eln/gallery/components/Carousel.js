@@ -45,9 +45,21 @@ export default function Carousel({ listing }: CarouselArgs): Node {
   const [zoom, setZoom] = React.useState(1);
 
   React.useEffect(() => {
-    setVisibleIndex(0);
-    selection.clear();
-    if (listing.tag === "list") selection.append(listing.list[0]);
+    if (listing.tag !== "list") return;
+    // when enter Carousel view, focus on already selected file
+    selection.asSet().only.do((selectedFile) => {
+      setVisibleIndex(
+        Math.max(
+          0,
+          listing.list.findIndex(({ id }) => id === selectedFile.id)
+        )
+      );
+    });
+    // otherwise select the first file
+    if (selection.isEmpty) {
+      setVisibleIndex(0);
+      selection.append(listing.list[0]);
+    }
   }, [listing]);
 
   function incrementVisibleIndex() {
