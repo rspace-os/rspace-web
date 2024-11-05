@@ -1353,12 +1353,34 @@ function GalleryMainPanel({
                 mt: 0.75,
               }}
             >
-              <InfoPanelForLargeViewports />
+              <InfoPanelForLargeViewports
+                /*
+                 * When the selection changes we want to unmount the current
+                 * info panel and mount a new one, thereby resetting any
+                 * modified state. If we didn't have this key and simply
+                 * re-rendered then if there was and still is one file selected
+                 * then the new name would not match the state held by the name
+                 * field so the component would think that it is in a modified
+                 * state and should open the Save and Cancel buttons. Same
+                 * applies to the Description field.
+                 */
+                key={selection
+                  .asSet()
+                  .reduce((acc, { id }) => `${acc},${idToString(id)}`, "")}
+              />
             </Grid>
             {selection
               .asSet()
               .only.map((file) => (
-                <InfoPanelForSmallViewports key={null} file={file} />
+                /*
+                 * Same applies here, in that we want to unmount and mount a
+                 * new info panel when the selection changes to reset any
+                 * modified state.
+                 */
+                <InfoPanelForSmallViewports
+                  key={idToString(file.id)}
+                  file={file}
+                />
               ))
               .orElse(null)}
           </Grid>
