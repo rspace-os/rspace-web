@@ -2396,6 +2396,120 @@
     </profile>
 
     <!-- makes a clean build of the application, deleting and recreating the
+         RSpace database from baseline sql -->
+    <profile>
+      <id>mysql-clean-liquibase</id>
+      <activation>
+        <property>
+          <name>environment</name>
+          <value>drop-recreate-liquibase-db</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>sql-maven-plugin</artifactId>
+            <version>1.5</version>
+            <dependencies>
+              <!-- specify the dependent jdbc driver here -->
+              <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${jdbc.version}</version>
+              </dependency>
+            </dependencies>
+            <!-- this is needed to delete the Liquibase log tables, which aren't
+              under hibernate control, after hibernate tool has recreated the schema -->
+            <!-- common configuration shared by all executions -->
+            <configuration>
+              <driver>${jdbc.driverClassName.maven}</driver>
+              <url>${jdbc.url.maven}?useSSL=false</url>
+              <username>${jdbc.username.maven}</username>
+              <password>${jdbc.password.maven}</password>
+              <!-- You can comment out username/password configurations and have
+                maven to look them up in your settings.xml using ${settingsKey} -->
+              <settingsKey>sensibleKey</settingsKey>
+              <!--all executions are ignored if -Dmaven.test.skip=true -->
+              <skip>${maven.test.skip}</skip>
+              <autocommit>true</autocommit>
+            </configuration>
+
+            <executions>
+              <!-- Why run 3 separate commands rather than use an SQL file?
+              This task runs *before* property placeholders are resolved in files (in process-resources phase); putting
+              '${jdbc.db.maven}' in an SQL file fails as it is not resolved to the actual database name -->
+              <execution>
+                <id>drop-database</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <sqlCommand>drop database if exists ${jdbc.db.maven}</sqlCommand>
+                  <onError>continue</onError>
+                </configuration>
+              </execution>
+              <execution>
+                <id>create-new-database</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <sqlCommand>create database if not exists ${jdbc.db.maven} collate 'utf8mb4_unicode_ci'</sqlCommand>
+                  <onError>continue</onError>
+                </configuration>
+              </execution>
+              <execution>
+                <id>create-rs-baseline-schema</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <autocommit>true</autocommit>
+                  <sqlCommand>use ${jdbc.db.maven}</sqlCommand>
+                  <srcFiles>
+                    <srcFile>src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql</srcFile>
+                  </srcFiles>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <artifactId>maven-clean-plugin</artifactId>
+            <configuration>
+              <verbose>true</verbose>
+              <filesets>
+                <fileset>
+                  <directory>${hibernate.search.index}</directory>
+                  <directory>${lucene.attachment.searchIndex}</directory>
+                  <followSymlinks>true</followSymlinks>
+                  <includes>
+                    <include>archive/*</include>
+                    <include>pdfs/*</include>
+                  </includes>
+                  <excludes>
+                    <exclude>*</exclude>
+                  </excludes>
+                </fileset>
+              </filesets>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+
+      <properties>
+        <context.path>/</context.path>
+        <ssl.enabled>false</ssl.enabled>
+        <jdbc.url>jdbc:mysql://localhost:3306/${jdbc.db.maven}?${ssl.enabled}=false</jdbc.url>
+      </properties>
+
+    </profile>
+
+    <!-- makes a clean build of the application, deleting and recreating the
       rspace database, Lucene search indices and runs tests that populate the
       DB with data from src/test/resources/sampleData.xl -->
     <profile>
@@ -2403,7 +2517,7 @@
       <activation>
         <property>
           <name>environment</name>
-          <value>drop-recreate-db</value>
+          <value>drop-recreate-hib-db</value>
         </property>
       </activation>
       <build>
@@ -2443,7 +2557,7 @@
             <executions>
               <!-- Why run 2 separate commands rather than use an SQL file?
               This task runs *before* property placeholders are resolved in files (in process-resources phase); putting
-              '${jdbc.db.maven}' in an SQL file fails as it is not resolved to the actual database name
+              '${jdbc.hibdb.maven}' in an SQL file fails as it is not resolved to the actual database name
               -->
               <execution>
                 <id>drop-database</id>
@@ -2452,7 +2566,7 @@
                   <goal>execute</goal>
                 </goals>
                 <configuration>
-                  <sqlCommand> drop database if exists ${jdbc.db.maven} </sqlCommand>
+                  <sqlCommand> drop database if exists ${jdbc.hibdb.maven} </sqlCommand>
                   <onError>continue</onError>
                 </configuration>
               </execution>
@@ -2463,7 +2577,7 @@
                   <goal>execute</goal>
                 </goals>
                 <configuration>
-                  <sqlCommand> create database if not exists ${jdbc.db.maven} collate 'utf8mb4_unicode_ci'</sqlCommand>
+                  <sqlCommand> create database if not exists ${jdbc.hibdb.maven} collate 'utf8mb4_unicode_ci'</sqlCommand>
                   <onError>continue</onError>
                 </configuration>
               </execution>
@@ -2503,7 +2617,7 @@
               <dialect>org.hibernate.dialect.MySQL5InnoDBDialect</dialect>
               <username>${jdbc.username.maven}</username>
               <password>${jdbc.password.maven}</password>
-              <url>${jdbc.url.maven}/${jdbc.db.maven}?useSSL=false</url>
+              <url>${jdbc.url.maven}/${jdbc.hibdb.maven}?useSSL=false</url>
               <driverClassName>${jdbc.driverClassName.maven}</driverClassName>
             </configuration>
           </plugin>
@@ -2920,6 +3034,7 @@
     <jdbc.url.maven>jdbc:mysql://localhost:3306</jdbc.url.maven>
     <!-- this is the name of the test db to drop/recreate -->
     <jdbc.db.maven>rspace</jdbc.db.maven>
+    <jdbc.hibdb.maven>rspace_hib</jdbc.hibdb.maven>
 
     <hibernate.dialect>org.hibernate.dialect.MySQLDialect</hibernate.dialect>
     <!-- override these at runtime to show logging -->
