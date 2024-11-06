@@ -28,6 +28,8 @@ import Result from "../../../util/result";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as Parsers from "../../../util/parsers";
 import axios from "axios";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -397,6 +399,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
               decrementVisibleIndex();
             }}
             disabled={visibleIndex === 0}
+            startIcon={<ArrowBackIcon />}
           >
             Previous
           </Button>
@@ -446,6 +449,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
               incrementVisibleIndex();
             }}
             disabled={visibleIndex === listing.list.length - 1}
+            endIcon={<ArrowForwardIcon />}
           >
             Next
           </Button>
