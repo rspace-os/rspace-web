@@ -25,6 +25,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import Result from "../../../util/result";
+import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as Parsers from "../../../util/parsers";
 import axios from "axios";
 
@@ -161,28 +162,46 @@ const Preview = ({
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
   const [numPages, setNumPages] = React.useState<number>(0);
   const [asposePdfUrl, setAsposePdfUrl] = React.useState<
-    {| tag: "loading" |} | {| tag: "loaded", url: string |} | null
+    | {| tag: "loading" |}
+    | {| tag: "loaded", url: string |}
+    | {| tag: "error" |}
+    | null
   >(null);
 
-  const { key, url } = canPreviewAsImage(file)
+  const { key, url, message } = canPreviewAsImage(file)
     .map((downloadHref) => ({
       key: "image",
       url: downloadHref,
+      message: "",
     }))
     .orElseTry(() =>
       canPreviewAsPdf(file).map((downloadHref) => ({
         key: "pdf",
         url: downloadHref,
+        message: "",
       }))
     )
     .orElseTry(() => {
-      if (asposePdfUrl !== null && asposePdfUrl.tag === "loaded")
-        return Result.Ok({ key: "pdf", url: asposePdfUrl.url });
-      return Result.Ok({ key: "aspose_loading", url: "" });
+      if (asposePdfUrl !== null) {
+        if (asposePdfUrl.tag === "loaded")
+          return Result.Ok({ key: "pdf", url: asposePdfUrl.url, message: "" });
+        if (asposePdfUrl.tag === "error")
+          return Result.Ok({
+            key: "aspose_message",
+            url: "",
+            message: "Failed to generate preview",
+          });
+      }
+      return Result.Ok({
+        key: "aspose_message",
+        url: "",
+        message: "Generating preview",
+      });
     })
     .orElseGet(() => ({
       key: "image",
       url: file.thumbnailUrl,
+      message: "",
     }));
 
   React.useEffect(() => {
@@ -209,8 +228,27 @@ const Preview = ({
                 "?fileName=" +
                 fileName,
             });
+          } else {
+            Parsers.isObject(data)
+              .flatMap(Parsers.isNotNull)
+              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+              .flatMap(Parsers.isString)
+              .do((msg) => {
+                throw new Error(msg);
+              });
+            Parsers.objectPath(["error", "errorMessages"], data)
+              .flatMap(Parsers.isArray)
+              .flatMap(ArrayUtils.head)
+              .flatMap(Parsers.isString)
+              .do((msg) => {
+                throw new Error(msg);
+              });
           }
-        } catch (error) {}
+        } catch (error) {
+          setAsposePdfUrl({
+            tag: "error",
+          });
+        }
       })();
     });
   }, []);
@@ -254,7 +292,13 @@ const Preview = ({
         </Document>
       </PreviewWrapper>
     );
-  if (key === "aspose_loading") return "Generating preview";
+  if (key === "aspose_message") {
+    return (
+      <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
+        {message}
+      </PreviewWrapper>
+    );
+  }
   throw new Error("Don't know how to render that preview");
 };
 
