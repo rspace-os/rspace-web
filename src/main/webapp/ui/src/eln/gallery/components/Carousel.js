@@ -71,6 +71,10 @@ export default function Carousel({ listing }: CarouselArgs): Node {
       selection.clear();
       selection.append(listing.list[newIndex]);
     }
+    if (visibleIndex + 2 === listing.list.length) {
+      // before the user gets to the end, pre-emptively load the next page
+      listing.loadMore.do((loadMore) => void loadMore());
+    }
   }
 
   function decrementVisibleIndex() {
@@ -95,7 +99,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
     };
     window.addEventListener("keydown", f);
     return () => window.removeEventListener("keydown", f);
-  }, [visibleIndex]);
+  }, [visibleIndex, listing]);
 
   if (listing.tag === "empty")
     return <PlaceholderLabel>{listing.reason}</PlaceholderLabel>;
