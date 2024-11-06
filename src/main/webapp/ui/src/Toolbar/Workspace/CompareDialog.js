@@ -280,6 +280,11 @@ function CompareDialog(): Node {
           <CrossIcon color="error" aria-label="Unsigned" aria-hidden="false" />
         ),
     }),
+    DataGridColumn.newColumnWithFieldName<Document, _>("tags", {
+      headerName: "Tags",
+      flex: 1,
+      sortable: false,
+    }),
   ];
   for (const [formId, fieldName] of fieldColumns) {
     columns.push(
@@ -332,6 +337,7 @@ function CompareDialog(): Node {
                     created: false,
                     lastModified: false,
                     signed: false,
+                    tags: false,
                   },
                 },
               }}
