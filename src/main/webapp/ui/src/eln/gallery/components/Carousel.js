@@ -9,7 +9,9 @@ import { useGallerySelection } from "../useGallerySelection";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
-import usePrimaryAction from "../primaryActionHooks";
+import usePrimaryAction, {
+  useImagePreviewOfGalleryFile,
+} from "../primaryActionHooks";
 import PlaceholderLabel from "./PlaceholderLabel";
 import IconButton from "@mui/material/IconButton";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
@@ -41,6 +43,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
+  const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const primaryAction = usePrimaryAction();
   const [zoom, setZoom] = React.useState(1);
 
@@ -269,16 +272,32 @@ export default function Carousel({ listing }: CarouselArgs): Node {
               }
             }}
           >
-            <img
-              src={f.isImage ? f.downloadHref : f.thumbnailUrl}
-              style={{
-                maxHeight: "100%",
-                maxWidth: "100%",
-                transform: `scale(${zoom})`,
-                transition: "transform .5s ease-in-out",
-                transformOrigin: "left top",
-              }}
-            />
+            {canPreviewAsImage(f)
+              .map((downloadHref) => (
+                <img
+                  src={downloadHref}
+                  style={{
+                    maxHeight: "100%",
+                    maxWidth: "100%",
+                    transform: `scale(${zoom})`,
+                    transition: "transform .5s ease-in-out",
+                    transformOrigin: "left top",
+                  }}
+                  key={downloadHref}
+                />
+              ))
+              .orElseGet(() => (
+                <img
+                  src={f.thumbnailUrl}
+                  style={{
+                    maxHeight: "100%",
+                    maxWidth: "100%",
+                    transform: `scale(${zoom})`,
+                    transition: "transform .5s ease-in-out",
+                    transformOrigin: "left top",
+                  }}
+                />
+              ))}
           </div>
         ))}
       </Grid>
