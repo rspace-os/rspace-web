@@ -196,7 +196,7 @@ Delete your testLiquibaseUpdate database and recreate:
 
 and reimport from the baseline in `src/main/resources/sqlUpdates/liquibaseConfig`:
 
-    mysql -urspacedbuser -prspacedbpwd --database testLiquibaseUpdate < ecat5dev-baseline2014-1-24.sql
+    mysql -urspacedbuser -prspacedbpwd --database testLiquibaseUpdate < rs-dbbaseline-utf8.sql
 
 Now try  running 
 

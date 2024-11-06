@@ -128,7 +128,7 @@ Grant database permissions (As a minimum, RSpace requires read/write/alter/drop/
 
 Use the supplied script, which will populate the database schema :
 
-    mysql -u[username] -p [databasename] < ReleaseContent-[VERSION]-RELEASE/ecat5dev-baseline2014-1-24.sql
+    mysql -u[username] -p [databasename] < ReleaseContent-[VERSION]-RELEASE/rs-dbbaseline-utf8.sql
 
 
 Configure Apache 
