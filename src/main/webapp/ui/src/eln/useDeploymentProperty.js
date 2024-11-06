@@ -3,6 +3,7 @@
 import React, { type Context } from "react";
 import axios from "axios";
 import * as FetchingData from "../util/fetchingData";
+import * as MapUtils from "../util/MapUtils";
 
 /**
  * The RSpace product has a wide variety of configuration options that allow
@@ -70,10 +71,12 @@ import * as FetchingData from "../util/fetchingData";
 export function useDeploymentProperty(
   name: string
 ): FetchingData.Fetched<mixed> {
-  const [value, setValue] = React.useState<FetchingData.Fetched<mixed>>({
-    tag: "loading",
-  });
   const map = React.useContext(DeploymentPropertyContext);
+  const [value, setValue] = React.useState<FetchingData.Fetched<mixed>>(
+    MapUtils.get(map, name)
+      .map((value) => ({ tag: "success", value }))
+      .orElse({ tag: "loading" })
+  );
 
   React.useEffect(() => {
     if (map.has(name)) {

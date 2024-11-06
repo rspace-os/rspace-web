@@ -12,6 +12,7 @@ import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction, {
   useImagePreviewOfGalleryFile,
   usePdfPreviewOfGalleryFile,
+  useAsposePreviewOfGalleryFile,
 } from "../primaryActionHooks";
 import PlaceholderLabel from "./PlaceholderLabel";
 import IconButton from "@mui/material/IconButton";
@@ -23,6 +24,9 @@ import { take, incrementForever } from "../../../util/iterators";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import Result from "../../../util/result";
+import * as Parsers from "../../../util/parsers";
+import axios from "axios";
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -154,7 +158,11 @@ const Preview = ({
 |}) => {
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
+  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
   const [numPages, setNumPages] = React.useState<number>(0);
+  const [asposePdfUrl, setAsposePdfUrl] = React.useState<
+    {| tag: "loading" |} | {| tag: "loaded", url: string |} | null
+  >(null);
 
   const { key, url } = canPreviewAsImage(file)
     .map((downloadHref) => ({
@@ -167,10 +175,45 @@ const Preview = ({
         url: downloadHref,
       }))
     )
+    .orElseTry(() => {
+      if (asposePdfUrl !== null && asposePdfUrl.tag === "loaded")
+        return Result.Ok({ key: "pdf", url: asposePdfUrl.url });
+      return Result.Ok({ key: "aspose_loading", url: "" });
+    })
     .orElseGet(() => ({
       key: "image",
       url: file.thumbnailUrl,
     }));
+
+  React.useEffect(() => {
+    canPreviewWithAspose(file).do(() => {
+      void (async () => {
+        setAsposePdfUrl({ tag: "loading" });
+        try {
+          const { data } = await axios.get<mixed>(
+            "/Streamfile/ajax/convert/" +
+              idToString(file.id) +
+              "?outputFormat=pdf"
+          );
+          const fileName = Parsers.isObject(data)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("data"))
+            .flatMap(Parsers.isString)
+            .orElse(null);
+          if (fileName) {
+            setAsposePdfUrl({
+              tag: "loaded",
+              url:
+                "/Streamfile/direct/" +
+                idToString(file.id) +
+                "?fileName=" +
+                fileName,
+            });
+          }
+        } catch (error) {}
+      })();
+    });
+  }, []);
 
   function onDocumentLoadSuccess({
     numPages: nextNumPages,
@@ -211,6 +254,7 @@ const Preview = ({
         </Document>
       </PreviewWrapper>
     );
+  if (key === "aspose_loading") return "Generating preview";
   throw new Error("Don't know how to render that preview");
 };
 
