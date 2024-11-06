@@ -29,6 +29,8 @@ import UserDetails from "../../Inventory/components/UserDetails";
 import { styled } from "@mui/material/styles";
 import CircularProgress from "@mui/material/CircularProgress";
 import * as Parsers from "../../util/parsers";
+import TickIcon from "@mui/icons-material/Done";
+import CrossIcon from "@mui/icons-material/Clear";
 
 type Document = {
   id: number,
@@ -51,6 +53,7 @@ type Document = {
   },
   created: string,
   lastModified: string,
+  signed: boolean,
   ...
 };
 
@@ -264,6 +267,19 @@ function CompareDialog(): Node {
           .map((l) => l.toLocaleString())
           .orElse("—"),
     }),
+    DataGridColumn.newColumnWithFieldName<Document, _>("signed", {
+      headerName: "Signed",
+      flex: 1,
+      sortable: false,
+      // for CSVs
+      valueFormatter: (signed) => signed ? "true" : "false",
+      renderCell: ({ value }: { value: boolean, ... }) =>
+        value ? (
+          <TickIcon color="success" aria-label="Signed" aria-hidden="false" />
+        ) : (
+          <CrossIcon color="error" aria-label="Unsigned" aria-hidden="false" />
+        ),
+    }),
   ];
   for (const [formId, fieldName] of fieldColumns) {
     columns.push(
@@ -315,6 +331,7 @@ function CompareDialog(): Node {
                   columnVisibilityModel: {
                     created: false,
                     lastModified: false,
+                    signed: false,
                   },
                 },
               }}
