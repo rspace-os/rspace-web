@@ -11,6 +11,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction, {
   useImagePreviewOfGalleryFile,
+  usePdfPreviewOfGalleryFile,
 } from "../primaryActionHooks";
 import PlaceholderLabel from "./PlaceholderLabel";
 import IconButton from "@mui/material/IconButton";
@@ -18,6 +19,20 @@ import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
+import { take, incrementForever } from "../../../util/iterators";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/esm/Page/TextLayer.css";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+
+/*
+ * This snippet is a necessary step in initialising the PDF preview
+ * functionality. Taken from the example code for react-pdf
+ * https://github.com/wojtekmaj/react-pdf/blob/main/sample/webpack5/Sample.tsx
+ */
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 /*
  * Arbitrary number that determines how much the zoom in and out buttons zoom
@@ -26,6 +41,178 @@ import Divider from "@mui/material/Divider";
  * have sufficiently fine-grained control.
  */
 const ZOOM_SCALE_FACTOR = 1.4;
+
+const PreviewWrapper = ({
+  file,
+  previewingAsPdf,
+  children,
+  visible,
+}: {|
+  file: GalleryFile,
+  previewingAsPdf: boolean,
+  children: Node,
+  visible: boolean,
+|}) => {
+  const { openImagePreview } = useImagePreview();
+  const { openPdfPreview } = usePdfPreview();
+  const { openAsposePreview } = useAsposePreview();
+  const primaryAction = usePrimaryAction();
+
+  function display() {
+    if (!visible) return "none";
+    if (previewingAsPdf) return "block";
+    return "flex";
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      style={{
+        borderRadius: "3px",
+        border: "2px solid #d0cad4",
+        position: "relative",
+        height: "100%",
+        overflow: "auto",
+        justifyContent: "center",
+        alignItems: "center",
+        display: display(),
+      }}
+      key={idToString(file.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          primaryAction(file).do((action) => {
+            if (action.tag === "open") {
+              action.open();
+              return;
+            }
+            if (action.tag === "image") {
+              openImagePreview(action.downloadHref);
+              return;
+            }
+            if (action.tag === "collabora") {
+              window.open(action.url);
+              return;
+            }
+            if (action.tag === "officeonline") {
+              window.open(action.url);
+              return;
+            }
+            if (action.tag === "pdf") {
+              openPdfPreview(action.downloadHref);
+              return;
+            }
+            if (action.tag === "aspose") {
+              void openAsposePreview(file);
+            }
+          });
+        }
+      }}
+      onClick={(e) => {
+        if (e.detail > 1) {
+          primaryAction(file).do((action) => {
+            if (action.tag === "open") {
+              action.open();
+              return;
+            }
+            if (action.tag === "image") {
+              openImagePreview(action.downloadHref);
+              return;
+            }
+            if (action.tag === "collabora") {
+              window.open(action.url);
+              return;
+            }
+            if (action.tag === "officeonline") {
+              window.open(action.url);
+              return;
+            }
+            if (action.tag === "pdf") {
+              openPdfPreview(action.downloadHref);
+              return;
+            }
+            if (action.tag === "aspose") {
+              void openAsposePreview(file);
+            }
+          });
+        }
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+const Preview = ({
+  file,
+  zoom,
+  visible,
+}: {|
+  file: GalleryFile,
+  zoom: number,
+  visible: boolean,
+|}) => {
+  const canPreviewAsImage = useImagePreviewOfGalleryFile();
+  const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
+  const [numPages, setNumPages] = React.useState<number>(0);
+
+  const { key, url } = canPreviewAsImage(file)
+    .map((downloadHref) => ({
+      key: "image",
+      url: downloadHref,
+    }))
+    .orElseTry(() =>
+      canPreviewAsPdf(file).map((downloadHref) => ({
+        key: "pdf",
+        url: downloadHref,
+      }))
+    )
+    .orElseGet(() => ({
+      key: "image",
+      url: file.thumbnailUrl,
+    }));
+
+  function onDocumentLoadSuccess({
+    numPages: nextNumPages,
+  }: {
+    numPages: number,
+    ...
+  }): void {
+    setNumPages(nextNumPages);
+  }
+
+  if (key === "image")
+    return (
+      <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
+        <img
+          src={url}
+          style={{
+            maxHeight: "100%",
+            maxWidth: "100%",
+            transform: `scale(${zoom})`,
+            transition: "transform .5s ease-in-out",
+            transformOrigin: "left top",
+          }}
+          key={url}
+        />
+      </PreviewWrapper>
+    );
+  if (key === "pdf")
+    return (
+      <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
+        <Document file={url} onLoadSuccess={onDocumentLoadSuccess}>
+          {[...take(incrementForever(), numPages)].map((index) => (
+            <Page
+              key={`page_${index + 1}`}
+              pageNumber={index + 1}
+              width={550}
+            />
+          ))}
+        </Document>
+      </PreviewWrapper>
+    );
+  throw new Error("Don't know how to render that preview");
+};
 
 type CarouselArgs = {
   listing:
@@ -40,11 +227,6 @@ type CarouselArgs = {
 export default function Carousel({ listing }: CarouselArgs): Node {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
-  const { openImagePreview } = useImagePreview();
-  const { openPdfPreview } = usePdfPreview();
-  const { openAsposePreview } = useAsposePreview();
-  const canPreviewAsImage = useImagePreviewOfGalleryFile();
-  const primaryAction = usePrimaryAction();
   const [zoom, setZoom] = React.useState(1);
 
   React.useEffect(() => {
@@ -199,106 +381,12 @@ export default function Carousel({ listing }: CarouselArgs): Node {
         }}
       >
         {listing.list.map((f, i) => (
-          <div
-            role="button"
-            tabIndex={0}
-            style={{
-              borderRadius: "3px",
-              border: "2px solid #d0cad4",
-              position: "relative",
-              height: "100%",
-              overflow: "auto",
-              justifyContent: "center",
-              alignItems: "center",
-              display: i === visibleIndex ? "flex" : "none",
-            }}
+          <Preview
+            file={f}
+            zoom={zoom}
+            visible={i === visibleIndex}
             key={idToString(f.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                primaryAction(f).do((action) => {
-                  if (action.tag === "open") {
-                    action.open();
-                    return;
-                  }
-                  if (action.tag === "image") {
-                    openImagePreview(action.downloadHref);
-                    return;
-                  }
-                  if (action.tag === "collabora") {
-                    window.open(action.url);
-                    return;
-                  }
-                  if (action.tag === "officeonline") {
-                    window.open(action.url);
-                    return;
-                  }
-                  if (action.tag === "pdf") {
-                    openPdfPreview(action.downloadHref);
-                    return;
-                  }
-                  if (action.tag === "aspose") {
-                    void openAsposePreview(f);
-                  }
-                });
-              }
-            }}
-            onClick={(e) => {
-              if (e.detail > 1) {
-                primaryAction(f).do((action) => {
-                  if (action.tag === "open") {
-                    action.open();
-                    return;
-                  }
-                  if (action.tag === "image") {
-                    openImagePreview(action.downloadHref);
-                    return;
-                  }
-                  if (action.tag === "collabora") {
-                    window.open(action.url);
-                    return;
-                  }
-                  if (action.tag === "officeonline") {
-                    window.open(action.url);
-                    return;
-                  }
-                  if (action.tag === "pdf") {
-                    openPdfPreview(action.downloadHref);
-                    return;
-                  }
-                  if (action.tag === "aspose") {
-                    void openAsposePreview(f);
-                  }
-                });
-              }
-            }}
-          >
-            {canPreviewAsImage(f)
-              .map((downloadHref) => (
-                <img
-                  src={downloadHref}
-                  style={{
-                    maxHeight: "100%",
-                    maxWidth: "100%",
-                    transform: `scale(${zoom})`,
-                    transition: "transform .5s ease-in-out",
-                    transformOrigin: "left top",
-                  }}
-                  key={downloadHref}
-                />
-              ))
-              .orElseGet(() => (
-                <img
-                  src={f.thumbnailUrl}
-                  style={{
-                    maxHeight: "100%",
-                    maxWidth: "100%",
-                    transform: `scale(${zoom})`,
-                    transition: "transform .5s ease-in-out",
-                    transformOrigin: "left top",
-                  }}
-                />
-              ))}
-          </div>
+          />
         ))}
       </Grid>
     </Grid>
