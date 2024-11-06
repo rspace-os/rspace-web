@@ -202,7 +202,11 @@ const Preview = ({
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
         <Document file={url} onLoadSuccess={onDocumentLoadSuccess}>
           {[...take(incrementForever(), numPages)].map((index) => (
-            <Page key={`page_${index + 1}`} pageNumber={index + 1} />
+            <Page
+              key={`page_${index + 1}`}
+              pageNumber={index + 1}
+              scale={zoom}
+            />
           ))}
         </Document>
       </PreviewWrapper>
