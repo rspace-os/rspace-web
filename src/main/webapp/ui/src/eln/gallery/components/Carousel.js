@@ -31,6 +31,7 @@ import axios from "axios";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { styled } from "@mui/material/styles";
+import { COLOR } from "../common";
 
 /*
  * When a drag is in progress, this cursor style applied.
@@ -98,7 +99,7 @@ const PreviewWrapper = ({
       tabIndex={0}
       style={{
         borderRadius: "3px",
-        border: "2px solid #d0cad4",
+        border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
         position: "relative",
         height: "100%",
         overflow: "auto",
@@ -463,7 +464,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
           <ButtonGroup
             variant="outlined"
             sx={{
-              border: "2px solid #cfc9d2",
+              border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
               borderRadius: "8px",
             }}
           >
