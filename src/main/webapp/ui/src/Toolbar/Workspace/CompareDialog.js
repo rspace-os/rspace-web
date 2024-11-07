@@ -9,6 +9,7 @@ import axios from "axios";
 import useOauthToken from "../../common/useOauthToken";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import {
@@ -31,6 +32,7 @@ import * as Parsers from "../../util/parsers";
 import TickIcon from "@mui/icons-material/Done";
 import CrossIcon from "@mui/icons-material/Clear";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import Button from "@mui/material/Button";
 
 type Document = {
   id: number,
@@ -398,6 +400,11 @@ function CompareDialog(): Node {
           </Grid>
         </Grid>
       </DialogContent>
+      <DialogActions>
+        <Button onClick={() => {
+          setDocumentCount(0);
+        }}>Close</Button>
+      </DialogActions>
     </Dialog>
   );
 }
