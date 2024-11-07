@@ -227,15 +227,18 @@ function CompareDialog(): Node {
         );
         //$FlowExpectedError[incompatible-call] Given that none of the `data`s contain `errors` lets just assume they're all `Document`s
         setDocuments(docs);
-      } catch (e) {
-        console.error(e.response.data.message ?? e.message);
+      } catch (e: mixed) {
         setDocumentCount(0);
         setLoadedCount(0);
+        const message = Parsers.objectPath(["response", "data", "message"], e)
+          .orElseTry(() => Parsers.objectPath(["message"], e))
+          .flatMap(Parsers.isString)
+          .orElse("Unknown reason");
         addAlert(
           mkAlert({
             variant: "error",
             title: "Could not read all of the documents",
-            message: e.response.data.message ?? e.message,
+            message,
           })
         );
       }
