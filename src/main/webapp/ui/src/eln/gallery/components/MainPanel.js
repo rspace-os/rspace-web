@@ -1005,6 +1005,7 @@ function GalleryMainPanel({
   setSortOrder,
   setOrderBy,
 }: GalleryMainPanelArgs): Node {
+  const viewportDimensions = useViewportDimensions();
   const { uploadFiles } = useGalleryActions();
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
@@ -1109,6 +1110,14 @@ function GalleryMainPanel({
             sx={{
               marginTop: 0.75,
               minHeight: 0,
+              /*
+               * This prevents content from being hidden underneath the
+               * floating info panel. 136px was found by visual inspection.
+               */
+              maxHeight:
+                viewportDimensions.isViewportSmall && !selection.isEmpty
+                  ? "calc(100% - 136px)"
+                  : "100%",
             }}
             flexWrap="nowrap"
             flexGrow="1"
