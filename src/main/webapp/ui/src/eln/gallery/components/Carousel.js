@@ -30,6 +30,19 @@ import * as Parsers from "../../../util/parsers";
 import axios from "axios";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { styled } from "@mui/material/styles";
+
+/*
+ * When a drag is in progress, this cursor style applied.
+ * Note that is relies on an undocumented implementation detail of the Pdf
+ * renderer so may not be entirely stable. If this class no longer applied then
+ * a default pointer will be shown when the drag operation is in progress.
+ */
+const StyledDocument = styled(Document)(() => ({
+  "& .textLayer .endOfContent": {
+    cursor: "grabbing",
+  },
+}));
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -64,6 +77,14 @@ const PreviewWrapper = ({
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
   const primaryAction = usePrimaryAction();
+  const [scrollPos, setScrollPos] = React.useState<null | {|
+    scrollLeft: number,
+    scrollTop: number,
+  |}>(null);
+  const [cursorOffset, setCursorOffset] = React.useState<null | {|
+    x: number,
+    y: number,
+  |}>(null);
 
   function display() {
     if (!visible) return "none";
@@ -84,8 +105,39 @@ const PreviewWrapper = ({
         justifyContent: "center",
         alignItems: "center",
         display: display(),
+        // we override the Pdf rendering internals to change to "grabbing" when
+        // a drag is in operation
+        cursor: "grab",
       }}
       key={idToString(file.id)}
+      onMouseDown={(e) => {
+        const thisNode = e.target.closest("[role='button']");
+        setScrollPos({
+          scrollLeft: thisNode.scrollLeft,
+          scrollTop: thisNode.scrollTop,
+        });
+        setCursorOffset({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY });
+      }}
+      onMouseMove={(e) => {
+        if (!scrollPos || !cursorOffset) return;
+        const thisNode = e.target.closest("[role='button']");
+        const currentOffset = {
+          x: e.nativeEvent.clientX,
+          y: e.nativeEvent.clientY,
+        };
+        const moved = {
+          x: currentOffset.x - cursorOffset.x,
+          y: currentOffset.y - cursorOffset.y,
+        };
+        thisNode.scrollTo(
+          scrollPos.scrollLeft - moved.x,
+          scrollPos.scrollTop - moved.y
+        );
+      }}
+      onMouseUp={() => {
+        setCursorOffset(null);
+        setScrollPos(null);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           primaryAction(file).do((action) => {
@@ -285,7 +337,7 @@ const Preview = ({
   if (key === "pdf")
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
-        <Document file={url} onLoadSuccess={onDocumentLoadSuccess}>
+        <StyledDocument file={url} onLoadSuccess={onDocumentLoadSuccess}>
           {[...take(incrementForever(), numPages)].map((index) => (
             <Page
               key={`page_${index + 1}`}
@@ -293,7 +345,7 @@ const Preview = ({
               scale={zoom}
             />
           ))}
-        </Document>
+        </StyledDocument>
       </PreviewWrapper>
     );
   if (key === "aspose_message") {
