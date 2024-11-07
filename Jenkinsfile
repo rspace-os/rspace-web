@@ -372,7 +372,7 @@ pipeline {
                   -Djavax.xml.accessExternalDTD=all\
                   -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
                   -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME}\
-                  -Dmaven.test.failure.ignore=false   -Denvironment=drop-recreate-db  \
+                  -Dmaven.test.failure.ignore=false   -Denvironment=drop-recreate-liquibase-db  \
                   -DRS.devlogLevel=INFO  -DRS_FILE_BASE=${RS_FILE_BASE} \
                   -DenableTestCoverage  ${params.NIGHTLY_BUILD}"
             }
