@@ -20,13 +20,12 @@ import {
 } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import createAccentedTheme from "../../accentedTheme";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider, styled } from "@mui/material/styles";
 import MenuItem from "@mui/material/MenuItem";
 import { doNotAwait } from "../../util/Util";
 import { getByKey } from "../../util/optional";
 import Box from "@mui/material/Box";
 import UserDetails from "../../Inventory/components/UserDetails";
-import { styled } from "@mui/material/styles";
 import CircularProgress from "@mui/material/CircularProgress";
 import * as Parsers from "../../util/parsers";
 import TickIcon from "@mui/icons-material/Done";
