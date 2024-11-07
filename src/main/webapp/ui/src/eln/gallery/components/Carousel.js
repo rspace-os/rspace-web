@@ -184,16 +184,18 @@ const Preview = ({
       }))
     )
     .orElseTry(() => {
-      if (asposePdfUrl !== null) {
-        if (asposePdfUrl.tag === "loaded")
-          return Result.Ok({ key: "pdf", url: asposePdfUrl.url, message: "" });
-        if (asposePdfUrl.tag === "error")
-          return Result.Ok({
-            key: "aspose_message",
-            url: "",
-            message: "Failed to generate preview",
-          });
-      }
+      if (asposePdfUrl === null)
+        return Result.Error<{| key: string, url: string, message: string |}>([
+          new Error("Can't preview with aspose"),
+        ]);
+      if (asposePdfUrl.tag === "loaded")
+        return Result.Ok({ key: "pdf", url: asposePdfUrl.url, message: "" });
+      if (asposePdfUrl.tag === "error")
+        return Result.Ok({
+          key: "aspose_message",
+          url: "",
+          message: "Failed to generate preview",
+        });
       return Result.Ok({
         key: "aspose_message",
         url: "",
