@@ -1,0 +1,31 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+<!--    <changeSet id="2024-11-07a" context="run" author="matthias">
+        <comment>Correct a few onDelete constraints that should result in 'cascade', rather than 'no action' (RSPAC-1876)</comment>
+
+        <dropForeignKeyConstraint baseTableName="FieldForm" constraintName="FK_11o2xwhsjotg0b837vv4ericn"/>
+        <addForeignKeyConstraint
+          baseColumnNames="form_id" baseTableName="FieldForm"
+          constraintName="FK_11o2xwhsjotg0b837vv4ericn" deferrable="false"
+          initiallyDeferred="false" onUpdate="NO ACTION"
+          referencedColumnNames="id" referencedTableName="RSForm" />
+    </changeSet>-->
+
+    <changeSet id="2024-11-07b" context="run" author="matthias">
+        <dropNotNullConstraint columnDataType="boolean" columnName="showAsPickList"
+          tableName="FieldForm_AUD"/>
+        <dropNotNullConstraint columnDataType="boolean" columnName="sortAlphabetic"
+          tableName="FieldForm_AUD"/>
+    </changeSet>
+
+    <changeSet id="2024-11-07c" context="run" author="matthias">
+        <modifyDataType columnName="data" newDataType="clob" tableName="Field"/>
+        <modifyDataType columnName="data" newDataType="clob" tableName="Field_AUD"/>
+    </changeSet>
+
+
+</databaseChangeLog>
