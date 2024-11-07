@@ -192,9 +192,9 @@ const Preview = ({
         return Result.Ok({ key: "pdf", url: asposePdfUrl.url, message: "" });
       if (asposePdfUrl.tag === "error")
         return Result.Ok({
-          key: "aspose_message",
-          url: "",
-          message: "Failed to generate preview",
+          key: "image",
+          url: file.thumbnailUrl,
+          message: "",
         });
       return Result.Ok({
         key: "aspose_message",
