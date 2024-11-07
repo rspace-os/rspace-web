@@ -31,6 +31,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import * as Parsers from "../../util/parsers";
 import TickIcon from "@mui/icons-material/Done";
 import CrossIcon from "@mui/icons-material/Clear";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
 type Document = {
   id: number,
@@ -166,6 +167,7 @@ const Toolbar = ({
 };
 
 function CompareDialog(): Node {
+  const { addAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
   const [documents, setDocuments] = React.useState<$ReadOnlyArray<Document>>(
     []
@@ -203,22 +205,40 @@ function CompareDialog(): Node {
     ) {
       setDocumentCount(event.detail.ids.length);
       setLoadedCount(0);
-      const token = await getToken();
-      const docs = await Promise.all(
-        event.detail.ids.map(async (id) => {
-          const { data } = await axios.get<Document>(
-            `/api/v1/documents/${id}`,
-            {
+      try {
+        const token = await getToken();
+        const docs = await Promise.all(
+          event.detail.ids.map(async (id) => {
+            const { data } = await axios.get<
+              Document | { errors: $ReadOnlyArray<string>, ... }
+            >(`/api/v1/documents/${id}`, {
               headers: {
                 Authorization: "Bearer " + token,
               },
-            }
-          );
-          setLoadedCount((x) => x + 1);
-          return data;
-        })
-      );
-      setDocuments(docs);
+            });
+            Parsers.getValueWithKey("errors")(data)
+              .flatMap(Parsers.isArray)
+              .do((errors) => {
+                throw errors[0];
+              });
+            setLoadedCount((x) => x + 1);
+            return data;
+          })
+        );
+        //$FlowExpectedError[incompatible-call] Given that none of the `data`s contain `errors` lets just assume they're all `Document`s
+        setDocuments(docs);
+      } catch (e) {
+        console.error(e.response.data.message ?? e.message);
+        setDocumentCount(0);
+        setLoadedCount(0);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not read all of the documents",
+            message: e.response.data.message ?? e.message,
+          })
+        );
+      }
     }
     window.addEventListener("OPEN_COMPARE_DIALOG", handler);
     return () => {
@@ -272,7 +292,7 @@ function CompareDialog(): Node {
       flex: 1,
       sortable: false,
       // for CSVs
-      valueFormatter: (signed) => signed ? "true" : "false",
+      valueFormatter: (signed) => (signed ? "true" : "false"),
       renderCell: ({ value }: { value: boolean, ... }) =>
         value ? (
           <TickIcon color="success" aria-label="Signed" aria-hidden="false" />
