@@ -138,10 +138,26 @@ const ExportMenuItem = ({
 
 const Toolbar = ({
   rowSelectionModel,
+  setColumnsMenuAnchorEl,
 }: {|
   rowSelectionModel: $ReadOnlyArray<number>,
+  setColumnsMenuAnchorEl: (HTMLElement) => void,
 |}) => {
   const apiRef = useGridApiContext();
+
+  /**
+   * The columns menu can be opened by either tapping the "Columns" toolbar
+   * button or by tapping the "Manage columns" menu item in each column's menu,
+   * logic that is handled my MUI. We provide a custom `anchorEl` so that the
+   * menu is positioned beneath the "Columns" toolbar button to be consistent
+   * with the other toolbar menus, otherwise is appears far to the left. Rather
+   * than having to hook into the logic that triggers the opening of the
+   * columns menu in both places, we just set the `anchorEl` pre-emptively.
+   */
+  const columnMenuRef = React.useRef();
+  React.useEffect(() => {
+    if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
+  }, [setColumnsMenuAnchorEl]);
 
   const exportVisibleRows = () => {
     apiRef.current?.exportDataAsCsv({
@@ -152,7 +168,12 @@ const Toolbar = ({
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
       <Box flexGrow={1}></Box>
-      <GridToolbarColumnsButton variant="outlined" />
+      <GridToolbarColumnsButton
+        variant="outlined"
+        ref={(node) => {
+          if (node) columnMenuRef.current = node;
+        }}
+      />
       <GridToolbarExportContainer variant="outlined">
         <ExportMenuItem
           onClick={() => {
@@ -182,6 +203,8 @@ function CompareDialog(): Node {
   >([]);
   const [documentCount, setDocumentCount] = React.useState(0);
   const [loadedCount, setLoadedCount] = React.useState(0);
+  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
+    React.useState<?HTMLElement>(null);
 
   const fieldColumns: $ReadOnlyArray<[number, string]> = React.useMemo(() => {
     const cols = [];
@@ -390,10 +413,14 @@ function CompareDialog(): Node {
               slotProps={{
                 toolbar: {
                   rowSelectionModel,
+                  setColumnsMenuAnchorEl,
                 },
                 loadingOverlay: {
                   loadedCount,
                   documentCount,
+                },
+                panel: {
+                  anchorEl: columnsMenuAnchorEl,
                 },
               }}
             />
