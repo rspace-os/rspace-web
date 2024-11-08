@@ -223,7 +223,7 @@ public class GalleryController extends BaseController {
       @RequestParam("mediatype") String mediatype,
       @RequestParam("currentFolderId") long currentFolderId,
       @RequestParam(value = "foldersOnly", required = false, defaultValue = "false")
-          boolean foldersOnly,
+      boolean foldersOnly,
       PaginationCriteria<BaseRecord> pgCrit,
       GalleryFilterCriteria filterCriteria) {
     User user = userManager.getAuthenticatedUserInSession();
@@ -266,7 +266,7 @@ public class GalleryController extends BaseController {
                 RecordType.NORMAL_EXAMPLE
                 // removed for APiInbox
                 // RecordType.SYSTEM
-                ));
+            ));
 
     RecordTypeFilter recordTypeFilter = foldersOnly ? galleryMove : RecordTypeFilter.GALLERY_FILTER;
     ISearchResults<BaseRecord> records =
