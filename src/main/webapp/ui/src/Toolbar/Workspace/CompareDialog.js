@@ -34,6 +34,19 @@ import CrossIcon from "@mui/icons-material/Clear";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
 
+/**
+ * This module provides a  dialog allows the user to compare the contents of
+ * several ELN documents and download a CSV of the same. The table and
+ * resulting file also contain various bits of metadata that were easily
+ * extracted from the API, rather than necessarily what would be most useful
+ * due to constraints on backend developer capacity.
+ *
+ * It should be added to the DOM on page load and remains hidden until the
+ * OPEN_COMPARE_DIALOG event is dispatched on `window`. That event MUST contain
+ * a list of document ids in its `detail`. This code then goes and fetches each
+ * of these documents and displays a table.
+ */
+
 type Document = {
   id: number,
   name: string,
@@ -231,6 +244,14 @@ function CompareDialog(): Node {
       setLoadedCount(0);
       try {
         const token = await getToken();
+        /*
+         * Making one network call per document may not be the most performant
+         * approach but this work was only possible by not requiring any
+         * backend developer capacity. If we find that users are downloading
+         * the CSV of many documents and this is causing a performance
+         * bottleneck then we should look to parallelise this with a custom API
+         * endpoint.
+         */
         const docs = await Promise.all(
           event.detail.ids.map(async (id) => {
             const { data } = await axios.get<
@@ -436,6 +457,11 @@ function CompareDialog(): Node {
   );
 }
 
+/*
+ * This is just a temporary neutral colour that should be replaced with the
+ * workspace's accent colour once that part of the product has been fully
+ * migrated to react.
+ */
 const COLOR = {
   main: {
     hue: 197,
