@@ -253,9 +253,7 @@ public class GalleryController extends BaseController {
     int numberOfRecords = getNumberOfRecordsOnGalleryPage(isOnRoot);
     pgCrit.setResultsPerPage(numberOfRecords);
 
-    RecordTypeFilter galleryMove =
-        new RecordTypeFilter(
-            EnumSet.of(
+    RecordTypeFilter galleryMove = new RecordTypeFilter(EnumSet.of(
                 RecordType.FOLDER,
                 RecordType.ROOT_MEDIA,
                 RecordType.SHARED_GROUP_FOLDER_ROOT,
@@ -268,7 +266,9 @@ public class GalleryController extends BaseController {
                 // RecordType.SYSTEM
             ));
 
-    RecordTypeFilter recordTypeFilter = foldersOnly ? galleryMove : RecordTypeFilter.GALLERY_FILTER;
+
+    RecordTypeFilter recordTypeFilter =
+        foldersOnly ? galleryMove : RecordTypeFilter.GALLERY_FILTER;
     ISearchResults<BaseRecord> records =
         recordManager.getGalleryItems(
             galleryItemParent.getId(), pgCrit, filterCriteria, recordTypeFilter, user);
