@@ -2231,21 +2231,6 @@
     </profile>
 
     <profile>
-      <id>testLiquibase</id>
-      <activation>
-        <property>
-          <name>environment</name>
-          <value>liquibase</value>
-        </property>
-      </activation>
-      <properties>
-        <jdbc.url>jdbc:mysql://localhost:3306/testLiquibaseUpdate?useSSL=false</jdbc.url>
-        <!-- apply liquibase changes in liquibase database -->
-        <liquibase.context>liquibase-update-test,run</liquibase.context>
-      </properties>
-    </profile>
-
-    <profile>
       <id>generateDiff</id>
       <build>
         <plugins>
@@ -2395,14 +2380,15 @@
       </build>
     </profile>
 
-    <!-- makes a clean build of the application, deleting and recreating the
-         RSpace database from baseline sql -->
+    <!-- 'mysql-clean-liquibase' profile adds tasks that clear RSpace database (by deleting
+         and recreating it from baseline sql script), clear Hibernate/Lucene indices,
+         and clear archive/pdf folders -->
     <profile>
       <id>mysql-clean-liquibase</id>
       <activation>
         <property>
           <name>environment</name>
-          <value>drop-recreate-liquibase-db</value>
+          <value>drop-recreate-db</value>
         </property>
       </activation>
       <build>
@@ -2436,9 +2422,6 @@
             </configuration>
 
             <executions>
-              <!-- Why run 3 separate commands rather than use an SQL file?
-              This task runs *before* property placeholders are resolved in files (in process-resources phase); putting
-              '${jdbc.db.maven}' in an SQL file fails as it is not resolved to the actual database name -->
               <execution>
                 <id>drop-database</id>
                 <phase>initialize</phase>
@@ -2509,15 +2492,15 @@
 
     </profile>
 
-    <!-- makes a clean build of the application, deleting and recreating the
-      rspace database, Lucene search indices and runs tests that populate the
-      DB with data from src/test/resources/sampleData.xl -->
+    <!-- 'mysql-clean-hibernate' profile is adding tasks that delete and recreate 'rspace_hib'
+          database out of Hibernate mappings. This can be used to compare the database schema
+          that created out of JPA annotations to the schema created by liquibase updates -->
     <profile>
-      <id>mysql-clean</id>
+      <id>mysql-clean-hibernate</id>
       <activation>
         <property>
           <name>environment</name>
-          <value>drop-recreate-hib-db</value>
+          <value>drop-recreate-hibernate-db</value>
         </property>
       </activation>
       <build>
@@ -2557,7 +2540,7 @@
             <executions>
               <!-- Why run 2 separate commands rather than use an SQL file?
               This task runs *before* property placeholders are resolved in files (in process-resources phase); putting
-              '${jdbc.hibdb.maven}' in an SQL file fails as it is not resolved to the actual database name
+              '${jdbc.db.maven}' in an SQL file fails as it is not resolved to the actual database name
               -->
               <execution>
                 <id>drop-database</id>
@@ -2566,7 +2549,7 @@
                   <goal>execute</goal>
                 </goals>
                 <configuration>
-                  <sqlCommand> drop database if exists ${jdbc.hibdb.maven} </sqlCommand>
+                  <sqlCommand> drop database if exists ${jdbc.db.maven} </sqlCommand>
                   <onError>continue</onError>
                 </configuration>
               </execution>
@@ -2577,7 +2560,7 @@
                   <goal>execute</goal>
                 </goals>
                 <configuration>
-                  <sqlCommand> create database if not exists ${jdbc.hibdb.maven} collate 'utf8mb4_unicode_ci'</sqlCommand>
+                  <sqlCommand> create database if not exists ${jdbc.db.maven} collate 'utf8mb4_unicode_ci'</sqlCommand>
                   <onError>continue</onError>
                 </configuration>
               </execution>
@@ -2617,7 +2600,7 @@
               <dialect>org.hibernate.dialect.MySQL5InnoDBDialect</dialect>
               <username>${jdbc.username.maven}</username>
               <password>${jdbc.password.maven}</password>
-              <url>${jdbc.url.maven}/${jdbc.hibdb.maven}?useSSL=false</url>
+              <url>${jdbc.url.maven}/${jdbc.db.maven}?useSSL=false</url>
               <driverClassName>${jdbc.driverClassName.maven}</driverClassName>
             </configuration>
           </plugin>
@@ -2645,9 +2628,12 @@
         </plugins>
       </build>
       <properties>
+        <jdbc.db.maven>rspace_hib</jdbc.db.maven>
+        <!-- only dev-test changesets should be run on top of auto-generated schema -->
+        <liquibase.context>dev-test</liquibase.context>
         <context.path>/</context.path>
         <ssl.enabled>false</ssl.enabled>
-        <jdbc.url>jdbc:mysql://localhost:3306/rspace?useSSL=false</jdbc.url>
+        <jdbc.url>jdbc:mysql://localhost:3306/${jdbc.db.maven}?useSSL=false</jdbc.url>
       </properties>
     </profile>
 
@@ -3034,7 +3020,6 @@
     <jdbc.url.maven>jdbc:mysql://localhost:3306</jdbc.url.maven>
     <!-- this is the name of the test db to drop/recreate -->
     <jdbc.db.maven>rspace</jdbc.db.maven>
-    <jdbc.hibdb.maven>rspace_hib</jdbc.hibdb.maven>
 
     <hibernate.dialect>org.hibernate.dialect.MySQLDialect</hibernate.dialect>
     <!-- override these at runtime to show logging -->
