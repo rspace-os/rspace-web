@@ -223,7 +223,7 @@ public class GalleryController extends BaseController {
       @RequestParam("mediatype") String mediatype,
       @RequestParam("currentFolderId") long currentFolderId,
       @RequestParam(value = "foldersOnly", required = false, defaultValue = "false")
-      boolean foldersOnly,
+          boolean foldersOnly,
       PaginationCriteria<BaseRecord> pgCrit,
       GalleryFilterCriteria filterCriteria) {
     User user = userManager.getAuthenticatedUserInSession();
@@ -254,17 +254,17 @@ public class GalleryController extends BaseController {
     pgCrit.setResultsPerPage(numberOfRecords);
 
     RecordTypeFilter galleryMove = new RecordTypeFilter(EnumSet.of(
-                RecordType.FOLDER,
-                RecordType.ROOT_MEDIA,
-                RecordType.SHARED_GROUP_FOLDER_ROOT,
-                RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT,
-                RecordType.API_INBOX),
-            // excluded
-            EnumSet.of(
-                RecordType.NORMAL_EXAMPLE
-                // removed for APiInbox
-                // RecordType.SYSTEM
-            ));
+        RecordType.FOLDER,
+            RecordType.ROOT_MEDIA,
+            RecordType.SHARED_GROUP_FOLDER_ROOT,
+            RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT,
+            RecordType.API_INBOX),
+        // excluded
+        EnumSet.of(
+            RecordType.NORMAL_EXAMPLE
+            // removed for APiInbox
+            //RecordType.SYSTEM
+        ));
 
 
     RecordTypeFilter recordTypeFilter =
