@@ -33,6 +33,8 @@ import TickIcon from "@mui/icons-material/Done";
 import CrossIcon from "@mui/icons-material/Clear";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
+import Analytics from "../../components/Analytics";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 /**
  * This module provides a  dialog allows the user to compare the contents of
@@ -156,6 +158,7 @@ const Toolbar = ({
   rowSelectionModel: $ReadOnlyArray<number>,
   setColumnsMenuAnchorEl: (HTMLElement) => void,
 |}) => {
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const apiRef = useGridApiContext();
 
   /**
@@ -191,6 +194,7 @@ const Toolbar = ({
         <ExportMenuItem
           onClick={() => {
             exportVisibleRows();
+            trackEvent("CSV comparing ELN documents downloaded");
             return Promise.resolve();
           }}
         >
@@ -202,6 +206,7 @@ const Toolbar = ({
 };
 
 function CompareDialog(): Node {
+  const analytics = React.useContext(AnalyticsContext);
   const { addAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
   const [documents, setDocuments] = React.useState<$ReadOnlyArray<Document>>(
@@ -240,6 +245,9 @@ function CompareDialog(): Node {
     async function handler(
       event: Event & { detail: { ids: $ReadOnlyArray<string> } }
     ) {
+      analytics.trackEvent("Dialog comparing ELN documents opened", {
+        numberOfDocuments: event.detail.ids.length,
+      });
       setDocumentCount(event.detail.ids.length);
       setLoadedCount(0);
       try {
@@ -493,15 +501,17 @@ const COLOR = {
 export default function Wrapper(): Node {
   return (
     <ErrorBoundary topOfViewport>
-      <Portal>
-        <Alerts>
-          <DialogBoundary>
-            <ThemeProvider theme={createAccentedTheme(COLOR)}>
-              <CompareDialog />
-            </ThemeProvider>
-          </DialogBoundary>
-        </Alerts>
-      </Portal>
+      <Analytics>
+        <Portal>
+          <Alerts>
+            <DialogBoundary>
+              <ThemeProvider theme={createAccentedTheme(COLOR)}>
+                <CompareDialog />
+              </ThemeProvider>
+            </DialogBoundary>
+          </Alerts>
+        </Portal>
+      </Analytics>
     </ErrorBoundary>
   );
 }
