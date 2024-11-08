@@ -1165,7 +1165,7 @@ function GalleryMainPanel({
                   >
                     <NewMenuItem
                       title="Grid"
-                      subheader="Browse by thumbnail previews"
+                      subheader="Browse by thumbnail previews."
                       backgroundColor={COLOR.background}
                       foregroundColor={COLOR.contrastText}
                       avatar={<GridIcon />}
@@ -1177,7 +1177,7 @@ function GalleryMainPanel({
                     />
                     <NewMenuItem
                       title="Tree"
-                      subheader="View and manage folder hierarchy"
+                      subheader="View and manage folder hierarchy."
                       backgroundColor={COLOR.background}
                       foregroundColor={COLOR.contrastText}
                       avatar={<TreeIcon />}
