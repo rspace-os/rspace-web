@@ -32,6 +32,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { styled } from "@mui/material/styles";
 import { COLOR } from "../common";
+import ResetZoomIcon from "./ResetZoomIcon";
 
 /*
  * When a drag is in progress, this cursor style applied.
@@ -476,6 +477,24 @@ export default function Carousel({ listing }: CarouselArgs): Node {
               size="small"
             >
               <ZoomInIcon />
+            </IconButton>
+            <Divider
+              orientation="vertical"
+              sx={{
+                height: "26px",
+                marginTop: "4px",
+                borderRightWidth: "1px",
+              }}
+            />
+            <IconButton
+              onClick={() => {
+                setZoom(1);
+              }}
+              disabled={zoom === 1}
+              aria-label="reset zoom"
+              size="small"
+            >
+              <ResetZoomIcon />
             </IconButton>
             <Divider
               orientation="vertical"
