@@ -33,6 +33,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { styled } from "@mui/material/styles";
 import { COLOR } from "../common";
 import ResetZoomIcon from "./ResetZoomIcon";
+import Typography from "@mui/material/Typography";
 
 /*
  * When a drag is in progress, this cursor style applied.
@@ -366,6 +367,7 @@ type CarouselArgs = {
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
+        totalHits: number,
         loadMore: Optional<() => Promise<void>>,
       |},
 };
@@ -460,6 +462,16 @@ export default function Carousel({ listing }: CarouselArgs): Node {
             Previous
           </Button>
         </Grid>
+        <Typography
+          variant="body2"
+          sx={{
+            alignSelf: "center",
+            pl: 1,
+            fontWeight: 500,
+          }}
+        >
+          {visibleIndex + 1} / {listing.totalHits}
+        </Typography>
         <Grid item flexGrow={1}></Grid>
         <Grid item>
           <ButtonGroup

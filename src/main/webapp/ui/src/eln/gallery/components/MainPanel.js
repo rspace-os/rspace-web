@@ -335,6 +335,7 @@ const GridView = observer(
       | {|
           tag: "list",
           list: $ReadOnlyArray<GalleryFile>,
+          totalHits: number,
           loadMore: Optional<() => Promise<void>>,
         |},
   |}) => {
@@ -982,6 +983,7 @@ type GalleryMainPanelArgs = {|
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
+        totalHits: number,
         loadMore: Optional<() => Promise<void>>,
       |}
   >,

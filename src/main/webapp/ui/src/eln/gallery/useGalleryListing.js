@@ -260,6 +260,7 @@ export function useGalleryListing({
     | {| tag: "empty", reason: string |}
     | {|
         tag: "list",
+        totalHits: number,
         list: $ReadOnlyArray<GalleryFile>,
         loadMore: Optional<() => Promise<void>>,
       |}
@@ -276,6 +277,7 @@ export function useGalleryListing({
   >([]);
   const [page, setPage] = React.useState<number>(0);
   const [totalPages, setTotalPages] = React.useState<number>(0);
+  const [totalHits, setTotalHits] = React.useState<number>(0);
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
     defaultPath ?? []
   );
@@ -558,6 +560,12 @@ export function useGalleryListing({
           .orElse(1)
       );
 
+      setTotalHits(
+        Parsers.objectPath(["data", "items", "totalHits"], data)
+          .flatMap(Parsers.isNumber)
+          .orElse(1)
+      );
+
       setGalleryListing(parseGalleryFiles(data));
     } catch (e) {
       console.error(e);
@@ -626,6 +634,7 @@ export function useGalleryListing({
           ? {
               tag: "list",
               list: galleryListing,
+              totalHits,
               loadMore:
                 page + 1 < totalPages
                   ? Optional.present(loadMore)
