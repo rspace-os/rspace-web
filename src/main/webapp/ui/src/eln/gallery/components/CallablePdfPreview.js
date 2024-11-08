@@ -15,6 +15,7 @@ import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
+import ResetZoomIcon from "./ResetZoomIcon";
 
 /**
  * Much like how `window.open` allows any JS code on the page to trigger the
@@ -118,6 +119,24 @@ export function CallablePdfPreview({ children }: {| children: Node |}): Node {
                 size="small"
               >
                 <ZoomInIcon />
+              </IconButton>
+              <Divider
+                orientation="vertical"
+                sx={{
+                  height: "26px",
+                  marginTop: "4px",
+                  borderRightWidth: "1px",
+                }}
+              />
+              <IconButton
+                onClick={() => {
+                  setScale(1);
+                }}
+                disabled={scale === 1}
+                aria-label="reset zoom"
+                size="small"
+              >
+                <ResetZoomIcon />
               </IconButton>
               <Divider
                 orientation="vertical"
