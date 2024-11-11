@@ -9,7 +9,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Button from "@mui/material/Button";
-import { importMeta } from "../../../util/Util";
+import { importMeta } from "../../../util/importMeta";
 
 /**
  * Much like how `window.open` allows any JS code on the page to trigger the

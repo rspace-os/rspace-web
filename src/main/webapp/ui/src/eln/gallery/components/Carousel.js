@@ -34,7 +34,7 @@ import { styled } from "@mui/material/styles";
 import { COLOR } from "../common";
 import ResetZoomIcon from "./ResetZoomIcon";
 import Typography from "@mui/material/Typography";
-import { importMeta } from "../../../util/Util";
+import { importMeta } from "../../../util/importMeta";
 
 /*
  * When a drag is in progress, this cursor style applied.

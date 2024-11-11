@@ -25,11 +25,6 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-jest.mock("../../../../util/Util", () => ({
-  importMeta: () => ({
-    url: "http://example.com",
-  }),
-}));
 jest.mock("react-pdf", () => ({
   Document: () => null,
   Page: () => {},

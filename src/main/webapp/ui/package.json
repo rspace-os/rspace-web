@@ -129,6 +129,9 @@
       "react-photoswipe-gallery": "<rootDir>/src/test-stubs/PhotoswipeStub.js",
       "^__mocks__/(.*)$": "<rootDir>/__mocks__/$1"
     },
+    "setupFiles": [
+      "./__mocks__/setupFiles/meta_import.js"
+    ],
     "testMatch": [
       "**/?*.test.js"
     ],
