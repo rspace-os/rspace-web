@@ -83,6 +83,9 @@ module.exports = {
     alias: {
       Styles: path.resolve(__dirname, "src/util/styles"),
     },
+    fallback: {
+      url: require.resolve("url/"),
+    },
   },
   module: {
     rules: [
