@@ -326,6 +326,7 @@ const Preview = ({
     return (
       <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
         <img
+          alt={`Preview of ${file.name}`}
           src={url}
           style={{
             maxHeight: "100%",
