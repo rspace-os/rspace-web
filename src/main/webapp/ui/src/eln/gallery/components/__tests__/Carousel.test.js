@@ -160,4 +160,38 @@ describe("Carousel", () => {
       `/Streamfile/${page2.data.items.lastResult.id}`
     );
   });
+
+  test("Moving to a different file resets the zoom level", async () => {
+    function Wrapper() {
+      const { galleryListing } = useGalleryListing({
+        section: "Images",
+        searchTerm: "",
+        sortOrder: "DESC",
+        orderBy: "modificationDate",
+      });
+
+      return FetchingData.getSuccessValue(galleryListing)
+        .map((listing) => {
+          if (listing.tag === "empty") return null;
+          return <Carousel listing={listing} key={null} />;
+        })
+        .orElse(null);
+    }
+    const user = userEvent.setup();
+
+    mockAxios.onGet("/collaboraOnline/supportedExts").reply(200, { data: {} });
+    mockAxios.onGet("/officeOnline/supportedExts").reply(200, { data: {} });
+    mockAxios.onGet("/gallery/getUploadedFiles").reply(200, page1);
+    render(<Wrapper />);
+
+    const resetZoomButton = await screen.findByRole("button", {
+      name: /reset zoom/i,
+    });
+
+    expect(resetZoomButton).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: /zoom in/i }));
+    expect(resetZoomButton).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: /next/i }));
+    expect(resetZoomButton).toBeDisabled();
+  });
 });
