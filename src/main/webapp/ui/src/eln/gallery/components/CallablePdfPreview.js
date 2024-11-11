@@ -9,6 +9,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Button from "@mui/material/Button";
+import { importMeta } from "../../../util/Util";
 
 /**
  * Much like how `window.open` allows any JS code on the page to trigger the
@@ -24,7 +25,7 @@ import Button from "@mui/material/Button";
  */
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
+  importMeta().url
 ).toString();
 
 const PdfPreviewContext = React.createContext((_link: string) => {});

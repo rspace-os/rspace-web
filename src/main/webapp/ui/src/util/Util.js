@@ -279,3 +279,10 @@ export const mapNullable = <A, B>(f: (A) => B, a: ?A): ?B => {
 };
 
 export const modulo = (a: number, b: number): number => ((a % b) + b) % b;
+
+/*
+ * This is a wrapper around getting `import.meta`, that can be mocked in jest
+ * scripts. For more information on `import.meta`, see mdn
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta
+ */
+export const importMeta = (): Import$Meta => import.meta;
