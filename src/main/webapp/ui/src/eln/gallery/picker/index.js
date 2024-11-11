@@ -24,6 +24,7 @@ import { CallableAsposePreview } from "../components/CallableAsposePreview";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
 import RsSet from "../../../util/set";
+import { DisableDragAndDropByDefault } from "../../../components/useFileImportDragAndDrop";
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   zIndex: 1100, // less than the SwipeableDrawer so that mobile info panel is shown
@@ -224,12 +225,14 @@ export default function Wrapper({
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
       <GallerySelection onlyAllowSingleSelection={onlyAllowSingleSelection}>
-        <Picker
-          open={open}
-          onClose={onClose}
-          onSubmit={onSubmit}
-          validateSelection={validateSelection}
-        />
+        <DisableDragAndDropByDefault>
+          <Picker
+            open={open}
+            onClose={onClose}
+            onSubmit={onSubmit}
+            validateSelection={validateSelection}
+          />
+        </DisableDragAndDropByDefault>
       </GallerySelection>
     </ThemeProvider>
   );
