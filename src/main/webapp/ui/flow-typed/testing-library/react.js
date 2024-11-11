@@ -5,6 +5,7 @@ declare module "@testing-library/react" {
 
   declare export type Element = {|
     checked: boolean,
+    disabled: boolean,
     value: string,
     textContent: string,
     className: string,

@@ -13,6 +13,7 @@ import { useGalleryListing } from "../../useGalleryListing";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import page1 from "../../__tests__/getUploadedFiles_1.json";
+import page2 from "../../__tests__/getUploadedFiles_2.json";
 import {
   useGallerySelection,
   GallerySelection,
@@ -112,5 +113,51 @@ describe("Carousel", () => {
     await waitFor(() => {
       expect(screen.getByRole("img")).toHaveAttribute("src", "/Streamfile/444");
     });
+  });
+
+  test("Subsequent pages are loaded automatically as the user progresses through the carousel", async () => {
+    function Wrapper() {
+      const { galleryListing } = useGalleryListing({
+        section: "Images",
+        searchTerm: "",
+        sortOrder: "DESC",
+        orderBy: "modificationDate",
+      });
+
+      return FetchingData.getSuccessValue(galleryListing)
+        .map((listing) => {
+          if (listing.tag === "empty") return null;
+          return <Carousel listing={listing} key={null} />;
+        })
+        .orElse(null);
+    }
+    const user = userEvent.setup();
+
+    mockAxios.onGet("/collaboraOnline/supportedExts").reply(200, { data: {} });
+    mockAxios.onGet("/officeOnline/supportedExts").reply(200, { data: {} });
+    mockAxios
+      .onGet("/gallery/getUploadedFiles", {
+        params: {
+          asymmetricMatch: (params) => params.get("pageNumber") === "0",
+        },
+      })
+      .reply(200, page1)
+      .onGet("/gallery/getUploadedFiles", {
+        params: {
+          asymmetricMatch: (params) => params.get("pageNumber") === "1",
+        },
+      })
+      .reply(200, page2);
+    render(<Wrapper />);
+
+    const nextButton = await screen.findByRole("button", { name: /next/i });
+    while (!nextButton.disabled) {
+      await user.click(nextButton);
+    }
+
+    expect(screen.getByRole("img")).toHaveAttribute(
+      "src",
+      `/Streamfile/${page2.data.items.lastResult.id}`
+    );
   });
 });
