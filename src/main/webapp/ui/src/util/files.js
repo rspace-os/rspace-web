@@ -1,4 +1,4 @@
-//@flow
+//@flow strict
 
 /*
  * General purpose functions for working with files

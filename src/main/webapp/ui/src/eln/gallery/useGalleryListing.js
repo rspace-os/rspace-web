@@ -1,4 +1,4 @@
-//@flow
+//@flow strict
 
 import React from "react";
 import axios from "axios";
@@ -237,7 +237,7 @@ function generateIconSrc(
     return `/gallery/getChemThumbnail/${id}/${Math.floor(
       modificationDate.getTime() / 1000
     )}`;
-  if (!extension) return "/images/icons/unknownDocument.png";
+  if (extension === null) return "/images/icons/unknownDocument.png";
   return getIconPathForExtension(extension);
 }
 
@@ -309,7 +309,7 @@ export function useGalleryListing({
     thumbnailId,
     size,
     version,
-  }: {
+  }: {|
     id: number,
     globalId: string,
     name: string,
@@ -322,7 +322,7 @@ export function useGalleryListing({
     thumbnailId: number | null,
     size: number,
     version: number,
-  }): GalleryFile {
+  |}): GalleryFile {
     const isFolder = /Folder/.test(type);
     const isSystemFolder = /System Folder/.test(type);
     const ret: GalleryFile = observable({
@@ -539,7 +539,7 @@ export function useGalleryListing({
           pageNumber: "0",
           sortOrder,
           orderBy,
-          foldersOnly: foldersOnly ? "true" : "false",
+          foldersOnly: foldersOnly !== null || !foldersOnly ? "true" : "false",
         }),
       });
 

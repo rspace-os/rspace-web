@@ -1,4 +1,4 @@
-//@flow
+//@flow strict
 
 import React, { type Node, type Context } from "react";
 import { type GalleryFile } from "./useGalleryListing";
