@@ -177,12 +177,7 @@ const NameFieldForLargeViewports = styled(
   observer(
     ({ file, className }: {| file: GalleryFile, className: string |}) => {
       const { rename } = useGalleryActions();
-
       const [name, setName] = React.useState(file.name);
-      React.useEffect(() => {
-        setName(file.name);
-      }, [file.name]);
-
       const textField = React.useRef(null);
 
       return (
@@ -340,9 +335,6 @@ const DescriptionField = styled(
       const [description, setDescription] = React.useState<string>(
         getDescValue(file)
       );
-      React.useEffect(() => {
-        setDescription(getDescValue(file));
-      }, [file]);
 
       const prefersMoreContrast = window.matchMedia(
         "(prefers-contrast: more)"

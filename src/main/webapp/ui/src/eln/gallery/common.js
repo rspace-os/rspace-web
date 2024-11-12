@@ -1,4 +1,4 @@
-//@flow
+//@flow strict
 
 import { COLORS as baseThemeColors } from "../../theme";
 import Result from "../../util/result";

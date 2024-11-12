@@ -1,6 +1,6 @@
 //@flow
 
-import React from "react";
+import React, { type Context } from "react";
 import axios from "axios";
 import * as Parsers from "../../util/parsers";
 
@@ -32,12 +32,21 @@ export default function useOfficeOnline(): {|
   const [supportedExts, setSupportedExts] = React.useState<Set<string>>(
     new Set()
   );
+  const context = React.useContext(OfficeOnlineContext);
 
   React.useEffect(() => {
+    if (context.supportedExts !== null) {
+      setSupportedExts(context.supportedExts);
+      return;
+    }
     void axios.get<mixed>("/officeOnline/supportedExts").then(({ data }) => {
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
-        .do((obj) => setSupportedExts(new Set(Object.keys(obj))));
+        .do((obj) => {
+          const newSupportedExts: Set<string> = new Set(Object.keys(obj));
+          setSupportedExts(newSupportedExts);
+          context.supportedExts = newSupportedExts;
+        });
     });
     // we should probably store the result in session storage
     // as it doesn't need to be loaded everytime this component is mounted
@@ -45,3 +54,7 @@ export default function useOfficeOnline(): {|
 
   return { supportedExts };
 }
+
+export const OfficeOnlineContext: Context<{|
+  supportedExts: Set<string> | null,
+|}> = React.createContext({ supportedExts: null });

@@ -77,6 +77,8 @@ import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { Optional } from "../../../util/optional";
 import LoadMoreButton from "./LoadMoreButton";
+import Carousel from "./Carousel";
+import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -333,6 +335,7 @@ const GridView = observer(
       | {|
           tag: "list",
           list: $ReadOnlyArray<GalleryFile>,
+          totalHits: number,
           loadMore: Optional<() => Promise<void>>,
         |},
   |}) => {
@@ -980,6 +983,7 @@ type GalleryMainPanelArgs = {|
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
+        totalHits: number,
         loadMore: Optional<() => Promise<void>>,
       |}
   >,
@@ -1003,6 +1007,7 @@ function GalleryMainPanel({
   setSortOrder,
   setOrderBy,
 }: GalleryMainPanelArgs): Node {
+  const viewportDimensions = useViewportDimensions();
   const { uploadFiles } = useGalleryActions();
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
@@ -1104,10 +1109,20 @@ function GalleryMainPanel({
             item
             container
             direction="row"
-            sx={{ marginTop: 0.75 }}
+            sx={{
+              marginTop: 0.75,
+              minHeight: 0,
+              /*
+               * This prevents content from being hidden underneath the
+               * floating info panel. 136px was found by visual inspection.
+               */
+              maxHeight:
+                viewportDimensions.isViewportSmall && !selection.isEmpty
+                  ? "calc(100% - 136px)"
+                  : "100%",
+            }}
             flexWrap="nowrap"
             flexGrow="1"
-            height="calc(100% - 56px)"
           >
             <Grid
               item
@@ -1150,7 +1165,7 @@ function GalleryMainPanel({
                   >
                     <NewMenuItem
                       title="Grid"
-                      subheader="Browse by thumbnail previews"
+                      subheader="Browse by thumbnail previews."
                       backgroundColor={COLOR.background}
                       foregroundColor={COLOR.contrastText}
                       avatar={<GridIcon />}
@@ -1162,7 +1177,7 @@ function GalleryMainPanel({
                     />
                     <NewMenuItem
                       title="Tree"
-                      subheader="View and manage folder hierarchy"
+                      subheader="View and manage folder hierarchy."
                       backgroundColor={COLOR.background}
                       foregroundColor={COLOR.contrastText}
                       avatar={<TreeIcon />}
@@ -1170,6 +1185,22 @@ function GalleryMainPanel({
                         setViewMode("tree");
                         setViewMenuAnchorEl(null);
                         selection.clear();
+                      }}
+                    />
+                    <NewMenuItem
+                      title="Carousel"
+                      subheader="Flick through all files to find one."
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={<ViewCarouselIcon />}
+                      onClick={() => {
+                        setViewMode("carousel");
+                        setViewMenuAnchorEl(null);
+                        /*
+                         * We don't clear the selection because we want
+                         * carousel view to default to the selected file,
+                         * if there is one
+                         */
                       }}
                     />
                   </StyledMenu>
@@ -1310,6 +1341,12 @@ function GalleryMainPanel({
                     error: (error) => <>{error}</>,
                     success: (listing) => <GridView listing={listing} />,
                   })}
+                {viewMode === "carousel" &&
+                  FetchingData.match(galleryListing, {
+                    loading: () => <></>,
+                    error: (error) => <>{error}</>,
+                    success: (listing) => <Carousel listing={listing} />,
+                  })}
               </Grid>
             </Grid>
             <Grid item sx={{ mx: 1.5, display: { xs: "none", md: "block" } }}>
@@ -1327,12 +1364,34 @@ function GalleryMainPanel({
                 mt: 0.75,
               }}
             >
-              <InfoPanelForLargeViewports />
+              <InfoPanelForLargeViewports
+                /*
+                 * When the selection changes we want to unmount the current
+                 * info panel and mount a new one, thereby resetting any
+                 * modified state. If we didn't have this key and simply
+                 * re-rendered then if there was and still is one file selected
+                 * then the new name would not match the state held by the name
+                 * field so the component would think that it is in a modified
+                 * state and should open the Save and Cancel buttons. Same
+                 * applies to the Description field.
+                 */
+                key={selection
+                  .asSet()
+                  .reduce((acc, { id }) => `${acc},${idToString(id)}`, "")}
+              />
             </Grid>
             {selection
               .asSet()
               .only.map((file) => (
-                <InfoPanelForSmallViewports key={null} file={file} />
+                /*
+                 * Same applies here, in that we want to unmount and mount a
+                 * new info panel when the selection changes to reset any
+                 * modified state.
+                 */
+                <InfoPanelForSmallViewports
+                  key={idToString(file.id)}
+                  file={file}
+                />
               ))
               .orElse(null)}
           </Grid>

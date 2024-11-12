@@ -352,6 +352,7 @@ type TreeViewArgs = {|
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
+        totalHits: number,
         loadMore: Optional<() => Promise<void>>,
       |},
   path: $ReadOnlyArray<GalleryFile>,

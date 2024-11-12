@@ -1,4 +1,4 @@
-//@flow
+//@flow strict
 
 import React from "react";
 import axios from "axios";
@@ -237,7 +237,7 @@ function generateIconSrc(
     return `/gallery/getChemThumbnail/${id}/${Math.floor(
       modificationDate.getTime() / 1000
     )}`;
-  if (!extension) return "/images/icons/unknownDocument.png";
+  if (extension === null) return "/images/icons/unknownDocument.png";
   return getIconPathForExtension(extension);
 }
 
@@ -260,6 +260,7 @@ export function useGalleryListing({
     | {| tag: "empty", reason: string |}
     | {|
         tag: "list",
+        totalHits: number,
         list: $ReadOnlyArray<GalleryFile>,
         loadMore: Optional<() => Promise<void>>,
       |}
@@ -276,6 +277,7 @@ export function useGalleryListing({
   >([]);
   const [page, setPage] = React.useState<number>(0);
   const [totalPages, setTotalPages] = React.useState<number>(0);
+  const [totalHits, setTotalHits] = React.useState<number>(0);
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
     defaultPath ?? []
   );
@@ -307,7 +309,7 @@ export function useGalleryListing({
     thumbnailId,
     size,
     version,
-  }: {
+  }: {|
     id: number,
     globalId: string,
     name: string,
@@ -320,7 +322,7 @@ export function useGalleryListing({
     thumbnailId: number | null,
     size: number,
     version: number,
-  }): GalleryFile {
+  |}): GalleryFile {
     const isFolder = /Folder/.test(type);
     const isSystemFolder = /System Folder/.test(type);
     const ret: GalleryFile = observable({
@@ -537,7 +539,8 @@ export function useGalleryListing({
           pageNumber: "0",
           sortOrder,
           orderBy,
-          foldersOnly: foldersOnly ? "true" : "false",
+          foldersOnly:
+            foldersOnly !== null && Boolean(foldersOnly) ? "true" : "false",
         }),
       });
 
@@ -554,6 +557,12 @@ export function useGalleryListing({
 
       setTotalPages(
         Parsers.objectPath(["data", "items", "totalPages"], data)
+          .flatMap(Parsers.isNumber)
+          .orElse(1)
+      );
+
+      setTotalHits(
+        Parsers.objectPath(["data", "items", "totalHits"], data)
           .flatMap(Parsers.isNumber)
           .orElse(1)
       );
@@ -626,6 +635,7 @@ export function useGalleryListing({
           ? {
               tag: "list",
               list: galleryListing,
+              totalHits,
               loadMore:
                 page + 1 < totalPages
                   ? Optional.present(loadMore)
