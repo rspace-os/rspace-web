@@ -13,6 +13,8 @@ import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
+import InvApiService from "../../common/InvApiService";
+import { doNotAwait } from "../../util/Util";
 
 export const FIELDMARK_COLOR = {
   main: {
@@ -47,10 +49,30 @@ type FieldmarkImportDialogArgs = {|
   onClose: () => void,
 |};
 
+type Notebook = { ... };
+
 export default function FieldmarkImportDialog({
   open,
   onClose,
 }: FieldmarkImportDialogArgs): Node {
+  const [notebooks, setNotebooks] =
+    React.useState<null | $ReadOnlyArray<Notebook>>(null);
+
+  React.useEffect(
+    doNotAwait(async () => {
+      try {
+        const { data } = await InvApiService.get<
+          mixed,
+          $ReadOnlyArray<Notebook>
+        >("/fieldmark/notebooks");
+        setNotebooks(data);
+      } catch (e) {
+        console.error(e);
+      }
+    }),
+    []
+  );
+
   return (
     <ThemeProvider theme={createAccentedTheme(FIELDMARK_COLOR)}>
       <Dialog open={open} onClose={onClose}>
