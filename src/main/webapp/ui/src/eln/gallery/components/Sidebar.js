@@ -104,7 +104,7 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
         transform: drawerOpen ? "unset" : "translateX(20px)",
       }}
     >
-      New
+      Create
     </div>
   </Button>
 ))(() => ({
