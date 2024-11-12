@@ -110,7 +110,7 @@ export default function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
             />
           }
-          subheader="For recording experimental materials."
+          subheader="Record experimental materials."
           backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
@@ -135,7 +135,7 @@ export default function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
             />
           }
-          subheader="For organising samples."
+          subheader="Organise samples and containers."
           backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
@@ -162,7 +162,7 @@ export default function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
             />
           }
-          subheader="For easily creating new samples."
+          subheader="Reuse sample structures."
           backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
