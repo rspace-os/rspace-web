@@ -100,7 +100,7 @@ export default function CreateNew({ onCreate }: CreateNewArgs): Node {
         }}
       >
         <NewMenuItem
-          title="Sample"
+          title="New Sample"
           avatar={
             <RecordTypeIcon
               record={{
@@ -125,7 +125,7 @@ export default function CreateNew({ onCreate }: CreateNewArgs): Node {
           }}
         />
         <NewMenuItem
-          title="Container"
+          title="New Container"
           avatar={
             <RecordTypeIcon
               record={{
@@ -150,7 +150,7 @@ export default function CreateNew({ onCreate }: CreateNewArgs): Node {
           }}
         />
         <NewMenuItem
-          title="Template"
+          title="New Template"
           avatar={
             <RecordTypeIcon
               record={{
