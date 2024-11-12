@@ -10,7 +10,6 @@ import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CreateNew from "../CreateNew";
-import ImportMenu from "../ImportMenu";
 import Drawer from "@mui/material/Drawer";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import GetAppIcon from "@mui/icons-material/GetApp";
@@ -586,7 +585,6 @@ function Sidebar(): Node {
           <ThemeProvider theme={createAccentedTheme(COLOR)}>
             <CreateNew onClick={afterClick} />
           </ThemeProvider>
-          <ImportMenu onClick={afterClick} />
         </List>
         <List
           component="nav"
