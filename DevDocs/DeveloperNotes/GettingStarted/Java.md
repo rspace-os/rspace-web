@@ -79,7 +79,7 @@ Launch in jetty:
 ```bash
 mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
 -Dspring.profiles.active=run \
--DgenerateReactDist -Dliquibase.context=dev-test \
+-DgenerateReactDist \
 -Dlog4j2.configurationFile=log4j2-dev.xml
 ```
 

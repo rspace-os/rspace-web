@@ -197,13 +197,10 @@ When starting RSpace for the first time use the following command:
 
 ```bash
 mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
--Dspring.profiles.active=run -Dliquibase.context=dev-test \
--DgenerateReactDist -Dlog4j2.configurationFile=log4j2-dev.xml
+-Dspring.profiles.active=run -DgenerateReactDist \
+-Dlog4j2.configurationFile=log4j2-dev.xml
 ```
-This command clears and sets up the database, so it takes a few minutes
-to run. This command also applies liquibase changes that are configured to
-run with the 'dev-test' profile (liquibase changes that are only configured
-to run with the 'run' profile will only run with a 'prod' launch config)
+This command clears and sets up the database, so it takes a bit longer to run. 
 
 **NOTE:** dont skip the tests compilation when cleaning the DB this way else existing data will not be deleted.
 - you can skip test compilation phase by adding -Dmaven.test.skip=true
@@ -312,7 +309,7 @@ separate standalone app.
 
 ```
 mvn clean jetty:run -Denvironment=keepdbintact \
--Dliquibase.context=dev-test -Dspring.profiles.active=prod \
+-Dspring.profiles.active=prod \
 -DgenerateReactDist -Dlog4j2.configurationFile=log4j2-dev.xml \
 -Daspose.license=/full/path/to/aspose-documentconversion/Aspose-Total-Java.lic \
 -Daspose.logfile=/full/path/to/any/file/logfile.txt -DRS.logLevel=INFO

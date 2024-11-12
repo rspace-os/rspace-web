@@ -13,12 +13,15 @@ This document is written in Markdown format.
   This is to overcome variations in collation between different OS/MariaDB/MySQL/ countries.
 - Does it need an accompanying _AUD table to record revision history?   
 - If it has FK references to any BaseRecord or User/Group table, we need to update UserDeletionManagerImpl to support the 'Delete User' use case.
+- If you've written some JUnit tests that extend from RealTRansactionSpringTestBase (i.e. test  cases that run real transactions) then remember to add to the 'DatabaseCleaner.cleanUp' method
+  the table name in the list of tables to delete after a test run -  this keeps the database clean between test runs. The order in which rows are removed is important, to avoid FK constraint errors.
 - Is this a table that is defined as a Hibernate entity? Sometimes a 3rd party library (e.g. liquibase, spring-social, chemistry tables) requires its own table that is not created or managed by Hibernate. In this case you may need to edit scripts in the *maven* folder.
 - Ensure your Java @Entity-annotated class implements Serializable. 
 - If rows are likely to be read more often than written to, consider registering the class with Hibernate's second-level cache 
 - Review Hibernate association mappings - even though @ManyToOne is eager by default, consider using a lazy fetch strategy if queries don't usually need data from the associated entity.
 - consider adding javax.validation annotations on persisted fields. These are asserted by Hibernate before the
  data is flushed to the database, thus saving load on the database handling bad data.(this validation is only performed in Hibernate's pre-commit event handler).
+
 
 ### Are you adding a new column with FK reference? 
 - You may need to update order of tables in `RealTransactionSpringTestBase cleanup ()`, or in  'Delete User' scenario of UserDeletionManagerImpl.
@@ -39,13 +42,13 @@ There are various naming conventions, please [IntegrationAndAppNotes](integratio
 - If altering a table structure ( add /remove change columns) is there an audit (_AUD) table
  that also needs to be changed in the same way?
 - when adding/modifying audit table columns, remember that they don't generally have not-null constraints (apart from id/REV columns).
--  If you are adding such constraint make sure you know the consequences, and double check if constraint is actually applied on your local database when testing.
+- If you are adding such constraint make sure you know the consequences, and double check if constraint is actually applied on your local database when testing.
 
 ### Have you set a context? Values are:
 - no value. Will run on all databases in all environments. E.g. static  reference data
 - Suitable for adding lookup static data to all test/dev/production databases. E.g., permissions.
   - `run` for general schema changes - adding/removing columns/ tables /keys
-  - `dev-test` change should only be applied during unit test runs - e.g., loading up test data.
+  - `dev-test` change should only be applied on local dev environment, or during unit test runs - e.g., loading up test data.
   - `cloud` change should only be applied for Community version.
 
 ###  Should the new data be included in RSpace exports?
@@ -87,55 +90,15 @@ If the Java update is making changes to data, e.g. altering or processing field 
    
 Java updates should be tested first on community-test using a realistic database dump from community.r.c
 
-
 ## Using Liquibase 
 
-We use Liquibase to apply schema updates to the database
-Steps 1 - 3 are one-off operations the first time you set this up.
- 
-1. cd to `src/main/resources/sqlUpdates/liquibaseConfig`
-2. Run the MySQL script createTestUpdateDB.sql with 2 arguments: the username and password of your MySQL admin user (who can grant permissions on new database).
-E.g.,
- 
-    `mysql -v  -uroot -ppassword < createTestUpdateDB.sql`
+We use Liquibase to apply schema updates to the database. When you run `mvn -Denvironment=drop-recreate-db`
+what happens in the background is that maven drops the `rspace` database and re-creates it from the
+`src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql` script. Then, when RSpace is 
+started, all the changesets defined in liquibase "changelog" xmls are applied. On production, 
+the database already exists, the new changesets will be applied on top of it. 
 
-This should create a database called **testLiquibaseUpdate** and populate it with your baseline schema from rs-dbbaseline-utf8 schema.
-
-**Note:** if the database is already populated then drop it before running the above script. Login to mysql shell, then:
-`drop database testLiquibaseUpdate;`
-    
-This database will resemble a production setup, in that we won't be deleting and recreating it all the time. 
-*Don't delete this database or edit its schema other than through Liquibase or it will be a mess*.
-
-3. Now run RSpace using the testLiquibaseUpdate database, and apply all existing changes that have been made since the baseline script was generated:
-
-
-    mvn clean jetty:run -Denvironment=liquibase -DRS.logLevel=INFO \
-                        -Dspring.profiles.active=run -Dliquibase.context=run,dev-test \
-                        -Dlog4j2.configurationFile=log4j2-dev.xml
-
-
-At this point, the testLiquibase update will be largely the same as that generated  from Hibernate mappings.
-You can repeat this step 3  at any future time as well, so that when you run step 4 onwards, you will only see new changes made in the Hibernate mappings.
-
-
-4. If you make, or think you've made changes to the database schema in development (via Hibernate annotations, or adding a non-transient property to an existing entity), continue to drop/recreate rspace database as usual by running
- maven with `-Denvironment=drop-recreate-db` flag set.
-
-When you're ready to commit, (i.e., unit tests are passing against the altered schema in rspace database) run:
- 
-    mvn -e process-resources -Denvironment=keepdbintact -PgenerateDiff
-
-(for Windows users: look into pom.xml generateDiff task, and remove timestamp, otherwise nothing is generated)
-
-The command will compare your new rspace database with the testLiquibaseUpdate database and generate a time-stamped changeset file in folder *generatedDBChangeSets/* in your project. This changeset describes the changes that must be applied to convert the testLiquibase database schema to be the same as that generated from Hibernate mappings. There will likely be some existing differences relating to indexes etc.
-
-This is just a temporary 'holding' folder for the diff output - the _diff_ tool may not always 'guess' the right changes to make, so they need to be reviewed. They're not put in SVN (set contents of this folder to 'SVN ignore' and can deleted once you've reviewed them.
-
-You may  also see other changes made by other developers that have already been applied 
- to kudu, you can ignore these - just look for your own changes.
-
-5. Review these proposed changes, and edit if necessary. Changes that need to be made are :
+When adding a new liquibase changeset:
 
 * Add a comment describing what the change is.
 * For schema changes, add `context=run` attribute - this enables the change to be applied only at runtime.
@@ -154,28 +117,47 @@ E.g.,
         <sql>alter table UserPasswordChange engine=InnoDB;</sql>
     </changeset>
 
-In  addition you might want to merge some of the new changesets together - the auto-generated changesets are very fine-grained.
+Then append them into the current version's changeset file in *src/main/resources/sqlUpdates/changeLog-xxxx.xml*
 
-
-Then copy the contents of the changeset  and append them into the current version's changeset file in *src/main/resources/sqlUpdates/changeLog-xxxx.xml*
-
-*DON'T EDIT EXISTING CHANGESETS!!!!!* Liquibase uses checksums to determine if changesets have altered and complains - it cannot tell if the database is inconsistent or if it's just an altered changeset.
+*DON'T EDIT EXISTING CHANGESETS!!!!!* Liquibase uses checksums to determine if changesets have altered and complains 
+- it cannot tell if the database is inconsistent or if it's just an altered changeset.
 
 *If you're not sure what changes to include, then please seek advice before committing the changes to Git.*
 
+### Auto-generating the changesets by comparing to the schema created out of Hibernate/JPA annotations 
 
-Now, run:
- 
-    mvn -e test -Denvironment=keepdbintact -PtestLiquibase
+In `pom.xml` file there is a profile that can generate database schema out of Hibernate/JPA annotations, 
+using `hibernate4-maven-plugin`. To run the maven task & generate such schema you need to first 
+create a separate database called `rspace_hib`, you can do that with the following mysql commands:
 
-This will attempt to apply new liquibase changes to the testLiquibaseUpdate and run JUnit tests.
-All the updates are applied via Spring at startup - since all database access in both tests and the application is through Spring beans, this should work fine.
+        drop database rspace_hib;
+        CREATE DATABASE rspace_hib collate 'utf8mb4_unicode_ci';
+        GRANT ALL ON rspace_hib.* TO 'rspacedbuser'@'localhost';
 
-4. After they pass, it's OK to commit. If the tests fail, read the maven output to see what went wrong, edit the liquibase changesets that didn't run and try again. Don't edit changesets that completed successfully - Liquibase might try to run them again. 
+Then you should start the RSpace with `-Denvironment=drop-recreate-hibernate-db` param (rather than
+standard `-Denvironment=drop-recreate-db`), which will generate the schema out of the annotations,
+then start the webapp but with all data coming from `rspace_hib` database.
 
-5. IF you've written some JUnit tests that extend from RealTRansactionSpringTestBase (i.e., test  cases that run real transactions) then remember to add to the 'cleanUp' method the table name 
- in the list of tables to delete after a test run - this keeps the database clean between test runs.
- The order in which rows are removed is important, to avoid FK constraint errors. 
+Next, you can compare a regular database schema created from baseline script and  liquibase updates 
+(i.e. one in your regular `rspace` database), to the schema auto-generated from Hibernate/JPA 
+annotations (i.e. one in your new `rspace_hib` database).
+
+You can compare manually, or run another maven command:
+
+    mvn -e process-resources -Denvironment=keepdbintact -PgenerateDiff
+
+which is based on `liquibase-maven-plugin` and will compare your `rspace` database with `rspace_hib`
+database, and generate a time-stamped changeset file in a folder *generatedDBChangeSets/* in your 
+project home (the command expects the folder to exist, so create it before running the command). 
+This changeset file describes the changes that should be applied to convert the `rspace` 
+database schema to be the same as `rspace_hib`. There will likely be some existing differences 
+relating to constraints, field types etc., so search for the ones related to your recent changes.
+
+Note for Windows OS users: look into pom.xml generateDiff task, and remove timestamp,
+otherwise nothing is generated.
+
+When using auto-generated changesets you may want to merge some of the changesets together,  
+the ones generated by the plugin are very fine-grained.
 
 ## If there is a problem...
 
@@ -187,22 +169,6 @@ this may be an error, but can be ignored here by running:
 
 from an SQL prompt on the testLiquibaseUpdate database. This prevents liquibase from comparing the 
 checksums of the changesets and it just sets in the new value.
-
-*If all else fails*
-Delete your testLiquibaseUpdate database and recreate:
-
-    drop database testLiquibaseUpdate;
-    create database testLiquibaseUpdate collate 'utf8mb4_unicode_ci';
-
-and reimport from the baseline in `src/main/resources/sqlUpdates/liquibaseConfig`:
-
-    mysql -urspacedbuser -prspacedbpwd --database testLiquibaseUpdate < rs-dbbaseline-utf8.sql
-
-Now try  running 
-
-    mvn -e test   -Denvironment=keepdbintact -PtestLiquibase
-
-again.
 
 *Debugging liquibase changesets*
 
@@ -218,7 +184,7 @@ Some links in your changesets may need to be temporarily altered to absolute pat
 
 ### After you've committed....
 
-5. Jenkins will apply Liquibase  changes each evening into its own 'testLiquibaseUpdate' database.
+5. Jenkins will apply Liquibase changes each evening into its own 'testLiquibaseUpdate' database.
 6. If the database update run passes on Jenkins, it will build for the staging server.
 
 In this way, the staging application at $STAGING will only update if database changes have been integrated successfully.

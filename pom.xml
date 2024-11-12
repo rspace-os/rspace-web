@@ -2231,21 +2231,6 @@
     </profile>
 
     <profile>
-      <id>testLiquibase</id>
-      <activation>
-        <property>
-          <name>environment</name>
-          <value>liquibase</value>
-        </property>
-      </activation>
-      <properties>
-        <jdbc.url>jdbc:mysql://localhost:3306/testLiquibaseUpdate?useSSL=false</jdbc.url>
-        <!-- apply liquibase changes in liquibase database -->
-        <liquibase.context>liquibase-update-test,run</liquibase.context>
-      </properties>
-    </profile>
-
-    <profile>
       <id>generateDiff</id>
       <build>
         <plugins>
@@ -2395,15 +2380,127 @@
       </build>
     </profile>
 
-    <!-- makes a clean build of the application, deleting and recreating the
-      rspace database, Lucene search indices and runs tests that populate the
-      DB with data from src/test/resources/sampleData.xl -->
+    <!-- 'mysql-clean-liquibase' profile adds tasks that clear RSpace database (by deleting
+         and recreating it from baseline sql script), clear Hibernate/Lucene indices,
+         and clear archive/pdf folders -->
     <profile>
-      <id>mysql-clean</id>
+      <id>mysql-clean-liquibase</id>
       <activation>
         <property>
           <name>environment</name>
           <value>drop-recreate-db</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>sql-maven-plugin</artifactId>
+            <version>1.5</version>
+            <dependencies>
+              <!-- specify the dependent jdbc driver here -->
+              <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${jdbc.version}</version>
+              </dependency>
+            </dependencies>
+            <!-- this is needed to delete the Liquibase log tables, which aren't
+              under hibernate control, after hibernate tool has recreated the schema -->
+            <!-- common configuration shared by all executions -->
+            <configuration>
+              <driver>${jdbc.driverClassName.maven}</driver>
+              <url>${jdbc.url.maven}?useSSL=false</url>
+              <username>${jdbc.username.maven}</username>
+              <password>${jdbc.password.maven}</password>
+              <!-- You can comment out username/password configurations and have
+                maven to look them up in your settings.xml using ${settingsKey} -->
+              <settingsKey>sensibleKey</settingsKey>
+              <!--all executions are ignored if -Dmaven.test.skip=true -->
+              <skip>${maven.test.skip}</skip>
+              <autocommit>true</autocommit>
+            </configuration>
+
+            <executions>
+              <execution>
+                <id>drop-database</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <sqlCommand>drop database if exists ${jdbc.db.maven}</sqlCommand>
+                  <onError>continue</onError>
+                </configuration>
+              </execution>
+              <execution>
+                <id>create-new-database</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <sqlCommand>create database if not exists ${jdbc.db.maven} collate 'utf8mb4_unicode_ci'</sqlCommand>
+                  <onError>continue</onError>
+                </configuration>
+              </execution>
+              <execution>
+                <id>create-rs-baseline-schema</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <autocommit>true</autocommit>
+                  <sqlCommand>use ${jdbc.db.maven}</sqlCommand>
+                  <srcFiles>
+                    <srcFile>src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql</srcFile>
+                  </srcFiles>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <artifactId>maven-clean-plugin</artifactId>
+            <configuration>
+              <verbose>true</verbose>
+              <filesets>
+                <fileset>
+                  <directory>${hibernate.search.index}</directory>
+                  <directory>${lucene.attachment.searchIndex}</directory>
+                  <followSymlinks>true</followSymlinks>
+                  <includes>
+                    <include>archive/*</include>
+                    <include>pdfs/*</include>
+                  </includes>
+                  <excludes>
+                    <exclude>*</exclude>
+                  </excludes>
+                </fileset>
+              </filesets>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+
+      <properties>
+        <context.path>/</context.path>
+        <ssl.enabled>false</ssl.enabled>
+        <jdbc.url>jdbc:mysql://localhost:3306/${jdbc.db.maven}?${ssl.enabled}=false</jdbc.url>
+      </properties>
+
+    </profile>
+
+    <!-- 'mysql-clean-hibernate' profile is adding tasks that delete and recreate 'rspace_hib'
+          database out of Hibernate mappings. This can be used to compare the database schema
+          that created out of JPA annotations to the schema created by liquibase updates -->
+    <profile>
+      <id>mysql-clean-hibernate</id>
+      <activation>
+        <property>
+          <name>environment</name>
+          <value>drop-recreate-hibernate-db</value>
         </property>
       </activation>
       <build>
@@ -2531,9 +2628,12 @@
         </plugins>
       </build>
       <properties>
+        <jdbc.db.maven>rspace_hib</jdbc.db.maven>
+        <!-- only dev-test changesets should be run on top of auto-generated schema -->
+        <liquibase.context>dev-test</liquibase.context>
         <context.path>/</context.path>
         <ssl.enabled>false</ssl.enabled>
-        <jdbc.url>jdbc:mysql://localhost:3306/rspace?useSSL=false</jdbc.url>
+        <jdbc.url>jdbc:mysql://localhost:3306/${jdbc.db.maven}?useSSL=false</jdbc.url>
       </properties>
     </profile>
 
