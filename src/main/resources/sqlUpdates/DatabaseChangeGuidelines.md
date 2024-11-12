@@ -147,8 +147,9 @@ You can compare manually, or run another maven command:
     mvn -e process-resources -Denvironment=keepdbintact -PgenerateDiff
 
 which is based on `liquibase-maven-plugin` and will compare your `rspace` database with `rspace_hib`
-database, and generate a time-stamped changeset file in folder *generatedDBChangeSets/* in your 
-project. This changeset describes the changes that should be applied to convert the `rspace` 
+database, and generate a time-stamped changeset file in a folder *generatedDBChangeSets/* in your 
+project home (the command expects the folder to exist, so create it before running the command). 
+This changeset file describes the changes that should be applied to convert the `rspace` 
 database schema to be the same as `rspace_hib`. There will likely be some existing differences 
 relating to constraints, field types etc., so search for the ones related to your recent changes.
 
