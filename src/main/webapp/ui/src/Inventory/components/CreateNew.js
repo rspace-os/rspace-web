@@ -58,8 +58,6 @@ const StyledMenu = styled(Menu)(({ open }) => ({
     ...(open
       ? {
           transform: "translate(-4px, 4px) !important",
-          boxShadow: "none",
-          border: `2px solid hsl(198deg, 37%, 80%)`,
         }
       : {}),
   },
