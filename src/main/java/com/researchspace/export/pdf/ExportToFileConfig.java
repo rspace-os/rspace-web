@@ -112,7 +112,7 @@ public class ExportToFileConfig implements StructuredDocumentHTMLViewConfig, IEx
         + pageSize
         + ", dateType="
         + dateType
-        + ", includeFooter="
+        + ", includeFooterAtEndOnly="
         + includeFooterAtEndOnly
         + ", exportName="
         + exportName

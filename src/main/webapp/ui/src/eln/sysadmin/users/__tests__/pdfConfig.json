@@ -12,7 +12,7 @@
     "includeFieldLastModifiedDate" : true,
     "pageSize" : "A4",
     "dateType" : "EXP",
-    "includeFooter" : true,
+    "includeFooterAtEndOnly" : true,
     "setPageSizeAsDefault" : false,
     "selectionScope" : true,
     "userScope" : false,

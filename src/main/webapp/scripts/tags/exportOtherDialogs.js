@@ -63,7 +63,7 @@ function _setUpPdfDialog() {
                     restartPageNumberPerDoc : restartPageNumberPerDoc,
                     pageSize : pageSize,
                     dateType: dateType,
-                    includeFooter : includeFooter,
+                    includeFooterAtEndOnly : includeFooter,
                     setPageSizeAsDefault: setPageSizeAsDefault,
                     includeFieldLastModifiedDate: includeFieldLastModifiedDate
                 };
