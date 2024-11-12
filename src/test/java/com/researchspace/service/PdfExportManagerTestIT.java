@@ -34,6 +34,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired ExportImport exportImportMgr;
   private @Autowired InternalFileStore fStore;
   private @Autowired RecordDeletionManager delMgr;
+  private @Autowired RecordManager recordMgr;
 
   @Before
   public void setUp() throws Exception {
@@ -50,7 +51,11 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     User exporter = createAndSaveUser(getRandomAlphabeticString("pdf"));
     initUser(exporter);
     logoutAndLoginAs(exporter);
+
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(exporter, "text");
+    sd.setName(sd.getName() + " + special chars &∅∈∌");
+    recordMgr.save(sd, exporter);
+
     ExportToFileConfig config = new ExportToFileConfig();
     final String exportName = "xxxx";
     config.setExportName(exportName);

@@ -1,0 +1,9 @@
+<div class="runningHeaderLeft">
+  Owner: $docOwner
+</div>
+<div class="runningHeaderCenter">
+  $docTitle
+</div>
+<div class="runningFooterRight">
+  Exported by: $exporterFullName
+</div>

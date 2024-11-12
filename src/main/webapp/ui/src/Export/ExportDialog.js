@@ -541,7 +541,7 @@ const pdfConfig = {
   pageSize: "A4",
   defaultPageSize: "A4",
   dateType: "EXP",
-  includeFooter: true,
+  includeFooterAtEndOnly: true,
   setPageSizeAsDefault: false,
   includeFieldLastModifiedDate: true,
 };

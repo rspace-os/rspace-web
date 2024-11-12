@@ -281,7 +281,7 @@ public class HTMLStringGeneratorTest {
     form.addFieldForm(fieldForm);
     StructuredDocument doc = createAnySD(form);
     doc.setId(1L);
-    doc.setName("<img src='' onerror='alert(2);'>");
+    doc.setName("<img src='' onerror='alert(2);'>name with special html chars &∅∈∌");
     ExportToFileConfig cfg = makeConfig();
     ExportProcesserInput documentData = htmlGenerator.extractHtmlStr(doc, cfg);
     String data = documentData.getDocumentAsHtml();
@@ -290,6 +290,11 @@ public class HTMLStringGeneratorTest {
     assertTrue(data.contains("&lt;img"));
     assertTrue(data.contains("alert(1)"));
     assertTrue(data.contains("alert(2)"));
+    // html chars in name escaped
+    assertFalse(data.contains("special html chars &∅∈∌"));
+    assertTrue(
+        "unexpected:" + data,
+        data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;&amp;#8716;"));
   }
 
   @Test

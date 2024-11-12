@@ -21,7 +21,7 @@ export type PdfExportDetails = {|
   pageSize: PageSize,
   defaultPageSize: PageSize,
   dateType: "EXP" | "NEW" | "UPD",
-  includeFooter: boolean,
+  includeFooterAtEndOnly: boolean,
   setPageSizeAsDefault: boolean,
   includeFieldLastModifiedDate: boolean,
 |};
@@ -50,7 +50,7 @@ const checkboxes = {
   annotations: "Include image annotations",
   includeFieldLastModifiedDate: "Include last modified dates for fields",
   restartPageNumberPerDoc: "Restart page numbering for each document",
-  includeFooter: "Insert date footer at file end only",
+  includeFooterAtEndOnly: "Insert date footer at file end only",
 };
 
 export default function PdfExport({
