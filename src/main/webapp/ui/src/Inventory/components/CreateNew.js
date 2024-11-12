@@ -8,6 +8,7 @@ import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
 import NewMenuItem from "../../eln/gallery/components/NewMenuItem";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
+import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 
@@ -24,11 +25,11 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 }));
 
 type CreateNewArgs = {|
-  onCreate: () => void,
+  onClick: () => void,
 |};
 
-export default function CreateNew({ onCreate }: CreateNewArgs): Node {
-  const { searchStore, trackingStore } = useStores();
+export default function CreateNew({ onClick }: CreateNewArgs): Node {
+  const { searchStore, trackingStore, uiStore, importStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -41,7 +42,7 @@ export default function CreateNew({ onCreate }: CreateNewArgs): Node {
     });
     try {
       const newRecord = await searchStore.createNew(recordType);
-      onCreate();
+      onClick();
       const params = searchStore.fetcher.generateNewQuery(
         newRecord.showNewlyCreatedRecordSearchParams
       );
@@ -52,6 +53,17 @@ export default function CreateNew({ onCreate }: CreateNewArgs): Node {
     } catch (e) {
       if (e instanceof UserCancelledAction) return;
       throw e;
+    }
+  };
+
+  const handleImport = async (
+    recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES"
+  ) => {
+    if (await uiStore.confirmDiscardAnyChanges()) {
+      await importStore.initializeNewImport(recordType);
+      navigate(`/inventory/import?recordType=${recordType}`);
+      onClick();
+      setAnchorEl(null);
     }
   };
 
@@ -155,6 +167,84 @@ export default function CreateNew({ onCreate }: CreateNewArgs): Node {
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
             void handleCreate("template");
+          }}
+        />
+        <Divider textAlign="left" aria-label="CSV import">
+          CSV Import
+        </Divider>
+        <NewMenuItem
+          title="Samples"
+          avatar={
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "",
+                iconName: "sample",
+              }}
+              color=""
+              style={{
+                width: "22px",
+                height: "22px",
+                backgroundColor: "hsl(198 37% 80% / 1)",
+                padding: "5px",
+                color: "hsl(198 13% 25% / 1)",
+              }}
+            />
+          }
+          subheader="Import samples with a similar structure."
+          backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
+          foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
+          onClick={() => {
+            void handleImport("SAMPLES");
+          }}
+        />
+        <NewMenuItem
+          title="Subsamples"
+          avatar={
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "",
+                iconName: "subsample",
+              }}
+              color=""
+              style={{
+                width: "22px",
+                height: "22px",
+                backgroundColor: "hsl(198 37% 80% / 1)",
+                padding: "5px",
+                color: "hsl(198 13% 25% / 1)",
+              }}
+            />
+          }
+          subheader="Import subsamples for each sample."
+          backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
+          foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
+          onClick={() => {
+            void handleImport("SUBSAMPLES");
+          }}
+        />
+        <NewMenuItem
+          title="Containers"
+          avatar={
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "",
+                iconName: "container",
+              }}
+              color=""
+              style={{
+                width: "22px",
+                height: "22px",
+                backgroundColor: "hsl(198 37% 80% / 1)",
+                padding: "5px",
+                color: "hsl(198 13% 25% / 1)",
+              }}
+            />
+          }
+          subheader="Import containers and their contents."
+          backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
+          foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
+          onClick={() => {
+            void handleImport("CONTAINERS");
           }}
         />
       </StyledMenu>

@@ -584,7 +584,7 @@ function Sidebar(): Node {
       <div className={classes.drawerContainer}>
         <List component="nav" aria-label="Create new Inventory items">
           <ThemeProvider theme={createAccentedTheme(COLOR)}>
-            <CreateNew onCreate={afterClick} />
+            <CreateNew onClick={afterClick} />
           </ThemeProvider>
           <ImportMenu onClick={afterClick} />
         </List>
