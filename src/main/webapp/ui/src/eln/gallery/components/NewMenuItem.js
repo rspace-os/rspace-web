@@ -105,6 +105,7 @@ export default (styled(
       width: compact ? 28 : 36,
       height: compact ? 28 : 36,
       borderRadius: "4px",
+      margin: theme.spacing(0.25),
     },
     "& .MuiSvgIcon-root": {
       width: compact ? 28 : 36,
@@ -115,6 +116,9 @@ export default (styled(
     },
     "& .MuiTypography-root": {
       color: prefersMoreContrast ? "#000" : fg,
+    },
+    "& .MuiCardHeader-content": {
+      marginRight: theme.spacing(2),
     },
     "& .MuiCardHeader-title": {
       fontSize: "1rem",

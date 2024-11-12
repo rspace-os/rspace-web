@@ -185,8 +185,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -210,8 +210,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -235,8 +235,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "32px",
-                height: "32px",
+                width: "28px",
+                height: "28px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "2px",
                 paddingTop: "5px",
@@ -265,8 +265,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -290,8 +290,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -315,8 +315,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -333,6 +333,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
           Other Import
         </Divider>
         <NewMenuItem
+          compact
           title="Fieldmark"
           avatar={<CardMedia image={FieldmarkIcon} />}
           subheader="Import Fieldmark notebooks and records"
