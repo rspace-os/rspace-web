@@ -94,16 +94,21 @@ export default (styled(
       padding: theme.spacing(compact ? 1 : 2),
     },
     "& .MuiCardHeader-avatar": {
-      border: `${compact ? 3 : 6}px solid ${bg}`,
+      border: `${compact ? 3 : 4}px solid ${bg}`,
       borderRadius: `${compact ? 4 : 6}px`,
+      backgroundColor: bg,
+      "& svg": {
+        margin: "2px",
+      },
     },
     "& .MuiCardMedia-root": {
-      width: compact ? 28 : 32,
-      height: compact ? 28 : 32,
+      width: compact ? 28 : 36,
+      height: compact ? 28 : 36,
+      borderRadius: "4px",
     },
     "& .MuiSvgIcon-root": {
-      width: compact ? 28 : 32,
-      height: compact ? 28 : 32,
+      width: compact ? 28 : 36,
+      height: compact ? 28 : 36,
       background: bg,
       padding: theme.spacing(0.5),
       color: fg,
