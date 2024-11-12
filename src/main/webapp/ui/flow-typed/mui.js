@@ -51,7 +51,7 @@ declare module "@mui/x-data-grid" {
   declare export type Column<Row> = {|
     headerName: string,
     field: string,
-    valueGetter?: (mixed) => mixed,
+    valueGetter?: (mixed, Row) => mixed,
     renderCell?: (params: {
       row: Row,
       value: mixed,
@@ -87,6 +87,7 @@ declare module "@mui/x-data-grid" {
     ToolbarProps: { ... },
     Value: mixed,
     SortableColumnNames: ColumnNames,
+    LoadingOverlayProps: { ... },
   >({|
     rows: $ReadOnlyArray<Row>,
     columns: $ReadOnlyArray<Column<Row>>,
@@ -118,6 +119,7 @@ declare module "@mui/x-data-grid" {
     slots?: {|
       toolbar?: (ToolbarProps) => Node,
       pagination?: null,
+      loadingOverlay?: (LoadingOverlayProps) => Node,
     |},
     className?: string,
     classes?: {||},
@@ -129,6 +131,7 @@ declare module "@mui/x-data-grid" {
     slotProps?: {|
       toolbar?: ToolbarProps,
       panel?: { ... },
+      loadingOverlay?: LoadingOverlayProps,
     |},
     localeText?: {|
       // https://github.com/mui/mui-x/blob/v7.12.0/packages/x-data-grid/src/constants/localeTextConstants.ts
