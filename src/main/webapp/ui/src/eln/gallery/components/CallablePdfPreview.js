@@ -9,6 +9,13 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Divider from "@mui/material/Divider";
+import ResetZoomIcon from "./ResetZoomIcon";
 
 /**
  * Much like how `window.open` allows any JS code on the page to trigger the
@@ -57,6 +64,7 @@ export function CallablePdfPreview({ children }: {| children: Node |}): Node {
     null
   );
   const [numPages, setNumPages] = React.useState<number>(0);
+  const [scale, setScale] = React.useState(1);
 
   function onDocumentLoadSuccess({
     numPages: nextNumPages,
@@ -90,11 +98,65 @@ export function CallablePdfPreview({ children }: {| children: Node |}): Node {
                   key={`page_${index + 1}`}
                   pageNumber={index + 1}
                   width={550}
+                  scale={scale}
                 />
               ))}
             </Document>
           </DialogContent>
           <DialogActions>
+            <ButtonGroup
+              variant="outlined"
+              sx={{
+                border: "2px solid #cfc9d2",
+                borderRadius: "8px",
+              }}
+            >
+              <IconButton
+                onClick={() => {
+                  setScale(scale * 1.2);
+                }}
+                aria-label="zoom in"
+                size="small"
+              >
+                <ZoomInIcon />
+              </IconButton>
+              <Divider
+                orientation="vertical"
+                sx={{
+                  height: "26px",
+                  marginTop: "4px",
+                  borderRightWidth: "1px",
+                }}
+              />
+              <IconButton
+                onClick={() => {
+                  setScale(1);
+                }}
+                disabled={scale === 1}
+                aria-label="reset zoom"
+                size="small"
+              >
+                <ResetZoomIcon />
+              </IconButton>
+              <Divider
+                orientation="vertical"
+                sx={{
+                  height: "26px",
+                  marginTop: "4px",
+                  borderRightWidth: "1px",
+                }}
+              />
+              <IconButton
+                onClick={() => {
+                  setScale(scale / 1.2);
+                }}
+                aria-label="zoom out"
+                size="small"
+              >
+                <ZoomOutIcon />
+              </IconButton>
+            </ButtonGroup>
+            <Box flexGrow={1}></Box>
             <Button
               onClick={() => {
                 setPdfPreviewOpen(null);
