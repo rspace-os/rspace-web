@@ -37,8 +37,37 @@ import Box from "@mui/material/Box";
 import { type Theme } from "../../../theme";
 import HelpDocs from "../../../components/Help/HelpDocs";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, ThemeProvider } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
+import createAccentedTheme from "../../../accentedTheme";
+
+const COLOR = {
+  main: {
+    hue: 197,
+    saturation: 50,
+    lightness: 80,
+  },
+  darker: {
+    hue: 197,
+    saturation: 100,
+    lightness: 30,
+  },
+  contrastText: {
+    hue: 200,
+    saturation: 30,
+    lightness: 36,
+  },
+  background: {
+    hue: 200,
+    saturation: 20,
+    lightness: 82,
+  },
+  backgroundContrastText: {
+    hue: 203,
+    saturation: 17,
+    lightness: 35,
+  },
+};
 
 const drawerWidth = 200;
 
@@ -554,7 +583,9 @@ function Sidebar(): Node {
       <SidebarActivator />
       <div className={classes.drawerContainer}>
         <List component="nav" aria-label="Create new Inventory items">
-          <CreateNew onCreate={afterClick} />
+          <ThemeProvider theme={createAccentedTheme(COLOR)}>
+            <CreateNew onCreate={afterClick} />
+          </ThemeProvider>
           <ImportMenu onClick={afterClick} />
         </List>
         <List
