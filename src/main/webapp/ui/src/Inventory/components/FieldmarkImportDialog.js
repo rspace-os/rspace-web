@@ -15,6 +15,9 @@ import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import InvApiService from "../../common/InvApiService";
 import { doNotAwait } from "../../util/Util";
+import { DataGridColumn } from "../../util/table";
+import { DataGrid } from "@mui/x-data-grid";
+import Radio from "@mui/material/Radio";
 
 export const FIELDMARK_COLOR = {
   main: {
@@ -49,7 +52,14 @@ type FieldmarkImportDialogArgs = {|
   onClose: () => void,
 |};
 
-type Notebook = { ... };
+type Notebook = {
+  name: string,
+  metadata: {
+    project_id: string,
+    ...
+  },
+  ...
+};
 
 export default function FieldmarkImportDialog({
   open,
@@ -113,6 +123,42 @@ export default function FieldmarkImportDialog({
                   See <Link href="#">docs.fieldmark.au</Link> and our{" "}
                   <Link href={"#"}>Fieldmark integration docs</Link> for more.
                 </Typography>
+              </Grid>
+              <Grid item>
+                <DataGrid
+                  columns={[
+                    {
+                      field: "radio",
+                      headerName: "Select",
+                      renderCell: (params: { row: Notebook, ... }) => (
+                        <Radio
+                          color="primary"
+                          value={false}
+                          checked={false}
+                          inputProps={{ "aria-label": "Notebook selection" }}
+                        />
+                      ),
+                      hideable: false,
+                      width: 70,
+                      flex: 0,
+                      disableColumnMenu: true,
+                      sortable: false,
+                    },
+                    DataGridColumn.newColumnWithFieldName<Notebook, _>("name", {
+                      headerName: "Name",
+                      flex: 1,
+                      sortable: false,
+                    }),
+                  ]}
+                  rows={notebooks ?? []}
+                  disableColumnFilter
+                  hideFooter
+                  localeText={{
+                    noRowsLabel: "No Notebooks",
+                  }}
+                  loading={notebooks === null}
+                  getRowId={(row) => row.metadata.project_id}
+                />
               </Grid>
             </Grid>
           </DialogContent>
