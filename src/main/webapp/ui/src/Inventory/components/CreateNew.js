@@ -22,6 +22,8 @@ import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
+import FieldmarkIcon from "../../eln/apps/icons/fieldmark.svg";
+import CardMedia from "@mui/material/CardMedia";
 
 export const FIELDMARK_COLOR = {
   main: {
@@ -86,6 +88,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
 
   const handleCreate = async (
     recordType: "sample" | "container" | "template"
@@ -326,9 +329,36 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             void handleImport("CONTAINERS");
           }}
         />
+        <Divider textAlign="left" aria-label="Other import">
+          Other Import
+        </Divider>
+        <NewMenuItem
+          title="Fieldmark"
+          avatar={<CardMedia image={FieldmarkIcon} />}
+          subheader="Import Fieldmark notebooks and records"
+          backgroundColor={{
+            hue: FIELDMARK_COLOR.background.hue,
+            saturation: FIELDMARK_COLOR.background.saturation,
+            lightness: FIELDMARK_COLOR.background.lightness,
+          }}
+          foregroundColor={{
+            hue: FIELDMARK_COLOR.backgroundContrastText.hue,
+            saturation: FIELDMARK_COLOR.backgroundContrastText.saturation,
+            lightness: FIELDMARK_COLOR.backgroundContrastText.lightness,
+          }}
+          onClick={() => {
+            setFieldmarkOpen(true);
+          }}
+        />
       </StyledMenu>
       <ThemeProvider theme={createAccentedTheme(FIELDMARK_COLOR)}>
-        <Dialog open>
+        <Dialog
+          open={fieldmarkOpen}
+          onClose={() => {
+            setFieldmarkOpen(false);
+            setAnchorEl(null);
+          }}
+        >
           <AppBar position="relative" open={true}>
             <Toolbar variant="dense">
               <Typography variant="h6" noWrap component="h2">
