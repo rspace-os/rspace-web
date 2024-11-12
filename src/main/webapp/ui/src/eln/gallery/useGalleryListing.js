@@ -539,7 +539,8 @@ export function useGalleryListing({
           pageNumber: "0",
           sortOrder,
           orderBy,
-          foldersOnly: foldersOnly !== null || !foldersOnly ? "true" : "false",
+          foldersOnly:
+            foldersOnly !== null && Boolean(foldersOnly) ? "true" : "false",
         }),
       });
 
