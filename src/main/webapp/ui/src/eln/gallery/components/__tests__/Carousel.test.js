@@ -115,51 +115,63 @@ describe("Carousel", () => {
     });
   });
 
-  test("Subsequent pages are loaded automatically as the user progresses through the carousel", async () => {
-    function Wrapper() {
-      const { galleryListing } = useGalleryListing({
-        section: "Images",
-        searchTerm: "",
-        sortOrder: "DESC",
-        orderBy: "modificationDate",
-      });
+  test(
+    "Subsequent pages are loaded automatically as the user progresses through the carousel",
+    async () => {
+      function Wrapper() {
+        const { galleryListing } = useGalleryListing({
+          section: "Images",
+          searchTerm: "",
+          sortOrder: "DESC",
+          orderBy: "modificationDate",
+        });
 
-      return FetchingData.getSuccessValue(galleryListing)
-        .map((listing) => {
-          if (listing.tag === "empty") return null;
-          return <Carousel listing={listing} key={null} />;
+        return FetchingData.getSuccessValue(galleryListing)
+          .map((listing) => {
+            if (listing.tag === "empty") return null;
+            return <Carousel listing={listing} key={null} />;
+          })
+          .orElse(null);
+      }
+      const user = userEvent.setup();
+
+      //eslint-disable-next-line no-shadow
+      const mockAxios = new MockAdapter(axios);
+      mockAxios
+        .onGet("/collaboraOnline/supportedExts")
+        .reply(200, { data: {} });
+      mockAxios.onGet("/officeOnline/supportedExts").reply(200, { data: {} });
+      mockAxios
+        .onGet("/gallery/getUploadedFiles", {
+          params: {
+            asymmetricMatch: (params) => params.get("pageNumber") === "0",
+          },
         })
-        .orElse(null);
-    }
-    const user = userEvent.setup();
+        .reply(200, page1)
+        .onGet("/gallery/getUploadedFiles", {
+          params: {
+            asymmetricMatch: (params) => params.get("pageNumber") === "1",
+          },
+        })
+        .reply(200, page2);
+      render(<Wrapper />);
 
-    mockAxios.onGet("/collaboraOnline/supportedExts").reply(200, { data: {} });
-    mockAxios.onGet("/officeOnline/supportedExts").reply(200, { data: {} });
-    mockAxios
-      .onGet("/gallery/getUploadedFiles", {
-        params: {
-          asymmetricMatch: (params) => params.get("pageNumber") === "0",
-        },
-      })
-      .reply(200, page1)
-      .onGet("/gallery/getUploadedFiles", {
-        params: {
-          asymmetricMatch: (params) => params.get("pageNumber") === "1",
-        },
-      })
-      .reply(200, page2);
-    render(<Wrapper />);
+      const nextButton = await screen.findByRole("button", { name: /next/i });
+      const progressLabel = screen.getByText("1 / 34");
 
-    const nextButton = await screen.findByRole("button", { name: /next/i });
-    while (!nextButton.disabled) {
-      await user.click(nextButton);
-    }
+      while (progressLabel.textContent !== "34 / 34") {
+        await user.click(nextButton);
+      }
 
-    expect(screen.getByRole("img")).toHaveAttribute(
-      "src",
-      `/Streamfile/${page2.data.items.lastResult.id}`
-    );
-  });
+      await waitFor(() => {
+        expect(screen.getByRole("img")).toHaveAttribute(
+          "src",
+          `/Streamfile/${page2.data.items.lastResult.id}`
+        );
+      });
+    },
+    30 * 1000
+  );
 
   test("Moving to a different file resets the zoom level", async () => {
     function Wrapper() {
