@@ -6,12 +6,10 @@ import NavigateContext from "../../stores/contexts/Navigate";
 import { UserCancelledAction } from "../../util/error";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import { makeStyles } from "tss-react/mui";
 import NewMenuItem from "../../eln/gallery/components/NewMenuItem";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -25,25 +23,12 @@ const StyledMenu = styled(Menu)(({ open }) => ({
   },
 }));
 
-const useStyles = makeStyles()((theme) => ({
-  button: {
-    paddingLeft: theme.spacing(3),
-    borderTopRightRadius: theme.spacing(3),
-    borderBottomRightRadius: theme.spacing(3),
-    color: theme.palette.primary.main,
-  },
-  buttonIcon: {
-    color: theme.palette.primary.main,
-  },
-}));
-
 type CreateNewArgs = {|
   onCreate: () => void,
 |};
 
 export default function CreateNew({ onCreate }: CreateNewArgs): Node {
   const { searchStore, trackingStore } = useStores();
-  const { classes } = useStyles();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -72,21 +57,17 @@ export default function CreateNew({ onCreate }: CreateNewArgs): Node {
 
   const controls = React.useId();
   return (
-    <>
-      <ListItem
-        button
-        className={classes.button}
+    <Box sx={{ p: 1.5, pt: 0 }}>
+      <Button
+        variant="outlined"
+        fullWidth
         aria-controls={controls}
         aria-haspopup="true"
-        variant="contained"
-        color="primary"
         onClick={(event) => setAnchorEl(event.currentTarget)}
+        startIcon={<AddIcon />}
       >
-        <ListItemIcon className={classes.buttonIcon}>
-          <AddIcon />
-        </ListItemIcon>
-        <ListItemText primary="Create" />
-      </ListItem>
+        Create
+      </Button>
       <StyledMenu
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
@@ -177,6 +158,6 @@ export default function CreateNew({ onCreate }: CreateNewArgs): Node {
           }}
         />
       </StyledMenu>
-    </>
+    </Box>
   );
 }
