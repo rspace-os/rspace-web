@@ -122,6 +122,7 @@ export default function FieldmarkImportDialog({
     React.useState<null | Notebook>(null);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<?HTMLElement>(null);
+  const [importing, setImporting] = React.useState(false);
 
   React.useEffect(
     doNotAwait(async () => {
@@ -139,6 +140,7 @@ export default function FieldmarkImportDialog({
   );
 
   async function importNotebook(notebook: Notebook) {
+    setImporting(true);
     try {
       await InvApiService.get<mixed, mixed>(
         "/fieldmark/import/notebook/" + notebook.metadata.project_id
@@ -159,6 +161,8 @@ export default function FieldmarkImportDialog({
           message: e.message,
         })
       );
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -338,7 +342,7 @@ export default function FieldmarkImportDialog({
             <Grid container direction="row" spacing={1}>
               <Grid item sx={{ ml: "auto" }}>
                 <Stack direction="row" spacing={1}>
-                  <Button onClick={() => onClose()} disabled={false}>
+                  <Button onClick={() => onClose()} disabled={importing}>
                     {selectedNotebook ? "Cancel" : "Close"}
                   </Button>
                   <ValidatingSubmitButton
@@ -351,7 +355,7 @@ export default function FieldmarkImportDialog({
                         ? IsInvalid("No Notebook selected.")
                         : IsValid()
                     }
-                    loading={false}
+                    loading={importing}
                   >
                     Import
                   </ValidatingSubmitButton>
