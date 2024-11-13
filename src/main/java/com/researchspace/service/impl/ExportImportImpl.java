@@ -528,7 +528,9 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       PostArchiveCompletion postArchiveCompleter,
       Supplier<ExportRecordList> exportIdSupplier)
       throws Exception {
+
     createTopLevelExportFolder(expCfg);
+    configureGroupExportCfg(expCfg, exporter, groupId);
     return doGroupArchive(expCfg, exporter, baseURL, postArchiveCompleter, exportIdSupplier);
   }
 
