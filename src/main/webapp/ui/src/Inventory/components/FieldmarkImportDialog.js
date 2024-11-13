@@ -16,7 +16,11 @@ import Typography from "@mui/material/Typography";
 import InvApiService from "../../common/InvApiService";
 import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
-import { DataGrid } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridToolbarContainer,
+  GridToolbarColumnsButton,
+} from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -56,6 +60,38 @@ export const FIELDMARK_COLOR = {
   },
 };
 
+const GridToolbar = ({
+  setColumnsMenuAnchorEl,
+}: {|
+  setColumnsMenuAnchorEl: (HTMLElement) => void,
+|}) => {
+  /**
+   * The columns menu can be opened by either tapping the "Columns" toolbar
+   * button or by tapping the "Manage columns" menu item in each column's menu,
+   * logic that is handled my MUI. We provide a custom `anchorEl` so that the
+   * menu is positioned beneath the "Columns" toolbar button to be consistent
+   * with the other toolbar menus, otherwise is appears far to the left. Rather
+   * than having to hook into the logic that triggers the opening of the
+   * columns menu in both places, we just set the `anchorEl` pre-emptively.
+   */
+  const columnMenuRef = React.useRef();
+  React.useEffect(() => {
+    if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
+  }, [setColumnsMenuAnchorEl]);
+
+  return (
+    <GridToolbarContainer sx={{ width: "100%" }}>
+      <Box flexGrow={1}></Box>
+      <GridToolbarColumnsButton
+        variant="outlined"
+        ref={(node) => {
+          if (node) columnMenuRef.current = node;
+        }}
+      />
+    </GridToolbarContainer>
+  );
+};
+
 type FieldmarkImportDialogArgs = {|
   open: boolean,
   onClose: () => void,
@@ -82,6 +118,8 @@ export default function FieldmarkImportDialog({
     React.useState<null | $ReadOnlyArray<Notebook>>(null);
   const [selectedNotebook, setSelectedNotebook] =
     React.useState<null | Notebook>(null);
+  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
+    React.useState<?HTMLElement>(null);
 
   React.useEffect(
     doNotAwait(async () => {
@@ -239,6 +277,17 @@ export default function FieldmarkImportDialog({
                     noRowsLabel: "No Notebooks",
                   }}
                   loading={notebooks === null}
+                  slots={{
+                    toolbar: GridToolbar,
+                  }}
+                  slotProps={{
+                    toolbar: {
+                      setColumnsMenuAnchorEl,
+                    },
+                    panel: {
+                      anchorEl: columnsMenuAnchorEl,
+                    },
+                  }}
                   getRowId={(row) => row.metadata.project_id}
                   onRowSelectionModelChange={(
                     newSelection: $ReadOnlyArray<string>
