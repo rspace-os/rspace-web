@@ -31,6 +31,7 @@ import ValidatingSubmitButton, {
   IsValid,
 } from "../../components/ValidatingSubmitButton";
 import DialogActions from "@mui/material/DialogActions";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
 export const FIELDMARK_COLOR = {
   main: {
@@ -114,6 +115,7 @@ export default function FieldmarkImportDialog({
   onClose,
 }: FieldmarkImportDialogArgs): Node {
   const { isViewportSmall } = useViewportDimensions();
+  const { addAlert } = React.useContext(AlertContext);
   const [notebooks, setNotebooks] =
     React.useState<null | $ReadOnlyArray<Notebook>>(null);
   const [selectedNotebook, setSelectedNotebook] =
@@ -141,11 +143,22 @@ export default function FieldmarkImportDialog({
       await InvApiService.get<mixed, mixed>(
         "/fieldmark/import/notebook/" + notebook.metadata.project_id
       );
-      // success toast
+      addAlert(
+        mkAlert({
+          variant: "success",
+          message: "Successfully imported notebook.",
+        })
+      );
       // reload bench, if that's the current search
     } catch (e) {
       console.error(e);
-      // error toast
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Could not import notebook.",
+          message: e.message,
+        })
+      );
     }
   }
 
