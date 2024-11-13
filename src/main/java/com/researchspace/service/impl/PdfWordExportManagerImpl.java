@@ -98,19 +98,19 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
     verifyInput(exportIds, exportTypes);
     List<File> tmpExportedFiles = new ArrayList<>();
 
-    EcatDocumentFile ecatDocumentFile = null;
+    EcatDocumentFile exportResult = null;
     processDocsForDocExport(
         ownerOfWork, exportIds, exportTypes, config, exporter, details, tmpExportedFiles);
     FileProperty fp = generateFilePropertyForExportedFile(config, exporter, details);
 
     if (mergeFilesIntoFinalOutputFileAndSaveInFileStore(
         tmpExportedFiles, details.getConcatenatedExportFile(), fp, config)) {
-      ecatDocumentFile = addPdfToGallery(config, exporter, details, fp, ecatDocumentFile);
+      exportResult = addPdfToGallery(config, exporter, details, fp);
     } else {
       log.error("Couldn't generate EcatDocumentFile");
       removeTempFiles(details);
     }
-    return ecatDocumentFile;
+    return exportResult;
   }
 
   public File doExportForSigning(
@@ -142,19 +142,15 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
   }
 
   private EcatDocumentFile addPdfToGallery(
-      ExportToFileConfig config,
-      User exporter,
-      ExportOperationDetails details,
-      FileProperty fp,
-      EcatDocumentFile ecatDocumentFile) {
+      ExportToFileConfig config, User exporter, ExportOperationDetails details, FileProperty fp) {
 
+    EcatDocumentFile resultFile = null;
     Folder parent = recordManager.getGallerySubFolderForUser(Folder.EXPORTS_FOLDER_NAME, exporter);
     if (parent == null) {
       throw new IllegalStateException("Could not obtain the PDF export folder.");
     }
     try {
-
-      ecatDocumentFile =
+      resultFile =
           ecatDocumentFactory.generateEcatDocument(
               exporter,
               fp,
@@ -170,18 +166,18 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
                 exporter,
                 thumbnail.getConverted().getName(),
                 new FileInputStream(thumbnail.getConverted()));
-        ecatDocumentFile.setDocThumbnailFP(exportThumbnail);
+        resultFile.setDocThumbnailFP(exportThumbnail);
       }
 
-      fMger.addChild(parent.getId(), ecatDocumentFile, exporter);
+      fMger.addChild(parent.getId(), resultFile, exporter);
 
-      postExportSuccess(config, exporter, ecatDocumentFile);
+      postExportSuccess(config, exporter, resultFile);
     } catch (Exception ex) {
       log.warn(ex.toString());
       postExportFailure(config, exporter, ex.getMessage());
     }
     removeTempFiles(details);
-    return ecatDocumentFile;
+    return resultFile;
   }
 
   private boolean mergeFilesIntoFinalOutputFileAndSaveInFileStore(
@@ -253,7 +249,6 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
           // rather than at some unknown point in later code
         }
       } catch (ExportFailureException ex) {
-        postExportFailure(config, exporter, ex.getMessage());
         throw ex;
       } catch (Exception ex) {
         log.warn("Error on {} for id={}", ex.getMessage(), exportIds[i]);
@@ -391,6 +386,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       User user,
       ExportToFileConfig exportConfig,
       ExportOperationDetails exportOpDetails) {
+
     try {
       exportConfig.setExporter(user);
       BaseRecord strucDocMaybe = recordManager.getRecordWithFields(sid, user);
@@ -429,7 +425,8 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
           "Unauthorized attempt by :" + user.getUsername() + " to export record with id " + sid);
     } catch (Exception ex) {
       log.warn(ex.toString());
-      throw new ExportFailureException(ex.getMessage());
+      throw new ExportFailureException(
+          "Exception when processing record with id [" + sid + "]: " + ex.getMessage());
     }
   }
 

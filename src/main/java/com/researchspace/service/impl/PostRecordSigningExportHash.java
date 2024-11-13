@@ -91,7 +91,7 @@ public class PostRecordSigningExportHash implements PostSigningManager {
               new Long[] {exported.getId()}, new String[] {RecordType.NORMAL.toString()});
       ArchiveResult result =
           exportImport
-              .exportRecordSelection(
+              .asyncExportSelectionToArchive(
                   exportSelection,
                   config,
                   exported.getOwner(),
@@ -115,7 +115,7 @@ public class PostRecordSigningExportHash implements PostSigningManager {
       try {
         File result =
             exportImport
-                .asynchExportFromSelectionForSigning(
+                .asyncExportSelectionToPdfForSigning(
                     new Long[] {exported.getId()},
                     new String[] {exported.getName()},
                     new String[] {RecordType.NORMAL.toString()},
