@@ -19,6 +19,7 @@ import { DataGridColumn } from "../../util/table";
 import { DataGrid } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
 import useViewportDimensions from "../../util/useViewportDimensions";
+import * as ArrayUtils from "../../util/ArrayUtils";
 
 export const FIELDMARK_COLOR = {
   main: {
@@ -72,6 +73,8 @@ export default function FieldmarkImportDialog({
   const { isViewportSmall } = useViewportDimensions();
   const [notebooks, setNotebooks] =
     React.useState<null | $ReadOnlyArray<Notebook>>(null);
+  const [selectedNotebook, setSelectedNotebook] =
+    React.useState<null | Notebook>(null);
 
   React.useEffect(
     doNotAwait(async () => {
@@ -144,8 +147,14 @@ export default function FieldmarkImportDialog({
                       renderCell: (params: { row: Notebook, ... }) => (
                         <Radio
                           color="primary"
-                          value={false}
-                          checked={false}
+                          value={
+                            selectedNotebook?.metadata.project_id ===
+                            params.row.metadata.project_id
+                          }
+                          checked={
+                            selectedNotebook?.metadata.project_id ===
+                            params.row.metadata.project_id
+                          }
                           inputProps={{ "aria-label": "Notebook selection" }}
                         />
                       ),
@@ -224,6 +233,21 @@ export default function FieldmarkImportDialog({
                   }}
                   loading={notebooks === null}
                   getRowId={(row) => row.metadata.project_id}
+                  onRowSelectionModelChange={(
+                    newSelection: $ReadOnlyArray<string>
+                  ) => {
+                    ArrayUtils.head(newSelection)
+                      .toOptional()
+                      .flatMap((selectedId) =>
+                        ArrayUtils.find(
+                          (n) => n.metadata.project_id === selectedId,
+                          notebooks ?? []
+                        )
+                      )
+                      .do((newlySelectedNotebook) => {
+                        setSelectedNotebook(newlySelectedNotebook);
+                      });
+                  }}
                 />
               </Grid>
             </Grid>
