@@ -366,7 +366,7 @@ function CompareDialog(): Node {
     columns.push(
       DataGridColumn.newColumnWithValueGetter<Document, _>(
         `${formId}:${fieldName}`,
-        (row: mixed, doc: Document) => {
+        (doc: Document) => {
           if (doc.form.id !== formId) return "";
           return doc.fields.find((f) => f.name === fieldName)?.content ?? "";
         },

@@ -18,6 +18,7 @@ import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
 import { DataGrid } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
+import useViewportDimensions from "../../util/useViewportDimensions";
 
 export const FIELDMARK_COLOR = {
   main: {
@@ -56,6 +57,9 @@ type Notebook = {
   name: string,
   metadata: {
     project_id: string,
+    ispublic: string,
+    pre_description: string,
+    project_lead: string,
     ...
   },
   ...
@@ -65,6 +69,7 @@ export default function FieldmarkImportDialog({
   open,
   onClose,
 }: FieldmarkImportDialogArgs): Node {
+  const { isViewportSmall } = useViewportDimensions();
   const [notebooks, setNotebooks] =
     React.useState<null | $ReadOnlyArray<Notebook>>(null);
 
@@ -85,7 +90,13 @@ export default function FieldmarkImportDialog({
 
   return (
     <ThemeProvider theme={createAccentedTheme(FIELDMARK_COLOR)}>
-      <Dialog open={open} onClose={onClose}>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="lg"
+        fullWidth
+        fullScreen={isViewportSmall}
+      >
         <AppBar position="relative" open={true}>
           <Toolbar variant="dense">
             <Typography variant="h6" noWrap component="h2">
@@ -149,7 +160,62 @@ export default function FieldmarkImportDialog({
                       flex: 1,
                       sortable: false,
                     }),
+                    DataGridColumn.newColumnWithFieldName<Notebook, _>(
+                      "status",
+                      {
+                        headerName: "Status",
+                        flex: 1,
+                        sortable: false,
+                      }
+                    ),
+                    DataGridColumn.newColumnWithValueGetter<Notebook, _>(
+                      "isPublic",
+                      (notebook) => notebook.metadata.ispublic,
+                      {
+                        headerName: "Is Public",
+                        flex: 1,
+                        sortable: false,
+                      }
+                    ),
+                    DataGridColumn.newColumnWithValueGetter<Notebook, _>(
+                      "description",
+                      (notebook) => notebook.metadata.pre_description,
+                      {
+                        headerName: "Description",
+                        flex: 1,
+                        sortable: false,
+                      }
+                    ),
+                    DataGridColumn.newColumnWithValueGetter<Notebook, _>(
+                      "projectLead",
+                      (notebook) => notebook.metadata.project_lead,
+                      {
+                        headerName: "Project Lead",
+                        flex: 1,
+                        sortable: false,
+                      }
+                    ),
+                    DataGridColumn.newColumnWithValueGetter<Notebook, _>(
+                      "id",
+                      (notebook) => notebook.metadata.project_id,
+                      {
+                        headerName: "Id",
+                        flex: 1,
+                        sortable: false,
+                      }
+                    ),
                   ]}
+                  initialState={{
+                    columns: {
+                      columnVisibilityModel: {
+                        status: !isViewportSmall,
+                        isPublic: !isViewportSmall,
+                        description: false,
+                        projectLead: false,
+                        id: false,
+                      },
+                    },
+                  }}
                   rows={notebooks ?? []}
                   disableColumnFilter
                   hideFooter
