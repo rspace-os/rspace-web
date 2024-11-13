@@ -126,6 +126,7 @@ export default function FieldmarkImportDialog({
 
   React.useEffect(
     doNotAwait(async () => {
+      if (!open) return;
       try {
         const { data } = await InvApiService.get<
           mixed,
@@ -134,9 +135,16 @@ export default function FieldmarkImportDialog({
         setNotebooks(data);
       } catch (e) {
         console.error(e);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not get notebooks from Fieldmark",
+            message: e.message,
+          })
+        );
       }
     }),
-    []
+    [open]
   );
 
   async function importNotebook(notebook: Notebook) {
