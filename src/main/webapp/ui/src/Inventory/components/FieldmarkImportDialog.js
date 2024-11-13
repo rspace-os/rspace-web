@@ -136,6 +136,19 @@ export default function FieldmarkImportDialog({
     []
   );
 
+  async function importNotebook(notebook: Notebook) {
+    try {
+      await InvApiService.get<mixed, mixed>(
+        "/fieldmark/import/notebook/" + notebook.metadata.project_id
+      );
+      // success toast
+      // reload bench, if that's the current search
+    } catch (e) {
+      console.error(e);
+      // error toast
+    }
+  }
+
   return (
     <ThemeProvider theme={createAccentedTheme(FIELDMARK_COLOR)}>
       <Dialog
@@ -317,7 +330,8 @@ export default function FieldmarkImportDialog({
                   </Button>
                   <ValidatingSubmitButton
                     onClick={() => {
-                      // TODO
+                      if (selectedNotebook)
+                        void importNotebook(selectedNotebook);
                     }}
                     validationResult={
                       !selectedNotebook
