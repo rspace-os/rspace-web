@@ -24,6 +24,7 @@ import {
 import Radio from "@mui/material/Radio";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import * as ArrayUtils from "../../util/ArrayUtils";
+import * as Parsers from "../../util/parsers";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import ValidatingSubmitButton, {
@@ -159,11 +160,22 @@ export default function FieldmarkImportDialog({
         setNotebooks(data);
       } catch (e) {
         console.error(e);
+        const message = Parsers.objectPath(
+          ["response", "data", "data", "validationErrors"],
+          e
+        )
+          .flatMap(Parsers.isArray)
+          .flatMap(ArrayUtils.head)
+          .flatMap(Parsers.isObject)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("message"))
+          .flatMap(Parsers.isString)
+          .orElse(e.message);
         addAlert(
           mkAlert({
             variant: "error",
             title: "Could not get notebooks from Fieldmark",
-            message: e.message,
+            message,
           })
         );
       } finally {
