@@ -319,6 +319,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
         open={fieldmarkOpen}
         onClose={() => {
           setFieldmarkOpen(false);
+          setAnchorEl(null);
         }}
       />
     </Box>

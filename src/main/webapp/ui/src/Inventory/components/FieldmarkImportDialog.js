@@ -20,6 +20,13 @@ import { DataGrid } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import * as ArrayUtils from "../../util/ArrayUtils";
+import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
+import ValidatingSubmitButton, {
+  IsInvalid,
+  IsValid,
+} from "../../components/ValidatingSubmitButton";
+import DialogActions from "@mui/material/DialogActions";
 
 export const FIELDMARK_COLOR = {
   main: {
@@ -117,7 +124,7 @@ export default function FieldmarkImportDialog({
             </Box>
           </Toolbar>
         </AppBar>
-        <Box sx={{ display: "flex", minHeight: 0 }}>
+        <Box sx={{ display: "flex", minHeight: 0, flexDirection: "column" }}>
           <DialogContent>
             <Grid
               container
@@ -252,6 +259,30 @@ export default function FieldmarkImportDialog({
               </Grid>
             </Grid>
           </DialogContent>
+          <DialogActions>
+            <Grid container direction="row" spacing={1}>
+              <Grid item sx={{ ml: "auto" }}>
+                <Stack direction="row" spacing={1}>
+                  <Button onClick={() => onClose()} disabled={false}>
+                    {selectedNotebook ? "Cancel" : "Close"}
+                  </Button>
+                  <ValidatingSubmitButton
+                    onClick={() => {
+                      // TODO
+                    }}
+                    validationResult={
+                      !selectedNotebook
+                        ? IsInvalid("No Notebook selected.")
+                        : IsValid()
+                    }
+                    loading={false}
+                  >
+                    Import
+                  </ValidatingSubmitButton>
+                </Stack>
+              </Grid>
+            </Grid>
+          </DialogActions>
         </Box>
       </Dialog>
     </ThemeProvider>
