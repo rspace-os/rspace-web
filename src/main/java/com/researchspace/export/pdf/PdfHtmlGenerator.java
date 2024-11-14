@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;
@@ -98,9 +99,9 @@ public class PdfHtmlGenerator {
       String html, String docOwner, String docTitle, String exporterFullName) {
 
     Map<String, Object> context = new HashMap<>();
-    context.put("docOwner", docOwner);
-    context.put("docTitle", docTitle);
-    context.put("exporterFullName", exporterFullName);
+    context.put("docOwner", StringEscapeUtils.escapeHtml(docOwner));
+    context.put("docTitle", StringEscapeUtils.escapeHtml(docTitle));
+    context.put("exporterFullName", StringEscapeUtils.escapeHtml(exporterFullName));
     String runningPageHtml =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocityEngine, "pdf/runningPageElems.vm", "UTF-8", context);
