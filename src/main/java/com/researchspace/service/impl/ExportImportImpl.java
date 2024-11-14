@@ -58,6 +58,8 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import javax.servlet.http.HttpServletResponse;
+import lombok.AccessLevel;
+import lombok.Setter;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -88,32 +90,30 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   private String rsversion;
 
   private @Autowired IPermissionUtils permissions;
-
   private @Autowired CommunicationManager commMgr;
   private @Autowired RSMetaDataManager metaDataMgr;
   private @Autowired FolderManager folderManager;
   private @Autowired @Lazy GroupManager grpMgr;
-
   private @Autowired Collection<ArchiveExportServiceManager> archiverServiceManagers;
   private @Autowired ArchiveImporterManager archiveImporter;
   private @Autowired PdfWordExportManager pdfWordExportManager;
-
   private @Autowired UserExternalIdResolver extIdResolver;
+
+  @Setter(AccessLevel.PACKAGE)
   private @Autowired MessageSource messageSource;
+
   private @Autowired IPropertyHolder properties;
+
+  @Setter(AccessLevel.PACKAGE)
   private @Autowired ResponseUtil responseUtil;
+
   private @Autowired UserManager userManager;
   private @Autowired OperationFailedMessageGenerator authGenerator;
   private @Autowired ArchiveRemover archiveRemover;
   private @Autowired ApplicationEventPublisher publisher;
-
   private @Autowired ArchiveExportPlanner archivePlanner;
 
-  void setResponseUtil(ResponseUtil responseUtil) {
-    this.responseUtil = responseUtil;
-  }
-
-  public Future<EcatDocumentFile> exportPdfOfAllUserRecords(
+  public Future<EcatDocumentFile> asyncExportAllUserRecordsToPdf(
       User toExport, ExportToFileConfig config, User exporter) throws IOException {
     Folder rootRecord = folderManager.getRootFolderForUser(toExport);
     config.setExportScope(ExportScope.USER);
@@ -126,42 +126,64 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     Long[] exportIds = new Long[] {rootRecord.getId()};
     String[] exportTypes = new String[] {RecordType.FOLDER.name()};
     String[] exportNames = new String[] {rootRecord.getName()};
-    EcatDocumentFile ecatdoc =
-        pdfWordExportManager.doExport(
-            toExport, exportIds, exportNames, exportTypes, config, exporter);
-    return new AsyncResult<>(ecatdoc);
+    try {
+      EcatDocumentFile pdfExport =
+          pdfWordExportManager.doExport(
+              toExport, exportIds, exportNames, exportTypes, config, exporter);
+      return new AsyncResult<>(pdfExport);
+    } catch (Exception e) {
+      logAndNotifyUserAboutExportFailure(config.getExportName(), exporter, e);
+      throw e;
+    }
+  }
+
+  private void logAndNotifyUserAboutExportFailure(String exportName, User exporter, Exception e) {
+    log.error("Unable to export.", e);
+    postArchiveExportFailure(exportName, exporter, e.getMessage());
   }
 
   @Override
-  public Future<EcatDocumentFile> asynchExportFromSelection(
+  public Future<EcatDocumentFile> asyncExportSelectionToPdf(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
       ExportToFileConfig config,
       User exporter)
       throws IOException {
-    EcatDocumentFile ecatdoc =
-        pdfWordExportManager.doExport(
-            exporter, exportIds, exportNames, exportTypes, config, exporter);
-    return new AsyncResult<>(ecatdoc);
+
+    try {
+      EcatDocumentFile pdfExport =
+          pdfWordExportManager.doExport(
+              exporter, exportIds, exportNames, exportTypes, config, exporter);
+      return new AsyncResult<>(pdfExport);
+    } catch (Exception e) {
+      logAndNotifyUserAboutExportFailure(config.getExportName(), exporter, e);
+      throw e;
+    }
   }
 
   @Override
-  public Future<File> asynchExportFromSelectionForSigning(
+  public Future<File> asyncExportSelectionToPdfForSigning(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
       ExportToFileConfig config,
       User exporter)
       throws IOException {
-    File pdfExport =
-        pdfWordExportManager.doExportForSigning(
-            exporter, exportIds, exportNames, exportTypes, config, exporter);
-    return new AsyncResult<>(pdfExport);
+
+    try {
+      File pdfExport =
+          pdfWordExportManager.doExportForSigning(
+              exporter, exportIds, exportNames, exportTypes, config, exporter);
+      return new AsyncResult<>(pdfExport);
+    } catch (Exception e) {
+      logAndNotifyUserAboutExportFailure(config.getExportName(), exporter, e);
+      throw e;
+    }
   }
 
   @Override
-  public EcatDocumentFile synchExportFromSelection(
+  public EcatDocumentFile syncExportSelectionToPdf(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
@@ -183,7 +205,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
 
   /** Runs asynchronously */
   @Override
-  public Future<ArchiveResult> exportRecordSelection(
+  public Future<ArchiveResult> asyncExportSelectionToArchive(
       ExportSelection exportSelection,
       ArchiveExportConfig expCfg,
       User exporter,
@@ -197,8 +219,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
           doArchiveSelection(expCfg, exporter, baseURL, postArchiveCompleter, exportListSupplier);
       return new AsyncResult<>(result);
     } catch (Exception e) {
-      log.error("Unable to export.", e);
-      postArchiveExportFailure(expCfg.getArchiveType(), exporter, e.getMessage());
+      logAndNotifyUserAboutExportFailure(expCfg.getDescription(), exporter, e);
       throw e;
     }
   }
@@ -225,7 +246,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   @Override
-  public ArchiveResult exportSyncRecordSelection(
+  public ArchiveResult syncExportSelectionToArchive(
       ArchiveExportConfig expCfg,
       User user,
       URI baseURL,
@@ -255,8 +276,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       postArchiveCompletionOperations(postArchiveCompleter, expCfg, user, result);
       return result;
     } catch (Exception e) {
-      log.error("Export attempt failed", e);
-      postArchiveExportFailure(expCfg.getDescription(), expCfg.getExporter(), e.getMessage());
+      logAndNotifyUserAboutExportFailure(expCfg.getDescription(), expCfg.getExporter(), e);
       throw e;
     }
   }
@@ -334,7 +354,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   @Override
-  public Future<ArchiveResult> exportArchiveAsyncUserWork(
+  public Future<ArchiveResult> asyncExportUserWorkToArchive(
       ArchiveExportConfig expCfg,
       User toExport,
       URI baseURL,
@@ -353,15 +373,14 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
           doSynchUserArchive(expCfg, baseURL, postArchiveCompleter, userSelection, rcdList);
       return new AsyncResult<>(result);
     } catch (Exception e) {
-      log.error("Unable to export.", e);
       String exportName = "user-" + toExport.getUsername();
-      postArchiveExportFailure(exportName, expCfg.getExporter(), e.getMessage());
+      logAndNotifyUserAboutExportFailure(exportName, exporter, e);
       throw e;
     }
   }
 
   @Override
-  public ArchiveResult exportArchiveSyncUserWork(
+  public ArchiveResult syncExportUserWorkToArchive(
       ArchiveExportConfig expCfg,
       User toExport,
       URI baseURL,
@@ -391,8 +410,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       postArchiveCompletionOperations(postArchiveCompleter, expCfg, expCfg.getExporter(), result);
       return result;
     } catch (Exception e) {
-      log.error("Export attempt failed", e);
-      postArchiveExportFailure(expCfg.getDescription(), expCfg.getExporter(), e.getMessage());
+      logAndNotifyUserAboutExportFailure(expCfg.getDescription(), expCfg.getExporter(), e);
       throw e;
     }
   }
@@ -448,8 +466,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   @Override
-  public Future<EcatDocumentFile> exportGroupPdf(
-      ExportToFileConfig expCfg, User exporter, Long groupId) {
+  public Future<EcatDocumentFile> asyncExportGroupToPdf(
+      ExportToFileConfig expCfg, User exporter, Long groupId) throws IOException {
 
     expCfg.setExportScope(ExportScope.GROUP);
     Group grp = grpMgr.getGroup(groupId);
@@ -470,14 +488,14 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
               expCfg,
               exporter);
       return new AsyncResult<>(ecatdoc);
-    } catch (IOException e) {
-      log.error("Error performing export.", e);
+    } catch (Exception e) {
+      logAndNotifyUserAboutExportFailure(expCfg.getExportName(), exporter, e);
+      throw e;
     }
-    return null;
   }
 
   @Override
-  public Future<ArchiveResult> exportAsyncGroup(
+  public Future<ArchiveResult> asyncExportGroupToArchive(
       ArchiveExportConfig expCfg,
       User exporter,
       Long groupId,
@@ -487,8 +505,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     try {
       createTopLevelExportFolder(expCfg);
     } catch (Exception e) {
-      log.error("Unable to export.", e);
-      postArchiveExportFailure(expCfg.getArchiveType(), exporter, e.getMessage());
+      logAndNotifyUserAboutExportFailure(expCfg.getDescription(), exporter, e);
       throw e;
     }
     ExportSelection exportSelection = configureGroupExportCfg(expCfg, exporter, groupId);
@@ -498,13 +515,12 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
             exporter,
             baseURL,
             postArchiveCompleter,
-            exportSelection,
             () -> archivePlanner.createExportRecordList(expCfg, exportSelection));
     return new AsyncResult<>(result);
   }
 
   @Override
-  public ArchiveResult exportSyncGroup(
+  public ArchiveResult syncExportGroupToArchive(
       ArchiveExportConfig expCfg,
       User exporter,
       Long groupId,
@@ -512,10 +528,10 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       PostArchiveCompletion postArchiveCompleter,
       Supplier<ExportRecordList> exportIdSupplier)
       throws Exception {
+
     createTopLevelExportFolder(expCfg);
-    ExportSelection exportSelection = configureGroupExportCfg(expCfg, exporter, groupId);
-    return doGroupArchive(
-        expCfg, exporter, baseURL, postArchiveCompleter, exportSelection, exportIdSupplier);
+    configureGroupExportCfg(expCfg, exporter, groupId);
+    return doGroupArchive(expCfg, exporter, baseURL, postArchiveCompleter, exportIdSupplier);
   }
 
   private ArchiveResult doGroupArchive(
@@ -523,23 +539,17 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       User exporter,
       URI baseURL,
       PostArchiveCompletion postArchiveCompleter,
-      ExportSelection exportSelection,
       Supplier<ExportRecordList> exportIdSupplier) {
+
     try {
       ArchiveResult result = doArchive(expCfg, baseURL, exportIdSupplier);
       postArchiveCompletionOperations(postArchiveCompleter, expCfg, exporter, result);
       return result;
 
-    } catch (ExportFailureException exception) {
-      handleGrpExportFailure(expCfg, exception);
-      throw exception;
+    } catch (ExportFailureException e) {
+      logAndNotifyUserAboutExportFailure(expCfg.getDescription(), expCfg.getExporter(), e);
+      throw e;
     }
-  }
-
-  private void handleGrpExportFailure(
-      ArchiveExportConfig expCfg, ExportFailureException exception) {
-    log.error("Export attempt failed", exception);
-    postArchiveExportFailure(expCfg.getDescription(), expCfg.getExporter(), exception.getMessage());
   }
 
   private ExportSelection configureGroupExportCfg(
@@ -629,22 +639,6 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
           authGenerator.getFailedMessage(
               exporter.getUsername(), " export records of [" + userToExport.getUsername() + "]");
       throw new AuthorizationException(msg);
-    }
-  }
-
-  void setMessageSource(MessageSource messageSource) {
-    this.messageSource = messageSource;
-  }
-
-  @Override
-  public void handlePossibleRollbackAsync(Future<EcatDocumentFile> doc) throws IOException {
-    try {
-      doc.get();
-    } catch (Exception e) {
-      log.error(
-          "Export failed: {} - root cause is {}",
-          e.getMessage(),
-          e.getCause() != null ? e.getCause().getMessage() : "unknown");
     }
   }
 }

@@ -85,7 +85,7 @@ public class PostRecordSigningExportHashTest {
   }
 
   private Future<ArchiveResult> performMockArchive() {
-    return exportImport.exportRecordSelection(
+    return exportImport.asyncExportSelectionToArchive(
         Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
   }
 
@@ -102,7 +102,7 @@ public class PostRecordSigningExportHashTest {
   }
 
   private void setUpPerformPdfExportOk() throws IOException {
-    when(exportImport.asynchExportFromSelectionForSigning(
+    when(exportImport.asyncExportSelectionToPdfForSigning(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
         .thenReturn(new AsyncResult<File>(mockPdfExportFile));
   }

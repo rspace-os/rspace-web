@@ -492,13 +492,12 @@ public class ExportController extends BaseController {
       switch (exportSelection.getType()) {
         case SELECTION:
           futureExportDocument =
-              exportManager.asynchExportFromSelection(
+              exportManager.asyncExportSelectionToPdf(
                   exportSelection.getExportIds(),
                   exportSelection.getExportNames(),
                   exportSelection.getExportTypes(),
                   exportToFileConfig,
                   exporter);
-          exportManager.handlePossibleRollbackAsync(futureExportDocument);
           break;
         case USER:
           if (isWordExport(exportToFileConfig)) {
@@ -514,7 +513,8 @@ public class ExportController extends BaseController {
           }
 
           futureExportDocument =
-              exportManager.exportPdfOfAllUserRecords(userToExport, exportToFileConfig, exporter);
+              exportManager.asyncExportAllUserRecordsToPdf(
+                  userToExport, exportToFileConfig, exporter);
           break;
         case GROUP:
           if (isWordExport(exportToFileConfig)) {
@@ -526,7 +526,7 @@ public class ExportController extends BaseController {
           if (groupPermUtils.userCanExportGroup(
               exporter, groupManager.getGroup(exportSelection.getGroupId()))) {
             futureExportDocument =
-                exportManager.exportGroupPdf(
+                exportManager.asyncExportGroupToPdf(
                     exportToFileConfig, exporter, exportSelection.getGroupId());
           } else {
             return getText(
@@ -692,7 +692,7 @@ public class ExportController extends BaseController {
       switch (exportSelection.getType()) {
         case SELECTION:
           futureArchive =
-              exportManager.exportRecordSelection(
+              exportManager.asyncExportSelectionToArchive(
                   exportSelection, exportCfg, exporter, baseUri, standardPostExport);
           break;
         case USER:
@@ -703,7 +703,7 @@ public class ExportController extends BaseController {
           Long groupId = exportSelection.getGroupId();
           if (groupPermUtils.userCanExportGroup(exporter, groupManager.getGroup(groupId))) {
             futureArchive =
-                exportManager.exportAsyncGroup(
+                exportManager.asyncExportGroupToArchive(
                     exportCfg, exporter, groupId, baseUri, standardPostExport);
           } else {
             return getText(

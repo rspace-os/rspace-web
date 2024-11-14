@@ -87,7 +87,7 @@ public class ExportTasklet implements Tasklet {
       }
       try {
         ArchiveResult result =
-            exportService.exportArchiveSyncUserWork(
+            exportService.syncExportUserWorkToArchive(
                 config, toExport, serverUrl(), user, postArchiveCompleter, exportIdSupplier);
 
         updateContext(chunkContext, result);
@@ -101,7 +101,7 @@ public class ExportTasklet implements Tasklet {
       if (groupId != null) {
         try {
           ArchiveResult result =
-              exportService.exportSyncGroup(
+              exportService.syncExportGroupToArchive(
                   config, user, groupId, serverUrl(), postArchiveCompleter, exportIdSupplier);
           updateContext(chunkContext, result);
         } catch (Exception e) {
@@ -114,7 +114,7 @@ public class ExportTasklet implements Tasklet {
     } else if (config.isSelectionScope()) {
       try {
         ArchiveResult result =
-            exportService.exportSyncRecordSelection(
+            exportService.syncExportSelectionToArchive(
                 config, user, serverUrl(), postArchiveCompleter, exportIdSupplier);
         updateContext(chunkContext, result);
       } catch (Exception e) {

@@ -287,7 +287,7 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
         ExportSelection.createRecordsExportSelection(
             new Long[] {subFolder.getId()}, new String[] {"FOLDER"});
     Future<ArchiveResult> result =
-        exportMgr.exportRecordSelection(
+        exportMgr.asyncExportSelectionToArchive(
             exportSelection, cfg, u1, new URI("http://www.google.com"), standardPostExport);
     File zipFile = result.get().getExportFile();
     // update user

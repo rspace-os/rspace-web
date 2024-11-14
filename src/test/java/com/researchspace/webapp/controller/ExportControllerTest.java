@@ -437,7 +437,7 @@ public class ExportControllerTest {
     String rst = exportController.export(exportConfig, bindingResult, principal);
 
     Mockito.verify(exImportMgr, Mockito.times(1))
-        .exportPdfOfAllUserRecords(user, exportConfig.getExportConfig(), user);
+        .asyncExportAllUserRecordsToPdf(user, exportConfig.getExportConfig(), user);
     Mockito.verify(bindingResult, Mockito.times(1)).hasErrors();
 
     assertTrue(rst != null);
@@ -466,7 +466,7 @@ public class ExportControllerTest {
     // check that regular user can't export another's records
     String rst = exportController.export(exportConfig, bindingResult, principal);
     Mockito.verify(exImportMgr, never())
-        .exportPdfOfAllUserRecords(other, exportConfig.getExportConfig(), user);
+        .asyncExportAllUserRecordsToPdf(other, exportConfig.getExportConfig(), user);
     assertEquals("failure: auth_error", rst);
   }
 
@@ -485,7 +485,7 @@ public class ExportControllerTest {
     when(grpPermUtils.userCanExportGroup(user, group)).thenReturn(true);
 
     exportController.export(exportConfig, bindingResult, principal);
-    verify(exImportMgr, times(1)).exportGroupPdf(exportConfig.getExportConfig(), user, 1L);
+    verify(exImportMgr, times(1)).asyncExportGroupToPdf(exportConfig.getExportConfig(), user, 1L);
 
     exportConfig.getExportConfig().setExportFormat(WORD);
     String rst = exportController.export(exportConfig, bindingResult, principal);
@@ -569,7 +569,7 @@ public class ExportControllerTest {
 
   private void setupArchiveNotMadeExpectation() {
     verify(exImportMgr, never())
-        .exportRecordSelection(
+        .asyncExportSelectionToArchive(
             Mockito.any(ExportSelection.class),
             Mockito.any(ArchiveExportConfig.class),
             Mockito.any(User.class),
