@@ -312,6 +312,19 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
           }}
           onClick={() => {
             setFieldmarkOpen(true);
+            /*
+             * We close the create menu when the fieldmark dialog is opened,
+             * rather than leaving it open in the background as would normally
+             * be the case, because the create menu is portalled to the root of
+             * the DOM and so floats over all else whereas the fieldmark dialog
+             * is added to the DOM as a child of a sibling of the `<section>`
+             * that wraps all of the alert toasts. This is so that alerts
+             * displayed by the contents of the dialog are reachable by screen
+             * readers but has the effect of meaning that the create new dialog
+             * would render over it. By closing the menu when the dialog is
+             * opened we prevent this bug.
+             */
+            setAnchorEl(null);
           }}
         />
       </StyledMenu>
@@ -319,7 +332,6 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
         open={fieldmarkOpen}
         onClose={() => {
           setFieldmarkOpen(false);
-          setAnchorEl(null);
         }}
       />
     </Box>
