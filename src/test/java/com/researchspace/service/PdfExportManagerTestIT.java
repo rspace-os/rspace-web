@@ -53,7 +53,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     logoutAndLoginAs(exporter);
 
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(exporter, "text");
-    sd.setName(sd.getName() + " + special chars &∅∈∌");
+    sd.setName("special chars in doc name &∅∈∌ and &#x3");
     recordMgr.save(sd, exporter);
 
     ExportToFileConfig config = new ExportToFileConfig();

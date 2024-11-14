@@ -330,7 +330,7 @@ public class PdfHtmlGeneratorTest {
             basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
 
     doc = new StructuredDocument(TestFactory.createAnyForm());
-    doc.setName("name with special html chars &∅∈∌");
+    doc.setName("name with non-ascii &∅∈∌ and html entities &#x3");
 
     User owner = new User();
     owner.setFirstName("Dev&Ops");
@@ -338,13 +338,16 @@ public class PdfHtmlGeneratorTest {
     doc.setOwner(owner);
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
-    // verfiy doc name chars converted
-    assertFalse("unexpected: " + processedHtml, processedHtml.contains("&∅∈∌"));
+    // verify doc name chars converted
+    assertFalse(
+        "unexpected: " + processedHtml,
+        processedHtml.contains("&∅∈∌") || processedHtml.contains("&#x3"));
     assertTrue(
-        "unexpected: " + processedHtml, processedHtml.contains("special html chars &amp;</span>"));
+        "unexpected: " + processedHtml, processedHtml.contains("name with non-ascii &amp;</span>"));
     assertTrue(
         "unexpected: " + processedHtml,
         processedHtml.contains("<span style=\"font-family: noto sans math;\">∅∈∌ </span>"));
+    assertTrue("unexpected: " + processedHtml, processedHtml.contains("&amp;#x3"));
     // verify owner name chars converted
     assertFalse("unexpected: " + processedHtml, processedHtml.contains("Dev&Ops"));
     assertTrue("unexpected: " + processedHtml, processedHtml.contains("Dev&amp;Ops"));
