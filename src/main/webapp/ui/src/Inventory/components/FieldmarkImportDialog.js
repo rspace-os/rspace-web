@@ -3,7 +3,7 @@
 import React, { type Node } from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
-import Dialog from "@mui/material/Dialog";
+import { Dialog } from "../../components/DialogBoundary";
 import createAccentedTheme from "../../accentedTheme";
 import Toolbar from "@mui/material/Toolbar";
 import AppBar from "@mui/material/AppBar";
@@ -34,6 +34,7 @@ import ValidatingSubmitButton, {
 import DialogActions from "@mui/material/DialogActions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
+import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
 
 export const FIELDMARK_COLOR = {
   main: {
@@ -62,6 +63,31 @@ export const FIELDMARK_COLOR = {
     lightness: 22,
   },
 };
+
+class ResponseContainer implements LinkableRecord {
+  id: ?number;
+  globalId: ?string;
+  name: string;
+
+  constructor({ globalId, name }: {| globalId: string, name: string |}) {
+    this.globalId = globalId;
+    this.name = name;
+    this.id = 0;
+  }
+
+  get recordTypeLabel(): string {
+    return "Container";
+  }
+
+  get iconName(): string {
+    return "container";
+  }
+
+  get permalinkURL(): string {
+    if (!this.globalId) throw new Error("Impossible");
+    return `/globalId/${this.globalId}`;
+  }
+}
 
 const GridToolbar = ({
   setColumnsMenuAnchorEl,
@@ -188,13 +214,24 @@ export default function FieldmarkImportDialog({
   async function importNotebook(notebook: Notebook) {
     setImporting(true);
     try {
-      await InvApiService.get<mixed, mixed>(
-        "/fieldmark/import/notebook/" + notebook.metadata.project_id
-      );
+      const { data } = await InvApiService.get<
+        mixed,
+        { containerName: string, containerGlobalId: string, ... }
+      >("/fieldmark/import/notebook/" + notebook.metadata.project_id);
       addAlert(
         mkAlert({
           variant: "success",
           message: "Successfully imported notebook.",
+          details: [
+            {
+              variant: "success",
+              title: data.containerName,
+              record: new ResponseContainer({
+                globalId: data.containerGlobalId,
+                name: data.containerName,
+              }),
+            },
+          ],
         })
       );
       // reload bench, if that's the current search
