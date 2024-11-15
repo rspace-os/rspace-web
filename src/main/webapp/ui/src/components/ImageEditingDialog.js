@@ -18,6 +18,14 @@ import { styled } from "@mui/material/styles";
 import { makeStyles } from "tss-react/mui";
 
 const useStyles = makeStyles()((_theme, { height }) => ({
+  /*
+   * These height style attributes are to ensure that when a tall image is
+   * being edited, it is scaled down rather than overflowing the dialog and
+   * resulting in the need to scroll: ideally the whole image should be visible
+   * when cropping. Setting `maxHeight: 100%` and `objectFit: scale-down` is
+   * not sufficient; all of the DOM nodes between the HTMLImageElement and the
+   * DialogContent need to have `height: 100%`. We then have to shrink back the crop-mask to only cover the image itself and not the whitespace below.
+   */
   crop: {
     height: "100%",
     "& .ReactCrop__child-wrapper": {
@@ -184,6 +192,21 @@ function ImageEditingDialog({
             onChange={setCrop}
             className={classes.crop}
             maxHeight={imageHeight}
+            onComplete={(...args) => {
+              /*
+               * Prevent the user from extending the cropping region to areas
+               * outside of the image, below it. Normally, react-image-crop
+               * would prevent this -- as it does in the other three directions
+               * -- but because we're setting `height: 100%` on many of its
+               * constitutent DOM nodes this is no longer enforced. As such, we
+               * enforce it ourselves.
+               */
+              if (args[0].height + args[0].y > imageHeight)
+                setCrop({
+                  ...args[0],
+                  height: Math.min(imageHeight - args[0].y, args[0].height),
+                });
+            }}
           >
             <img
               src={editorData}
