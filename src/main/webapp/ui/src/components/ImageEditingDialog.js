@@ -14,8 +14,6 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import CardMedia from "@mui/material/CardMedia";
-import Card from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
 import { makeStyles } from "tss-react/mui";
 
