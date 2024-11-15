@@ -166,7 +166,13 @@ function ImageEditingDialog({
 
   return (
     <StyledDialog maxWidth="md" open={open} onClose={close}>
-      <DialogContent>
+      <DialogContent
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+        }}
+      >
         {editorData && (
           <ReactCrop
             crop={crop}
