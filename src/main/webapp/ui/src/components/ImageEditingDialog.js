@@ -8,6 +8,12 @@ import DialogContent from "@mui/material/DialogContent";
 import { observer } from "mobx-react-lite";
 import ReactCrop from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
+import RotateLeftIcon from "@mui/icons-material/RotateLeft";
+import RotateRightIcon from "@mui/icons-material/RotateRight";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Divider from "@mui/material/Divider";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
 
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 
@@ -84,6 +90,24 @@ function ImageEditingDialog({
     }
   };
 
+  const onRotate = (direction: "clockwise" | "counter clockwise"): void => {
+    const getRotatedImageURL = (): string => {
+      const image = imageElement.current;
+      if (!image) throw new Error("Image file not present");
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = image.naturalHeight;
+      canvas.height = image.naturalWidth;
+      if (ctx) {
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(((direction === "clockwise" ? 90 : -90) * Math.PI) / 180);
+        ctx.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
+      }
+      return canvas.toDataURL("image/jpeg", "1.0");
+    };
+    setEditorData(getRotatedImageURL());
+  };
+
   const cropImage = (): string => {
     const image = imageElement.current;
     if (!image) throw new Error("Image file not present");
@@ -126,6 +150,41 @@ function ImageEditingDialog({
         )}
       </DialogContent>
       <DialogActions>
+        <ButtonGroup
+          variant="outlined"
+          sx={{
+            border: "2px solid #cfc9d2",
+            borderRadius: "8px",
+          }}
+        >
+          <IconButton
+            onClick={() => {
+              onRotate("counter clockwise");
+            }}
+            aria-label="rotate left"
+            size="small"
+          >
+            <RotateLeftIcon />
+          </IconButton>
+          <Divider
+            orientation="vertical"
+            sx={{
+              height: "26px",
+              marginTop: "4px",
+              borderRightWidth: "1px",
+            }}
+          />
+          <IconButton
+            onClick={() => {
+              onRotate("clockwise");
+            }}
+            aria-label="rotate right"
+            size="small"
+          >
+            <RotateRightIcon />
+          </IconButton>
+        </ButtonGroup>
+        <Box flexGrow={1}></Box>
         <Button onClick={mainDialogSubmit} color="primary">
           Done
         </Button>
