@@ -7,7 +7,7 @@ module.exports = {
       severity: "error",
       from: {},
       to: {
-        licenseNot: ["MIT", "BSD", "Apache", "Hippocratic"]
+        licenseNot: ["MIT", "BSD", "Apache", "Hippocratic", "ISC"]
       }
     },
     // {
