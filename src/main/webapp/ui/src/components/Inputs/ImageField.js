@@ -1,6 +1,5 @@
 // @flow
 
-import "tui-image-editor/dist/tui-image-editor.css";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
