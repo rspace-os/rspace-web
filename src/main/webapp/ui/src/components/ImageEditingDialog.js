@@ -197,13 +197,7 @@ function ImageEditingDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <ButtonGroup
-          variant="outlined"
-          sx={{
-            border: "2px solid #cfc9d2",
-            borderRadius: "8px",
-          }}
-        >
+        <ButtonGroup variant="outlined">
           <IconButton
             onClick={() => {
               onRotate("counter clockwise");
@@ -218,7 +212,7 @@ function ImageEditingDialog({
             sx={{
               height: "26px",
               marginTop: "4px",
-              borderRightWidth: "1px",
+              borderRightWidth: "2px",
             }}
           />
           <IconButton
