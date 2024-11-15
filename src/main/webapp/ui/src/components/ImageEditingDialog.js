@@ -17,11 +17,14 @@ import IconButton from "@mui/material/IconButton";
 import { styled } from "@mui/material/styles";
 import { makeStyles } from "tss-react/mui";
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((_theme, { height }) => ({
   crop: {
     height: "100%",
     "& .ReactCrop__child-wrapper": {
       height: "100%",
+    },
+    "& .ReactCrop__crop-mask": {
+      height: `${height}px`,
     },
   },
 }));
@@ -60,7 +63,8 @@ function ImageEditingDialog({
   close,
   submitHandler,
 }: ImageEditingDialogArgs): Node {
-  const { classes } = useStyles();
+  const [imageHeight, setImageHeight] = React.useState(0);
+  const { classes } = useStyles({ height: imageHeight });
   const [editorData, setEditorData] = React.useState<?string>(null);
   const [crop, setCrop] = React.useState({
     unit: "px",
@@ -91,9 +95,11 @@ function ImageEditingDialog({
 
   const onImageLoad = (e: Event): void => {
     if (e.target instanceof HTMLImageElement) {
-      const { naturalHeight, naturalWidth, height, width } = e.target;
+      const target: HTMLImageElement = e.target;
+      const { naturalHeight, naturalWidth, height, width } = target;
+      setImageHeight(height);
       if (!imageElement) return;
-      imageElement.current = e.target;
+      imageElement.current = target;
       setScale({
         x: naturalWidth / width,
         y: naturalHeight / height,
@@ -162,7 +168,12 @@ function ImageEditingDialog({
     <StyledDialog maxWidth="md" open={open} onClose={close}>
       <DialogContent>
         {editorData && (
-          <ReactCrop crop={crop} onChange={setCrop} className={classes.crop}>
+          <ReactCrop
+            crop={crop}
+            onChange={setCrop}
+            className={classes.crop}
+            maxHeight={imageHeight}
+          >
             <img
               src={editorData}
               onLoad={onImageLoad}
