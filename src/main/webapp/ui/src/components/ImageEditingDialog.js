@@ -31,6 +31,11 @@ const useStyles = makeStyles()((_theme, { height }) => ({
 
 const StyledDialog = styled(Dialog)(() => ({
   "& > .MuiDialog-container > .MuiPaper-root": {
+    /*
+     * Even though this makes the dialog taller than it needs to be for
+     * horizontal images, this is necessary to ensure that vertical images are
+     * scaled down rather than overflowing the dialog with a scrollbar.
+     */
     height: "100%",
   },
 }));
