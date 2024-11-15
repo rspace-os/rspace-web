@@ -18,6 +18,16 @@ import useViewportDimensions from "../util/useViewportDimensions";
 import CardMedia from "@mui/material/CardMedia";
 import Card from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
+import { makeStyles } from "tss-react/mui";
+
+const useStyles = makeStyles()(() => ({
+  crop: {
+    height: "100%",
+    "& .ReactCrop__child-wrapper": {
+      height: "100%",
+    },
+  },
+}));
 
 const StyledDialog = styled(Dialog)(() => ({
   "& > .MuiDialog-container > .MuiPaper-root": {
@@ -53,6 +63,7 @@ function ImageEditingDialog({
   close,
   submitHandler,
 }: ImageEditingDialogArgs): Node {
+  const { classes } = useStyles();
   const [editorData, setEditorData] = React.useState<?string>(null);
   const [crop, setCrop] = React.useState({
     unit: "px",
@@ -154,18 +165,17 @@ function ImageEditingDialog({
     <StyledDialog maxWidth="md" open={open} onClose={close}>
       <DialogContent>
         {editorData && (
-          <Card sx={{ height: "100%" }}>
-            <CardMedia
-              component="img"
-              image={editorData}
+          <ReactCrop crop={crop} onChange={setCrop} className={classes.crop}>
+            <img
+              src={editorData}
               onLoad={onImageLoad}
-              sx={{
+              style={{
                 maxHeight: "100%",
                 maxWidth: "100%",
                 objectFit: "scale-down",
               }}
             />
-          </Card>
+          </ReactCrop>
         )}
       </DialogContent>
       <DialogActions>
