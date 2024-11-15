@@ -246,7 +246,7 @@ function ImageEditingDialog({
             onClick={() => {
               onRotate("counter clockwise");
             }}
-            aria-label="rotate left"
+            aria-label="rotate counter clockwise"
             size="small"
           >
             <RotateLeftIcon />
@@ -263,7 +263,7 @@ function ImageEditingDialog({
             onClick={() => {
               onRotate("clockwise");
             }}
-            aria-label="rotate right"
+            aria-label="rotate clockwise"
             size="small"
           >
             <RotateRightIcon />

@@ -140,6 +140,7 @@
       "default",
       "jest-junit",
       "<rootDir>/__tests__/reporters/slowest"
-    ]
+    ],
+    "testEnvironmentOptions": { "resources": "usable" }
   }
 }
