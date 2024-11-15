@@ -14,6 +14,16 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
+import useViewportDimensions from "../util/useViewportDimensions";
+import CardMedia from "@mui/material/CardMedia";
+import Card from "@mui/material/Card";
+import { styled } from "@mui/material/styles";
+
+const StyledDialog = styled(Dialog)(() => ({
+  "& > .MuiDialog-container > .MuiPaper-root": {
+    height: "100%",
+  },
+}));
 
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 
@@ -141,12 +151,21 @@ function ImageEditingDialog({
   };
 
   return (
-    <Dialog fullScreen open={open} onClose={close}>
-      <DialogContent style={{ overscrollBehavior: "contain", padding: "0px" }}>
+    <StyledDialog maxWidth="md" open={open} onClose={close}>
+      <DialogContent>
         {editorData && (
-          <ReactCrop crop={crop} onChange={setCrop}>
-            <img src={editorData} onLoad={onImageLoad} />
-          </ReactCrop>
+          <Card sx={{ height: "100%" }}>
+            <CardMedia
+              component="img"
+              image={editorData}
+              onLoad={onImageLoad}
+              sx={{
+                maxHeight: "100%",
+                maxWidth: "100%",
+                objectFit: "scale-down",
+              }}
+            />
+          </Card>
         )}
       </DialogContent>
       <DialogActions>
@@ -189,7 +208,7 @@ function ImageEditingDialog({
           Done
         </Button>
       </DialogActions>
-    </Dialog>
+    </StyledDialog>
   );
 }
 
