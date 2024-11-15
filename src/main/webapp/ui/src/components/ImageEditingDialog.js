@@ -184,6 +184,10 @@ function ImageEditingDialog({
               src={editorData}
               onLoad={onImageLoad}
               style={{
+                /*
+                 * Can't add a border or outline as it throws off the logic of
+                 * the crop region and draggable anchors.
+                 */
                 maxHeight: "100%",
                 maxWidth: "100%",
                 objectFit: "scale-down",
