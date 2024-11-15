@@ -1,6 +1,6 @@
 //@flow
 
-import React, { useRef, type Node, type ComponentType } from "react";
+import React, { type Node, type ComponentType } from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -38,7 +38,18 @@ function ImageEditingDialog({
   submitHandler,
 }: ImageEditingDialogArgs): Node {
   const [editorData, setEditorData] = React.useState<?string>(null);
-  const [crop, setCrop] = React.useState();
+  const [crop, setCrop] = React.useState({
+    unit: "px",
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
+  const [scale, setScale] = React.useState({
+    x: 1,
+    y: 1,
+  });
+  const imageElement = React.useRef<HTMLImageElement | null>(null);
 
   React.useEffect(() => {
     let settable = true;
@@ -54,8 +65,53 @@ function ImageEditingDialog({
     };
   }, [imageFile]);
 
+  const onImageLoad = (e: Event): void => {
+    if (e.target instanceof HTMLImageElement) {
+      const { naturalHeight, naturalWidth, height, width } = e.target;
+      if (!imageElement) return;
+      imageElement.current = e.target;
+      setScale({
+        x: naturalWidth / width,
+        y: naturalHeight / height,
+      });
+      setCrop({
+        unit: "px",
+        x: 0,
+        y: 0,
+        width,
+        height,
+      });
+    }
+  };
+
+  const cropImage = (): string => {
+    const image = imageElement.current;
+    if (!image) throw new Error("Image file not present");
+    const canvas = document.createElement("canvas");
+
+    const maxWidth = 600;
+    const imageRatio = maxWidth / crop.width;
+    canvas.width = maxWidth;
+    canvas.height = crop.height * imageRatio;
+    const ctx = canvas.getContext("2d");
+    if (ctx)
+      ctx.drawImage(
+        image,
+        crop.x * scale.x,
+        crop.y * scale.y,
+        crop.width * scale.x,
+        crop.height * scale.y,
+        0,
+        0,
+        crop.width * imageRatio,
+        crop.height * imageRatio
+      );
+
+    return canvas.toDataURL("image/jpeg", "1.0");
+  };
+
   const mainDialogSubmit = () => {
-    // get cropped region from canvas
+    const newImage = cropImage();
     submitHandler(newImage);
     close();
   };
@@ -65,7 +121,7 @@ function ImageEditingDialog({
       <DialogContent style={{ overscrollBehavior: "contain", padding: "0px" }}>
         {editorData && (
           <ReactCrop crop={crop} onChange={setCrop}>
-            <img src={editorData} />
+            <img src={editorData} onLoad={onImageLoad} />
           </ReactCrop>
         )}
       </DialogContent>
