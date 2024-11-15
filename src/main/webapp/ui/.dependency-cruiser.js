@@ -437,7 +437,7 @@ module.exports = {
       systems) without dependency-cruiser getting a major version bump.
      */
     babelConfig: {
-      fileName: '.babelrc'
+      fileName: 'babel.config.js'
     },
 
     /* List of strings you have in use in addition to cjs/ es6 requires
