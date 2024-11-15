@@ -91,11 +91,13 @@ function ImageEditingDialog({
     y: 1,
   });
   const imageElement = React.useRef<HTMLImageElement | null>(null);
+  const [dirtyFlag, setDirtyFlag] = React.useState(false);
+  const [imageType, setImageType] = React.useState("");
 
   React.useEffect(() => {
     let settable = true;
     if (imageFile) {
-      const imageType = imageTypeFromFile(imageFile);
+      setImageType(imageTypeFromFile(imageFile));
       void readAsBinaryString(imageFile).then((binaryString: string) => {
         if (settable)
           setEditorData(`data:${imageType};base64,${btoa(binaryString)}`);
@@ -128,6 +130,7 @@ function ImageEditingDialog({
   };
 
   const onRotate = (direction: "clockwise" | "counter clockwise"): void => {
+    setDirtyFlag(true);
     const getRotatedImageURL = (): string => {
       const image = imageElement.current;
       if (!image) throw new Error("Image file not present");
@@ -140,12 +143,12 @@ function ImageEditingDialog({
         ctx.rotate(((direction === "clockwise" ? 90 : -90) * Math.PI) / 180);
         ctx.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
       }
-      return canvas.toDataURL("image/jpeg", "1.0");
+      return canvas.toDataURL(imageType, "1.0");
     };
     setEditorData(getRotatedImageURL());
   };
 
-  const cropImage = (): string => {
+  const cropImage = (format: string): string => {
     const image = imageElement.current;
     if (!image) throw new Error("Image file not present");
     const canvas = document.createElement("canvas");
@@ -168,11 +171,23 @@ function ImageEditingDialog({
         crop.height * imageRatio
       );
 
-    return canvas.toDataURL("image/jpeg", "1.0");
+    return canvas.toDataURL(format, "1.0");
   };
 
   const mainDialogSubmit = () => {
-    const newImage = cropImage();
+    if (!dirtyFlag) {
+      close();
+      return;
+    }
+
+    /*
+     * We apply rotations in place because they can always be undone by
+     * rotating in the other direction so there is no infomation loss. We only
+     * apply the cropping once the user submits the dialog as cropping the
+     * image as the move the cropped region would prevent them from undoing
+     * their changes.
+     */
+    const newImage = cropImage(imageType);
     submitHandler(newImage);
     close();
   };
@@ -193,6 +208,7 @@ function ImageEditingDialog({
             className={classes.crop}
             maxHeight={imageHeight}
             onComplete={(...args) => {
+              setDirtyFlag(true);
               /*
                * Prevent the user from extending the cropping region to areas
                * outside of the image, below it. Normally, react-image-crop
