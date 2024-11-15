@@ -104,6 +104,7 @@
     "react-autosuggest": "=10.1.0",
     "react-device-detect": "=2.2.3",
     "react-dom": "=18.2.0",
+    "react-image-crop": "^11.0.7",
     "react-leaflet": "^4.2.1",
     "react-pdf": "^9.1.0",
     "react-photoswipe-gallery": "=2.2.7",

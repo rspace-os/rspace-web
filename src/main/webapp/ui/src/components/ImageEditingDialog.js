@@ -1,27 +1,13 @@
 //@flow
 
 import React, { useRef, type Node, type ComponentType } from "react";
-import "./ImageEditingDialogStyles.css";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import FileFormatPrompt from "./FileFormatPrompt";
-import ImageEditor from "@toast-ui/react-image-editor";
-import whiteTheme from "../common/theme";
 import { observer } from "mobx-react-lite";
-
-function getImageSize(base64String: string): string {
-  var stringLength = base64String.length - "data:image/png;base64,".length;
-  var sizeInBytes = 4 * Math.ceil(stringLength / 3) * 0.5624896334383812;
-  var sizeInKb = sizeInBytes / 1000;
-
-  if (sizeInKb < 1024) {
-    return `${sizeInKb.toFixed(0)} KB`;
-  } else {
-    return `${(sizeInKb / 1024).toFixed(2)} MB`;
-  }
-}
+import ReactCrop from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 
@@ -52,15 +38,12 @@ function ImageEditingDialog({
   submitHandler,
 }: ImageEditingDialogArgs): Node {
   const [editorData, setEditorData] = React.useState<?string>(null);
-  const [imageType, setImageType] = React.useState("");
-  const [promptOpen, setPromptOpen] = React.useState(false);
-  const closeButton = useRef(null);
-  const editor = useRef(null);
+  const [crop, setCrop] = React.useState();
 
   React.useEffect(() => {
     let settable = true;
     if (imageFile) {
-      setImageType(imageTypeFromFile(imageFile));
+      const imageType = imageTypeFromFile(imageFile);
       void readAsBinaryString(imageFile).then((binaryString: string) => {
         if (settable)
           setEditorData(`data:${imageType};base64,${btoa(binaryString)}`);
@@ -71,73 +54,23 @@ function ImageEditingDialog({
     };
   }, [imageFile]);
 
-  const getImageInFormat = (format: string): string => {
-    if (!editor.current) return "";
-    return editor.current.getInstance().toDataURL(
-      format === "jpeg"
-        ? {
-            format: "jpeg",
-            quality: 0.85,
-          }
-        : null
-    );
-  };
-
-  const submit = (format: string) => {
-    setPromptOpen(false);
-    close();
-    submitHandler(getImageInFormat(format));
-  };
-
   const mainDialogSubmit = () => {
-    if (editor.current?.getInstance().isEmptyUndoStack()) {
-      submit(imageType);
-    } else if (imageType === "jpeg") {
-      setPromptOpen(true);
-    } else {
-      submit(imageType);
-    }
+    // get cropped region from canvas
+    submitHandler(newImage);
+    close();
   };
 
   return (
     <Dialog fullScreen open={open} onClose={close}>
       <DialogContent style={{ overscrollBehavior: "contain", padding: "0px" }}>
         {editorData && (
-          <ImageEditor
-            ref={editor}
-            includeUI={{
-              loadImage: {
-                path: editorData,
-                name: "Blank",
-              },
-              theme: whiteTheme,
-              menu: ["crop", "flip", "rotate", "filter"],
-              initMenu: null,
-              uiSize: {
-                width: "100%",
-                height: "100%",
-              },
-              menuBarPosition: "right",
-            }}
-          />
-        )}
-        {promptOpen && (
-          <FileFormatPrompt
-            pngSize={getImageSize(getImageInFormat("png"))}
-            jpegSize={getImageSize(getImageInFormat("jpeg"))}
-            saveAs={submit}
-            open={promptOpen}
-            closePrompt={() => setPromptOpen(false)}
-          />
+          <ReactCrop crop={crop} onChange={setCrop}>
+            <img src={editorData} />
+          </ReactCrop>
         )}
       </DialogContent>
       <DialogActions>
-        <Button
-          ref={closeButton}
-          onClick={mainDialogSubmit}
-          color="primary"
-          data-test-id="confirm-action"
-        >
+        <Button onClick={mainDialogSubmit} color="primary">
           Done
         </Button>
       </DialogActions>
