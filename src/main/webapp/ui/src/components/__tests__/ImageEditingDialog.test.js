@@ -198,6 +198,38 @@ describe("ImageEditingDialog", () => {
     );
   });
 
+  test("If no change has been made, then submitHandler is not called", async () => {
+    const user = userEvent.setup();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    // 600px to negate any scaling effects
+    ctx.canvas.width = 600;
+    ctx.canvas.height = 600;
+    ctx.fillStyle = "green";
+    ctx.fillRect(0, 0, 300, 300);
+
+    const blob: Blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve);
+    });
+
+    const submitHandler = jest.fn<[string], void>();
+    const close = jest.fn<[], void>();
+    render(
+      <ImageEditingDialog
+        imageFile={blob}
+        open={true}
+        close={close}
+        submitHandler={submitHandler}
+        alt="dummy alt text"
+      />
+    );
+
+    await screen.findByRole("img");
+    await user.click(screen.getByRole("button", { name: /done/i }));
+    expect(close).toHaveBeenCalled();
+    expect(submitHandler).not.toHaveBeenCalled();
+  });
+
   /*
    * Testing the cropping functionality was attempted but it seems to be
    * impossible to get the keyDown events for moving the anchors around to
