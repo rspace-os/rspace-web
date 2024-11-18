@@ -151,6 +151,53 @@ describe("ImageEditingDialog", () => {
     );
   });
 
+  test("Rotating by 90º counter clockwise should result in the correct image", async () => {
+    const user = userEvent.setup();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    // 600px to negate any scaling effects
+    ctx.canvas.width = 600;
+    ctx.canvas.height = 600;
+    ctx.fillStyle = "green";
+    ctx.fillRect(0, 0, 300, 300);
+
+    const blob: Blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve);
+    });
+
+    const submitHandler = jest.fn<[string], void>();
+    render(
+      <ImageEditingDialog
+        imageFile={blob}
+        open={true}
+        close={() => {}}
+        submitHandler={submitHandler}
+        alt="dummy alt text"
+      />
+    );
+
+    await screen.findByRole("img");
+
+    const rotateButton = screen.getByRole("button", {
+      name: "rotate counter clockwise",
+    });
+    await user.click(rotateButton);
+
+    await user.click(screen.getByRole("button", { name: /done/i }));
+
+    const canvas2 = document.createElement("canvas");
+    const ctx2 = canvas2.getContext("2d");
+    // 600px to negate any scaling effects
+    ctx2.canvas.width = 600;
+    ctx2.canvas.height = 600;
+    ctx2.fillStyle = "green";
+    ctx2.fillRect(0, 300, 300, 600);
+
+    expect(submitHandler).toHaveBeenCalledWith(
+      canvas2.toDataURL("image/png", "1.0")
+    );
+  });
+
   /*
    * Testing the cropping functionality was attempted but it seems to be
    * impossible to get the keyDown events for moving the anchors around to
