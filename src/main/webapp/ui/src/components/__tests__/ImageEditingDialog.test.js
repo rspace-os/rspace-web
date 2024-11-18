@@ -103,4 +103,11 @@ describe("ImageEditingDialog", () => {
       { numRuns: 4 }
     );
   });
+  /*
+   * Testing the cropping functionality was attempted but it seems to be
+   * impossible to get the keyDown events for moving the anchors around to
+   * trigger react-image-crop's onChange event handler. There is a console
+   * error reported that `scrollTo` could not be invoked on the root div of
+   * ReactCrop, so perhaps that is the issue.
+   */
 });
