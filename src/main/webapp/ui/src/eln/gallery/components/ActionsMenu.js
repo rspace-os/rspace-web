@@ -316,12 +316,20 @@ function ActionsMenu({
       .only.toResult(() => new Error("Too many items selected."))
       .flatMap((file) => {
         if (file.isImage)
-          return Result.Error<null>([new Error("Not yet implemented.")]);
+          return Result.Error<{| key: "document", url: string |}>([
+            new Error("Not yet implemented."),
+          ]);
         return canEditWithCollabora(file)
           .orElseTry(() => canEditWithOfficeOnline(file))
-          .map(() => Result.Error<null>([new Error("Not yet implemented.")]))
+          .map<{| key: "document", url: string |}>((url) => ({
+            key: "document",
+            url,
+          }))
+          .map(Result.Ok)
           .orElseGet(() =>
-            Result.Error<null>([new Error("Cannot edit this item.")])
+            Result.Error<{| key: "document", url: string |}>([
+              new Error("Cannot edit this item."),
+            ])
           );
       })
   );
@@ -501,6 +509,9 @@ function ActionsMenu({
           foregroundColor={COLOR.contrastText}
           avatar={<EditIcon />}
           onClick={() => {
+            editingAllowed.get().do((action) => {
+              if (action.key === "document") window.open(action.url);
+            });
             setActionsMenuAnchorEl(null);
           }}
           compact
