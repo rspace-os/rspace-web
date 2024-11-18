@@ -112,11 +112,23 @@ function ImageField({
     });
   };
 
-  const submit = async (editedImageDataURL: string) => {
-    const newFile = await fetch(editedImageDataURL).then((r) => r.blob());
+  const readAsDataUrl = (file: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // $FlowExpectedError[incompatible-cast] reader.result will be string because we called readAsDataUrl
+        resolve((reader.result: string));
+      };
+      reader.onerror = () => {
+        reject(reader.error);
+      };
+      reader.readAsDataURL(file);
+    });
+
+  const submit = async (editedImage: Blob) => {
     storeNewImage({
-      dataURL: editedImageDataURL,
-      file: newFile,
+      dataURL: await readAsDataUrl(editedImage),
+      file: editedImage,
     });
   };
 

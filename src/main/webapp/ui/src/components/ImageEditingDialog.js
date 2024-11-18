@@ -68,7 +68,7 @@ type ImageEditingDialogArgs = {|
   imageFile: ?Blob,
   open: boolean,
   close: () => void,
-  submitHandler: (string) => void,
+  submitHandler: (Blob) => void,
   alt: string,
 |};
 
@@ -151,7 +151,7 @@ function ImageEditingDialog({
     setEditorData(getRotatedImageURL());
   };
 
-  const cropImage = (format: string): string => {
+  const cropImage = (format: string): Promise<Blob> => {
     const image = imageElement.current;
     if (!image) throw new Error("Image file not present");
     const canvas = document.createElement("canvas");
@@ -174,7 +174,7 @@ function ImageEditingDialog({
         crop.height * imageRatio
       );
 
-    return canvas.toDataURL(format, "1.0");
+    return new Promise((resolve) => canvas.toBlob(resolve, format, "1.0"));
   };
 
   const mainDialogSubmit = () => {
@@ -190,9 +190,10 @@ function ImageEditingDialog({
      * image as the move the cropped region would prevent them from undoing
      * their changes.
      */
-    const newImage = cropImage(imageType);
-    submitHandler(newImage);
-    close();
+    void cropImage(imageType).then((newImage) => {
+      submitHandler(newImage);
+      close();
+    });
   };
 
   return (

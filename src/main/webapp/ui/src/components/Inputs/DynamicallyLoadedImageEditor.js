@@ -36,7 +36,7 @@ type DynamicallyLoadedImageEditorArgs = {|
   editorFile: ?Blob,
   editorOpen: boolean,
   close: () => void,
-  submitHandler: (string) => void,
+  submitHandler: (Blob) => void,
   alt: string,
 |};
 

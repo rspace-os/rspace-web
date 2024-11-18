@@ -69,7 +69,7 @@ describe("ImageEditingDialog", () => {
             canvas.toBlob(resolve);
           });
 
-          const submitHandler = jest.fn<[string], void>();
+          const submitHandler = jest.fn<[Blob], void>();
           render(
             <ImageEditingDialog
               imageFile={blob}
@@ -89,14 +89,14 @@ describe("ImageEditingDialog", () => {
 
           await user.click(screen.getByRole("button", { name: /done/i }));
 
+          const expected = await new Promise((resolve) =>
+            canvas.toBlob(resolve, "image/png", "1.0")
+          );
+
           if (number % 4 === 0) {
-            expect(submitHandler).toHaveBeenCalledWith(
-              canvas.toDataURL("image/png", "1.0")
-            );
+            expect(submitHandler).toHaveBeenCalledWith(expected);
           } else {
-            expect(submitHandler).not.toHaveBeenCalledWith(
-              canvas.toDataURL("image/png", "1.0")
-            );
+            expect(submitHandler).not.toHaveBeenCalledWith(expected);
           }
         }
       ),
@@ -118,7 +118,7 @@ describe("ImageEditingDialog", () => {
       canvas.toBlob(resolve);
     });
 
-    const submitHandler = jest.fn<[string], void>();
+    const submitHandler = jest.fn<[Blob], void>();
     render(
       <ImageEditingDialog
         imageFile={blob}
@@ -145,10 +145,11 @@ describe("ImageEditingDialog", () => {
     ctx2.canvas.height = 600;
     ctx2.fillStyle = "green";
     ctx2.fillRect(300, 0, 600, 300);
-
-    expect(submitHandler).toHaveBeenCalledWith(
-      canvas2.toDataURL("image/png", "1.0")
+    const expected = await new Promise((resolve) =>
+      canvas2.toBlob(resolve, "image/png", "1.0")
     );
+
+    expect(submitHandler).toHaveBeenCalledWith(expected);
   });
 
   test("Rotating by 90º counter clockwise should result in the correct image", async () => {
@@ -165,7 +166,7 @@ describe("ImageEditingDialog", () => {
       canvas.toBlob(resolve);
     });
 
-    const submitHandler = jest.fn<[string], void>();
+    const submitHandler = jest.fn<[Blob], void>();
     render(
       <ImageEditingDialog
         imageFile={blob}
@@ -192,10 +193,11 @@ describe("ImageEditingDialog", () => {
     ctx2.canvas.height = 600;
     ctx2.fillStyle = "green";
     ctx2.fillRect(0, 300, 300, 600);
-
-    expect(submitHandler).toHaveBeenCalledWith(
-      canvas2.toDataURL("image/png", "1.0")
+    const expected = await new Promise((resolve) =>
+      canvas2.toBlob(resolve, "image/png", "1.0")
     );
+
+    expect(submitHandler).toHaveBeenCalledWith(expected);
   });
 
   test("If no change has been made, then submitHandler is not called", async () => {
@@ -212,7 +214,7 @@ describe("ImageEditingDialog", () => {
       canvas.toBlob(resolve);
     });
 
-    const submitHandler = jest.fn<[string], void>();
+    const submitHandler = jest.fn<[Blob], void>();
     const close = jest.fn<[], void>();
     render(
       <ImageEditingDialog
