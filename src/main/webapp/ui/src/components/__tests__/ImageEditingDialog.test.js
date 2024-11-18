@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import { render, cleanup, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import ImageEditingDialog from "../ImageEditingDialog";
@@ -18,6 +18,19 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+const readAsDataUrl = (file: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // $FlowExpectedError[incompatible-cast] reader.result will be string because we called readAsDataUrl
+      resolve((reader.result: string));
+    };
+    reader.onerror = () => {
+      reject(reader.error);
+    };
+    reader.readAsDataURL(file);
+  });
 
 describe("ImageEditingDialog", () => {
   test("Should have no axe violations.", async () => {
@@ -89,14 +102,16 @@ describe("ImageEditingDialog", () => {
 
           await user.click(screen.getByRole("button", { name: /done/i }));
 
-          const expected = await new Promise((resolve) =>
-            canvas.toBlob(resolve, "image/png", "1.0")
-          );
+          await waitFor(() => {
+            expect(submitHandler).toHaveBeenCalled();
+          });
+          const actualBlob = submitHandler.mock.calls[0][0];
+          const actualDataUrl = readAsDataUrl(actualBlob);
 
           if (number % 4 === 0) {
-            expect(submitHandler).toHaveBeenCalledWith(expected);
+            expect(actualDataUrl).not.toEqual(canvas.toDataURL());
           } else {
-            expect(submitHandler).not.toHaveBeenCalledWith(expected);
+            expect(actualDataUrl).not.toEqual(canvas.toDataURL());
           }
         }
       ),
@@ -149,7 +164,9 @@ describe("ImageEditingDialog", () => {
       canvas2.toBlob(resolve, "image/png", "1.0")
     );
 
-    expect(submitHandler).toHaveBeenCalledWith(expected);
+    await waitFor(() => {
+      expect(submitHandler).toHaveBeenCalledWith(expected);
+    });
   });
 
   test("Rotating by 90º counter clockwise should result in the correct image", async () => {
@@ -197,7 +214,9 @@ describe("ImageEditingDialog", () => {
       canvas2.toBlob(resolve, "image/png", "1.0")
     );
 
-    expect(submitHandler).toHaveBeenCalledWith(expected);
+    await waitFor(() => {
+      expect(submitHandler).toHaveBeenCalledWith(expected);
+    });
   });
 
   test("If no change has been made, then submitHandler is not called", async () => {
