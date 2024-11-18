@@ -494,6 +494,11 @@ export function useGalleryActions(): {|
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .flatMap(Parsers.isString)
+          .orElseTry(() =>
+            Parsers.objectPath(["exceptionMessage"], data).flatMap(
+              Parsers.isString
+            )
+          )
           .map((exceptionMessage) =>
             mkAlert({
               title: `Failed to upload new version.`,
