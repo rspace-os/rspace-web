@@ -314,22 +314,27 @@ function ActionsMenu({
     selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
-      .flatMap((file) => {
+      .flatMap<
+        | {| key: "image", downloadHref: ?string |}
+        | {| key: "document", url: string |}
+      >((file) => {
         if (file.isImage)
-          return Result.Error<{| key: "document", url: string |}>([
-            new Error("Not yet implemented."),
-          ]);
+          return Result.Ok({ key: "image", downloadHref: file.downloadHref });
         return canEditWithCollabora(file)
           .orElseTry(() => canEditWithOfficeOnline(file))
-          .map<{| key: "document", url: string |}>((url) => ({
-            key: "document",
-            url,
-          }))
-          .map(Result.Ok)
+          .map<
+            Result<
+              | {| key: "image", downloadHref: ?string |}
+              | {| key: "document", url: string |}
+            >
+          >((url) =>
+            Result.Ok({
+              key: "document",
+              url,
+            })
+          )
           .orElseGet(() =>
-            Result.Error<{| key: "document", url: string |}>([
-              new Error("Cannot edit this item."),
-            ])
+            Result.Error<_>([new Error("Cannot edit this item.")])
           );
       })
   );
@@ -511,6 +516,11 @@ function ActionsMenu({
           onClick={() => {
             editingAllowed.get().do((action) => {
               if (action.key === "document") window.open(action.url);
+              if (action.key === "image") {
+                // download image file
+                // open image editor
+                // implement logic that uploads new version when editor is closed
+              }
             });
             setActionsMenuAnchorEl(null);
           }}
