@@ -209,7 +209,7 @@ function ImageEditingDialog({
             onChange={setCrop}
             className={classes.crop}
             maxHeight={imageHeight}
-            onComplete={(...args) => {
+            onComplete={(newCrop) => {
               setDirtyFlag(true);
               /*
                * Prevent the user from extending the cropping region to areas
@@ -219,10 +219,10 @@ function ImageEditingDialog({
                * constitutent DOM nodes this is no longer enforced. As such, we
                * enforce it ourselves.
                */
-              if (args[0].height + args[0].y > imageHeight)
+              if (newCrop.height + newCrop.y > imageHeight)
                 setCrop({
-                  ...args[0],
-                  height: Math.min(imageHeight - args[0].y, args[0].height),
+                  ...newCrop,
+                  height: Math.min(imageHeight - newCrop.y, newCrop.height),
                 });
             }}
           >
