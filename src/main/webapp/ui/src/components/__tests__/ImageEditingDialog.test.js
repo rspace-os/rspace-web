@@ -9,6 +9,9 @@ import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import ImageEditingDialog from "../ImageEditingDialog";
 import fc from "fast-check";
+import { axe, toHaveNoViolations } from "jest-axe";
+
+expect.extend(toHaveNoViolations);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -17,6 +20,32 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ImageEditingDialog", () => {
+  test("Should have no axe violations.", async () => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    // 600px to negate any scaling effects
+    ctx.canvas.width = 600;
+    ctx.canvas.height = 400;
+    ctx.fillStyle = "green";
+    ctx.fillRect(10, 10, 150, 100);
+
+    const blob: Blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve);
+    });
+
+    const { container } = render(
+      <ImageEditingDialog
+        imageFile={blob}
+        open={true}
+        close={() => {}}
+        submitHandler={() => {}}
+        alt="dummy alt text"
+      />
+    );
+
+    // $FlowExpectedError[incompatible-call] See expect.extend above
+    expect(await axe(container)).toHaveNoViolations();
+  });
   test("Rotating four times in either direction is a no-op.", async () => {
     const user = userEvent.setup();
     await fc.assert(
