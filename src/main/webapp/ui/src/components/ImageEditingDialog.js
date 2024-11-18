@@ -24,7 +24,8 @@ const useStyles = makeStyles()((_theme, { height }) => ({
    * resulting in the need to scroll: ideally the whole image should be visible
    * when cropping. Setting `maxHeight: 100%` and `objectFit: scale-down` is
    * not sufficient; all of the DOM nodes between the HTMLImageElement and the
-   * DialogContent need to have `height: 100%`. We then have to shrink back the crop-mask to only cover the image itself and not the whitespace below.
+   * DialogContent need to have `height: 100%`. We then have to shrink back the
+   * crop-mask to only cover the image itself and not the whitespace below.
    */
   crop: {
     height: "100%",
