@@ -47,6 +47,7 @@ describe("ImageEditingDialog", () => {
               open={true}
               close={() => {}}
               submitHandler={submitHandler}
+              alt="dummy alt text"
             />
           );
 

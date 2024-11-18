@@ -47,7 +47,10 @@ const OverviewSection = observer(
           }
         />
         <Organization container={activeResult} />
-        <ContainerImage fieldOwner={activeResult} />
+        <ContainerImage
+          fieldOwner={activeResult}
+          alt="What the new container looks like"
+        />
       </StepperPanel>
     );
   }

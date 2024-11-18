@@ -49,7 +49,10 @@ function OverviewSection({
       sectionName="overview"
       recordType="subSample"
     >
-      <Image fieldOwner={setOfSubSamples} />
+      <Image
+        fieldOwner={setOfSubSamples}
+        alt={`What the ${setOfSubSamples.size} subsamples look like`}
+      />
       {setOfSubSamples.isFieldEditable("image") && (
         <Box mt={1}>
           <Alert severity="info">

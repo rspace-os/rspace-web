@@ -57,7 +57,12 @@ describe("ImageField", () => {
 
       test("be a camera icon shown.", () => {
         render(
-          <ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" />
+          <ImageField
+            storeImage={() => {}}
+            imageAsObjectURL={null}
+            id="foo"
+            alt="dummy alt text"
+          />
         );
         expect(CameraAltIcon).toHaveBeenCalled();
       });
@@ -70,7 +75,12 @@ describe("ImageField", () => {
 
       test("be an image icon shown.", () => {
         render(
-          <ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" />
+          <ImageField
+            storeImage={() => {}}
+            imageAsObjectURL={null}
+            id="foo"
+            alt="dummy alt text"
+          />
         );
         expect(ImageIcon).toHaveBeenCalled();
       });
@@ -84,7 +94,12 @@ describe("ImageField", () => {
     test("be a DynamicallyLoadedImageEditor that opens.", async () => {
       const user = userEvent.setup();
       render(
-        <ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" />
+        <ImageField
+          storeImage={() => {}}
+          imageAsObjectURL={null}
+          id="foo"
+          alt="dummy alt text"
+        />
       );
 
       const editImageButton = screen.getByText("Edit Image");

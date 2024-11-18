@@ -55,7 +55,10 @@ const OverviewSection = observer(
           }
         />
         <TemplateField />
-        <ImageField fieldOwner={activeResult} />
+        <ImageField
+          fieldOwner={activeResult}
+          alt="What the new sample looks like"
+        />
       </StepperPanel>
     );
   }

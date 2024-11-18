@@ -47,7 +47,10 @@ const OverviewSection = observer(
             setFormSectionError(formSectionError, "name", e)
           }
         />
-        <ImageField fieldOwner={activeResult} />
+        <ImageField
+          fieldOwner={activeResult}
+          alt="A visual representation of the samples that will be created from this new template"
+        />
       </StepperPanel>
     );
   }

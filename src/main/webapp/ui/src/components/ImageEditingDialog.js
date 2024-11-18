@@ -68,6 +68,7 @@ type ImageEditingDialogArgs = {|
   open: boolean,
   close: () => void,
   submitHandler: (string) => void,
+  alt: string,
 |};
 
 function ImageEditingDialog({
@@ -75,6 +76,7 @@ function ImageEditingDialog({
   open,
   close,
   submitHandler,
+  alt,
 }: ImageEditingDialogArgs): Node {
   const [imageHeight, setImageHeight] = React.useState(0);
   const { classes } = useStyles({ height: imageHeight });
@@ -225,6 +227,7 @@ function ImageEditingDialog({
             }}
           >
             <img
+              alt={alt}
               src={editorData}
               onLoad={onImageLoad}
               style={{

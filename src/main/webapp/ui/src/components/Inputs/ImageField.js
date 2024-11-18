@@ -4,7 +4,6 @@ import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CropIcon from "@mui/icons-material/Crop";
-import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import ImageIcon from "@mui/icons-material/Image";
 import React, {
@@ -48,6 +47,7 @@ type ImageFieldArgs = {|
   // required
   storeImage: (ImageData) => void,
   imageAsObjectURL: ?string,
+  alt: string,
 
   // optional
   id?: string,
@@ -71,6 +71,7 @@ function ImageField({
   showPreview = true,
   warningAlert = "",
   noValueLabel,
+  alt,
 }: ImageFieldArgs): Node {
   const { classes } = useStyles({ width, height });
   const [editorFile, setEditorFile] = useState<?Blob>(null);
@@ -149,6 +150,7 @@ function ImageField({
       imgProps={{
         width: typeof width === "number" ? width : null,
         height: typeof height === "number" ? height : null,
+        alt,
       }}
       {...props}
     />
@@ -222,6 +224,7 @@ function ImageField({
                 setEditorOpen(false);
               }}
               submitHandler={doNotAwait(submit)}
+              alt={alt}
             />
           )}
         </>
