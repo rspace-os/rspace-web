@@ -52,6 +52,10 @@ import {
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import axios from "axios";
+import ImageEditingDialog from "../../../components/ImageEditingDialog";
+import { doNotAwait } from "../../../util/Util";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -285,9 +289,10 @@ function ActionsMenu({
   folderId,
 }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
-  const { deleteFiles, duplicateFiles } = useGalleryActions();
+  const { deleteFiles, duplicateFiles, uploadNewVersion } = useGalleryActions();
   const selection = useGallerySelection();
   const theme = useTheme();
+  const { addAlert } = React.useContext(AlertContext);
   const canOpenAsFolder = useOpen();
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
@@ -302,6 +307,9 @@ function ActionsMenu({
   const [moveOpen, setMoveOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
+  const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(
+    null
+  );
 
   const openAllowed = computed(() => {
     return selection
@@ -517,9 +525,14 @@ function ActionsMenu({
             editingAllowed.get().do((action) => {
               if (action.key === "document") window.open(action.url);
               if (action.key === "image") {
-                // download image file
-                // open image editor
-                // implement logic that uploads new version when editor is closed
+                if (!action.downloadHref) return;
+                void axios
+                  .get<Blob>(action.downloadHref, {
+                    responseType: "blob",
+                  })
+                  .then(({ data }) => {
+                    setImageEditorBlob(data);
+                  });
               }
             });
             setActionsMenuAnchorEl(null);
@@ -745,6 +758,53 @@ function ActionsMenu({
           disabled={deleteAllowed.get().isError}
         />
       </StyledMenu>
+      <ImageEditingDialog
+        imageFile={imageEditorBlob}
+        open={imageEditorBlob !== null}
+        close={() => {
+          setImageEditorBlob(null);
+        }}
+        submitHandler={doNotAwait(async (newBlob) => {
+          try {
+            const file = selection
+              .asSet()
+              .only.toResult(() => new Error("Nothing selected"))
+              .elseThrow();
+            const newFile = new File([newBlob], file.name, {
+              type: newBlob.type,
+            });
+            const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
+              .map(({ id }) => id)
+              .orElseTry(() => FetchingData.getSuccessValue(folderId))
+              .mapError(() => new Error("Current folder is not known"))
+              .elseThrow();
+            await uploadNewVersion(idOfFolderThatFileIsIn, file, newFile);
+            refreshListing();
+          } catch (e) {
+            addAlert(
+              mkAlert({
+                variant: "error",
+                title: "Failed to process edited image",
+                message: e.message,
+              })
+            );
+          } finally {
+            setActionsMenuAnchorEl(null);
+          }
+        })}
+        alt={selection
+          .asSet()
+          .only.map(
+            (file) =>
+              file.name +
+              file.description.match({
+                missing: () => "",
+                empty: () => "",
+                present: (d) => d,
+              })
+          )
+          .orElse("")}
+      />
       <Typography
         variant="body2"
         sx={{
