@@ -81,7 +81,7 @@ export default (styled(
       ? backgroundColor
       : `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
   return {
-    margin: theme.spacing(compact ? 0.5 : 1),
+    margin: theme.spacing(1),
     padding: 0,
     borderRadius: "2px",
     border: prefersMoreContrast ? "2px solid #000" : "none",
