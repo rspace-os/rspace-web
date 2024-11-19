@@ -289,7 +289,7 @@ function ActionsMenu({
   folderId,
 }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
-  const { deleteFiles, duplicateFiles, uploadNewVersion } = useGalleryActions();
+  const { deleteFiles, duplicateFiles, uploadFiles } = useGalleryActions();
   const selection = useGallerySelection();
   const theme = useTheme();
   const { addAlert } = React.useContext(AlertContext);
@@ -770,15 +770,19 @@ function ActionsMenu({
               .asSet()
               .only.toResult(() => new Error("Nothing selected"))
               .elseThrow();
-            const newFile = new File([newBlob], file.name, {
-              type: newBlob.type,
-            });
+            const newFile = new File(
+              [newBlob],
+              file.transformFilename((name) => name + "_edited"),
+              {
+                type: newBlob.type,
+              }
+            );
             const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
               .map(({ id }) => id)
               .orElseTry(() => FetchingData.getSuccessValue(folderId))
               .mapError(() => new Error("Current folder is not known"))
               .elseThrow();
-            await uploadNewVersion(idOfFolderThatFileIsIn, file, newFile);
+            await uploadFiles(file.path, idOfFolderThatFileIsIn, [newFile]);
             refreshListing();
           } catch (e) {
             addAlert(
