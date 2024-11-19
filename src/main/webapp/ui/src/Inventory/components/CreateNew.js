@@ -1,6 +1,6 @@
 // @flow
 import AddIcon from "@mui/icons-material/Add";
-import React, { type Node, useContext } from "react";
+import React, { type Node, useContext, type ComponentType } from "react";
 import useStores from "../../stores/use-stores";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { UserCancelledAction } from "../../util/error";
@@ -11,6 +11,7 @@ import RecordTypeIcon from "../../components/RecordTypeIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
+import { observer } from "mobx-react-lite";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -28,7 +29,7 @@ type CreateNewArgs = {|
   onClick: () => void,
 |};
 
-export default function CreateNew({ onClick }: CreateNewArgs): Node {
+function CreateNew({ onClick }: CreateNewArgs): Node {
   const { searchStore, trackingStore, uiStore, importStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -76,9 +77,34 @@ export default function CreateNew({ onClick }: CreateNewArgs): Node {
         aria-controls={controls}
         aria-haspopup="true"
         onClick={(event) => setAnchorEl(event.currentTarget)}
-        startIcon={<AddIcon />}
+        startIcon={
+          <AddIcon
+            style={{
+              transition: window.matchMedia("(prefers-reduced-motion: reduce)")
+                .matches
+                ? "none"
+                : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+              transform: uiStore.sidebarOpen
+                ? "translateX(0px)"
+                : "translateX(33px)",
+            }}
+          />
+        }
+        sx={{ minWidth: "unset", overflow: "hidden" }}
       >
-        Create
+        <span
+          style={{
+            transition: window.matchMedia("(prefers-reduced-motion: reduce)")
+              .matches
+              ? "none"
+              : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+            transform: uiStore.sidebarOpen
+              ? "translateX(0px)"
+              : "translateX(46px)",
+          }}
+        >
+          Create
+        </span>
       </Button>
       <StyledMenu
         open={Boolean(anchorEl)}
@@ -251,3 +277,5 @@ export default function CreateNew({ onClick }: CreateNewArgs): Node {
     </Box>
   );
 }
+
+export default (observer(CreateNew): ComponentType<CreateNewArgs>);

@@ -89,7 +89,7 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
             .matches
             ? "none"
             : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
-          transform: drawerOpen ? "translateX(0px)" : "translateX(22px)",
+          transform: drawerOpen ? "translateX(0px)" : "translateX(32px)",
         }}
       />
     }
@@ -101,7 +101,7 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
           ? "none"
           : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
         opacity: drawerOpen ? 1 : 0,
-        transform: drawerOpen ? "unset" : "translateX(20px)",
+        transform: drawerOpen ? "unset" : "translateX(30px)",
       }}
     >
       Create
@@ -112,7 +112,7 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
   color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, 40%, 100%)`,
 }));
 
-const CustomDrawer = styled(Drawer)(({ open, theme }) => ({
+const CustomDrawer = styled(Drawer)(({ open }) => ({
   // on small viewports, it will hidden entirely when not open
   width: open ? "200px" : "64px",
   // drawer should float over dialog in Inventory
