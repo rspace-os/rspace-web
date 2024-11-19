@@ -286,7 +286,10 @@ export default function FieldmarkImportDialog({
               <Typography variant="h3">Import from Fieldmark</Typography>
             </Grid>
             <Grid item>
-              <Typography variant="body2">
+              <Typography
+                variant="body2"
+                sx={{ maxWidth: "54em" /* entirely arbitrary */ }}
+              >
                 Choose a Fieldmark notebook to import into Inventory. A Sample
                 will be created for each record inside the notebook. A new list
                 container will be placed on your bench, containing a singular
