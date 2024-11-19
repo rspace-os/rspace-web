@@ -1073,6 +1073,19 @@ function GalleryMainPanel({
         sensors={[mouseSensor, touchSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
+          /*
+           * When tapping, holding, and then releasing on a folder onDragEnd is
+           * invoked with event.over.data.current.destination.folder being and
+           * event.active.data.current.filesBeingMoved including the container
+           * that is tapped. This is clearly an unintended operation and we
+           * should not attempt to move the container into itself.
+           */
+          if (
+            event.active.data.current.filesBeingMoved.has(
+              event.over.data.current.destination.folder
+            )
+          )
+            return;
           void moveFiles(event.active.data.current.filesBeingMoved)
             .to({
               destination: event.over.data.current.destination,
