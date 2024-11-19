@@ -287,8 +287,10 @@ export default function FieldmarkImportDialog({
             </Grid>
             <Grid item>
               <Typography variant="body2">
-                Choose a Fieldmark notebook to import into Inventory. The new
-                list container will be placed on your bench.
+                Choose a Fieldmark notebook to import into Inventory. A Sample
+                will be created for each record inside the notebook. A new list
+                container will be placed on your bench, containing a singular
+                subsample for each sample.
               </Typography>
               <Typography variant="body2">
                 See <Link href="#">docs.fieldmark.au</Link> and our{" "}

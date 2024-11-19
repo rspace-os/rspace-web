@@ -293,7 +293,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
           }}
         />
         <Divider textAlign="left" aria-label="Other import">
-          Other Import
+          Third-Party Import
         </Divider>
         <NewMenuItem
           compact
