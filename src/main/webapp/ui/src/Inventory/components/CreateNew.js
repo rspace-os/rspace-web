@@ -17,6 +17,7 @@ import CardMedia from "@mui/material/CardMedia";
 import FieldmarkImportDialog, {
   FIELDMARK_COLOR,
 } from "./FieldmarkImportDialog";
+import { fetchIntegrationInfo } from "../../common/integrationHelpers";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -52,6 +53,15 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
+  const [fieldmarkEnabled, setFieldmarkEnabled] = React.useState(false);
+
+  React.useEffect(() => {
+    fetchIntegrationInfo("FIELDMARK")
+      .then((r) => setFieldmarkEnabled(r.available && r.enabled))
+      .catch((e) =>
+        console.error("Cannot establish if Fieldmark app is enabled", e)
+      );
+  }, []);
 
   const handleCreate = async (
     recordType: "sample" | "container" | "template"
@@ -292,41 +302,45 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             void handleImport("CONTAINERS");
           }}
         />
-        <Divider textAlign="left" aria-label="Other import">
-          Third-Party Import
-        </Divider>
-        <NewMenuItem
-          compact
-          title="Fieldmark"
-          avatar={<CardMedia image={FieldmarkIcon} />}
-          subheader="Import Fieldmark notebooks and records"
-          backgroundColor={{
-            hue: FIELDMARK_COLOR.background.hue,
-            saturation: FIELDMARK_COLOR.background.saturation,
-            lightness: FIELDMARK_COLOR.background.lightness,
-          }}
-          foregroundColor={{
-            hue: FIELDMARK_COLOR.backgroundContrastText.hue,
-            saturation: FIELDMARK_COLOR.backgroundContrastText.saturation,
-            lightness: FIELDMARK_COLOR.backgroundContrastText.lightness,
-          }}
-          onClick={() => {
-            setFieldmarkOpen(true);
-            /*
-             * We close the create menu when the fieldmark dialog is opened,
-             * rather than leaving it open in the background as would normally
-             * be the case, because the create menu is portalled to the root of
-             * the DOM and so floats over all else whereas the fieldmark dialog
-             * is added to the DOM as a child of a sibling of the `<section>`
-             * that wraps all of the alert toasts. This is so that alerts
-             * displayed by the contents of the dialog are reachable by screen
-             * readers but has the effect of meaning that the create new dialog
-             * would render over it. By closing the menu when the dialog is
-             * opened we prevent this bug.
-             */
-            setAnchorEl(null);
-          }}
-        />
+        {fieldmarkEnabled && (
+          <>
+            <Divider textAlign="left" aria-label="Other import">
+              Third-Party Import
+            </Divider>
+            <NewMenuItem
+              compact
+              title="Fieldmark"
+              avatar={<CardMedia image={FieldmarkIcon} />}
+              subheader="Import Fieldmark notebooks and records"
+              backgroundColor={{
+                hue: FIELDMARK_COLOR.background.hue,
+                saturation: FIELDMARK_COLOR.background.saturation,
+                lightness: FIELDMARK_COLOR.background.lightness,
+              }}
+              foregroundColor={{
+                hue: FIELDMARK_COLOR.backgroundContrastText.hue,
+                saturation: FIELDMARK_COLOR.backgroundContrastText.saturation,
+                lightness: FIELDMARK_COLOR.backgroundContrastText.lightness,
+              }}
+              onClick={() => {
+                setFieldmarkOpen(true);
+                /*
+                 * We close the create menu when the fieldmark dialog is opened,
+                 * rather than leaving it open in the background as would normally
+                 * be the case, because the create menu is portalled to the root of
+                 * the DOM and so floats over all else whereas the fieldmark dialog
+                 * is added to the DOM as a child of a sibling of the `<section>`
+                 * that wraps all of the alert toasts. This is so that alerts
+                 * displayed by the contents of the dialog are reachable by screen
+                 * readers but has the effect of meaning that the create new dialog
+                 * would render over it. By closing the menu when the dialog is
+                 * opened we prevent this bug.
+                 */
+                setAnchorEl(null);
+              }}
+            />
+          </>
+        )}
       </StyledMenu>
       <FieldmarkImportDialog
         open={fieldmarkOpen}
