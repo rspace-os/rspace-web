@@ -70,6 +70,7 @@ type ImageEditingDialogArgs = {|
   close: () => void,
   submitHandler: (Blob) => void,
   alt: string,
+  submitButtonLabel?: string,
 |};
 
 function ImageEditingDialog({
@@ -78,6 +79,7 @@ function ImageEditingDialog({
   close,
   submitHandler,
   alt,
+  submitButtonLabel = "Done",
 }: ImageEditingDialogArgs): Node {
   const [imageHeight, setImageHeight] = React.useState(0);
   const { classes } = useStyles({ height: imageHeight });
@@ -276,7 +278,7 @@ function ImageEditingDialog({
         </ButtonGroup>
         <Box flexGrow={1}></Box>
         <Button onClick={mainDialogSubmit} color="primary">
-          Done
+          {submitButtonLabel}
         </Button>
       </DialogActions>
     </StyledDialog>

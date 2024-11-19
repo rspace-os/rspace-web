@@ -764,6 +764,7 @@ function ActionsMenu({
         close={() => {
           setImageEditorBlob(null);
         }}
+        submitButtonLabel="Save as new image"
         submitHandler={doNotAwait(async (newBlob) => {
           try {
             const file = selection
