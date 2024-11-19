@@ -234,7 +234,6 @@ export default function FieldmarkImportDialog({
           ],
         })
       );
-      // reload bench, if that's the current search
     } catch (e) {
       console.error(e);
       addAlert(
@@ -244,6 +243,7 @@ export default function FieldmarkImportDialog({
           message: e.message,
         })
       );
+      throw e;
     } finally {
       setImporting(false);
     }
@@ -430,7 +430,10 @@ export default function FieldmarkImportDialog({
                 </Button>
                 <ValidatingSubmitButton
                   onClick={() => {
-                    if (selectedNotebook) void importNotebook(selectedNotebook);
+                    if (selectedNotebook)
+                      void importNotebook(selectedNotebook).then(() =>
+                        onClose()
+                      );
                   }}
                   validationResult={
                     !selectedNotebook
