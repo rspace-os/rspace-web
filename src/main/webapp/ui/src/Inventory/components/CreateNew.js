@@ -83,7 +83,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               transition: window.matchMedia("(prefers-reduced-motion: reduce)")
                 .matches
                 ? "none"
-                : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+                : "all .2s cubic-bezier(0.4, 0, 0.2, 1) .2s",
               transform: uiStore.sidebarOpen
                 ? "translateX(0px)"
                 : "translateX(33px)",
@@ -97,7 +97,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             transition: window.matchMedia("(prefers-reduced-motion: reduce)")
               .matches
               ? "none"
-              : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+              : "all .2s cubic-bezier(0.4, 0, 0.2, 1) .2s",
             transform: uiStore.sidebarOpen
               ? "translateX(0px)"
               : "translateX(46px)",

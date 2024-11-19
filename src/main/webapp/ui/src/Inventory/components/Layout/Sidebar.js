@@ -197,7 +197,7 @@ const NavItem = withStyles<
   { button: string, listIcon: string }
 >((theme: Theme) => ({
   button: {
-    paddingLeft: theme.spacing(3),
+    paddingLeft: theme.spacing(2.5),
     borderTopRightRadius: theme.spacing(3),
     borderBottomRightRadius: theme.spacing(3),
     cursor: "pointer",
