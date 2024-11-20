@@ -17,7 +17,8 @@ import CardMedia from "@mui/material/CardMedia";
 import FieldmarkImportDialog, {
   FIELDMARK_COLOR,
 } from "./FieldmarkImportDialog";
-import { fetchIntegrationInfo } from "../../common/integrationHelpers";
+import { useIntegrationIsAllowedAndEnabled } from "../../common/integrationHelpers";
+import * as FetchingData from "../../util/fetchingData";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -53,15 +54,9 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
-  const [fieldmarkEnabled, setFieldmarkEnabled] = React.useState(false);
-
-  React.useEffect(() => {
-    fetchIntegrationInfo("FIELDMARK")
-      .then((r) => setFieldmarkEnabled(r.available && r.enabled))
-      .catch((e) =>
-        console.error("Cannot establish if Fieldmark app is enabled", e)
-      );
-  }, []);
+  const showFieldmark = FetchingData.getSuccessValue(
+    useIntegrationIsAllowedAndEnabled("FIELDMARK")
+  ).orElse(false);
 
   const handleCreate = async (
     recordType: "sample" | "container" | "template"
@@ -302,7 +297,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             void handleImport("CONTAINERS");
           }}
         />
-        {fieldmarkEnabled && (
+        {showFieldmark && (
           <>
             <Divider textAlign="left" aria-label="Other import">
               Third-Party Import
