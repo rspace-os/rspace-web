@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import ImageEditingDialog from "../ImageEditingDialog";
@@ -146,12 +146,23 @@ describe("ImageEditingDialog", () => {
 
     await screen.findByRole("img");
 
+    // wait for image to load
+    await act(() => Promise.resolve());
+
     const rotateButton = screen.getByRole("button", {
       name: "rotate clockwise",
     });
-    await user.click(rotateButton);
 
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await act(async () => {
+      await user.click(rotateButton);
+    });
+
+    // wait for rotated image to load
+    await act(() => Promise.resolve());
+
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /done/i }));
+    });
 
     const canvas2 = document.createElement("canvas");
     const ctx2 = canvas2.getContext("2d");
