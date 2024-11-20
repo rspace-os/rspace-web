@@ -47,7 +47,7 @@ describe("ImageEditingDialog", () => {
       canvas.toBlob(resolve);
     });
 
-    const { container } = render(
+    const { baseElement } = render(
       <ImageEditingDialog
         imageFile={blob}
         open={true}
@@ -63,7 +63,7 @@ describe("ImageEditingDialog", () => {
     await act(() => sleep(1000));
 
     // $FlowExpectedError[incompatible-call] See expect.extend above
-    expect(await axe(container)).toHaveNoViolations();
+    expect(await axe(baseElement)).toHaveNoViolations();
   });
   test("Rotating four times in either direction is a no-op.", async () => {
     const user = userEvent.setup();

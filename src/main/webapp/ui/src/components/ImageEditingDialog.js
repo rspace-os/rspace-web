@@ -16,6 +16,7 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import { styled } from "@mui/material/styles";
 import { makeStyles } from "tss-react/mui";
+import DialogTitle from "@mui/material/DialogTitle";
 
 const useStyles = makeStyles()((_theme, { height }) => ({
   /*
@@ -98,6 +99,7 @@ function ImageEditingDialog({
   const imageElement = React.useRef<HTMLImageElement | null>(null);
   const [dirtyFlag, setDirtyFlag] = React.useState(false);
   const [imageType, setImageType] = React.useState("");
+  const titleId = React.useId();
 
   React.useEffect(() => {
     let settable = true;
@@ -199,7 +201,13 @@ function ImageEditingDialog({
   };
 
   return (
-    <StyledDialog maxWidth="md" open={open} onClose={close}>
+    <StyledDialog
+      maxWidth="md"
+      open={open}
+      onClose={close}
+      aria-labelledby={titleId}
+    >
+      <DialogTitle id={titleId}>Edit Image</DialogTitle>
       <DialogContent
         sx={{
           display: "flex",
