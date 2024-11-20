@@ -285,6 +285,7 @@ function ImageEditingDialog({
           </IconButton>
         </ButtonGroup>
         <Box flexGrow={1}></Box>
+        <Button onClick={close}>Cancel</Button>
         <Button onClick={mainDialogSubmit} color="primary">
           {submitButtonLabel}
         </Button>

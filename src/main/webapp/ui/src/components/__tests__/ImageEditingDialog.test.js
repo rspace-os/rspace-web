@@ -286,4 +286,55 @@ describe("ImageEditingDialog", () => {
    * error reported that `scrollTo` could not be invoked on the root div of
    * ReactCrop, so perhaps that is the issue.
    */
+
+  test("Cancel button should not invoke submitHandler", async () => {
+    const user = userEvent.setup();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    // 600px to negate any scaling effects
+    ctx.canvas.width = 600;
+    ctx.canvas.height = 600;
+    ctx.fillStyle = "green";
+    ctx.fillRect(0, 0, 300, 300);
+
+    const blob: Blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve);
+    });
+
+    const submitHandler = jest.fn<[Blob], void>();
+    const close = jest.fn<[], void>();
+
+    render(
+      <ImageEditingDialog
+        imageFile={blob}
+        open={true}
+        close={close}
+        submitHandler={submitHandler}
+        alt="dummy alt text"
+      />
+    );
+
+    await screen.findByRole("img");
+
+    // wait for image to load
+    await act(() => Promise.resolve());
+
+    const rotateButton = screen.getByRole("button", {
+      name: "rotate clockwise",
+    });
+
+    await act(async () => {
+      await user.click(rotateButton);
+    });
+
+    // wait for rotated image to load
+    await act(() => Promise.resolve());
+
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /cancel/i }));
+    });
+
+    expect(close).toHaveBeenCalled();
+    expect(submitHandler).not.toHaveBeenCalled();
+  });
 });
