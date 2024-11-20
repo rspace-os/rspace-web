@@ -50,7 +50,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
-import { fetchIntegrationInfo } from "../../../common/integrationHelpers";
+import { useIntegrationIsAllowedAndEnabled } from "../../../common/integrationHelpers";
 import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { observer } from "mobx-react-lite";
@@ -289,33 +289,15 @@ const DmpMenuSection = ({
   onDialogClose,
   showDmpPanel,
 }: DmpMenuSectionArgs) => {
-  const [argosEnabled, setArgosEnabled] = React.useState(false);
-  const [dmponlineEnabled, setDmponlineEnabled] = React.useState(false);
-  const [dmptoolEnabled, setDmptoolEnabled] = React.useState(false);
-
-  React.useEffect(() => {
-    fetchIntegrationInfo("ARGOS")
-      .then((r) => setArgosEnabled(r.enabled))
-      .catch((e) =>
-        console.error("Cannot establish if Argos app is enabled", e)
-      );
-  }, []);
-
-  React.useEffect(() => {
-    fetchIntegrationInfo("DMPONLINE")
-      .then((r) => setDmponlineEnabled(r.enabled))
-      .catch((e) =>
-        console.error("Cannot establish if DmpOnline app is enabled", e)
-      );
-  }, []);
-
-  React.useEffect(() => {
-    fetchIntegrationInfo("DMPTOOL")
-      .then((r) => setDmptoolEnabled(r.enabled))
-      .catch((e) =>
-        console.error("Cannot establish if DMPTool app is enabled", e)
-      );
-  }, []);
+  const showArgos = FetchingData.getSuccessValue(
+    useIntegrationIsAllowedAndEnabled("ARGOS")
+  ).orElse(false);
+  const showDmponline = FetchingData.getSuccessValue(
+    useIntegrationIsAllowedAndEnabled("DMPONLINE")
+  ).orElse(false);
+  const showDmptool = FetchingData.getSuccessValue(
+    useIntegrationIsAllowedAndEnabled("DMPTOOL")
+  ).orElse(false);
 
   React.useEffect(() => {
     /*
@@ -327,17 +309,15 @@ const DmpMenuSection = ({
     window.gallery = showDmpPanel;
   }, []);
 
-  if (!argosEnabled && !dmponlineEnabled && !dmptoolEnabled) return null;
+  if (!showArgos && !showDmponline && !showDmptool) return null;
   return (
     <>
       <Divider textAlign="left" aria-label="DMPs">
         DMPs
       </Divider>
-      {argosEnabled && <ArgosNewMenuItem onDialogClose={onDialogClose} />}
-      {dmponlineEnabled && (
-        <DMPOnlineNewMenuItem onDialogClose={onDialogClose} />
-      )}
-      {dmptoolEnabled && <DMPToolNewMenuItem onDialogClose={onDialogClose} />}
+      {showArgos && <ArgosNewMenuItem onDialogClose={onDialogClose} />}
+      {showDmponline && <DMPOnlineNewMenuItem onDialogClose={onDialogClose} />}
+      {showDmptool && <DMPToolNewMenuItem onDialogClose={onDialogClose} />}
     </>
   );
 };
