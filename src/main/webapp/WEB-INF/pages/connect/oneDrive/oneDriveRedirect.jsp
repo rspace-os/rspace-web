@@ -5,6 +5,6 @@
 </head>
 <body>
     <!-- The script will handle passing oauth/authorize response back to the calling page. -->
-    <script type="text/javascript" src="//js.live.net/v7.0/OneDrive.js"></script>
+    <script type="text/javascript" src="//js.live.net/v7.2/OneDrive.js"></script>
 </body>
 </html>
