@@ -1388,6 +1388,8 @@ function GalleryMainPanel({
                 overflowY: "auto",
                 mt: 0.75,
               }}
+              role="region"
+              aria-label="info panel"
             >
               <InfoPanelForLargeViewports
                 /*
