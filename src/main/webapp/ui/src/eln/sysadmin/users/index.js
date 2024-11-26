@@ -1867,8 +1867,8 @@ export const UsersPage = (): Node => {
                         }),
                       })}
                       pageSizeOptions={FetchingData.match(userListing, {
-                        loading: () => [],
-                        error: () => [],
+                        loading: () => [0],
+                        error: () => [0],
                         success: (listing) =>
                           paginationOptions(listing.totalListingCount),
                       })}

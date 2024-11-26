@@ -15,13 +15,11 @@ import {
 import "@testing-library/jest-dom";
 import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../../theme";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import USER_LISTING from "./userListing";
 import PDF_CONFIG from "./pdfConfig";
-import { sleep } from "../../../../util/Util";
 import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
@@ -56,31 +54,43 @@ describe("Grant User PI Role", () => {
         .reply(200, { data: true });
 
       render(
-        <StyledEngineProvider injectFirst>
-          <ThemeProvider theme={materialTheme}>
-            <UsersPage />
-          </ThemeProvider>
-        </StyledEngineProvider>
+        <ThemeProvider theme={materialTheme}>
+          <UsersPage />
+        </ThemeProvider>
       );
 
-      await act(() => {
-        return sleep(1000);
+      await waitFor(() => {
+        expect(screen.getByRole("grid")).toBeVisible();
+      });
+
+      await waitFor(() => {
+        expect(
+          within(screen.getByRole("grid")).getAllByRole("row").length
+        ).toBeGreaterThan(1);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole("row", { name: /user8h/ })).toBeVisible();
       });
 
       const checkbox = within(
         await screen.findByRole("row", { name: /user8h/ })
       ).getByRole("checkbox");
 
-      await user.click(checkbox);
+      await act(async () => {
+        await user.click(checkbox);
+      });
 
-      await user.click(screen.getByRole("button", { name: /Actions/ }));
-      await user.click(screen.getByRole("menuitem", { name: /Grant PI role/ }));
+      await act(async () => {
+        await user.click(screen.getByRole("button", { name: /Actions/ }));
+      });
+      await act(async () => {
+        await user.click(
+          screen.getByRole("menuitem", { name: /Grant PI role/ })
+        );
+      });
 
       expect(await screen.findByRole("dialog")).toBeVisible();
-
-      await act(() => {
-        return sleep(100);
-      });
 
       expect(
         within(screen.getByRole("dialog")).getByText(
@@ -111,33 +121,39 @@ describe("Grant User PI Role", () => {
         .reply(200, { data: false });
 
       render(
-        <StyledEngineProvider injectFirst>
-          <ThemeProvider theme={materialTheme}>
-            <UsersPage />
-          </ThemeProvider>
-        </StyledEngineProvider>
+        <ThemeProvider theme={materialTheme}>
+          <UsersPage />
+        </ThemeProvider>
       );
 
-      await act(() => {
-        return sleep(100);
+      await waitFor(() => {
+        expect(screen.getByRole("grid")).toBeVisible();
+      });
+
+      await waitFor(() => {
+        expect(
+          within(screen.getByRole("grid")).getAllByRole("row").length
+        ).toBeGreaterThan(1);
       });
 
       const checkbox = within(
         await screen.findByRole("row", { name: /user8h/ })
       ).getByRole("checkbox");
 
-      await user.click(checkbox);
-
-      await user.click(screen.getByRole("button", { name: /Actions/ }));
-      await user.click(screen.getByRole("menuitem", { name: /Grant PI role/ }));
-
-      await waitFor(() => {
-        expect(screen.getByRole("dialog")).toBeVisible();
+      await act(async () => {
+        await user.click(checkbox);
       });
 
-      await act(() => {
-        return sleep(100);
+      await act(async () => {
+        await user.click(screen.getByRole("button", { name: /Actions/ }));
       });
+      await act(async () => {
+        await user.click(
+          screen.getByRole("menuitem", { name: /Grant PI role/ })
+        );
+      });
+
+      expect(await screen.findByRole("dialog")).toBeVisible();
 
       await waitFor(() => {
         expect(
@@ -150,6 +166,6 @@ describe("Grant User PI Role", () => {
         ).toBeVisible();
       });
     },
-    30 * 1000
+    20 * 1000
   );
 });
