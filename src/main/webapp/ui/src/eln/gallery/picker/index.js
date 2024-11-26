@@ -73,6 +73,7 @@ const Picker = observer(
     onSubmit: (RsSet<GalleryFile>) => void,
     validateSelection: (GalleryFile) => Result<null>,
   |}) => {
+    const sidebarId = React.useId();
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -141,6 +142,7 @@ const Picker = observer(
                 setAppliedSearchTerm={setAppliedSearchTerm}
                 setDrawerOpen={setDrawerOpen}
                 drawerOpen={drawerOpen}
+                sidebarId={sidebarId}
               />
               <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
                 <Sidebar
@@ -153,6 +155,7 @@ const Picker = observer(
                   path={path}
                   folderId={folderId}
                   refreshListing={refreshListing}
+                  id={sidebarId}
                 />
                 <Box
                   sx={{
