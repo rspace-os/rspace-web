@@ -259,6 +259,7 @@ const Path = styled(({ className, section, path, clearPath }) => {
             paddingTop: "5px",
             paddingBottom: "5px",
           },
+          "aria-label": "copy breadcrumb path",
         }}
       />
       {/*
