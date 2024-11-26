@@ -1177,6 +1177,7 @@ function GalleryMainPanel({
                       setViewMenuAnchorEl(e.target);
                     }}
                     aria-haspopup="menu"
+                    aria-expanded={viewMenuAnchorEl ? "true" : "false"}
                   >
                     Views
                   </Button>
@@ -1186,6 +1187,7 @@ function GalleryMainPanel({
                     onClose={() => setViewMenuAnchorEl(null)}
                     MenuListProps={{
                       disablePadding: true,
+                      "aria-label": "view options",
                     }}
                   >
                     <NewMenuItem
@@ -1237,6 +1239,7 @@ function GalleryMainPanel({
                       setSortMenuAnchorEl(e.target);
                     }}
                     aria-haspopup="menu"
+                    aria-expanded={sortMenuAnchorEl ? "true" : "false"}
                   >
                     Sort
                   </Button>
@@ -1246,6 +1249,7 @@ function GalleryMainPanel({
                     onClose={() => setSortMenuAnchorEl(null)}
                     MenuListProps={{
                       disablePadding: true,
+                      "aria-label": "sort listing",
                     }}
                   >
                     <NewMenuItem

@@ -429,6 +429,7 @@ function ActionsMenu({
         size="small"
         disabled={selection.isEmpty}
         aria-haspopup="menu"
+        aria-expanded={actionsMenuAnchorEl ? "true" : "false"}
         startIcon={<ChecklistIcon />}
         onClick={(e) => {
           setActionsMenuAnchorEl(e.target);
@@ -442,6 +443,7 @@ function ActionsMenu({
         onClose={() => setActionsMenuAnchorEl(null)}
         MenuListProps={{
           disablePadding: true,
+          "aria-label": "actions",
         }}
         keepMounted
       >
