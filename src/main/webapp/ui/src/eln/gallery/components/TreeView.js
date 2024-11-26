@@ -418,6 +418,8 @@ const TreeView = ({
     );
   return (
     <SimpleTreeView
+      role="region"
+      aria-label="tree view of files"
       expandedItems={expandedItems}
       onExpandedItemsChange={(_event, nodeIds) => {
         setExpandedItems(nodeIds);

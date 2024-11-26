@@ -145,6 +145,8 @@ const Puller: ComponentType<{|
   onKeyDown: (KeyboardEvent) => void,
   tabIndex?: number,
   role?: string,
+  "aria-controls": string,
+  "aria-expanded": "true" | "false",
 |}> = styled("div")(() => ({
   width: 30,
   height: 6,
@@ -799,6 +801,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
   );
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const selection = useGallerySelection();
+  const mobileInfoPanelId = React.useId();
 
   return (
     <CustomSwipeableDrawer
@@ -824,6 +827,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
       disableSwipeToOpen={false}
       ModalProps={{
         keepMounted: true,
+        ariaHidden: false,
       }}
       allowSwipeInChildren={(event) => {
         if (event.target.id === "open") return false;
@@ -831,7 +835,13 @@ export const InfoPanelForSmallViewports: ComponentType<{|
       }}
     >
       <MobileInfoPanelContent>
-        <Stack spacing={1} height="100%">
+        <Stack
+          spacing={1}
+          height="100%"
+          role="region"
+          aria-label="info panel"
+          id={mobileInfoPanelId}
+        >
           <Puller
             onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
             onKeyDown={(e) => {
@@ -839,6 +849,8 @@ export const InfoPanelForSmallViewports: ComponentType<{|
             }}
             role="button"
             tabIndex={0}
+            aria-controls={mobileInfoPanelId}
+            aria-expanded={mobileInfoPanelOpen ? "true" : "false"}
           />
           <CardContent>
             <Grid

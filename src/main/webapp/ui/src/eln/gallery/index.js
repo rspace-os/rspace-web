@@ -59,6 +59,7 @@ const WholePage = styled(() => {
     });
   const { isViewportSmall } = useViewportDimensions();
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
+  const sidebarId = React.useId();
 
   return (
     <CallableImagePreview>
@@ -69,8 +70,12 @@ const WholePage = styled(() => {
             setAppliedSearchTerm={setAppliedSearchTerm}
             setDrawerOpen={setDrawerOpen}
             drawerOpen={drawerOpen}
+            sidebarId={sidebarId}
           />
-          <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+          <Box
+            sx={{ display: "flex", height: "calc(100% - 48px)" }}
+            component="main"
+          >
             <Sidebar
               selectedSection={selectedSection}
               setSelectedSection={(mediaType) => {
@@ -83,6 +88,7 @@ const WholePage = styled(() => {
               path={path}
               folderId={folderId}
               refreshListing={refreshListing}
+              id={sidebarId}
             />
             <Box
               sx={{

@@ -410,6 +410,7 @@ type SidebarArgs = {|
   path: $ReadOnlyArray<GalleryFile>,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => void,
+  id: string,
 |};
 
 const Sidebar = ({
@@ -420,6 +421,7 @@ const Sidebar = ({
   path,
   folderId,
   refreshListing,
+  id,
 }: SidebarArgs): Node => {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
     React.useState(8);
@@ -479,7 +481,9 @@ const Sidebar = ({
       onClose={() => {
         if (viewport.isViewportSmall) setDrawerOpen(false);
       }}
+      role="region"
       aria-label="gallery sections drawer"
+      id={id}
     >
       <Box width="100%" p={1.5}>
         <AddButton

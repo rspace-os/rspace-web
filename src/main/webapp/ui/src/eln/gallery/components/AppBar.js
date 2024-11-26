@@ -30,6 +30,7 @@ type GalleryAppBarArgs = {|
   setAppliedSearchTerm: (string) => void,
   setDrawerOpen: (boolean) => void,
   drawerOpen: boolean,
+  sidebarId: string,
 |};
 
 function GalleryAppBar({
@@ -37,6 +38,7 @@ function GalleryAppBar({
   setAppliedSearchTerm,
   setDrawerOpen,
   drawerOpen,
+  sidebarId,
 }: GalleryAppBarArgs): Node {
   const { isViewportVerySmall, isViewportSmall } = useViewportDimensions();
   const [showTextfield, setShowTextfield] = React.useState(false);
@@ -53,10 +55,12 @@ function GalleryAppBar({
   }, [appliedSearchTerm]);
 
   return (
-    <AppBar position="relative" open={true}>
+    <AppBar position="relative" open={true} aria-label="page header">
       <Toolbar variant="dense">
         <IconButton
           aria-label={drawerOpen ? "close drawer" : "open drawer"}
+          aria-controls={sidebarId}
+          aria-expanded={drawerOpen ? "true" : "false"}
           onClick={() => {
             setDrawerOpen(!drawerOpen);
           }}

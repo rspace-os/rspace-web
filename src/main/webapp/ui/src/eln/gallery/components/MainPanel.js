@@ -225,6 +225,8 @@ const Path = styled(({ className, section, path, clearPath }) => {
         onKeyDown(e);
       }}
       style={{ position: "relative" }}
+      role="region"
+      aria-label="breadcrumbs"
     >
       <TextField
         className={className}
@@ -257,6 +259,7 @@ const Path = styled(({ className, section, path, clearPath }) => {
             paddingTop: "5px",
             paddingBottom: "5px",
           },
+          "aria-label": "copy breadcrumb path",
         }}
       />
       {/*
@@ -403,6 +406,8 @@ const GridView = observer(
     return (
       <>
         <Grid
+          role="region"
+          aria-label="grid view of files"
           container
           spacing={2}
           onKeyDown={(e) => {
@@ -1148,9 +1153,17 @@ function GalleryMainPanel({
                 mt: 0.75,
               }}
               flexWrap="nowrap"
+              role="region"
+              aria-label="files listing"
             >
               <Grid item sx={{ maxWidth: "100% !important" }}>
-                <Stack direction="row" spacing={0.5} alignItems="center">
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  alignItems="center"
+                  role="region"
+                  aria-label="files listing controls"
+                >
                   <ActionsMenu
                     refreshListing={refreshListing}
                     section={selectedSection}
@@ -1165,6 +1178,7 @@ function GalleryMainPanel({
                       setViewMenuAnchorEl(e.target);
                     }}
                     aria-haspopup="menu"
+                    aria-expanded={viewMenuAnchorEl ? "true" : "false"}
                   >
                     Views
                   </Button>
@@ -1174,6 +1188,7 @@ function GalleryMainPanel({
                     onClose={() => setViewMenuAnchorEl(null)}
                     MenuListProps={{
                       disablePadding: true,
+                      "aria-label": "view options",
                     }}
                   >
                     <NewMenuItem
@@ -1225,6 +1240,7 @@ function GalleryMainPanel({
                       setSortMenuAnchorEl(e.target);
                     }}
                     aria-haspopup="menu"
+                    aria-expanded={sortMenuAnchorEl ? "true" : "false"}
                   >
                     Sort
                   </Button>
@@ -1234,6 +1250,7 @@ function GalleryMainPanel({
                     onClose={() => setSortMenuAnchorEl(null)}
                     MenuListProps={{
                       disablePadding: true,
+                      "aria-label": "sort listing",
                     }}
                   >
                     <NewMenuItem
@@ -1376,6 +1393,8 @@ function GalleryMainPanel({
                 overflowY: "auto",
                 mt: 0.75,
               }}
+              role="region"
+              aria-label="info panel"
             >
               <InfoPanelForLargeViewports
                 /*
