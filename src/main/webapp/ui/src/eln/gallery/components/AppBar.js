@@ -53,7 +53,7 @@ function GalleryAppBar({
   }, [appliedSearchTerm]);
 
   return (
-    <AppBar position="relative" open={true}>
+    <AppBar position="relative" open={true} aria-label="page header">
       <Toolbar variant="dense">
         <IconButton
           aria-label={drawerOpen ? "close drawer" : "open drawer"}

@@ -479,6 +479,7 @@ const Sidebar = ({
       onClose={() => {
         if (viewport.isViewportSmall) setDrawerOpen(false);
       }}
+      role="region"
       aria-label="gallery sections drawer"
     >
       <Box width="100%" p={1.5}>

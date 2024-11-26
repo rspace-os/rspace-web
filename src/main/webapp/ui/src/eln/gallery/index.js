@@ -70,7 +70,10 @@ const WholePage = styled(() => {
             setDrawerOpen={setDrawerOpen}
             drawerOpen={drawerOpen}
           />
-          <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+          <Box
+            sx={{ display: "flex", height: "calc(100% - 48px)" }}
+            component="main"
+          >
             <Sidebar
               selectedSection={selectedSection}
               setSelectedSection={(mediaType) => {

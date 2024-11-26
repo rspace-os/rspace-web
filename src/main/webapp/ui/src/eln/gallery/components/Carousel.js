@@ -450,6 +450,8 @@ export default function Carousel({ listing }: CarouselArgs): Node {
       }}
       spacing={1}
       flexWrap="nowrap"
+      role="region"
+      aria-label="Carousel view of files"
     >
       <Grid item container direction="row" spacing={1}>
         <Grid item>

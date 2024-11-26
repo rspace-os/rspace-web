@@ -225,6 +225,8 @@ const Path = styled(({ className, section, path, clearPath }) => {
         onKeyDown(e);
       }}
       style={{ position: "relative" }}
+      role="region"
+      aria-label="breadcrumbs"
     >
       <TextField
         className={className}
@@ -403,6 +405,8 @@ const GridView = observer(
     return (
       <>
         <Grid
+          role="region"
+          aria-label="grid view of files"
           container
           spacing={2}
           onKeyDown={(e) => {
@@ -1148,9 +1152,17 @@ function GalleryMainPanel({
                 mt: 0.75,
               }}
               flexWrap="nowrap"
+              role="region"
+              aria-label="files listing"
             >
               <Grid item sx={{ maxWidth: "100% !important" }}>
-                <Stack direction="row" spacing={0.5} alignItems="center">
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  alignItems="center"
+                  role="region"
+                  aria-label="files listing controls"
+                >
                   <ActionsMenu
                     refreshListing={refreshListing}
                     section={selectedSection}
