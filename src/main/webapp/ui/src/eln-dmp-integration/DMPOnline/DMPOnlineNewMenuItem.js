@@ -24,11 +24,11 @@ export default function DMPonlineNewMenuItem({
         avatar={<CardMedia image={DMPonlineIcon} />}
         backgroundColor={COLOR}
         foregroundColor={{ ...COLOR, lightness: 30 }}
-        subheader="Import from dmponline.dcc.ac.uk"
         onClick={() => {
           setShowDMPDialog(true);
         }}
         aria-haspopup="dialog"
+        compact
       />
       <EventBoundary>
         <DMPDialog
