@@ -6,7 +6,9 @@ import com.researchspace.files.service.FileStore;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemInfo;
 import com.researchspace.netfiles.NfsAuthException;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
@@ -16,6 +18,7 @@ import com.researchspace.service.NfsManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,8 +62,22 @@ public class NfsManagerImpl implements NfsManager {
   }
 
   @Override
-  public List<NfsFileStore> getFileStoresForUser(Long userId) {
-    return nfsDao.getUserFileStores(userId);
+  public List<NfsFileStoreInfo> getFileStoreInfosForUser(User user) {
+    List<NfsFileStore> userStores = nfsDao.getUserFileStores(user.getId());
+    List<NfsFileStoreInfo> userStoreInfos = new ArrayList<>();
+    for (NfsFileStore us : userStores) {
+      userStoreInfos.add(us.toFileStoreInfo());
+    }
+    return userStoreInfos;
+  }
+
+  @Override
+  public List<NfsFileSystemInfo> getActiveFileSystemInfos() {
+    List<NfsFileSystemInfo> activeSystemInfos = new ArrayList<>();
+    for (NfsFileSystem as : getActiveFileSystems()) {
+      activeSystemInfos.add(as.toFileSystemInfo());
+    }
+    return activeSystemInfos;
   }
 
   /*

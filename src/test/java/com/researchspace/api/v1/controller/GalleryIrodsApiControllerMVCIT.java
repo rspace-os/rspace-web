@@ -1,11 +1,10 @@
 package com.researchspace.api.v1.controller;
 
-import static com.researchspace.api.v1.GalleryApi.PARAM_FILESTORE_PATH_ID;
-import static com.researchspace.api.v1.GalleryApi.PARAM_RECORD_IDS;
-import static com.researchspace.api.v1.controller.GalleryApiController.IRODS_ENDPOINT;
-import static com.researchspace.api.v1.controller.GalleryApiController.Operation;
-import static com.researchspace.api.v1.controller.GalleryApiController.Operation.copy;
-import static com.researchspace.api.v1.controller.GalleryApiController.Operation.move;
+import static com.researchspace.api.v1.GalleryIrodsApi.PARAM_FILESTORE_PATH_ID;
+import static com.researchspace.api.v1.GalleryIrodsApi.PARAM_RECORD_IDS;
+import static com.researchspace.api.v1.controller.GalleryIrodsApiController.Operation;
+import static com.researchspace.api.v1.controller.GalleryIrodsApiController.Operation.copy;
+import static com.researchspace.api.v1.controller.GalleryIrodsApiController.Operation.move;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -51,7 +50,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
-public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
+public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
 
   private String CLIENT_OPTIONS_STRING =
       "IRODS_ZONE=tempZone\nIRODS_HOME_DIR=/tempZone/home/alice\nIRODS_PORT=1247\n";
@@ -479,6 +478,6 @@ public class GalleryApiControllerMVCIT extends API_MVC_TestBase {
   private MockHttpServletRequestBuilder createIrodsPostBuilder(
       User user, String apiKey, ApiNfsCredentials credentials, Operation operation) {
     return createBuilderForPostWithJSONBody(
-        apiKey, "/gallery" + IRODS_ENDPOINT + "/" + operation.toString(), user, credentials);
+        apiKey, "/gallery/irods/" + operation.toString(), user, credentials);
   }
 }

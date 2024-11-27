@@ -26,7 +26,6 @@ import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,17 +114,9 @@ public class NfsController extends BaseController {
   }
 
   private void addFileStoresAndFileSystemsToView(Model model, Principal p) {
-    List<NfsFileStore> userStores = nfsManager.getFileStoresForUser(getPrincipalUser(p).getId());
-    List<NfsFileStoreInfo> userStoreInfos = new ArrayList<>();
-    for (NfsFileStore us : userStores) {
-      userStoreInfos.add(us.toFileStoreInfo());
-    }
-
-    List<NfsFileSystem> activeSystems = nfsManager.getActiveFileSystems();
-    List<NfsFileSystemInfo> activeSystemInfos = new ArrayList<>();
-    for (NfsFileSystem as : activeSystems) {
-      activeSystemInfos.add(as.toFileSystemInfo());
-    }
+    List<NfsFileStoreInfo> userStoreInfos =
+        nfsManager.getFileStoreInfosForUser(getPrincipalUser(p));
+    List<NfsFileSystemInfo> activeSystemInfos = nfsManager.getActiveFileSystemInfos();
 
     String userStoresJson = null;
     String activeSystemsJson = null;
@@ -272,7 +263,7 @@ public class NfsController extends BaseController {
   @Data
   @NoArgsConstructor
   @AllArgsConstructor
-  protected static class NfsLoginData {
+  public static class NfsLoginData {
     private Long fileSystemId;
     private String nfsusername;
     private String nfspassword;
@@ -395,8 +386,8 @@ public class NfsController extends BaseController {
           getErrorListFromMessageCode(getText("net.filestores.validation.userfolder.name.empty")));
     }
 
-    List<NfsFileStore> userFolders = nfsManager.getFileStoresForUser(user.getId());
-    if (isNameOnTheList(fileStoreName, userFolders)) {
+    List<NfsFileStoreInfo> userFileStores = nfsManager.getFileStoreInfosForUser(user);
+    if (isNameOnTheList(fileStoreName, userFileStores)) {
       return new AjaxReturnObject<>(
           null,
           getErrorListFromMessageCode(
@@ -442,9 +433,9 @@ public class NfsController extends BaseController {
     return SUCCESS_MSG;
   }
 
-  private boolean isNameOnTheList(String fileStoreName, List<NfsFileStore> fileStoreList) {
+  private boolean isNameOnTheList(String fileStoreName, List<NfsFileStoreInfo> fileStoreList) {
     if (fileStoreName != null && fileStoreList != null) {
-      for (NfsFileStore fs : fileStoreList) {
+      for (NfsFileStoreInfo fs : fileStoreList) {
         if (fileStoreName.equals(fs.getName())) {
           return true;
         }

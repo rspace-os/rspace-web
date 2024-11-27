@@ -170,18 +170,21 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
     node.calculateFileName(lsEntry.getFilename());
     node.setNodePath(fullPathToTarget);
     node.setIsFolder(attrs.isDir() || attrs.isLink());
-    node.setFileDate(getDateFromMTime(attrs.getMTime()));
+    Date mTimeDate = getDateFromMTime(attrs.getMTime());
+    node.setFileDate(sdf.format(mTimeDate));
+    node.setFileDateMillis(mTimeDate.getTime());
     node.calculateLogicPath(fullPathToTarget, activeUserFolder);
 
     if (!attrs.isDir()) {
       node.setFileSize("" + attrs.getSize());
+      node.setFileSizeBytes(attrs.getSize());
     }
 
     return node;
   }
 
-  private String getDateFromMTime(int mtime) {
-    return sdf.format(new Date((long) mtime * 1000));
+  private Date getDateFromMTime(int mtime) {
+    return new Date((long) mtime * 1000);
   }
 
   /* operates on path that is already sanitised */

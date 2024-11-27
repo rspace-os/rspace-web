@@ -54,7 +54,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
           "Error Connecting to iRODS at: {} with username: {}",
           irodsAccount.getHost(),
           irodsAccount.getUserName());
-      throw new NfsException("Error Connecting to iRODS:", e);
+      throw new NfsException("Error Connecting to iRODS", e);
     }
   }
 
@@ -104,7 +104,9 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
     node.setNodePath(entry.getPathOrName());
     node.setIsFolder(entry.isCollection());
     node.setFileDate(String.valueOf(entry.getModifiedAt()));
+    node.setFileDateMillis(entry.getModifiedAt().getTime());
     node.setFileSize(entry.getDisplayDataSize());
+    node.setFileSizeBytes(entry.getDataSize());
     node.setNfsId((long) entry.getId());
     return node;
   }

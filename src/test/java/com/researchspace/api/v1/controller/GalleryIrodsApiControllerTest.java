@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import static com.researchspace.api.v1.GalleryApi.API_GALLERY_V1;
+import static com.researchspace.api.v1.GalleryIrodsApi.API_V1_GALLERY_IRODS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,7 +39,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.web.util.UriComponentsBuilder;
 
-class GalleryApiControllerTest {
+class GalleryIrodsApiControllerTest {
 
   private static final String USERNAME = "username";
   private static final String PASSWORD = "password";
@@ -52,7 +52,6 @@ class GalleryApiControllerTest {
   @Mock private ExternalStorageManager externalStorageManager;
   @Mock private User user;
 
-  private GalleryApiController galleryApiController;
   private Long validFilestorePathId_1 = 1L;
   private Long invalidFilestorePathId_2 = 2L;
   private Long validFilestorePathId_3 = 3L;
@@ -60,19 +59,23 @@ class GalleryApiControllerTest {
   private NfsClient nfsClientLoggedIn = new NfsClientStub(USERNAME, true);
   private Set<Long> validRecordIds = Set.of(123L, 456L);
 
+  private GalleryIrodsApiController galleryIrodsApiController;
+  private GalleryFilestoresCredentialsStore credentialsStore;
+
   @BeforeEach
   public void setup() throws IOException {
     MockitoAnnotations.openMocks(this);
-    galleryApiController =
-        new GalleryApiController(
+
+    credentialsStore = new GalleryFilestoresCredentialsStore(nfsAuthentication);
+    galleryIrodsApiController =
+        new GalleryIrodsApiController(
             nfsManager,
             deletionManager,
             baseRecordManager,
-            nfsAuthentication,
+            credentialsStore,
             externalStorageManager);
-    galleryApiController.rsBaseLink =
-        UriComponentsBuilder.fromHttpUrl("http://url").path(API_GALLERY_V1);
-    ;
+    galleryIrodsApiController.irodsGalleryBaseLink =
+        UriComponentsBuilder.fromHttpUrl("http://url").path(API_V1_GALLERY_IRODS);
 
     when(nfsManager.getNfsFileStore(validFilestorePathId_1))
         .thenReturn(createIrodsFileStore(validFilestorePathId_1, "Filestore_1"));
@@ -110,7 +113,7 @@ class GalleryApiControllerTest {
         assertThrows(
             BindException.class,
             () -> {
-              galleryApiController.copyToIRODS(
+              galleryIrodsApiController.copyToIRODS(
                   recordIds,
                   null,
                   new ApiNfsCredentials(),
@@ -131,7 +134,7 @@ class GalleryApiControllerTest {
         assertThrows(
             BindException.class,
             () -> {
-              galleryApiController.copyToIRODS(
+              galleryIrodsApiController.copyToIRODS(
                   validRecordIds,
                   invalidFilestorePathId_2,
                   new ApiNfsCredentials(),
@@ -151,7 +154,7 @@ class GalleryApiControllerTest {
         assertThrows(
             BindException.class,
             () -> {
-              galleryApiController.copyToIRODS(
+              galleryIrodsApiController.copyToIRODS(
                   validRecordIds,
                   validFilestorePathId_1,
                   new ApiNfsCredentials(null, "", PASSWORD),
@@ -171,7 +174,7 @@ class GalleryApiControllerTest {
         assertThrows(
             BindException.class,
             () -> {
-              galleryApiController.copyToIRODS(
+              galleryIrodsApiController.copyToIRODS(
                   validRecordIds,
                   validFilestorePathId_1,
                   new ApiNfsCredentials(null, USERNAME, ""),
@@ -194,7 +197,7 @@ class GalleryApiControllerTest {
         assertThrows(
             BindException.class,
             () -> {
-              galleryApiController.copyToIRODS(
+              galleryIrodsApiController.copyToIRODS(
                   validRecordIds,
                   validFilestorePathId_1,
                   new ApiNfsCredentials(null, USERNAME, PASSWORD),
@@ -213,7 +216,7 @@ class GalleryApiControllerTest {
         assertThrows(
             BindException.class,
             () -> {
-              galleryApiController.copyToIRODS(
+              galleryIrodsApiController.copyToIRODS(
                   recordIds,
                   validFilestorePathId_1,
                   new ApiNfsCredentials(null, USERNAME, PASSWORD),
@@ -238,7 +241,7 @@ class GalleryApiControllerTest {
         assertThrows(
             BindException.class,
             () -> {
-              galleryApiController.copyToIRODS(
+              galleryIrodsApiController.copyToIRODS(
                   validRecordIds,
                   validFilestorePathId_1,
                   new ApiNfsCredentials(null, USERNAME, PASSWORD),
@@ -262,25 +265,25 @@ class GalleryApiControllerTest {
 
     // username and password wrong
     callAndAssertCopyEndPointWithWrongCredentials(validRecordIds, USERNAME_WRONG, PASSWORD_WRONG);
-    assertEquals(1, galleryApiController.credentialsMapCache.values().size());
+    assertEquals(1, credentialsStore.getCredentialsMapCache().values().size());
     ApiNfsCredentials credentials =
-        galleryApiController.credentialsMapCache.values().stream().findFirst().get();
+        credentialsStore.getCredentialsMapCache().values().stream().findFirst().get();
     assertEquals(PASSWORD_WRONG, credentials.getPassword());
     assertEquals(USERNAME_WRONG, credentials.getUsername());
     assertEquals(user, credentials.getUser());
 
     // password only wrong
     callAndAssertCopyEndPointWithWrongCredentials(validRecordIds, USERNAME, PASSWORD_WRONG);
-    assertEquals(1, galleryApiController.credentialsMapCache.values().size());
-    credentials = galleryApiController.credentialsMapCache.values().stream().findFirst().get();
+    assertEquals(1, credentialsStore.getCredentialsMapCache().values().size());
+    credentials = credentialsStore.getCredentialsMapCache().values().stream().findFirst().get();
     assertEquals(PASSWORD_WRONG, credentials.getPassword());
     assertEquals(USERNAME, credentials.getUsername());
     assertEquals(user, credentials.getUser());
 
     // username only wrong
     callAndAssertCopyEndPointWithWrongCredentials(validRecordIds, USERNAME_WRONG, PASSWORD);
-    assertEquals(1, galleryApiController.credentialsMapCache.values().size());
-    credentials = galleryApiController.credentialsMapCache.values().stream().findFirst().get();
+    assertEquals(1, credentialsStore.getCredentialsMapCache().values().size());
+    credentials = credentialsStore.getCredentialsMapCache().values().stream().findFirst().get();
     assertEquals(PASSWORD, credentials.getPassword());
     assertEquals(USERNAME_WRONG, credentials.getUsername());
     assertEquals(user, credentials.getUser());
@@ -289,35 +292,35 @@ class GalleryApiControllerTest {
   @Test
   void testCacheCredentialsByUserAndFilesystem()
       throws BindException, UnsupportedOperationException {
-    galleryApiController.copyToIRODS(
+    galleryIrodsApiController.copyToIRODS(
         validRecordIds,
         validFilestorePathId_1,
         new ApiNfsCredentials(null, USERNAME, PASSWORD),
         new BeanPropertyBindingResult(validRecordIds, "bean"),
         user);
-    assertEquals(1, galleryApiController.credentialsMapCache.values().size());
+    assertEquals(1, credentialsStore.getCredentialsMapCache().values().size());
 
-    galleryApiController.copyToIRODS(
+    galleryIrodsApiController.copyToIRODS(
         validRecordIds,
         validFilestorePathId_3,
         new ApiNfsCredentials(null, USERNAME, PASSWORD),
         new BeanPropertyBindingResult(validRecordIds, "bean"),
         user);
-    assertEquals(2, galleryApiController.credentialsMapCache.values().size());
+    assertEquals(2, credentialsStore.getCredentialsMapCache().values().size());
 
-    galleryApiController.copyToIRODS(
+    galleryIrodsApiController.copyToIRODS(
         validRecordIds,
         validFilestorePathId_1,
         null,
         new BeanPropertyBindingResult(validRecordIds, "bean"),
         user);
-    assertEquals(2, galleryApiController.credentialsMapCache.values().size());
+    assertEquals(2, credentialsStore.getCredentialsMapCache().values().size());
   }
 
   @Test
   void testCopySuccessfullyToIrods()
       throws BindException, UnsupportedOperationException, IOException {
-    galleryApiController.copyToIRODS(
+    galleryIrodsApiController.copyToIRODS(
         validRecordIds,
         validFilestorePathId_1,
         new ApiNfsCredentials(null, USERNAME, PASSWORD),
@@ -336,7 +339,7 @@ class GalleryApiControllerTest {
         assertThrows(
             BindException.class,
             () -> {
-              galleryApiController.moveToIRODS(
+              galleryIrodsApiController.moveToIRODS(
                   validRecordIds,
                   validFilestorePathId_1,
                   new ApiNfsCredentials(null, USERNAME, PASSWORD),
@@ -355,7 +358,7 @@ class GalleryApiControllerTest {
   @Test
   void testMoveSuccessfullyToIrods()
       throws BindException, UnsupportedOperationException, IOException {
-    galleryApiController.moveToIRODS(
+    galleryIrodsApiController.moveToIRODS(
         validRecordIds,
         validFilestorePathId_1,
         new ApiNfsCredentials(null, USERNAME, PASSWORD),
@@ -371,7 +374,7 @@ class GalleryApiControllerTest {
         assertThrows(
             BindException.class,
             () -> {
-              galleryApiController.copyToIRODS(
+              galleryIrodsApiController.copyToIRODS(
                   recordIds,
                   validFilestorePathId_1,
                   new ApiNfsCredentials(null, username, password),

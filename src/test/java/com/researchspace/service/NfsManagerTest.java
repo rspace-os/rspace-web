@@ -56,14 +56,14 @@ public class NfsManagerTest extends SpringTransactionalTest {
     User user = userManager.getUserByUsername(USER);
     nfsMgr.saveNfsFileSystem(testFileSystem);
 
-    int initialFolderCount = nfsMgr.getFileStoresForUser(user.getId()).size();
+    int initialFolderCount = nfsMgr.getFileStoreInfosForUser(user).size();
 
     NfsFileStore fileStore = NetFilesTestFactory.createAnyNfsFileStore(user);
     fileStore.setFileSystem(testFileSystem);
     nfsMgr.saveNfsFileStore(fileStore);
     assertNotNull(fileStore.getId());
     assertFalse(fileStore.isDeleted());
-    assertEquals(initialFolderCount + 1, nfsMgr.getFileStoresForUser(user.getId()).size());
+    assertEquals(initialFolderCount + 1, nfsMgr.getFileStoreInfosForUser(user).size());
     assertNotNull(fileStore.getFileSystem());
     assertEquals(testFileSystem, fileStore.getFileSystem());
 
@@ -71,7 +71,7 @@ public class NfsManagerTest extends SpringTransactionalTest {
     NfsFileStore deletedFolder = nfsMgr.getNfsFileStore(fileStore.getId());
     assertNotNull(deletedFolder);
     assertTrue(deletedFolder.isDeleted());
-    assertEquals(initialFolderCount, nfsMgr.getFileStoresForUser(user.getId()).size());
+    assertEquals(initialFolderCount, nfsMgr.getFileStoreInfosForUser(user).size());
   }
 
   @Test

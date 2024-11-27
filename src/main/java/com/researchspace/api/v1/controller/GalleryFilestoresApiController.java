@@ -1,0 +1,159 @@
+package com.researchspace.api.v1.controller;
+
+import com.researchspace.api.v1.GalleryFilestoresApi;
+import com.researchspace.model.User;
+import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileStoreInfo;
+import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemInfo;
+import com.researchspace.netfiles.ApiNfsCredentials;
+import com.researchspace.netfiles.ApiNfsRemotePathBrowseResult;
+import com.researchspace.netfiles.NfsClient;
+import com.researchspace.netfiles.NfsFileTreeNode;
+import com.researchspace.service.NfsManager;
+import java.io.IOException;
+import java.util.List;
+import javax.validation.Valid;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@Slf4j
+@NoArgsConstructor
+@ApiController
+public class GalleryFilestoresApiController extends BaseApiController
+    implements GalleryFilestoresApi {
+
+  @Autowired private NfsManager nfsManager;
+
+  @Autowired private GalleryFilestoresCredentialsStore credentialsStore;
+
+  @Override
+  public List<NfsFileStoreInfo> getUserFilestores(@RequestAttribute(name = "user") User user) {
+    return nfsManager.getFileStoreInfosForUser(user);
+  }
+
+  @Override
+  public ApiNfsRemotePathBrowseResult browseFilestore(
+      @PathVariable Long filestoreId,
+      @RequestParam(value = "remotePath", required = false) String browsePath,
+      @RequestAttribute(name = "user") User user)
+      throws IOException {
+
+    NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    NfsFileSystem filesystem = filestore.getFileSystem();
+    NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
+
+    String combinedPath = filestore.getPath();
+    if (StringUtils.isNotEmpty(browsePath)) {
+      combinedPath += browsePath;
+    }
+
+    NfsFileTreeNode fileTree = nfsClient.createFileTree(combinedPath, null, filestore);
+    return getRemotePathBrowseResult(filesystem, nfsClient, fileTree);
+  }
+
+  private ApiNfsRemotePathBrowseResult getRemotePathBrowseResult(
+      NfsFileSystem filesystem, NfsClient nfsClient, NfsFileTreeNode fileTree) {
+
+    return new ApiNfsRemotePathBrowseResult(
+        fileTree,
+        filesystem.toFileSystemInfo(),
+        nfsClient.supportsExtraDirs() && !filesystem.fileSystemRequiresUserRootDirs(),
+        nfsClient.supportsCurrentDir(),
+        nfsClient.getUsername());
+  }
+
+  @Override
+  public void downloadFromFilestore(
+      @PathVariable Long filestoreId,
+      @RequestParam(value = "remotePath", required = false) String remotePath,
+      @RequestAttribute(name = "user") User user)
+      throws IOException {
+
+    log.info("download from filestore " + filestoreId + ": " + remotePath);
+
+    throw new UnsupportedOperationException("download not supported yet");
+  }
+
+  @Override
+  public String createFilestore(
+      @RequestParam("filesystemId") Long filesystemId,
+      @RequestParam("nfsname") String filestoreName,
+      @RequestParam("nfspath") String filestorePath,
+      ApiNfsCredentials credentials,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user) {
+
+    log.info("test");
+    return null;
+  }
+
+  @Override
+  public void deleteFilestore(
+      @PathVariable Long filestoreId, @RequestAttribute(name = "user") User user) {
+
+    log.info("test");
+  }
+
+  @Override
+  public List<NfsFileSystemInfo> getFilesystems(@RequestAttribute(name = "user") User user) {
+    if (user.hasSysadminRole()) {
+      // return all, not just active?
+    }
+    return nfsManager.getActiveFileSystemInfos();
+  }
+
+  @Override
+  public ApiNfsRemotePathBrowseResult browseFilesystem(
+      @PathVariable Long filesystemId,
+      @RequestParam(value = "remotePath", required = false) String browsePath,
+      @RequestAttribute(name = "user") User user)
+      throws IOException {
+
+    NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
+    NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
+
+    NfsFileTreeNode fileTree = nfsClient.createFileTree(browsePath, null, null);
+    return getRemotePathBrowseResult(filesystem, nfsClient, fileTree);
+  }
+
+  @Override
+  public void loginToFilesystem(
+      @PathVariable Long filesystemId,
+      @RequestBody @Valid ApiNfsCredentials credentials,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
+    NfsClient nfsClient =
+        credentialsStore.validateCredentialsAndLoginNfs(credentials, errors, user, filesystem);
+    try {
+      nfsClient.tryConnectAndReadTarget("");
+    } catch (Exception e) {
+      credentialsStore.removeUserCredentialsForFilesystem(user, filesystemId);
+      throw new ExternalApiAuthorizationException(
+          "Error connecting to filesystem ["
+              + filesystem.getName()
+              + "] (id: "
+              + filesystemId
+              + "). Wrong credentials?");
+    }
+  }
+
+  @Override
+  public void logoutFromFilesystem(
+      @PathVariable Long filesystemId, @RequestAttribute(name = "user") User user) {
+
+    log.info("test logout");
+    credentialsStore.removeUserCredentialsForFilesystem(user, filesystemId);
+  }
+}
