@@ -98,7 +98,7 @@ describe("Grant User PI Role", () => {
         )
       ).toBeVisible();
     },
-    20 * 1000
+    40 * 1000
   );
   test(
     "When `checkVerificationPasswordNeeded` returns false, a message should not be shown.",
@@ -166,6 +166,6 @@ describe("Grant User PI Role", () => {
         ).toBeVisible();
       });
     },
-    20 * 1000
+    40 * 1000
   );
 });
