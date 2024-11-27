@@ -333,6 +333,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
                  */
                 setAnchorEl(null);
               }}
+              aria-haspopup="dialog"
             />
           </>
         )}
