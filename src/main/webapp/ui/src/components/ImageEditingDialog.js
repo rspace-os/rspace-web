@@ -16,6 +16,7 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import { styled } from "@mui/material/styles";
 import { makeStyles } from "tss-react/mui";
+import DialogTitle from "@mui/material/DialogTitle";
 
 const useStyles = makeStyles()((_theme, { height }) => ({
   /*
@@ -70,6 +71,7 @@ type ImageEditingDialogArgs = {|
   close: () => void,
   submitHandler: (Blob) => void,
   alt: string,
+  submitButtonLabel?: string,
 |};
 
 function ImageEditingDialog({
@@ -78,6 +80,7 @@ function ImageEditingDialog({
   close,
   submitHandler,
   alt,
+  submitButtonLabel = "Done",
 }: ImageEditingDialogArgs): Node {
   const [imageHeight, setImageHeight] = React.useState(0);
   const { classes } = useStyles({ height: imageHeight });
@@ -96,6 +99,7 @@ function ImageEditingDialog({
   const imageElement = React.useRef<HTMLImageElement | null>(null);
   const [dirtyFlag, setDirtyFlag] = React.useState(false);
   const [imageType, setImageType] = React.useState("");
+  const titleId = React.useId();
 
   React.useEffect(() => {
     let settable = true;
@@ -197,7 +201,13 @@ function ImageEditingDialog({
   };
 
   return (
-    <StyledDialog maxWidth="md" open={open} onClose={close}>
+    <StyledDialog
+      maxWidth="md"
+      open={open}
+      onClose={close}
+      aria-labelledby={titleId}
+    >
+      <DialogTitle id={titleId}>Edit Image</DialogTitle>
       <DialogContent
         sx={{
           display: "flex",
@@ -275,8 +285,9 @@ function ImageEditingDialog({
           </IconButton>
         </ButtonGroup>
         <Box flexGrow={1}></Box>
+        <Button onClick={close}>Cancel</Button>
         <Button onClick={mainDialogSubmit} color="primary">
-          Done
+          {submitButtonLabel}
         </Button>
       </DialogActions>
     </StyledDialog>

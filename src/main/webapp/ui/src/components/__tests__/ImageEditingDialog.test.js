@@ -4,12 +4,13 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import ImageEditingDialog from "../ImageEditingDialog";
 import fc from "fast-check";
 import { axe, toHaveNoViolations } from "jest-axe";
+import { sleep } from "../../util/Util";
 
 expect.extend(toHaveNoViolations);
 
@@ -46,7 +47,7 @@ describe("ImageEditingDialog", () => {
       canvas.toBlob(resolve);
     });
 
-    const { container } = render(
+    const { baseElement } = render(
       <ImageEditingDialog
         imageFile={blob}
         open={true}
@@ -56,8 +57,13 @@ describe("ImageEditingDialog", () => {
       />
     );
 
+    await screen.findByRole("img");
+
+    // wait for image to load
+    await act(() => sleep(1000));
+
     // $FlowExpectedError[incompatible-call] See expect.extend above
-    expect(await axe(container)).toHaveNoViolations();
+    expect(await axe(baseElement)).toHaveNoViolations();
   });
   test("Rotating four times in either direction is a no-op.", async () => {
     const user = userEvent.setup();
@@ -98,9 +104,14 @@ describe("ImageEditingDialog", () => {
           const rotateButton = screen.getByRole("button", {
             name: "rotate " + direction,
           });
-          for (let i = 0; i < number; i++) await user.click(rotateButton);
+          for (let i = 0; i < number; i++)
+            await act(async () => {
+              await user.click(rotateButton);
+            });
 
-          await user.click(screen.getByRole("button", { name: /done/i }));
+          await act(async () => {
+            await user.click(screen.getByRole("button", { name: /done/i }));
+          });
 
           await waitFor(() => {
             expect(submitHandler).toHaveBeenCalled();
@@ -146,12 +157,23 @@ describe("ImageEditingDialog", () => {
 
     await screen.findByRole("img");
 
+    // wait for image to load
+    await act(() => Promise.resolve());
+
     const rotateButton = screen.getByRole("button", {
       name: "rotate clockwise",
     });
-    await user.click(rotateButton);
 
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await act(async () => {
+      await user.click(rotateButton);
+    });
+
+    // wait for rotated image to load
+    await act(() => Promise.resolve());
+
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /done/i }));
+    });
 
     const canvas2 = document.createElement("canvas");
     const ctx2 = canvas2.getContext("2d");
@@ -199,9 +221,13 @@ describe("ImageEditingDialog", () => {
     const rotateButton = screen.getByRole("button", {
       name: "rotate counter clockwise",
     });
-    await user.click(rotateButton);
+    await act(async () => {
+      await user.click(rotateButton);
+    });
 
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /done/i }));
+    });
 
     const canvas2 = document.createElement("canvas");
     const ctx2 = canvas2.getContext("2d");
@@ -246,7 +272,9 @@ describe("ImageEditingDialog", () => {
     );
 
     await screen.findByRole("img");
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /done/i }));
+    });
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
   });
@@ -258,4 +286,55 @@ describe("ImageEditingDialog", () => {
    * error reported that `scrollTo` could not be invoked on the root div of
    * ReactCrop, so perhaps that is the issue.
    */
+
+  test("Cancel button should not invoke submitHandler", async () => {
+    const user = userEvent.setup();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    // 600px to negate any scaling effects
+    ctx.canvas.width = 600;
+    ctx.canvas.height = 600;
+    ctx.fillStyle = "green";
+    ctx.fillRect(0, 0, 300, 300);
+
+    const blob: Blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve);
+    });
+
+    const submitHandler = jest.fn<[Blob], void>();
+    const close = jest.fn<[], void>();
+
+    render(
+      <ImageEditingDialog
+        imageFile={blob}
+        open={true}
+        close={close}
+        submitHandler={submitHandler}
+        alt="dummy alt text"
+      />
+    );
+
+    await screen.findByRole("img");
+
+    // wait for image to load
+    await act(() => Promise.resolve());
+
+    const rotateButton = screen.getByRole("button", {
+      name: "rotate clockwise",
+    });
+
+    await act(async () => {
+      await user.click(rotateButton);
+    });
+
+    // wait for rotated image to load
+    await act(() => Promise.resolve());
+
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /cancel/i }));
+    });
+
+    expect(close).toHaveBeenCalled();
+    expect(submitHandler).not.toHaveBeenCalled();
+  });
 });
