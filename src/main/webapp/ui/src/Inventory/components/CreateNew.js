@@ -72,7 +72,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
   return (
     <Box sx={{ p: 1.5, pt: 0 }}>
       <Button
-        variant="outlined"
+        variant="contained"
+        color="callToAction"
         fullWidth
         aria-controls={controls}
         aria-haspopup="true"

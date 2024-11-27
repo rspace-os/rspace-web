@@ -82,6 +82,8 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
     fullWidth
     style={{ minWidth: "unset" }}
     aria-haspopup="menu"
+    variant="contained"
+    color="callToAction"
     startIcon={
       <AddIcon
         style={{
@@ -109,7 +111,6 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
   </Button>
 ))(() => ({
   overflowX: "hidden",
-  color: `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, 40%, 100%)`,
 }));
 
 const CustomDrawer = styled(Drawer)(({ open }) => ({
