@@ -306,7 +306,6 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               compact
               title="Fieldmark"
               avatar={<CardMedia image={FieldmarkIcon} />}
-              subheader="Import Fieldmark notebooks and records"
               backgroundColor={{
                 hue: FIELDMARK_COLOR.background.hue,
                 saturation: FIELDMARK_COLOR.background.saturation,
