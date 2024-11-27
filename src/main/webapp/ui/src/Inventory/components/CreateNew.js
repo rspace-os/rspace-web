@@ -120,6 +120,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
         }}
       >
         <NewMenuItem
+          compact
           title="New Sample"
           avatar={
             <RecordTypeIcon
@@ -137,7 +138,6 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
             />
           }
-          subheader="Record experimental materials."
           backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
@@ -145,6 +145,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
           }}
         />
         <NewMenuItem
+          compact
           title="New Container"
           avatar={
             <RecordTypeIcon
@@ -162,7 +163,6 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
             />
           }
-          subheader="Organise samples and containers."
           backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
@@ -170,6 +170,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
           }}
         />
         <NewMenuItem
+          compact
           title="New Template"
           avatar={
             <RecordTypeIcon
@@ -189,7 +190,6 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
             />
           }
-          subheader="Reuse sample structures."
           backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
@@ -200,6 +200,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
           CSV Import
         </Divider>
         <NewMenuItem
+          compact
           title="Samples"
           avatar={
             <RecordTypeIcon
@@ -217,7 +218,6 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
             />
           }
-          subheader="Import samples with a similar structure."
           backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
@@ -225,6 +225,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
           }}
         />
         <NewMenuItem
+          compact
           title="Subsamples"
           avatar={
             <RecordTypeIcon
@@ -242,7 +243,6 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
             />
           }
-          subheader="Import subsamples for each sample."
           backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
@@ -250,6 +250,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
           }}
         />
         <NewMenuItem
+          compact
           title="Containers"
           avatar={
             <RecordTypeIcon
@@ -267,7 +268,6 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
             />
           }
-          subheader="Import containers and their contents."
           backgroundColor={{ hue: 198, saturation: 37, lightness: 80 }}
           foregroundColor={{ hue: 198, saturation: 13, lightness: 25 }}
           onClick={() => {
