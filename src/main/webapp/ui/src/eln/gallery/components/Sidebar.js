@@ -214,6 +214,8 @@ const NewFolderMenuItem = ({
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const { createFolder } = useGalleryActions();
+  const [submitting, setSubmitting] = React.useState(false);
+
   return (
     <>
       <EventBoundary>
@@ -226,9 +228,14 @@ const NewFolderMenuItem = ({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              void createFolder(path, folderId, name).then(() => {
-                onDialogClose(true);
-              });
+              setSubmitting(true);
+              void createFolder(path, folderId, name)
+                .then(() => {
+                  onDialogClose(true);
+                })
+                .finally(() => {
+                  setSubmitting(false);
+                });
             }}
           >
             <DialogTitle>New Folder</DialogTitle>
@@ -254,8 +261,8 @@ const NewFolderMenuItem = ({
               </Button>
               <SubmitSpinnerButton
                 type="submit"
-                loading={false}
-                disabled={false}
+                loading={submitting}
+                disabled={submitting}
                 label="Create"
               />
             </DialogActions>
