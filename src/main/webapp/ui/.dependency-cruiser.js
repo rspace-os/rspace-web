@@ -7,7 +7,7 @@ module.exports = {
       severity: "error",
       from: {},
       to: {
-        licenseNot: ["MIT", "BSD", "Apache", "Hippocratic"]
+        licenseNot: ["MIT", "BSD", "Apache", "Hippocratic", "ISC"]
       }
     },
     // {
@@ -332,6 +332,20 @@ module.exports = {
         path: "src/stores/stores",
         reachable: true
       },
+    },
+
+    {
+      name: "react-image-editor is deprecated",
+      severity: "error",
+      from: {
+        pathNot: [
+          // once the old gallery is removed, we can remove the dependency and stop using `--force` when calling `npm install`
+          "^src/Gallery"
+        ]
+      },
+      to: {
+        path: "@toast-ui/react-image-editor",
+      }
     }
 
   ],

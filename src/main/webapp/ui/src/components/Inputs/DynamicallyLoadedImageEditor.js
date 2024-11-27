@@ -36,7 +36,8 @@ type DynamicallyLoadedImageEditorArgs = {|
   editorFile: ?Blob,
   editorOpen: boolean,
   close: () => void,
-  submitHandler: (string) => void,
+  submitHandler: (Blob) => void,
+  alt: string,
 |};
 
 function DynamicallyLoadedImageEditor({
@@ -44,6 +45,7 @@ function DynamicallyLoadedImageEditor({
   editorOpen,
   close,
   submitHandler,
+  alt,
 }: DynamicallyLoadedImageEditorArgs): Node {
   return (
     <ErrorBoundary>
@@ -53,6 +55,7 @@ function DynamicallyLoadedImageEditor({
           open={editorOpen}
           close={close}
           submitHandler={submitHandler}
+          alt={alt}
         />
       </Suspense>
     </ErrorBoundary>
