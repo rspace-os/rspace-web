@@ -314,7 +314,7 @@ const DmpMenuSection = ({
   return (
     <>
       <Divider textAlign="left" aria-label="DMPs">
-        DMPs
+        DMP Import
       </Divider>
       {showArgos && <ArgosNewMenuItem onDialogClose={onDialogClose} />}
       {showDmponline && <DMPOnlineNewMenuItem onDialogClose={onDialogClose} />}
