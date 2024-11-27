@@ -214,10 +214,12 @@ export default function FieldmarkImportDialog({
   async function importNotebook(notebook: Notebook) {
     setImporting(true);
     try {
-      const { data } = await InvApiService.get<
-        mixed,
+      const { data } = await InvApiService.post<
+        { id: string },
         { containerName: string, containerGlobalId: string, ... }
-      >("/fieldmark/import/notebook/" + notebook.metadata.project_id);
+      >("/import/fieldmark/notebook", {
+        notebookId: notebook.metadata.project_id,
+      });
       addAlert(
         mkAlert({
           variant: "success",
