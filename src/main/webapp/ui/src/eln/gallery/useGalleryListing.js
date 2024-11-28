@@ -383,6 +383,66 @@ class LocalGalleryFile implements GalleryFile {
   }
 }
 
+class Filestore implements GalleryFile {
+  id: Id;
+  name: string;
+  description: Description;
+  +isFolder: boolean;
+  +size: number;
+
+  constructor({ id, name }: {| id: Id, name: string |}) {
+    this.id = id;
+    this.name = name;
+    this.description = Description.Missing();
+    this.isFolder = true;
+    this.size = 0;
+  }
+
+  get extension(): string | null {
+    return null;
+  }
+
+  get creationDate(): Date {
+    return new Date();
+  }
+
+  get modificationDate(): Date {
+    return new Date();
+  }
+
+  get thumbnailUrl(): string {
+    return "/images/icons/folder.png";
+  }
+
+  get path(): $ReadOnlyArray<GalleryFile> {
+    return [];
+  }
+
+  pathAsString(): string {
+    return "";
+  }
+
+  get isSystemFolder(): boolean {
+    return false;
+  }
+
+  get isImage(): boolean {
+    return false;
+  }
+
+  get isSnippet(): boolean {
+    return false;
+  }
+
+  get isSnippetFolder(): boolean {
+    return false;
+  }
+
+  transformFilename(f: (string) => string): string {
+    return f(this.name);
+  }
+}
+
 class RemoteFile implements GalleryFile {
   +nfsId: number;
   name: string;
@@ -660,6 +720,55 @@ export function useGalleryListing({
       });
   }
 
+  async function getFilestores(): Promise<void> {
+    selection.clear();
+    setGalleryListing([]);
+    setLoading(true);
+    const api = axios.create({
+      baseURL: "/api/v1/gallery",
+      headers: {
+        Authorization: "Bearer " + (await getToken()),
+      },
+    });
+    try {
+      const { data } = await api.get<mixed>("filestores");
+      Parsers.isArray(data)
+        .flatMap((array) =>
+          Result.all(
+            ...array.map((mixed) =>
+              Parsers.isObject(mixed)
+                .flatMap(Parsers.isNotNull)
+                .flatMap((obj) => {
+                  try {
+                    const id = Parsers.getValueWithKey("id")(obj)
+                      .flatMap(Parsers.isNumber)
+                      .elseThrow();
+
+                    const name = Parsers.getValueWithKey("name")(obj)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+
+                    return Result.Ok<GalleryFile>(
+                      new Filestore({
+                        id,
+                        name,
+                      })
+                    );
+                  } catch (e) {
+                    return Result.Error<GalleryFile>([e]);
+                  }
+                })
+            )
+          )
+        )
+        .do(setGalleryListing);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function getRemoteFiles(): Promise<void> {
     selection.clear();
     setGalleryListing([]);
@@ -725,6 +834,9 @@ export function useGalleryListing({
   }
 
   async function getGalleryFiles(): Promise<void> {
+    if (section === "NetworkFiles" && path.length === 0) {
+      return getFilestores();
+    }
     if (section === "NetworkFiles") {
       return getRemoteFiles();
     }
