@@ -428,7 +428,7 @@ class Filestore implements GalleryFile {
   }
 
   get thumbnailUrl(): string {
-    return "/images/icons/folder.png";
+    return "/images/icons/fileStoreLink.png";
   }
 
   get path(): $ReadOnlyArray<GalleryFile> {
