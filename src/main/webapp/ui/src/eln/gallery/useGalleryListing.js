@@ -192,7 +192,7 @@ export interface GalleryFile {
 
   +creationDate: Date;
   +modificationDate: Date;
-  +type: string;
+  +type?: string;
   +thumbnailUrl: string;
   +ownerName: string;
   description: Description;

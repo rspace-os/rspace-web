@@ -493,10 +493,14 @@ const InfoPanelContent = ({
         </Typography>
         <DescriptionList
           content={[
-            {
-              label: "Type",
-              value: file.type,
-            },
+            ...(typeof file.type === "string"
+              ? [
+                  {
+                    label: "Type",
+                    value: file.type,
+                  },
+                ]
+              : []),
             {
               label: "Size",
               value: formatFileSize(file.size),

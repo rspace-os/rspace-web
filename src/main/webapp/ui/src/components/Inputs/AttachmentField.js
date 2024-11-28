@@ -86,6 +86,8 @@ function AttachmentField<
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
 
   const onFileSelection = (file: File | GalleryFile) => {
+    if (typeof file.type !== "string") throw new Error("Unknown file type");
+
     onAttachmentChange(file);
 
     trackingStore.trackEvent("AddedFieldAttachment", {
