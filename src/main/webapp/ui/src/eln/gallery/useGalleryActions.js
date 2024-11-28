@@ -435,6 +435,9 @@ export function useGalleryActions(): {|
       file.transformFilename(() => newName)
     );
     try {
+      if (typeof file.setName === "undefined")
+        throw new Error("This file cannot be renamed");
+      const setName = file.setName;
       const data = await structuredDocumentApi.post<FormData, mixed>(
         "rename",
         formData,
@@ -458,7 +461,7 @@ export function useGalleryActions(): {|
         })
       );
 
-      file.setName(file.transformFilename(() => newName));
+      setName(file.transformFilename(() => newName));
     } catch (e) {
       addAlert(
         mkAlert({
