@@ -246,7 +246,7 @@ export interface GalleryFile {
    */
   transformFilename((string) => string): string;
 
-  setName(string): void;
+  +setName?: (string) => void;
   setDescription(Description): void;
 }
 
@@ -270,6 +270,8 @@ class LocalGalleryFile implements GalleryFile {
   // this will only ever actually be an array of LocalGalleryFile,
   // but getting the types correct here is tricky
   +path: $ReadOnlyArray<GalleryFile>;
+
+  +setName: (string) => void;
 
   constructor({
     id,
@@ -307,7 +309,6 @@ class LocalGalleryFile implements GalleryFile {
     makeObservable(this, {
       name: observable,
       description: observable,
-      setName: action,
       setDescription: action,
     });
     this.id = id;
@@ -329,6 +330,9 @@ class LocalGalleryFile implements GalleryFile {
     } else {
       this.downloadHref = `/Streamfile/${idToString(this.id)}`;
     }
+    this.setName = action((newName) => {
+      this.name = newName;
+    });
   }
 
   get isFolder(): boolean {
@@ -357,10 +361,6 @@ class LocalGalleryFile implements GalleryFile {
       ...this.path.map(({ name }) => name),
       this.name,
     ].join("/")}/`;
-  }
-
-  setName(newName: string): void {
-    this.name = newName;
   }
 
   setDescription(newDescription: Description): void {
