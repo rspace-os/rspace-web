@@ -65,6 +65,7 @@ library.add(faShapes);
 library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
+library.add(faDatabase);
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -703,6 +704,23 @@ const Sidebar = ({
               selected={selectedSection === "Miscellaneous"}
               onClick={() => {
                 setSelectedSection("Miscellaneous");
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+              }}
+            />
+            <DrawerTab
+              label={gallerySectionLabel.NetworkFiles}
+              icon={<FaIcon icon="database" />}
+              index={7}
+              tabIndex={getTabIndex(7)}
+              ref={(node) => {
+                sectionRefs.current[GALLERY_SECTION.NETWORKFILES] = node;
+                const ref = getRef(8);
+                if (ref) ref.current = node;
+              }}
+              drawerOpen={drawerOpen}
+              selected={selectedSection === "NetworkFiles"}
+              onClick={() => {
+                setSelectedSection("NetworkFiles");
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
