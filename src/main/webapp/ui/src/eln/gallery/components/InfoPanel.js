@@ -485,10 +485,14 @@ const InfoPanelContent = ({
                 },
               ]
             : []),
-          {
-            label: "Owner",
-            value: file.ownerName,
-          },
+          ...(typeof file.ownerName === "string"
+            ? [
+                {
+                  label: "Owner",
+                  value: file.ownerName,
+                },
+              ]
+            : []),
           {
             label: "Description",
             value: (

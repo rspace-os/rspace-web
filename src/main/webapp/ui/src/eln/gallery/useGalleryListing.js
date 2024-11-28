@@ -199,7 +199,7 @@ export interface GalleryFile {
   +modificationDate: Date;
   +type?: string;
   +thumbnailUrl: string;
-  +ownerName: string;
+  +ownerName?: string;
   description: Description;
 
   /*
