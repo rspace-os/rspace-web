@@ -1,4 +1,4 @@
-//@flow strict
+//@flow
 
 import React from "react";
 import axios from "axios";
@@ -16,6 +16,7 @@ import { observable, action, makeObservable } from "mobx";
 import { Optional } from "../../util/optional";
 import { type URL } from "../../util/types";
 import { take, incrementForever } from "../../util/iterators";
+import useOauthToken from "../../common/useOauthToken";
 
 export opaque type Id = number;
 // dummyId is for use in tests ONLY
@@ -493,6 +494,7 @@ export function useGalleryListing({
   clearPath: () => void,
   folderId: FetchingData.Fetched<Id>,
 |} {
+  const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
   const [galleryListing, setGalleryListing] = React.useState<
@@ -504,7 +506,9 @@ export function useGalleryListing({
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
     defaultPath ?? []
   );
-  const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([]));
+  const [parentId, setParentId] = React.useState<Result<Id>>(
+    Result.Error([new Error("Parent Id is not yet known")])
+  );
   const selection = useGallerySelection();
 
   function emptyReason(): string {
@@ -661,7 +665,74 @@ export function useGalleryListing({
       });
   }
 
+  async function getRemoteFiles(): Promise<void> {
+    selection.clear();
+    setGalleryListing([]);
+    setLoading(true);
+    const api = axios.create({
+      baseURL: "/api/v1/gallery",
+      headers: {
+        Authorization: "Bearer " + (await getToken()),
+      },
+    });
+    try {
+      const { data } = await api.get<mixed>(
+        "filestores/1/browse?remotePath=%2F"
+      );
+      Parsers.isObject(data)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.getValueWithKey("content"))
+        .flatMap(Parsers.isArray)
+        .flatMap((array) =>
+          Result.all(
+            ...array.map((mixed) =>
+              Parsers.isObject(mixed)
+                .flatMap(Parsers.isNotNull)
+                .flatMap((obj) => {
+                  try {
+                    const nfsId = Parsers.getValueWithKey("nfsId")(obj)
+                      .flatMap(Parsers.isNumber)
+                      .elseThrow();
+
+                    const name = Parsers.getValueWithKey("name")(obj)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+
+                    const folder = Parsers.getValueWithKey("folder")(obj)
+                      .flatMap(Parsers.isBoolean)
+                      .elseThrow();
+
+                    const fileSize = Parsers.getValueWithKey("fileSize")(obj)
+                      .flatMap(Parsers.isNumber)
+                      .elseThrow();
+
+                    return Result.Ok<GalleryFile>(
+                      new RemoteFile({
+                        nfsId,
+                        name,
+                        folder,
+                        fileSize,
+                      })
+                    );
+                  } catch (e) {
+                    return Result.Error<GalleryFile>([e]);
+                  }
+                })
+            )
+          )
+        )
+        .do(setGalleryListing);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function getGalleryFiles(): Promise<void> {
+    if (section === "NetworkFiles") {
+      return getRemoteFiles();
+    }
     selection.clear();
     setGalleryListing([]);
     setLoading(true);
