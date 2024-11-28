@@ -47,8 +47,10 @@ export function useCollaboraEdit(): (file: GalleryFile) => Result<string> {
               ),
             ])
       )
-      .map(() => {
-        return "/collaboraOnline/" + file.globalId + "/edit";
+      .map(() => file.globalId)
+      .flatMap(Parsers.isNotBottom)
+      .map((globalId) => {
+        return "/collaboraOnline/" + globalId + "/edit";
       });
   };
 }
@@ -71,8 +73,10 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
               ),
             ])
       )
-      .map(() => {
-        return "/officeOnline/" + file.globalId + "/view";
+      .map(() => file.globalId)
+      .flatMap(Parsers.isNotBottom)
+      .map((globalId) => {
+        return "/officeOnline/" + globalId + "/view";
       });
   };
 }

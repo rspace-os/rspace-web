@@ -460,10 +460,14 @@ const InfoPanelContent = ({
     <Stack sx={{ height: "100%" }}>
       <DescriptionList
         content={[
-          {
-            label: "Global ID",
-            value: file.globalId,
-          },
+          ...(typeof file.globalId === "string"
+            ? [
+                {
+                  label: "Global ID",
+                  value: file.globalId,
+                },
+              ]
+            : []),
           {
             label: "Owner",
             value: file.ownerName,
