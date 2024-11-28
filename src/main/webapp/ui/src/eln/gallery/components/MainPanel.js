@@ -1004,7 +1004,7 @@ const FileCard = styled(
                       </Grid>
                     </Grid>
                   </Grid>
-                  {file.version > 1 && (
+                  {typeof file.version === "number" && file.version > 1 && (
                     <div
                       className="versionIndicator"
                       aria-label={`version ${file.version}`}

@@ -206,7 +206,7 @@ export interface GalleryFile {
    * A positive natural number, that is incremented whenever the user uploads a
    * new version or otherwise edits the file
    */
-  +version: number;
+  +version?: number;
 
   // In bytes. Folders are always 0 bytes
   +size: number;

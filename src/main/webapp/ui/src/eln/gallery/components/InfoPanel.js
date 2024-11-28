@@ -534,10 +534,14 @@ const InfoPanelContent = ({
               label: "Modified",
               value: file.modificationDate.toLocaleString(),
             },
-            {
-              label: "Version",
-              value: file.version,
-            },
+            ...(typeof file.version === "number"
+              ? [
+                  {
+                    label: "Version",
+                    value: file.version,
+                  },
+                ]
+              : []),
           ]}
         />
       </Box>
