@@ -247,7 +247,7 @@ export interface GalleryFile {
   transformFilename((string) => string): string;
 
   +setName?: (string) => void;
-  setDescription(Description): void;
+  +setDescription?: (Description) => void;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -272,6 +272,7 @@ class LocalGalleryFile implements GalleryFile {
   +path: $ReadOnlyArray<GalleryFile>;
 
   +setName: (string) => void;
+  +setDescription: (Description) => void;
 
   constructor({
     id,
@@ -309,7 +310,6 @@ class LocalGalleryFile implements GalleryFile {
     makeObservable(this, {
       name: observable,
       description: observable,
-      setDescription: action,
     });
     this.id = id;
     this.globalId = globalId;
@@ -332,6 +332,9 @@ class LocalGalleryFile implements GalleryFile {
     }
     this.setName = action((newName) => {
       this.name = newName;
+    });
+    this.setDescription = action((newDescription) => {
+      this.description = newDescription;
     });
   }
 
@@ -361,10 +364,6 @@ class LocalGalleryFile implements GalleryFile {
       ...this.path.map(({ name }) => name),
       this.name,
     ].join("/")}/`;
-  }
-
-  setDescription(newDescription: Description): void {
-    this.description = newDescription;
   }
 
   get thumbnailUrl(): string {
