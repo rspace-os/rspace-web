@@ -1775,6 +1775,25 @@ paths:
       responses:
         '200':
           description: A list of FileStoreInfo objects
+    post:
+      summary: Save new filestore
+      description: >-
+        Creates new filestore for access by tthe current user
+      produces:
+        - application/json
+      tags:
+        - Gallery
+      parameters:
+        - $ref: '#/parameters/filesystemIdPostParam'
+        - $ref: '#/parameters/filestoreNamePostParam'
+        - $ref: '#/parameters/filestoreRemotePathParam'
+      responses:
+        '201':
+          description: Success
+        '400':
+          description: Bad request - format/scope is unsupported
+        '404':
+          description: unauthorised to make the export request
   '/gallery/filestores/{filestoreId}/browse':
     get:
       summary: Browse remote filestore
@@ -1804,6 +1823,20 @@ paths:
       responses:
         '200':
           description: A resource
+  '/gallery/filestores/{filestoreId}':
+    delete:
+      summary: Delete a filestore by its id
+      description: >
+        Marks filestore as deleted, it will no longer show up on user's filestore listing. 
+        The filestore links added to RSpace documents based on this filestore will stay resolvable.
+      tags:
+        - Gallery
+      parameters:
+        - $ref: '#/parameters/filestoreIdParam'
+      responses:
+        '204':
+          description: No content
+
 
   '/gallery/filesystems':
     get:
@@ -2758,6 +2791,11 @@ parameters:
     format: int64
     required: true
     description: A unique identifier for the Gallery filestore.
+  filestoreNamePostParam:
+    name: name
+    in: query
+    description: Name of a new filestore
+    type: string
   filestoreRemotePathParam:
     name: remotePath
     in: query
@@ -2770,6 +2808,11 @@ parameters:
     format: int64
     required: true
     description: A unique identifier for the Institutional Filesystem.
+  filesystemIdPostParam:
+    name: filesystemId
+    in: query
+    description: Filesystem id
+    type: string
   userIdParam:
     name: userId
     in: path

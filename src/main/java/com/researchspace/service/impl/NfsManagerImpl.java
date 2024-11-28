@@ -56,6 +56,29 @@ public class NfsManagerImpl implements NfsManager {
   }
 
   @Override
+  public NfsFileStore createAndSaveNewFileStore(
+      Long fileSystemId, String fileStoreName, String fileStorePath, User user) {
+
+    NfsFileSystem fileSystem = getFileSystem(fileSystemId);
+    String pathToSave = fileStorePath;
+    String nfsServerUrl = fileSystem.getUrl();
+    int serverUrlIdxInPath = pathToSave.indexOf(nfsServerUrl);
+    int serverUrlLength = nfsServerUrl.length();
+    if (serverUrlIdxInPath >= 0 && pathToSave.length() > serverUrlLength) {
+      pathToSave = pathToSave.substring(serverUrlIdxInPath + serverUrlLength);
+    }
+    pathToSave = NfsFileStore.validateTargetPath(pathToSave);
+
+    NfsFileStore userStore = new NfsFileStore();
+    userStore.setUser(user);
+    userStore.setName(fileStoreName);
+    userStore.setPath(pathToSave);
+    userStore.setFileSystem(fileSystem);
+    saveNfsFileStore(userStore);
+    return userStore;
+  }
+
+  @Override
   public void markFileStoreAsDeleted(NfsFileStore fileStore) {
     fileStore.setDeleted(true);
     nfsDao.saveNfsFileStore(fileStore);
@@ -69,6 +92,14 @@ public class NfsManagerImpl implements NfsManager {
       userStoreInfos.add(us.toFileStoreInfo());
     }
     return userStoreInfos;
+  }
+
+  @Override
+  public boolean verifyFileStoreNameUniqueForUser(String fileStoreName, User user) {
+    List<NfsFileStoreInfo> userFileStores = getFileStoreInfosForUser(user);
+    return userFileStores.stream()
+        .map(NfsFileStoreInfo::getName)
+        .noneMatch(fileStoreName::equalsIgnoreCase);
   }
 
   @Override

@@ -28,6 +28,9 @@ public interface NfsManager {
 
   void saveNfsFileStore(NfsFileStore fileStore);
 
+  NfsFileStore createAndSaveNewFileStore(
+      Long fileSystemId, String fileStoreName, String fileStorePath, User user);
+
   void markFileStoreAsDeleted(NfsFileStore fileStore);
 
   List<NfsFileStoreInfo> getFileStoreInfosForUser(User user);
@@ -41,6 +44,8 @@ public interface NfsManager {
   List<NfsFileSystem> getFileSystems();
 
   List<NfsFileSystem> getActiveFileSystems();
+
+  boolean verifyFileStoreNameUniqueForUser(String fileStoreName, User user);
 
   List<NfsFileSystemInfo> getActiveFileSystemInfos();
 

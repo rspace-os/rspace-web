@@ -16,10 +16,6 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
-import com.researchspace.model.netfiles.NfsAuthenticationType;
-import com.researchspace.model.netfiles.NfsClientType;
-import com.researchspace.model.netfiles.NfsFileStore;
-import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
@@ -28,6 +24,7 @@ import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,9 +75,13 @@ class GalleryIrodsApiControllerTest {
         UriComponentsBuilder.fromHttpUrl("http://url").path(API_V1_GALLERY_IRODS);
 
     when(nfsManager.getNfsFileStore(validFilestorePathId_1))
-        .thenReturn(createIrodsFileStore(validFilestorePathId_1, "Filestore_1"));
+        .thenReturn(
+            GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(
+                validFilestorePathId_1, "Filestore_1", user));
     when(nfsManager.getNfsFileStore(validFilestorePathId_3))
-        .thenReturn(createIrodsFileStore(validFilestorePathId_3, "Filestore_3"));
+        .thenReturn(
+            GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(
+                validFilestorePathId_3, "Filestore_3", user));
 
     when(nfsAuthentication.validateCredentials(any(), any(), any())).thenReturn(null);
     when(nfsAuthentication.validateCredentials(eq(""), eq(PASSWORD), any()))
@@ -384,29 +385,5 @@ class GalleryIrodsApiControllerTest {
     assertEquals(1, exception.getAllErrors().size());
     assertEquals("nfsClient", exception.getAllErrors().get(0).getObjectName());
     assertEquals("User is not logged in", exception.getAllErrors().get(0).getDefaultMessage());
-  }
-
-  private NfsFileStore createIrodsFileStore(Long id, String name) {
-    NfsFileStore fileStore = new NfsFileStore();
-    fileStore.setId(id);
-    fileStore.setFileSystem(createIrodsFileSystem(id));
-    fileStore.setDeleted(false);
-    fileStore.setName(name);
-    fileStore.setPath("");
-    fileStore.setUser(user);
-    return fileStore;
-  }
-
-  private NfsFileSystem createIrodsFileSystem(Long id) {
-    NfsFileSystem fileSystem = new NfsFileSystem();
-    fileSystem.setId(id);
-    fileSystem.setAuthType(NfsAuthenticationType.PASSWORD);
-    fileSystem.setClientOptions(
-        "IRODS_ZONE=tempZone\nIRODS_HOME_DIR=/tempZone/home/alice\nIRODS_PORT=1247");
-    fileSystem.setClientType(NfsClientType.IRODS);
-    fileSystem.setDisabled(false);
-    fileSystem.setName("irods_test_instance");
-    fileSystem.setUrl("irods-test.researchspace.com");
-    return fileSystem;
   }
 }

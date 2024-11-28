@@ -17,8 +17,6 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.ExternalStorageLocation;
-import com.researchspace.model.netfiles.NfsAuthenticationType;
-import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.RecordInformation;
@@ -30,6 +28,7 @@ import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.TestGroup;
 import com.researchspace.webapp.controller.GalleryController;
 import java.io.IOException;
@@ -52,8 +51,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 @RunWith(ConditionalTestRunner.class)
 public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
 
-  private String CLIENT_OPTIONS_STRING =
-      "IRODS_ZONE=tempZone\nIRODS_HOME_DIR=/tempZone/home/alice\nIRODS_PORT=1247\n";
   private String IRODS_URL = "irods-test.researchspace.com";
   private Integer IRODS_PORT = 1247;
   private String IRODS_TIMEZONE = "tempZone";
@@ -160,7 +157,10 @@ public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
     IRODS_TARGET_PATH = IRODS_HOME_DIR + "/test";
     testGrp = createTestGroup(2, new TestGroupConfig(true));
     user1 = testGrp.getUserByPrefix("u1");
-    NfsFileSystem iRodsFileSystem = createIrodsFileSystem();
+
+    NfsFileSystem iRodsFileSystem = GalleryFilestoreTestUtils.createIrodsFileSystem();
+    nfsManager.saveNfsFileSystem(iRodsFileSystem);
+
     fileStorePathId1 = createIrodsFileStore(iRodsFileSystem, "test_folder_1", IRODS_TARGET_PATH);
     fileStorePathId2 =
         createIrodsFileStore(iRodsFileSystem, "test_folder_2", IRODS_HOME_DIR + "/training_jpgs");
@@ -449,26 +449,11 @@ public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   private Long createIrodsFileStore(NfsFileSystem fileSystem, String name, String path) {
-    NfsFileStore fileStore = new NfsFileStore();
-    fileStore.setFileSystem(fileSystem);
-    fileStore.setDeleted(false);
-    fileStore.setName(name);
+    NfsFileStore fileStore =
+        GalleryFilestoreTestUtils.createIrodsFileStore(name, user1, fileSystem);
     fileStore.setPath(path);
-    fileStore.setUser(user1);
     nfsManager.saveNfsFileStore(fileStore);
     return fileStore.getId();
-  }
-
-  private NfsFileSystem createIrodsFileSystem() {
-    NfsFileSystem fileSystem = new NfsFileSystem();
-    fileSystem.setAuthType(NfsAuthenticationType.PASSWORD);
-    fileSystem.setClientOptions(CLIENT_OPTIONS_STRING);
-    fileSystem.setClientType(NfsClientType.IRODS);
-    fileSystem.setDisabled(false);
-    fileSystem.setName("irods_test_instance");
-    fileSystem.setUrl(IRODS_URL);
-    nfsManager.saveNfsFileSystem(fileSystem);
-    return fileSystem;
   }
 
   private MockHttpServletRequestBuilder createIrodsGetBuilder(User user, String apiKey) {

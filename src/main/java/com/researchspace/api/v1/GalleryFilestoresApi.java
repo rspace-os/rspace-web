@@ -11,6 +11,7 @@ import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.ApiNfsRemotePathBrowseResult;
 import java.io.IOException;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 @RequestMapping("/api/v1/gallery")
 public interface GalleryFilestoresApi {
@@ -35,15 +37,12 @@ public interface GalleryFilestoresApi {
 
   @PostMapping("/filestores")
   @ResponseBody
-  String createFilestore(
-      Long filesystemId,
-      String filestoreName,
-      String filestorePath,
-      ApiNfsCredentials credentials,
-      BindingResult errors,
-      User user);
+  @ResponseStatus(HttpStatus.CREATED)
+  NfsFileStoreInfo createFilestore(
+      Long filesystemId, String filestoreName, String remotePath, User user);
 
   @DeleteMapping("/filestores/{filestoreId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   void deleteFilestore(Long filestoreId, User user);
 
   /* ========= filesystems =========== */

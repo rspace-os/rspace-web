@@ -84,23 +84,35 @@ public class GalleryFilestoresApiController extends BaseApiController
   }
 
   @Override
-  public String createFilestore(
+  public NfsFileStoreInfo createFilestore(
       @RequestParam("filesystemId") Long filesystemId,
-      @RequestParam("nfsname") String filestoreName,
-      @RequestParam("nfspath") String filestorePath,
-      ApiNfsCredentials credentials,
-      BindingResult errors,
+      @RequestParam("name") String filestoreName,
+      @RequestParam("remotePath") String remotePath,
       @RequestAttribute(name = "user") User user) {
 
-    log.info("test");
-    return null;
+    boolean filestoreNameUnique = nfsManager.verifyFileStoreNameUniqueForUser(filestoreName, user);
+    if (!filestoreNameUnique) {
+      throw new IllegalArgumentException(
+          "User already has a filestore named '"
+              + filestoreName
+              + "' - filestore name must be unique");
+    }
+
+    NfsFileStore userStore =
+        nfsManager.createAndSaveNewFileStore(filesystemId, filestoreName, remotePath, user);
+    return userStore.toFileStoreInfo();
   }
 
   @Override
   public void deleteFilestore(
       @PathVariable Long filestoreId, @RequestAttribute(name = "user") User user) {
 
-    log.info("test");
+    NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    if (filestore == null || !user.getUsername().equals(filestore.getUser().getUsername())) {
+      throw new IllegalArgumentException("user has no access to filestore " + filestoreId);
+    }
+
+    nfsManager.markFileStoreAsDeleted(filestore);
   }
 
   @Override
