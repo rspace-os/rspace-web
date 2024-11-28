@@ -49,7 +49,9 @@ describe("useGalleryActions", () => {
                   isImage: true,
                   isSnippet: false,
                   isSnippetFolder: false,
-                  transformFilename: (f) => f("Foo"),
+                  transformFilename(f: (string) => string) {
+                    return f("Foo");
+                  },
                   setName: () => {},
                   setDescription: () => {},
                 },
@@ -144,7 +146,9 @@ describe("useGalleryActions", () => {
                   isImage: true,
                   isSnippet: false,
                   isSnippetFolder: false,
-                  transformFilename: (f) => f("Foo"),
+                  transformFilename(f: (string) => string) {
+                    return f("Foo");
+                  },
                   setName: () => {},
                   setDescription: () => {},
                 },
@@ -239,7 +243,9 @@ describe("useGalleryActions", () => {
                   isImage: true,
                   isSnippet: false,
                   isSnippetFolder: false,
-                  transformFilename: (f) => f("Foo"),
+                  transformFilename(f: (string) => string) {
+                    return f("Foo");
+                  },
                   setName: () => {},
                   setDescription: () => {},
                 },
