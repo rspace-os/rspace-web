@@ -196,8 +196,8 @@ export interface GalleryFile {
   // null for folders, otherwise usually a non-empty string
   +extension: string | null;
 
-  +creationDate: Date;
-  +modificationDate: Date;
+  +creationDate?: Date;
+  +modificationDate?: Date;
   +type?: string;
   +thumbnailUrl: string;
   +ownerName?: string;
@@ -419,14 +419,6 @@ class Filestore implements GalleryFile {
     return null;
   }
 
-  get creationDate(): Date {
-    return new Date();
-  }
-
-  get modificationDate(): Date {
-    return new Date();
-  }
-
   get thumbnailUrl(): string {
     return "/images/icons/fileStoreLink.png";
   }
@@ -466,23 +458,27 @@ class RemoteFile implements GalleryFile {
   description: Description;
   +isFolder: boolean;
   +size: number;
+  +modificationDate: Date;
 
   constructor({
     nfsId,
     name,
     folder,
     fileSize,
+    modificationDate,
   }: {|
     nfsId: number,
     name: string,
     folder: boolean,
     fileSize: number,
+    modificationDate: Date,
   |}) {
     this.nfsId = nfsId;
     this.name = name;
     this.description = Description.Missing();
     this.isFolder = folder;
     this.size = fileSize;
+    this.modificationDate = modificationDate;
   }
 
   get id(): Id {
@@ -491,14 +487,6 @@ class RemoteFile implements GalleryFile {
 
   get extension(): string | null {
     return null;
-  }
-
-  get creationDate(): Date {
-    return new Date();
-  }
-
-  get modificationDate(): Date {
-    return new Date();
   }
 
   get thumbnailUrl(): string {
@@ -829,12 +817,20 @@ export function useGalleryListing({
                       .flatMap(Parsers.isNumber)
                       .elseThrow();
 
+                    const modificationDate = Parsers.getValueWithKey(
+                      "modificationDate"
+                    )(obj)
+                      .flatMap(Parsers.isString)
+                      .flatMap(Parsers.parseDate)
+                      .elseThrow();
+
                     return Result.Ok<GalleryFile>(
                       new RemoteFile({
                         nfsId,
                         name,
                         folder,
                         fileSize,
+                        modificationDate,
                       })
                     );
                   } catch (e) {

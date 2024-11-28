@@ -32,6 +32,7 @@ import usePrimaryAction from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import { Optional } from "../../../util/optional";
 
 /*
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -526,14 +527,22 @@ const InfoPanelContent = ({
               label: "Size",
               value: formatFileSize(file.size),
             },
-            {
-              label: "Created",
-              value: file.creationDate.toLocaleString(),
-            },
-            {
-              label: "Modified",
-              value: file.modificationDate.toLocaleString(),
-            },
+            ...(typeof file.creationDate !== "undefined"
+              ? [
+                  {
+                    label: "Created",
+                    value: file.creationDate.toLocaleString(),
+                  },
+                ]
+              : []),
+            ...(typeof file.modificationDate !== "undefined"
+              ? [
+                  {
+                    label: "Modified",
+                    value: file.modificationDate.toLocaleString(),
+                  },
+                ]
+              : []),
             ...(typeof file.version === "number"
               ? [
                   {
@@ -554,16 +563,20 @@ const InfoPanelMultipleContent = (): Node => {
   const selection = useGallerySelection();
   const sortedByCreated = selection
     .asSet()
-    .toArray(
-      (fileA, fileB) =>
-        fileA.creationDate.getTime() - fileB.creationDate.getTime()
-    );
+    .mapOptional((file) =>
+      typeof file.creationDate === "undefined"
+        ? Optional.empty<Date>()
+        : Optional.present(file.creationDate)
+    )
+    .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
   const sortedByModified = selection
     .asSet()
-    .toArray(
-      (fileA, fileB) =>
-        fileA.modificationDate.getTime() - fileB.modificationDate.getTime()
-    );
+    .mapOptional((file) =>
+      typeof file.modificationDate === "undefined"
+        ? Optional.empty<Date>()
+        : Optional.present(file.modificationDate)
+    )
+    .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
   return (
     <DescriptionList
       content={[
@@ -573,35 +586,31 @@ const InfoPanelMultipleContent = (): Node => {
             selection.asSet().reduce((sum, file) => sum + file.size, 0)
           ),
         },
-        ...Result.lift2<GalleryFile, GalleryFile, _>(
-          (oldestFile, newestFile) => [
-            {
-              label: "Created",
-              value: (
-                <>
-                  {oldestFile.creationDate.toLocaleDateString()} &ndash;{" "}
-                  {newestFile.creationDate.toLocaleDateString()}
-                </>
-              ),
-            },
-          ]
-        )(
+        ...Result.lift2<Date, Date, _>((oldestDate, newestDate) => [
+          {
+            label: "Created",
+            value: (
+              <>
+                {oldestDate.toLocaleDateString()} &ndash;{" "}
+                {newestDate.toLocaleDateString()}
+              </>
+            ),
+          },
+        ])(
           ArrayUtils.head(sortedByCreated),
           ArrayUtils.last(sortedByCreated)
         ).orElse([]),
-        ...Result.lift2<GalleryFile, GalleryFile, _>(
-          (oldestFile, newestFile) => [
-            {
-              label: "Modified",
-              value: (
-                <>
-                  {oldestFile.modificationDate.toLocaleDateString()} &ndash;{" "}
-                  {newestFile.modificationDate.toLocaleDateString()}
-                </>
-              ),
-            },
-          ]
-        )(
+        ...Result.lift2<Date, Date, _>((oldestDate, newestDate) => [
+          {
+            label: "Modified",
+            value: (
+              <>
+                {oldestDate.toLocaleDateString()} &ndash;{" "}
+                {newestDate.toLocaleDateString()}
+              </>
+            ),
+          },
+        ])(
           ArrayUtils.head(sortedByModified),
           ArrayUtils.last(sortedByModified)
         ).orElse(
