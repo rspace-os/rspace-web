@@ -389,13 +389,25 @@ class Filestore implements GalleryFile {
   description: Description;
   +isFolder: boolean;
   +size: number;
+  +open: () => void;
 
-  constructor({ id, name }: {| id: Id, name: string |}) {
+  constructor({
+    id,
+    name,
+    setPath,
+    path,
+  }: {|
+    id: Id,
+    name: string,
+    path: $ReadOnlyArray<GalleryFile>,
+    setPath: ($ReadOnlyArray<GalleryFile>) => void,
+  |}) {
     this.id = id;
     this.name = name;
     this.description = Description.Missing();
     this.isFolder = true;
     this.size = 0;
+    this.open = () => setPath([...path, this]);
   }
 
   get extension(): string | null {
@@ -752,6 +764,8 @@ export function useGalleryListing({
                       new Filestore({
                         id,
                         name,
+                        path,
+                        setPath,
                       })
                     );
                   } catch (e) {
@@ -781,7 +795,7 @@ export function useGalleryListing({
     });
     try {
       const { data } = await api.get<mixed>(
-        "filestores/1/browse?remotePath=%2F"
+        `filestores/${path[0].id}/browse?remotePath=%2F`
       );
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
