@@ -545,6 +545,9 @@ export function useGalleryActions(): {|
       })
     );
     try {
+      if (typeof file.setDescription === "undefined")
+        throw new Error("Cannot edit description");
+      const setDescription = file.setDescription;
       const data = await structuredDocumentApi.post<FormData, mixed>(
         "description",
         formData,
@@ -568,7 +571,7 @@ export function useGalleryActions(): {|
         })
       );
 
-      file.setDescription(newDescription);
+      setDescription(newDescription);
     } catch (e) {
       addAlert(
         mkAlert({
