@@ -122,7 +122,9 @@ describe("ActionsMenu", () => {
               isImage: true,
               isSnippet: false,
               isSnippetFolder: false,
-              transformFilename: (f) => f("Foo"),
+              transformFilename(f: (string) => string) {
+                return f("Foo");
+              },
               setName: () => {},
               setDescription: () => {},
             }}
@@ -187,7 +189,9 @@ describe("ActionsMenu", () => {
               isImage: false,
               isSnippet: false,
               isSnippetFolder: false,
-              transformFilename: (f) => f("Foo"),
+              transformFilename(f: (string) => string) {
+                return f("Foo");
+              },
               setName: () => {},
               setDescription: () => {},
               open: () => {},

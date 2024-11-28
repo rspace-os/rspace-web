@@ -12,7 +12,7 @@ import {
   justFilenameExtension,
 } from "../../util/files";
 import { useGallerySelection } from "./useGallerySelection";
-import { observable, runInAction } from "mobx";
+import { observable, action, makeObservable } from "mobx";
 import { Optional } from "../../util/optional";
 import { type URL } from "../../util/types";
 
@@ -55,68 +55,6 @@ export class Description {
     return opts.present(this.#state.value);
   }
 }
-
-/**
- * Objects of this shape model files and folders in the Gallery.
- */
-export type GalleryFile = {|
-  id: Id,
-  globalId: string,
-  name: string,
-
-  // null for folders, otherwise usually a non-empty string
-  extension: string | null,
-
-  creationDate: Date,
-  modificationDate: Date,
-  type: string,
-  thumbnailUrl: string,
-  ownerName: string,
-  description: Description,
-
-  /*
-   * A positive natural number, that is incremented whenever the user uploads a
-   * new version or otherwise edits the file
-   */
-  version: number,
-
-  // In bytes. Folders are always 0 bytes
-  size: number,
-
-  /*
-   * A list of folders from the top gallery section to the parent of this
-   * file/folder
-   */
-  path: $ReadOnlyArray<GalleryFile>,
-
-  /*
-   * The names of the folders that form the path, separated with forward slashes
-   */
-  pathAsString: () => string,
-
-  // if the file is a folder, open it
-  open?: () => void,
-
-  downloadHref?: URL,
-
-  isFolder: boolean,
-  isSystemFolder: boolean,
-  isImage: boolean,
-  isSnippet: boolean,
-  isSnippetFolder: boolean,
-
-  /*
-   * There are various places in the UI where the user applies some
-   * transformation to the name of either a folder or file. Mainly the rename
-   * action, but also when duplicating and in other places too. This method
-   * allows the call to generate a new file name by applying a transformation
-   * to the name before the extension, leaving the extension in place.
-   */
-  transformFilename: ((string) => string) => string,
-
-  setName: (string) => void,
-  setDescription: (Description) => void,
-|};
 
 /**
  * These are all the files types for which we have a thumbnail specific for the
@@ -241,6 +179,210 @@ function generateIconSrc(
   return getIconPathForExtension(extension);
 }
 
+/**
+ * Objects of this shape model files and folders in the Gallery.
+ */
+export interface GalleryFile {
+  +id: Id;
+  +globalId: string;
+  name: string;
+
+  // null for folders, otherwise usually a non-empty string
+  +extension: string | null;
+
+  +creationDate: Date;
+  +modificationDate: Date;
+  +type: string;
+  +thumbnailUrl: string;
+  +ownerName: string;
+  description: Description;
+
+  /*
+   * A positive natural number, that is incremented whenever the user uploads a
+   * new version or otherwise edits the file
+   */
+  +version: number;
+
+  // In bytes. Folders are always 0 bytes
+  +size: number;
+
+  /*
+   * A list of folders from the top gallery section to the parent of this
+   * file/folder
+   */
+  +path: $ReadOnlyArray<GalleryFile>;
+
+  /*
+   * The names of the folders that form the path, separated with forward slashes
+   */
+  pathAsString(): string;
+
+  // if the file is a folder, open it
+  +open?: () => void;
+
+  downloadHref?: URL;
+
+  /*
+   * These predicates should be false whenever the implementing class cannot
+   * be sure that the file is of the respective type.
+   */
+  +isFolder: boolean;
+  +isSystemFolder: boolean;
+  +isImage: boolean;
+  +isSnippet: boolean;
+  +isSnippetFolder: boolean;
+
+  /*
+   * There are various places in the UI where the user applies some
+   * transformation to the name of either a folder or file. Mainly the rename
+   * action, but also when duplicating and in other places too. This method
+   * allows the call to generate a new file name by applying a transformation
+   * to the name before the extension, leaving the extension in place.
+   */
+  transformFilename((string) => string): string;
+
+  setName(string): void;
+  setDescription(Description): void;
+}
+
+class LocalGalleryFile implements GalleryFile {
+  +id: Id;
+  +globalId: string;
+  name: string;
+  +extension: string | null;
+  +creationDate: Date;
+  +modificationDate: Date;
+  description: Description;
+  +type: string;
+  +ownerName: string;
+  +gallerySection: string;
+  +size: number;
+  +version: number;
+  +thumbnailId: number | null;
+  +open: () => void | void;
+  downloadHref: URL | void;
+
+  // this will only ever actually be an array of LocalGalleryFile,
+  // but getting the types correct here is tricky
+  +path: $ReadOnlyArray<GalleryFile>;
+
+  constructor({
+    id,
+    globalId,
+    name,
+    extension,
+    creationDate,
+    modificationDate,
+    description,
+    type,
+    ownerName,
+    path,
+    setPath,
+    gallerySection,
+    size,
+    version,
+    thumbnailId,
+  }: {|
+    id: Id,
+    globalId: string,
+    name: string,
+    extension: string | null,
+    creationDate: Date,
+    modificationDate: Date,
+    description: Description,
+    type: string,
+    ownerName: string,
+    path: $ReadOnlyArray<GalleryFile>,
+    setPath: ($ReadOnlyArray<GalleryFile>) => void,
+    gallerySection: string,
+    size: number,
+    version: number,
+    thumbnailId: number | null,
+  |}) {
+    makeObservable(this, {
+      name: observable,
+      description: observable,
+      setName: action,
+      setDescription: action,
+    });
+    this.id = id;
+    this.globalId = globalId;
+    this.name = name;
+    this.extension = extension;
+    this.creationDate = creationDate;
+    this.modificationDate = modificationDate;
+    this.description = description;
+    this.type = type;
+    this.ownerName = ownerName;
+    this.path = path;
+    this.gallerySection = gallerySection;
+    this.size = size;
+    this.version = version;
+    this.thumbnailId = thumbnailId;
+    if (this.isFolder) {
+      this.open = () => setPath([...path, this]);
+    } else {
+      this.downloadHref = `/Streamfile/${idToString(this.id)}`;
+    }
+  }
+
+  get isFolder(): boolean {
+    return /Folder/.test(this.type);
+  }
+
+  get isImage(): boolean {
+    return /Image/.test(this.type);
+  }
+
+  get isSnippet(): boolean {
+    return /Snippet/.test(this.type);
+  }
+
+  get isSystemFolder(): boolean {
+    return /System Folder/.test(this.type);
+  }
+
+  get isSnippetFolder(): boolean {
+    return this.isSystemFolder && /SNIPPETS/.test(this.name);
+  }
+
+  pathAsString(): string {
+    return `/${[
+      this.gallerySection,
+      ...this.path.map(({ name }) => name),
+      this.name,
+    ].join("/")}/`;
+  }
+
+  setName(newName: string): void {
+    this.name = newName;
+  }
+
+  setDescription(newDescription: Description): void {
+    this.description = newDescription;
+  }
+
+  get thumbnailUrl(): string {
+    return generateIconSrc(
+      this.name,
+      this.type,
+      this.extension,
+      this.thumbnailId,
+      this.id,
+      this.modificationDate,
+      this.isFolder,
+      this.isSystemFolder
+    );
+  }
+
+  transformFilename(f: (string) => string): string {
+    if (this.isFolder) return f(this.name);
+    return `${f(filenameExceptExtension(this.name))}.${justFilenameExtension(
+      this.name
+    )}`;
+  }
+}
+
 export function useGalleryListing({
   section,
   searchTerm,
@@ -294,95 +436,6 @@ export function useGalleryListing({
     if (searchTerm !== "")
       return `There are no top-level ${gallerySectionCollectiveNoun[section]} that match the search term "${searchTerm}".`;
     return `There are no top-level ${gallerySectionCollectiveNoun[section]}.`;
-  }
-
-  function mkGalleryFile({
-    id,
-    globalId,
-    name,
-    ownerName,
-    description,
-    creationDate,
-    modificationDate,
-    type,
-    extension,
-    thumbnailId,
-    size,
-    version,
-  }: {|
-    id: number,
-    globalId: string,
-    name: string,
-    ownerName: string,
-    description: Description,
-    creationDate: Date,
-    modificationDate: Date,
-    type: string,
-    extension: string | null,
-    thumbnailId: number | null,
-    size: number,
-    version: number,
-  |}): GalleryFile {
-    const isFolder = /Folder/.test(type);
-    const isSystemFolder = /System Folder/.test(type);
-    const ret: GalleryFile = observable({
-      id,
-      globalId,
-      name,
-      extension,
-      ownerName,
-      description,
-      creationDate,
-      modificationDate,
-      type,
-      size,
-      version,
-      thumbnailUrl: generateIconSrc(
-        name,
-        type,
-        extension,
-        thumbnailId,
-        id,
-        modificationDate,
-        isFolder,
-        isSystemFolder
-      ),
-      path,
-      pathAsString: () =>
-        `/${[section, ...path.map(({ name }) => name), name].join("/")}/`,
-      ...(isFolder
-        ? {
-            open: () => {
-              setPath([...path, ret]);
-            },
-          }
-        : {
-            // downloads the latest version, if the version is >1
-            downloadHref: `/Streamfile/${idToString(id)}`,
-          }),
-      isFolder,
-      isSystemFolder,
-      isImage: /Image/.test(type),
-      isSnippet: /Snippet/.test(type),
-      isSnippetFolder: isSystemFolder && /SNIPPETS/.test(name),
-      transformFilename: (f) => {
-        if (isFolder) return f(name);
-        return `${f(filenameExceptExtension(name))}.${justFilenameExtension(
-          name
-        )}`;
-      },
-      setName: (newName: string) => {
-        runInAction(() => {
-          ret.name = newName;
-        });
-      },
-      setDescription: (newDescription: Description) => {
-        runInAction(() => {
-          ret.description = newDescription;
-        });
-      },
-    });
-    return ret;
   }
 
   function parseGalleryFiles(data: mixed) {
@@ -471,20 +524,23 @@ export function useGalleryListing({
                     .flatMap(Parsers.isNumber)
                     .elseThrow();
 
-                  return Result.Ok(
-                    mkGalleryFile({
+                  return Result.Ok<GalleryFile>(
+                    new LocalGalleryFile({
                       id,
                       globalId,
                       name,
-                      ownerName,
-                      description,
+                      extension,
                       creationDate,
                       modificationDate,
+                      description,
                       type,
-                      extension,
-                      thumbnailId,
+                      ownerName,
+                      path,
+                      gallerySection: section,
                       size,
                       version,
+                      thumbnailId,
+                      setPath,
                     })
                   );
                 } catch (e) {
