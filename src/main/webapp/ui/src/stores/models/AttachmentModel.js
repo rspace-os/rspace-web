@@ -903,6 +903,8 @@ export const newGalleryAttachment = (
   file: GalleryFile,
   onRemoveCallback: (Attachment) => void
 ): NewGalleryAttachment => {
+  if (!file.globalId)
+    throw new Error("Cannot attach a file that does not have a Global Id");
   return new NewGalleryAttachment(
     {
       id: null,

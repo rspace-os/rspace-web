@@ -189,7 +189,7 @@ function generateIconSrc(
  */
 export interface GalleryFile {
   +id: Id;
-  +globalId: string;
+  +globalId?: string;
   name: string;
 
   // null for folders, otherwise usually a non-empty string
