@@ -56,6 +56,7 @@ import useViewportDimensions from "../../../util/useViewportDimensions";
 import { observer } from "mobx-react-lite";
 import { autorun } from "mobx";
 import EventBoundary from "../../../components/EventBoundary";
+import Result from "../../../util/result";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -138,7 +139,7 @@ const UploadMenuItem = ({
   tabIndex,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
-  folderId: Id,
+  folderId: Result<Id>,
   onUploadComplete: () => void,
   onCancel: () => void,
 
@@ -179,19 +180,24 @@ const UploadMenuItem = ({
         autoFocus={autoFocus}
         tabIndex={tabIndex}
         compact
+        disabled={folderId.isError}
       />
-      <input
-        ref={inputRef}
-        accept="*"
-        hidden
-        multiple
-        onChange={({ target: { files } }) => {
-          void uploadFiles(path, folderId, [...files]).then(() => {
-            onUploadComplete();
-          });
-        }}
-        type="file"
-      />
+      {folderId
+        .map((fId) => (
+          <input
+            ref={inputRef}
+            accept="*"
+            hidden
+            multiple
+            onChange={({ target: { files } }) => {
+              void uploadFiles(path, fId, [...files]).then(() => {
+                onUploadComplete();
+              });
+            }}
+            type="file"
+          />
+        ))
+        .orElse(null)}
     </>
   );
 };
@@ -204,7 +210,7 @@ const NewFolderMenuItem = ({
   tabIndex,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
-  folderId: Id,
+  folderId: Result<Id>,
   onDialogClose: (boolean) => void,
 
   /*
@@ -231,7 +237,8 @@ const NewFolderMenuItem = ({
             onSubmit={(e) => {
               e.preventDefault();
               setSubmitting(true);
-              void createFolder(path, folderId, name)
+              const fId = folderId.elseThrow();
+              void createFolder(path, fId, name)
                 .then(() => {
                   onDialogClose(true);
                 })
@@ -284,6 +291,7 @@ const NewFolderMenuItem = ({
         tabIndex={tabIndex}
         aria-haspopup="dialog"
         compact
+        disabled={folderId.isError}
       />
     </>
   );
@@ -510,38 +518,30 @@ const Sidebar = ({
             disablePadding: true,
           }}
         >
-          {FetchingData.getSuccessValue(folderId)
-            .map((fId) => (
-              <UploadMenuItem
-                key={"upload"}
-                path={path}
-                folderId={fId}
-                onUploadComplete={() => {
-                  refreshListing();
-                  setNewMenuAnchorEl(null);
-                  if (viewport.isViewportSmall) setDrawerOpen(false);
-                }}
-                onCancel={() => {
-                  setNewMenuAnchorEl(null);
-                  if (viewport.isViewportSmall) setDrawerOpen(false);
-                }}
-              />
-            ))
-            .orElse(null)}
-          {FetchingData.getSuccessValue(folderId)
-            .map((fId) => (
-              <NewFolderMenuItem
-                key={"newFolder"}
-                path={path}
-                folderId={fId}
-                onDialogClose={(success) => {
-                  if (success) refreshListing();
-                  setNewMenuAnchorEl(null);
-                  if (viewport.isViewportSmall) setDrawerOpen(false);
-                }}
-              />
-            ))
-            .orElse(null)}
+          <UploadMenuItem
+            key={"upload"}
+            path={path}
+            folderId={FetchingData.getSuccessValue(folderId)}
+            onUploadComplete={() => {
+              refreshListing();
+              setNewMenuAnchorEl(null);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
+            }}
+            onCancel={() => {
+              setNewMenuAnchorEl(null);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
+            }}
+          />
+          <NewFolderMenuItem
+            key={"newFolder"}
+            path={path}
+            folderId={FetchingData.getSuccessValue(folderId)}
+            onDialogClose={(success) => {
+              if (success) refreshListing();
+              setNewMenuAnchorEl(null);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
+            }}
+          />
           <DmpMenuSection
             onDialogClose={() => {
               setNewMenuAnchorEl(null);
