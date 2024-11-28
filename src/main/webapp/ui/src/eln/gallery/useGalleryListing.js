@@ -387,6 +387,83 @@ class LocalGalleryFile implements GalleryFile {
   }
 }
 
+class RemoteFile implements GalleryFile {
+  +nfsId: number;
+  name: string;
+  description: Description;
+  +isFolder: boolean;
+  +size: number;
+
+  constructor({
+    nfsId,
+    name,
+    folder,
+    fileSize,
+  }: {|
+    nfsId: number,
+    name: string,
+    folder: boolean,
+    fileSize: number,
+  |}) {
+    this.nfsId = nfsId;
+    this.name = name;
+    this.description = Description.Missing();
+    this.isFolder = folder;
+    this.size = fileSize;
+  }
+
+  get id(): Id {
+    return this.nfsId;
+  }
+
+  get extension(): string | null {
+    return null;
+  }
+
+  get creationDate(): Date {
+    return new Date();
+  }
+
+  get modificationDate(): Date {
+    return new Date();
+  }
+
+  get thumbnailUrl(): string {
+    return "/images/icons/unknownDocument.png";
+  }
+
+  get path(): $ReadOnlyArray<GalleryFile> {
+    return [];
+  }
+
+  pathAsString(): string {
+    return "";
+  }
+
+  get isSystemFolder(): boolean {
+    return false;
+  }
+
+  get isImage(): boolean {
+    return false;
+  }
+
+  get isSnippet(): boolean {
+    return false;
+  }
+
+  get isSnippetFolder(): boolean {
+    return false;
+  }
+
+  transformFilename(f: (string) => string): string {
+    if (this.isFolder) return f(this.name);
+    return `${f(filenameExceptExtension(this.name))}.${justFilenameExtension(
+      this.name
+    )}`;
+  }
+}
+
 export function useGalleryListing({
   section,
   searchTerm,
