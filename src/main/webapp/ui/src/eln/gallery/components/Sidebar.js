@@ -455,6 +455,7 @@ const AddFilestoreMenuItem = ({
         tabIndex={tabIndex}
         aria-haspopup="dialog"
         compact
+        disabled={filesystems.length === 0}
       />
     </>
   );
