@@ -894,9 +894,10 @@ export function useGalleryListing({
         if (
           await login({
             filesystemName: filestore.filesystemName,
+            filesystemId: filestore.filesystemId,
           })
         ) {
-          // and then call this function again
+          await getRemoteFiles();
         } else {
           ArrayUtils.dropLast(path).do((newPath) => {
             setPath(newPath);
