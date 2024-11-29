@@ -1,6 +1,6 @@
 //@flow
 
-import React from "react";
+import React, { type Node } from "react";
 import axios from "axios";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
@@ -18,6 +18,7 @@ import { Optional } from "../../util/optional";
 import { type URL } from "../../util/types";
 import useOauthToken from "../../common/useOauthToken";
 import { useFilestoreLogin } from "./components/FilestoreLoginDialog";
+import { LinkedDocumentsPanel } from "./components/LinkedDocumentsPanel";
 
 export opaque type Id = number;
 export const DUMMY_ID: Id = 0; // for use in tests
@@ -246,6 +247,8 @@ export interface GalleryFile {
 
   +setName?: (string) => void;
   +setDescription?: (Description) => void;
+
+  +linkedDocuments: Node;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -383,6 +386,10 @@ class LocalGalleryFile implements GalleryFile {
       this.name
     )}`;
   }
+
+  get linkedDocuments(): Node {
+    return <LinkedDocumentsPanel file={this} />;
+  }
 }
 
 class Filestore implements GalleryFile {
@@ -454,6 +461,10 @@ class Filestore implements GalleryFile {
 
   transformFilename(f: (string) => string): string {
     return f(this.name);
+  }
+
+  get linkedDocuments(): Node {
+    return null;
   }
 }
 
@@ -527,6 +538,10 @@ class RemoteFile implements GalleryFile {
     return `${f(filenameExceptExtension(this.name))}.${justFilenameExtension(
       this.name
     )}`;
+  }
+
+  get linkedDocuments(): Node {
+    return null;
   }
 }
 

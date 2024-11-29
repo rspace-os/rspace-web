@@ -127,6 +127,7 @@ describe("ActionsMenu", () => {
               },
               setName: () => {},
               setDescription: () => {},
+              linkedDocuments: null,
             }}
           />
           <ActionsMenu
@@ -195,6 +196,7 @@ describe("ActionsMenu", () => {
               setName: () => {},
               setDescription: () => {},
               open: () => {},
+              linkedDocuments: null,
             }}
           />
           <ActionsMenu

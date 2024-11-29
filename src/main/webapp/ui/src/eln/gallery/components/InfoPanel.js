@@ -19,7 +19,6 @@ import { grey } from "@mui/material/colors";
 import DescriptionList from "../../../components/DescriptionList";
 import { formatFileSize, filenameExceptExtension } from "../../../util/files";
 import Result from "../../../util/result";
-import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
 import { observer } from "mobx-react-lite";
 import { useGalleryActions } from "../useGalleryActions";
 import ImagePreview, {
@@ -537,7 +536,7 @@ const InfoPanelContent = ({
           ]}
         />
       </Box>
-      <LinkedDocumentsPanel file={file} />
+      {file.linkedDocuments}
     </Stack>
   );
 };
