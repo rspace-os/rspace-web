@@ -17,6 +17,7 @@ import { Optional } from "../../util/optional";
 import { type URL } from "../../util/types";
 import { take, incrementForever } from "../../util/iterators";
 import useOauthToken from "../../common/useOauthToken";
+import { useFilestoreLogin } from "./components/FilestoreLoginDialog";
 
 export opaque type Id = number;
 // dummyId is for use in tests ONLY
@@ -574,6 +575,7 @@ export function useGalleryListing({
     Result.Error([new Error("Parent Id is not yet known")])
   );
   const selection = useGallerySelection();
+  const { login } = useFilestoreLogin();
 
   function emptyReason(): string {
     if (path.length > 0) {
@@ -861,6 +863,11 @@ export function useGalleryListing({
         .do(setGalleryListing);
     } catch (e) {
       console.error(e);
+      login((l) => {
+        console.debug("login: ", l);
+        // then show a login dialog
+        // and then call this function again
+      });
     } finally {
       setLoading(false);
     }
