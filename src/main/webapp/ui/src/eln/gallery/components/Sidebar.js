@@ -60,6 +60,7 @@ import ValidatingSubmitButton, {
   IsInvalid,
 } from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
+import DnsIcon from "@mui/icons-material/Dns";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -70,6 +71,9 @@ library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
 library.add(faDatabase);
+import axios from "axios";
+import useOauthToken from "../../../common/useOauthToken";
+import * as Parsers from "../../../util/parsers";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -280,6 +284,122 @@ const NewFolderMenuItem = ({
         aria-haspopup="dialog"
         compact
         disabled={folderId.isError}
+      />
+    </>
+  );
+};
+
+const AddFilestoreMenuItem = ({
+  autoFocus,
+  tabIndex,
+}: {|
+  /*
+   * These properties are dynamically added by the MUI Menu parent component
+   */
+  autoFocus?: boolean,
+  tabIndex?: number,
+|}) => {
+  const [open, setOpen] = React.useState(false);
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [filesystems, setFilesystems] = React.useState<
+    $ReadOnlyArray<{|
+      id: number,
+      name: string,
+      url: string,
+    |}>
+  >([]);
+  const { getToken } = useOauthToken();
+
+  React.useEffect(() => {
+    void (async () => {
+      const api = axios.create({
+        baseURL: "/api/v1/gallery",
+        headers: {
+          Authorization: "Bearer " + (await getToken()),
+        },
+      });
+      const { data } = await api.get<mixed>("filesystems");
+      Parsers.isArray(data)
+        .flatMap((array) =>
+          Result.all(
+            ...array.map((m) =>
+              Parsers.isObject(m)
+                .flatMap(Parsers.isNotNull)
+                .flatMap((obj) => {
+                  try {
+                    const id = Parsers.getValueWithKey("id")(obj)
+                      .flatMap(Parsers.isNumber)
+                      .elseThrow();
+                    const name = Parsers.getValueWithKey("name")(obj)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    const url = Parsers.getValueWithKey("url")(obj)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    return Result.Ok({ id, name, url });
+                  } catch (e) {
+                    return Result.Error<{|
+                      id: number,
+                      name: string,
+                      url: string,
+                    |}>([e]);
+                  }
+                })
+            )
+          )
+        )
+        .do((newFilesystems) => setFilesystems(newFilesystems));
+    })();
+  }, []);
+
+  return (
+    <>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        sx={{
+          transform: "translate(16px, -12px)",
+        }}
+        MenuListProps={{
+          disablePadding: true,
+        }}
+      >
+        {filesystems.map((fs) => (
+          <NewMenuItem
+            key={fs.id}
+            title={fs.name}
+            subheader={fs.url}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            onClick={() => {
+              // select
+            }}
+          />
+        ))}
+      </Menu>
+      <NewMenuItem
+        title="Add a filestore"
+        avatar={<DnsIcon />}
+        backgroundColor={COLOR.background}
+        foregroundColor={COLOR.contrastText}
+        onClick={({ target }) => {
+          setOpen(true);
+          setAnchorEl(target);
+        }}
+        //eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={autoFocus}
+        tabIndex={tabIndex}
+        aria-haspopup="dialog"
+        compact
       />
     </>
   );
@@ -522,6 +642,7 @@ const Sidebar = ({
               if (viewport.isViewportSmall) setDrawerOpen(false);
             }}
           />
+          <AddFilestoreMenuItem />
           <DmpMenuSection
             onDialogClose={() => {
               setNewMenuAnchorEl(null);
