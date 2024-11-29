@@ -29,7 +29,7 @@ import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
-import { FilestoreLoginDialog } from "./components/FilestoreLoginDialog";
+import { FilestoreLoginContextualDialog } from "./components/FilestoreLoginDialog";
 
 const WholePage = styled(() => {
   const [searchParams, setSelectedSection] = useSearchParamState({
@@ -156,9 +156,9 @@ window.addEventListener("load", () => {
                             <Alerts>
                               <RouterNavigationContext>
                                 <GallerySelection>
-                                  <FilestoreLoginDialog>
+                                  <FilestoreLoginContextualDialog>
                                     <WholePage />
-                                  </FilestoreLoginDialog>
+                                  </FilestoreLoginContextualDialog>
                                 </GallerySelection>
                               </RouterNavigationContext>
                             </Alerts>

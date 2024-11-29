@@ -6,6 +6,9 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import DialogContentText from "@mui/material/DialogContentText";
+import Stack from "@mui/material/Stack";
 
 const FilestoreLoginContext = React.createContext<{|
   login: ({|
@@ -29,7 +32,66 @@ export function useFilestoreLogin(): {|
   };
 }
 
-export function FilestoreLoginDialog({ children }: {| children: Node |}): Node {
+/*
+ * This component is a performance optimisation: We don't want a change to
+ * username or password to trigger a re-rendering of the whole page.
+ */
+const FilestoreLoginDialog = ({
+  filesystemName,
+  onClose,
+}: {|
+  filesystemName: string,
+  onClose: () => void,
+|}): Node => {
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+
+  return (
+    <Dialog open onClose={onClose}>
+      <DialogTitle>Filestore Login</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Please authenticate to file system <strong>{filesystemName}</strong>.
+        </DialogContentText>
+        <Stack spacing={2} sx={{ mt: 2 }}>
+          <TextField
+            size="small"
+            label="Username"
+            value={username}
+            onChange={({ target: { value } }) => {
+              setUsername(value);
+            }}
+          />
+          <TextField
+            size="small"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={({ target: { value } }) => {
+              setPassword(value);
+            }}
+          />
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          onClick={() => {
+            // do the login
+          }}
+        >
+          Log In
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export function FilestoreLoginContextualDialog({
+  children,
+}: {|
+  children: Node,
+|}): Node {
   const [resolve, setResolve] = React.useState<null | {|
     r: (boolean) => void,
   |}>(null);
@@ -52,36 +114,13 @@ export function FilestoreLoginDialog({ children }: {| children: Node |}): Node {
         {children}
       </FilestoreLoginContext.Provider>
       {resolve !== null && (
-        <Dialog
-          open
+        <FilestoreLoginDialog
+          filesystemName={filesystemName}
           onClose={() => {
             resolve.r(false);
             setResolve(null);
           }}
-        >
-          <DialogTitle>Filestore Login</DialogTitle>
-          <DialogContent>
-            Please authenticate to file system <strong>{filesystemName}</strong>
-            .
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => {
-                resolve.r(false);
-                setResolve(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                // do the login
-              }}
-            >
-              Log In
-            </Button>
-          </DialogActions>
-        </Dialog>
+        />
       )}
     </>
   );
