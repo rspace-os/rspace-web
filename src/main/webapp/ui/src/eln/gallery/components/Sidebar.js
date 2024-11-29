@@ -71,6 +71,8 @@ library.add(faDatabase);
 import axios, { type Axios } from "axios";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
+import { doNotAwait } from "../../../util/Util";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -302,15 +304,18 @@ const NewFolderMenuItem = ({
 };
 
 const AddFilestoreMenuItem = ({
+  onMenuClose,
   autoFocus,
   tabIndex,
 }: {|
+  onMenuClose: (boolean) => void,
   /*
    * These properties are dynamically added by the MUI Menu parent component
    */
   autoFocus?: boolean,
   tabIndex?: number,
 |}) => {
+  const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [filesystems, setFilesystems] = React.useState<
@@ -373,7 +378,10 @@ const AddFilestoreMenuItem = ({
       <Menu
         anchorEl={anchorEl}
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setOpen(false);
+          onMenuClose(false);
+        }}
         anchorOrigin={{
           vertical: "top",
           horizontal: "right",
@@ -396,9 +404,40 @@ const AddFilestoreMenuItem = ({
             subheader={fs.url}
             backgroundColor={COLOR.background}
             foregroundColor={COLOR.contrastText}
-            onClick={() => {
-              // select
-            }}
+            onClick={doNotAwait(async () => {
+              try {
+                await (
+                  await api.current
+                ).post<_, mixed>(
+                  "filestores",
+                  {},
+                  {
+                    //$FlowExpectedError[incompatible-call] Flow types are wrong; plain object is allowed for `params`
+                    params: {
+                      filesystemId: fs.id,
+                      name: fs.name,
+                      pathToSave: "/",
+                    },
+                  }
+                );
+                addAlert(
+                  mkAlert({
+                    variant: "success",
+                    message: "Successfully added new filestore",
+                  })
+                );
+                onMenuClose(true);
+              } catch (e) {
+                console.error(e);
+                addAlert(
+                  mkAlert({
+                    variant: "error",
+                    title: "Failed to add new filestore",
+                    message: e.message,
+                  })
+                );
+              }
+            })}
           />
         ))}
       </Menu>
@@ -666,7 +705,13 @@ const Sidebar = ({
               if (viewport.isViewportSmall) setDrawerOpen(false);
             }}
           />
-          <AddFilestoreMenuItem />
+          <AddFilestoreMenuItem
+            onMenuClose={(success) => {
+              if (success) refreshListing();
+              setNewMenuAnchorEl(null);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
+            }}
+          />
           <DmpMenuSection
             onDialogClose={() => {
               setNewMenuAnchorEl(null);
