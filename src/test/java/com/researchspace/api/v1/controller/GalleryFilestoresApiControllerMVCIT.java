@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.model.User;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemInfo;
@@ -141,4 +142,34 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
     assertEquals(0, retrievedFilestoreInfos.size());
   }
+
+  @Test
+  public void testRemoteFileDownload() throws Exception {
+
+    // add test filesystem
+    NfsFileSystem testFilesystem = GalleryFilestoreTestUtils.createIrodsFileSystem();
+    nfsManager.saveNfsFileSystem(testFilesystem);
+
+    // add test filestore
+    NfsFileStore testFilestore = GalleryFilestoreTestUtils.createFileStore(
+        "test", anyUser, testFilesystem);
+    nfsManager.saveNfsFileStore(testFilestore);
+
+    // try downloading without authenticating to filesystem
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForGet(API_VERSION.ONE, apiKey,
+                "/gallery/filestores/" + testFilestore.getId() + "/download", anyUser)
+                .param("remotePath", "testResource"))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    assertNotNull(result.getResolvedException());
+    assertEquals("download not supported yet", result.getResolvedException().getMessage());
+    //assertEquals("[ ]", result.getResponse().getContentAsString());
+
+    // mock nfsClient that returns a file when queried
+    // TODO: WIP
+
+  }
+
 }

@@ -25,7 +25,7 @@ public class GalleryFilestoreTestUtils {
     return createIrodsFileSystem(null);
   }
 
-  public static NfsFileStore createIrodsFileStore(
+  public static NfsFileStore createFileStore(
       String name, User user, NfsFileSystem filesystem) {
     NfsFileStore fileStore = new NfsFileStore();
     fileStore.setFileSystem(filesystem);
@@ -37,7 +37,7 @@ public class GalleryFilestoreTestUtils {
   }
 
   public static NfsFileStore createIrodsFileSystemAndFileStore(Long id, String name, User user) {
-    NfsFileStore filestore = createIrodsFileStore(name, user, createIrodsFileSystem(id));
+    NfsFileStore filestore = createFileStore(name, user, createIrodsFileSystem(id));
     filestore.setId(id);
     return filestore;
   }

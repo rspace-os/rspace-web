@@ -172,7 +172,7 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
     node.setIsFolder(attrs.isDir() || attrs.isLink());
     Date mTimeDate = getDateFromMTime(attrs.getMTime());
     node.setFileDate(sdf.format(mTimeDate));
-    node.setFileDateMillis(mTimeDate.getTime());
+    node.setModificationDateMillis(mTimeDate.getTime());
     node.calculateLogicPath(fullPathToTarget, activeUserFolder);
 
     if (!attrs.isDir()) {

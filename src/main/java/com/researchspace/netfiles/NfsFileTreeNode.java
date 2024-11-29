@@ -17,8 +17,8 @@ public class NfsFileTreeNode {
   @Getter @Setter private NfsFileTreeOrderType orderType;
   @Getter @Setter private String nodePath; /* a path to be saved as user folder */
   @Getter private String logicPath; /* nfsFileStoreId:relativePath */
-  @Getter @Setter private String fileDate; /* date displayed to user */
-  @Getter @Setter private Long fileDateMillis;
+  @Getter @Setter private String fileDate; /* modification date, to displayed in JSP tree-view UI */
+  @Getter @Setter private Long modificationDateMillis; /* used by API */
   @Getter @Setter private String fileSize = "0"; /* file size as human-readable string */
   @Getter @Setter private Long fileSizeBytes = 0L;
   @Getter @Setter private Long nfsId;

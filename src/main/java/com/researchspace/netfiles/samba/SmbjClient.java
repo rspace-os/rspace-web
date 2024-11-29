@@ -184,7 +184,7 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
 
     Date dt = f.getLastWriteTime().toDate();
     node.setFileDate(sdf.format(dt));
-    node.setFileDateMillis(dt.getTime());
+    node.setModificationDateMillis(dt.getTime());
 
     node.setIsFolder(isFolder);
     if (!isFolder) {

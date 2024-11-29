@@ -247,33 +247,6 @@ public class NfsControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void sambaFilestoreSavedWithCorrectPath() {
-    loginTestUserToTestFileSystem();
-
-    AjaxReturnObject<String> jcifsPathSaveResult =
-        controller.saveFileStore(
-            TEST_FILE_SYSTEM_ID,
-            "jcifs path format",
-            "smb://test.com/samba-folder/BE/",
-            request,
-            principalStub);
-    assertEquals(
-        "{\"id\":null,\"name\":\"jcifs path format\",\"path\":\"/samba-folder/BE\",\"fileSystem\":"
-            + "{\"id\":11,\"name\":\"testFileSystem\",\"url\":\"smb://test.com\",\"clientType\":\"SAMBA\","
-            + "\"authType\":\"PASSWORD\",\"options\":{},\"loggedAs\":null}}",
-        jcifsPathSaveResult.getData());
-
-    AjaxReturnObject<String> smbjPathSaveResult =
-        controller.saveFileStore(
-            TEST_FILE_SYSTEM_ID, "smbj path format", "/BE/", request, principalStub);
-    assertEquals(
-        "{\"id\":null,\"name\":\"smbj path format\",\"path\":\"/BE\",\"fileSystem\":"
-            + "{\"id\":11,\"name\":\"testFileSystem\",\"url\":\"smb://test.com\",\"clientType\":\"SAMBA\","
-            + "\"authType\":\"PASSWORD\",\"options\":{},\"loggedAs\":null}}",
-        smbjPathSaveResult.getData());
-  }
-
-  @Test
   public void testDeleteFileStore() {
 
     loginTestUserToTestFileSystem();

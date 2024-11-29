@@ -104,7 +104,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
     node.setNodePath(entry.getPathOrName());
     node.setIsFolder(entry.isCollection());
     node.setFileDate(String.valueOf(entry.getModifiedAt()));
-    node.setFileDateMillis(entry.getModifiedAt().getTime());
+    node.setModificationDateMillis(entry.getModifiedAt().getTime());
     node.setFileSize(entry.getDisplayDataSize());
     node.setFileSizeBytes(entry.getDataSize());
     node.setNfsId((long) entry.getId());

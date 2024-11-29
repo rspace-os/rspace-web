@@ -74,7 +74,7 @@ public class GalleryFilestoresApiController extends BaseApiController
   @Override
   public void downloadFromFilestore(
       @PathVariable Long filestoreId,
-      @RequestParam(value = "remotePath", required = false) String remotePath,
+      @RequestParam(value = "remotePath") String remotePath,
       @RequestAttribute(name = "user") User user)
       throws IOException {
 

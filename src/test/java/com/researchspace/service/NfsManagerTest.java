@@ -12,6 +12,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.dao.NfsDao;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.EcatAudio;
@@ -19,10 +21,13 @@ import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NetFilesTestFactory;
+import com.researchspace.model.netfiles.NfsAuthenticationType;
+import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.webapp.controller.AjaxReturnObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -161,4 +166,32 @@ public class NfsManagerTest extends SpringTransactionalTest {
     verify(fileStore, times(2)).findFile(any());
     verify(nfsClient).uploadFilesToNfs(any(), any());
   }
+
+  @Test
+  public void sambaFilestoreSavedWithCorrectPath() throws JsonProcessingException {
+
+    User user = userManager.getUserByUsername(USER);
+
+    NfsFileSystem testSambaFileSystem = new NfsFileSystem();
+    testSambaFileSystem.setName("testFileSystem");
+    testSambaFileSystem.setClientType(NfsClientType.SAMBA);
+    testSambaFileSystem.setAuthType(NfsAuthenticationType.PASSWORD);
+    testSambaFileSystem.setUrl("smb://test.com");
+    nfsMgr.saveNfsFileSystem(testSambaFileSystem);
+
+    NfsFileStore createdFileStore =
+        nfsMgr.createAndSaveNewFileStore(
+            testSambaFileSystem.getId(),
+            "jcifs path format",
+            "smb://test.com/samba-folder/BE/",
+            user
+        );
+    assertEquals("/samba-folder/BE", createdFileStore.getPath());
+
+    createdFileStore = nfsMgr.createAndSaveNewFileStore(
+        testSambaFileSystem.getId(), "smbj path format", "/BE/", user);
+    assertEquals("/BE", createdFileStore.getPath());
+  }
+
+
 }

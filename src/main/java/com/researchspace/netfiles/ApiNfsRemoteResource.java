@@ -20,10 +20,10 @@ public class ApiNfsRemoteResource {
   private boolean isFolder;
   private String logicPath; /* nfsFileStoreId:relativePath */
 
-  @JsonProperty("fileDate")
+  @JsonProperty("modificationDate")
   @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
   @JsonDeserialize(using = ISO8601DateTimeDeserialiser.class)
-  private Long fileDateMillis;
+  private Long modificationDateMillis;
 
   private Long fileSize = 0L;
   private Long nfsId;
@@ -32,7 +32,7 @@ public class ApiNfsRemoteResource {
     name = treeNode.getFileName();
     isFolder = treeNode.getIsFolder();
     logicPath = treeNode.getLogicPath();
-    fileDateMillis = treeNode.getFileDateMillis();
+    modificationDateMillis = treeNode.getModificationDateMillis();
     fileSize = treeNode.getFileSizeBytes();
     nfsId = treeNode.getNfsId();
   }
