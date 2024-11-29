@@ -3,15 +3,16 @@
 import React, { type Node } from "react";
 
 const FilestoreLoginContext = React.createContext<{|
-  login: ((boolean) => void) => void,
+  login: () => Promise<boolean>,
 |}>({
-  login: () => {
-    throw new Error("FilestoreLoginDialog is not included in the DOM");
-  },
+  login: () =>
+    Promise.reject(
+      new Error("FilestoreLoginDialog is not included in the DOM")
+    ),
 });
 
 export function useFilestoreLogin(): {|
-  login: ((boolean) => void) => void,
+  login: () => Promise<boolean>,
 |} {
   const { login } = React.useContext(FilestoreLoginContext);
   return {
@@ -20,10 +21,14 @@ export function useFilestoreLogin(): {|
 }
 
 export function FilestoreLoginDialog({ children }: {| children: Node |}): Node {
-  const [cb, setCb] = React.useState<null | {| cb: (boolean) => void |}>(null);
+  const [resolve, setResolve] = React.useState<null | {|
+    r: (boolean) => void,
+  |}>(null);
 
-  const login = (newCb: (boolean) => void) => {
-    setCb({ cb: newCb });
+  const login = (): Promise<boolean> => {
+    return new Promise((r) => {
+      setResolve({ r });
+    });
   };
 
   return (
@@ -31,10 +36,10 @@ export function FilestoreLoginDialog({ children }: {| children: Node |}): Node {
       <FilestoreLoginContext.Provider value={{ login }}>
         {children}
       </FilestoreLoginContext.Provider>
-      {cb !== null && (
+      {resolve !== null && (
         <button
           onClick={() => {
-            cb.cb(true);
+            resolve.r(true);
           }}
         >
           resolve the promise
