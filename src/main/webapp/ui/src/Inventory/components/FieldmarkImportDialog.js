@@ -35,6 +35,7 @@ import DialogActions from "@mui/material/DialogActions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
+import docLinks from "../../assets/DocLinks";
 
 export const FIELDMARK_COLOR = {
   main: {
@@ -273,7 +274,7 @@ export default function FieldmarkImportDialog({
               />
             </Box>
             <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-              <HelpLinkIcon title="Fieldmark help" link="#" />
+              <HelpLinkIcon title="Fieldmark help" link={docLinks.fieldmark} />
             </Box>
           </Toolbar>
         </AppBar>
@@ -298,8 +299,13 @@ export default function FieldmarkImportDialog({
                 subsample for each sample.
               </Typography>
               <Typography variant="body2">
-                See <Link href="#">docs.fieldmark.au</Link> and our{" "}
-                <Link href={"#"}>Fieldmark integration docs</Link> for more.
+                See{" "}
+                <Link href="https://docs.fieldmark.au">docs.fieldmark.au</Link>{" "}
+                and our{" "}
+                <Link href={docLinks.fieldmark}>
+                  Fieldmark integration docs
+                </Link>{" "}
+                for more.
               </Typography>
             </Grid>
             <Grid item>
