@@ -859,13 +859,22 @@ export function useGalleryListing({
         .do(setGalleryListing);
     } catch (e) {
       console.error(e);
-      // if 403
-      if (await login()) {
-        // and then call this function again
+      if (
+        e.response?.status === 403 &&
+        typeof e.response?.data.message === "string" &&
+        new RegExp("Call '/login' endpoint first?").test(
+          e.response.data.message
+        )
+      ) {
+        if (await login()) {
+          // and then call this function again
+        } else {
+          ArrayUtils.dropLast(path).do((newPath) => {
+            setPath(newPath);
+          });
+        }
       } else {
-        ArrayUtils.dropLast(path).do((newPath) => {
-          setPath(newPath);
-        });
+        throw e;
       }
     } finally {
       setLoading(false);
