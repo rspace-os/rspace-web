@@ -1,0 +1,308 @@
+{
+  "id": 98304,
+  "globalId": "IT98304",
+  "name": "Sample Template RSpace IGSN Demo - 2024-11-20 18:24:03",
+  "description": null,
+  "created": "2024-11-20T18:24:10.572Z",
+  "createdBy": "sysadmin1",
+  "lastModified": "2024-11-20T18:24:10.572Z",
+  "modifiedBy": "sysadmin1",
+  "modifiedByFullName": "System Admin",
+  "deleted": false,
+  "deletedDate": null,
+  "iconId": -1,
+  "quantity": {
+    "numericValue": 0,
+    "unitId": 1
+  },
+  "tags": [],
+  "type": "SAMPLE_TEMPLATE",
+  "attachments": [],
+  "barcodes": [],
+  "identifiers": [],
+  "owner": {
+    "id": -12,
+    "username": "sysadmin1",
+    "email": "sysadmin@researchspace.com",
+    "firstName": "System",
+    "lastName": "Admin",
+    "homeFolderId": 292,
+    "workbenchId": null,
+    "hasPiRole": false,
+    "hasSysAdminRole": true,
+    "_links": []
+  },
+  "permittedActions": [
+    "READ",
+    "UPDATE",
+    "CHANGE_OWNER"
+  ],
+  "sharingMode": "OWNER_GROUPS",
+  "sharedWith": [],
+  "templateId": null,
+  "templateVersion": null,
+  "template": true,
+  "revisionId": null,
+  "version": 1,
+  "historicalVersion": false,
+  "subSampleAlias": {
+    "alias": "subsample",
+    "plural": "subsamples"
+  },
+  "defaultUnitId": 1,
+  "subSamplesCount": 1,
+  "storageTempMin": null,
+  "storageTempMax": null,
+  "sampleSource": "LAB_CREATED",
+  "expiryDate": null,
+  "fields": [
+    {
+      "id": 98304,
+      "globalId": "SF98304",
+      "name": "Field-ID",
+      "type": "text",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 1,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98305,
+      "globalId": "SF98305",
+      "name": "hridPrimary-Next-Section",
+      "type": "text",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 2,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98306,
+      "globalId": "SF98306",
+      "name": "Survey-Number",
+      "type": "number",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 3,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98307,
+      "globalId": "SF98307",
+      "name": "IGSN-QR-Code",
+      "type": "text",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 4,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98308,
+      "globalId": "SF98308",
+      "name": "Sample-Location_latitude",
+      "type": "number",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 5,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98309,
+      "globalId": "SF98309",
+      "name": "Sample-Location_longitude",
+      "type": "number",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 6,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98310,
+      "globalId": "SF98310",
+      "name": "New-Text-Field",
+      "type": "text",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 7,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98311,
+      "globalId": "SF98311",
+      "name": "Item-Description",
+      "type": "text",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 8,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98312,
+      "globalId": "SF98312",
+      "name": "Sample-Photograph",
+      "type": "attachment",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 9,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98313,
+      "globalId": "SF98313",
+      "name": "Length-mm",
+      "type": "number",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 10,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98314,
+      "globalId": "SF98314",
+      "name": "Width-mm",
+      "type": "number",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 11,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    },
+    {
+      "id": 98315,
+      "globalId": "SF98315",
+      "name": "Thickness-mm",
+      "type": "number",
+      "mandatory": false,
+      "content": null,
+      "lastModified": "2024-11-20T18:24:10.573Z",
+      "columnIndex": 12,
+      "definition": null,
+      "selectedOptions": null,
+      "attachment": null,
+      "_links": []
+    }
+  ],
+  "extraFields": [],
+  "subSamples": [
+    {
+      "id": 98304,
+      "globalId": "SS98304",
+      "name": "Sample Template RSpace IGSN Demo - 2024-11-20 18:24:03",
+      "description": null,
+      "created": "2024-11-20T18:24:10.572Z",
+      "createdBy": "sysadmin1",
+      "lastModified": "2024-11-20T18:24:10.572Z",
+      "modifiedBy": "sysadmin1",
+      "modifiedByFullName": null,
+      "deleted": false,
+      "deletedDate": null,
+      "iconId": -1,
+      "tags": [],
+      "attachments": [],
+      "barcodes": [],
+      "identifiers": [],
+      "owner": {
+        "id": -12,
+        "username": "sysadmin1",
+        "email": "sysadmin@researchspace.com",
+        "firstName": "System",
+        "lastName": "Admin",
+        "homeFolderId": 292,
+        "workbenchId": null,
+        "hasPiRole": false,
+        "hasSysAdminRole": true,
+        "_links": []
+      },
+      "permittedActions": [],
+      "sharingMode": "OWNER_GROUPS",
+      "quantity": {
+        "numericValue": 1,
+        "unitId": 3
+      },
+      "type": "SUBSAMPLE",
+      "parentContainers": [],
+      "parentLocation": null,
+      "lastNonWorkbenchParent": null,
+      "lastMoveDate": null,
+      "revisionId": null,
+      "deletedOnSampleDeletion": false,
+      "storedInContainer": false,
+      "_links": [
+        {
+          "link": "http://localhost:8080/api/inventory/v1/subSamples/98304",
+          "rel": "self"
+        },
+        {
+          "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+          "rel": "image"
+        },
+        {
+          "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+          "rel": "thumbnail"
+        }
+      ]
+    }
+  ],
+  "_links": [
+    {
+      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304",
+      "rel": "self"
+    },
+    {
+      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+      "rel": "icon"
+    },
+    {
+      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+      "rel": "thumbnail"
+    },
+    {
+      "link": "http://localhost:8080/api/inventory/v1/sampleTemplates/98304/icon/-1",
+      "rel": "image"
+    }
+  ],
+  "canBeDeleted": true
+}
