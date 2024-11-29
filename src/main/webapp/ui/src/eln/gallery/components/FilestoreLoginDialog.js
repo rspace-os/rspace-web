@@ -9,10 +9,16 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import DialogContentText from "@mui/material/DialogContentText";
 import Stack from "@mui/material/Stack";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import axios from "axios";
+import { doNotAwait } from "../../../util/Util";
+import useOauthToken from "../../../common/useOauthToken";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 const FilestoreLoginContext = React.createContext<{|
   login: ({|
     filesystemName: string,
+    filesystemId: number,
   |}) => Promise<boolean>,
 |}>({
   login: () =>
@@ -24,6 +30,7 @@ const FilestoreLoginContext = React.createContext<{|
 export function useFilestoreLogin(): {|
   login: ({|
     filesystemName: string,
+    filesystemId: number,
   |}) => Promise<boolean>,
 |} {
   const { login } = React.useContext(FilestoreLoginContext);
@@ -38,51 +45,99 @@ export function useFilestoreLogin(): {|
  */
 const FilestoreLoginDialog = ({
   filesystemName,
+  filesystemId,
   onClose,
+  onSuccess,
 }: {|
   filesystemName: string,
+  filesystemId: number,
   onClose: () => void,
+  onSuccess: () => void,
 |}): Node => {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [submitting, setSubmitting] = React.useState(false);
+  const { getToken } = useOauthToken();
+  const { addAlert } = React.useContext(AlertContext);
 
   return (
     <Dialog open onClose={onClose}>
-      <DialogTitle>Filestore Login</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          Please authenticate to file system <strong>{filesystemName}</strong>.
-        </DialogContentText>
-        <Stack spacing={2} sx={{ mt: 2 }}>
-          <TextField
-            size="small"
-            label="Username"
-            value={username}
-            onChange={({ target: { value } }) => {
-              setUsername(value);
-            }}
+      <form
+        onSubmit={doNotAwait(async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
+          try {
+            const api = axios.create({
+              baseURL: "/api/v1/gallery",
+              headers: {
+                Authorization: "Bearer " + (await getToken()),
+              },
+            });
+            await api.post<
+              {|
+                username: string,
+                password: string,
+              |},
+              mixed
+            >(`filesystems/${filesystemId}/login`, {
+              username,
+              password,
+            });
+            onSuccess();
+          } catch (error) {
+            console.error(error);
+            const message =
+              error.response?.status === 403
+                ? "Wrong credentials?"
+                : error.response?.data.message ?? error.message;
+            addAlert(
+              mkAlert({
+                variant: "error",
+                title: "Could not authenticate",
+                message,
+              })
+            );
+          } finally {
+            setSubmitting(false);
+          }
+        })}
+      >
+        <DialogTitle>Filestore Login</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Please authenticate to file system <strong>{filesystemName}</strong>
+            .
+          </DialogContentText>
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            <TextField
+              size="small"
+              label="Username"
+              value={username}
+              onChange={({ target: { value } }) => {
+                setUsername(value);
+              }}
+            />
+            <TextField
+              size="small"
+              label="Password"
+              type="password"
+              value={password}
+              onChange={({ target: { value } }) => {
+                setPassword(value);
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <SubmitSpinnerButton
+            type="submit"
+            loading={submitting}
+            disabled={submitting}
+            label="Login"
           />
-          <TextField
-            size="small"
-            label="Password"
-            type="password"
-            value={password}
-            onChange={({ target: { value } }) => {
-              setPassword(value);
-            }}
-          />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button
-          onClick={() => {
-            // do the login
-          }}
-        >
-          Log In
-        </Button>
-      </DialogActions>
+        </DialogActions>
+      </form>
     </Dialog>
   );
 };
@@ -96,13 +151,17 @@ export function FilestoreLoginContextualDialog({
     r: (boolean) => void,
   |}>(null);
   const [filesystemName, setFilesystemName] = React.useState("");
+  const [filesystemId, setFilesystemId] = React.useState(0);
 
   const login = ({
     filesystemName: newFilesystemName,
+    filesystemId: newFilesystemId,
   }: {|
     filesystemName: string,
+    filesystemId: number,
   |}): Promise<boolean> => {
     setFilesystemName(newFilesystemName);
+    setFilesystemId(newFilesystemId);
     return new Promise((r) => {
       setResolve({ r });
     });
@@ -116,8 +175,13 @@ export function FilestoreLoginContextualDialog({
       {resolve !== null && (
         <FilestoreLoginDialog
           filesystemName={filesystemName}
+          filesystemId={filesystemId}
           onClose={() => {
             resolve.r(false);
+            setResolve(null);
+          }}
+          onSuccess={() => {
+            resolve.r(true);
             setResolve(null);
           }}
         />
