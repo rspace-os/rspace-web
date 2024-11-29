@@ -8,7 +8,9 @@ import DialogContent from "@mui/material/DialogContent";
 import Button from "@mui/material/Button";
 
 const FilestoreLoginContext = React.createContext<{|
-  login: () => Promise<boolean>,
+  login: ({|
+    filesystemName: string,
+  |}) => Promise<boolean>,
 |}>({
   login: () =>
     Promise.reject(
@@ -17,7 +19,9 @@ const FilestoreLoginContext = React.createContext<{|
 });
 
 export function useFilestoreLogin(): {|
-  login: () => Promise<boolean>,
+  login: ({|
+    filesystemName: string,
+  |}) => Promise<boolean>,
 |} {
   const { login } = React.useContext(FilestoreLoginContext);
   return {
@@ -29,8 +33,14 @@ export function FilestoreLoginDialog({ children }: {| children: Node |}): Node {
   const [resolve, setResolve] = React.useState<null | {|
     r: (boolean) => void,
   |}>(null);
+  const [filesystemName, setFilesystemName] = React.useState("");
 
-  const login = (): Promise<boolean> => {
+  const login = ({
+    filesystemName: newFilesystemName,
+  }: {|
+    filesystemName: string,
+  |}): Promise<boolean> => {
+    setFilesystemName(newFilesystemName);
     return new Promise((r) => {
       setResolve({ r });
     });
@@ -50,7 +60,10 @@ export function FilestoreLoginDialog({ children }: {| children: Node |}): Node {
           }}
         >
           <DialogTitle>Filestore Login</DialogTitle>
-          <DialogContent>Login to URL</DialogContent>
+          <DialogContent>
+            Please authenticate to file system <strong>{filesystemName}</strong>
+            .
+          </DialogContent>
           <DialogActions>
             <Button
               onClick={() => {

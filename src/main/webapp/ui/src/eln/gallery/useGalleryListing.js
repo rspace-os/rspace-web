@@ -393,6 +393,7 @@ class LocalGalleryFile implements GalleryFile {
 class Filestore implements GalleryFile {
   id: Id;
   filesystemId: number;
+  filesystemName: string;
   name: string;
   description: Description;
   +isFolder: boolean;
@@ -403,12 +404,14 @@ class Filestore implements GalleryFile {
     id,
     name,
     filesystemId,
+    filesystemName,
     setPath,
     path,
   }: {|
     id: Id,
     name: string,
     filesystemId: number,
+    filesystemName: string,
     path: $ReadOnlyArray<GalleryFile>,
     setPath: ($ReadOnlyArray<GalleryFile>) => void,
   |}) {
@@ -419,6 +422,7 @@ class Filestore implements GalleryFile {
     this.size = 0;
     this.open = () => setPath([...path, this]);
     this.filesystemId = filesystemId;
+    this.filesystemName = filesystemName;
   }
 
   get extension(): string | null {
@@ -773,11 +777,18 @@ export function useGalleryListing({
                       .flatMap(Parsers.isNumber)
                       .elseThrow();
 
+                    const filesystemName = Parsers.getValueWithKey("name")(
+                      filesystem
+                    )
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+
                     return Result.Ok<GalleryFile>(
                       new Filestore({
                         id,
                         name,
                         filesystemId,
+                        filesystemName,
                         path,
                         setPath,
                       })
@@ -807,9 +818,23 @@ export function useGalleryListing({
         Authorization: "Bearer " + (await getToken()),
       },
     });
+    const filestore = ArrayUtils.getAt(0, path)
+      .toResult(
+        () =>
+          new Error(
+            "Remote files path should never be empty. Where is the filestore?"
+          )
+      )
+      .flatMap((p) =>
+        p instanceof Filestore
+          ? Result.Ok(p)
+          : Result.Error([new Error("First part of path isn't a filestore")])
+      )
+      .elseThrow();
+
     try {
       const { data } = await api.get<mixed>(
-        `filestores/${path[0].id}/browse?remotePath=%2F`
+        `filestores/${filestore.id}/browse?remotePath=%2F`
       );
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -871,7 +896,11 @@ export function useGalleryListing({
           e.response.data.message
         )
       ) {
-        if (await login()) {
+        if (
+          await login({
+            filesystemName: filestore.filesystemName,
+          })
+        ) {
           // and then call this function again
         } else {
           ArrayUtils.dropLast(path).do((newPath) => {
