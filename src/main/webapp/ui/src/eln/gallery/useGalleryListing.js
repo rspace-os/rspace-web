@@ -858,11 +858,9 @@ export function useGalleryListing({
         .do(setGalleryListing);
     } catch (e) {
       console.error(e);
-      login((l) => {
-        console.debug("login: ", l);
-        // then show a login dialog
-        // and then call this function again
-      });
+      const l = await login();
+      console.debug("login", l);
+      // and then call this function again
     } finally {
       setLoading(false);
     }
