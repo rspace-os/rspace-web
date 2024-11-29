@@ -385,6 +385,7 @@ class LocalGalleryFile implements GalleryFile {
 
 class Filestore implements GalleryFile {
   id: Id;
+  filesystemId: number;
   name: string;
   description: Description;
   +isFolder: boolean;
@@ -394,11 +395,13 @@ class Filestore implements GalleryFile {
   constructor({
     id,
     name,
+    filesystemId,
     setPath,
     path,
   }: {|
     id: Id,
     name: string,
+    filesystemId: number,
     path: $ReadOnlyArray<GalleryFile>,
     setPath: ($ReadOnlyArray<GalleryFile>) => void,
   |}) {
@@ -408,6 +411,7 @@ class Filestore implements GalleryFile {
     this.isFolder = true;
     this.size = 0;
     this.open = () => setPath([...path, this]);
+    this.filesystemId = filesystemId;
   }
 
   get extension(): string | null {
@@ -748,10 +752,24 @@ export function useGalleryListing({
                       .flatMap(Parsers.isString)
                       .elseThrow();
 
+                    const filesystem = Parsers.getValueWithKey("fileSystem")(
+                      obj
+                    )
+                      .flatMap(Parsers.isObject)
+                      .flatMap(Parsers.isNotNull)
+                      .elseThrow();
+
+                    const filesystemId = Parsers.getValueWithKey("id")(
+                      filesystem
+                    )
+                      .flatMap(Parsers.isNumber)
+                      .elseThrow();
+
                     return Result.Ok<GalleryFile>(
                       new Filestore({
                         id,
                         name,
+                        filesystemId,
                         path,
                         setPath,
                       })
