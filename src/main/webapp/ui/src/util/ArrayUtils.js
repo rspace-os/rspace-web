@@ -54,10 +54,26 @@ export function head<T>(array: $ReadOnlyArray<T>): Result<T> {
     : Result.Error([new Error("Array is empty")]);
 }
 
+/**
+ * Extract the last element of an array, if there is one
+ */
 export function last<T>(array: $ReadOnlyArray<T>): Result<T> {
   return array.length > 0
     ? Result.Ok(array[array.length - 1])
     : Result.Error([new Error("Array is empty")]);
+}
+
+/**
+ * Take a copy of an array but without the last element.
+ * Returns Result.Error if the array is empty.
+ */
+export function dropLast<T>(
+  array: $ReadOnlyArray<T>
+): Result<$ReadOnlyArray<T>> {
+  if (array.length === 0) return Result.Error([new Error("Array is empty")]);
+  const copy = [...array];
+  copy.pop();
+  return Result.Ok(copy);
 }
 
 /**

@@ -6,6 +6,7 @@ import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
+import * as ArrayUtils from "../../util/ArrayUtils";
 import { gallerySectionCollectiveNoun, type GallerySection } from "./common";
 import {
   filenameExceptExtension,
@@ -863,9 +864,14 @@ export function useGalleryListing({
         .do(setGalleryListing);
     } catch (e) {
       console.error(e);
-      const l = await login();
-      console.debug("login", l);
-      // and then call this function again
+      // if 403
+      if (await login()) {
+        // and then call this function again
+      } else {
+        ArrayUtils.dropLast(path).do((newPath) => {
+          setPath(newPath);
+        });
+      }
     } finally {
       setLoading(false);
     }

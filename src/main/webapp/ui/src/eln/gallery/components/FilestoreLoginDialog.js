@@ -1,6 +1,11 @@
 //@flow
 
 import React, { type Node } from "react";
+import { Dialog } from "../../../components/DialogBoundary";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import Button from "@mui/material/Button";
 
 const FilestoreLoginContext = React.createContext<{|
   login: () => Promise<boolean>,
@@ -37,13 +42,33 @@ export function FilestoreLoginDialog({ children }: {| children: Node |}): Node {
         {children}
       </FilestoreLoginContext.Provider>
       {resolve !== null && (
-        <button
-          onClick={() => {
-            resolve.r(true);
+        <Dialog
+          open
+          onClose={() => {
+            resolve.r(false);
+            setResolve(null);
           }}
         >
-          resolve the promise
-        </button>
+          <DialogTitle>Filestore Login</DialogTitle>
+          <DialogContent>Login to URL</DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                resolve.r(false);
+                setResolve(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                // do the login
+              }}
+            >
+              Log In
+            </Button>
+          </DialogActions>
+        </Dialog>
       )}
     </>
   );
