@@ -54,6 +54,7 @@ describe("useGalleryActions", () => {
                   },
                   setName: () => {},
                   setDescription: () => {},
+                  linkedDocuments: null,
                 },
               ])
             );
@@ -151,6 +152,7 @@ describe("useGalleryActions", () => {
                   },
                   setName: () => {},
                   setDescription: () => {},
+                  linkedDocuments: null,
                 },
               ])
             );
@@ -248,6 +250,7 @@ describe("useGalleryActions", () => {
                   },
                   setName: () => {},
                   setDescription: () => {},
+                  linkedDocuments: null,
                 },
               ])
             ).to({
