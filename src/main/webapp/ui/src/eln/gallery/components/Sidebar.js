@@ -68,7 +68,7 @@ library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
 library.add(faDatabase);
-import axios from "axios";
+import axios, { type Axios } from "axios";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 
@@ -321,16 +321,20 @@ const AddFilestoreMenuItem = ({
     |}>
   >([]);
   const { getToken } = useOauthToken();
-
-  React.useEffect(() => {
-    void (async () => {
-      const api = axios.create({
+  const api = React.useRef<Promise<Axios>>(
+    (async () => {
+      return axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
           Authorization: "Bearer " + (await getToken()),
         },
       });
-      const { data } = await api.get<mixed>("filesystems");
+    })()
+  );
+
+  React.useEffect(() => {
+    void (async () => {
+      const { data } = await (await api.current).get<mixed>("filesystems");
       Parsers.isArray(data)
         .flatMap((array) =>
           Result.all(
