@@ -401,6 +401,7 @@ class Filestore implements GalleryFile {
   +isFolder: boolean;
   +size: number;
   +open: () => void;
+  +path: $ReadOnlyArray<GalleryFile>;
 
   constructor({
     id,
@@ -425,6 +426,7 @@ class Filestore implements GalleryFile {
     this.open = () => setPath([...path, this]);
     this.filesystemId = filesystemId;
     this.filesystemName = filesystemName;
+    this.path = path;
   }
 
   get extension(): string | null {
@@ -435,12 +437,8 @@ class Filestore implements GalleryFile {
     return "/images/icons/fileStoreLink.png";
   }
 
-  get path(): $ReadOnlyArray<GalleryFile> {
-    return [];
-  }
-
   pathAsString(): string {
-    return "";
+    return "/";
   }
 
   get isSystemFolder(): boolean {
@@ -475,6 +473,8 @@ class RemoteFile implements GalleryFile {
   +isFolder: boolean;
   +size: number;
   +modificationDate: Date;
+  +open: () => void;
+  +path: $ReadOnlyArray<GalleryFile>;
 
   constructor({
     nfsId,
@@ -482,12 +482,16 @@ class RemoteFile implements GalleryFile {
     folder,
     fileSize,
     modificationDate,
+    path,
+    setPath,
   }: {|
     nfsId: number,
     name: string,
     folder: boolean,
     fileSize: number,
     modificationDate: Date,
+    path: $ReadOnlyArray<GalleryFile>,
+    setPath: ($ReadOnlyArray<GalleryFile>) => void,
   |}) {
     this.nfsId = nfsId;
     this.name = name;
@@ -495,6 +499,8 @@ class RemoteFile implements GalleryFile {
     this.isFolder = folder;
     this.size = fileSize;
     this.modificationDate = modificationDate;
+    this.path = path;
+    if (folder) this.open = () => setPath([...path, this]);
   }
 
   get id(): Id {
@@ -506,15 +512,13 @@ class RemoteFile implements GalleryFile {
   }
 
   get thumbnailUrl(): string {
+    if (this.isFolder) return "/images/icons/folder.png";
     return "/images/icons/unknownDocument.png";
   }
 
-  get path(): $ReadOnlyArray<GalleryFile> {
-    return [];
-  }
-
   pathAsString(): string {
-    return "";
+    const parent = ArrayUtils.last(this.path).elseThrow();
+    return `${parent.pathAsString()}${this.name}/`;
   }
 
   get isSystemFolder(): boolean {
@@ -844,7 +848,9 @@ export function useGalleryListing({
 
     try {
       const { data } = await api.get<mixed>(
-        `filestores/${filestore.id}/browse?remotePath=%2F`
+        `filestores/${filestore.id}/browse?remotePath=${ArrayUtils.last(path)
+          .map((file) => file.pathAsString())
+          .orElse("/")}`
       );
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -887,6 +893,8 @@ export function useGalleryListing({
                         folder,
                         fileSize,
                         modificationDate,
+                        path,
+                        setPath,
                       })
                     );
                   } catch (e) {
