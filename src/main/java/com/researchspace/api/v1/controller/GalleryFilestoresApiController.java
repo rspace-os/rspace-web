@@ -9,13 +9,22 @@ import com.researchspace.model.netfiles.NfsFileSystemInfo;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.ApiNfsRemotePathBrowseResult;
 import com.researchspace.netfiles.NfsClient;
+import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
+import com.researchspace.netfiles.NfsTarget;
+import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
@@ -32,7 +41,7 @@ public class GalleryFilestoresApiController extends BaseApiController
     implements GalleryFilestoresApi {
 
   @Autowired private NfsManager nfsManager;
-
+  @Autowired private NfsFileHandler nfsFileHandler;
   @Autowired private GalleryFilestoresCredentialsStore credentialsStore;
 
   @Override
@@ -75,12 +84,29 @@ public class GalleryFilestoresApiController extends BaseApiController
   public void downloadFromFilestore(
       @PathVariable Long filestoreId,
       @RequestParam(value = "remotePath") String remotePath,
-      @RequestAttribute(name = "user") User user)
+      @RequestParam(name = "remoteId", required = false) Long remoteId,
+      @RequestAttribute(name = "user") User user,
+      HttpServletResponse response)
       throws IOException {
 
-    log.info("download from filestore " + filestoreId + ": " + remotePath);
+    NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    NfsFileSystem filesystem = filestore.getFileSystem();
+    NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
 
-    throw new UnsupportedOperationException("download not supported yet");
+    String fullPath = filestore.getAbsolutePath(remotePath);
+    NfsFileDetails nfsFileDetails =
+        nfsFileHandler.downloadNfsFileToRSpace(new NfsTarget(fullPath, remoteId), nfsClient);
+    File downloadedFile = nfsFileDetails.getLocalFile();
+    log.info("downloaded to: " + downloadedFile.getCanonicalPath());
+
+    response.setContentType("application/octet-stream");
+    response.setContentLength((int) downloadedFile.length());
+    response.setHeader(
+        "Content-Disposition", "attachment; filename=\"" + downloadedFile.getName() + "\"");
+    try (InputStream is = new FileInputStream(downloadedFile);
+        ServletOutputStream out = response.getOutputStream()) {
+      IOUtils.copy(is, out);
+    }
   }
 
   @Override

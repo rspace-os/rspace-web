@@ -25,8 +25,7 @@ public class GalleryFilestoreTestUtils {
     return createIrodsFileSystem(null);
   }
 
-  public static NfsFileStore createFileStore(
-      String name, User user, NfsFileSystem filesystem) {
+  public static NfsFileStore createFileStore(String name, User user, NfsFileSystem filesystem) {
     NfsFileStore fileStore = new NfsFileStore();
     fileStore.setFileSystem(filesystem);
     fileStore.setDeleted(false);

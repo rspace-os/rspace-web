@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ public class GalleryFilestoresCredentialsStore {
   @Getter(AccessLevel.PROTECTED)
   private Map<NfsUserFileSystem, ApiNfsCredentials> credentialsMapCache = new LinkedHashMap<>();
 
+  @Setter(AccessLevel.PROTECTED)
   private NfsAuthentication nfsAuthentication;
 
   public GalleryFilestoresCredentialsStore(

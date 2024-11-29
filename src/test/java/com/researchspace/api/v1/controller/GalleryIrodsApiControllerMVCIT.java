@@ -449,8 +449,7 @@ public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   private Long createIrodsFileStore(NfsFileSystem fileSystem, String name, String path) {
-    NfsFileStore fileStore =
-        GalleryFilestoreTestUtils.createFileStore(name, user1, fileSystem);
+    NfsFileStore fileStore = GalleryFilestoreTestUtils.createFileStore(name, user1, fileSystem);
     fileStore.setPath(path);
     nfsManager.saveNfsFileStore(fileStore);
     return fileStore.getId();

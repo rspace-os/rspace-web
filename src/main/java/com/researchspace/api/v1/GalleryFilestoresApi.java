@@ -11,6 +11,7 @@ import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.ApiNfsRemotePathBrowseResult;
 import java.io.IOException;
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -33,7 +34,9 @@ public interface GalleryFilestoresApi {
 
   @GetMapping("/filestores/{filestoreId}/download")
   @ResponseBody
-  void downloadFromFilestore(Long filestoreId, String downloadPath, User user) throws IOException;
+  void downloadFromFilestore(
+      Long filestoreId, String downloadPath, Long remoteId, User user, HttpServletResponse response)
+      throws IOException;
 
   @PostMapping("/filestores")
   @ResponseBody

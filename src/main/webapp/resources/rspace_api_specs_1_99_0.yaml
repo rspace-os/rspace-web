@@ -1820,6 +1820,7 @@ paths:
       parameters:
         - $ref: '#/parameters/filestoreIdParam'
         - $ref: '#/parameters/filestoreRemotePathParam'
+        - $ref: '#/parameters/filestoreRemoteIdParam'
       responses:
         '200':
           description: A resource
@@ -2801,6 +2802,12 @@ parameters:
     in: query
     description: Filestore/Filesystem path to operate on
     type: string
+  filestoreRemoteIdParam:
+    name: remoteId
+    in: query
+    description: Id of a remote resource to operate on (if supported)
+    type: integer
+    format: int64
   filesystemIdParam:
     name: filesystemId
     in: path

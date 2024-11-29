@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -11,11 +12,18 @@ import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemInfo;
+import com.researchspace.netfiles.ApiNfsCredentials;
+import com.researchspace.netfiles.NfsAuthentication;
+import com.researchspace.netfiles.NfsClient;
+import com.researchspace.netfiles.NfsFileDetails;
+import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.NfsManager;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -27,6 +35,8 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
   String apiKey;
 
   @Autowired private NfsManager nfsManager;
+
+  @Autowired private GalleryFilestoresCredentialsStore credentialsStore;
 
   @Before
   public void setup() throws Exception {
@@ -144,32 +154,92 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  public void testRemoteFileDownload() throws Exception {
+  public void testLoginDownloadDummyFile() throws Exception {
 
     // add test filesystem
     NfsFileSystem testFilesystem = GalleryFilestoreTestUtils.createIrodsFileSystem();
     nfsManager.saveNfsFileSystem(testFilesystem);
 
     // add test filestore
-    NfsFileStore testFilestore = GalleryFilestoreTestUtils.createFileStore(
-        "test", anyUser, testFilesystem);
+    NfsFileStore testFilestore =
+        GalleryFilestoreTestUtils.createFileStore("test", anyUser, testFilesystem);
     nfsManager.saveNfsFileStore(testFilestore);
 
     // try downloading without authenticating to filesystem
     MvcResult result =
         mockMvc
-            .perform(createBuilderForGet(API_VERSION.ONE, apiKey,
-                "/gallery/filestores/" + testFilestore.getId() + "/download", anyUser)
-                .param("remotePath", "testResource"))
+            .perform(
+                createBuilderForGet(
+                        API_VERSION.ONE,
+                        apiKey,
+                        "/gallery/filestores/" + testFilestore.getId() + "/download",
+                        anyUser)
+                    .param("remotePath", "testResource"))
             .andExpect(status().is4xxClientError())
             .andReturn();
     assertNotNull(result.getResolvedException());
-    assertEquals("download not supported yet", result.getResolvedException().getMessage());
-    //assertEquals("[ ]", result.getResponse().getContentAsString());
+    assertEquals(
+        "User not logged to filesystem [irods_test_instance]. Call '/login' " + "endpoint first?",
+        result.getResolvedException().getMessage());
 
-    // mock nfsClient that returns a file when queried
-    // TODO: WIP
+    // set mocked nfsAuthenticator to allow login with dummy credentials,
+    // and to return mocked nfsClient that will return a test content on download attempt
+    NfsAuthentication mockNfsAuthentication = Mockito.mock(NfsAuthentication.class);
+    credentialsStore.setNfsAuthentication(mockNfsAuthentication);
+    NfsClient mockNfsClient = Mockito.mock(NfsClient.class);
 
+    // mock calls used by login flow
+    ApiNfsCredentials dummyCredentials = new ApiNfsCredentials(anyUser, "testuser", "testpass");
+    when(mockNfsAuthentication.validateCredentials(
+            dummyCredentials.getUsername(), dummyCredentials.getPassword(), anyUser))
+        .thenReturn(null);
+    when(mockNfsAuthentication.login(
+            dummyCredentials.getUsername(),
+            dummyCredentials.getPassword(),
+            testFilesystem,
+            anyUser))
+        .thenReturn(mockNfsClient);
+    when(mockNfsClient.isUserLoggedIn()).thenReturn(true);
+
+    // login with dummy credentials
+    assertEquals(0, credentialsStore.getCredentialsMapCache().size());
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/gallery/filesystems/" + testFilesystem.getId() + "/login",
+                    anyUser,
+                    dummyCredentials))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    assertEquals(1, credentialsStore.getCredentialsMapCache().size());
+
+    // mock calls used by download flow
+    NfsTarget dummyTarget = new NfsTarget("testResourcePath");
+    NfsFileDetails dummyFileDetails = new NfsFileDetails();
+    String dummyFileContent = "testContent";
+    dummyFileDetails.setName("testFile");
+    dummyFileDetails.setRemoteInputStream(new ByteArrayInputStream(dummyFileContent.getBytes()));
+    when(mockNfsClient.queryNfsFileForDownload(dummyTarget)).thenReturn(dummyFileDetails);
+
+    // try downloading now
+    result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                        API_VERSION.ONE,
+                        apiKey,
+                        "/gallery/filestores/" + testFilestore.getId() + "/download",
+                        anyUser)
+                    .param("remotePath", dummyTarget.getPath()))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    assertEquals("application/octet-stream", result.getResponse().getContentType());
+    byte[] responseBytes = result.getResponse().getContentAsByteArray();
+    assertEquals(11, responseBytes.length);
+    assertEquals(dummyFileContent, new String(responseBytes));
   }
-
 }
