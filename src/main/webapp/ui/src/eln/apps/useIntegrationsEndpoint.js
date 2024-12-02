@@ -116,7 +116,6 @@ export type IntegrationStates = {|
     ["googledrive.linking.enabled"]: Optional<boolean>,
   |}>,
   JOVE: IntegrationState<{||}>,
-  MENDELEY: IntegrationState<{||}>,
   MSTEAMS: IntegrationState<
     Array<
       Optional<{|
@@ -414,10 +413,6 @@ function decodeJove(data: FetchedState): IntegrationStates["JOVE"] {
   return { mode: parseState(data), credentials: {} };
 }
 
-function decodeMendeley(data: FetchedState): IntegrationStates["MENDELEY"] {
-  return { mode: parseState(data), credentials: {} };
-}
-
 function decodeMsTeams(data: FetchedState): IntegrationStates["MSTEAMS"] {
   return {
     mode: parseState(data),
@@ -552,7 +547,6 @@ function decodeIntegrationStates(data: {
     GITHUB: decodeGitHub(data.GITHUB),
     GOOGLEDRIVE: decodeGoogleDrive(data.GOOGLEDRIVE),
     JOVE: decodeJove(data.JOVE),
-    MENDELEY: decodeMendeley(data.MENDELEY),
     MSTEAMS: decodeMsTeams(data.MSTEAMS),
     NEXTCLOUD: decodeNextCloud(data.NEXTCLOUD),
     OMERO: decodeOmero(data.OMERO),
@@ -827,14 +821,6 @@ const encodeIntegrationState = <I: Integration>(
   if (integration === "JOVE") {
     return {
       name: "JOVE",
-      available: data.mode !== "UNAVAILABLE",
-      enabled: data.mode === "ENABLED",
-      options: {},
-    };
-  }
-  if (integration === "MENDELEY") {
-    return {
-      name: "MENDELEY",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {},
@@ -1137,8 +1123,6 @@ export function useIntegrationsEndpoint(): {|
               return decodeGoogleDrive(responseData.data);
             case "JOVE":
               return decodeJove(responseData.data);
-            case "MENDELEY":
-              return decodeMendeley(responseData.data);
             case "MSTEAMS":
               return decodeMsTeams(responseData.data);
             case "NEXTCLOUD":
@@ -1241,8 +1225,6 @@ export function useIntegrationsEndpoint(): {|
           return decodeGoogleDrive(response.data.data);
         case "JOVE":
           return decodeJove(response.data.data);
-        case "MENDELEY":
-          return decodeMendeley(response.data.data);
         case "MSTEAMS":
           return decodeMsTeams(response.data.data);
         case "NEXTCLOUD":

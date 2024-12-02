@@ -53,7 +53,6 @@
         <div id="owncloud.available.description"><spring:message code="system.property.description.owncloud.available" /></div>
         <div id="nextcloud.available.description"><spring:message code="system.property.description.nextcloud.available" /></div>
         <div id="evernote.available.description"><spring:message code="system.property.description.evernote.available" /></div>
-        <div id="mendeley.available.description"><spring:message code="system.property.description.mendeley.available" /></div>
         <div id="chemistry.available.description"><spring:message code="system.property.description.chemistry.available" /></div>
         <div id="slack.available.description"><spring:message code="system.property.description.slack.available" /></div>
         <div id="orcid.available.description"><spring:message code="system.property.description.orcid.available" /></div>

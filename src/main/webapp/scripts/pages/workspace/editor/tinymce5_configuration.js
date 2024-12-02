@@ -455,7 +455,6 @@ function initTinyMCE(selector) {
 		var egnyteEnabled      = integrations.EGNYTE.enabled && integrations.EGNYTE.available;
 		var gitHubEnabled      = integrations.GITHUB.enabled && integrations.GITHUB.available;
 		var chemistryEnabled      = integrations.CHEMISTRY.enabled && integrations.CHEMISTRY.available;
-		var mendeleyEnabled    = integrations.MENDELEY.enabled && integrations.MENDELEY.available;
 		var protocolsIOEnabled = integrations.PROTOCOLS_IO.enabled && integrations.PROTOCOLS_IO.available;
 		var ownCloudEnabled    = integrations.OWNCLOUD.enabled && integrations.OWNCLOUD.available && properties["ownCloud.url"] !== '';
 		var nextCloudEnabled    = integrations.NEXTCLOUD.enabled && integrations.NEXTCLOUD.available && properties["nextcloud.url"] !== '';
@@ -540,11 +539,6 @@ function initTinyMCE(selector) {
 			localTinymcesetup.external_plugins["pyrat"] = "/scripts/externalTinymcePlugins/pyrat/plugin.min.js";
 			addToToolbarIfNotPresent(localTinymcesetup, " | pyrat");
 			addToMenuIfNotPresent(localTinymcesetup, " | optPyrat");
-		}
-		if (mendeleyEnabled) {
-			localTinymcesetup.external_plugins["mendeley"] = "/scripts/externalTinymcePlugins/mendeley/plugin.min.js";
-			addToToolbarIfNotPresent(localTinymcesetup, " | mendeley");
-			addToMenuIfNotPresent(localTinymcesetup, " | optMendeley");
 		}
 		if (chemistryEnabled) {
 			localTinymcesetup.external_plugins["cheminfo"] = "/scripts/externalTinymcePlugins/chemInfo/plugin.min.js";

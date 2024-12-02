@@ -77,7 +77,6 @@ INFO 24 Mar 2022 02:10:56,449 - BaseConfig.lambda$snapgeneWSClient$0 | Creating 
 INFO 24 Mar 2022 02:10:56,485 - OriginRefererCheckerImpl.init | Additional Accepted Domains: [https://rs-inventory-alpha.researchspace.com,https://129.215.1.97]
 INFO 24 Mar 2022 02:10:56,486 - OriginRefererCheckerImpl.init | All accepted domains : [https://pangolin8085.researchspace.com,https://rs-inventory-alpha.researchspace.com,https://129.215.1.97,http://localhost:,https://localhost:]
 INFO 24 Mar 2022 02:10:57,182 - ProdAPIConfig.accountInitialiser | Beta API account initialisor is enabled
-INFO 24 Mar 2022 02:10:57,251 - RSpaceSocialConfig.configureMendeley | Configuring Mendeley: Adding 5566 and MXvHQwIVZXfwlDnC
 INFO 24 Mar 2022 02:10:57,684 - StdSchedulerFactory.instantiate | Using default implementation for ThreadExecutor
 INFO 24 Mar 2022 02:10:57,703 - SchedulerSignalerImpl.<init> | Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
 INFO 24 Mar 2022 02:10:57,703 - QuartzScheduler.<init> | Quartz Scheduler v.2.3.2 created.
@@ -328,10 +327,6 @@ mail.replyTo: do-not-reply@researchspace.com
 mail.ssl.enabled: false
 mail.transport.protocol: smtp
 max.tiff.conversionSize: 8192000
-mendeley.id: 5566
-mendeley.secret: MXv...
-mendeley.id: 5566
-mendeley.secret: MXv...
 msoffice.wopi.enabled: false
 msoffice.wopi.proofKey.validation.enabled: true
 netfilestores.enabled: true

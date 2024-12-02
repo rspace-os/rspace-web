@@ -31,9 +31,6 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${onedrive.client.id}")
   private String oneDriveClientId;
 
-  @Value("${mendeley.id}")
-  private String mendeleyId;
-
   @Value("${server.urls.prefix}")
   private String baseURL;
 
@@ -135,8 +132,6 @@ public class DeploymentPropertiesController extends BaseController {
         return joveApiUrl;
       case "onedrive.redirect":
         return oneDriveRedirect;
-      case "mendeley.id":
-        return mendeleyId;
       case "server.urls.prefix":
         return baseURL;
       case "onedrive.client.id":
@@ -219,8 +214,6 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("chemistry.available", rc.get("chemistry.available").getValue());
     properties.put(SNAPGENE_AVAILABLE, rc.get(SNAPGENE_AVAILABLE).getValue());
 
-    properties.put("mendeley.available", rc.get("mendeley.available").getValue());
-    properties.put("mendeley.id", mendeleyId);
     properties.put("baseURL", baseURL);
 
     properties.put("labtools.server.location", labToolsServerUrl);

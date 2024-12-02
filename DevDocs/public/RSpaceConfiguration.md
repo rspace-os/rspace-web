@@ -290,11 +290,6 @@ You can provide multiple files using a comma-separated list. Remember to use an 
 
 ### External application connections
 
-The following optional properties enable RSpace to connect to Mendeley (if Mendeley integration is enabled):
-
-* **mendeley.id** Numeric application id obtained from Mendeley developer site. Default is unset.
-* **mendeley.secret** Secret word obtained from Mendeley developer site. Default is unset.
-
 The following optional properties enable RSpace to connect to OneDrive (if OneDrive integration is enabled)::
 * **onedrive.client.id**  application id obtained from OneDrive developer site. Default is unset.
 * **onedrive.redirect** Callback URL that is configured on OneDrive developer site for this RSpace. Default is unset.

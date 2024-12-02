@@ -90,8 +90,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
           Preference.DROPBOX,
           Preference.GOOGLEDRIVE,
           Preference.CHEMISTRY,
-          Preference.ONEDRIVE,
-          Preference.MENDELEY);
+          Preference.ONEDRIVE);
 
   // for testing, shouldn't be exposed in interface
   public Map<SystemProperty, List<SystemProperty>> getParent2ChildMap() {

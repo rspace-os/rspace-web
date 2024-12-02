@@ -54,7 +54,6 @@ const docLinks: { [string]: URL } = {
   github: mkDocLink("y2080yw30x"),
   cloudstorage: mkDocLink("j2z5f5r90q"),
   jove: mkDocLink("mopbqzzdf5"),
-  mendeley: mkDocLink("xbca81rbxo"),
   nextcloud: mkDocLink("na3hn8ilee"),
   omero: mkDocLink("bwwbpkll90"),
   owncloud: mkDocLink("v8ss2uso0a"),
