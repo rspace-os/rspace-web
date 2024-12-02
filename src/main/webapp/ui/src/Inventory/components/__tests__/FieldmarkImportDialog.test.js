@@ -30,9 +30,10 @@ jest.mock("../../../common/InvApiService", () => ({
   get: (resource) => {
     if (resource === "/fieldmark/notebooks")
       return Promise.resolve({ data: mockFieldmarkNotebooksJson });
-    if (
-      resource === "/fieldmark/import/notebook/1726126204618-rspace-igsn-demo"
-    )
+    throw new Error("Unknown resource");
+  },
+  post: (resource) => {
+    if (resource === "/import/fieldmark/notebook")
       return Promise.resolve({ data: mockFieldmarkImportJson });
     throw new Error("Unknown resource");
   },
