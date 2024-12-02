@@ -13,6 +13,7 @@ import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import { withStyles } from "Styles";
 import { observer } from "mobx-react-lite";
@@ -224,7 +225,9 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           height="calc(100% + 16px)"
         >
           <Grid item>
-            <Typography variant="h3">Import a DMP into the Gallery</Typography>
+            <DialogTitle variant="h3">
+              Import a DMP into the Gallery
+            </DialogTitle>
           </Grid>
           <Grid item>
             <Typography variant="body2">
