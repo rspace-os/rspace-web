@@ -1786,7 +1786,7 @@ paths:
       parameters:
         - $ref: '#/parameters/filesystemIdPostParam'
         - $ref: '#/parameters/filestoreNamePostParam'
-        - $ref: '#/parameters/filestoreRemotePathParam'
+        - $ref: '#/parameters/filestorePathPostParam'
       responses:
         '201':
           description: Success
@@ -2801,6 +2801,11 @@ parameters:
     name: remotePath
     in: query
     description: Filestore/Filesystem path to operate on
+    type: string
+  filestorePathPostParam:
+    name: pathToSave
+    in: query
+    description: Path to the dir that filestore should be rooted at. The value should be taken from 'logicPath' property of filesystem's `/browse` response.
     type: string
   filestoreRemoteIdParam:
     name: remoteId

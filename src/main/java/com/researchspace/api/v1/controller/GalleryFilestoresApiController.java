@@ -113,7 +113,7 @@ public class GalleryFilestoresApiController extends BaseApiController
   public NfsFileStoreInfo createFilestore(
       @RequestParam("filesystemId") Long filesystemId,
       @RequestParam("name") String filestoreName,
-      @RequestParam("remotePath") String remotePath,
+      @RequestParam("pathToSave") String pathToSave,
       @RequestAttribute(name = "user") User user) {
 
     boolean filestoreNameUnique = nfsManager.verifyFileStoreNameUniqueForUser(filestoreName, user);
@@ -125,7 +125,7 @@ public class GalleryFilestoresApiController extends BaseApiController
     }
 
     NfsFileStore userStore =
-        nfsManager.createAndSaveNewFileStore(filesystemId, filestoreName, remotePath, user);
+        nfsManager.createAndSaveNewFileStore(filesystemId, filestoreName, pathToSave, user);
     return userStore.toFileStoreInfo();
   }
 

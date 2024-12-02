@@ -111,7 +111,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
                 createBuilderForPost(API_VERSION.ONE, apiKey, "/gallery/filestores", anyUser)
                     .param("filesystemId", "" + testFilesystem.getId())
                     .param("name", "testNewFS")
-                    .param("remotePath", "testNewRemotePath"))
+                    .param("pathToSave", "testNewFilestorePath"))
             .andExpect(status().isCreated())
             .andReturn();
 
@@ -120,7 +120,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     assertNotNull(createdFilestoreInfo);
     assertEquals(testFilesystem.getName(), createdFilestoreInfo.getFileSystem().getName());
     assertEquals("testNewFS", createdFilestoreInfo.getName());
-    assertEquals("testNewRemotePath", createdFilestoreInfo.getPath());
+    assertEquals("testNewFilestorePath", createdFilestoreInfo.getPath());
 
     // check new filestore is returned by listing
     result =
