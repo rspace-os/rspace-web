@@ -600,6 +600,15 @@ by accessibility technologies, use [DialogBoundary][] to prevent MUI from making
 these floating elements inert.
 
 
+### Make sure every Dialog has a DialogTitle
+
+
+If I Dialog has a DialogTitle then Material UI will automatically wire up the
+latter to the former with an `aria-labelledby` attribute. Every DOM node with
+role "dialog" must have a label and this is the simplest way to achieve that
+given that sighted user will need a title too.
+
+
 ### Automatically adjusted heading levels
 
 It is important that heading levels are rendered in order without skipping to
