@@ -5,7 +5,7 @@
 /* eslint-env jest */
 import "../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import { render, cleanup, screen, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import FieldmarkImportDialog from "../FieldmarkImportDialog";
@@ -57,14 +57,21 @@ describe("FieldmarkImportDialog", () => {
       </ThemeProvider>
     );
 
-    await user.click(await screen.findByRole("radio"));
-    await user.click(screen.getByRole("button", { name: /import/i }));
+    const radio = await screen.findByRole("radio");
+    await act(async () => {
+      await user.click(radio);
+    });
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /import/i }));
+    });
 
     await screen.findByText("Successfully imported notebook.");
 
-    await user.click(
-      screen.getByRole("button", { name: "1 sub-messages. Toggle to show" })
-    );
+    await act(async () => {
+      await user.click(
+        screen.getByRole("button", { name: "1 sub-messages. Toggle to show" })
+      );
+    });
 
     expect(
       screen.getByText("Container RSpace IGSN Demo - 2024-11-14 10:32:03")
