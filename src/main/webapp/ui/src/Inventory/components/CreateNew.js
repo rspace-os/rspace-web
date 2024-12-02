@@ -26,9 +26,23 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 }));
 
 type CreateNewArgs = {|
+  /**
+   * Called whenever a menu item is clicked, and SHOULD cause the menu to
+   * close.
+   */
   onClick: () => void,
 |};
 
+/**
+ * The menu for creating new items in Inventory, be that creating new items
+ * from scratch by opening the create new forms for the respective record types
+ * or to import data from outside sources.
+ *
+ * The button and menu is styled to be consistent with create menus across
+ * other parts of the product, providing a consistent look-and-feel. The
+ * button that triggers the menu is styled with the `callToAction` colour so
+ * that the button stands out on the page.
+ */
 function CreateNew({ onClick }: CreateNewArgs): Node {
   const { searchStore, trackingStore, uiStore, importStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
