@@ -24,11 +24,11 @@ export default function ArgosNewMenuItem({
         avatar={<CardMedia image={ArgosIcon} />}
         backgroundColor={COLOR}
         foregroundColor={{ ...COLOR, lightness: 28 }}
-        subheader="Import from argos.eu"
         onClick={() => {
           setShowDMPDialog(true);
         }}
         aria-haspopup="dialog"
+        compact
       />
       <EventBoundary>
         <DMPDialog

@@ -532,8 +532,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Grid>
           <Grid item>
             <Typography variant="body2">
-              Importing a DMP will make it available to view and reference
-              within RSpace.
+              Importing a DMP from <strong>argos.openaire.eu</strong> will make
+              it available to view and reference within RSpace.
             </Typography>
             <Typography variant="body2">
               See{" "}
