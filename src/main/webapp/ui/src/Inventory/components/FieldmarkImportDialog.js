@@ -65,6 +65,10 @@ export const FIELDMARK_COLOR = {
   },
 };
 
+/**
+ * This class allows us to provide a link to the newly created container in the
+ * success alert toast.
+ */
 class ResponseContainer implements LinkableRecord {
   id: ?number;
   globalId: ?string;
@@ -160,6 +164,14 @@ type Notebook = {
   ...
 };
 
+/**
+ * Fieldmark is a third-party tool for collecting sample data in the field as
+ * "records" of a "notebook". Our integration allows these notebooks to be
+ * imported as containers, with each record imported as a subsample.
+ *
+ * This dialog provides a mechanism for choosing a Fieldmark notebook and
+ * triggering an import.
+ */
 export default function FieldmarkImportDialog({
   open,
   onClose,
