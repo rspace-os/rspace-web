@@ -226,16 +226,6 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
     [update]
   );
 
-  const mendeleyUpdate = React.useCallback(
-    (newState: IntegrationStates["MENDELEY"]) => {
-      void runInAction(async () => {
-        integrationStates.MENDELEY = await update("MENDELEY", newState);
-      });
-    },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
-  );
-
   const nextCloudUpdate = React.useCallback(
     (newState: IntegrationStates["NEXTCLOUD"]) => {
       void runInAction(async () => {

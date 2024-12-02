@@ -156,14 +156,6 @@
       "oauthConnected" : false,
       "options" : { }
     },
-    "MENDELEY" : {
-      "name" : "MENDELEY",
-      "displayName" : "MENDELEY",
-      "available" : true,
-      "enabled" : false,
-      "oauthConnected" : false,
-      "options" : { }
-    },
     "BOX" : {
       "name" : "BOX",
       "displayName" : "BOX",

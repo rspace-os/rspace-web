@@ -45,9 +45,6 @@ function printSettingsList() {
             'evernote.available'
     ]);
 
-    _printCategory('Publications');
-    _printSettings([ 'mendeley.available' ]);
-
     _printCategory('Protocols');
     _printSettings([ 'protocols_io.available' ]);
     _printSettings([ 'jove.available' ]);

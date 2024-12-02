@@ -55,7 +55,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @RunWith(ConditionalTestRunner.class)
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 27;
+  final int TOTAL_INTEGRATIONS = 26;
   Principal mockPrincipal = null;
 
   @Before
@@ -90,7 +90,6 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put("GOOGLEDRIVE", new String[] {"googledrive.linking.enabled"});
     expectedOptions.put("ONEDRIVE", new String[] {"onedrive.linking.enabled"});
     expectedOptions.put("CHEMISTRY", new String[] {});
-    expectedOptions.put("MENDELEY", new String[] {});
     expectedOptions.put(SLACK_APP_NAME, new String[] {});
     expectedOptions.put(DATAVERSE_APP_NAME, new String[] {});
     expectedOptions.put(GITHUB_APP_NAME, new String[] {});
