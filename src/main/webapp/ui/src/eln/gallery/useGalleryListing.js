@@ -557,11 +557,47 @@ export function useGalleryListing({
   orderBy,
   foldersOnly,
 }: {|
+  /**
+   * The Gallery is divided up into a several sections based on the type of the
+   * files contained within. All of them behave the same with the exception of
+   * NetworkFiles, which is the section that allows for viewing files stored on
+   * external filesystems. As such, whilst when the `section` is anything else,
+   * hereafter refered to as "local sections", network calls will be made to
+   * `/gallery/getUploadedFiles`, and when `section` is "NetworkFiles", API
+   * calls will be made to the several endpoints under `/filestores`. This
+   * means that some of the other parameters below will at times be ignored.
+   */
   section: GallerySection,
-  searchTerm: string,
+
+  /**
+   * This is the series of folders that defines the initial point at which the
+   * listing starts.  A copy of this value is stored by this custom hook and is
+   * manipulated as the user descends and ascends the folder hierarchy. If it
+   * is not specified, then the empty list and thus the root of the section is
+   * assumed.
+   */
   path?: $ReadOnlyArray<GalleryFile>,
+
+  /**
+   * The contents of folders within the local sections of the Gallery can be
+   * filtered based on a search term. Do note that this does not search the
+   * entire Gallery nor the whole section, but rather just the current folder.
+   * It is not available at all when `section` is "NetworkFiles" and the
+   * listing is of remote files.
+   */
+  searchTerm: string,
+
+  /**
+   * When viewing a listing of a local section, the listing can be sorted.
+   */
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
+
+  /**
+   * When viewing a listing of a local section, the listing can be filtered to
+   * only return folders. This is so that pagination works correctly within the
+   * move dialog where only folders are shown.
+   */
   foldersOnly?: boolean,
 |}): {|
   galleryListing: FetchingData.Fetched<
