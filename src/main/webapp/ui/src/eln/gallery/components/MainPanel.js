@@ -1326,6 +1326,7 @@ function GalleryMainPanel({
                     }}
                     aria-haspopup="menu"
                     aria-expanded={sortMenuAnchorEl ? "true" : "false"}
+                    disabled={selectedSection === "NetworkFiles"}
                   >
                     Sort
                   </Button>
