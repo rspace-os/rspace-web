@@ -141,6 +141,7 @@ const Picker = observer(
               <AppBar
                 appliedSearchTerm={appliedSearchTerm}
                 setAppliedSearchTerm={setAppliedSearchTerm}
+                hideSearch={selectedSection === "NetworkFiles"}
                 setDrawerOpen={setDrawerOpen}
                 drawerOpen={drawerOpen}
                 sidebarId={sidebarId}
