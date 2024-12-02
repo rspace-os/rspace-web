@@ -39,14 +39,6 @@ import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import { useTheme, ThemeProvider } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import createAccentedTheme from "../../../accentedTheme";
-import Dialog from "@mui/material/Dialog";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
-import AccessibilityTips from "../../../components/AccessibilityTips";
-import HelpLinkIcon from "../../../components/HelpLinkIcon";
-import DialogContent from "@mui/material/DialogContent";
-import Grid from "@mui/material/Grid";
-import Link from "@mui/material/Link";
 
 const COLOR = {
   main: {
