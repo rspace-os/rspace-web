@@ -12,14 +12,19 @@ import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
+import FieldmarkIcon from "../../eln/apps/icons/fieldmark.svg";
+import CardMedia from "@mui/material/CardMedia";
+import FieldmarkImportDialog, {
+  FIELDMARK_COLOR,
+} from "./FieldmarkImportDialog";
+import { useIntegrationIsAllowedAndEnabled } from "../../common/integrationHelpers";
+import * as FetchingData from "../../util/fetchingData";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
     ...(open
       ? {
           transform: "translate(-4px, 4px) !important",
-          boxShadow: "none",
-          border: `2px solid hsl(198deg, 37%, 80%)`,
         }
       : {}),
   },
@@ -48,6 +53,10 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
+  const showFieldmark = FetchingData.getSuccessValue(
+    useIntegrationIsAllowedAndEnabled("FIELDMARK")
+  ).orElse(false);
 
   const handleCreate = async (
     recordType: "sample" | "container" | "template"
@@ -144,8 +153,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -169,8 +178,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -194,8 +203,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "32px",
-                height: "32px",
+                width: "28px",
+                height: "28px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "2px",
                 paddingTop: "5px",
@@ -224,8 +233,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -249,8 +258,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -274,8 +283,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               }}
               color=""
               style={{
-                width: "22px",
-                height: "22px",
+                width: "18px",
+                height: "18px",
                 backgroundColor: "hsl(198 37% 80% / 1)",
                 padding: "5px",
                 color: "hsl(198 13% 25% / 1)",
@@ -288,7 +297,52 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             void handleImport("CONTAINERS");
           }}
         />
+        {showFieldmark && (
+          <>
+            <Divider textAlign="left" aria-label="Other import">
+              Third-Party Import
+            </Divider>
+            <NewMenuItem
+              compact
+              title="Fieldmark"
+              avatar={<CardMedia image={FieldmarkIcon} />}
+              backgroundColor={{
+                hue: FIELDMARK_COLOR.background.hue,
+                saturation: FIELDMARK_COLOR.background.saturation,
+                lightness: FIELDMARK_COLOR.background.lightness,
+              }}
+              foregroundColor={{
+                hue: FIELDMARK_COLOR.backgroundContrastText.hue,
+                saturation: FIELDMARK_COLOR.backgroundContrastText.saturation,
+                lightness: FIELDMARK_COLOR.backgroundContrastText.lightness,
+              }}
+              onClick={() => {
+                setFieldmarkOpen(true);
+                /*
+                 * We close the create menu when the fieldmark dialog is opened,
+                 * rather than leaving it open in the background as would normally
+                 * be the case, because the create menu is portalled to the root of
+                 * the DOM and so floats over all else whereas the fieldmark dialog
+                 * is added to the DOM as a child of a sibling of the `<section>`
+                 * that wraps all of the alert toasts. This is so that alerts
+                 * displayed by the contents of the dialog are reachable by screen
+                 * readers but has the effect of meaning that the create new dialog
+                 * would render over it. By closing the menu when the dialog is
+                 * opened we prevent this bug.
+                 */
+                setAnchorEl(null);
+              }}
+              aria-haspopup="dialog"
+            />
+          </>
+        )}
       </StyledMenu>
+      <FieldmarkImportDialog
+        open={fieldmarkOpen}
+        onClose={() => {
+          setFieldmarkOpen(false);
+        }}
+      />
     </Box>
   );
 }

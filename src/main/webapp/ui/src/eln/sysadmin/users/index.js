@@ -1486,7 +1486,7 @@ export const UsersPage = (): Node => {
     React.useState<?HTMLElement>(null);
 
   const columns = [
-    DataGridColumn.newColumnWithValueGetter(
+    DataGridColumn.newColumnWithValueMapper(
       "fullName",
       (fullName) => fullName,
       {
@@ -1523,7 +1523,7 @@ export const UsersPage = (): Node => {
       headerName: "Email",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueGetter<User, _>(
+    DataGridColumn.newColumnWithValueMapper<User, _>(
       "role",
       (role) => {
         const roles = role.split(",");
@@ -1544,7 +1544,7 @@ export const UsersPage = (): Node => {
       headerName: "Username",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueGetter<User, _>(
+    DataGridColumn.newColumnWithValueMapper<User, _>(
       "recordCount",
       (recordCount) => `${recordCount}`,
       {
@@ -1552,7 +1552,7 @@ export const UsersPage = (): Node => {
         flex: 1,
       }
     ),
-    DataGridColumn.newColumnWithValueGetter<User, _>(
+    DataGridColumn.newColumnWithValueMapper<User, _>(
       "fileUsage",
       (fileUsage) => formatFileSize(fileUsage),
       {

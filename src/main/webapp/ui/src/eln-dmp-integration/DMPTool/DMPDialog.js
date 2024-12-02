@@ -298,7 +298,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithValueGetter<Plan, _>(
+                DataGridColumn.newColumnWithValueMapper<Plan, _>(
                   "created",
                   (created) => new Date(created).toLocaleString(),
                   {
@@ -307,7 +307,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                     sortable: false,
                   }
                 ),
-                DataGridColumn.newColumnWithValueGetter<Plan, _>(
+                DataGridColumn.newColumnWithValueMapper<Plan, _>(
                   "modified",
                   (modified) => new Date(modified).toLocaleString(),
                   {

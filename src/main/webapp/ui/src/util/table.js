@@ -139,6 +139,31 @@ const DataGridColumn = {
       ...rest,
     };
   },
+
+  /**
+   * Define a new column where the cell's value is the output of the
+   * `mapFunction` function when called with the value of the `Field` field.
+   *
+   * This allows for simple transformations to the data such as formatting a
+   * date in the user's locale.
+   */
+  newColumnWithValueMapper<Row: { ... }, Field: string>(
+    // The name of field to be transformed
+    field: Field,
+    // Function that does the transformation
+    // $FlowExpectedError[invalid-computed-prop]
+    mapFunction: (Row[Field]) => string,
+    // $FlowExpectedError[invalid-computed-prop]
+    rest: ColumnProps<Row, Row[Field]>
+  ): Column<Row> {
+    return {
+      field,
+      // $FlowExpectedError[invalid-computed-prop]
+      valueGetter: (valueBefore: Row[Field]) => mapFunction(valueBefore),
+      ...rest,
+    };
+  },
+
   /**
    * Define a new column where the cell's value is the output of the
    * `valueGetter` function.
@@ -146,14 +171,13 @@ const DataGridColumn = {
   newColumnWithValueGetter<Row: { ... }, Field: string>(
     // Unique identifier for the column
     field: Field,
-    // $FlowExpectedError[invalid-computed-prop]
-    valueGetter: (Row[Field], Row) => string,
-    // $FlowExpectedError[invalid-computed-prop]
-    rest: ColumnProps<Row, Row[Field]>
+    // Function for getting a cell's value from a Row
+    valueGetter: (Row) => string,
+    rest: ColumnProps<Row, mixed>
   ): Column<Row> {
     return {
       field,
-      valueGetter,
+      valueGetter: (_ignore: mixed, row: Row) => valueGetter(row),
       ...rest,
     };
   },

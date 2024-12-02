@@ -107,6 +107,7 @@ type DialogArgs<T> = {|
   TransitionComponent?: ComponentType<T> | Node,
   className?: string,
   onClick?: () => void,
+  "aria-labelledby"?: string,
 |};
 
 export function Dialog<T>(props: DialogArgs<T>): Node {

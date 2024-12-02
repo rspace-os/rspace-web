@@ -33,7 +33,6 @@ import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import MoveToIrods, { COLOR as IRODS_COLOR } from "./MoveToIrods";
 import IrodsLogo from "./IrodsLogo.svg";
-import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 import MoveDialog from "./MoveDialog";
 import ExportDialog from "../../../Export/ExportDialog";
@@ -56,6 +55,7 @@ import axios from "axios";
 import ImageEditingDialog from "../../../components/ImageEditingDialog";
 import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import CardMedia from "@mui/material/CardMedia";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -705,18 +705,7 @@ function ActionsMenu({
             .orElseGet(([e]) => e.message)}
           backgroundColor={IRODS_COLOR.background}
           foregroundColor={IRODS_COLOR.contrastText}
-          avatar={
-            <Avatar
-              variant="square"
-              sx={{
-                width: 28,
-                height: 28,
-                bgcolor: `hsl(${IRODS_COLOR.main.hue}deg, ${IRODS_COLOR.main.saturation}%, ${IRODS_COLOR.main.lightness}%, 100%)`,
-                border: `4px solid hsl(${IRODS_COLOR.main.hue}deg, ${IRODS_COLOR.main.saturation}%, ${IRODS_COLOR.main.lightness}%, 100%)`,
-              }}
-              src={IrodsLogo}
-            />
-          }
+          avatar={<CardMedia image={IrodsLogo} />}
           onClick={() => {
             setIrodsOpen(true);
           }}
