@@ -89,6 +89,8 @@ public class GalleryFilestoresApiController extends BaseApiController
       HttpServletResponse response)
       throws IOException {
 
+    // FIXME remotePath shouldn't be required if remoteId is present
+
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     NfsFileSystem filesystem = filestore.getFileSystem();
     NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
