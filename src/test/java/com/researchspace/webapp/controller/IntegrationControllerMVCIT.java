@@ -55,7 +55,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @RunWith(ConditionalTestRunner.class)
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 27;
+  final int TOTAL_INTEGRATIONS = 26;
   Principal mockPrincipal = null;
 
   @Before
