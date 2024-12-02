@@ -7,6 +7,7 @@ import useViewportDimensions from "../../util/useViewportDimensions";
 import { withStyles } from "Styles";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
@@ -195,9 +196,9 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
             <DialogContent>
               <Grid container direction="column" spacing={2}>
                 <Grid item>
-                  <Typography variant="h3">
+                  <DialogTitle variant="h3">
                     Import a DMP into the Gallery
-                  </Typography>
+                  </DialogTitle>
                 </Grid>
                 <Grid item>
                   <Typography variant="body2">

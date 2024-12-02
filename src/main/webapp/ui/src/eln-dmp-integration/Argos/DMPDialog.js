@@ -49,6 +49,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { DataGrid } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
+import DialogTitle from "@mui/material/DialogTitle";
 
 const COLOR = {
   main: {
@@ -528,7 +529,9 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           height="calc(100% + 16px)"
         >
           <Grid item>
-            <Typography variant="h3">Import a DMP into the Gallery</Typography>
+            <DialogTitle variant="h3">
+              Import a DMP into the Gallery
+            </DialogTitle>
           </Grid>
           <Grid item>
             <Typography variant="body2">
