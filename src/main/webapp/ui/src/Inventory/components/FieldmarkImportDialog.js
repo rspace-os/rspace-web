@@ -186,6 +186,7 @@ export default function FieldmarkImportDialog({
     React.useState<?HTMLElement>(null);
   const [fetchingNotebooks, setFetchingNotebooks] = React.useState(false);
   const [importing, setImporting] = React.useState(false);
+  const titleId = React.useId();
 
   React.useEffect(
     doNotAwait(async () => {
@@ -272,6 +273,7 @@ export default function FieldmarkImportDialog({
         maxWidth="lg"
         fullWidth
         fullScreen={isViewportSmall}
+        aria-labelledby={titleId}
       >
         <AppBar position="relative" open={true}>
           <Toolbar variant="dense">
@@ -298,7 +300,9 @@ export default function FieldmarkImportDialog({
             sx={{ height: "100%", flexWrap: "nowrap" }}
           >
             <Grid item>
-              <Typography variant="h3">Import from Fieldmark</Typography>
+              <Typography variant="h3" id={titleId}>
+                Import from Fieldmark
+              </Typography>
             </Grid>
             <Grid item>
               <Typography

@@ -5,7 +5,7 @@
 /* eslint-env jest */
 import "../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import { render, cleanup, screen, act, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import FieldmarkImportDialog from "../FieldmarkImportDialog";
@@ -14,6 +14,9 @@ import mockFieldmarkImportJson from "./fieldmark_import.json";
 import Alerts from "../../../components/Alerts/Alerts";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
+import { axe, toHaveNoViolations } from "jest-axe";
+
+expect.extend(toHaveNoViolations);
 
 jest.mock("../../../stores/stores/RootStore", () => () => ({
   uiStore: {
@@ -81,5 +84,21 @@ describe("FieldmarkImportDialog", () => {
       "href",
       "/globalId/IC98304"
     );
+  });
+  test("Should have no axe violations.", async () => {
+    const { baseElement } = render(
+      <ThemeProvider theme={materialTheme}>
+        <Alerts>
+          <FieldmarkImportDialog open={true} onClose={() => {}} />
+        </Alerts>
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("radio")).toBeInTheDocument();
+    });
+
+    // $FlowExpectedError[incompatible-call] See expect.extend above
+    expect(await axe(baseElement)).toHaveNoViolations();
   });
 });
