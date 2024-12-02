@@ -10,6 +10,7 @@ import AppBar from "@mui/material/AppBar";
 import AccessibilityTips from "../../components/AccessibilityTips";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
@@ -186,7 +187,6 @@ export default function FieldmarkImportDialog({
     React.useState<?HTMLElement>(null);
   const [fetchingNotebooks, setFetchingNotebooks] = React.useState(false);
   const [importing, setImporting] = React.useState(false);
-  const titleId = React.useId();
 
   React.useEffect(
     doNotAwait(async () => {
@@ -273,7 +273,6 @@ export default function FieldmarkImportDialog({
         maxWidth="lg"
         fullWidth
         fullScreen={isViewportSmall}
-        aria-labelledby={titleId}
       >
         <AppBar position="relative" open={true}>
           <Toolbar variant="dense">
@@ -300,9 +299,7 @@ export default function FieldmarkImportDialog({
             sx={{ height: "100%", flexWrap: "nowrap" }}
           >
             <Grid item>
-              <Typography variant="h3" id={titleId}>
-                Import from Fieldmark
-              </Typography>
+              <DialogTitle variant="h3">Import from Fieldmark</DialogTitle>
             </Grid>
             <Grid item>
               <Typography
