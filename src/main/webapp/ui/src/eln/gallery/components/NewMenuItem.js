@@ -64,7 +64,14 @@ export default (styled(
         tabIndex={tabIndex}
         aria-haspopup={ariaHasPopup}
       >
-        <CardHeader {...props} />
+        <CardHeader
+          {...props}
+          subheaderTypographyProps={{
+            sx: {
+              whiteSpace: "break-spaces",
+            },
+          }}
+        />
       </MenuItem>
     )
   )
