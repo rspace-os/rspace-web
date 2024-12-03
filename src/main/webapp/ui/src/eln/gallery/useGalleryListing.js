@@ -252,6 +252,7 @@ export interface GalleryFile {
 
   +canDuplicate: Result<null>;
   +canDelete: Result<null>;
+  +canRename: Result<null>;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -405,6 +406,12 @@ class LocalGalleryFile implements GalleryFile {
       return Result.Error([new Error("Cannot delete system folders.")]);
     return Result.Ok(null);
   }
+
+  get canRename(): Result<null> {
+    if (this.isSystemFolder)
+      return Result.Error([new Error("Cannot rename system folders.")]);
+    return Result.Ok(null);
+  }
 }
 
 class Filestore implements GalleryFile {
@@ -486,6 +493,10 @@ class Filestore implements GalleryFile {
 
   get canDelete(): Result<null> {
     return Result.Error([new Error("Cannot delete filestores.")]);
+  }
+
+  get canRename(): Result<null> {
+    return Result.Error([new Error("Cannot rename filestores.")]);
   }
 }
 
@@ -585,6 +596,16 @@ class RemoteFile implements GalleryFile {
     return Result.Error([
       new Error(
         `Cannot delete ${
+          this.isFolder ? "folders" : "files"
+        } stored in filestores.`
+      ),
+    ]);
+  }
+
+  get canRename(): Result<null> {
+    return Result.Error([
+      new Error(
+        `Cannot rename ${
           this.isFolder ? "folders" : "files"
         } stored in filestores.`
       ),

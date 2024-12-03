@@ -105,6 +105,16 @@ export default class Result<T> {
   }
 
   /**
+   * Just like `flatMap`, but discard the result of the function and return the
+   * input instead.
+   */
+  flatMapDiscarding<U>(f: (T) => Result<U>): Result<T> {
+    if (this.#state.key === "error") return Result.Error(this.#state.errors);
+    const value = this.#state.value;
+    return f(value).map(() => value);
+  }
+
+  /**
    * Perform a side-effect on the value if the result is in an OK state.
    * Otherwise the error(s) are discarded.
    */

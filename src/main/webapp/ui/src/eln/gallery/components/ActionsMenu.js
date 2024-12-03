@@ -402,11 +402,7 @@ function ActionsMenu({
     return selection
       .asSet()
       .only.toResult(() => new Error("Only one item may be renamed at once."))
-      .flatMap((file) => {
-        if (file.isSystemFolder)
-          return Result.Error([new Error("Cannot rename system folders.")]);
-        return Result.Ok(null);
-      });
+      .flatMap((file) => file.canRename);
   });
 
   const moveToIrodsAllowed = computed((): Result<null> => {
