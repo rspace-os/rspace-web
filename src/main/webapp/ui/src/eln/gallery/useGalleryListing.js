@@ -254,6 +254,7 @@ export interface GalleryFile {
   +canDelete: Result<null>;
   +canRename: Result<null>;
   +canMoveToIrods: Result<null>;
+  +canBeShared: Result<null>;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -419,6 +420,11 @@ class LocalGalleryFile implements GalleryFile {
       return Result.Error([new Error("Cannot move system folders to iRODS.")]);
     return Result.Ok(null);
   }
+
+  get canBeShared(): Result<null> {
+    if (this.isSnippet) return Result.Ok(null);
+    return Result.Error([new Error("Only snippets can be shared.")]);
+  }
 }
 
 class Filestore implements GalleryFile {
@@ -508,6 +514,10 @@ class Filestore implements GalleryFile {
 
   get canMoveToIrods(): Result<null> {
     return Result.Error([new Error("Cannot move filestores to iRODS.")]);
+  }
+
+  get canBeShared(): Result<null> {
+    return Result.Error([new Error("Filestores cannot be shared.")]);
   }
 }
 
@@ -630,6 +640,12 @@ class RemoteFile implements GalleryFile {
           this.isFolder ? "folders" : "files"
         } stored in filestores to iRODS.`
       ),
+    ]);
+  }
+
+  get canBeShared(): Result<null> {
+    return Result.Error([
+      new Error("Contents of filestores cannot be shared within RSpace."),
     ]);
   }
 }

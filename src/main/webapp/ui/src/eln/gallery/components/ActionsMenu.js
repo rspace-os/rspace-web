@@ -411,10 +411,10 @@ function ActionsMenu({
     );
   });
 
-  const sharingSnippetsAllowed = computed((): Result<null> => {
-    if (selection.asSet().some((f) => !f.isSnippet))
-      return Result.Error([new Error("Only snippets may be shared.")]);
-    return Result.Error([new Error("Not yet available.")]);
+  const sharingAllowed = computed((): Result<null> => {
+    return Result.all(...selection.asSet().map((f) => f.canBeShared)).map(
+      () => null
+    );
   });
 
   const exportAllowed = computed((): Result<null> => {
@@ -680,7 +680,7 @@ function ActionsMenu({
         </EventBoundary>
         <NewMenuItem
           title="Share"
-          subheader={sharingSnippetsAllowed
+          subheader={sharingAllowed
             .get()
             .map(() => "")
             .orElseGet(([e]) => e.message)}
@@ -691,7 +691,7 @@ function ActionsMenu({
             setActionsMenuAnchorEl(null);
           }}
           compact
-          disabled={sharingSnippetsAllowed.get().isError}
+          disabled={sharingAllowed.get().isError}
         />
         <NewMenuItem
           title="Move to iRODS"

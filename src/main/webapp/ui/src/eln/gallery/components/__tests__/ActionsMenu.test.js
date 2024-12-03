@@ -133,6 +133,7 @@ describe("ActionsMenu", () => {
               canDelete: Result.Ok(null),
               canRename: Result.Ok(null),
               canMoveToIrods: Result.Ok(null),
+              canBeShared: Result.Ok(null),
             }}
           />
           <ActionsMenu
@@ -206,6 +207,7 @@ describe("ActionsMenu", () => {
               canDelete: Result.Ok(null),
               canRename: Result.Ok(null),
               canMoveToIrods: Result.Ok(null),
+              canBeShared: Result.Ok(null),
             }}
           />
           <ActionsMenu
