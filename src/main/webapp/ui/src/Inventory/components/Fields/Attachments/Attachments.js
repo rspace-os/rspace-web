@@ -219,6 +219,11 @@ const FileSelector = ({
                 return Result.Error([
                   new Error("Folders cannot be attached to Inventory records."),
                 ]);
+              if (!file.globalId)
+                return Result.Error([
+                  // some of the files will be from filestores
+                  new Error(`"${file.name}" does not have an RSpace Global Id`),
+                ]);
               return Result.Ok(null);
             }}
           />
