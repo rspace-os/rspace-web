@@ -669,13 +669,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
           {selection
             .asSet()
             .only.toResult(() => new Error("Empty or multiple selected"))
-            .flatMap((f) =>
-              f.isSystemFolder
-                ? Result.Error<GalleryFile>([
-                    new Error("Cannot rename system folder"),
-                  ])
-                : Result.Ok(f)
-            )
+            .flatMapDiscarding((f) => f.canRename)
             .map((f) => <NameFieldForLargeViewports key={null} file={f} />)
             .orElse(
               <Typography
