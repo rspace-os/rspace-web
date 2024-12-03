@@ -54,6 +54,14 @@ export class Description {
     return new Description({ key: "present", value });
   }
 
+  toString(): Result<string> {
+    return this.match({
+      missing: () => Result.Error([new Error("Description is missing")]),
+      empty: () => Result.Ok(""),
+      present: (d) => Result.Ok(d),
+    });
+  }
+
   match<T>(opts: {|
     missing: () => T,
     empty: () => T,
