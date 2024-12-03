@@ -254,6 +254,7 @@ export interface GalleryFile {
   +canMoveToIrods: Result<null>;
   +canBeShared: Result<null>;
   +canBeExported: Result<null>;
+  +canBeMoved: Result<null>;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -432,6 +433,10 @@ class LocalGalleryFile implements GalleryFile {
   get canBeExported(): Result<null> {
     return Result.Ok(null);
   }
+
+  get canBeMoved(): Result<null> {
+    return Result.Ok(null);
+  }
 }
 
 class Filestore implements GalleryFile {
@@ -533,6 +538,10 @@ class Filestore implements GalleryFile {
 
   get canBeExported(): Result<null> {
     return Result.Error([new Error("Filestores cannot be exported.")]);
+  }
+
+  get canBeMoved(): Result<null> {
+    return Result.Error([new Error("Filestores cannot be moved.")]);
   }
 }
 
@@ -672,6 +681,12 @@ class RemoteFile implements GalleryFile {
   get canBeExported(): Result<null> {
     return Result.Error([
       new Error("Contents of filestores cannot be exported."),
+    ]);
+  }
+
+  get canBeMoved(): Result<null> {
+    return Result.Error([
+      new Error("Contents of filestores cannot be moved from within RSpace."),
     ]);
   }
 }

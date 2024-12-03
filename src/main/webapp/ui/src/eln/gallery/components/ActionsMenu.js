@@ -436,7 +436,9 @@ function ActionsMenu({
   });
 
   const moveAllowed = computed((): Result<null> => {
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canBeMoved)).map(
+      () => null
+    );
   });
 
   return (
