@@ -442,7 +442,9 @@ function ActionsMenu({
       return Result.Error([
         new Error("Cannot move more than 50 items at once."),
       ]);
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canBeMoved)).map(
+      () => null
+    );
   });
 
   return (

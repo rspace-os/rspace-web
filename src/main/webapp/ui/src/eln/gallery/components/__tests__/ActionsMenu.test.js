@@ -135,6 +135,7 @@ describe("ActionsMenu", () => {
               canRename: Result.Ok(null),
               canMoveToIrods: Result.Ok(null),
               canBeExported: Result.Ok(null),
+              canBeMoved: Result.Ok(null),
             }]}
           />
           <ActionsMenu
@@ -209,6 +210,7 @@ describe("ActionsMenu", () => {
               canRename: Result.Ok(null),
               canMoveToIrods: Result.Ok(null),
               canBeExported: Result.Ok(null),
+              canBeMoved: Result.Ok(null),
             }]}
           />
           <ActionsMenu
@@ -283,6 +285,7 @@ describe("ActionsMenu", () => {
                 canRename: Result.Ok(null),
                 canMoveToIrods: Result.Ok(null),
                 canBeExported: Result.Ok(null),
+                canBeMoved: Result.Ok(null),
               },
               {
                 id: dummyId(),
@@ -317,6 +320,7 @@ describe("ActionsMenu", () => {
                 canRename: Result.Ok(null),
                 canMoveToIrods: Result.Ok(null),
                 canBeExported: Result.Ok(null),
+                canBeMoved: Result.Ok(null),
               },
             ]}
           />

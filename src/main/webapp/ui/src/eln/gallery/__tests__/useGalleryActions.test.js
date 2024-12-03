@@ -62,6 +62,7 @@ describe("useGalleryActions", () => {
                   canRename: Result.Ok(null),
                   canMoveToIrods: Result.Ok(null),
                   canBeExported: Result.Ok(null),
+                  canBeMoved: Result.Ok(null),
                 },
               ])
             );
@@ -166,6 +167,7 @@ describe("useGalleryActions", () => {
                   canRename: Result.Ok(null),
                   canMoveToIrods: Result.Ok(null),
                   canBeExported: Result.Ok(null),
+                  canBeMoved: Result.Ok(null),
                 },
               ])
             );
@@ -270,6 +272,7 @@ describe("useGalleryActions", () => {
                   canRename: Result.Ok(null),
                   canMoveToIrods: Result.Ok(null),
                   canBeExported: Result.Ok(null),
+                  canBeMoved: Result.Ok(null),
                 },
               ])
             ).to({
