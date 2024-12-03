@@ -890,23 +890,25 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                   {file.name}
                 </Typography>
               </Grid>
-              {file.open && (
-                <Grid item>
-                  <ActionButton
-                    label="Open"
-                    sx={{
-                      borderRadius: 3,
-                      px: 2.5,
-                      py: 0.5,
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      file.open?.();
-                      setMobileInfoPanelOpen(false);
-                    }}
-                  />
-                </Grid>
-              )}
+              {file.canOpen
+                .map((open) => (
+                  <Grid item>
+                    <ActionButton
+                      label="Open"
+                      sx={{
+                        borderRadius: 3,
+                        px: 2.5,
+                        py: 0.5,
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        open();
+                        setMobileInfoPanelOpen(false);
+                      }}
+                    />
+                  </Grid>
+                ))
+                .orElse(null)}
               {file.isImage && file.downloadHref && (
                 <Grid item>
                   <ActionButton

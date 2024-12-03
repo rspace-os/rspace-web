@@ -221,9 +221,6 @@ export interface GalleryFile {
    */
   pathAsString(): string;
 
-  // if the file is a folder, open it
-  +open?: () => void;
-
   downloadHref?: URL;
 
   /*
@@ -250,6 +247,7 @@ export interface GalleryFile {
 
   +linkedDocuments: Node;
 
+  +canOpen: Result<() => void>;
   +canDuplicate: Result<null>;
   +canDelete: Result<null>;
   +canRename: Result<null>;
@@ -271,7 +269,7 @@ class LocalGalleryFile implements GalleryFile {
   +size: number;
   +version: number;
   +thumbnailId: number | null;
-  +open: () => void | void;
+  #open: () => void | void;
   downloadHref: URL | void;
 
   // this will only ever actually be an array of LocalGalleryFile,
@@ -332,9 +330,8 @@ class LocalGalleryFile implements GalleryFile {
     this.size = size;
     this.version = version;
     this.thumbnailId = thumbnailId;
-    if (this.isFolder) {
-      this.open = () => setPath([...path, this]);
-    } else {
+    this.#open = () => setPath([...path, this]);
+    if (!this.isFolder) {
       this.downloadHref = `/Streamfile/${idToString(this.id)}`;
     }
     this.setName = action((newName) => {
@@ -397,6 +394,11 @@ class LocalGalleryFile implements GalleryFile {
     return <LinkedDocumentsPanel file={this} />;
   }
 
+  get canOpen(): Result<() => void> {
+    if (this.isFolder) return Result.Ok(this.#open);
+    return Result.Error([new Error("Only folders can be opened.")]);
+  }
+
   get canDuplicate(): Result<null> {
     if (this.isSystemFolder)
       return Result.Error([new Error("Cannot duplicate system folders.")]);
@@ -435,7 +437,7 @@ class Filestore implements GalleryFile {
   description: Description;
   +isFolder: boolean;
   +size: number;
-  +open: () => void;
+  #open: () => void;
   +path: $ReadOnlyArray<GalleryFile>;
 
   constructor({
@@ -458,7 +460,7 @@ class Filestore implements GalleryFile {
     this.description = Description.Missing();
     this.isFolder = true;
     this.size = 0;
-    this.open = () => setPath([...path, this]);
+    this.#open = () => setPath([...path, this]);
     this.filesystemId = filesystemId;
     this.filesystemName = filesystemName;
     this.path = path;
@@ -500,6 +502,10 @@ class Filestore implements GalleryFile {
     return null;
   }
 
+  get canOpen(): Result<() => void> {
+    return Result.Ok(this.#open);
+  }
+
   get canDuplicate(): Result<null> {
     return Result.Error([new Error("Cannot duplicate filestores.")]);
   }
@@ -528,7 +534,7 @@ class RemoteFile implements GalleryFile {
   +isFolder: boolean;
   +size: number;
   +modificationDate: Date;
-  +open: () => void;
+  #open: () => void;
   +path: $ReadOnlyArray<GalleryFile>;
 
   constructor({
@@ -555,7 +561,7 @@ class RemoteFile implements GalleryFile {
     this.size = fileSize;
     this.modificationDate = modificationDate;
     this.path = path;
-    if (folder) this.open = () => setPath([...path, this]);
+    this.#open = () => setPath([...path, this]);
   }
 
   get id(): Id {
@@ -601,6 +607,11 @@ class RemoteFile implements GalleryFile {
 
   get linkedDocuments(): Node {
     return null;
+  }
+
+  get canOpen(): Result<() => void> {
+    if (this.isFolder) return Result.Ok(this.#open);
+    return Result.Error([new Error("Only folders can be opened.")]);
   }
 
   get canDuplicate(): Result<null> {

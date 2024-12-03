@@ -133,6 +133,9 @@ const BreadcrumbLink = React.forwardRef<
       clearPath,
       tabIndex,
     }: {|
+      /*
+       * Undefined means that it is a link to the root of the section
+       */
       folder?: GalleryFile,
       section: string,
       clearPath: () => void,
@@ -177,7 +180,12 @@ const BreadcrumbLink = React.forwardRef<
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          (folder?.open ?? clearPath)();
+          if (folder) {
+            const open = folder.canOpen.elseThrow();
+            open();
+          } else {
+            clearPath();
+          }
         }}
         ref={(node) => {
           setDropRef(node);
@@ -791,16 +799,16 @@ const FileCard = styled(
                  * keyDown event to propagate up to the KeyboardSensor of the
                  * drag-and-drop mechanism for all other files
                  */
-                {...(file.open
-                  ? {
-                      onKeyDown: (e) => {
-                        if (e.key === " ") file.open?.();
-                      },
-                    }
-                  : {})}
+                {...file.canOpen
+                  .map((open) => ({
+                    onKeyDown: (e: KeyboardEvent) => {
+                      if (e.key === " ") open();
+                    },
+                  }))
+                  .orElse({})}
               >
                 <CardActionArea
-                  role={file.open ? "button" : "checkbox"}
+                  role={file.canOpen.map(() => "button").orElse("checkbox")}
                   aria-checked={selected}
                   tabIndex={-1}
                   onFocus={(e) => {

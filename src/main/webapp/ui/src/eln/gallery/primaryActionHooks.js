@@ -10,16 +10,6 @@ import useOfficeOnline from "./useOfficeOnline";
 import { supportedAsposeFile } from "./components/CallableAsposePreview";
 import { type URL } from "../../util/types";
 
-export function useOpen(): (file: GalleryFile) => Result<() => void> {
-  return (file) => {
-    if (file.open) {
-      const f = file.open;
-      return Result.Ok(() => f());
-    }
-    return Result.Error([new Error("Not a folder.")]);
-  };
-}
-
 export function useImagePreviewOfGalleryFile(): (
   file: GalleryFile
 ) => Result<URL> {
@@ -116,7 +106,6 @@ export default function usePrimaryAction(): (
   | {| tag: "pdf", downloadHref: string |}
   | {| tag: "aspose" |}
 > {
-  const canOpenAsFolder = useOpen();
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
@@ -124,7 +113,7 @@ export default function usePrimaryAction(): (
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
 
   return (file) =>
-    canOpenAsFolder(file)
+    file.canOpen
       .map((open) => ({ tag: "open", open }))
       .orElseTry(() =>
         canPreviewAsImage(file).map((downloadHref) => ({
