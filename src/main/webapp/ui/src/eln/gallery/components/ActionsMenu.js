@@ -396,13 +396,13 @@ function ActionsMenu({
   });
 
   const deleteAllowed = computed((): Result<null> => {
-    if (selection.asSet().some((f) => f.isSystemFolder))
-      return Result.Error([new Error("Cannot delete system folders.")]);
     if (selection.size > 50)
       return Result.Error([
         new Error("Cannot delete more than 50 items at once."),
       ]);
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canDelete)).map(
+      () => null
+    );
   });
 
   const renameAllowed = computed((): Result<null> => {

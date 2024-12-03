@@ -57,6 +57,7 @@ describe("useGalleryActions", () => {
                   setDescription: () => {},
                   linkedDocuments: null,
                   canDuplicate: Result.Ok(null),
+                  canDelete: Result.Ok(null),
                 },
               ])
             );
@@ -156,6 +157,7 @@ describe("useGalleryActions", () => {
                   setDescription: () => {},
                   linkedDocuments: null,
                   canDuplicate: Result.Ok(null),
+                  canDelete: Result.Ok(null),
                 },
               ])
             );
@@ -255,6 +257,7 @@ describe("useGalleryActions", () => {
                   setDescription: () => {},
                   linkedDocuments: null,
                   canDuplicate: Result.Ok(null),
+                  canDelete: Result.Ok(null),
                 },
               ])
             ).to({

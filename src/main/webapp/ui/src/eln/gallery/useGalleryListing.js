@@ -256,6 +256,7 @@ export interface GalleryFile {
   +linkedDocuments: Node;
 
   +canDuplicate: Result<null>;
+  +canDelete: Result<null>;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -403,6 +404,12 @@ class LocalGalleryFile implements GalleryFile {
       return Result.Error([new Error("Cannot duplicate system folders.")]);
     return Result.Ok(null);
   }
+
+  get canDelete(): Result<null> {
+    if (this.isSystemFolder)
+      return Result.Error([new Error("Cannot delete system folders.")]);
+    return Result.Ok(null);
+  }
 }
 
 class Filestore implements GalleryFile {
@@ -480,6 +487,10 @@ class Filestore implements GalleryFile {
 
   get canDuplicate(): Result<null> {
     return Result.Error([new Error("Cannot duplicate filestores.")]);
+  }
+
+  get canDelete(): Result<null> {
+    return Result.Error([new Error("Cannot delete filestores.")]);
   }
 }
 
@@ -569,6 +580,16 @@ class RemoteFile implements GalleryFile {
     return Result.Error([
       new Error(
         `Cannot duplicate ${
+          this.isFolder ? "folders" : "files"
+        } stored in filestores.`
+      ),
+    ]);
+  }
+
+  get canDelete(): Result<null> {
+    return Result.Error([
+      new Error(
+        `Cannot delete ${
           this.isFolder ? "folders" : "files"
         } stored in filestores.`
       ),
