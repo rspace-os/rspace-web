@@ -134,6 +134,7 @@ describe("ActionsMenu", () => {
               canDelete: Result.Ok(null),
               canRename: Result.Ok(null),
               canMoveToIrods: Result.Ok(null),
+              canBeExported: Result.Ok(null),
             }]}
           />
           <ActionsMenu
@@ -207,6 +208,7 @@ describe("ActionsMenu", () => {
               canDelete: Result.Ok(null),
               canRename: Result.Ok(null),
               canMoveToIrods: Result.Ok(null),
+              canBeExported: Result.Ok(null),
             }]}
           />
           <ActionsMenu
@@ -275,10 +277,12 @@ describe("ActionsMenu", () => {
                 setDescription: () => {},
                 open: () => {},
                 linkedDocuments: null,
+                canOpen: Result.Error([new Error("I'm a folder")]),
                 canDuplicate: Result.Ok(null),
                 canDelete: Result.Ok(null),
                 canRename: Result.Ok(null),
                 canMoveToIrods: Result.Ok(null),
+                canBeExported: Result.Ok(null),
               },
               {
                 id: dummyId(),
@@ -307,10 +311,12 @@ describe("ActionsMenu", () => {
                 setDescription: () => {},
                 open: () => {},
                 linkedDocuments: null,
+                canOpen: Result.Error([new Error("I'm a folder")]),
                 canDuplicate: Result.Ok(null),
                 canDelete: Result.Ok(null),
                 canRename: Result.Ok(null),
                 canMoveToIrods: Result.Ok(null),
+                canBeExported: Result.Ok(null),
               },
             ]}
           />

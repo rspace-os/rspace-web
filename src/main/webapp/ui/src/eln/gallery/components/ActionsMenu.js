@@ -421,7 +421,7 @@ function ActionsMenu({
       return Result.Error([
         new Error("Cannot export more than 100 itemes at once."),
       ]);
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(() => null);
   });
 
   const downloadAllowed = computed((): Result<null> => {

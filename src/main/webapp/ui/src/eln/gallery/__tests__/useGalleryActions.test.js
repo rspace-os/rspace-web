@@ -56,10 +56,12 @@ describe("useGalleryActions", () => {
                   setName: () => {},
                   setDescription: () => {},
                   linkedDocuments: null,
+                  canOpen: Result.Error([new Error("I'm a folder")]),
                   canDuplicate: Result.Ok(null),
                   canDelete: Result.Ok(null),
                   canRename: Result.Ok(null),
                   canMoveToIrods: Result.Ok(null),
+                  canBeExported: Result.Ok(null),
                 },
               ])
             );
@@ -158,10 +160,12 @@ describe("useGalleryActions", () => {
                   setName: () => {},
                   setDescription: () => {},
                   linkedDocuments: null,
+                  canOpen: Result.Error([new Error("I'm a folder")]),
                   canDuplicate: Result.Ok(null),
                   canDelete: Result.Ok(null),
                   canRename: Result.Ok(null),
                   canMoveToIrods: Result.Ok(null),
+                  canBeExported: Result.Ok(null),
                 },
               ])
             );
@@ -260,10 +264,12 @@ describe("useGalleryActions", () => {
                   setName: () => {},
                   setDescription: () => {},
                   linkedDocuments: null,
+                  canOpen: Result.Error([new Error("I'm a folder")]),
                   canDuplicate: Result.Ok(null),
                   canDelete: Result.Ok(null),
                   canRename: Result.Ok(null),
                   canMoveToIrods: Result.Ok(null),
+                  canBeExported: Result.Ok(null),
                 },
               ])
             ).to({

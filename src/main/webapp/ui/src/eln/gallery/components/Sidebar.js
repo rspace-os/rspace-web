@@ -688,7 +688,7 @@ const Sidebar = ({
           />
           <AddFilestoreMenuItem
             onMenuClose={(success) => {
-              if (success) refreshListing();
+              if (success) void refreshListing();
               setNewMenuAnchorEl(null);
               if (viewport.isViewportSmall) setDrawerOpen(false);
             }}
