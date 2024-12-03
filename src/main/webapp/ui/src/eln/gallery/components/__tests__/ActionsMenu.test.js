@@ -132,6 +132,7 @@ describe("ActionsMenu", () => {
               canDuplicate: Result.Ok(null),
               canDelete: Result.Ok(null),
               canRename: Result.Ok(null),
+              canMoveToIrods: Result.Ok(null),
             }]}
           />
           <ActionsMenu
@@ -204,6 +205,7 @@ describe("ActionsMenu", () => {
               canDuplicate: Result.Ok(null),
               canDelete: Result.Ok(null),
               canRename: Result.Ok(null),
+              canMoveToIrods: Result.Ok(null),
             }]}
           />
           <ActionsMenu
@@ -275,6 +277,7 @@ describe("ActionsMenu", () => {
                 canDuplicate: Result.Ok(null),
                 canDelete: Result.Ok(null),
                 canRename: Result.Ok(null),
+                canMoveToIrods: Result.Ok(null),
               },
               {
                 id: dummyId(),
@@ -306,6 +309,7 @@ describe("ActionsMenu", () => {
                 canDuplicate: Result.Ok(null),
                 canDelete: Result.Ok(null),
                 canRename: Result.Ok(null),
+                canMoveToIrods: Result.Ok(null),
               },
             ]}
           />
