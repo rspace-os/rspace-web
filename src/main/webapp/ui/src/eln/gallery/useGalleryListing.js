@@ -249,6 +249,8 @@ export interface GalleryFile {
   +setDescription?: (Description) => void;
 
   +linkedDocuments: Node;
+
+  +canDuplicate: Result<null>;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -390,6 +392,12 @@ class LocalGalleryFile implements GalleryFile {
   get linkedDocuments(): Node {
     return <LinkedDocumentsPanel file={this} />;
   }
+
+  get canDuplicate(): Result<null> {
+    if (this.isSystemFolder)
+      return Result.Error([new Error("Cannot duplicate system folders.")]);
+    return Result.Ok(null);
+  }
 }
 
 class Filestore implements GalleryFile {
@@ -463,6 +471,10 @@ class Filestore implements GalleryFile {
 
   get linkedDocuments(): Node {
     return null;
+  }
+
+  get canDuplicate(): Result<null> {
+    return Result.Error([new Error("Cannot duplicate filestores.")]);
   }
 }
 
@@ -546,6 +558,16 @@ class RemoteFile implements GalleryFile {
 
   get linkedDocuments(): Node {
     return null;
+  }
+
+  get canDuplicate(): Result<null> {
+    return Result.Error([
+      new Error(
+        `Cannot duplicate ${
+          this.isFolder ? "folders" : "files"
+        } stored in filestores.`
+      ),
+    ]);
   }
 }
 
