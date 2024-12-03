@@ -40,7 +40,6 @@ import * as Parsers from "../../../util/parsers";
 import * as FetchingData from "../../../util/fetchingData";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import {
-  useOpen,
   useImagePreviewOfGalleryFile,
   useCollaboraEdit,
   useOfficeOnlineEdit,
@@ -292,7 +291,6 @@ function ActionsMenu({
   const selection = useGallerySelection();
   const theme = useTheme();
   const { addAlert } = React.useContext(AlertContext);
-  const canOpenAsFolder = useOpen();
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
@@ -314,7 +312,7 @@ function ActionsMenu({
     return selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
-      .flatMap(canOpenAsFolder);
+      .flatMap((f) => f.canOpen);
   });
 
   const editingAllowed = computed(() =>
@@ -350,7 +348,7 @@ function ActionsMenu({
     selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
-      .map((file) => canOpenAsFolder(file).isOk)
+      .map((file) => file.canOpen.isOk)
       .orElse(false)
   );
 
