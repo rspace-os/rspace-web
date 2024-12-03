@@ -253,6 +253,7 @@ export interface GalleryFile {
   +canRename: Result<null>;
   +canMoveToIrods: Result<null>;
   +canBeShared: Result<null>;
+  +canBeExported: Result<null>;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -427,6 +428,10 @@ class LocalGalleryFile implements GalleryFile {
     if (this.isSnippet) return Result.Ok(null);
     return Result.Error([new Error("Only snippets can be shared.")]);
   }
+
+  get canBeExported(): Result<null> {
+    return Result.Ok(null);
+  }
 }
 
 class Filestore implements GalleryFile {
@@ -524,6 +529,10 @@ class Filestore implements GalleryFile {
 
   get canBeShared(): Result<null> {
     return Result.Error([new Error("Filestores cannot be shared.")]);
+  }
+
+  get canBeExported(): Result<null> {
+    return Result.Error([new Error("Filestores cannot be exported.")]);
   }
 }
 
@@ -657,6 +666,12 @@ class RemoteFile implements GalleryFile {
   get canBeShared(): Result<null> {
     return Result.Error([
       new Error("Contents of filestores cannot be shared within RSpace."),
+    ]);
+  }
+
+  get canBeExported(): Result<null> {
+    return Result.Error([
+      new Error("Contents of filestores cannot be exported."),
     ]);
   }
 }

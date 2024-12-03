@@ -416,7 +416,10 @@ function ActionsMenu({
   });
 
   const exportAllowed = computed((): Result<null> => {
-    return Result.Ok(null);
+    return selection
+      .asSet()
+      .only.toResult(() => new Error("Only one item can be exported at once."))
+      .flatMap((file) => file.canBeExported);
   });
 
   const downloadAllowed = computed((): Result<null> => {
