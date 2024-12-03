@@ -22,6 +22,7 @@ import createAccentedTheme from "../../../../accentedTheme";
 import "../../../../../__mocks__/matchMedia";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
+import Result from "../../../../util/result";
 
 jest.mock("../CallablePdfPreview", () => ({
   usePdfPreview: () => ({
@@ -128,6 +129,7 @@ describe("ActionsMenu", () => {
               setName: () => {},
               setDescription: () => {},
               linkedDocuments: null,
+              canDuplicate: Result.Ok(null),
             }]}
           />
           <ActionsMenu
@@ -197,6 +199,7 @@ describe("ActionsMenu", () => {
               setDescription: () => {},
               open: () => {},
               linkedDocuments: null,
+              canDuplicate: Result.Ok(null),
             }]}
           />
           <ActionsMenu
@@ -265,6 +268,7 @@ describe("ActionsMenu", () => {
                 setDescription: () => {},
                 open: () => {},
                 linkedDocuments: null,
+                canDuplicate: Result.Ok(null),
               },
               {
                 id: dummyId(),
@@ -293,6 +297,7 @@ describe("ActionsMenu", () => {
                 setDescription: () => {},
                 open: () => {},
                 linkedDocuments: null,
+                canDuplicate: Result.Ok(null),
               },
             ]}
           />

@@ -13,6 +13,7 @@ import { dummyId, Description } from "../useGalleryListing";
 import Alerts from "../../../components/Alerts/Alerts";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
+import Result from "../../../util/result";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -55,6 +56,7 @@ describe("useGalleryActions", () => {
                   setName: () => {},
                   setDescription: () => {},
                   linkedDocuments: null,
+                  canDuplicate: Result.Ok(null),
                 },
               ])
             );
@@ -153,6 +155,7 @@ describe("useGalleryActions", () => {
                   setName: () => {},
                   setDescription: () => {},
                   linkedDocuments: null,
+                  canDuplicate: Result.Ok(null),
                 },
               ])
             );
@@ -251,6 +254,7 @@ describe("useGalleryActions", () => {
                   setName: () => {},
                   setDescription: () => {},
                   linkedDocuments: null,
+                  canDuplicate: Result.Ok(null),
                 },
               ])
             ).to({
