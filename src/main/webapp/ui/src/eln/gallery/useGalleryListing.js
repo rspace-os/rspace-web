@@ -255,6 +255,7 @@ export interface GalleryFile {
   +canBeShared: Result<null>;
   +canBeExported: Result<null>;
   +canBeMoved: Result<null>;
+  +canUploadNewVersion: Result<null>;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -437,6 +438,18 @@ class LocalGalleryFile implements GalleryFile {
   get canBeMoved(): Result<null> {
     return Result.Ok(null);
   }
+
+  get canUploadNewVersion(): Result<null> {
+    if (this.isFolder)
+      return Result.Error([new Error("Cannot upload new version of folders.")]);
+    if (!this.extension)
+      return Result.Error([
+        new Error(
+          "An extension is required to be able to update the file with a new version."
+        ),
+      ]);
+    return Result.Ok(null);
+  }
 }
 
 class Filestore implements GalleryFile {
@@ -542,6 +555,12 @@ class Filestore implements GalleryFile {
 
   get canBeMoved(): Result<null> {
     return Result.Error([new Error("Filestores cannot be moved.")]);
+  }
+
+  get canUploadNewVersion(): Result<null> {
+    return Result.Error([
+      new Error("Filestores cannot be updated by uploading new versions."),
+    ]);
   }
 }
 
@@ -687,6 +706,14 @@ class RemoteFile implements GalleryFile {
   get canBeMoved(): Result<null> {
     return Result.Error([
       new Error("Contents of filestores cannot be moved from within RSpace."),
+    ]);
+  }
+
+  get canUploadNewVersion(): Result<null> {
+    return Result.Error([
+      new Error(
+        "Contents of filestores cannot be updated by uploading new versions."
+      ),
     ]);
   }
 }
