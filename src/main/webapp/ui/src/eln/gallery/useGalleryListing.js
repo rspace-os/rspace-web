@@ -253,6 +253,7 @@ export interface GalleryFile {
   +canDuplicate: Result<null>;
   +canDelete: Result<null>;
   +canRename: Result<null>;
+  +canMoveToIrods: Result<null>;
 }
 
 class LocalGalleryFile implements GalleryFile {
@@ -412,6 +413,12 @@ class LocalGalleryFile implements GalleryFile {
       return Result.Error([new Error("Cannot rename system folders.")]);
     return Result.Ok(null);
   }
+
+  get canMoveToIrods(): Result<null> {
+    if (this.isSystemFolder)
+      return Result.Error([new Error("Cannot move system folders to iRODS.")]);
+    return Result.Ok(null);
+  }
 }
 
 class Filestore implements GalleryFile {
@@ -497,6 +504,10 @@ class Filestore implements GalleryFile {
 
   get canRename(): Result<null> {
     return Result.Error([new Error("Cannot rename filestores.")]);
+  }
+
+  get canMoveToIrods(): Result<null> {
+    return Result.Error([new Error("Cannot move filestores to iRODS.")]);
   }
 }
 
@@ -608,6 +619,16 @@ class RemoteFile implements GalleryFile {
         `Cannot rename ${
           this.isFolder ? "folders" : "files"
         } stored in filestores.`
+      ),
+    ]);
+  }
+
+  get canMoveToIrods(): Result<null> {
+    return Result.Error([
+      new Error(
+        `Cannot move ${
+          this.isFolder ? "folders" : "files"
+        } stored in filestores to iRODS.`
       ),
     ]);
   }

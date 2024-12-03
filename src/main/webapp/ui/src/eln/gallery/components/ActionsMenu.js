@@ -406,9 +406,9 @@ function ActionsMenu({
   });
 
   const moveToIrodsAllowed = computed((): Result<null> => {
-    if (selection.asSet().some((f) => f.isSystemFolder))
-      return Result.Error([new Error("Cannot move system folders to iRODS.")]);
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canMoveToIrods)).map(
+      () => null
+    );
   });
 
   const sharingSnippetsAllowed = computed((): Result<null> => {
