@@ -287,6 +287,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               fontWeight: 700,
               lineHeight: 1.167,
               padding: "0",
+              margin: baseTheme.spacing(2),
             },
           },
         },

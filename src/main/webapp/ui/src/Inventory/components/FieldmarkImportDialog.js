@@ -291,6 +291,7 @@ export default function FieldmarkImportDialog({
             </Box>
           </Toolbar>
         </AppBar>
+        <DialogTitle variant="h3">Import from Fieldmark</DialogTitle>
         <DialogContent>
           <Grid
             container
@@ -298,9 +299,6 @@ export default function FieldmarkImportDialog({
             spacing={2}
             sx={{ height: "100%", flexWrap: "nowrap" }}
           >
-            <Grid item>
-              <DialogTitle variant="h3">Import from Fieldmark</DialogTitle>
-            </Grid>
             <Grid item>
               <Typography
                 variant="body2"

@@ -253,6 +253,7 @@ function MoveCopyDialog({
           }}
         >
           <form>
+            <DialogTitle variant="h3">Move to iRODS</DialogTitle>
             <DialogContent>
               <Grid
                 container
@@ -260,9 +261,6 @@ function MoveCopyDialog({
                 spacing={2}
                 sx={{ height: "100%", flexWrap: "nowrap" }}
               >
-                <Grid item>
-                  <DialogTitle variant="h3">Move to iRODS</DialogTitle>
-                </Grid>
                 {FetchingData.match(irods, {
                   loading: () => <></>,
                   error: (errorMsg) => (

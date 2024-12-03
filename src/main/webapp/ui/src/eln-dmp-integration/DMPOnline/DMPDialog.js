@@ -193,13 +193,11 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
           }}
         >
           <form onSubmit={onSubmit}>
+            <DialogTitle variant="h3">
+              Import a DMP into the Gallery
+            </DialogTitle>
             <DialogContent>
               <Grid container direction="column" spacing={2}>
-                <Grid item>
-                  <DialogTitle variant="h3">
-                    Import a DMP into the Gallery
-                  </DialogTitle>
-                </Grid>
                 <Grid item>
                   <Typography variant="body2">
                     Importing a DMP from <strong>dmponline.dcc.ac.uk</strong>{" "}

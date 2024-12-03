@@ -519,6 +519,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Box>
         </Toolbar>
       </AppBar>
+      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
         <Grid
           container
@@ -528,11 +529,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           // this is so that just the table is scrollable
           height="calc(100% + 16px)"
         >
-          <Grid item>
-            <DialogTitle variant="h3">
-              Import a DMP into the Gallery
-            </DialogTitle>
-          </Grid>
           <Grid item>
             <Typography variant="body2">
               Importing a DMP from <strong>argos.openaire.eu</strong> will make
