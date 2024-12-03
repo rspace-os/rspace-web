@@ -307,8 +307,12 @@ const NameFieldForLargeViewports = styled(
  * submitting by keyboard requires tabbing to the submit button.
  *
  * @param file           The selected file whose description is being edited.
- *                       A description that is anything but `present` is
- *                       considered to be blank.
+ *                       The `description` prop should be derived from
+ *                       `file.description`.
+ * @param description    The current description, as a string. If the
+ *                       description is missing then this component should not
+ *                       be rendered at all. If the description is empty then
+ *                       this string should be the empty string.
  * @param minimalStyling Whether minimal styling is applied.
  *                       Ignored when high contrast mode is requested, with the
  *                       borders always being shown.
@@ -318,25 +322,19 @@ const DescriptionField = styled(
   observer(
     ({
       file,
+      description: initialDescription,
       minimalStyling = false,
       className,
     }: {|
       file: GalleryFile,
+      description: string,
       minimalStyling?: boolean,
       className: string,
     |}) => {
       const { changeDescription } = useGalleryActions();
-      function getDescValue(f: GalleryFile) {
-        return f.description.match({
-          missing: () => "",
-          empty: () => "",
-          present: (d) => d,
-        });
-      }
 
-      const [description, setDescription] = React.useState<string>(
-        getDescValue(file)
-      );
+      const [description, setDescription] =
+        React.useState<string>(initialDescription);
 
       const prefersMoreContrast = window.matchMedia(
         "(prefers-contrast: more)"
@@ -352,7 +350,7 @@ const DescriptionField = styled(
             className={clsx(
               className,
               minimalStyling && !prefersMoreContrast && MINIMAL_STYLING_CLASS,
-              description !== getDescValue(file) && "modified"
+              description !== initialDescription && "modified"
             )}
             onChange={({ target: { value } }) => setDescription(value)}
             multiline
@@ -365,7 +363,7 @@ const DescriptionField = styled(
             }}
           />
           <Collapse
-            in={description !== getDescValue(file)}
+            in={description !== initialDescription}
             timeout={
               window.matchMedia("(prefers-reduced-motion: reduce)").matches
                 ? 0
@@ -376,7 +374,7 @@ const DescriptionField = styled(
               <Button
                 size="small"
                 onClick={() => {
-                  setDescription(getDescValue(file));
+                  setDescription(initialDescription);
                 }}
               >
                 Cancel
@@ -476,13 +474,29 @@ const InfoPanelContent = ({
                 },
               ]
             : []),
-          {
-            label: "Description",
-            value: (
-              <DescriptionField file={file} minimalStyling={!smallViewport} />
+          ...file.description
+            .toString()
+            .map((desc) => [
+              {
+                label: "Description",
+                value: (
+                  <DescriptionField
+                    file={file}
+                    description={desc}
+                    minimalStyling={!smallViewport}
+                  />
+                ),
+                below: true,
+              },
+            ])
+            .orElse(
+              ([]: $ReadOnlyArray<{|
+                label: string,
+                value: Node,
+                below?: boolean,
+                reducedPadding?: boolean,
+              |}>)
             ),
-            below: true,
-          },
         ]}
         sx={{
           "& dd.below": {
