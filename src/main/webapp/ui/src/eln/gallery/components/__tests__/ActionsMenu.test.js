@@ -130,6 +130,7 @@ describe("ActionsMenu", () => {
               setDescription: () => {},
               linkedDocuments: null,
               canDuplicate: Result.Ok(null),
+              canDelete: Result.Ok(null),
             }}
           />
           <ActionsMenu
@@ -200,6 +201,7 @@ describe("ActionsMenu", () => {
               open: () => {},
               linkedDocuments: null,
               canDuplicate: Result.Ok(null),
+              canDelete: Result.Ok(null),
             }}
           />
           <ActionsMenu
