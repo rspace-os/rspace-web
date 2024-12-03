@@ -208,15 +208,19 @@ const FileSelector = ({
               });
               setGalleryDialogOpen(false);
             }}
-            validateSelection={(file) =>
-              file.isSnippet
-                ? Result.Error([
-                    new Error(
-                      "Snippets cannot be attached to Inventory records."
-                    ),
-                  ])
-                : Result.Ok(null)
-            }
+            validateSelection={(file) => {
+              if (file.isSnippet)
+                return Result.Error([
+                  new Error(
+                    "Snippets cannot be attached to Inventory records."
+                  ),
+                ]);
+              if (file.isFolder)
+                return Result.Error([
+                  new Error("Folders cannot be attached to Inventory records."),
+                ]);
+              return Result.Ok(null);
+            }}
           />
         </React.Suspense>
       )}
