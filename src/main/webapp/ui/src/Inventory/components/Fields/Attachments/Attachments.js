@@ -208,15 +208,20 @@ const FileSelector = ({
               });
               setGalleryDialogOpen(false);
             }}
-            validateSelection={(file) =>
-              file.isSnippet
-                ? Result.Error([
-                    new Error(
-                      "Snippets cannot be attached to Inventory records."
-                    ),
-                  ])
-                : Result.Ok(null)
-            }
+            validateSelection={(file) => {
+              if (file.isSnippet)
+                return Result.Error([
+                  new Error(
+                    "Snippets cannot be attached to Inventory records."
+                  ),
+                ]);
+              if (!file.globalId)
+                return Result.Error([
+                  // some of the files will be from filestores
+                  new Error(`"${file.name}" does not have an RSpace Global Id`),
+                ]);
+              return Result.Ok(null);
+            }}
           />
         </React.Suspense>
       )}
