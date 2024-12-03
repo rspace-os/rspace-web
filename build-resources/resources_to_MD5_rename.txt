@@ -12,7 +12,6 @@ scripts/externalTinymcePlugins/googledrive/plugin.min.js
 scripts/externalTinymcePlugins/internallink/plugin.min.js
 scripts/externalTinymcePlugins/jove/plugin.min.js
 scripts/externalTinymcePlugins/mathjax/plugin.min.js
-scripts/externalTinymcePlugins/mendeley/plugin.min.js
 scripts/externalTinymcePlugins/nexcloud/plugin.min.js
 scripts/externalTinymcePlugins/onedrive/plugin.min.js
 scripts/externalTinymcePlugins/owncloud/plugin.min.js

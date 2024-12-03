@@ -58,6 +58,11 @@ declare module "@mui/x-data-grid" {
       tabIndex: number,
       ...
     }) => Node,
+    /*
+     * if valueFormatter and renderCell are defined, then renderCell will be
+     * used for the UI and valueFormatter for the CSV output. If renderCell is
+     * not specified then valueFormatter will be used for both.
+     */
     valueFormatter?: ({ value: mixed, ... }) => Node,
     hideable?: boolean,
     width?: number,

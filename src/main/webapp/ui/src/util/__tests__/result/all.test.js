@@ -76,4 +76,12 @@ describe("all", () => {
       expect(errors.map((e) => e.message)).toEqual(["error2", "error1"]);
     });
   });
+  test("Empty array in, empty array out", () => {
+    const input: $ReadOnlyArray<Result<mixed>> = [];
+    const actual = Result.all(...input);
+    expect(actual.isOk).toBe(true);
+    actual.do((output) => {
+      expect(output.length).toBe(0);
+    });
+  });
 });

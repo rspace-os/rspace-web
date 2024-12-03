@@ -50,7 +50,10 @@ function OverviewSection({
       sectionName="overview"
       recordType="sample"
     >
-      <Image fieldOwner={collection} />
+      <Image
+        fieldOwner={collection}
+        alt={`What the ${collection.size} samples look like`}
+      />
       {collection.isFieldEditable("image") && (
         <Box mt={1}>
           <Alert severity="info">

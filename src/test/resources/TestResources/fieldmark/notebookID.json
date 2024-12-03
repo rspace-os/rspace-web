@@ -1,0 +1,448 @@
+{
+  "metadata": {
+    "Age": "123",
+    "Size": "Large",
+    "accesses": [
+      "admin",
+      "moderator",
+      "team",
+      "user"
+    ],
+    "filenames": [],
+    "ispublic": false,
+    "isrequest": false,
+    "lead_institution": "Fieldmark",
+    "name": "RSpace IGSN Demo",
+    "notebook_version": "1.1",
+    "pre_description": "Demonstration notebook to help develop an export pipeline from Fieldmark to RSpace.",
+    "project_lead": "Steve Cassidy",
+    "project_status": "New",
+    "schema_version": "1.0",
+    "sections": {},
+    "showQRCodeButton": "true",
+    "project_id": "1726126204618-rspace-igsn-demo"
+  },
+  "ui-specification": {
+    "fields": {
+      "New-Text-Field": {
+        "component-namespace": "formik-material-ui",
+        "component-name": "TextField",
+        "type-returned": "faims-core::String",
+        "component-parameters": {
+          "fullWidth": true,
+          "helperText": "Summarise the collection location.",
+          "variant": "outlined",
+          "required": false,
+          "InputProps": {
+            "type": "text"
+          },
+          "SelectProps": {},
+          "name": "New-Text-Field",
+          "label": "Location Description"
+        },
+        "validationSchema": [
+          [
+            "yup.string"
+          ]
+        ],
+        "initialValue": "",
+        "meta": {
+          "annotation": {
+            "include": true,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": true,
+            "label": "uncertainty"
+          }
+        }
+      },
+      "Field-ID": {
+        "component-namespace": "faims-custom",
+        "component-name": "BasicAutoIncrementer",
+        "type-returned": "faims-core::String",
+        "component-parameters": {
+          "name": "Field-ID",
+          "id": "basic-autoincrementer-field",
+          "variant": "outlined",
+          "required": true,
+          "num_digits": 5,
+          "form_id": "Primary-Next-Section",
+          "label": "ID"
+        },
+        "validationSchema": [
+          [
+            "yup.string"
+          ],
+          [
+            "yup.required"
+          ]
+        ],
+        "initialValue": null,
+        "meta": {
+          "annotation": {
+            "include": true,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": true,
+            "label": "uncertainty"
+          }
+        }
+      },
+      "hridPrimary-Next-Section": {
+        "component-namespace": "faims-custom",
+        "component-name": "TemplatedStringField",
+        "type-returned": "faims-core::String",
+        "component-parameters": {
+          "fullWidth": true,
+          "name": "hridPrimary-Next-Section",
+          "id": "hrid-field",
+          "helperText": "Human Readable observation ID",
+          "variant": "outlined",
+          "required": true,
+          "template": "Sample-{{Survey-Number}}-{{Field-ID}}",
+          "InputProps": {
+            "type": "text"
+          },
+          "hrid": true,
+          "label": "Identifier",
+          "InputLabelProps": {
+            "label": "Identifier"
+          }
+        },
+        "validationSchema": [
+          [
+            "yup.string"
+          ],
+          [
+            "yup.required"
+          ]
+        ],
+        "initialValue": "",
+        "meta": {
+          "annotation": {
+            "include": true,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": true,
+            "label": "uncertainty"
+          }
+        }
+      },
+      "IGSN-QR-Code": {
+        "component-namespace": "qrcode",
+        "component-name": "QRCodeFormField",
+        "type-returned": "faims-core::String",
+        "component-parameters": {
+          "name": "IGSN-QR-Code",
+          "id": "qr-code-field",
+          "variant": "outlined",
+          "required": true,
+          "label": "IGSN QR Code",
+          "FormLabelProps": {
+            "children": "Input a value here"
+          },
+          "helperText": "Scan the pre-printed QR Code for this sample."
+        },
+        "validationSchema": [
+          [
+            "yup.string"
+          ]
+        ],
+        "initialValue": "1",
+        "meta": {
+          "annotation": {
+            "include": false,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": false,
+            "label": "uncertainty"
+          }
+        }
+      },
+      "Sample-Location": {
+        "component-namespace": "faims-custom",
+        "component-name": "TakePoint",
+        "type-returned": "faims-pos::Location",
+        "component-parameters": {
+          "fullWidth": true,
+          "name": "Sample-Location",
+          "id": "take-point-field",
+          "helperText": "Click to save current location",
+          "variant": "outlined",
+          "label": "Sample Location"
+        },
+        "validationSchema": [
+          [
+            "yup.object"
+          ],
+          [
+            "yup.nullable"
+          ]
+        ],
+        "initialValue": null,
+        "meta": {
+          "annotation": {
+            "include": true,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": true,
+            "label": "uncertainty"
+          }
+        }
+      },
+      "Sample-Photograph": {
+        "component-namespace": "faims-custom",
+        "component-name": "TakePhoto",
+        "type-returned": "faims-attachment::Files",
+        "component-parameters": {
+          "fullWidth": true,
+          "name": "Sample-Photograph",
+          "id": "take-photo-field",
+          "helperText": "Take a photo",
+          "variant": "outlined",
+          "label": "Sample Photograph"
+        },
+        "validationSchema": [
+          [
+            "yup.array"
+          ],
+          [
+            "yup.of",
+            [
+              [
+                "yup.object"
+              ],
+              [
+                "yup.nullable"
+              ]
+            ]
+          ],
+          [
+            "yup.nullable"
+          ]
+        ],
+        "initialValue": null,
+        "meta": {
+          "annotation": {
+            "include": true,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": true,
+            "label": "uncertainty"
+          }
+        }
+      },
+      "Length-mm": {
+        "component-namespace": "formik-material-ui",
+        "component-name": "TextField",
+        "type-returned": "faims-core::Integer",
+        "component-parameters": {
+          "fullWidth": true,
+          "helperText": "Longest dimension of sample in mm.",
+          "variant": "outlined",
+          "required": false,
+          "InputProps": {
+            "type": "number"
+          },
+          "SelectProps": {},
+          "name": "Length-mm",
+          "label": "Length (mm)"
+        },
+        "validationSchema": [
+          [
+            "yup.number"
+          ]
+        ],
+        "initialValue": "",
+        "meta": {
+          "annotation": {
+            "include": true,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": true,
+            "label": "uncertainty"
+          }
+        }
+      },
+      "Survey-Number": {
+        "component-namespace": "formik-material-ui",
+        "component-name": "TextField",
+        "type-returned": "faims-core::Integer",
+        "component-parameters": {
+          "label": "Survey Number",
+          "fullWidth": true,
+          "helperText": "We have fields for storing Numbers.",
+          "variant": "outlined",
+          "required": false,
+          "InputProps": {
+            "type": "number"
+          },
+          "name": "Survey-Number"
+        },
+        "validationSchema": [
+          [
+            "yup.number"
+          ]
+        ],
+        "initialValue": "",
+        "meta": {
+          "annotation": {
+            "include": true,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": true,
+            "label": "uncertainty"
+          }
+        }
+      },
+      "Width-mm": {
+        "component-namespace": "formik-material-ui",
+        "component-name": "TextField",
+        "type-returned": "faims-core::Integer",
+        "component-parameters": {
+          "label": "Width (mm)",
+          "fullWidth": true,
+          "helperText": "Shortest dimension of sample in mm",
+          "variant": "outlined",
+          "required": false,
+          "InputProps": {
+            "type": "number"
+          },
+          "name": "Width-mm"
+        },
+        "validationSchema": [
+          [
+            "yup.number"
+          ]
+        ],
+        "initialValue": "",
+        "meta": {
+          "annotation": {
+            "include": true,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": true,
+            "label": "uncertainty"
+          }
+        },
+        "condition": null,
+        "persistent": false,
+        "displayParent": false
+      },
+      "Thickness-mm": {
+        "component-namespace": "formik-material-ui",
+        "component-name": "TextField",
+        "type-returned": "faims-core::Integer",
+        "component-parameters": {
+          "label": "Thickness (mm)",
+          "fullWidth": true,
+          "helperText": "Thickness of sample in mm",
+          "variant": "outlined",
+          "required": false,
+          "InputProps": {
+            "type": "number"
+          },
+          "name": "Thickness-mm"
+        },
+        "validationSchema": [
+          [
+            "yup.number"
+          ]
+        ],
+        "initialValue": "",
+        "meta": {
+          "annotation": {
+            "include": true,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": true,
+            "label": "uncertainty"
+          }
+        },
+        "condition": null,
+        "persistent": false,
+        "displayParent": false
+      },
+      "Description": {
+        "component-namespace": "formik-material-ui",
+        "component-name": "TextField",
+        "type-returned": "faims-core::String",
+        "component-parameters": {
+          "label": "Description",
+          "fullWidth": true,
+          "helperText": "Enter a description of the sample",
+          "variant": "outlined",
+          "required": false,
+          "InputProps": {
+            "type": "text"
+          },
+          "name": "Description"
+        },
+        "validationSchema": [
+          [
+            "yup.string"
+          ]
+        ],
+        "initialValue": "",
+        "meta": {
+          "annotation": {
+            "include": false,
+            "label": "annotation"
+          },
+          "uncertainty": {
+            "include": false,
+            "label": "uncertainty"
+          }
+        },
+        "condition": null,
+        "persistent": false,
+        "displayParent": false
+      }
+    },
+    "fviews": {
+      "Primary-New-Section": {
+        "label": "Detail",
+        "fields": [
+          "Sample-Location",
+          "New-Text-Field",
+          "Description",
+          "Sample-Photograph",
+          "Length-mm",
+          "Width-mm",
+          "Thickness-mm"
+        ]
+      },
+      "Primary-Next-Section": {
+        "label": "Identify",
+        "fields": [
+          "Field-ID",
+          "hridPrimary-Next-Section",
+          "Survey-Number",
+          "IGSN-QR-Code"
+        ]
+      }
+    },
+    "viewsets": {
+      "Primary": {
+        "label": "Observation",
+        "views": [
+          "Primary-Next-Section",
+          "Primary-New-Section"
+        ]
+      }
+    },
+    "visible_types": [
+      "Primary"
+    ]
+  }
+}

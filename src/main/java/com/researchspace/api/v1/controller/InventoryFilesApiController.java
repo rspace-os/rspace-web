@@ -61,6 +61,7 @@ public class InventoryFilesApiController extends BaseApiInventoryController
 
   @Data
   @NoArgsConstructor
+  @AllArgsConstructor
   public static class ApiInventoryFilePost {
 
     @JsonProperty("parentGlobalId")

@@ -21,7 +21,7 @@ function Image<
     ...
   },
   FieldOwner: HasEditableFields<Fields>
->({ fieldOwner }: {| fieldOwner: FieldOwner |}): Node {
+>({ fieldOwner, alt }: {| fieldOwner: FieldOwner, alt: string |}): Node {
   const { search } = useContext(SearchContext);
   const isFieldEditable = fieldOwner.isFieldEditable("image");
   let tooManytoBatchThis: boolean = false;
@@ -64,6 +64,7 @@ function Image<
             width={150}
             id="preview-image-form-element"
             noValueLabel={fieldOwner.noValueLabel.image}
+            alt={alt}
           />
           <canvas id={CANVAS_ID} style={{ display: "none" }} />
           {tooManytoBatchThis && (

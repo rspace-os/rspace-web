@@ -10,7 +10,6 @@ import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CreateNew from "../CreateNew";
-import ImportMenu from "../ImportMenu";
 import Drawer from "@mui/material/Drawer";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import GetAppIcon from "@mui/icons-material/GetApp";
@@ -37,8 +36,37 @@ import Box from "@mui/material/Box";
 import { type Theme } from "../../../theme";
 import HelpDocs from "../../../components/Help/HelpDocs";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, ThemeProvider } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
+import createAccentedTheme from "../../../accentedTheme";
+
+const COLOR = {
+  main: {
+    hue: 197,
+    saturation: 50,
+    lightness: 80,
+  },
+  darker: {
+    hue: 197,
+    saturation: 100,
+    lightness: 30,
+  },
+  contrastText: {
+    hue: 200,
+    saturation: 30,
+    lightness: 36,
+  },
+  background: {
+    hue: 200,
+    saturation: 20,
+    lightness: 82,
+  },
+  backgroundContrastText: {
+    hue: 203,
+    saturation: 17,
+    lightness: 35,
+  },
+};
 
 const drawerWidth = 200;
 
@@ -169,7 +197,7 @@ const NavItem = withStyles<
   { button: string, listIcon: string }
 >((theme: Theme) => ({
   button: {
-    paddingLeft: theme.spacing(3),
+    paddingLeft: theme.spacing(2.5),
     borderTopRightRadius: theme.spacing(3),
     borderBottomRightRadius: theme.spacing(3),
     cursor: "pointer",
@@ -554,8 +582,9 @@ function Sidebar(): Node {
       <SidebarActivator />
       <div className={classes.drawerContainer}>
         <List component="nav" aria-label="Create new Inventory items">
-          <CreateNew onCreate={afterClick} />
-          <ImportMenu onClick={afterClick} />
+          <ThemeProvider theme={createAccentedTheme(COLOR)}>
+            <CreateNew onClick={afterClick} />
+          </ThemeProvider>
         </List>
         <List
           component="nav"

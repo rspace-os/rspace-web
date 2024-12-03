@@ -1,0 +1,26 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2023-12-02" author="matthias">
+        <comment>
+            RSDEV-262: remove system property/descriptor from old Mendeley integration
+        </comment>
+        <sql>
+            DELETE spv FROM SystemPropertyValue spv
+                JOIN SystemProperty sp ON spv.property_id = sp.id
+                JOIN PropertyDescriptor pd ON sp.descriptor_id = pd.id
+                WHERE pd.name = 'mendeley.available';
+
+                DELETE sp FROM SystemProperty sp
+                JOIN PropertyDescriptor pd ON sp.descriptor_id = pd.id
+                WHERE pd.name = 'mendeley.available';
+
+                DELETE pd FROM PropertyDescriptor pd
+                WHERE pd.name = 'mendeley.available';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

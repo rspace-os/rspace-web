@@ -36,8 +36,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): Node {
       <IntegrationCard
         name="Fieldmark"
         integrationState={integrationState}
-        explanatoryText="Available soon."
-        //explanatoryText="Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory."
+        explanatoryText="Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory."
         image={FieldmarktIcon}
         color={COLOR}
         update={(newMode) =>
@@ -55,9 +54,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): Node {
         setupSection={
           <>
             <ol>
-              <li>
-                Obtain an API Token from Fieldmark by [how to get API key].
-              </li>
+              <li>Obtain an API Token from Fieldmark.</li>
               <li>Copy the API Token into the field below, and Save.</li>
               <li>Enable the integration.</li>
               <li>

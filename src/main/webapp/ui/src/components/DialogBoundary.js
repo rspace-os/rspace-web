@@ -107,6 +107,14 @@ type DialogArgs<T> = {|
   TransitionComponent?: ComponentType<T> | Node,
   className?: string,
   onClick?: () => void,
+
+  /*
+   * If one of the descendents of the Dialog is not a Material UI DialogTitle
+   * then jest-axe will rightly complain that the dialog does not have a label.
+   * Instead of passing `aria-label` or `aria-labelledby` here, be sure to use
+   * a DialogTitle as the Material UI Dialog and DialogTitle already contain
+   * the logic for wiring up the `aria-labelledby` attribute correctly.
+   */
 |};
 
 export function Dialog<T>(props: DialogArgs<T>): Node {

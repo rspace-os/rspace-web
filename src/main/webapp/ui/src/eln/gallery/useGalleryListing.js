@@ -389,7 +389,6 @@ export function useGalleryListing({
     return Parsers.objectPath(["data", "items", "results"], data)
       .flatMap(Parsers.isArray)
       .map((array) => {
-        if (array.length === 0) return ([]: $ReadOnlyArray<GalleryFile>);
         return Result.all(
           ...array.map((m) =>
             Parsers.isObject(m)

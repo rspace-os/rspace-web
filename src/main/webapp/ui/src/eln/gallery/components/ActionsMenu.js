@@ -33,7 +33,6 @@ import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import MoveToIrods, { COLOR as IRODS_COLOR } from "./MoveToIrods";
 import IrodsLogo from "./IrodsLogo.svg";
-import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 import MoveDialog from "./MoveDialog";
 import ExportDialog from "../../../Export/ExportDialog";
@@ -52,6 +51,11 @@ import {
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import axios from "axios";
+import ImageEditingDialog from "../../../components/ImageEditingDialog";
+import { doNotAwait } from "../../../util/Util";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import CardMedia from "@mui/material/CardMedia";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -285,9 +289,10 @@ function ActionsMenu({
   folderId,
 }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
-  const { deleteFiles, duplicateFiles } = useGalleryActions();
+  const { deleteFiles, duplicateFiles, uploadFiles } = useGalleryActions();
   const selection = useGallerySelection();
   const theme = useTheme();
+  const { addAlert } = React.useContext(AlertContext);
   const canOpenAsFolder = useOpen();
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
@@ -302,6 +307,9 @@ function ActionsMenu({
   const [moveOpen, setMoveOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
+  const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(
+    null
+  );
 
   const openAllowed = computed(() => {
     return selection
@@ -314,14 +322,27 @@ function ActionsMenu({
     selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
-      .flatMap((file) => {
+      .flatMap<
+        | {| key: "image", downloadHref: ?string |}
+        | {| key: "document", url: string |}
+      >((file) => {
         if (file.isImage)
-          return Result.Error<null>([new Error("Not yet implemented.")]);
+          return Result.Ok({ key: "image", downloadHref: file.downloadHref });
         return canEditWithCollabora(file)
           .orElseTry(() => canEditWithOfficeOnline(file))
-          .map(() => Result.Error<null>([new Error("Not yet implemented.")]))
+          .map<
+            Result<
+              | {| key: "image", downloadHref: ?string |}
+              | {| key: "document", url: string |}
+            >
+          >((url) =>
+            Result.Ok({
+              key: "document",
+              url,
+            })
+          )
           .orElseGet(() =>
-            Result.Error<null>([new Error("Cannot edit this item.")])
+            Result.Error<_>([new Error("Cannot edit this item.")])
           );
       })
   );
@@ -501,6 +522,19 @@ function ActionsMenu({
           foregroundColor={COLOR.contrastText}
           avatar={<EditIcon />}
           onClick={() => {
+            editingAllowed.get().do((action) => {
+              if (action.key === "document") window.open(action.url);
+              if (action.key === "image") {
+                if (!action.downloadHref) return;
+                void axios
+                  .get<Blob>(action.downloadHref, {
+                    responseType: "blob",
+                  })
+                  .then(({ data }) => {
+                    setImageEditorBlob(data);
+                  });
+              }
+            });
             setActionsMenuAnchorEl(null);
           }}
           compact
@@ -671,18 +705,7 @@ function ActionsMenu({
             .orElseGet(([e]) => e.message)}
           backgroundColor={IRODS_COLOR.background}
           foregroundColor={IRODS_COLOR.contrastText}
-          avatar={
-            <Avatar
-              variant="square"
-              sx={{
-                width: 28,
-                height: 28,
-                bgcolor: `hsl(${IRODS_COLOR.main.hue}deg, ${IRODS_COLOR.main.saturation}%, ${IRODS_COLOR.main.lightness}%, 100%)`,
-                border: `4px solid hsl(${IRODS_COLOR.main.hue}deg, ${IRODS_COLOR.main.saturation}%, ${IRODS_COLOR.main.lightness}%, 100%)`,
-              }}
-              src={IrodsLogo}
-            />
-          }
+          avatar={<CardMedia image={IrodsLogo} />}
           onClick={() => {
             setIrodsOpen(true);
           }}
@@ -724,6 +747,58 @@ function ActionsMenu({
           disabled={deleteAllowed.get().isError}
         />
       </StyledMenu>
+      <ImageEditingDialog
+        imageFile={imageEditorBlob}
+        open={imageEditorBlob !== null}
+        close={() => {
+          setImageEditorBlob(null);
+        }}
+        submitButtonLabel="Save as new image"
+        submitHandler={doNotAwait(async (newBlob) => {
+          try {
+            const file = selection
+              .asSet()
+              .only.toResult(() => new Error("Nothing selected"))
+              .elseThrow();
+            const newFile = new File(
+              [newBlob],
+              file.transformFilename((name) => name + "_edited"),
+              {
+                type: newBlob.type,
+              }
+            );
+            const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
+              .map(({ id }) => id)
+              .orElseTry(() => FetchingData.getSuccessValue(folderId))
+              .mapError(() => new Error("Current folder is not known"))
+              .elseThrow();
+            await uploadFiles(file.path, idOfFolderThatFileIsIn, [newFile]);
+            refreshListing();
+          } catch (e) {
+            addAlert(
+              mkAlert({
+                variant: "error",
+                title: "Failed to process edited image",
+                message: e.message,
+              })
+            );
+          } finally {
+            setActionsMenuAnchorEl(null);
+          }
+        })}
+        alt={selection
+          .asSet()
+          .only.map(
+            (file) =>
+              file.name +
+              file.description.match({
+                missing: () => "",
+                empty: () => "",
+                present: (d) => d,
+              })
+          )
+          .orElse("")}
+      />
       <Typography
         variant="body2"
         sx={{

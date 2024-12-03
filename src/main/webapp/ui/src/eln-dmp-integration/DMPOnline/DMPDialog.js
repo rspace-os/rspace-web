@@ -7,6 +7,7 @@ import useViewportDimensions from "../../util/useViewportDimensions";
 import { withStyles } from "Styles";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
@@ -192,17 +193,15 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
           }}
         >
           <form onSubmit={onSubmit}>
+            <DialogTitle variant="h3">
+              Import a DMP into the Gallery
+            </DialogTitle>
             <DialogContent>
               <Grid container direction="column" spacing={2}>
                 <Grid item>
-                  <Typography variant="h3">
-                    Import a DMP into the Gallery
-                  </Typography>
-                </Grid>
-                <Grid item>
                   <Typography variant="body2">
-                    Importing a DMP will make it available to view and reference
-                    within RSpace.
+                    Importing a DMP from <strong>dmponline.dcc.ac.uk</strong>{" "}
+                    will make it available to view and reference within RSpace.
                   </Typography>
                   <Typography variant="body2">
                     See{" "}

@@ -1,27 +1,54 @@
 //@flow
 
-import React, { useRef, type Node, type ComponentType } from "react";
-import "./ImageEditingDialogStyles.css";
+import React, { type Node, type ComponentType } from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import FileFormatPrompt from "./FileFormatPrompt";
-import ImageEditor from "@toast-ui/react-image-editor";
-import whiteTheme from "../common/theme";
 import { observer } from "mobx-react-lite";
+import ReactCrop from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
+import RotateLeftIcon from "@mui/icons-material/RotateLeft";
+import RotateRightIcon from "@mui/icons-material/RotateRight";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Divider from "@mui/material/Divider";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import { styled } from "@mui/material/styles";
+import { makeStyles } from "tss-react/mui";
+import DialogTitle from "@mui/material/DialogTitle";
 
-function getImageSize(base64String: string): string {
-  var stringLength = base64String.length - "data:image/png;base64,".length;
-  var sizeInBytes = 4 * Math.ceil(stringLength / 3) * 0.5624896334383812;
-  var sizeInKb = sizeInBytes / 1000;
+const useStyles = makeStyles()((_theme, { height }) => ({
+  /*
+   * These height style attributes are to ensure that when a tall image is
+   * being edited, it is scaled down rather than overflowing the dialog and
+   * resulting in the need to scroll: ideally the whole image should be visible
+   * when cropping. Setting `maxHeight: 100%` and `objectFit: scale-down` is
+   * not sufficient; all of the DOM nodes between the HTMLImageElement and the
+   * DialogContent need to have `height: 100%`. We then have to shrink back the
+   * crop-mask to only cover the image itself and not the whitespace below.
+   */
+  crop: {
+    height: "100%",
+    "& .ReactCrop__child-wrapper": {
+      height: "100%",
+    },
+    "& .ReactCrop__crop-mask": {
+      height: `${height}px`,
+    },
+  },
+}));
 
-  if (sizeInKb < 1024) {
-    return `${sizeInKb.toFixed(0)} KB`;
-  } else {
-    return `${(sizeInKb / 1024).toFixed(2)} MB`;
-  }
-}
+const StyledDialog = styled(Dialog)(() => ({
+  "& > .MuiDialog-container > .MuiPaper-root": {
+    /*
+     * Even though this makes the dialog taller than it needs to be for
+     * horizontal images, this is necessary to ensure that vertical images are
+     * scaled down rather than overflowing the dialog with a scrollbar.
+     */
+    height: "100%",
+  },
+}));
 
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 
@@ -42,7 +69,9 @@ type ImageEditingDialogArgs = {|
   imageFile: ?Blob,
   open: boolean,
   close: () => void,
-  submitHandler: (string) => void,
+  submitHandler: (Blob) => void,
+  alt: string,
+  submitButtonLabel?: string,
 |};
 
 function ImageEditingDialog({
@@ -50,12 +79,27 @@ function ImageEditingDialog({
   open,
   close,
   submitHandler,
+  alt,
+  submitButtonLabel = "Done",
 }: ImageEditingDialogArgs): Node {
+  const [imageHeight, setImageHeight] = React.useState(0);
+  const { classes } = useStyles({ height: imageHeight });
   const [editorData, setEditorData] = React.useState<?string>(null);
+  const [crop, setCrop] = React.useState({
+    unit: "px",
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
+  const [scale, setScale] = React.useState({
+    x: 1,
+    y: 1,
+  });
+  const imageElement = React.useRef<HTMLImageElement | null>(null);
+  const [dirtyFlag, setDirtyFlag] = React.useState(false);
   const [imageType, setImageType] = React.useState("");
-  const [promptOpen, setPromptOpen] = React.useState(false);
-  const closeButton = useRef(null);
-  const editor = useRef(null);
+  const titleId = React.useId();
 
   React.useEffect(() => {
     let settable = true;
@@ -71,77 +115,182 @@ function ImageEditingDialog({
     };
   }, [imageFile]);
 
-  const getImageInFormat = (format: string): string => {
-    if (!editor.current) return "";
-    return editor.current.getInstance().toDataURL(
-      format === "jpeg"
-        ? {
-            format: "jpeg",
-            quality: 0.85,
-          }
-        : null
-    );
-  };
-
-  const submit = (format: string) => {
-    setPromptOpen(false);
-    close();
-    submitHandler(getImageInFormat(format));
-  };
-
-  const mainDialogSubmit = () => {
-    if (editor.current?.getInstance().isEmptyUndoStack()) {
-      submit(imageType);
-    } else if (imageType === "jpeg") {
-      setPromptOpen(true);
-    } else {
-      submit(imageType);
+  const onImageLoad = (e: Event): void => {
+    if (e.target instanceof HTMLImageElement) {
+      const target: HTMLImageElement = e.target;
+      const { naturalHeight, naturalWidth, height, width } = target;
+      setImageHeight(height);
+      if (!imageElement) return;
+      imageElement.current = target;
+      setScale({
+        x: naturalWidth / width,
+        y: naturalHeight / height,
+      });
+      setCrop({
+        unit: "px",
+        x: 0,
+        y: 0,
+        width,
+        height,
+      });
     }
   };
 
+  const onRotate = (direction: "clockwise" | "counter clockwise"): void => {
+    setDirtyFlag(true);
+    const getRotatedImageURL = (): string => {
+      const image = imageElement.current;
+      if (!image) throw new Error("Image file not present");
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = image.naturalHeight;
+      canvas.height = image.naturalWidth;
+      if (ctx) {
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(((direction === "clockwise" ? 90 : -90) * Math.PI) / 180);
+        ctx.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
+      }
+      return canvas.toDataURL(imageType, "1.0");
+    };
+    setEditorData(getRotatedImageURL());
+  };
+
+  const cropImage = (format: string): Promise<Blob> => {
+    const image = imageElement.current;
+    if (!image) throw new Error("Image file not present");
+    const canvas = document.createElement("canvas");
+
+    const maxWidth = 600;
+    const imageRatio = maxWidth / crop.width;
+    canvas.width = maxWidth;
+    canvas.height = crop.height * imageRatio;
+    const ctx = canvas.getContext("2d");
+    if (ctx)
+      ctx.drawImage(
+        image,
+        crop.x * scale.x,
+        crop.y * scale.y,
+        crop.width * scale.x,
+        crop.height * scale.y,
+        0,
+        0,
+        crop.width * imageRatio,
+        crop.height * imageRatio
+      );
+
+    return new Promise((resolve) => canvas.toBlob(resolve, format, "1.0"));
+  };
+
+  const mainDialogSubmit = () => {
+    if (!dirtyFlag) {
+      close();
+      return;
+    }
+
+    /*
+     * We apply rotations in place because they can always be undone by
+     * rotating in the other direction so there is no infomation loss. We only
+     * apply the cropping once the user submits the dialog as cropping the
+     * image as the move the cropped region would prevent them from undoing
+     * their changes.
+     */
+    void cropImage(imageType).then((newImage) => {
+      submitHandler(newImage);
+      close();
+    });
+  };
+
   return (
-    <Dialog fullScreen open={open} onClose={close}>
-      <DialogContent style={{ overscrollBehavior: "contain", padding: "0px" }}>
+    <StyledDialog
+      maxWidth="md"
+      open={open}
+      onClose={close}
+      aria-labelledby={titleId}
+    >
+      <DialogTitle id={titleId}>Edit Image</DialogTitle>
+      <DialogContent
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+        }}
+      >
         {editorData && (
-          <ImageEditor
-            ref={editor}
-            includeUI={{
-              loadImage: {
-                path: editorData,
-                name: "Blank",
-              },
-              theme: whiteTheme,
-              menu: ["crop", "flip", "rotate", "filter"],
-              initMenu: null,
-              uiSize: {
-                width: "100%",
-                height: "100%",
-              },
-              menuBarPosition: "right",
+          <ReactCrop
+            crop={crop}
+            onChange={setCrop}
+            className={classes.crop}
+            maxHeight={imageHeight}
+            onComplete={(newCrop) => {
+              setDirtyFlag(true);
+              /*
+               * Prevent the user from extending the cropping region to areas
+               * outside of the image, below it. Normally, react-image-crop
+               * would prevent this -- as it does in the other three directions
+               * -- but because we're setting `height: 100%` on many of its
+               * constitutent DOM nodes this is no longer enforced. As such, we
+               * enforce it ourselves.
+               */
+              if (newCrop.height + newCrop.y > imageHeight)
+                setCrop({
+                  ...newCrop,
+                  height: Math.min(imageHeight - newCrop.y, newCrop.height),
+                });
             }}
-          />
-        )}
-        {promptOpen && (
-          <FileFormatPrompt
-            pngSize={getImageSize(getImageInFormat("png"))}
-            jpegSize={getImageSize(getImageInFormat("jpeg"))}
-            saveAs={submit}
-            open={promptOpen}
-            closePrompt={() => setPromptOpen(false)}
-          />
+          >
+            <img
+              alt={alt}
+              src={editorData}
+              onLoad={onImageLoad}
+              style={{
+                /*
+                 * Can't add a border or outline as it throws off the logic of
+                 * the crop region and draggable anchors.
+                 */
+                maxHeight: "100%",
+                maxWidth: "100%",
+                objectFit: "scale-down",
+              }}
+            />
+          </ReactCrop>
         )}
       </DialogContent>
       <DialogActions>
-        <Button
-          ref={closeButton}
-          onClick={mainDialogSubmit}
-          color="primary"
-          data-test-id="confirm-action"
-        >
-          Done
+        <ButtonGroup variant="outlined">
+          <IconButton
+            onClick={() => {
+              onRotate("counter clockwise");
+            }}
+            aria-label="rotate counter clockwise"
+            size="small"
+          >
+            <RotateLeftIcon />
+          </IconButton>
+          <Divider
+            orientation="vertical"
+            sx={{
+              height: "26px",
+              marginTop: "4px",
+              borderRightWidth: "2px",
+            }}
+          />
+          <IconButton
+            onClick={() => {
+              onRotate("clockwise");
+            }}
+            aria-label="rotate clockwise"
+            size="small"
+          >
+            <RotateRightIcon />
+          </IconButton>
+        </ButtonGroup>
+        <Box flexGrow={1}></Box>
+        <Button onClick={close}>Cancel</Button>
+        <Button onClick={mainDialogSubmit} color="primary">
+          {submitButtonLabel}
         </Button>
       </DialogActions>
-    </Dialog>
+    </StyledDialog>
   );
 }
 

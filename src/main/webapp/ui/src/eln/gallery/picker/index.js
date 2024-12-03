@@ -136,6 +136,7 @@ const Picker = observer(
                   md: "unset",
                 },
               }}
+              aria-label="Gallery Picker"
             >
               <AppBar
                 appliedSearchTerm={appliedSearchTerm}

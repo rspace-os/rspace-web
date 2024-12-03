@@ -89,7 +89,7 @@
     "history": "=5.3.0",
     "i": "^0.3.7",
     "immutability-helper": "=3.1.1",
-    "jest-axe": "^7.0.1",
+    "jest-axe": "9.0.0",
     "jest-junit": "=15.0.0",
     "jsdom": "^20.0.3",
     "jwt-decode": "=3.1.2",
@@ -104,6 +104,7 @@
     "react-autosuggest": "=10.1.0",
     "react-device-detect": "=2.2.3",
     "react-dom": "=18.2.0",
+    "react-image-crop": "^11.0.7",
     "react-leaflet": "^4.2.1",
     "react-pdf": "^9.1.0",
     "react-photoswipe-gallery": "=2.2.7",
@@ -139,6 +140,7 @@
       "default",
       "jest-junit",
       "<rootDir>/__tests__/reporters/slowest"
-    ]
+    ],
+    "testEnvironmentOptions": { "resources": "usable" }
   }
 }

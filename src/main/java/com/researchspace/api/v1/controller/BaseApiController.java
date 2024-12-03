@@ -181,8 +181,8 @@ public class BaseApiController implements ServletContextAware {
     apiSearchResult.addNavigationLinks(getApiBaseURI(), pgCrit, srchConfig);
   }
 
-  void throwBindExceptionIfErrors(BindingResult errors) throws BindException {
-    if (errors.hasErrors()) {
+  protected void throwBindExceptionIfErrors(BindingResult errors) throws BindException {
+    if (errors != null && errors.hasErrors()) {
       throw new BindException(errors);
     }
   }

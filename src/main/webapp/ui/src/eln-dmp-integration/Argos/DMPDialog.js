@@ -49,6 +49,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { DataGrid } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
+import DialogTitle from "@mui/material/DialogTitle";
 
 const COLOR = {
   main: {
@@ -518,6 +519,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Box>
         </Toolbar>
       </AppBar>
+      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
         <Grid
           container
@@ -528,12 +530,9 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           height="calc(100% + 16px)"
         >
           <Grid item>
-            <Typography variant="h3">Import a DMP into the Gallery</Typography>
-          </Grid>
-          <Grid item>
             <Typography variant="body2">
-              Importing a DMP will make it available to view and reference
-              within RSpace.
+              Importing a DMP from <strong>argos.openaire.eu</strong> will make
+              it available to view and reference within RSpace.
             </Typography>
             <Typography variant="body2">
               See{" "}
@@ -588,7 +587,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithValueGetter<PlanSummary, _>(
+                DataGridColumn.newColumnWithValueMapper<PlanSummary, _>(
                   "createdAt",
                   (createdAt) => new Date(createdAt).toLocaleString(),
                   {
@@ -597,7 +596,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                     sortable: false,
                   }
                 ),
-                DataGridColumn.newColumnWithValueGetter<PlanSummary, _>(
+                DataGridColumn.newColumnWithValueMapper<PlanSummary, _>(
                   "modifiedAt",
                   (modifiedAt) => new Date(modifiedAt).toLocaleString(),
                   {

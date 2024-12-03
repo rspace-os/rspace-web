@@ -113,6 +113,7 @@ function LocationsImageField(): Node {
                   ? "Click on ‘Edit Locations’ to add locations and start using the visual container."
                   : ""
               }
+              alt={"The marked locations of ${activeResult.name}"}
             />
             <canvas id={CANVAS_ID} style={{ display: "none" }}></canvas>
           </>

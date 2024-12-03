@@ -45,9 +45,6 @@ define(function() {
                 'evernote.available'
         ]);
 
-        _printCategory('Publications');
-        _printSettings([ 'mendeley.available' ]);
-
         _printCategory('Protocols');
         _printSettings([ 'protocols_io.available' ]);
         _printSettings([ 'jove.available' ]);
@@ -60,7 +57,7 @@ define(function() {
 
         _printCategory('Inventory');
         _printSettings([ 'inventory.available' ]);
-        //_printSettings([ 'fieldmark.available' ]);
+        _printSettings([ 'fieldmark.available' ]);
 
         _printCategory('Communication');
         _printSettings([ 'msteams.available' ]);

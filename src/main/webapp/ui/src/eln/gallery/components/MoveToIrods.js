@@ -10,6 +10,7 @@ import AppBar from "@mui/material/AppBar";
 import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
 import DialogActions from "@mui/material/DialogActions";
+import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Box from "@mui/material/Box";
@@ -252,6 +253,7 @@ function MoveCopyDialog({
           }}
         >
           <form>
+            <DialogTitle variant="h3">Move to iRODS</DialogTitle>
             <DialogContent>
               <Grid
                 container
@@ -259,9 +261,6 @@ function MoveCopyDialog({
                 spacing={2}
                 sx={{ height: "100%", flexWrap: "nowrap" }}
               >
-                <Grid item>
-                  <Typography variant="h3">Move to iRODS</Typography>
-                </Grid>
                 {FetchingData.match(irods, {
                   loading: () => <></>,
                   error: (errorMsg) => (

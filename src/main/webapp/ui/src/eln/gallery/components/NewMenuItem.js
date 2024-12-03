@@ -81,7 +81,7 @@ export default (styled(
       ? backgroundColor
       : `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
   return {
-    margin: theme.spacing(compact ? 0.5 : 1),
+    margin: theme.spacing(1),
     padding: 0,
     borderRadius: "2px",
     border: prefersMoreContrast ? "2px solid #000" : "none",
@@ -94,22 +94,31 @@ export default (styled(
       padding: theme.spacing(compact ? 1 : 2),
     },
     "& .MuiCardHeader-avatar": {
-      border: `${compact ? 3 : 6}px solid ${bg}`,
+      border: `${compact ? 3 : 4}px solid ${bg}`,
       borderRadius: `${compact ? 4 : 6}px`,
+      backgroundColor: bg,
+      "& svg": {
+        margin: "2px",
+      },
     },
     "& .MuiCardMedia-root": {
-      width: compact ? 28 : 32,
-      height: compact ? 28 : 32,
+      width: compact ? 28 : 36,
+      height: compact ? 28 : 36,
+      borderRadius: "4px",
+      margin: theme.spacing(0.25),
     },
     "& .MuiSvgIcon-root": {
-      width: compact ? 28 : 32,
-      height: compact ? 28 : 32,
+      width: compact ? 28 : 36,
+      height: compact ? 28 : 36,
       background: bg,
       padding: theme.spacing(0.5),
       color: fg,
     },
     "& .MuiTypography-root": {
       color: prefersMoreContrast ? "#000" : fg,
+    },
+    "& .MuiCardHeader-content": {
+      marginRight: theme.spacing(2),
     },
     "& .MuiCardHeader-title": {
       fontSize: "1rem",

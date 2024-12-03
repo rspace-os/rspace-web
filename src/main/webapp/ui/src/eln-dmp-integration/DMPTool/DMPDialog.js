@@ -13,6 +13,7 @@ import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import { withStyles } from "Styles";
 import { observer } from "mobx-react-lite";
@@ -20,7 +21,6 @@ import Typography from "@mui/material/Typography";
 import axios from "axios";
 import { type UseState } from "../../util/types";
 import ScopeField, { type Scope } from "./ScopeField";
-import { Optional } from "../../util/optional";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import Portal from "@mui/material/Portal";
@@ -42,6 +42,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import Radio from "@mui/material/Radio";
 import DOMPurify from "dompurify";
+import { mapNullable } from "../../util/Util";
 
 const COLOR = {
   main: {
@@ -99,6 +100,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
 
+  const [DMPHost, setDMPHost] = React.useState<?string>();
   const [DMPs, setDMPs] = useState(([]: Array<Plan>));
   const [selectedPlan, setSelectedPlan]: UseState<?Plan> = useState();
 
@@ -107,6 +109,13 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   const fetchingId = useRef(0);
 
   const [importing, setImporting] = useState(false);
+
+  React.useEffect(() => {
+    axios
+      .get<void, string>("/apps/dmptool/baseUrlHost")
+      .then((r) => setDMPHost(r.data))
+      .catch((e) => console.error("Cannot establish DMP host", e));
+  }, []);
 
   const getDMPs = (scope: Scope) => {
     setErrorFetching(null);
@@ -206,6 +215,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Box>
         </Toolbar>
       </AppBar>
+      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
         <Grid
           container
@@ -216,12 +226,17 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           height="calc(100% + 16px)"
         >
           <Grid item>
-            <Typography variant="h3">Import a DMP into the Gallery</Typography>
-          </Grid>
-          <Grid item>
             <Typography variant="body2">
-              Importing a DMP will make it available to view and reference
-              within RSpace.
+              Importing a DMP{" "}
+              {mapNullable(
+                (host) => (
+                  <>
+                    from <strong>{host}</strong>{" "}
+                  </>
+                ),
+                DMPHost
+              ) ?? ""}
+              will make it available to view and reference within RSpace.
             </Typography>
             <Typography variant="body2">
               See <Link href="https://dmptool.org">dmptool.org</Link> and our{" "}
@@ -282,7 +297,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithValueGetter<Plan, _>(
+                DataGridColumn.newColumnWithValueMapper<Plan, _>(
                   "created",
                   (created) => new Date(created).toLocaleString(),
                   {
@@ -291,7 +306,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                     sortable: false,
                   }
                 ),
-                DataGridColumn.newColumnWithValueGetter<Plan, _>(
+                DataGridColumn.newColumnWithValueMapper<Plan, _>(
                   "modified",
                   (modified) => new Date(modified).toLocaleString(),
                   {
