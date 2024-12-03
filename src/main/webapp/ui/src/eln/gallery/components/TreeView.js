@@ -540,9 +540,21 @@ const TreeView = ({
               });
             });
           }
-          selection.clear();
           if (selected) {
             MapUtils.get(idMap, itemId).do((file) => {
+              /*
+               * If the user is just opening or closing the node that is
+               * already selected, then this event handler will have been
+               * called twice with the `itemId` of that file: first with
+               * `selected` set to false (which will have been dropped above)
+               * and secondly with `selected` set to true. If the selection is
+               * already that one file then there is no need to clear and reset
+               * that selection as it will only result in unnecessary
+               * re-renders and a slower response time to actually
+               * opening/closing the tree node.
+               */
+              if (selection.size === 1 && selection.includes(file)) return;
+              selection.clear();
               selection.append(file);
             });
           }
