@@ -306,13 +306,14 @@ const AddFilestoreMenuItem = ({
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
-  const [filesystems, setFilesystems] = React.useState<
-    $ReadOnlyArray<{|
-      id: number,
-      name: string,
-      url: string,
-    |}>
-  >([]);
+  const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
+    id: number,
+    name: string,
+    url: string,
+  |}>>(null);
+  const [filestoreIds, setFilestoreIds] = React.useState<null | Set<number>>(
+    null
+  );
   const { getToken } = useOauthToken();
   const api = React.useRef<Promise<Axios>>(
     (async () => {
@@ -361,6 +362,26 @@ const AddFilestoreMenuItem = ({
     })();
   }, []);
 
+  React.useEffect(() => {
+    void (async () => {
+      const { data } = await (await api.current).get<mixed>("filestores");
+      Parsers.isArray(data)
+        .flatMap((array) =>
+          Result.all(
+            ...array.map((m) =>
+              Parsers.isObject(m)
+                .flatMap(Parsers.isNotNull)
+                .flatMap(Parsers.getValueWithKey("fileSystem"))
+                .flatMap(Parsers.isObject)
+                .flatMap(Parsers.isNotNull)
+                .flatMap(Parsers.getValueWithKey("id"))
+                .flatMap(Parsers.isNumber)
+            )
+          )
+        )
+        .do((newFilesystemIds) => setFilestoreIds(new Set(newFilesystemIds)));
+    })();
+  }, []);
   return (
     <>
       <Menu
@@ -385,49 +406,56 @@ const AddFilestoreMenuItem = ({
           disablePadding: true,
         }}
       >
-        {filesystems.map((fs) => (
-          <NewMenuItem
-            key={fs.id}
-            title={fs.name}
-            subheader={fs.url}
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
-            onClick={doNotAwait(async () => {
-              try {
-                await (
-                  await api.current
-                ).post<_, mixed>(
-                  "filestores",
-                  {},
-                  {
-                    //$FlowExpectedError[incompatible-call] Flow types are wrong; plain object is allowed for `params`
-                    params: {
-                      filesystemId: fs.id,
-                      name: fs.name,
-                      pathToSave: "/",
-                    },
-                  }
-                );
-                addAlert(
-                  mkAlert({
-                    variant: "success",
-                    message: "Successfully added new filestore",
-                  })
-                );
-                onMenuClose(true);
-              } catch (e) {
-                console.error(e);
-                addAlert(
-                  mkAlert({
-                    variant: "error",
-                    title: "Failed to add new filestore",
-                    message: e.message,
-                  })
-                );
+        {filesystems !== null &&
+          filestoreIds !== null &&
+          filesystems.map((fs) => (
+            <NewMenuItem
+              key={fs.id}
+              title={fs.name}
+              subheader={
+                filestoreIds.has(fs.id)
+                  ? "Already added to filestores section"
+                  : fs.url
               }
-            })}
-          />
-        ))}
+              backgroundColor={COLOR.background}
+              foregroundColor={COLOR.contrastText}
+              disabled={filestoreIds.has(fs.id)}
+              onClick={doNotAwait(async () => {
+                try {
+                  await (
+                    await api.current
+                  ).post<_, mixed>(
+                    "filestores",
+                    {},
+                    {
+                      //$FlowExpectedError[incompatible-call] Flow types are wrong; plain object is allowed for `params`
+                      params: {
+                        filesystemId: fs.id,
+                        name: fs.name,
+                        pathToSave: "/",
+                      },
+                    }
+                  );
+                  addAlert(
+                    mkAlert({
+                      variant: "success",
+                      message: "Successfully added new filestore",
+                    })
+                  );
+                  onMenuClose(true);
+                } catch (e) {
+                  console.error(e);
+                  addAlert(
+                    mkAlert({
+                      variant: "error",
+                      title: "Failed to add new filestore",
+                      message: e.message,
+                    })
+                  );
+                }
+              })}
+            />
+          ))}
       </Menu>
       <NewMenuItem
         title="Add a filestore"
@@ -443,7 +471,7 @@ const AddFilestoreMenuItem = ({
         tabIndex={tabIndex}
         aria-haspopup="dialog"
         compact
-        disabled={filesystems.length === 0}
+        disabled={(filesystems ?? []).length === 0 && filestoreIds !== null}
       />
     </>
   );
