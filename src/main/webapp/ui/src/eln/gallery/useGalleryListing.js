@@ -618,8 +618,16 @@ class RemoteFile implements GalleryFile {
   }
 
   get thumbnailUrl(): string {
-    if (this.isFolder) return "/images/icons/folder.png";
-    return "/images/icons/unknownDocument.png";
+    return generateIconSrc(
+      this.name,
+      "",
+      justFilenameExtension(this.name),
+      null,
+      -1,
+      this.modificationDate,
+      this.isFolder,
+      false
+    );
   }
 
   pathAsString(): string {
