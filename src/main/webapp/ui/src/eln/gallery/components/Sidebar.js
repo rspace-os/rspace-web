@@ -87,27 +87,12 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
     startIcon={
       <AddIcon
         style={{
-          transition: window.matchMedia("(prefers-reduced-motion: reduce)")
-            .matches
-            ? "none"
-            : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
-          transform: drawerOpen ? "translateX(0px)" : "translateX(32px)",
+          marginLeft: drawerOpen ? "0px" : "11px",
         }}
       />
     }
   >
-    <div
-      style={{
-        transition: window.matchMedia("(prefers-reduced-motion: reduce)")
-          .matches
-          ? "none"
-          : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
-        opacity: drawerOpen ? 1 : 0,
-        transform: drawerOpen ? "unset" : "translateX(30px)",
-      }}
-    >
-      Create
-    </div>
+    {drawerOpen && <div>Create</div>}
   </Button>
 ))(() => ({
   overflowX: "hidden",

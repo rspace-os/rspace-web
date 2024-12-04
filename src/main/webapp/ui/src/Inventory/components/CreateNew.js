@@ -104,31 +104,13 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
         startIcon={
           <AddIcon
             style={{
-              transition: window.matchMedia("(prefers-reduced-motion: reduce)")
-                .matches
-                ? "none"
-                : "all .2s cubic-bezier(0.4, 0, 0.2, 1) .2s",
-              transform: uiStore.sidebarOpen
-                ? "translateX(0px)"
-                : "translateX(33px)",
+              marginLeft: uiStore.sidebarOpen ? "0px" : "11px",
             }}
           />
         }
         sx={{ minWidth: "unset", overflow: "hidden" }}
       >
-        <span
-          style={{
-            transition: window.matchMedia("(prefers-reduced-motion: reduce)")
-              .matches
-              ? "none"
-              : "all .2s cubic-bezier(0.4, 0, 0.2, 1) .2s",
-            transform: uiStore.sidebarOpen
-              ? "translateX(0px)"
-              : "translateX(46px)",
-          }}
-        >
-          Create
-        </span>
+        {uiStore.sidebarOpen && <span>Create</span>}
       </Button>
       <StyledMenu
         open={Boolean(anchorEl)}
