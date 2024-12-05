@@ -61,6 +61,7 @@ describe("MainPanel", () => {
           <MainPanel
             selectedSection="Images"
             path={[]}
+            setPath={() => {}}
             clearPath={() => {}}
             galleryListing={{ tag: "loading" }}
             folderId={{ tag: "loading" }}
