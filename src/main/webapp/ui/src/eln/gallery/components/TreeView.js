@@ -37,6 +37,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
+import { useSetFolderOpen, useFolderOpen } from "./OpenFolderProvider";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -356,6 +357,7 @@ type TreeViewArgs = {|
         loadMore: Optional<() => Promise<void>>,
       |},
   path: $ReadOnlyArray<GalleryFile>,
+  setPath: ($ReadOnlyArray<GalleryFile>) => void,
   selectedSection: GallerySection,
   refreshListing: () => void,
   filter?: (GalleryFile) => boolean,
@@ -368,6 +370,7 @@ type TreeViewArgs = {|
 const TreeView = ({
   listing,
   path,
+  setPath,
   selectedSection,
   refreshListing,
   filter = () => true,
@@ -382,6 +385,7 @@ const TreeView = ({
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
   const primaryAction = usePrimaryAction();
+  const { openFolder } = useFolderOpen();
 
   const [expandedItems, setExpandedItems] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
@@ -396,6 +400,14 @@ const TreeView = ({
     for (const file of listing.list) map.set(idToString(file.id), file);
     return map;
   });
+
+  const { setFolderOpen } = useSetFolderOpen();
+  React.useEffect(() => {
+    setFolderOpen((file) => {
+      //alert("change root");
+      setPath([...file.path, file]);
+    });
+  }, []);
 
   if (listing.tag === "empty" || listing.list.filter(filter).length === 0)
     return (
@@ -485,7 +497,7 @@ const TreeView = ({
             MapUtils.get(idMap, itemId).do((file) => {
               primaryAction(file).do((action) => {
                 if (action.tag === "open") {
-                  action.open();
+                  openFolder(file);
                   return;
                 }
                 if (action.tag === "image") {

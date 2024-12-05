@@ -32,6 +32,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { Optional } from "../../../util/optional";
+import { useFolderOpen } from "./OpenFolderProvider";
 
 /*
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -647,6 +648,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const primaryAction = usePrimaryAction();
+  const { openFolder } = useFolderOpen();
 
   return (
     <>
@@ -702,7 +704,9 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   return (
                     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                       <ActionButton
-                        onClick={action.open}
+                        onClick={() => {
+                          openFolder(file);
+                        }}
                         label="Open"
                         sx={{
                           borderRadius: 1,

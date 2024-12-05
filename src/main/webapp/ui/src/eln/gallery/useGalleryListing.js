@@ -797,6 +797,7 @@ export function useGalleryListing({
   refreshListing: () => void,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
+  setPath: ($ReadOnlyArray<GalleryFile>) => void,
   folderId: FetchingData.Fetched<Id>,
 |} {
   const { getToken } = useOauthToken();
@@ -1258,6 +1259,7 @@ export function useGalleryListing({
     return {
       galleryListing: { tag: "loading" },
       path,
+      setPath: () => {},
       clearPath: () => {},
       folderId: { tag: "loading" },
       refreshListing: () => {},
@@ -1280,6 +1282,7 @@ export function useGalleryListing({
           : { tag: "empty", reason: emptyReason() },
     },
     path,
+    setPath,
     clearPath: () => setPath([]),
     folderId: parentId
       .map((value: number) => ({ tag: "success", value }))

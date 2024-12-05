@@ -30,6 +30,7 @@ import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginContextualDialog } from "./components/FilestoreLoginDialog";
+import OpenFolderProvider from "./components/OpenFolderProvider";
 
 const WholePage = styled(() => {
   const [searchParams, setSelectedSection] = useSearchParamState({
@@ -50,7 +51,7 @@ const WholePage = styled(() => {
       defaultValue: "DESC",
     }
   );
-  const { galleryListing, path, clearPath, folderId, refreshListing } =
+  const { galleryListing, path, setPath, clearPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
@@ -105,6 +106,7 @@ const WholePage = styled(() => {
                 selectedSection={selectedSection}
                 path={path}
                 clearPath={clearPath}
+                setPath={setPath}
                 galleryListing={galleryListing}
                 folderId={folderId}
                 refreshListing={refreshListing}
@@ -158,7 +160,9 @@ window.addEventListener("load", () => {
                               <RouterNavigationContext>
                                 <GallerySelection>
                                   <FilestoreLoginContextualDialog>
-                                    <WholePage />
+                                    <OpenFolderProvider>
+                                      <WholePage />
+                                    </OpenFolderProvider>
                                   </FilestoreLoginContextualDialog>
                                 </GallerySelection>
                               </RouterNavigationContext>

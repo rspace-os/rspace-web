@@ -171,6 +171,7 @@ const Picker = observer(
                   <MainPanel
                     selectedSection={selectedSection}
                     path={path}
+                    setPath={() => {} /* TODO */}
                     clearPath={clearPath}
                     galleryListing={galleryListing}
                     folderId={folderId}
