@@ -25,6 +25,7 @@ import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
 import RsSet from "../../../util/set";
 import { DisableDragAndDropByDefault } from "../../../components/useFileImportDragAndDrop";
+import OpenFolderProvider from "../components/OpenFolderProvider";
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   zIndex: 1100, // less than the SwipeableDrawer so that mobile info panel is shown
@@ -120,89 +121,93 @@ const Picker = observer(
       <CallableImagePreview>
         <CallablePdfPreview>
           <CallableAsposePreview>
-            <CustomDialog
-              maxWidth="xl"
-              fullWidth
-              open={open}
-              TransitionComponent={CustomGrow}
-              onClose={onClose}
-              fullScreen={viewport.isViewportSmall}
-              sx={{
-                height: {
-                  xs:
-                    selection.size > 0
-                      ? `calc(100% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`
-                      : "100%",
-                  md: "unset",
-                },
-              }}
-              aria-label="Gallery Picker"
-            >
-              <AppBar
-                appliedSearchTerm={appliedSearchTerm}
-                setAppliedSearchTerm={setAppliedSearchTerm}
-                hideSearch={selectedSection === "NetworkFiles"}
-                setDrawerOpen={setDrawerOpen}
-                drawerOpen={drawerOpen}
-                sidebarId={sidebarId}
-              />
-              <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-                <Sidebar
-                  selectedSection={selectedSection}
-                  setSelectedSection={(mediaType) => {
-                    setSelectedSection(mediaType);
-                  }}
-                  drawerOpen={drawerOpen}
+            <OpenFolderProvider setPath={setPath}>
+              <CustomDialog
+                maxWidth="xl"
+                fullWidth
+                open={open}
+                TransitionComponent={CustomGrow}
+                onClose={onClose}
+                fullScreen={viewport.isViewportSmall}
+                sx={{
+                  height: {
+                    xs:
+                      selection.size > 0
+                        ? `calc(100% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`
+                        : "100%",
+                    md: "unset",
+                  },
+                }}
+                aria-label="Gallery Picker"
+              >
+                <AppBar
+                  appliedSearchTerm={appliedSearchTerm}
+                  setAppliedSearchTerm={setAppliedSearchTerm}
+                  hideSearch={selectedSection === "NetworkFiles"}
                   setDrawerOpen={setDrawerOpen}
-                  path={path}
-                  folderId={folderId}
-                  refreshListing={refreshListing}
-                  id={sidebarId}
+                  drawerOpen={drawerOpen}
+                  sidebarId={sidebarId}
                 />
-                <Box
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    flexGrow: 1,
-                    width: "calc(100% - 200px)",
-                  }}
-                >
-                  <MainPanel
+                <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+                  <Sidebar
                     selectedSection={selectedSection}
+                    setSelectedSection={(mediaType) => {
+                      setSelectedSection(mediaType);
+                    }}
+                    drawerOpen={drawerOpen}
+                    setDrawerOpen={setDrawerOpen}
                     path={path}
-                    clearPath={() => setPath([])}
-                    galleryListing={galleryListing}
                     folderId={folderId}
                     refreshListing={refreshListing}
-                    sortOrder={sortOrder}
-                    orderBy={orderBy}
-                    setSortOrder={setSortOrder}
-                    setOrderBy={setOrderBy}
+                    id={sidebarId}
                   />
-                  <DialogActions>
-                    <Button onClick={() => onClose()}>Cancel</Button>
-                    <ValidatingSubmitButton
-                      validationResult={
-                        selection.size > 0
-                          ? Result.all(
-                              ...selection.asSet().map(validateSelection)
-                            ).map(() => null)
-                          : Result.Error([
-                              new Error("Select at least one file to proceed."),
-                            ])
-                      }
-                      loading={false}
-                      onClick={() => {
-                        onSubmit(selection.asSet());
-                      }}
-                    >
-                      Add
-                    </ValidatingSubmitButton>
-                  </DialogActions>
+                  <Box
+                    sx={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      flexGrow: 1,
+                      width: "calc(100% - 200px)",
+                    }}
+                  >
+                    <MainPanel
+                      selectedSection={selectedSection}
+                      path={path}
+                      clearPath={() => setPath([])}
+                      galleryListing={galleryListing}
+                      folderId={folderId}
+                      refreshListing={refreshListing}
+                      sortOrder={sortOrder}
+                      orderBy={orderBy}
+                      setSortOrder={setSortOrder}
+                      setOrderBy={setOrderBy}
+                    />
+                    <DialogActions>
+                      <Button onClick={() => onClose()}>Cancel</Button>
+                      <ValidatingSubmitButton
+                        validationResult={
+                          selection.size > 0
+                            ? Result.all(
+                                ...selection.asSet().map(validateSelection)
+                              ).map(() => null)
+                            : Result.Error([
+                                new Error(
+                                  "Select at least one file to proceed."
+                                ),
+                              ])
+                        }
+                        loading={false}
+                        onClick={() => {
+                          onSubmit(selection.asSet());
+                        }}
+                      >
+                        Add
+                      </ValidatingSubmitButton>
+                    </DialogActions>
+                  </Box>
                 </Box>
-              </Box>
-            </CustomDialog>
+              </CustomDialog>
+            </OpenFolderProvider>
           </CallableAsposePreview>
         </CallablePdfPreview>
       </CallableImagePreview>
