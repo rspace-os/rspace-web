@@ -30,7 +30,9 @@ import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginContextualDialog } from "./components/FilestoreLoginDialog";
-import OpenFolderProvider from "./components/OpenFolderProvider";
+import OpenFolderProvider, {
+  useSetFolderOpen,
+} from "./components/OpenFolderProvider";
 
 const WholePage = styled(() => {
   const [searchParams, setSelectedSection] = useSearchParamState({
@@ -62,6 +64,13 @@ const WholePage = styled(() => {
   const { isViewportSmall } = useViewportDimensions();
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
   const sidebarId = React.useId();
+
+  const { setFolderOpen } = useSetFolderOpen();
+  React.useEffect(() => {
+    setFolderOpen((file) => {
+      setPath([...file.path, file]);
+    });
+  }, [setPath]);
 
   return (
     <CallableImagePreview>
@@ -106,7 +115,6 @@ const WholePage = styled(() => {
                 selectedSection={selectedSection}
                 path={path}
                 clearPath={clearPath}
-                setPath={setPath}
                 galleryListing={galleryListing}
                 folderId={folderId}
                 refreshListing={refreshListing}

@@ -990,7 +990,6 @@ const FileCard = styled(
 type GalleryMainPanelArgs = {|
   selectedSection: GallerySection,
   path: $ReadOnlyArray<GalleryFile>,
-  setPath: ($ReadOnlyArray<GalleryFile>) => void,
   clearPath: () => void,
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string |}
@@ -1012,7 +1011,6 @@ type GalleryMainPanelArgs = {|
 function GalleryMainPanel({
   selectedSection,
   path,
-  setPath,
   clearPath,
   galleryListing,
   folderId,
@@ -1368,7 +1366,6 @@ function GalleryMainPanel({
                       <TreeView
                         listing={listing}
                         path={path}
-                        setPath={setPath}
                         selectedSection={selectedSection}
                         refreshListing={refreshListing}
                         sortOrder={sortOrder}
