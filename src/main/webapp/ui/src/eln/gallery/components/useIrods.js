@@ -1,6 +1,6 @@
 //@flow
 
-import axios, { type Axios } from "axios";
+import axios from "axios";
 import React from "react";
 import Result from "../../../util/result";
 import * as Parsers from "../../../util/parsers";
@@ -188,16 +188,6 @@ export default function useIrods(
   configuredLocations: $ReadOnlyArray<IrodsLocation>,
 |}> {
   const { getToken } = useOauthToken();
-  const api = React.useRef<Promise<Axios>>(
-    (async () => {
-      return axios.create({
-        baseURL: "/api/v1/gallery/irods",
-        headers: {
-          Authorization: "Bearer " + (await getToken()),
-        },
-      });
-    })()
-  );
   const { addAlert } = React.useContext(AlertContext);
 
   /**
@@ -222,9 +212,13 @@ export default function useIrods(
       path,
       copy: copyLink.map((cl) => async ({ username, password }) => {
         try {
-          const response = await (
-            await api.current
-          ).post<
+          const api = axios.create({
+            baseURL: "/api/v1/gallery/irods",
+            headers: {
+              Authorization: "Bearer " + (await getToken()),
+            },
+          });
+          const response = await api.post<
             {|
               username: string,
               password: string,
@@ -252,9 +246,13 @@ export default function useIrods(
       }),
       move: moveLink.map((ml) => async ({ username, password }) => {
         try {
-          const response = await (
-            await api.current
-          ).post<
+          const api = axios.create({
+            baseURL: "/api/v1/gallery/irods",
+            headers: {
+              Authorization: "Bearer " + (await getToken()),
+            },
+          });
+          const response = await api.post<
             {|
               username: string,
               password: string,
@@ -296,9 +294,13 @@ export default function useIrods(
     setLoading(true);
     setErrorMessage("");
     try {
-      const { data } = await (
-        await api.current
-      ).get<mixed>("/", {
+      const api = axios.create({
+        baseURL: "/api/v1/gallery/irods",
+        headers: {
+          Authorization: "Bearer " + (await getToken()),
+        },
+      });
+      const { data } = await api.get<mixed>("/", {
         params: new URLSearchParams({
           recordIds: selectedIds.join(","),
         }),
