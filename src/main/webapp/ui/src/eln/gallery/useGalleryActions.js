@@ -8,7 +8,8 @@ import RsSet from "../../util/set";
 import Result from "../../util/result";
 import {
   type GalleryFile,
-  Description,
+  LocalGalleryFile,
+  type Description,
   idToString,
   type Id,
 } from "./useGalleryListing";
@@ -331,38 +332,44 @@ export function useGalleryActions(): {|
     };
   }
 
-  async function deleteFiles(files: RsSet<GalleryFile>) {
-    if (files.some((f) => f.isSystemFolder)) return;
+  async function deleteLocalFiles(files: RsSet<LocalGalleryFile>) {
     const formData = new FormData();
     for (const file of files)
       formData.append("idsToDelete[]", idToString(file.id));
+    const data = await galleryApi.post<FormData, mixed>(
+      "deleteElementFromGallery",
+      formData,
+      {
+        headers: {
+          "content-type": "multipart/form-data",
+        },
+      }
+    );
+    addAlert(
+      Parsers.objectPath(["data", "exceptionMessage"], data)
+        .flatMap(Parsers.isString)
+        .map((exceptionMessage) =>
+          mkAlert({
+            title: `Failed to delete item.`,
+            message: exceptionMessage,
+            variant: "error",
+          })
+        )
+        .orElse(
+          mkAlert({
+            message: `Successfully deleted item${files.size > 0 ? "s" : ""}.`,
+            variant: "success",
+          })
+        )
+    );
+  }
+
+  async function deleteFiles(files: RsSet<GalleryFile>) {
+    if (files.some((f) => f.isSystemFolder)) return;
     try {
-      const data = await galleryApi.post<FormData, mixed>(
-        "deleteElementFromGallery",
-        formData,
-        {
-          headers: {
-            "content-type": "multipart/form-data",
-          },
-        }
-      );
-      addAlert(
-        Parsers.objectPath(["data", "exceptionMessage"], data)
-          .flatMap(Parsers.isString)
-          .map((exceptionMessage) =>
-            mkAlert({
-              title: `Failed to delete item.`,
-              message: exceptionMessage,
-              variant: "error",
-            })
-          )
-          .orElse(
-            mkAlert({
-              message: `Successfully deleted item${files.size > 0 ? "s" : ""}.`,
-              variant: "success",
-            })
-          )
-      );
+      if (files.some((f) => !(f instanceof LocalGalleryFile)))
+        throw new Error("Can only delete local files");
+      await deleteLocalFiles(files.filterClass(LocalGalleryFile));
     } catch (e) {
       addAlert(
         mkAlert({
