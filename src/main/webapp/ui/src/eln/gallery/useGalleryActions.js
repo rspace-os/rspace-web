@@ -8,7 +8,8 @@ import RsSet from "../../util/set";
 import Result from "../../util/result";
 import {
   type GalleryFile,
-  Description,
+  LocalGalleryFile,
+  type Description,
   idToString,
   type Id,
 } from "./useGalleryListing";
@@ -357,18 +358,17 @@ export function useGalleryActions(): {|
     };
   }
 
-  async function deleteFiles(files: RsSet<GalleryFile>) {
-    if (files.some((f) => f.isSystemFolder)) return;
+  async function deleteLocalFiles(files: RsSet<LocalGalleryFile>) {
     const deletingAlert = mkAlert({
       message: "Deleting...",
       variant: "notice",
       isInfinite: true,
     });
-    const formData = new FormData();
-    for (const file of files)
-      formData.append("idsToDelete[]", idToString(file.id));
     try {
       addAlert(deletingAlert);
+      const formData = new FormData();
+      for (const file of files)
+        formData.append("idsToDelete[]", idToString(file.id));
       const data = await galleryApi.post<FormData, mixed>(
         "deleteElementFromGallery",
         formData,
@@ -400,6 +400,17 @@ export function useGalleryActions(): {|
             })
           )
       );
+    } finally {
+      removeAlert(deletingAlert);
+    }
+  }
+
+  async function deleteFiles(files: RsSet<GalleryFile>) {
+    if (files.some((f) => f.isSystemFolder)) return;
+    try {
+      if (files.some((f) => !(f instanceof LocalGalleryFile)))
+        throw new Error("Can only delete local files");
+      await deleteLocalFiles(files.filterClass(LocalGalleryFile));
     } catch (e) {
       addAlert(
         mkAlert({
@@ -409,8 +420,6 @@ export function useGalleryActions(): {|
         })
       );
       throw e;
-    } finally {
-      removeAlert(deletingAlert);
     }
   }
 

@@ -270,7 +270,7 @@ export interface GalleryFile {
   +canUploadNewVersion: Result<null>;
 }
 
-class LocalGalleryFile implements GalleryFile {
+export class LocalGalleryFile implements GalleryFile {
   +id: Id;
   +globalId: string;
   name: string;
