@@ -1,5 +1,5 @@
 /**
- * RSpace API Access your RSpace documents programmatically. All requests require authentication
+ * RSpace API Access your RSpace Filestores programmatically. All requests require authentication
  * using an API key set as the value of the header `RSpace-API-Key`.
  */
 package com.researchspace.api.v1;

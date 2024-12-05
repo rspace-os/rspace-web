@@ -1764,6 +1764,21 @@ paths:
               _links:
                 $ref: '#/definitions/LinkItemList'
 
+  '/gallery/{mediaFileId}/download':
+    get:
+      summary: Download file stored in RSpace Gallery
+      description: Download a file uploaded to RSpace Gallery, by the id of Gallery Item
+      produces:
+        - application/octet-stream
+        - application/json
+      tags:
+        - Gallery
+      parameters:
+        - $ref: '#/parameters/mediaFileIdParam'
+      responses:
+        '200':
+          description: A resource
+
   '/gallery/filestores':
     get:
       summary: Get filestores saved by the current user
@@ -1771,7 +1786,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       responses:
         '200':
           description: A list of FileStoreInfo objects
@@ -1782,7 +1797,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - $ref: '#/parameters/filesystemIdPostParam'
         - $ref: '#/parameters/filestoreNamePostParam'
@@ -1801,7 +1816,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - $ref: '#/parameters/filestoreIdParam'
         - $ref: '#/parameters/filestoreRemotePathParam'
@@ -1816,7 +1831,7 @@ paths:
         - application/octet-stream
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - $ref: '#/parameters/filestoreIdParam'
         - $ref: '#/parameters/filestoreRemotePathParam'
@@ -1831,7 +1846,7 @@ paths:
         Marks filestore as deleted, it will no longer show up on user's filestore listing. 
         The filestore links added to RSpace documents based on this filestore will stay resolvable.
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - $ref: '#/parameters/filestoreIdParam'
       responses:
@@ -1846,7 +1861,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       responses:
         '200':
           description: A list of FileSystemInfo objects
@@ -1857,7 +1872,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - $ref: '#/parameters/filesystemIdParam'
         - $ref: '#/parameters/filestoreRemotePathParam'
@@ -1871,7 +1886,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - $ref: '#/parameters/filesystemIdParam'
         - name: credentials
@@ -1890,7 +1905,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - $ref: '#/parameters/filesystemIdParam'
       responses:
@@ -1906,7 +1921,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - name: recordIds
           description: A comma-separated list of IDs of records to copy/move the the gallery
@@ -1944,7 +1959,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - name: recordIds
           description: A comma-separated list of IDs of records to copy the the gallery
@@ -2003,7 +2018,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - name: recordIds
           description: A comma-separated list of IDs of records to move the the gallery
@@ -2825,6 +2840,13 @@ parameters:
     in: query
     description: Filesystem id
     type: string
+  mediaFileIdParam:
+    name: mediaFileId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: A unique identifier for the RSpace Gallery file.
   userIdParam:
     name: userId
     in: path
