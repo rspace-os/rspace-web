@@ -51,7 +51,7 @@ const WholePage = styled(() => {
       defaultValue: "DESC",
     }
   );
-  const { galleryListing, path, setPath, clearPath, folderId, refreshListing } =
+  const { galleryListing, path, setPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
@@ -84,7 +84,7 @@ const WholePage = styled(() => {
                 selectedSection={selectedSection}
                 setSelectedSection={(mediaType) => {
                   setSelectedSection({ mediaType });
-                  clearPath();
+                  setPath([]);
                   setAppliedSearchTerm("");
                 }}
                 drawerOpen={drawerOpen}
@@ -106,7 +106,7 @@ const WholePage = styled(() => {
                 <MainPanel
                   selectedSection={selectedSection}
                   path={path}
-                  clearPath={clearPath}
+                  clearPath={() => setPath([])}
                   galleryListing={galleryListing}
                   folderId={folderId}
                   refreshListing={refreshListing}

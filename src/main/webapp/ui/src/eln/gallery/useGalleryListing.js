@@ -794,7 +794,6 @@ export function useGalleryListing({
   >,
   refreshListing: () => Promise<void>,
   path: $ReadOnlyArray<GalleryFile>,
-  clearPath: () => void,
   setPath: ($ReadOnlyArray<GalleryFile>) => void,
   folderId: FetchingData.Fetched<Id>,
 |} {
@@ -1265,7 +1264,6 @@ export function useGalleryListing({
       galleryListing: { tag: "loading" },
       path,
       setPath: () => {},
-      clearPath: () => {},
       folderId: { tag: "loading" },
       refreshListing: () => Promise.resolve(),
     };
@@ -1288,7 +1286,6 @@ export function useGalleryListing({
     },
     path,
     setPath,
-    clearPath: () => setPath([]),
     folderId: parentId
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),

@@ -107,7 +107,7 @@ const Picker = observer(
        */
       viewport.isViewportLarge
     );
-    const { galleryListing, path, clearPath, folderId, refreshListing } =
+    const { galleryListing, path, setPath, folderId, refreshListing } =
       useGalleryListing({
         section: selectedSection,
         searchTerm: appliedSearchTerm,
@@ -171,7 +171,7 @@ const Picker = observer(
                   <MainPanel
                     selectedSection={selectedSection}
                     path={path}
-                    clearPath={clearPath}
+                    clearPath={() => setPath([])}
                     galleryListing={galleryListing}
                     folderId={folderId}
                     refreshListing={refreshListing}
