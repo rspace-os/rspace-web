@@ -55,6 +55,7 @@ import ImageEditingDialog from "../../../components/ImageEditingDialog";
 import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import CardMedia from "@mui/material/CardMedia";
+import { useFolderOpen } from "./OpenFolderProvider";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -288,6 +289,7 @@ function ActionsMenu({
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
+  const { openFolder } = useFolderOpen();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
@@ -301,7 +303,7 @@ function ActionsMenu({
     return selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
-      .flatMap((f) => f.canOpen);
+      .flatMapDiscarding((f) => f.canOpen);
   });
 
   const editingAllowed = computed(() =>
@@ -457,14 +459,14 @@ function ActionsMenu({
       >
         {openAllowed
           .get()
-          .map((open) => (
+          .map((file) => (
             <NewMenuItem
               title="Open"
               backgroundColor={COLOR.background}
               foregroundColor={COLOR.contrastText}
               avatar={<FolderOpenIcon />}
               onClick={() => {
-                open();
+                openFolder(file);
                 setActionsMenuAnchorEl(null);
               }}
               compact

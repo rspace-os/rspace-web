@@ -206,7 +206,7 @@ describe("ActionsMenu", () => {
               setName: () => {},
               setDescription: () => {},
               linkedDocuments: null,
-              canOpen: Result.Ok(() => {}),
+              canOpen: Result.Ok(null),
               canDuplicate: Result.Ok(null),
               canDelete: Result.Ok(null),
               canRename: Result.Ok(null),
