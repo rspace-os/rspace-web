@@ -104,7 +104,6 @@ const MoveDialog = observer(
                 <TreeView
                   listing={listing}
                   path={[]}
-                  setPath={() => {}}
                   selectedSection={section}
                   refreshListing={refreshListing}
                   filter={filterFile}
