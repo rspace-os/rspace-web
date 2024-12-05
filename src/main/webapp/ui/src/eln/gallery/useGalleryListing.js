@@ -460,7 +460,7 @@ export class LocalGalleryFile implements GalleryFile {
   }
 }
 
-class Filestore implements GalleryFile {
+export class Filestore implements GalleryFile {
   id: Id;
   filesystemId: number;
   filesystemName: string;
@@ -542,7 +542,7 @@ class Filestore implements GalleryFile {
   }
 
   get canDelete(): Result<null> {
-    return Result.Error([new Error("Cannot delete filestores.")]);
+    return Result.Ok(null);
   }
 
   get canRename(): Result<null> {
