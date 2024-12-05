@@ -75,7 +75,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
-import { Optional } from "../../../util/optional";
+import { Optional, getByKey } from "../../../util/optional";
 import LoadMoreButton from "./LoadMoreButton";
 import Carousel from "./Carousel";
 import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
@@ -170,6 +170,7 @@ const BreadcrumbLink = React.forwardRef<
       : {
           border: "2px solid transparent",
         };
+
     return (
       <Link
         component={ReactRouterLink}
@@ -195,7 +196,8 @@ const BreadcrumbLink = React.forwardRef<
         }}
         tabIndex={tabIndex}
       >
-        {folder?.name ?? section}
+        {folder?.name ??
+          getByKey(section, gallerySectionLabel).orElse("UNKNOWN")}
       </Link>
     );
   }
