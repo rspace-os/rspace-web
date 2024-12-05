@@ -25,44 +25,38 @@ import { type GalleryFile } from "../useGalleryListing";
  * of another listing and thus the file has no way of updating the path all the
  * way at the top of the tree.
  *
- * What we need is a mechanism for the current view to broadcast what it means
- * to open a folder, so that whatever part of the UI is triggering an open
- * operation can do so in the correct way.
+ * What we need is a mechanism for any part of the UI to update the path of the
+ * root listing of tree view/the listing of the other views, which is what this
+ * component and hook is for.
  */
 
 const OpenFolderContext = React.createContext({
-  open: { f: (_file: GalleryFile) => {} },
-  setOpen: (_newFunc: {| f: (GalleryFile) => void |}) => {},
+  open: (_file: GalleryFile) => {},
 });
 
 export default function OpenFolderProvider({
   children,
+  setPath,
 }: {|
   children: Node,
+  setPath: ($ReadOnlyArray<GalleryFile>) => void,
 |}): Node {
-  const [open, setOpen] = React.useState<{| f: (GalleryFile) => void |}>({
-    f: () => {},
-  });
-
   return (
-    <OpenFolderContext.Provider value={{ open, setOpen }}>
+    <OpenFolderContext.Provider
+      value={{
+        open: (file) => {
+          setPath([...file.path, file]);
+        },
+      }}
+    >
       {children}
     </OpenFolderContext.Provider>
   );
 }
 
-export function useSetFolderOpen(): {|
-  setFolderOpen: ((GalleryFile) => void) => void,
-|} {
-  const { setOpen } = React.useContext(OpenFolderContext);
-  return {
-    setFolderOpen: (f) => setOpen({ f }),
-  };
-}
-
 export function useFolderOpen(): {| openFolder: (GalleryFile) => void |} {
   const { open } = React.useContext(OpenFolderContext);
   return {
-    openFolder: open.f,
+    openFolder: open,
   };
 }
