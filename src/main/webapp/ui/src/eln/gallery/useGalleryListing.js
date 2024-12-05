@@ -260,7 +260,7 @@ export interface GalleryFile {
 
   +linkedDocuments: Node;
 
-  +canOpen: Result<() => void>;
+  +canOpen: Result<null>;
   +canDuplicate: Result<null>;
   +canDelete: Result<null>;
   +canRename: Result<null>;
@@ -409,8 +409,8 @@ export class LocalGalleryFile implements GalleryFile {
     return <LinkedDocumentsPanel file={this} />;
   }
 
-  get canOpen(): Result<() => void> {
-    if (this.isFolder) return Result.Ok(this.#open);
+  get canOpen(): Result<null> {
+    if (this.isFolder) return Result.Ok(null);
     return Result.Error([new Error("Only folders can be opened.")]);
   }
 
@@ -532,8 +532,8 @@ export class Filestore implements GalleryFile {
     return null;
   }
 
-  get canOpen(): Result<() => void> {
-    return Result.Ok(this.#open);
+  get canOpen(): Result<null> {
+    return Result.Ok(null);
   }
 
   get canDuplicate(): Result<null> {
@@ -666,8 +666,8 @@ class RemoteFile implements GalleryFile {
     return null;
   }
 
-  get canOpen(): Result<() => void> {
-    if (this.isFolder) return Result.Ok(this.#open);
+  get canOpen(): Result<null> {
+    if (this.isFolder) return Result.Ok(null);
     return Result.Error([new Error("Only folders can be opened.")]);
   }
 

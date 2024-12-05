@@ -80,6 +80,7 @@ import LoadMoreButton from "./LoadMoreButton";
 import Carousel from "./Carousel";
 import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
+import { useFolderOpen } from "./OpenFolderProvider";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -174,6 +175,7 @@ const BreadcrumbLink = React.forwardRef<
       : {
           border: "2px solid transparent",
         };
+    const { openFolder } = useFolderOpen();
 
     return (
       <Link
@@ -183,8 +185,7 @@ const BreadcrumbLink = React.forwardRef<
           e.preventDefault();
           e.stopPropagation();
           if (folder) {
-            const open = folder.canOpen.elseThrow();
-            open();
+            openFolder(folder);
           } else {
             clearPath();
           }
@@ -363,6 +364,7 @@ const GridView = observer(
     const { openImagePreview } = useImagePreview();
     const { openPdfPreview } = usePdfPreview();
     const { openAsposePreview } = useAsposePreview();
+    const { openFolder } = useFolderOpen();
     const primaryAction = usePrimaryAction();
 
     const viewportDimensions = useViewportDimensions();
@@ -605,7 +607,7 @@ const GridView = observer(
                   if (e.detail > 1) {
                     primaryAction(file).do((action) => {
                       if (action.tag === "open") {
-                        action.open();
+                        openFolder(file);
                         return;
                       }
                       if (action.tag === "image") {
@@ -683,6 +685,7 @@ const FileCard = styled(
         ref
       ) => {
         const { uploadFiles } = useGalleryActions();
+        const { openFolder } = useFolderOpen();
         const selection = useGallerySelection();
         const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
           useFileImportDropZone({
@@ -886,9 +889,9 @@ const FileCard = styled(
                  * drag-and-drop mechanism for all other files
                  */
                 {...file.canOpen
-                  .map((open) => ({
+                  .map(() => ({
                     onKeyDown: (e: KeyboardEvent) => {
-                      if (e.key === " ") open();
+                      if (e.key === " ") openFolder(file);
                     },
                   }))
                   .orElse({})}

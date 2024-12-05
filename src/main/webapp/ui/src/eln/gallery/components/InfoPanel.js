@@ -855,6 +855,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const selection = useGallerySelection();
   const mobileInfoPanelId = React.useId();
+  const { openFolder } = useFolderOpen();
 
   return (
     <CustomSwipeableDrawer
@@ -926,7 +927,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                 </Typography>
               </Grid>
               {file.canOpen
-                .map((open) => (
+                .map(() => (
                   <Grid item>
                     <ActionButton
                       label="Open"
@@ -937,7 +938,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        open();
+                        openFolder(file);
                         setMobileInfoPanelOpen(false);
                       }}
                     />
