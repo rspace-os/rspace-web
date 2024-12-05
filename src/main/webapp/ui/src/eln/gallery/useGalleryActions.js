@@ -9,11 +9,13 @@ import Result from "../../util/result";
 import {
   type GalleryFile,
   LocalGalleryFile,
+  Filestore,
   type Description,
   idToString,
   type Id,
 } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import useOauthToken from "../../common/useOauthToken";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -63,6 +65,7 @@ export function useGalleryActions(): {|
   changeDescription: (GalleryFile, Description) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
+  const { getToken } = useOauthToken();
 
   /*
    * We create these axios objects because the global axios object is polluted
@@ -405,8 +408,39 @@ export function useGalleryActions(): {|
     }
   }
 
+  async function deleteFilestore(filestore: Filestore) {
+    const api = axios.create({
+      baseURL: "/api/v1/gallery",
+      headers: {
+        Authorization: "Bearer " + (await getToken()),
+      },
+    });
+    try {
+      await api.delete<mixed>(`filestores/${idToString(filestore.id)}`);
+      addAlert(
+        mkAlert({
+          message: "Successfully deleted filestore.",
+          variant: "success",
+        })
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to delete filestore.",
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
   async function deleteFiles(files: RsSet<GalleryFile>) {
     if (files.some((f) => f.isSystemFolder)) return;
+    if (files.size === 1 && files.first instanceof Filestore) {
+      await deleteFilestore(files.first);
+      return;
+    }
     try {
       if (files.some((f) => !(f instanceof LocalGalleryFile)))
         throw new Error("Can only delete local files");
