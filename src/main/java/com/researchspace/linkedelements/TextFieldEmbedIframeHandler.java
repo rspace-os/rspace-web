@@ -26,7 +26,7 @@ public class TextFieldEmbedIframeHandler {
 
   // youtube src url last fragment, e.g. 'YkRldqVfTJo?start=17'
   private static final String YOUTUBE_SRC_SUFFIX_PATTERN =
-      "([\\w-])+((\\?start=\\d+)|(\\?controls=0)|(\\?controls=0&amp;start=\\d+))?";
+      "([\\w-])+(\\?((si=[\\w-]+)|((&amp;)?&?start=\\d+)|((&amp;)?&?controls=0))+)?";
   // jove src url last fragment, e.g. 'id=54239&t=1&s=1&fpv=1'
   private static final String JOVE_SRC_SUFFIX_PATTERN =
       "\\?id=\\d+((&\\w+=1)|(&language=\\w+)|(&access=\\w+)|(&utm_source=\\w+))*";
@@ -53,10 +53,12 @@ public class TextFieldEmbedIframeHandler {
     knownIframeAttrsAndPatterns.put("marginwidth", "\\d+");
     knownIframeAttrsAndPatterns.put(
         "allow",
-        "((\\s?accelerometer;?)|(\\s?autoplay;?)|(\\s?clipboard-write;?)|(\\s?encrypted-media;?)|(\\s?encrypted-media"
-            + " \\*;?)|(\\s?gyroscope;?)|(\\s?picture-in-picture;?))*");
+        "((\\s?accelerometer;?)|(\\s?autoplay;?)|(\\s?clipboard-write;?)|(\\s?encrypted-media;?)"
+            + "|(\\s?encrypted-media \\*;?)|(\\s?gyroscope;?)|(\\s?picture-in-picture;?)"
+            + "|(\\s?web-share;?))*");
     knownIframeAttrsAndPatterns.put("allowfullscreen", "");
     knownIframeAttrsAndPatterns.put("allowtransparency", "true");
+    knownIframeAttrsAndPatterns.put("referrerpolicy", "strict-origin-when-cross-origin");
     knownIframeAttrsAndPatterns.put("scrolling", "no");
   }
 
