@@ -83,13 +83,15 @@ public class GalleryFilestoresApiController extends BaseApiController
   @Override
   public void downloadFromFilestore(
       @PathVariable Long filestoreId,
-      @RequestParam(value = "remotePath") String remotePath,
+      @RequestParam(value = "remotePath", required = false) String remotePath,
       @RequestParam(name = "remoteId", required = false) Long remoteId,
       @RequestAttribute(name = "user") User user,
       HttpServletResponse response)
       throws IOException {
 
-    // FIXME remotePath shouldn't be required if remoteId is present
+    if (StringUtils.isEmpty(remotePath) && remoteId == null) {
+      throw new IllegalArgumentException("Neither 'remotePath' nor 'remoteId' param is provided");
+    }
 
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     NfsFileSystem filesystem = filestore.getFileSystem();

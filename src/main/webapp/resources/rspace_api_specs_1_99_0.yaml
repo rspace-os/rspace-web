@@ -1103,7 +1103,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - $ref: '#/parameters/pageNumberParam'
         - $ref: '#/parameters/pageSizeParam'
@@ -1211,7 +1211,7 @@ paths:
         'X-UploadLimitLimit' and 'X-UploadLimitRemaining'.
 
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - name: file
           in: formData
@@ -1255,7 +1255,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - $ref: '#/parameters/fileIdParam'
       responses:
@@ -1280,7 +1280,7 @@ paths:
         - application/octet-stream
         - application/json
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - $ref: '#/parameters/fileIdParam'
       responses:
@@ -1300,7 +1300,7 @@ paths:
       consumes:
         - multipart/form-data
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - $ref: '#/parameters/fileIdParam'
         - name: file
@@ -1763,21 +1763,6 @@ paths:
                 $ref: '#/definitions/ActivityList'
               _links:
                 $ref: '#/definitions/LinkItemList'
-
-  '/gallery/{mediaFileId}/download':
-    get:
-      summary: Download file stored in RSpace Gallery
-      description: Download a file uploaded to RSpace Gallery, by the id of Gallery Item
-      produces:
-        - application/octet-stream
-        - application/json
-      tags:
-        - Gallery
-      parameters:
-        - $ref: '#/parameters/mediaFileIdParam'
-      responses:
-        '200':
-          description: A resource
 
   '/gallery/filestores':
     get:
