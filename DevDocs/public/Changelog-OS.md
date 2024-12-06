@@ -18,7 +18,7 @@ You can find official changelog at https://documentation.researchspace.com/artic
 
 ### Inventory Features
 
-- RSDEV-314, #193 Fieldmark integration
+- RSDEV-372, #193 Fieldmark integration
 - RSDEV-339, RSDEV-388, RSDEV-391 new actions and improvements in 'Browse Gallery' dialog
 
 # 2.4.0 2024-11-01
