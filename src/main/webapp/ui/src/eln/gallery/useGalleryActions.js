@@ -63,6 +63,7 @@ export function useGalleryActions(): {|
     newFile: File
   ) => Promise<void>,
   changeDescription: (GalleryFile, Description) => Promise<void>,
+  download: (GalleryFile) => void,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
@@ -695,6 +696,10 @@ export function useGalleryActions(): {|
     }
   }
 
+  function download(file: GalleryFile) {
+    console.debug(file.downloadHref);
+  }
+
   return {
     uploadFiles,
     createFolder,
@@ -704,5 +709,6 @@ export function useGalleryActions(): {|
     rename,
     uploadNewVersion,
     changeDescription,
+    download,
   };
 }

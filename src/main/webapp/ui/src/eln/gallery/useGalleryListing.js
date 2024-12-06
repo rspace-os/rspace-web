@@ -347,7 +347,7 @@ export class LocalGalleryFile implements GalleryFile {
     this.thumbnailId = thumbnailId;
     this.#open = () => setPath([...path, this]);
     if (!this.isFolder) {
-      this.downloadHref = `/Streamfile/${idToString(this.id)}`;
+      this.downloadHref = `/api/v1/files/${idToString(this.id)}/file`;
     }
     this.setName = action((newName) => {
       this.name = newName;
@@ -576,6 +576,7 @@ class RemoteFile implements GalleryFile {
   +modificationDate: Date;
   #open: () => void;
   +path: $ReadOnlyArray<GalleryFile>;
+  downloadHref: URL | void;
 
   constructor({
     nfsId,
@@ -602,6 +603,11 @@ class RemoteFile implements GalleryFile {
     this.modificationDate = modificationDate;
     this.path = path;
     this.#open = () => setPath([...path, this]);
+    if (!this.isFolder) {
+      this.downloadHref = `/api/v1/gallery/filestores/${idToString(
+        this.id
+      )}/download`;
+    }
   }
 
   get id(): Id {

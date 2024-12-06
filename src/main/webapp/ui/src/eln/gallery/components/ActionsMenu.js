@@ -275,7 +275,8 @@ function ActionsMenu({
   folderId,
 }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
-  const { deleteFiles, duplicateFiles, uploadFiles } = useGalleryActions();
+  const { deleteFiles, duplicateFiles, uploadFiles, download } =
+    useGalleryActions();
   const selection = useGallerySelection();
   const theme = useTheme();
   const { addAlert } = React.useContext(AlertContext);
@@ -635,7 +636,7 @@ function ActionsMenu({
           avatar={<FileDownloadIcon />}
           onClick={() => {
             selection.asSet().only.do((file) => {
-              window.open(file.downloadHref);
+              download(file);
             });
             setActionsMenuAnchorEl(null);
           }}
