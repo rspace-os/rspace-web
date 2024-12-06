@@ -414,16 +414,9 @@ function ActionsMenu({
   });
 
   const downloadAllowed = computed((): Result<null> => {
-    return selection
-      .asSet()
-      .only.toResult(
-        () => new Error("Only one item may be downloaded at once.")
-      )
-      .flatMap((file) => {
-        if (file.isFolder)
-          return Result.Error([new Error("Cannot download folders.")]);
-        return Result.Ok(null);
-      });
+    if (selection.asSet().some((f) => f.isFolder))
+      return Result.Error([new Error("Cannot download folders.")]);
+    return Result.Ok(null);
   });
 
   const moveAllowed = computed((): Result<null> => {
@@ -635,10 +628,9 @@ function ActionsMenu({
           foregroundColor={COLOR.contrastText}
           avatar={<FileDownloadIcon />}
           onClick={() => {
-            selection.asSet().only.do((file) => {
-              void download(file);
+            void download(selection.asSet()).then(() => {
+              setActionsMenuAnchorEl(null);
             });
-            setActionsMenuAnchorEl(null);
           }}
           compact
           disabled={downloadAllowed.get().isError}

@@ -16,6 +16,7 @@ import {
 } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useOauthToken from "../../common/useOauthToken";
+import { partitionAllSettled } from "../../util/Util";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -63,7 +64,7 @@ export function useGalleryActions(): {|
     newFile: File
   ) => Promise<void>,
   changeDescription: (GalleryFile, Description) => Promise<void>,
-  download: (GalleryFile) => Promise<void>,
+  download: (RsSet<GalleryFile>) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
@@ -696,7 +697,7 @@ export function useGalleryActions(): {|
     }
   }
 
-  async function download(file: GalleryFile) {
+  async function download(files: RsSet<GalleryFile>) {
     const api = axios.create({
       baseURL: "",
       headers: {
@@ -704,21 +705,61 @@ export function useGalleryActions(): {|
       },
     });
     try {
-      if (!file.downloadHref) throw new Error("Cannot download file");
-      const { data: blob } = await api.get<Blob>(file.downloadHref, {
-        responseType: "blob",
-      });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.href = url;
-      link.download = file.name;
-      link.click();
-      URL.revokeObjectURL(url);
+      const { fulfilled, rejected } = partitionAllSettled(
+        await Promise.allSettled(
+          [...files].map(async (file) => {
+            if (!file.downloadHref)
+              throw new Error(`Cannot download ${file.name}`);
+            const { data: blob } = await api.get<Blob>(file.downloadHref, {
+              responseType: "blob",
+            });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(url);
+            return file;
+          })
+        )
+      );
+      if (fulfilled.length > 0) {
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: `Successfully downloaded ${
+              rejected.length > 0 ? "some of " : ""
+            }the files.`,
+            ...(rejected.length > 0
+              ? {
+                  details: fulfilled.map((f) => ({
+                    variant: "success",
+                    title: f.name,
+                  })),
+                }
+              : {}),
+          })
+        );
+      }
+      if (rejected.length > 0) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            message: `Failed to download ${
+              fulfilled.length > 0 ? "some of " : ""
+            }the files.`,
+            details: rejected.map((e) => ({
+              variant: "error",
+              title: e.message,
+            })),
+          })
+        );
+      }
     } catch (e) {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to download file.",
+          title: "Failed to download all the files.",
           message: e.message,
         })
       );
