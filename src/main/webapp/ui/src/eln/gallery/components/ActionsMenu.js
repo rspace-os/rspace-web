@@ -636,7 +636,7 @@ function ActionsMenu({
           avatar={<FileDownloadIcon />}
           onClick={() => {
             selection.asSet().only.do((file) => {
-              download(file);
+              void download(file);
             });
             setActionsMenuAnchorEl(null);
           }}

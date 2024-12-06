@@ -586,6 +586,7 @@ class RemoteFile implements GalleryFile {
     modificationDate,
     path,
     setPath,
+    remotePath,
   }: {|
     nfsId: number,
     name: string,
@@ -594,6 +595,7 @@ class RemoteFile implements GalleryFile {
     modificationDate: Date,
     path: $ReadOnlyArray<GalleryFile>,
     setPath: ($ReadOnlyArray<GalleryFile>) => void,
+    remotePath: string,
   |}) {
     this.nfsId = nfsId;
     this.name = name;
@@ -604,9 +606,10 @@ class RemoteFile implements GalleryFile {
     this.path = path;
     this.#open = () => setPath([...path, this]);
     if (!this.isFolder) {
+      const filestoreId = path[0].id;
       this.downloadHref = `/api/v1/gallery/filestores/${idToString(
-        this.id
-      )}/download`;
+        filestoreId
+      )}/download?remoteId=${idToString(this.id)}&remotePath=${remotePath}`;
     }
   }
 
@@ -1102,6 +1105,10 @@ export function useGalleryListing({
                       .flatMap(Parsers.parseDate)
                       .elseThrow();
 
+                    const remotePath = Parsers.getValueWithKey("logicPath")(obj)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+
                     return Result.Ok<GalleryFile>(
                       new RemoteFile({
                         nfsId,
@@ -1111,6 +1118,7 @@ export function useGalleryListing({
                         modificationDate,
                         path,
                         setPath,
+                        remotePath,
                       })
                     );
                   } catch (e) {

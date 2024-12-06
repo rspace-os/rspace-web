@@ -63,7 +63,7 @@ export function useGalleryActions(): {|
     newFile: File
   ) => Promise<void>,
   changeDescription: (GalleryFile, Description) => Promise<void>,
-  download: (GalleryFile) => void,
+  download: (GalleryFile) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
@@ -696,8 +696,33 @@ export function useGalleryActions(): {|
     }
   }
 
-  function download(file: GalleryFile) {
-    console.debug(file.downloadHref);
+  async function download(file: GalleryFile) {
+    const api = axios.create({
+      baseURL: "",
+      headers: {
+        Authorization: "Bearer " + (await getToken()),
+      },
+    });
+    try {
+      if (!file.downloadHref) throw new Error("Cannot download file");
+      const { data: blob } = await api.get<Blob>(file.downloadHref, {
+        responseType: "blob",
+      });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = file.name;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to download file.",
+          message: e.message,
+        })
+      );
+    }
   }
 
   return {
