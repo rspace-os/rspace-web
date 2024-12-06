@@ -4,6 +4,23 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog 
 
+# 2.5.0 2024-12-06
+
+### ELN Features
+
+- RSDEV-274 new Workspace action to batch-compare ELN documents, with optional CSV export
+
+### ELN Bugfix
+
+- RSDEV-425: update OneDrive integration to make it work with latest OneDrive API 
+- RSDEV-418: fix delivery of notifications for some types of PDF export problems   
+- RSDEV-411: fix problem with PDF export of documents having html-entity char sequence in document name
+
+### Inventory Features
+
+- RSDEV-314, #193 Fieldmark integration
+- RSDEV-339, RSDEV-388, RSDEV-391 new actions and improvements in 'Browse Gallery' dialog
+
 # 2.4.0 2024-11-01
 
 ### ELN Features
