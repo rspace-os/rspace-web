@@ -35,6 +35,7 @@ public class TextFieldEmbedIframeHandler {
     "https://www.youtube.com/embed/" + YOUTUBE_SRC_SUFFIX_PATTERN,
     "https://www.youtube-nocookie.com/embed/" + YOUTUBE_SRC_SUFFIX_PATTERN,
     "https://www.jove.com/embed/player" + JOVE_SRC_SUFFIX_PATTERN,
+    "https://app.jove.com/embed/player" + JOVE_SRC_SUFFIX_PATTERN,
     "https://richard-dev2.jove.com/embed/player" + JOVE_SRC_SUFFIX_PATTERN
   };
 

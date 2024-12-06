@@ -83,6 +83,8 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
     assertTrue(
         iframeHandler.isKnownIframeSrc(
             "https://www.jove.com/embed/player?id=54239&language=Dutch&t=1&s=1&fpv=1"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc("https://app.jove.com/embed/player?id=2359&t=1&s=1&fpv=1"));
 
     // Jove staging site src variants
     assertTrue(
@@ -180,8 +182,7 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
             + " data-allowfullscreen=\"\""
             + " data-referrerpolicy=\"strict-origin-when-cross-origin\"></p>";
 
-    // youtube embed code fragment, with 'privacy enhanced mode' selected, no controls, and start
-    // time
+    // youtube embed code fragment, with 'privacy enhanced mode', no controls, and start time
     String youtubePrivacyModeEmbed =
         "<iframe width=\"560\" height=\"315\""
             + " src=\"https://www.youtube-nocookie.com/embed/bhRExXIGxek?si=i85Qk9Y2son5jSZ6&amp;controls=0&amp;start=2\""
@@ -219,9 +220,9 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void checkJoveIframeConversion() {
+  public void checkJoveIframeConversion_Jan2022() {
 
-    // jove embed code fragment
+    // jove embed code fragment (taken in January 2022)
     String joveEmbed =
         "<iframe id=\"embed-iframe\" allowTransparency=\"true\" allow=\"encrypted-media *\""
             + " allowfullscreen height=\"415\" width=\"460\" border=\"0\" scrolling=\"no\""
@@ -242,6 +243,43 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
     String expectedRestoredJoveEmbed =
         "<iframe width=\"460\" height=\"415\""
             + " src=\"https://www.jove.com/embed/player?id=54239&amp;t=1&amp;s=1&amp;fpv=1\""
+            + " border=\"0\" frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
+            + " allow=\"encrypted-media *\" allowfullscreen=\"\" allowtransparency=\"true\""
+            + " scrolling=\"no\"> </iframe>";
+
+    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n<p>end</p>";
+    String htmlFragment = String.format(htmlFragmentFormat, joveEmbed);
+    String expectedConvertedHtml = String.format(htmlFragmentFormat, expectedConvertedJoveEmbed);
+
+    String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(htmlFragment);
+    assertEquals(expectedConvertedHtml, convertedHtml);
+
+    String restoredHtml = iframeHandler.decodeKnownIframesFromParagraphs(convertedHtml);
+    String restoredHtmlAdjustedForEqualsAssertion =
+        restoredHtml.replaceAll("/p> <iframe", "/p>\n<iframe");
+    String expectedRestoredHtml = String.format(htmlFragmentFormat, expectedRestoredJoveEmbed);
+    assertEquals(expectedRestoredHtml, restoredHtmlAdjustedForEqualsAssertion);
+  }
+
+  @Test
+  public void checkJoveIframeConversion_Dec2024() {
+
+    // jove embed code fragment (taken in December 2024)
+    String joveEmbed =
+        "<iframe id=\"embed-iframe\" allowTransparency=\"true\" allow=\"encrypted-media *\""
+            + " allowfullscreen height=\"415\" width=\"460\" border=\"0\" scrolling=\"no\""
+            + " frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
+            + " src=\"https://app.jove.com/embed/player?id=2359&t=1&s=1&fpv=1\"></iframe>";
+    String expectedConvertedJoveEmbed =
+        "<p class=\"rsKnownIframeReplacement\" "
+            + "data-src=\"https://app.jove.com/embed/player?id=2359&amp;t=1&amp;s=1&amp;fpv=1\" "
+            + "data-width=\"460\" data-height=\"415\" data-border=\"0\" data-frameborder=\"0\" "
+            + "data-marginwheight=\"0\" data-marginwidth=\"0\" "
+            + "data-allow=\"encrypted-media *\" data-allowfullscreen=\"\" "
+            + "data-allowtransparency=\"true\" data-scrolling=\"no\"></p>";
+    String expectedRestoredJoveEmbed =
+        "<iframe width=\"460\" height=\"415\""
+            + " src=\"https://app.jove.com/embed/player?id=2359&amp;t=1&amp;s=1&amp;fpv=1\""
             + " border=\"0\" frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
             + " allow=\"encrypted-media *\" allowfullscreen=\"\" allowtransparency=\"true\""
             + " scrolling=\"no\"> </iframe>";
