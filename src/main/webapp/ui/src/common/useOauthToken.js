@@ -33,10 +33,10 @@ import React from "react";
  *
  * This hook also automatically refreshes the token when it expires, so be sure
  * to not cache the value returned by `getToken` in the components or hooks
- * that use this hook as otherwise they will fail to work if the token elapses.
- * If the page is loaded and there is a valid token in the session storage then
- * it is used and a timer is set up to refresh the token when it expires just
- * as if the token and been fetched directly.
+ * that use this hook as otherwise they will fail to work when the token
+ * elapses.  If the page is loaded and there is a valid token in the session
+ * storage then it is used and a timer is set up to refresh the token when it
+ * expires just as if the token and been fetched directly.
  */
 export default function useOauthToken(): {| getToken: () => Promise<string> |} {
   /*
@@ -50,9 +50,9 @@ export default function useOauthToken(): {| getToken: () => Promise<string> |} {
   const [token, setToken] = React.useState<null | string>(null);
 
   /*
-   * As part of fetching a new token we save it into session storage so that
+   * As part of fetching a new token, we save it into session storage so that
    * after the page is reloaded we can just get it from there. This is mostly
-   * for performance: the reasoning being that the content of the page can
+   * for performance: the reasoning being that the content of the page cannot
    * be loaded until we have a token so rather than having all of the content
    * wait on a single blocking network call we can just persist the value
    * across page loads and only incur that penalty on the first page load.
