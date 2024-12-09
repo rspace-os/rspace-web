@@ -35,7 +35,6 @@
   ],
   "AUDIO": [
     "mp3",
-    "mp4",
     "wav",
     "wma"
   ],
@@ -44,7 +43,53 @@
     "flv",
     "m4v",
     "mov",
+    "mp4",
     "mpg",
     "wmv"
+  ],
+  "IMAGES": [
+    "bmp",
+    "gif",
+    "jpg",
+    "jpeg",
+    "png",
+    "svg",
+    "tif"
+  ],
+  "DOCUMENTS": [
+    "doc",
+    "docx",
+    "odt",
+    "rtf",
+    "txt",
+    "text",
+    "md"
+  ],
+  "SPREADSHEET": [
+    "ods",
+    "xls",
+    "xlsx"
+  ],
+  "PRESENTATION": [
+    "odp",
+    "pps",
+    "ppt",
+    "pptx"
+  ],
+  "HTML": [
+    "html",
+    "htm"
+  ],
+  "CSV": [
+    "csv"
+  ],
+  "PDF": [
+    "pdf"
+  ],
+  "XML": [
+    "xml"
+  ],
+  "ZIP": [
+    "zip"
   ]
 }
