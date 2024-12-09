@@ -1,0 +1,50 @@
+{
+  "CHEMISTRY": [
+    "skc",
+    "mrv",
+    "cxsmiles",
+    "cxsmarts",
+    "cdx",
+    "cdxml",
+    "csrdf",
+    "cml",
+    "csmol",
+    "cssdf",
+    "csrxn",
+    "mol",
+    "mol2",
+    "pdb",
+    "rxn",
+    "rdf",
+    "smiles",
+    "smarts",
+    "sdf",
+    "inchi"
+  ],
+  "DNA": [
+    "fa",
+    "gb",
+    "gbk",
+    "fasta",
+    "fa",
+    "dna",
+    "seq",
+    "sbd",
+    "embl",
+    "ab1"
+  ],
+  "AUDIO": [
+    "mp3",
+    "mp4",
+    "wav",
+    "wma"
+  ],
+  "VIDEO": [
+    "avi",
+    "flv",
+    "m4v",
+    "mov",
+    "mpg",
+    "wmv"
+  ]
+}

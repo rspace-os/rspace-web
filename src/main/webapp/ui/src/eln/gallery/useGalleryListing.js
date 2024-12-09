@@ -20,6 +20,7 @@ import { take, incrementForever } from "../../util/iterators";
 import useOauthToken from "../../common/useOauthToken";
 import { useFilestoreLogin } from "./components/FilestoreLoginDialog";
 import { LinkedDocumentsPanel } from "./components/LinkedDocumentsPanel";
+import FILE_EXTENSIONS_BY_TYPE from "./fileExtensionsByType.json";
 
 export opaque type Id = number;
 // dummyId is for use in tests ONLY
@@ -30,6 +31,22 @@ export const dummyId: () => Id = () => {
 export function idToString(id: Id): string {
   return `${id}`;
 }
+
+const fileIconMap = new Map([
+  ...FILE_EXTENSIONS_BY_TYPE.CHEMISTRY.map((ext) => [
+    ext,
+    "/images/icons/chemistry.svg",
+  ]),
+  ...FILE_EXTENSIONS_BY_TYPE.DNA.map((ext) => [ext, "/images/icons/dna.svg"]),
+  ...FILE_EXTENSIONS_BY_TYPE.AUDIO.map((ext) => [
+    ext,
+    "/images/icons/audio.svg",
+  ]),
+  ...FILE_EXTENSIONS_BY_TYPE.VIDEO.map((ext) => [
+    ext,
+    "/images/icons/video.svg",
+  ]),
+]);
 
 type DescriptionInternalState =
   | {| key: "missing" |}
@@ -112,53 +129,24 @@ function getIconPathForExtension(extension: string) {
     "embl",
     "ab1",
   ];
-  const iconOfSameName = [
-    "avi",
-    "bmp",
-    "doc",
-    "docx",
-    "flv",
-    "gif",
-    "jpg",
-    "jpeg",
-    "m4v",
-    "mov",
-    "mp3",
-    "mp4",
-    "mpg",
-    "ods",
-    "odp",
-    "csv",
-    "pps",
-    "odt",
-    "pdf",
-    "png",
-    "rtf",
-    "wav",
-    "wma",
-    "wmv",
-    "xls",
-    "xlsx",
-    "xml",
-    "zip",
-  ];
+  const audioFiles = ["mp3", "mp4", "wav", "wma"];
+  const videoFiles = ["avi", "flv", "m4v", "mov", "mpg", "wmv"];
+  const spreadsheetFiles = ["ods", "xls", "xlsx"];
+  const imageFiles = ["bmp", "gif", "jpg", "jpeg", "png"];
+  const documentFiles = ["doc", "docx", "odt", "rtf"];
+  const presentationFiles = ["odp", "pps", "ppt", "pptx"];
+  const textFiles = ["txt", "text", "md"];
+  const htmlFiles = ["htm", "html"];
+  const iconOfSameName = ["csv", "pdf", "xml", "zip"];
 
   const ext = extension.toLowerCase();
   if (chemFileExtensions.includes(ext))
     return "/images/icons/chemistry-file.png";
   if (dnaFiles.includes(ext)) return "/images/icons/dna-file.svg";
+  if (audioFiles.includes(ext)) return "/images/icons/audio.svg";
+  // and rest
   if (iconOfSameName.includes(ext)) return `/images/icons/${ext}.png`;
-  return (
-    ({
-      htm: "/images/icons/html.png",
-      html: "/images/icons/html.png",
-      ppt: "/images/icons/powerpoint.png",
-      pptx: "/images/icons/powerpoint.png",
-      txt: "/images/icons/txt.png",
-      text: "/images/icons/txt.png",
-      md: "/images/icons/txt.png",
-    }: { [string]: string })[ext] ?? "/images/icons/unknownDocument.png"
-  );
+  return "/images/icons/unknownDocument.png";
 }
 
 /**
@@ -193,7 +181,8 @@ function generateIconSrc(
       modificationDate.getTime() / 1000
     )}`;
   if (extension === null) return "/images/icons/unknownDocument.png";
-  return getIconPathForExtension(extension);
+  console.debug(fileIconMap, extension);
+  return fileIconMap.get(extension) ?? "/images/icons/unknownDocument.png";
 }
 
 /**
