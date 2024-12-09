@@ -16,7 +16,7 @@ import { observable, runInAction } from "mobx";
 import { Optional } from "../../util/optional";
 import { type URL } from "../../util/types";
 //$FlowExpectedError[untyped-import] Can't exactly add the //@flow line to a JSON file!
-import FILE_EXTENSIONS_BY_TYPE from "./fileExtensionsByType.json";
+import EXT_BY_TYPE from "./fileExtensionsByType.json";
 
 export opaque type Id = number;
 // dummyId is for use in tests ONLY
@@ -28,20 +28,28 @@ export function idToString(id: Id): string {
   return `${id}`;
 }
 
+/*
+ * Maps file extensions to icon files
+ */
+const mapToSvgImageIcon = (
+  extensions: $ReadOnlyArray<string>,
+  filename: string
+): $ReadOnlyArray<[string, string]> =>
+  extensions.map((ext) => [ext, `/images/icons/${filename}.svg`]);
 const fileIconMap = new Map([
-  ...FILE_EXTENSIONS_BY_TYPE.CHEMISTRY.map((ext) => [
-    ext,
-    "/images/icons/chemistry.svg",
-  ]),
-  ...FILE_EXTENSIONS_BY_TYPE.DNA.map((ext) => [ext, "/images/icons/dna.svg"]),
-  ...FILE_EXTENSIONS_BY_TYPE.AUDIO.map((ext) => [
-    ext,
-    "/images/icons/audio.svg",
-  ]),
-  ...FILE_EXTENSIONS_BY_TYPE.VIDEO.map((ext) => [
-    ext,
-    "/images/icons/video.svg",
-  ]),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.CHEMISTRY, "chemistry"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.DNA, "dna"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.AUDIO, "audio"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.VIDEO, "video"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.SPREADSHEET, "sheet"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.IMAGES, "image"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.DOCUMENTS, "document"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.PRESENTATION, "presentation"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.HTML, "html"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.CSV, "csv"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.PDF, "pdf"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.XML, "xml"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.ZIP, "zip"),
 ]);
 
 type DescriptionInternalState =
@@ -141,65 +149,6 @@ export type GalleryFile = {|
 |};
 
 /**
- * These are all the files types for which we have a thumbnail specific for the
- * file type.
- */
-function getIconPathForExtension(extension: string) {
-  const chemFileExtensions = [
-    "skc",
-    "mrv",
-    "cxsmiles",
-    "cxsmarts",
-    "cdx",
-    "cdxml",
-    "csrdf",
-    "cml",
-    "csmol",
-    "cssdf",
-    "csrxn",
-    "mol",
-    "mol2",
-    "pdb",
-    "rxn",
-    "rdf",
-    "smiles",
-    "smarts",
-    "sdf",
-    "inchi",
-  ];
-  const dnaFiles = [
-    "fa",
-    "gb",
-    "gbk",
-    "fasta",
-    "fa",
-    "dna",
-    "seq",
-    "sbd",
-    "embl",
-    "ab1",
-  ];
-  const audioFiles = ["mp3", "mp4", "wav", "wma"];
-  const videoFiles = ["avi", "flv", "m4v", "mov", "mpg", "wmv"];
-  const spreadsheetFiles = ["ods", "xls", "xlsx"];
-  const imageFiles = ["bmp", "gif", "jpg", "jpeg", "png"];
-  const documentFiles = ["doc", "docx", "odt", "rtf"];
-  const presentationFiles = ["odp", "pps", "ppt", "pptx"];
-  const textFiles = ["txt", "text", "md"];
-  const htmlFiles = ["htm", "html"];
-  const iconOfSameName = ["csv", "pdf", "xml", "zip"];
-
-  const ext = extension.toLowerCase();
-  if (chemFileExtensions.includes(ext))
-    return "/images/icons/chemistry-file.png";
-  if (dnaFiles.includes(ext)) return "/images/icons/dna-file.svg";
-  if (audioFiles.includes(ext)) return "/images/icons/audio.svg";
-  // and rest
-  if (iconOfSameName.includes(ext)) return `/images/icons/${ext}.png`;
-  return "/images/icons/unknownDocument.png";
-}
-
-/**
  * For some file types we generate thumbnails of the content. For others we
  * have thumbnails to represent all files of that type.
  */
@@ -211,28 +160,28 @@ function generateIconSrc(
   id: number,
   modificationDate: Date,
   isFolder: boolean,
-  isSystemFolder: boolean
+  _isSystemFolder: boolean
 ) {
   if (isFolder) {
-    if (isSystemFolder) {
-      if (/snippets/i.test(name)) return "/images/icons/folder-shared.png";
-      return "/images/icons/folder-api-inbox.png";
-    }
-    return "/images/icons/folder.png";
+    return "/images/icons/folder.svg";
+    //  if (isSystemFolder) {
+    //    if (/snippets/i.test(name)) return "/images/icons/folder-shared.png";
+    //    return "/images/icons/folder-api-inbox.png";
+    //  }
+    //  return "/images/icons/folder.png";
   }
   if (type === "Image")
     return `/gallery/getThumbnail/${id}/${Math.floor(
       modificationDate.getTime() / 1000
     )}`;
-  if (type === "Documents" || type === "PdfDocuments")
-    return `/image/docThumbnail/${id}/${thumbnailId ?? "none"}`;
+  if ((type === "Documents" || type === "PdfDocuments") && thumbnailId !== null)
+    return `/image/docThumbnail/${id}/${thumbnailId}`;
   if (type === "Chemistry")
     return `/gallery/getChemThumbnail/${id}/${Math.floor(
       modificationDate.getTime() / 1000
     )}`;
-  if (extension === null) return "/images/icons/unknownDocument.png";
-  console.debug(fileIconMap, extension);
-  return fileIconMap.get(extension) ?? "/images/icons/unknownDocument.png";
+  if (extension === null) return "/images/icons/unknown.svg";
+  return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
 }
 
 export function useGalleryListing({
