@@ -630,6 +630,10 @@ const FileCard = styled(
         |},
         ref
       ) => {
+        const NAME_STYLES = {
+          LINE_HEIGHT: 1.5,
+          FONT_SIZE: "0.8125rem",
+        };
         const { uploadFiles } = useGalleryActions();
         const selection = useGallerySelection();
         const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
@@ -913,8 +917,16 @@ const FileCard = styled(
                       <Grid
                         item
                         sx={{
-                          textAlign: "center",
+                          // give room for two lines of text
+                          lineHeight: NAME_STYLES.LINE_HEIGHT,
+                          fontSize: NAME_STYLES.FONT_SIZE,
+                          minHeight: `calc(2* ${NAME_STYLES.LINE_HEIGHT}* ${NAME_STYLES.FONT_SIZE})`,
+
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "end",
                           flexGrow: 1,
+                          textAlign: "center",
                           ...(selected
                             ? {
                                 backgroundColor: (theme) =>
