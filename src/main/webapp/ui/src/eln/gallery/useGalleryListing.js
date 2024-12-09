@@ -110,15 +110,11 @@ function generateIconSrc(
   id: number,
   modificationDate: Date,
   isFolder: boolean,
-  _isSystemFolder: boolean
+  isSystemFolder: boolean
 ) {
   if (isFolder) {
+    if (isSystemFolder) return "/images/icons/system_folder.svg";
     return "/images/icons/folder.svg";
-    //  if (isSystemFolder) {
-    //    if (/snippets/i.test(name)) return "/images/icons/folder-shared.png";
-    //    return "/images/icons/folder-api-inbox.png";
-    //  }
-    //  return "/images/icons/folder.png";
   }
   if (type === "Image")
     return `/gallery/getThumbnail/${id}/${Math.floor(
