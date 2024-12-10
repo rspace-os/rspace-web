@@ -273,7 +273,6 @@ const Path = ({
             sx={{
               p: 0.5,
               pl: 1,
-              height: 26,
               fontWeight: 700,
               textTransform: "uppercase",
             }}
