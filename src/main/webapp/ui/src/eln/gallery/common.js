@@ -1,8 +1,32 @@
 //@flow strict
 
+import React, { type Node } from "react";
 import { COLORS as baseThemeColors } from "../../theme";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
+import ChemistryIcon from "./chemistryIcon";
+import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import {
+  faImage,
+  faFilm,
+  faFile,
+  faFileInvoice,
+  faDatabase,
+  faShapes,
+  faCircleDown,
+  faVolumeLow,
+} from "@fortawesome/free-solid-svg-icons";
+import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
+library.add(faImage);
+library.add(faFilm);
+library.add(faFile);
+library.add(faFileInvoice);
+library.add(faDatabase);
+library.add(faShapes);
+library.add(faNoteSticky);
+library.add(faCircleDown);
+library.add(faVolumeLow);
 
 export type GallerySection =
   | "Images"
@@ -61,6 +85,19 @@ export const gallerySectionLabel = {
   Snippets: "Snippets",
   Miscellaneous: "Miscellaneous",
   PdfDocuments: "Exports",
+};
+
+export const gallerySectionIcon: { [string]: Node } = {
+  Images: <FaIcon icon="image" />,
+  Audios: <FaIcon icon="volume-low" />,
+  Videos: <FaIcon icon="film" />,
+  Documents: <FaIcon icon="file" />,
+  Chemistry: <ChemistryIcon />,
+  DMPs: <FaIcon icon="file-invoice" />,
+  NetworkFiles: null,
+  Snippets: <FaIcon icon="fa-regular fa-note-sticky" />,
+  Miscellaneous: <FaIcon icon="shapes" />,
+  PdfDocuments: <FaIcon icon="fa-circle-down" />,
 };
 
 export const gallerySectionCollectiveNoun = {

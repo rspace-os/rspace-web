@@ -7,6 +7,7 @@ import { styled } from "@mui/material/styles";
 import {
   COLOR,
   gallerySectionLabel,
+  gallerySectionIcon,
   type GallerySection,
   GALLERY_SECTION,
 } from "../common";
@@ -16,23 +17,9 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import { darken } from "@mui/system";
-import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
-import ChemistryIcon from "../chemistryIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import {
-  faImage,
-  faFilm,
-  faFile,
-  faFileInvoice,
-  faDatabase,
-  faShapes,
-  faCircleDown,
-  faVolumeLow,
-} from "@fortawesome/free-solid-svg-icons";
-import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import AddIcon from "@mui/icons-material/Add";
@@ -59,15 +46,6 @@ import ValidatingSubmitButton, {
   IsValid,
   IsInvalid,
 } from "../../../components/ValidatingSubmitButton";
-library.add(faImage);
-library.add(faFilm);
-library.add(faFile);
-library.add(faFileInvoice);
-library.add(faDatabase);
-library.add(faShapes);
-library.add(faNoteSticky);
-library.add(faCircleDown);
-library.add(faVolumeLow);
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -560,7 +538,7 @@ const Sidebar = ({
           <List sx={{ position: "static" }}>
             <DrawerTab
               label={gallerySectionLabel.Images}
-              icon={<FaIcon icon="image" />}
+              icon={gallerySectionIcon.Images}
               index={0}
               tabIndex={getTabIndex(0)}
               ref={(node) => {
@@ -577,7 +555,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Audios}
-              icon={<FaIcon icon="volume-low" />}
+              icon={gallerySectionIcon.Audios}
               index={1}
               tabIndex={getTabIndex(1)}
               ref={(node) => {
@@ -594,7 +572,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Videos}
-              icon={<FaIcon icon="film" />}
+              icon={gallerySectionIcon.Videos}
               index={2}
               tabIndex={getTabIndex(2)}
               ref={(node) => {
@@ -611,7 +589,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Documents}
-              icon={<FaIcon icon="file" />}
+              icon={gallerySectionIcon.Documents}
               index={3}
               tabIndex={getTabIndex(3)}
               ref={(node) => {
@@ -628,7 +606,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Chemistry}
-              icon={<ChemistryIcon />}
+              icon={gallerySectionIcon.Chemistry}
               index={4}
               tabIndex={getTabIndex(4)}
               ref={(node) => {
@@ -645,7 +623,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.DMPs}
-              icon={<FaIcon icon="file-invoice" />}
+              icon={gallerySectionIcon.DMPs}
               index={5}
               tabIndex={getTabIndex(5)}
               ref={(node) => {
@@ -662,7 +640,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Snippets}
-              icon={<FaIcon icon="fa-regular fa-note-sticky" />}
+              icon={gallerySectionIcon.Snippets}
               index={6}
               tabIndex={getTabIndex(6)}
               ref={(node) => {
@@ -679,7 +657,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Miscellaneous}
-              icon={<FaIcon icon="shapes" />}
+              icon={gallerySectionIcon.Miscellaneous}
               index={7}
               tabIndex={getTabIndex(7)}
               ref={(node) => {
@@ -699,7 +677,7 @@ const Sidebar = ({
           <List sx={{ position: "static" }}>
             <DrawerTab
               label={gallerySectionLabel.PdfDocuments}
-              icon={<FaIcon icon="fa-circle-down" />}
+              icon={gallerySectionIcon.PdfDocuments}
               index={8}
               tabIndex={getTabIndex(8)}
               ref={(node) => {
