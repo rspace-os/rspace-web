@@ -389,12 +389,20 @@ function ActionsMenu({
   const duplicateAllowed = computed((): Result<null> => {
     if (selection.asSet().some((f) => f.isSystemFolder))
       return Result.Error([new Error("Cannot duplicate system folders.")]);
+    if (selection.size > 50)
+      return Result.Error([
+        new Error("Cannot duplicate more than 50 items at once."),
+      ]);
     return Result.Ok(null);
   });
 
   const deleteAllowed = computed((): Result<null> => {
     if (selection.asSet().some((f) => f.isSystemFolder))
       return Result.Error([new Error("Cannot delete system folders.")]);
+    if (selection.size > 50)
+      return Result.Error([
+        new Error("Cannot delete more than 50 items at once."),
+      ]);
     return Result.Ok(null);
   });
 
@@ -422,6 +430,10 @@ function ActionsMenu({
   });
 
   const exportAllowed = computed((): Result<null> => {
+    if (selection.size > 100)
+      return Result.Error([
+        new Error("Cannot export more than 100 itemes at once."),
+      ]);
     return Result.Ok(null);
   });
 
@@ -439,6 +451,10 @@ function ActionsMenu({
   });
 
   const moveAllowed = computed((): Result<null> => {
+    if (selection.size > 50)
+      return Result.Error([
+        new Error("Cannot move more than 50 items at once."),
+      ]);
     return Result.Ok(null);
   });
 
