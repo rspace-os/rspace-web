@@ -109,6 +109,10 @@ const DEFAULT_STATE = {
 export type ExportSelection =
   | {|
       type: "selection",
+      /*
+       * Note that if these arrays are larger than 100, the network call to
+       * trigger the export will fail.
+       */
       exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">,
       exportNames: Array<string>,
       exportIds: Array<string>,
@@ -265,7 +269,8 @@ function ExportDialog({
         addAlert(
           mkAlert({
             variant:
-              response.data.indexOf("Please contact") > -1
+              response.data.indexOf("Please contact") > -1 ||
+              response.data.indexOf("failed for the following reason") > -1
                 ? "error"
                 : "success",
             message: response.data,

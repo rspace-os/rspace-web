@@ -240,6 +240,11 @@ export function useGalleryActions(): {|
           );
           addAlert(
             Parsers.objectPath(["data", "exceptionMessage"], data)
+              .orElseTry(() =>
+                Parsers.objectPath(["data", "error", "errorMessages"], data)
+                  .flatMap(Parsers.isArray)
+                  .flatMap(ArrayUtils.head)
+              )
               .flatMap(Parsers.isString)
               .map((exceptionMessage) =>
                 mkAlert({
@@ -300,6 +305,11 @@ export function useGalleryActions(): {|
           );
           addAlert(
             Parsers.objectPath(["data", "exceptionMessage"], data)
+              .orElseTry(() =>
+                Parsers.objectPath(["data", "error", "errorMessages"], data)
+                  .flatMap(Parsers.isArray)
+                  .flatMap(ArrayUtils.head)
+              )
               .flatMap(Parsers.isString)
               .map((exceptionMessage) =>
                 mkAlert({
@@ -348,6 +358,11 @@ export function useGalleryActions(): {|
       );
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
+          .orElseTry(() =>
+            Parsers.objectPath(["data", "error", "errorMessages"], data)
+              .flatMap(Parsers.isArray)
+              .flatMap(ArrayUtils.head)
+          )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
             mkAlert({
@@ -397,6 +412,11 @@ export function useGalleryActions(): {|
       );
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
+          .orElseTry(() =>
+            Parsers.objectPath(["data", "error", "errorMessages"], data)
+              .flatMap(Parsers.isArray)
+              .flatMap(ArrayUtils.head)
+          )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
             mkAlert({
