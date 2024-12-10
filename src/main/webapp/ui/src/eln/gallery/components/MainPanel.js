@@ -12,6 +12,7 @@ import Grid from "@mui/material/Grid";
 import Fade from "@mui/material/Fade";
 import {
   gallerySectionLabel,
+  gallerySectionIcon,
   COLOR,
   SELECTED_OR_FOCUS_BORDER,
   SELECTED_OR_FOCUS_BLUE,
@@ -58,8 +59,6 @@ import SwapVertIcon from "@mui/icons-material/SwapVert";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import TextField from "@mui/material/TextField";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import Link from "@mui/material/Link";
 import { Link as ReactRouterLink } from "react-router-dom";
 import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
@@ -79,6 +78,8 @@ import { Optional, getByKey } from "../../../util/optional";
 import LoadMoreButton from "./LoadMoreButton";
 import Carousel from "./Carousel";
 import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
+import Breadcrumbs from "@mui/material/Breadcrumbs";
+import Chip from "@mui/material/Chip";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -122,6 +123,27 @@ const DragCancelFab = () => {
   );
 };
 
+const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
+  "& .MuiBreadcrumbs-separator": {
+    marginLeft: theme.spacing(0.5),
+    marginRight: theme.spacing(0.5),
+  },
+}));
+
+const StyledBreadcrumb = styled(
+  React.forwardRef((props, ref) => <Chip ref={ref} {...props} clickable />)
+)(({ theme }) => ({
+  height: theme.spacing(3),
+  color: theme.palette.text.primary,
+  fontWeight: theme.typography.fontWeightRegular,
+  cursor: "pointer",
+  "& .MuiChip-icon": {
+    fontSize: "1.05rem",
+    marginRight: theme.spacing(-0.5),
+    color: theme.palette.primary.contrastText,
+  },
+}));
+
 const BreadcrumbLink = React.forwardRef<
   ElementConfig<typeof Link>,
   null | typeof Link
@@ -132,11 +154,13 @@ const BreadcrumbLink = React.forwardRef<
       section,
       clearPath,
       tabIndex,
+      sx,
     }: {|
       folder?: GalleryFile,
       section: string,
       clearPath: () => void,
       tabIndex: number,
+      sx: mixed,
     |},
     ref:
       | null
@@ -172,7 +196,7 @@ const BreadcrumbLink = React.forwardRef<
         };
 
     return (
-      <Link
+      <StyledBreadcrumb
         component={ReactRouterLink}
         to={""}
         onClick={(e) => {
@@ -188,28 +212,30 @@ const BreadcrumbLink = React.forwardRef<
         }}
         style={{
           ...dropStyle,
-          borderRadius: "6px",
-          paddingLeft: "1px",
-          paddingRight: "1px",
-          paddingTop: "1px",
-          fontSize: "0.885rem",
         }}
         tabIndex={tabIndex}
-      >
-        {folder?.name ??
-          getByKey(section, gallerySectionLabel).orElse("UNKNOWN")}
-      </Link>
+        label={
+          folder?.name ??
+          getByKey(section, gallerySectionLabel).orElse("UNKNOWN")
+        }
+        icon={
+          folder ? null : getByKey(section, gallerySectionIcon).orElse(null)
+        }
+        sx={sx}
+      />
     );
   }
 );
 
-const Path = styled(({ className, section, path, clearPath }) => {
-  const str = ArrayUtils.last(path)
-    .map((folder) => folder.pathAsString())
-    .orElse(`/${section}/`);
-  const [hasFocus, setHasFocus] = React.useState(false);
-  const textFieldRef = React.useRef(null);
-  const sectionLink = React.useRef(null);
+const Path = ({
+  section,
+  path,
+  clearPath,
+}: {|
+  section: string,
+  path: $ReadOnlyArray<GalleryFile>,
+  clearPath: () => void,
+|}) => {
   const {
     eventHandlers: { onFocus, onBlur, onKeyDown },
     getTabIndex,
@@ -230,96 +256,45 @@ const Path = styled(({ className, section, path, clearPath }) => {
       role="region"
       aria-label="breadcrumbs"
     >
-      <TextField
-        className={className}
-        value={hasFocus ? str : ""}
-        onChange={() => {}}
-        fullWidth
-        size="small"
-        onFocus={() => {
-          setHasFocus(true);
-        }}
-        onBlur={() => {
-          setHasFocus(false);
-        }}
-        onKeyDown={(e) => {
-          /*
-           * This ensures keyboard users can tab through both the textfield
-           * for copying the path and the links.
-           */
-          if (e.key === "Tab" && !e.shiftKey) {
-            e.stopPropagation();
-            setHasFocus(false);
-            setTimeout(() => {
-              sectionLink.current?.focus();
-            }, 0);
-          }
-        }}
-        inputProps={{
-          ref: textFieldRef,
-          style: {
-            paddingTop: "5px",
-            paddingBottom: "5px",
-          },
-          "aria-label": "copy breadcrumb path",
-        }}
-      />
       {/*
        * These two divs create a horizonally scrolling box without a scrollbar,
        * mimicing the standard behaviour of a text field.
        */}
-      {!hasFocus && (
-        <div
-          style={{
-            width: "calc(100% - 16px)",
-            position: "absolute",
-            top: "2px",
-            right: "8px",
-            overflow: "hidden",
-          }}
-        >
-          <Stack
-            onClick={() => {
-              textFieldRef.current?.focus();
-            }}
-            direction="row"
-            spacing={0.25}
+      <div
+        style={{
+          width: "calc(100% - 16px)",
+          overflow: "hidden",
+        }}
+      >
+        <StyledBreadcrumbs>
+          <BreadcrumbLink
+            section={section}
+            clearPath={clearPath}
             sx={{
-              whiteSpace: "nowrap",
-              overflowX: "auto",
-              marginBottom: "-50px",
-              paddingBottom: "50px",
-              cursor: "text",
+              p: 0.5,
+              pl: 1,
+              height: 26,
+              fontWeight: 700,
+              textTransform: "uppercase",
             }}
-          >
+            ref={getRef(0)}
+            tabIndex={getTabIndex(0)}
+          />
+          {path.map((f, i) => (
             <BreadcrumbLink
+              key={idToString(f.id)}
+              folder={f}
               section={section}
               clearPath={clearPath}
-              ref={getRef(0)}
-              tabIndex={getTabIndex(0)}
+              ref={getRef(i + 1)}
+              tabIndex={getTabIndex(i + 1)}
             />
-            {path.map((f, i) => (
-              <>
-                <span>›</span>
-                <BreadcrumbLink
-                  folder={f}
-                  section={section}
-                  clearPath={clearPath}
-                  ref={getRef(i + 1)}
-                  tabIndex={getTabIndex(i + 1)}
-                />
-              </>
-            ))}
-          </Stack>
-        </div>
-      )}
+          ))}
+        </StyledBreadcrumbs>
+      </div>
     </div>
   );
-})(() => ({
-  "& input": {
-    height: "21px",
-  },
-}));
+};
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -1149,21 +1124,7 @@ function GalleryMainPanel({
           sx={{ height: "100%", flexWrap: "nowrap" }}
           spacing={1}
         >
-          <Grid item>
-            <Typography variant="h3" key={selectedSection}>
-              <Fade
-                in={true}
-                timeout={
-                  window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                    ? 0
-                    : 1000
-                }
-              >
-                <div>{gallerySectionLabel[selectedSection]}</div>
-              </Fade>
-            </Typography>
-          </Grid>
-          <Grid item>
+          <Grid item sx={{ pt: "0 !important" }}>
             <Path section={selectedSection} path={path} clearPath={clearPath} />
           </Grid>
           <Grid item sx={{ maxWidth: "100% !important" }}>
