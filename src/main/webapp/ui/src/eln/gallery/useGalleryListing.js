@@ -822,6 +822,8 @@ export function useGalleryListing({
         return `Nothing in the folder "${folderName}" matches the search term "${searchTerm}".`;
       return `The folder "${folderName}" is empty.`;
     }
+    if (section === "NetworkFiles")
+      return "Add a filestore in the Create menu.";
     if (searchTerm !== "")
       return `There are no top-level ${gallerySectionCollectiveNoun[section]} that match the search term "${searchTerm}".`;
     return `There are no top-level ${gallerySectionCollectiveNoun[section]}.`;
