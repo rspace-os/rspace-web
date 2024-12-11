@@ -455,7 +455,7 @@ const AddFilestoreMenuItem = ({
           ))}
       </Menu>
       <NewMenuItem
-        title="Add a filestore"
+        title="Add a Filestore"
         avatar={<DnsIcon />}
         backgroundColor={COLOR.background}
         foregroundColor={COLOR.contrastText}
