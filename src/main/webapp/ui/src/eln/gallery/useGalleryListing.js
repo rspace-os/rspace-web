@@ -648,6 +648,7 @@ export function useGalleryListing({
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: () => {
+      setPage(0);
       void getGalleryFiles();
     },
   };
