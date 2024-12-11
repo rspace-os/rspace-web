@@ -439,8 +439,8 @@ export function useGalleryActions(): {|
 
   async function deleteFiles(files: RsSet<GalleryFile>) {
     if (files.some((f) => f.isSystemFolder)) return;
-    if (files.size === 1 && files.first instanceof Filestore) {
-      await deleteFilestore(files.first);
+    if (files.every((f) => f instanceof Filestore)) {
+      await Promise.all(files.filterClass(Filestore).map(deleteFilestore));
       return;
     }
     try {
