@@ -18,6 +18,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import { darken } from "@mui/system";
 import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
 import ChemistryIcon from "../chemistryIcon";
+import FilestoreIcon from "../filestoreIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
@@ -888,7 +889,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.NetworkFiles}
-              icon={<FaIcon icon="database" />}
+              icon={<FilestoreIcon />}
               index={7}
               tabIndex={getTabIndex(7)}
               ref={(node) => {
