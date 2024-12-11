@@ -13,6 +13,7 @@ import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,7 @@ import org.irods.jargon.core.pub.domain.DataObject;
 import org.irods.jargon.core.pub.io.IRODSFile;
 import org.irods.jargon.core.pub.io.IRODSFileFactory;
 import org.irods.jargon.core.query.CollectionAndDataObjectListingEntry;
+import org.irods.jargon.core.query.MetaDataAndDomainData;
 
 @Slf4j
 public class IRODSClient extends NfsAbstractClient implements NfsClient {
@@ -97,6 +99,24 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
       node.calculateLogicPath(
           entry.getParentPath() + "/" + entry.getPathOrName(), selectedUserFolder);
       node.calculateFileName(entry.getPathOrName());
+      try {
+        String avuHtml = "";
+        List<MetaDataAndDomainData> irodsDataObjectAVUs =
+            getIrodsDataObjectAVUs(entry.getParentPath() + "/" + entry.getPathOrName());
+        for (MetaDataAndDomainData avu : irodsDataObjectAVUs) {
+          avuHtml +=
+              "A: "
+                  + avu.getAvuAttribute()
+                  + "\nV: "
+                  + avu.getAvuValue()
+                  + "\nU: "
+                  + avu.getAvuUnit()
+                  + "\n\n";
+        }
+        node.setFileMetadata(avuHtml);
+      } catch (JargonException e) {
+        log.error("Error getting metadata for {}", node.getLogicPath(), e);
+      }
     } else {
       node.calculateLogicPath(entry.getPathOrName(), selectedUserFolder);
       node.calculateFileName(entry.getPathOrName().replace(entry.getParentPath(), ""));
@@ -307,6 +327,18 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
         iRodsFileSystem.closeAndEatExceptions();
       }
     }
+  }
+
+  private List<MetaDataAndDomainData> getIrodsDataObjectAVUs(String logicPath)
+      throws JargonException {
+
+    List<MetaDataAndDomainData> irodsDataObjectAVUs =
+        jargonFacade.getIRODSDataObjectAVUsByPath(logicPath, irodsAccount);
+
+    log.info("Retrieving AVUs for [{}]", logicPath);
+    log.info("AVUs: [{}]", Arrays.toString(irodsDataObjectAVUs.toArray()));
+
+    return irodsDataObjectAVUs;
   }
 
   private DataObject getIrodsDataObject(NfsTarget nfsTarget) throws JargonException {

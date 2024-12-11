@@ -60,6 +60,8 @@
 	                     <a href="#" rel="${node.logicPath}" data-nfsid="${node.nfsId}" style="display:inline;"
 	                         onclick="event.preventDefault(); RS.downloadNetFile($(this).attr('rel'), $(this).data('nfsid'));">
 	                         ${node.fileName}</a>
+			     <a href="#" style="display:inline;" onclick="$('#avu-${node.nfsId}').toggle();">Meta</a>
+			     <div id="avu-${node.nfsId}" style="display: none" escape="false"><pre>${node.fileMetadata}</pre></div>	 
 	                 </li>
                  </c:if>
              </c:otherwise>
