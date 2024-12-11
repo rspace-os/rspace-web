@@ -301,6 +301,7 @@ const AddFilestoreMenuItem = ({
   tabIndex?: number,
 |}) => {
   const { addAlert } = React.useContext(AlertContext);
+  const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
@@ -454,22 +455,29 @@ const AddFilestoreMenuItem = ({
             />
           ))}
       </Menu>
-      <NewMenuItem
-        title="Add a Filestore"
-        avatar={<DnsIcon />}
-        backgroundColor={COLOR.background}
-        foregroundColor={COLOR.contrastText}
-        onClick={({ target }) => {
-          setOpen(true);
-          setAnchorEl(target);
-        }}
-        //eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus={autoFocus}
-        tabIndex={tabIndex}
-        aria-haspopup="dialog"
-        compact
-        disabled={(filesystems ?? []).length === 0 && filestoreIds !== null}
-      />
+      {FetchingData.getSuccessValue(filestoresEnabled)
+        .flatMap(Parsers.isBoolean)
+        .flatMap(Parsers.isTrue)
+        .map(() => (
+          <NewMenuItem
+            key={null}
+            title="Add a Filestore"
+            avatar={<DnsIcon />}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            onClick={({ target }) => {
+              setOpen(true);
+              setAnchorEl(target);
+            }}
+            //eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus={autoFocus}
+            tabIndex={tabIndex}
+            aria-haspopup="dialog"
+            compact
+            disabled={(filesystems ?? []).length === 0 && filestoreIds !== null}
+          />
+        ))
+        .orElse(null)}
     </>
   );
 };
