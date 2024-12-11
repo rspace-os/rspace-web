@@ -4,12 +4,7 @@ import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import { styled } from "@mui/material/styles";
-import {
-  COLOR,
-  gallerySectionLabel,
-  type GallerySection,
-  GALLERY_SECTION,
-} from "../common";
+import { COLOR, gallerySectionLabel, type GallerySection } from "../common";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItem from "@mui/material/ListItem";
@@ -521,21 +516,6 @@ const DmpMenuSection = ({
   );
 };
 
-const SelectedDrawerTabIndicator = styled(({ className }) => (
-  <div className={className}></div>
-))(({ verticalPosition }) => ({
-  width: "198px",
-  height: "43px",
-  backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
-    ? "black"
-    : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
-  position: "absolute",
-  top: verticalPosition,
-  transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "none"
-    : "top 400ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
-}));
-
 const DrawerTab = styled(
   //eslint-disable-next-line react/display-name
   React.forwardRef(
@@ -593,9 +573,11 @@ const DrawerTab = styled(
       ),
     },
     "&.Mui-selected": {
-      backgroundColor: "unset",
       "&:hover": {
-        backgroundColor: "unset",
+        backgroundColor: darken(
+          `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 100%)`,
+          0.05
+        ),
       },
     },
   },
@@ -622,55 +604,9 @@ const Sidebar = ({
   refreshListing,
   id,
 }: SidebarArgs): Node => {
-  const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
-    React.useState(null);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
-
-  const sectionRefs = React.useRef({
-    [GALLERY_SECTION.IMAGES]: null,
-    [GALLERY_SECTION.AUDIOS]: null,
-    [GALLERY_SECTION.VIDEOS]: null,
-    [GALLERY_SECTION.DOCUMENTS]: null,
-    [GALLERY_SECTION.CHEMISTRY]: null,
-    [GALLERY_SECTION.DMPS]: null,
-    [GALLERY_SECTION.NETWORKFILES]: null,
-    [GALLERY_SECTION.SNIPPETS]: null,
-    [GALLERY_SECTION.MISCELLANEOUS]: null,
-    [GALLERY_SECTION.PDFDOCUMENTS]: null,
-  });
-
-  React.useEffect(() => {
-    const fsEnabled =
-      FetchingData.getSuccessValue(filestoresEnabled).orElse(false);
-    const validGallerySections = new Set([
-      "Images",
-      "Audios",
-      "Videos",
-      "Documents",
-      "Chemistry",
-      "DMPs",
-      "Snippets",
-      "Miscellaneous",
-      ...(fsEnabled === true ? ["NetworkFiles"] : []),
-      "PdfDocuments",
-    ]);
-    if (!validGallerySections.has(selectedSection)) {
-      setSelectedIndicatorOffset(null);
-      return;
-    }
-    if (sectionRefs.current && sectionRefs.current[selectedSection])
-      setSelectedIndicatorOffset(
-        sectionRefs.current[selectedSection].offsetTop
-      );
-    /*
-     * On mobile, the sectionRefs are not immediately initialised as the
-     * sidebar is closed. By re-executing this effect when the IMAGES
-     * sectionRef has been initialised we know that all of the sectionRefs
-     * have been initialised and can calculate the selection indicator offset
-     */
-  }, [selectedSection, sectionRefs.current[GALLERY_SECTION.IMAGES]]);
 
   React.useEffect(() => {
     autorun(() => {
@@ -766,11 +702,6 @@ const Sidebar = ({
           position: "relative",
         }}
       >
-        {selectedIndicatorOffset !== null && (
-          <SelectedDrawerTabIndicator
-            verticalPosition={selectedIndicatorOffset}
-          />
-        )}
         <div role="navigation">
           <List sx={{ position: "static" }}>
             <DrawerTab
@@ -779,7 +710,6 @@ const Sidebar = ({
               index={0}
               tabIndex={getTabIndex(0)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.IMAGES] = node;
                 const ref = getRef(0);
                 if (ref) ref.current = node;
               }}
@@ -796,7 +726,6 @@ const Sidebar = ({
               index={1}
               tabIndex={getTabIndex(1)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.AUDIOS] = node;
                 const ref = getRef(1);
                 if (ref) ref.current = node;
               }}
@@ -813,7 +742,6 @@ const Sidebar = ({
               index={2}
               tabIndex={getTabIndex(2)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.VIDEOS] = node;
                 const ref = getRef(2);
                 if (ref) ref.current = node;
               }}
@@ -830,7 +758,6 @@ const Sidebar = ({
               index={3}
               tabIndex={getTabIndex(3)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.DOCUMENTS] = node;
                 const ref = getRef(3);
                 if (ref) ref.current = node;
               }}
@@ -847,7 +774,6 @@ const Sidebar = ({
               index={4}
               tabIndex={getTabIndex(4)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.CHEMISTRY] = node;
                 const ref = getRef(4);
                 if (ref) ref.current = node;
               }}
@@ -864,7 +790,6 @@ const Sidebar = ({
               index={5}
               tabIndex={getTabIndex(5)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.DMPS] = node;
                 const ref = getRef(5);
                 if (ref) ref.current = node;
               }}
@@ -881,7 +806,6 @@ const Sidebar = ({
               index={6}
               tabIndex={getTabIndex(6)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.SNIPPETS] = node;
                 const ref = getRef(6);
                 if (ref) ref.current = node;
               }}
@@ -898,7 +822,6 @@ const Sidebar = ({
               index={7}
               tabIndex={getTabIndex(7)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.MISCELLANEOUS] = node;
                 const ref = getRef(7);
                 if (ref) ref.current = node;
               }}
@@ -920,7 +843,6 @@ const Sidebar = ({
                   index={7}
                   tabIndex={getTabIndex(7)}
                   ref={(node) => {
-                    sectionRefs.current[GALLERY_SECTION.NETWORKFILES] = node;
                     const ref = getRef(8);
                     if (ref) ref.current = node;
                   }}
@@ -942,7 +864,6 @@ const Sidebar = ({
               index={8}
               tabIndex={getTabIndex(8)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.PDFDOCUMENTS] = node;
                 const ref = getRef(8);
                 if (ref) ref.current = node;
               }}
