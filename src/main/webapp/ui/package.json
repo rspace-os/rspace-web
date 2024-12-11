@@ -42,6 +42,7 @@
     "eslint-config-prettier": "=8.6.0",
     "eslint-plugin-ft-flow": "^3.0.10",
     "eslint-plugin-jest-dom": "^4.0.3",
+    "eslint-plugin-jsdoc": "^50.6.0",
     "eslint-plugin-prettier": "=4.2.1",
     "eslint-plugin-react": "=7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -141,6 +142,8 @@
       "jest-junit",
       "<rootDir>/__tests__/reporters/slowest"
     ],
-    "testEnvironmentOptions": { "resources": "usable" }
+    "testEnvironmentOptions": {
+      "resources": "usable"
+    }
   }
 }
