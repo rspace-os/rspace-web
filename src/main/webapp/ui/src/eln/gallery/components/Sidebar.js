@@ -49,13 +49,16 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
-import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import { useIntegrationIsAllowedAndEnabled } from "../../../common/integrationHelpers";
 import useOneDimensionalRovingTabIndex from "../../../components/useOneDimensionalRovingTabIndex";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { observer } from "mobx-react-lite";
 import { autorun } from "mobx";
 import EventBoundary from "../../../components/EventBoundary";
+import ValidatingSubmitButton, {
+  IsValid,
+  IsInvalid,
+} from "../../../components/ValidatingSubmitButton";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -245,12 +248,17 @@ const NewFolderMenuItem = ({
               >
                 Cancel
               </Button>
-              <SubmitSpinnerButton
-                type="submit"
+              <ValidatingSubmitButton
                 loading={submitting}
-                disabled={submitting}
-                label="Create"
-              />
+                validationResult={
+                  name.length > 0 ? IsValid() : IsInvalid("A name is required.")
+                }
+                onClick={() => {
+                  /* see form onSubmit */
+                }}
+              >
+                Create
+              </ValidatingSubmitButton>
             </DialogActions>
           </form>
         </Dialog>
