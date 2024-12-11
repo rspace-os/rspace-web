@@ -77,6 +77,7 @@ import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { useDeploymentProperty } from "../../useDeploymentProperty";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -625,6 +626,7 @@ const Sidebar = ({
     React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
   const viewport = useViewportDimensions();
+  const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
 
   const sectionRefs = React.useRef({
     [GALLERY_SECTION.IMAGES]: null,
@@ -887,23 +889,30 @@ const Sidebar = ({
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
-            <DrawerTab
-              label={gallerySectionLabel.NetworkFiles}
-              icon={<FilestoreIcon />}
-              index={7}
-              tabIndex={getTabIndex(7)}
-              ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.NETWORKFILES] = node;
-                const ref = getRef(8);
-                if (ref) ref.current = node;
-              }}
-              drawerOpen={drawerOpen}
-              selected={selectedSection === "NetworkFiles"}
-              onClick={() => {
-                setSelectedSection("NetworkFiles");
-                if (viewport.isViewportSmall) setDrawerOpen(false);
-              }}
-            />
+            {FetchingData.getSuccessValue(filestoresEnabled)
+              .flatMap(Parsers.isBoolean)
+              .flatMap(Parsers.isTrue)
+              .map(() => (
+                <DrawerTab
+                  key={null}
+                  label={gallerySectionLabel.NetworkFiles}
+                  icon={<FilestoreIcon />}
+                  index={7}
+                  tabIndex={getTabIndex(7)}
+                  ref={(node) => {
+                    sectionRefs.current[GALLERY_SECTION.NETWORKFILES] = node;
+                    const ref = getRef(8);
+                    if (ref) ref.current = node;
+                  }}
+                  drawerOpen={drawerOpen}
+                  selected={selectedSection === "NetworkFiles"}
+                  onClick={() => {
+                    setSelectedSection("NetworkFiles");
+                    if (viewport.isViewportSmall) setDrawerOpen(false);
+                  }}
+                />
+              ))
+              .orElse(null)}
           </List>
           <Divider />
           <List sx={{ position: "static" }}>
