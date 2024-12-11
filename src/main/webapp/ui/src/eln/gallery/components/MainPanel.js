@@ -133,14 +133,20 @@ const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
 const StyledBreadcrumb = styled(
   React.forwardRef((props, ref) => <Chip ref={ref} {...props} clickable />)
 )(({ theme }) => ({
-  height: theme.spacing(3),
-  color: theme.palette.text.primary,
-  fontWeight: theme.typography.fontWeightRegular,
+  height: theme.spacing(3.5),
+  color: alpha(theme.palette.primary.contrastText, 0.85),
+  paddingLeft: theme.spacing(0.5),
+  paddingRight: theme.spacing(0.5),
+  paddingTop: theme.spacing(0.25),
+  paddingBottom: theme.spacing(0.25),
+  border: `2px solid ${theme.palette.primary.main}`,
+  fontWeight: 500,
+  fontSize: "1rem",
   cursor: "pointer",
   "& .MuiChip-icon": {
     fontSize: "1.05rem",
     marginRight: theme.spacing(-0.5),
-    color: theme.palette.primary.contrastText,
+    color: alpha(theme.palette.primary.contrastText, 0.85),
   },
 }));
 
@@ -191,9 +197,7 @@ const BreadcrumbLink = React.forwardRef<
           borderWidth: "2px",
           animation: "drop 2s linear infinite",
         }
-      : {
-          border: "2px solid transparent",
-        };
+      : {};
 
     return (
       <StyledBreadcrumb
@@ -271,10 +275,7 @@ const Path = ({
             section={section}
             clearPath={clearPath}
             sx={{
-              p: 0.5,
               pl: 1,
-              fontWeight: 700,
-              textTransform: "uppercase",
             }}
             ref={getRef(0)}
             tabIndex={getTabIndex(0)}
