@@ -462,6 +462,11 @@ const AddFilestoreMenuItem = ({
           <NewMenuItem
             key={null}
             title="Add a Filestore"
+            subheader={
+              (filesystems ?? []).length === 0
+                ? "System Admin has not configured any external filestores."
+                : null
+            }
             avatar={<DnsIcon />}
             backgroundColor={COLOR.background}
             foregroundColor={COLOR.contrastText}
