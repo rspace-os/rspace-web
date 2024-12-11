@@ -272,7 +272,7 @@ const NameFieldForLargeViewports = styled(
   [`& .${outlinedInputClasses.root}`]: {
     border: "none",
     borderRadius: "4px",
-    fontSize: "1.23rem", // to be the same height as the adjacent button
+    fontSize: "1.4rem", // to be the same height as the adjacent button
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
     transition: "all .3s ease-in-out",
@@ -477,6 +477,7 @@ const InfoPanelContent = ({
           },
         ]}
         sx={{
+          pl: 2,
           "& dd.below": {
             justifySelf: "start",
             width: "100%",
@@ -484,7 +485,7 @@ const InfoPanelContent = ({
         }}
       />
       <Box component="section" sx={{ mt: 0.5 }}>
-        <Typography variant="h6" component="h4">
+        <Typography variant="h4" component="h4">
           Details
         </Typography>
         <DescriptionList
@@ -510,6 +511,9 @@ const InfoPanelContent = ({
               value: file.version,
             },
           ]}
+          sx={{
+            pl: 2,
+          }}
         />
       </Box>
       <LinkedDocumentsPanel file={file} />

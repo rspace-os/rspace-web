@@ -41,7 +41,7 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
       sx={{ mt: 0.5, "--DataGrid-overlayHeight": "40px" }}
       flexGrow={1}
     >
-      <Typography variant="h6" component="h4">
+      <Typography variant="h4" component="h4">
         Linked Documents
       </Typography>
       <DataGrid
@@ -77,6 +77,9 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
         }}
         loading={linkedDocuments.loading}
         getRowId={(row) => row.id}
+        sx={{
+          ml: 2,
+        }}
       />
     </Box>
   );
