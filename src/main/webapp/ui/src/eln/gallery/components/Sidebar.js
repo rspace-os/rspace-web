@@ -623,7 +623,7 @@ const Sidebar = ({
   id,
 }: SidebarArgs): Node => {
   const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
-    React.useState(8);
+    React.useState(null);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
@@ -642,6 +642,24 @@ const Sidebar = ({
   });
 
   React.useEffect(() => {
+    const fsEnabled =
+      FetchingData.getSuccessValue(filestoresEnabled).orElse(false);
+    const validGallerySections = new Set([
+      "Images",
+      "Audios",
+      "Videos",
+      "Documents",
+      "Chemistry",
+      "DMPs",
+      "Snippets",
+      "Miscellaneous",
+      ...(fsEnabled === true ? ["NetworkFiles"] : []),
+      "PdfDocuments",
+    ]);
+    if (!validGallerySections.has(selectedSection)) {
+      setSelectedIndicatorOffset(null);
+      return;
+    }
     if (sectionRefs.current && sectionRefs.current[selectedSection])
       setSelectedIndicatorOffset(
         sectionRefs.current[selectedSection].offsetTop
@@ -748,9 +766,11 @@ const Sidebar = ({
           position: "relative",
         }}
       >
-        <SelectedDrawerTabIndicator
-          verticalPosition={selectedIndicatorOffset}
-        />
+        {selectedIndicatorOffset !== null && (
+          <SelectedDrawerTabIndicator
+            verticalPosition={selectedIndicatorOffset}
+          />
+        )}
         <div role="navigation">
           <List sx={{ position: "static" }}>
             <DrawerTab
