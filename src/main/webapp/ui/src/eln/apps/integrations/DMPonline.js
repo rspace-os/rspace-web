@@ -52,7 +52,7 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): Node {
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
         name="DMPonline"
-        explanatoryText="Available soon."
+        explanatoryText="Create Data Management Plans for your research."
         image={DMPonlineIcon}
         color={COLOR}
         usageText="You can import Data Management Plans (DMPs) from DMPonline into RSpace. You can then reference DMPs in RSpace documents, and attach DMPs to data deposits when exporting to repositories."
@@ -62,9 +62,14 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): Node {
         setupSection={
           <>
             <ol>
+              <li>
+                Click on Connect to authorise RSpace to access your DMPonline
+                account.
+              </li>
               <li>Enable the integration.</li>
               <li>
-                DMPonline DMPs can now be imported through the RSpace Gallery.
+                You can now import a DMP when in the Gallery, and associate a
+                DMP with data when in the export dialog.
               </li>
             </ol>
             {connected ? (
