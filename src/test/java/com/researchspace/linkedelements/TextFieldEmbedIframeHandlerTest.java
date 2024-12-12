@@ -46,6 +46,9 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
     assertTrue(iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/q27r-ZBw9lI"));
     assertTrue(iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/YkRldqVfTJo"));
     assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://www.youtube.com/embed/bhRExXIGxek?si=i85Qk9Y2son5jSZ6"));
+    assertTrue(
         iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/YkRldqVfTJo?start=18"));
     assertTrue(
         iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/YkRldqVfTJo?controls=0"));
@@ -53,7 +56,21 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
         iframeHandler.isKnownIframeSrc(
             "https://www.youtube.com/embed/YkRldqVfTJo?controls=0&amp;start=16"));
     assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://www.youtube.com/embed/bhRExXIGxek?si=i85Qk9Y2son5jSZ6&amp;controls=0&amp;start=2"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://www.youtube.com/embed/bhRExXIGxek?si=i85Qk9Y2son5jSZ6&controls=0&start=2"));
+    assertTrue(
         iframeHandler.isKnownIframeSrc("https://www.youtube-nocookie.com/embed/YkRldqVfTJo"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://www.youtube-nocookie.com/embed/bhRExXIGxek"
+                + "?si=i85Qk9Y2son5jSZ6&amp;controls=0&amp;start=2"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc(
+            "https://www.youtube-nocookie.com/embed/bhRExXIGxek"
+                + "?si=i85Qk9Y2son5jSZ6&controls=0&start=2"));
 
     // jove embed code src variants
     assertTrue(iframeHandler.isKnownIframeSrc("https://www.jove.com/embed/player?id=54239"));
@@ -66,6 +83,8 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
     assertTrue(
         iframeHandler.isKnownIframeSrc(
             "https://www.jove.com/embed/player?id=54239&language=Dutch&t=1&s=1&fpv=1"));
+    assertTrue(
+        iframeHandler.isKnownIframeSrc("https://app.jove.com/embed/player?id=2359&t=1&s=1&fpv=1"));
 
     // Jove staging site src variants
     assertTrue(
@@ -89,12 +108,14 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
         iframeHandler.isKnownIframeSrc("https://calendar.google.com/calendar/embed?src=pl.uk"));
     assertFalse(iframeHandler.isKnownIframeSrc(" https://www.youtube.com/embed/YkRldqVfTJo"));
     assertFalse(iframeHandler.isKnownIframeSrc("https://www.youtube.com/embed/YkRldqVfTJo-dummy!"));
+    assertFalse(
+        iframeHandler.isKnownIframeSrc("otherText_https://www.youtube.com/embed/YkRldqVfTJo"));
   }
 
   @Test
-  public void checkYoutubeIframeConversion() {
+  public void checkYoutubeIframeConversion_Jan2022() {
 
-    // youtube embed code fragment
+    // youtube embed code fragment (taken in January 2022)
     String youtubeEmbed =
         "<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/q27r-ZBw9lI\""
             + " title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay;"
@@ -142,9 +163,66 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void checkJoveIframeConversion() {
+  public void checkYoutubeIframeConversion_Dec2024() {
 
-    // jove embed code fragment
+    // youtube embed code fragment (taken in December 2024)
+    String youtubeEmbed =
+        "<iframe width=\"560\" height=\"315\" "
+            + "src=\"https://www.youtube.com/embed/bhRExXIGxek?si=i85Qk9Y2son5jSZ6\" "
+            + "title=\"YouTube video player\" frameborder=\"0\" "
+            + "allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; "
+            + "gyroscope; picture-in-picture; web-share\" "
+            + "referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>";
+    String expectedConvertedYoutubeEmbed =
+        "<p class=\"rsKnownIframeReplacement\""
+            + " data-src=\"https://www.youtube.com/embed/bhRExXIGxek?si=i85Qk9Y2son5jSZ6\""
+            + " data-title=\"YouTube video player\" data-width=\"560\" data-height=\"315\""
+            + " data-frameborder=\"0\" data-allow=\"accelerometer; autoplay; clipboard-write;"
+            + " encrypted-media; gyroscope; picture-in-picture; web-share\""
+            + " data-allowfullscreen=\"\""
+            + " data-referrerpolicy=\"strict-origin-when-cross-origin\"></p>";
+
+    // youtube embed code fragment, with 'privacy enhanced mode', no controls, and start time
+    String youtubePrivacyModeEmbed =
+        "<iframe width=\"560\" height=\"315\""
+            + " src=\"https://www.youtube-nocookie.com/embed/bhRExXIGxek?si=i85Qk9Y2son5jSZ6&amp;controls=0&amp;start=2\""
+            + " title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay;"
+            + " clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\""
+            + " referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>";
+    String expectedConvertedYoutubePrivacyModeEmbed =
+        "<p class=\"rsKnownIframeReplacement\""
+            + " data-src=\"https://www.youtube-nocookie.com/embed/bhRExXIGxek?si=i85Qk9Y2son5jSZ6&amp;controls=0&amp;start=2\""
+            + " data-title=\"YouTube video player\" data-width=\"560\" data-height=\"315\""
+            + " data-frameborder=\"0\" data-allow=\"accelerometer; autoplay; clipboard-write;"
+            + " encrypted-media; gyroscope; picture-in-picture; web-share\""
+            + " data-allowfullscreen=\"\""
+            + " data-referrerpolicy=\"strict-origin-when-cross-origin\"></p>";
+
+    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n%s\n<p>end</p>";
+    String htmlFragment = String.format(htmlFragmentFormat, youtubeEmbed, youtubePrivacyModeEmbed);
+    String expectedConvertedHtml =
+        String.format(
+            htmlFragmentFormat,
+            expectedConvertedYoutubeEmbed,
+            expectedConvertedYoutubePrivacyModeEmbed);
+
+    String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(htmlFragment);
+    assertEquals(expectedConvertedHtml, convertedHtml);
+
+    String restoredHtml = iframeHandler.decodeKnownIframesFromParagraphs(convertedHtml);
+    String restoredHtmlAdjustedForEqualsAssertion =
+        restoredHtml
+            .replaceAll("/p> <iframe", "/p>\n<iframe")
+            .replaceAll("/> <iframe", "/>\n<iframe")
+            .replaceAll("> </iframe>", "></iframe>")
+            .replaceAll("allowfullscreen=\"\"", "allowfullscreen");
+    assertEquals(htmlFragment, restoredHtmlAdjustedForEqualsAssertion);
+  }
+
+  @Test
+  public void checkJoveIframeConversion_Jan2022() {
+
+    // jove embed code fragment (taken in January 2022)
     String joveEmbed =
         "<iframe id=\"embed-iframe\" allowTransparency=\"true\" allow=\"encrypted-media *\""
             + " allowfullscreen height=\"415\" width=\"460\" border=\"0\" scrolling=\"no\""
@@ -165,6 +243,43 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
     String expectedRestoredJoveEmbed =
         "<iframe width=\"460\" height=\"415\""
             + " src=\"https://www.jove.com/embed/player?id=54239&amp;t=1&amp;s=1&amp;fpv=1\""
+            + " border=\"0\" frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
+            + " allow=\"encrypted-media *\" allowfullscreen=\"\" allowtransparency=\"true\""
+            + " scrolling=\"no\"> </iframe>";
+
+    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n<p>end</p>";
+    String htmlFragment = String.format(htmlFragmentFormat, joveEmbed);
+    String expectedConvertedHtml = String.format(htmlFragmentFormat, expectedConvertedJoveEmbed);
+
+    String convertedHtml = iframeHandler.encodeKnownIframesAsParagraphs(htmlFragment);
+    assertEquals(expectedConvertedHtml, convertedHtml);
+
+    String restoredHtml = iframeHandler.decodeKnownIframesFromParagraphs(convertedHtml);
+    String restoredHtmlAdjustedForEqualsAssertion =
+        restoredHtml.replaceAll("/p> <iframe", "/p>\n<iframe");
+    String expectedRestoredHtml = String.format(htmlFragmentFormat, expectedRestoredJoveEmbed);
+    assertEquals(expectedRestoredHtml, restoredHtmlAdjustedForEqualsAssertion);
+  }
+
+  @Test
+  public void checkJoveIframeConversion_Dec2024() {
+
+    // jove embed code fragment (taken in December 2024)
+    String joveEmbed =
+        "<iframe id=\"embed-iframe\" allowTransparency=\"true\" allow=\"encrypted-media *\""
+            + " allowfullscreen height=\"415\" width=\"460\" border=\"0\" scrolling=\"no\""
+            + " frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
+            + " src=\"https://app.jove.com/embed/player?id=2359&t=1&s=1&fpv=1\"></iframe>";
+    String expectedConvertedJoveEmbed =
+        "<p class=\"rsKnownIframeReplacement\" "
+            + "data-src=\"https://app.jove.com/embed/player?id=2359&amp;t=1&amp;s=1&amp;fpv=1\" "
+            + "data-width=\"460\" data-height=\"415\" data-border=\"0\" data-frameborder=\"0\" "
+            + "data-marginwheight=\"0\" data-marginwidth=\"0\" "
+            + "data-allow=\"encrypted-media *\" data-allowfullscreen=\"\" "
+            + "data-allowtransparency=\"true\" data-scrolling=\"no\"></p>";
+    String expectedRestoredJoveEmbed =
+        "<iframe width=\"460\" height=\"415\""
+            + " src=\"https://app.jove.com/embed/player?id=2359&amp;t=1&amp;s=1&amp;fpv=1\""
             + " border=\"0\" frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
             + " allow=\"encrypted-media *\" allowfullscreen=\"\" allowtransparency=\"true\""
             + " scrolling=\"no\"> </iframe>";
