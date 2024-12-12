@@ -17,7 +17,11 @@ import { Optional } from "../../util/optional";
 import { type URL } from "../../util/types";
 
 export opaque type Id = number;
-export const DUMMY_ID: Id = 0; // for use in tests
+// dummyId is for use in tests ONLY
+let nextDummyId = 0;
+export const dummyId: () => Id = () => {
+  return nextDummyId++;
+};
 export function idToString(id: Id): string {
   return `${id}`;
 }

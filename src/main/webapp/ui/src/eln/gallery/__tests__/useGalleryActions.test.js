@@ -9,7 +9,7 @@ import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import RsSet from "../../../util/set";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";
-import { DUMMY_ID, Description } from "../useGalleryListing";
+import { dummyId, Description } from "../useGalleryListing";
 import Alerts from "../../../components/Alerts/Alerts";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
@@ -30,7 +30,7 @@ describe("useGalleryActions", () => {
             void duplicateFiles(
               new RsSet([
                 {
-                  id: DUMMY_ID,
+                  id: dummyId(),
                   globalId: "GF1",
                   name: "Foo",
                   extension: "txt",
@@ -125,7 +125,7 @@ describe("useGalleryActions", () => {
             void deleteFiles(
               new RsSet([
                 {
-                  id: DUMMY_ID,
+                  id: dummyId(),
                   globalId: "GF1",
                   name: "Foo",
                   extension: "txt",
@@ -220,7 +220,7 @@ describe("useGalleryActions", () => {
             void moveFiles(
               new RsSet([
                 {
-                  id: DUMMY_ID,
+                  id: dummyId(),
                   globalId: "GF1",
                   name: "Foo",
                   extension: "txt",

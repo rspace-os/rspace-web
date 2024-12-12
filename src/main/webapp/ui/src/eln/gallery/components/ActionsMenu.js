@@ -684,16 +684,16 @@ function ActionsMenu({
               type: "selection",
               exportTypes: selection
                 .asSet()
-                .map(() => "MEDIA_FILE")
-                .toArray(),
+                .toArray()
+                .map(() => "MEDIA_FILE"),
               exportNames: selection
                 .asSet()
-                .map(({ name }) => name)
-                .toArray(),
+                .toArray()
+                .map(({ name }) => name),
               exportIds: selection
                 .asSet()
-                .map(({ id }) => idToString(id))
-                .toArray(),
+                .toArray()
+                .map(({ id }) => idToString(id)),
             }}
             allowFileStores={false}
           />
