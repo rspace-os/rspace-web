@@ -130,7 +130,6 @@ export default function AddFilestoreDialog({
   open,
   onClose,
 }: AddFilestoreDialogArgs): Node {
-  // fetch the file systems, and provide a menu
   // once one is selected, provide a tree of the file system to pick a folder
   //   let's look at how the move dialog does it?
   // provide a text field for naming the filesystem
@@ -158,7 +157,10 @@ export default function AddFilestoreDialog({
         <Stepper activeStep={activeStep} orientation="vertical">
           <FilesystemSelectionStep
             selectedFilesystem={selectedFilesystem}
-            setSelectedFilesystem={setSelectedFilesystem}
+            setSelectedFilesystem={(fs) => {
+              setSelectedFilesystem(fs);
+              setActiveStep(1);
+            }}
           />
           <FolderSelectionStep />
           <NameStep />
