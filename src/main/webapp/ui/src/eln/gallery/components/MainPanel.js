@@ -680,6 +680,24 @@ const FileCard = styled(
         const dndContext = useDndContext();
         const dndInProgress = Boolean(dndContext.active);
 
+        /*
+         * When the user taps the FileCard, we don't want to immediately
+         * trigger useDraggable's listeners because otherwise react gets bogged
+         * down in re-rendering all of the FileCards a couple of times over
+         * before actually updating the new selection state. When the user taps,
+         * onMouseDown/onTouchDown trigger which causes a re-rendering with
+         * drag-and-drop active, then onMouseUp/onTouchUp fire immediately
+         * after triggering another re-rendering with drag-and-drop not active,
+         * and then onClick fires to update the selection state.
+         *
+         * This state variable contains a reference to a setTimeout that is
+         * intended to only fire onMouseDown/onTouchDown if the user holds the
+         * mouse key/their finger down for more than half a second to prevent
+         * these excessive re-renders and make the UI more responsive in
+         * updating the selection state.
+         */
+        const [dndDebounce, setDndDebounce] = React.useState(null);
+
         const dragStyle: { [string]: string | number } = transform
           ? {
               transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
@@ -771,7 +789,27 @@ const FileCard = styled(
                   // $FlowExpectedError[prop-missing]
                   if (ref) ref.current = node;
                 }}
-                {...listeners}
+                onMouseDown={(...args) => {
+                  setDndDebounce(
+                    setTimeout(() => {
+                      listeners.onMouseDown(...args);
+                    }, 500)
+                  );
+                }}
+                onMouseUp={() => {
+                  clearTimeout(dndDebounce);
+                }}
+                onTouchDown={(...args) => {
+                  setDndDebounce(
+                    setTimeout(() => {
+                      listeners.onTouchDown(...args);
+                    }, 500)
+                  );
+                }}
+                onTouchUp={() => {
+                  clearTimeout(dndDebounce);
+                }}
+                onKeyDown={listeners.onKeyDown}
                 {...attributes}
                 tabIndex={tabIndex}
                 onFocus={onFocus}
