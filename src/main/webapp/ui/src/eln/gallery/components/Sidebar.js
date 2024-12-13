@@ -16,7 +16,7 @@ import ChemistryIcon from "../chemistryIcon";
 import FilestoreIcon from "../filestoreIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
-import Menu from "@mui/material/Menu";
+import { Menu } from "../../../components/DialogBoundary";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faImage,

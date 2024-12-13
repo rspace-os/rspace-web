@@ -9,6 +9,7 @@ import React, {
   useRef,
 } from "react";
 import MuiDialog from "@mui/material/Dialog";
+import MuiMenu from "@mui/material/Menu";
 
 /**
  * This file contains a context and two components that collectively provide a
@@ -135,5 +136,33 @@ export function Dialog<T>(props: DialogArgs<T>): Node {
     <MuiDialog container={() => modalContainer.current} open={open} {...rest}>
       {children}
     </MuiDialog>
+  );
+}
+
+// everything from MuiMenu except container
+type MenuArgs<T> = {|
+  onClose: () => void,
+  open: boolean,
+  children: Node,
+|};
+
+export function Menu<T>(props: MenuArgs<T>): Node {
+  const { modalContainer } = useContext(DialogBoundaryContext);
+  const { children, open, ...rest } = props;
+
+  React.useEffect(() => {
+    if (document.body) {
+      if (open) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "unset";
+      }
+    }
+  }, [open]);
+
+  return (
+    <MuiMenu container={() => modalContainer.current} open={open} {...rest}>
+      {children}
+    </MuiMenu>
   );
 }
