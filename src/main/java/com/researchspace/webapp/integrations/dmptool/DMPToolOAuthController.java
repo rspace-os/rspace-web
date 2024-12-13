@@ -2,7 +2,6 @@ package com.researchspace.webapp.integrations.dmptool;
 
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.dmptool.model.DMPList;
 import com.researchspace.dmptool.model.DMPPlanScope;
 import com.researchspace.dmptool.model.DMPToolDMP;
@@ -24,7 +23,6 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import lombok.Data;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,15 +69,6 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     this.restTemplate = new RestTemplate();
   }
 
-  @Data
-  public static class AccessToken {
-    private @JsonProperty("access_token") String accessToken;
-    private @JsonProperty("token_type") String type;
-    private @JsonProperty("created_at") Long createdAt;
-    private @JsonProperty("expires_in") Long expiresIn;
-    private String scope;
-  }
-
   @PostMapping("/connect")
   public RedirectView connect() throws MalformedURLException {
     String redirectUrl = String.valueOf(new URL(getServerUrl(), "/apps/dmptool/callback"));
@@ -118,8 +107,8 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     }
 
     UserConnection conn = new UserConnection();
-    conn.setAccessToken(accessToken.accessToken);
-    conn.setExpireTime(getExpireTime(accessToken.expiresIn));
+    conn.setAccessToken(accessToken.getAccessToken());
+    conn.setExpireTime(getExpireTime(accessToken.getExpiresIn()));
     conn.setDisplayName("DMPTool access token");
     conn.setId(
         new UserConnectionId(principal.getName(), DMPTOOL_APP_NAME, "ProviderUserIdNotNeeded"));
