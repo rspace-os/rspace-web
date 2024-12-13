@@ -380,6 +380,7 @@ const AddFilestoreMenuItem = ({
         .do((newFilesystemIds) => setFilestoreIds(new Set(newFilesystemIds)));
     })();
   }, []);
+
   return (
     <>
       <Menu
