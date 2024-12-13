@@ -12,13 +12,30 @@ import Result from "../../../util/result";
 import axios, { type Axios } from "axios";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControl from "@mui/material/FormControl";
+import FormLabel from "@mui/material/FormLabel";
 
 type AddFilestoreDialogArgs = {|
   open: boolean,
   onClose: () => void,
 |};
 
-function FilesystemSelectionStep(props: {||}) {
+function FilesystemSelectionStep(props: {|
+  setSelectedFilesystem: ({|
+    id: number,
+    name: string,
+    url: string,
+  |}) => void,
+  selectedFilesystem: null | {|
+    id: number,
+    name: string,
+    url: string,
+  |}
+|}) {
+  const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
   const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
     id: number,
     name: string,
@@ -97,10 +114,19 @@ function FilesystemSelectionStep(props: {||}) {
   }, []);
 
   return (
-    <Step key="filesystemSelection" {...props}>
+    <Step key="filesystemSelection" {...rest}>
       <StepLabel>Select a Filesystem</StepLabel>
       <StepContent>
-        {filesystems?.length ?? "NULL"},{filestoreIds?.size ?? "NULL"}
+        <RadioGroup
+          value={selectedFilesystem}
+          onChange={({ target: { value } }) => {
+            setSelectedFilesystem(value);
+          }}
+        >
+          {(filesystems ?? []).map((fs) => (
+            <FormControlLabel value={fs} control={<Radio />} label={fs.name} />
+          ))}
+        </RadioGroup>
       </StepContent>
     </Step>
   );
@@ -143,12 +169,21 @@ export default function AddFilestoreDialog({
     }
   }, [open, setActiveStep]);
 
+  const [selectedFilesystem, setSelectedFilesystem] = React.useState<null | {|
+    id: number,
+    name: string,
+    url: string,
+  |}>(null);
+
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Add a Filestore</DialogTitle>
       <DialogContent>
         <Stepper activeStep={activeStep} orientation="vertical">
-          <FilesystemSelectionStep />
+          <FilesystemSelectionStep
+            selectedFilesystem={selectedFilesystem}
+            setSelectedFilesystem={setSelectedFilesystem}
+          />
           <FolderSelectionStep />
           <NameStep />
         </Stepper>
