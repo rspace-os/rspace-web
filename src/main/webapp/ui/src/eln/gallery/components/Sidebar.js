@@ -70,8 +70,7 @@ library.add(faDatabase);
 import axios, { type Axios } from "axios";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
-import { doNotAwait } from "../../../util/Util";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import AlertContext from "../../../stores/contexts/Alert";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import AddFilestoreDialog from "./AddFilestoreDialog";
 
@@ -301,7 +300,6 @@ const AddFilestoreMenuItem = ({
   autoFocus?: boolean,
   tabIndex?: number,
 |}) => {
-  const { addAlert } = React.useContext(AlertContext);
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -386,8 +384,9 @@ const AddFilestoreMenuItem = ({
     <>
       <AddFilestoreDialog
         open={open}
-        onClose={() => {
+        onClose={(success) => {
           setOpen(false);
+          onMenuClose(success);
         }}
       />
       {/*<Menu

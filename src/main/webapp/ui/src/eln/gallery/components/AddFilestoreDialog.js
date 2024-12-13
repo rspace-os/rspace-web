@@ -21,10 +21,12 @@ import { Optional } from "../../../util/optional";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 type AddFilestoreDialogArgs = {|
   open: boolean,
-  onClose: () => void,
+  onClose: (boolean) => void,
 |};
 
 function FilesystemSelectionStep(props: {|
@@ -225,11 +227,38 @@ function FolderSelectionStep(props: {|
   );
 }
 
-function NameStep(props: {||}) {
+function NameStep(props: {|
+  onConfirm: (string) => void,
+  onCancel: () => void,
+|}) {
+  const { onConfirm, onCancel, ...rest } = props;
+  const [name, setName] = React.useState("");
   return (
-    <Step key="name" {...props}>
+    <Step key="name" {...rest}>
       <StepLabel>Name the Filestore</StepLabel>
-      <StepContent>Baz</StepContent>
+      <StepContent>
+        <TextField
+          value={name}
+          onChange={({ target: { value } }) => {
+            setName(value);
+          }}
+        />
+        <Box sx={{ mb: 2 }}>
+          <Button
+            disabled={name.length === 0}
+            variant="contained"
+            onClick={() => {
+              onConfirm(name);
+            }}
+            sx={{ mt: 1, mr: 1 }}
+          >
+            Add Filestore
+          </Button>
+          <Button onClick={onCancel} sx={{ mt: 1, mr: 1 }}>
+            Back
+          </Button>
+        </Box>
+      </StepContent>
     </Step>
   );
 }
@@ -262,8 +291,58 @@ export default function AddFilestoreDialog({
 
   const [pathOfSelectedFolder, setPathOfSelectedFolder] = React.useState("");
 
+  const { addAlert } = React.useContext(AlertContext);
+  const { getToken } = useOauthToken();
+  const api = React.useRef<Promise<Axios>>(
+    (async () => {
+      return axios.create({
+        baseURL: "/api/v1/gallery",
+        headers: {
+          Authorization: "Bearer " + (await getToken()),
+        },
+      });
+    })()
+  );
+  async function addFilestore(name: string) {
+    try {
+      const filesystemId = selectedFilesystem
+        .toResult(() => new Error("No filestore has been selected,"))
+        .elseThrow().id;
+      await (
+        await api.current
+      ).post<_, mixed>(
+        "filestores",
+        {},
+        {
+          //$FlowExpectedError[incompatible-call] Flow types are wrong; plain object is allowed for `params`
+          params: {
+            filesystemId,
+            name,
+            pathToSave: pathOfSelectedFolder,
+          },
+        }
+      );
+      addAlert(
+        mkAlert({
+          variant: "success",
+          message: "Successfully added new filestore",
+        })
+      );
+      onClose(true);
+    } catch (e) {
+      console.error(e);
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to add new filestore",
+          message: e.message,
+        })
+      );
+    }
+  }
+
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={() => onClose(false)}>
       <DialogTitle>Add a Filestore</DialogTitle>
       <DialogContent>
         <Stepper activeStep={activeStep} orientation="vertical">
@@ -284,7 +363,14 @@ export default function AddFilestoreDialog({
               setActiveStep(0);
             }}
           />
-          <NameStep />
+          <NameStep
+            onConfirm={(name) => {
+              void addFilestore(name);
+            }}
+            onCancel={() => {
+              setActiveStep(1);
+            }}
+          />
         </Stepper>
       </DialogContent>
     </Dialog>
