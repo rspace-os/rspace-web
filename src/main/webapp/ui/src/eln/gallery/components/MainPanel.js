@@ -696,7 +696,9 @@ const FileCard = styled(
          * these excessive re-renders and make the UI more responsive in
          * updating the selection state.
          */
-        const [dndDebounce, setDndDebounce] = React.useState(null);
+        const [dndDebounce, setDndDebounce] = React.useState<null | TimeoutID>(
+          null
+        );
 
         const dragStyle: { [string]: string | number } = transform
           ? {
