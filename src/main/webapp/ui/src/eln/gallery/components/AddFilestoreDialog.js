@@ -8,6 +8,10 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import StepContent from "@mui/material/StepContent";
+import Result from "../../../util/result";
+import axios, { type Axios } from "axios";
+import useOauthToken from "../../../common/useOauthToken";
+import * as Parsers from "../../../util/parsers";
 
 type AddFilestoreDialogArgs = {|
   open: boolean,
@@ -15,10 +19,89 @@ type AddFilestoreDialogArgs = {|
 |};
 
 function FilesystemSelectionStep(props: {||}) {
+  const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
+    id: number,
+    name: string,
+    url: string,
+  |}>>(null);
+  const [filestoreIds, setFilestoreIds] = React.useState<null | Set<number>>(
+    null
+  );
+  const { getToken } = useOauthToken();
+  const api = React.useRef<Promise<Axios>>(
+    (async () => {
+      return axios.create({
+        baseURL: "/api/v1/gallery",
+        headers: {
+          Authorization: "Bearer " + (await getToken()),
+        },
+      });
+    })()
+  );
+
+  React.useEffect(() => {
+    void (async () => {
+      const { data } = await (await api.current).get<mixed>("filesystems");
+      Parsers.isArray(data)
+        .flatMap((array) =>
+          Result.all(
+            ...array.map((m) =>
+              Parsers.isObject(m)
+                .flatMap(Parsers.isNotNull)
+                .flatMap((obj) => {
+                  try {
+                    const id = Parsers.getValueWithKey("id")(obj)
+                      .flatMap(Parsers.isNumber)
+                      .elseThrow();
+                    const name = Parsers.getValueWithKey("name")(obj)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    const url = Parsers.getValueWithKey("url")(obj)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    return Result.Ok({ id, name, url });
+                  } catch (e) {
+                    return Result.Error<{|
+                      id: number,
+                      name: string,
+                      url: string,
+                    |}>([e]);
+                  }
+                })
+            )
+          )
+        )
+        .do((newFilesystems) => setFilesystems(newFilesystems));
+    })();
+  }, []);
+
+  React.useEffect(() => {
+    void (async () => {
+      const { data } = await (await api.current).get<mixed>("filestores");
+      Parsers.isArray(data)
+        .flatMap((array) =>
+          Result.all(
+            ...array.map((m) =>
+              Parsers.isObject(m)
+                .flatMap(Parsers.isNotNull)
+                .flatMap(Parsers.getValueWithKey("fileSystem"))
+                .flatMap(Parsers.isObject)
+                .flatMap(Parsers.isNotNull)
+                .flatMap(Parsers.getValueWithKey("id"))
+                .flatMap(Parsers.isNumber)
+            )
+          )
+        )
+        .do((newFilesystemIds) => setFilestoreIds(new Set(newFilesystemIds)));
+    })();
+  }, []);
+
   return (
     <Step key="filesystemSelection" {...props}>
       <StepLabel>Select a Filesystem</StepLabel>
-      <StepContent>Foo</StepContent>
+      <StepContent>
+        {filesystems?.length ?? "NULL"},{filestoreIds?.size ?? "NULL"}
+      </StepContent>
     </Step>
   );
 }
@@ -50,11 +133,14 @@ export default function AddFilestoreDialog({
   //   let's look at how the move dialog does it?
   // provide a text field for naming the filesystem
   // submit button with validation
-  // actually maybe it should be a 3-step wizard?
 
   const [activeStep, setActiveStep] = React.useState(-1);
   React.useEffect(() => {
-    if (!open) setActiveStep(-1);
+    if (open) {
+      setActiveStep(0);
+    } else {
+      setActiveStep(-1);
+    }
   }, [open, setActiveStep]);
 
   return (
