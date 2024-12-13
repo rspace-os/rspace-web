@@ -73,6 +73,7 @@ import * as Parsers from "../../../util/parsers";
 import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
+import AddFilestoreDialog from "./AddFilestoreDialog";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -383,7 +384,13 @@ const AddFilestoreMenuItem = ({
 
   return (
     <>
-      <Menu
+      <AddFilestoreDialog
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      />
+      {/*<Menu
         anchorEl={anchorEl}
         open={open}
         onClose={() => {
@@ -455,7 +462,7 @@ const AddFilestoreMenuItem = ({
               })}
             />
           ))}
-      </Menu>
+      </Menu>*/}
       {FetchingData.getSuccessValue(filestoresEnabled)
         .flatMap(Parsers.isBoolean)
         .flatMap(Parsers.isTrue)
