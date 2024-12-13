@@ -70,7 +70,6 @@ library.add(faDatabase);
 import axios, { type Axios } from "axios";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
-import AlertContext from "../../../stores/contexts/Alert";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import AddFilestoreDialog from "./AddFilestoreDialog";
 
@@ -302,7 +301,6 @@ const AddFilestoreMenuItem = ({
 |}) => {
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const [open, setOpen] = React.useState(false);
-  const [anchorEl, setAnchorEl] = React.useState(null);
   const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
     id: number,
     name: string,
@@ -389,79 +387,6 @@ const AddFilestoreMenuItem = ({
           onMenuClose(success);
         }}
       />
-      {/*<Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={() => {
-          setOpen(false);
-          onMenuClose(false);
-        }}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        sx={{
-          transform: "translate(16px, -12px)",
-        }}
-        MenuListProps={{
-          disablePadding: true,
-        }}
-      >
-        {filesystems !== null &&
-          filestoreIds !== null &&
-          filesystems.map((fs) => (
-            <NewMenuItem
-              key={fs.id}
-              title={fs.name}
-              subheader={
-                filestoreIds.has(fs.id)
-                  ? "Already added to filestores section"
-                  : fs.url
-              }
-              backgroundColor={COLOR.background}
-              foregroundColor={COLOR.contrastText}
-              disabled={filestoreIds.has(fs.id)}
-              onClick={doNotAwait(async () => {
-                try {
-                  await (
-                    await api.current
-                  ).post<_, mixed>(
-                    "filestores",
-                    {},
-                    {
-                      //$FlowExpectedError[incompatible-call] Flow types are wrong; plain object is allowed for `params`
-                      params: {
-                        filesystemId: fs.id,
-                        name: fs.name,
-                        pathToSave: "/",
-                      },
-                    }
-                  );
-                  addAlert(
-                    mkAlert({
-                      variant: "success",
-                      message: "Successfully added new filestore",
-                    })
-                  );
-                  onMenuClose(true);
-                } catch (e) {
-                  console.error(e);
-                  addAlert(
-                    mkAlert({
-                      variant: "error",
-                      title: "Failed to add new filestore",
-                      message: e.message,
-                    })
-                  );
-                }
-              })}
-            />
-          ))}
-      </Menu>*/}
       {FetchingData.getSuccessValue(filestoresEnabled)
         .flatMap(Parsers.isBoolean)
         .flatMap(Parsers.isTrue)
@@ -477,9 +402,8 @@ const AddFilestoreMenuItem = ({
             avatar={<DnsIcon />}
             backgroundColor={COLOR.background}
             foregroundColor={COLOR.contrastText}
-            onClick={({ target }) => {
+            onClick={() => {
               setOpen(true);
-              setAnchorEl(target);
             }}
             //eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus={autoFocus}

@@ -267,11 +267,6 @@ export default function AddFilestoreDialog({
   open,
   onClose,
 }: AddFilestoreDialogArgs): Node {
-  // once one is selected, provide a tree of the file system to pick a folder
-  //   let's look at how the move dialog does it?
-  // provide a text field for naming the filesystem
-  // submit button with validation
-
   const [activeStep, setActiveStep] = React.useState(-1);
   React.useEffect(() => {
     if (open) {
