@@ -15,8 +15,10 @@ import * as Parsers from "../../../util/parsers";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { TreeItem } from "@mui/x-tree-view/TreeItem";
+import { Optional } from "../../../util/optional";
+import * as ArrayUtils from "../../../util/ArrayUtils";
 
 type AddFilestoreDialogArgs = {|
   open: boolean,
@@ -29,11 +31,11 @@ function FilesystemSelectionStep(props: {|
     name: string,
     url: string,
   |}) => void,
-  selectedFilesystem: null | {|
+  selectedFilesystem: Optional<{|
     id: number,
     name: string,
     url: string,
-  |},
+  |}>,
 |}) {
   const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
   const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
@@ -94,13 +96,25 @@ function FilesystemSelectionStep(props: {|
       <StepLabel>Select a Filesystem</StepLabel>
       <StepContent>
         <RadioGroup
-          value={selectedFilesystem}
+          value={selectedFilesystem.orElse(null)}
           onChange={({ target: { value } }) => {
-            setSelectedFilesystem(value);
+            const chosenId = parseInt(value, 10);
+            Optional.fromNullable(filesystems)
+              .flatMap((fss) =>
+                ArrayUtils.find(({ id }) => id === chosenId, fss)
+              )
+              .do((fs) => {
+                setSelectedFilesystem(fs);
+              });
           }}
         >
           {(filesystems ?? []).map((fs) => (
-            <FormControlLabel value={fs} control={<Radio />} label={fs.name} />
+            <FormControlLabel
+              key={fs.id}
+              value={fs.id}
+              control={<Radio />}
+              label={fs.name}
+            />
           ))}
         </RadioGroup>
       </StepContent>
@@ -108,11 +122,76 @@ function FilesystemSelectionStep(props: {|
   );
 }
 
-function FolderSelectionStep(props: {||}) {
+type FilesystemListing = $ReadOnlyArray<{|
+  nfsId: number,
+  name: string,
+  folder: boolean,
+|}>;
+
+function TreeListing({ fsId, path }: {| fsId: number, path: string |}): Node {
+  const { getToken } = useOauthToken();
+  const api = React.useRef<Promise<Axios>>(
+    (async () => {
+      return axios.create({
+        baseURL: "/api/v1/gallery",
+        headers: {
+          Authorization: "Bearer " + (await getToken()),
+        },
+      });
+    })()
+  );
+
+  const [listing, setListing] = React.useState<FilesystemListing>([]);
+  React.useEffect(() => {
+    void (async () => {
+      const {
+        data: { content },
+      } = await (
+        await api.current
+      ).get<{ content: FilesystemListing, ... }>(
+        `filesystems/${fsId}/browse?remotePath=${path}`
+      );
+      setListing(content);
+    })();
+  }, [fsId, path]);
+
   return (
-    <Step key="folderSelection" {...props}>
+    <>
+      {listing.map(
+        ({ folder, name, nfsId }) =>
+          folder && (
+            <TreeItem itemId={nfsId} label={name} key={nfsId}>
+              <TreeListing fsId={fsId} path={`${path}${name}/`} />
+            </TreeItem>
+          )
+      )}
+    </>
+  );
+}
+
+function FolderSelectionStep(props: {|
+  selectedFilestoreId: Optional<number>,
+|}) {
+  const { selectedFilestoreId, ...rest } = props;
+  const [expandedItems, setExpandedItems] = React.useState<
+    $ReadOnlyArray<number>
+  >([]);
+
+  return (
+    <Step key="folderSelection" {...rest}>
       <StepLabel>Select your Folder</StepLabel>
-      <StepContent>Bar</StepContent>
+      <StepContent>
+        <SimpleTreeView
+          expandedItems={expandedItems}
+          onExpandedItemsChange={(_event, nodeIds) => {
+            setExpandedItems(nodeIds);
+          }}
+        >
+          {selectedFilestoreId
+            .map((fsId) => <TreeListing path="/" fsId={fsId} key={null} />)
+            .orElse(null)}
+        </SimpleTreeView>
+      </StepContent>
     </Step>
   );
 }
@@ -144,11 +223,13 @@ export default function AddFilestoreDialog({
     }
   }, [open, setActiveStep]);
 
-  const [selectedFilesystem, setSelectedFilesystem] = React.useState<null | {|
-    id: number,
-    name: string,
-    url: string,
-  |}>(null);
+  const [selectedFilesystem, setSelectedFilesystem] = React.useState<
+    Optional<{|
+      id: number,
+      name: string,
+      url: string,
+    |}>
+  >(Optional.empty());
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -158,11 +239,13 @@ export default function AddFilestoreDialog({
           <FilesystemSelectionStep
             selectedFilesystem={selectedFilesystem}
             setSelectedFilesystem={(fs) => {
-              setSelectedFilesystem(fs);
+              setSelectedFilesystem(Optional.present(fs));
               setActiveStep(1);
             }}
           />
-          <FolderSelectionStep />
+          <FolderSelectionStep
+            selectedFilestoreId={selectedFilesystem.map((fs) => fs.id)}
+          />
           <NameStep />
         </Stepper>
       </DialogContent>
