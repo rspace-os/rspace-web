@@ -33,7 +33,7 @@ function FilesystemSelectionStep(props: {|
     id: number,
     name: string,
     url: string,
-  |}
+  |},
 |}) {
   const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
   const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
@@ -41,9 +41,6 @@ function FilesystemSelectionStep(props: {|
     name: string,
     url: string,
   |}>>(null);
-  const [filestoreIds, setFilestoreIds] = React.useState<null | Set<number>>(
-    null
-  );
   const { getToken } = useOauthToken();
   const api = React.useRef<Promise<Axios>>(
     (async () => {
@@ -89,27 +86,6 @@ function FilesystemSelectionStep(props: {|
           )
         )
         .do((newFilesystems) => setFilesystems(newFilesystems));
-    })();
-  }, []);
-
-  React.useEffect(() => {
-    void (async () => {
-      const { data } = await (await api.current).get<mixed>("filestores");
-      Parsers.isArray(data)
-        .flatMap((array) =>
-          Result.all(
-            ...array.map((m) =>
-              Parsers.isObject(m)
-                .flatMap(Parsers.isNotNull)
-                .flatMap(Parsers.getValueWithKey("fileSystem"))
-                .flatMap(Parsers.isObject)
-                .flatMap(Parsers.isNotNull)
-                .flatMap(Parsers.getValueWithKey("id"))
-                .flatMap(Parsers.isNumber)
-            )
-          )
-        )
-        .do((newFilesystemIds) => setFilestoreIds(new Set(newFilesystemIds)));
     })();
   }, []);
 
