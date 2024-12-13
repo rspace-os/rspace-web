@@ -19,6 +19,8 @@ import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import { Optional } from "../../../util/optional";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 
 type AddFilestoreDialogArgs = {|
   open: boolean,
@@ -171,12 +173,14 @@ function TreeListing({ fsId, path }: {| fsId: number, path: string |}): Node {
 
 function FolderSelectionStep(props: {|
   selectedFilestoreId: Optional<number>,
-  setSelectedFolder: (string) => void,
+  onConfirm: (string) => void,
+  onCancel: () => void,
 |}) {
-  const { selectedFilestoreId, setSelectedFolder, ...rest } = props;
+  const { selectedFilestoreId, onConfirm, onCancel, ...rest } = props;
   const [expandedItems, setExpandedItems] = React.useState<
     $ReadOnlyArray<number>
   >([]);
+  const [selectedFolderPath, setSelectedFolderPath] = React.useState("");
 
   return (
     <Step key="folderSelection" {...rest}>
@@ -194,13 +198,28 @@ function FolderSelectionStep(props: {|
           ) => {
             if (Array.isArray(itemId)) return;
             if (!selected) return;
-            setSelectedFolder(itemId);
+            setSelectedFolderPath(itemId);
           }}
         >
           {selectedFilestoreId
             .map((fsId) => <TreeListing path="/" fsId={fsId} key={null} />)
             .orElse(null)}
         </SimpleTreeView>
+        <Box sx={{ mb: 2 }}>
+          <Button
+            disabled={!selectedFolderPath}
+            variant="contained"
+            onClick={() => {
+              onConfirm(selectedFolderPath);
+            }}
+            sx={{ mt: 1, mr: 1 }}
+          >
+            Choose Folder
+          </Button>
+          <Button onClick={onCancel} sx={{ mt: 1, mr: 1 }}>
+            Back
+          </Button>
+        </Box>
       </StepContent>
     </Step>
   );
@@ -257,8 +276,12 @@ export default function AddFilestoreDialog({
           />
           <FolderSelectionStep
             selectedFilestoreId={selectedFilesystem.map((fs) => fs.id)}
-            setSelectedFolder={(newPath) => {
+            onConfirm={(newPath) => {
               setPathOfSelectedFolder(newPath);
+              setActiveStep(2);
+            }}
+            onCancel={() => {
+              setActiveStep(0);
             }}
           />
           <NameStep />
