@@ -160,7 +160,7 @@ function TreeListing({ fsId, path }: {| fsId: number, path: string |}): Node {
       {listing.map(
         ({ folder, name, nfsId }) =>
           folder && (
-            <TreeItem itemId={nfsId} label={name} key={nfsId}>
+            <TreeItem itemId={`${path}${name}/`} label={name} key={nfsId}>
               <TreeListing fsId={fsId} path={`${path}${name}/`} />
             </TreeItem>
           )
@@ -171,8 +171,9 @@ function TreeListing({ fsId, path }: {| fsId: number, path: string |}): Node {
 
 function FolderSelectionStep(props: {|
   selectedFilestoreId: Optional<number>,
+  setSelectedFolder: (string) => void,
 |}) {
-  const { selectedFilestoreId, ...rest } = props;
+  const { selectedFilestoreId, setSelectedFolder, ...rest } = props;
   const [expandedItems, setExpandedItems] = React.useState<
     $ReadOnlyArray<number>
   >([]);
@@ -185,6 +186,15 @@ function FolderSelectionStep(props: {|
           expandedItems={expandedItems}
           onExpandedItemsChange={(_event, nodeIds) => {
             setExpandedItems(nodeIds);
+          }}
+          onItemSelectionToggle={(
+            event,
+            itemId: string | $ReadOnlyArray<string>,
+            selected
+          ) => {
+            if (Array.isArray(itemId)) return;
+            if (!selected) return;
+            setSelectedFolder(itemId);
           }}
         >
           {selectedFilestoreId
@@ -231,6 +241,8 @@ export default function AddFilestoreDialog({
     |}>
   >(Optional.empty());
 
+  const [pathOfSelectedFolder, setPathOfSelectedFolder] = React.useState("");
+
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Add a Filestore</DialogTitle>
@@ -245,6 +257,9 @@ export default function AddFilestoreDialog({
           />
           <FolderSelectionStep
             selectedFilestoreId={selectedFilesystem.map((fs) => fs.id)}
+            setSelectedFolder={(newPath) => {
+              setPathOfSelectedFolder(newPath);
+            }}
           />
           <NameStep />
         </Stepper>
