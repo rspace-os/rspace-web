@@ -13,7 +13,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
-import { DUMMY_ID } from "../../useGalleryListing";
+import { dummyId } from "../../useGalleryListing";
 
 function newMockAxios() {
   const mockAxios = new MockAdapter(axios);
@@ -90,7 +90,7 @@ describe("Sidebar", () => {
             drawerOpen
             setDrawerOpen={() => {}}
             path={[]}
-            folderId={{ tag: "success", value: DUMMY_ID }}
+            folderId={{ tag: "success", value: dummyId() }}
             refreshListing={() => {}}
             id="1"
           />
@@ -132,7 +132,7 @@ describe("Sidebar", () => {
             drawerOpen
             setDrawerOpen={() => {}}
             path={[]}
-            folderId={{ tag: "success", value: DUMMY_ID }}
+            folderId={{ tag: "success", value: dummyId() }}
             refreshListing={() => {}}
             id="1"
           />
