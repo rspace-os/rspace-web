@@ -982,24 +982,21 @@ const FileCard = styled(
                           justifyContent: "end",
                           flexGrow: 1,
                           textAlign: "center",
-                          ...(selected
-                            ? {
-                                backgroundColor: (theme) =>
-                                  window.matchMedia("(prefers-contrast: more)")
-                                    .matches
-                                    ? "black"
-                                    : theme.palette.callToAction.main,
-                                p: 0.25,
-                                borderRadius: "4px",
-                                mx: 0.5,
-                              }
-                            : {}),
                         }}
                       >
                         <Typography
                           sx={{
                             ...(selected
                               ? {
+                                  backgroundColor: (theme) =>
+                                    window.matchMedia(
+                                      "(prefers-contrast: more)"
+                                    ).matches
+                                      ? "black"
+                                      : theme.palette.callToAction.main,
+                                  p: 0.25,
+                                  borderRadius: "4px",
+                                  mx: 0.5,
                                   color: window.matchMedia(
                                     "(prefers-contrast: more)"
                                   ).matches
