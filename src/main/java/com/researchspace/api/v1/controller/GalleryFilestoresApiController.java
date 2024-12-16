@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.GalleryFilestoresApi;
+import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
@@ -14,6 +15,7 @@ import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
+import com.researchspace.webapp.controller.DeploymentProperty;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -46,7 +48,16 @@ public class GalleryFilestoresApiController extends BaseApiController
 
   @Override
   public List<NfsFileStoreInfo> getUserFilestores(@RequestAttribute(name = "user") User user) {
+    assertFilestoresApiEnabled(user);
     return nfsManager.getFileStoreInfosForUser(user);
+  }
+
+  private void assertFilestoresApiEnabled(User subject) {
+    if (!properties.isNetFileStoresEnabled() && !subject.hasSysadminRole()) {
+      throw new UnsupportedOperationException(
+          "Gallery Filestores API is not enabled for use on this RSpace instance "
+              + "(netfilestores.enabled=false)");
+    }
   }
 
   @Override
@@ -56,6 +67,7 @@ public class GalleryFilestoresApiController extends BaseApiController
       @RequestAttribute(name = "user") User user)
       throws IOException {
 
+    assertFilestoresApiEnabled(user);
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     NfsFileSystem filesystem = filestore.getFileSystem();
     NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
@@ -89,6 +101,7 @@ public class GalleryFilestoresApiController extends BaseApiController
       HttpServletResponse response)
       throws IOException {
 
+    assertFilestoresApiEnabled(user);
     if (StringUtils.isEmpty(remotePath) && remoteId == null) {
       throw new IllegalArgumentException("Neither 'remotePath' nor 'remoteId' param is provided");
     }
@@ -120,6 +133,7 @@ public class GalleryFilestoresApiController extends BaseApiController
       @RequestParam("pathToSave") String pathToSave,
       @RequestAttribute(name = "user") User user) {
 
+    assertFilestoresApiEnabled(user);
     boolean filestoreNameUnique = nfsManager.verifyFileStoreNameUniqueForUser(filestoreName, user);
     if (!filestoreNameUnique) {
       throw new IllegalArgumentException(
@@ -137,6 +151,7 @@ public class GalleryFilestoresApiController extends BaseApiController
   public void deleteFilestore(
       @PathVariable Long filestoreId, @RequestAttribute(name = "user") User user) {
 
+    assertFilestoresApiEnabled(user);
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     if (filestore == null || !user.getUsername().equals(filestore.getUser().getUsername())) {
       throw new IllegalArgumentException("user has no access to filestore " + filestoreId);
@@ -147,8 +162,9 @@ public class GalleryFilestoresApiController extends BaseApiController
 
   @Override
   public List<NfsFileSystemInfo> getFilesystems(@RequestAttribute(name = "user") User user) {
+    assertFilestoresApiEnabled(user);
     if (user.hasSysadminRole()) {
-      // return all, not just active?
+      // TODO return all, not just active
     }
     return nfsManager.getActiveFileSystemInfos();
   }
@@ -160,6 +176,7 @@ public class GalleryFilestoresApiController extends BaseApiController
       @RequestAttribute(name = "user") User user)
       throws IOException {
 
+    assertFilestoresApiEnabled(user);
     NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
     NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
 
@@ -168,6 +185,7 @@ public class GalleryFilestoresApiController extends BaseApiController
   }
 
   @Override
+  @DeploymentProperty(DeploymentPropertyType.NET_FILE_STORES_ENABLED)
   public void loginToFilesystem(
       @PathVariable Long filesystemId,
       @RequestBody @Valid ApiNfsCredentials credentials,
@@ -175,6 +193,7 @@ public class GalleryFilestoresApiController extends BaseApiController
       @RequestAttribute(name = "user") User user)
       throws BindException {
 
+    assertFilestoresApiEnabled(user);
     NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
     NfsClient nfsClient =
         credentialsStore.validateCredentialsAndLoginNfs(credentials, errors, user, filesystem);
@@ -195,7 +214,7 @@ public class GalleryFilestoresApiController extends BaseApiController
   public void logoutFromFilesystem(
       @PathVariable Long filesystemId, @RequestAttribute(name = "user") User user) {
 
-    log.info("test logout");
+    assertFilestoresApiEnabled(user);
     credentialsStore.removeUserCredentialsForFilesystem(user, filesystemId);
   }
 }

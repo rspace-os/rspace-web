@@ -110,6 +110,8 @@ public interface IPropertyHolder extends Versionable {
 
   String getNetFileStoresEnabled();
 
+  boolean isNetFileStoresEnabled();
+
   String getNetFileStoresExportEnabled();
 
   String getUserSignup();
