@@ -23,6 +23,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { useFilestoreLogin } from "./FilestoreLoginDialog";
 
 type AddFilestoreDialogArgs = {|
   open: boolean,
@@ -132,7 +133,17 @@ type FilesystemListing = $ReadOnlyArray<{|
   folder: boolean,
 |}>;
 
-function TreeListing({ fsId, path }: {| fsId: number, path: string |}): Node {
+function TreeListing({
+  fsId,
+  fsName,
+  path,
+  onFailToAuthenticate,
+}: {|
+  fsId: number,
+  fsName: string,
+  path: string,
+  onFailToAuthenticate: () => void,
+|}): Node {
   const { getToken } = useOauthToken();
   const api = React.useRef<Promise<Axios>>(
     (async () => {
@@ -146,17 +157,36 @@ function TreeListing({ fsId, path }: {| fsId: number, path: string |}): Node {
   );
 
   const [listing, setListing] = React.useState<FilesystemListing>([]);
+  const { login } = useFilestoreLogin();
   React.useEffect(() => {
-    void (async () => {
-      const {
-        data: { content },
-      } = await (
-        await api.current
-      ).get<{ content: FilesystemListing, ... }>(
-        `filesystems/${fsId}/browse?remotePath=${path}`
-      );
-      setListing(content);
-    })();
+    async function browse(): Promise<void> {
+      try {
+        const {
+          data: { content },
+        } = await (
+          await api.current
+        ).get<{ content: FilesystemListing, ... }>(
+          `filesystems/${fsId}/browse?remotePath=${path}`
+        );
+        setListing(content);
+      } catch (e) {
+        if (e.response?.status === 403) {
+          if (
+            await login({
+              filesystemName: fsName,
+              filesystemId: fsId,
+            })
+          ) {
+            await browse();
+          } else {
+            onFailToAuthenticate();
+          }
+        } else {
+          throw e;
+        }
+      }
+    }
+    void browse();
   }, [fsId, path]);
 
   return (
@@ -165,7 +195,12 @@ function TreeListing({ fsId, path }: {| fsId: number, path: string |}): Node {
         ({ folder, name, nfsId }) =>
           folder && (
             <TreeItem itemId={`${path}${name}/`} label={name} key={nfsId}>
-              <TreeListing fsId={fsId} path={`${path}${name}/`} />
+              <TreeListing
+                fsId={fsId}
+                fsName={name}
+                path={`${path}${name}/`}
+                onFailToAuthenticate={onFailToAuthenticate}
+              />
             </TreeItem>
           )
       )}
@@ -204,7 +239,17 @@ function FolderSelectionStep(props: {|
           }}
         >
           {selectedFilestoreId
-            .map((fsId) => <TreeListing path="/" fsId={fsId} key={null} />)
+            .map((fsId) => (
+              <TreeListing
+                path="/"
+                fsId={fsId}
+                fsName={"Foo"}
+                key={null}
+                onFailToAuthenticate={() => {
+                  onCancel();
+                }}
+              />
+            ))
             .orElse(null)}
         </SimpleTreeView>
         <Box sx={{ mb: 2 }}>
