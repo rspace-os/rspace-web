@@ -214,19 +214,7 @@ const NewFolderMenuItem = ({
             setOpen(false);
           }}
         >
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSubmitting(true);
-              void createFolder(path, folderId, name)
-                .then(() => {
-                  onDialogClose(true);
-                })
-                .finally(() => {
-                  setSubmitting(false);
-                });
-            }}
-          >
+          <form /* onSubmit is handled by ValidatingSubmitButton */>
             <DialogTitle>New Folder</DialogTitle>
             <DialogContent>
               <DialogContentText variant="body2" sx={{ mb: 2 }}>
@@ -254,7 +242,14 @@ const NewFolderMenuItem = ({
                   name.length > 0 ? IsValid() : IsInvalid("A name is required.")
                 }
                 onClick={() => {
-                  /* see form onSubmit */
+                  setSubmitting(true);
+                  void createFolder(path, folderId, name)
+                    .then(() => {
+                      onDialogClose(true);
+                    })
+                    .finally(() => {
+                      setSubmitting(false);
+                    });
                 }}
               >
                 Create
