@@ -81,7 +81,9 @@ export type IntegrationStates = {|
   DIGITALCOMMONSDATA: IntegrationState<{|
     ACCESS_TOKEN: Optional<string>,
   |}>,
-  DMPONLINE: IntegrationState<{||}>,
+  DMPONLINE: IntegrationState<{|
+    ACCESS_TOKEN: Optional<string>,
+  |}>,
   DMPTOOL: IntegrationState<{|
     ACCESS_TOKEN: Optional<string>,
   |}>,
@@ -310,7 +312,12 @@ function decodeDmpTool(data: FetchedState): IntegrationStates["DMPTOOL"] {
 }
 
 function decodeDmponline(data: FetchedState): IntegrationStates["DMPONLINE"] {
-  return { mode: parseState(data), credentials: {} };
+  return {
+    mode: parseState(data),
+    credentials: {
+      ACCESS_TOKEN: parseCredentialString(data.options, "DMPONLINE_USER_TOKEN"),
+    },
+  };
 }
 
 function decodeDropbox(data: FetchedState): IntegrationStates["DROPBOX"] {
@@ -529,7 +536,7 @@ function decodeIntegrationStates(data: {
     ARGOS: decodeArgos(data.ARGOS),
     ASCENSCIA: {
       mode: "EXTERNAL",
-      credentials: null
+      credentials: null,
     },
     BOX: decodeBox(data.BOX),
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
@@ -675,7 +682,12 @@ const encodeIntegrationState = <I: Integration>(
       name: "DMPONLINE",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      options: {},
+      // $FlowExpectedError[prop-missing]
+      // $FlowExpectedError[incompatible-type]
+      // $FlowExpectedError[incompatible-use]
+      options: data.credentials.ACCESS_TOKEN.map((token) => ({
+        ACCESS_TOKEN: token,
+      })).orElse({}),
     };
   }
   if (integration === "DMPTOOL") {
