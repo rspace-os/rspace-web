@@ -9,13 +9,22 @@ import axios from "axios";
 import * as FetchingData from "../util/fetchingData";
 import { doNotAwait } from "../util/Util";
 import React from "react";
+import * as Parsers from "../util/parsers";
+import Result from "../util/result";
 
-// A title-case name for displaying in the UI.
+/**
+ * A title-case name for displaying in the UI.
+ */
 export type IntegrationDisplayName = string;
 
-// An uppercase name that uniquely identifies the integration.
+/**
+ * An uppercase name that uniquely identifies the integration.
+ */
 export type IntegrationName = string;
 
+/**
+ * The current status of a particular integration
+ */
 export type IntegrationInfo = {|
   available: boolean,
   displayName: IntegrationDisplayName,
@@ -25,7 +34,7 @@ export type IntegrationInfo = {|
   options: {},
 |};
 
-/*
+/**
  * A simple function for fetching information on the status of a particular
  * integration. Most notably, it can be used to determine if the sysadmin has
  * made the integration available, whether the user has enabled it, and
@@ -41,7 +50,41 @@ export async function fetchIntegrationInfo(
       responseType: "json",
     }
   );
-  return data.data;
+  return Parsers.isObject(data)
+    .flatMap(Parsers.isNotNull)
+    .flatMap(Parsers.getValueWithKey("data"))
+    .flatMap(Parsers.isObject)
+    .flatMap(Parsers.isNotNull)
+    .flatMap((obj) => {
+      try {
+        const available = Parsers.getValueWithKey("available")(obj)
+          .flatMap(Parsers.isBoolean)
+          .elseThrow();
+        const displayName = Parsers.getValueWithKey("displayName")(obj)
+          .flatMap(Parsers.isString)
+          .elseThrow();
+        const enabled = Parsers.getValueWithKey("enabled")(obj)
+          .flatMap(Parsers.isBoolean)
+          .elseThrow();
+        const name = Parsers.getValueWithKey("name")(obj)
+          .flatMap(Parsers.isString)
+          .elseThrow();
+        const oauthConnected = Parsers.getValueWithKey("oauthConnected")(obj)
+          .flatMap(Parsers.isBoolean)
+          .elseThrow();
+        return Result.Ok({
+          available,
+          displayName,
+          enabled,
+          name,
+          oauthConnected,
+          options: {},
+        });
+      } catch (e) {
+        return Result.Error<IntegrationInfo>([e]);
+      }
+    })
+    .elseThrow();
 }
 
 /**
