@@ -653,27 +653,38 @@ export function useGalleryListing({
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: async () => {
-      setGalleryListing(
-        (
-          await Promise.all(
-            [...take(incrementForever(), page + 1)].map((p) =>
-              axios
-                .get<mixed>(`/gallery/getUploadedFiles`, {
-                  params: new URLSearchParams({
-                    mediatype: section,
-                    currentFolderId:
-                      path.length > 0 ? `${path[path.length - 1].id}` : "0",
-                    name: searchTerm,
-                    pageNumber: `${p}`,
-                    sortOrder,
-                    orderBy,
-                  }),
-                })
-                .then(({ data }) => parseGalleryFiles(data))
-            )
+      const newFiles = (
+        await Promise.all(
+          [...take(incrementForever(), page + 1)].map((p) =>
+            axios
+              .get<mixed>(`/gallery/getUploadedFiles`, {
+                params: new URLSearchParams({
+                  mediatype: section,
+                  currentFolderId:
+                    path.length > 0 ? `${path[path.length - 1].id}` : "0",
+                  name: searchTerm,
+                  pageNumber: `${p}`,
+                  sortOrder,
+                  orderBy,
+                }),
+              })
+              .then(({ data }) => parseGalleryFiles(data))
           )
-        ).flat()
-      );
+        )
+      ).flat();
+      setGalleryListing(newFiles);
+
+      /*
+       * If some of the selected files are no longer included in the listing
+       * then we clear the selection as it would be quite confusing to allow
+       * the user to operate on files they can no longer see. An example of
+       * when this might happen is duplicating the last file in a page; the
+       * selected one will become the first file of the next page that the user
+       * needs to load by tapping the "Load More" button.
+       */
+      const newFilesIds = new Set(newFiles.map(({ id }) => id));
+      if (selection.asSet().some((f) => !newFilesIds.has(f.id)))
+        selection.clear();
     },
   };
 }
