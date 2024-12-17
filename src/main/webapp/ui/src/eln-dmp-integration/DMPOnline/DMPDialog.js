@@ -313,7 +313,6 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
                       toolbar: () => (
                         <GridToolbarContainer>
                           <GridToolbarColumnsButton variant="outlined" />
-                          <GridToolbarDensitySelector variant="outlined" />
                         </GridToolbarContainer>
                       ),
                     }}
