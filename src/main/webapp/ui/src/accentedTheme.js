@@ -701,28 +701,6 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
           },
         },
-        MuiCheckbox: {
-          styleOverrides: {
-            root: {
-              [`&.${checkboxClasses.checked}`]: {
-                [`& .${svgIconClasses.root}`]: {
-                  fill: interactiveColor,
-                },
-              },
-            },
-          },
-        },
-        MuiRadio: {
-          styleOverrides: {
-            root: {
-              [`&.${radioClasses.checked}`]: {
-                [`& .${svgIconClasses.root}`]: {
-                  fill: interactiveColor,
-                },
-              },
-            },
-          },
-        },
         MuiChip: {
           styleOverrides: {
             root: {
