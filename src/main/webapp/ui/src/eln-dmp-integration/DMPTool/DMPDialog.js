@@ -82,7 +82,7 @@ const CustomDialog = withStyles<
     maxHeight: "unset",
     minHeight: "unset",
 
-    // this is so that the hights of the dialog's content of constrained and scrollbars appear
+    // this is so that the heights of the dialog's content are constrained and scrollbars appear
     // 24px margin above and below, 3px border above and below
     height: fullScreen ? "100%" : "calc(100% - 48px)",
   },
@@ -222,7 +222,10 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           direction="column"
           spacing={2}
           flexWrap="nowrap"
-          // this is so that just the table is scrollable
+          /*
+           * The height of 100% ensures that the table is scrollable
+           * The extra 16px prevents excessive whitespace, more and we get double scrollbars
+           */
           height="calc(100% + 16px)"
         >
           <Grid item>
