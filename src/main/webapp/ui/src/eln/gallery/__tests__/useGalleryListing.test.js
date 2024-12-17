@@ -48,7 +48,7 @@ function WrapperComponent() {
             .orElse(null)}
           <button
             onClick={() => {
-              refreshListing();
+              void refreshListing();
             }}
           >
             Refresh

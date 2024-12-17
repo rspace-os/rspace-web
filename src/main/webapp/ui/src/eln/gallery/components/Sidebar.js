@@ -405,7 +405,7 @@ type SidebarArgs = {|
   setDrawerOpen: (boolean) => void,
   path: $ReadOnlyArray<GalleryFile>,
   folderId: FetchingData.Fetched<Id>,
-  refreshListing: () => void,
+  refreshListing: () => Promise<void>,
   id: string,
 |};
 
@@ -496,7 +496,7 @@ const Sidebar = ({
                 path={path}
                 folderId={fId}
                 onUploadComplete={() => {
-                  refreshListing();
+                  void refreshListing();
                   setNewMenuAnchorEl(null);
                   if (viewport.isViewportSmall) setDrawerOpen(false);
                 }}
@@ -514,7 +514,7 @@ const Sidebar = ({
                 path={path}
                 folderId={fId}
                 onDialogClose={(success) => {
-                  if (success) refreshListing();
+                  if (success) void refreshListing();
                   setNewMenuAnchorEl(null);
                   if (viewport.isViewportSmall) setDrawerOpen(false);
                 }}
@@ -528,7 +528,7 @@ const Sidebar = ({
             }}
             showDmpPanel={() => {
               if (selectedSection === "DMPs") {
-                refreshListing();
+                void refreshListing();
               } else {
                 setSelectedSection("DMPs");
               }

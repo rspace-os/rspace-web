@@ -1035,7 +1035,7 @@ type GalleryMainPanelArgs = {|
       |}
   >,
   folderId: FetchingData.Fetched<Id>,
-  refreshListing: () => void,
+  refreshListing: () => Promise<void>,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
   setSortOrder: ("DESC" | "ASC") => void,
@@ -1063,7 +1063,7 @@ function GalleryMainPanel({
           throw new Error("Unknown folder id");
         });
         await uploadFiles(path, fId, files);
-        refreshListing();
+        void refreshListing();
       }),
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
@@ -1139,7 +1139,7 @@ function GalleryMainPanel({
               section: selectedSection,
             })
             .then(() => {
-              refreshListing();
+              void refreshListing();
             });
         }}
       >

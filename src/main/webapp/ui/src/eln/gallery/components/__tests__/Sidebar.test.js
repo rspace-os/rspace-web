@@ -91,7 +91,7 @@ describe("Sidebar", () => {
             setDrawerOpen={() => {}}
             path={[]}
             folderId={{ tag: "success", value: dummyId() }}
-            refreshListing={() => {}}
+            refreshListing={() => Promise.resolve()}
             id="1"
           />
         </ThemeProvider>
@@ -133,7 +133,7 @@ describe("Sidebar", () => {
             setDrawerOpen={() => {}}
             path={[]}
             folderId={{ tag: "success", value: dummyId() }}
-            refreshListing={() => {}}
+            refreshListing={() => Promise.resolve()}
             id="1"
           />
         </ThemeProvider>

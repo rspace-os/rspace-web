@@ -88,7 +88,7 @@ type TreeItemContentArgs = {|
   path: $ReadOnlyArray<GalleryFile>,
   section: GallerySection,
   idMap: Map<string, GalleryFile>,
-  refreshListing: () => void,
+  refreshListing: () => Promise<void>,
   filter: (GalleryFile) => "hide" | "enabled" | "disabled",
   disableDragAndDrop?: boolean,
   sortOrder: "DESC" | "ASC",
@@ -185,7 +185,7 @@ const CustomTreeItem = observer(
     path: $ReadOnlyArray<GalleryFile>,
     section: GallerySection,
     idMap: Map<string, GalleryFile>,
-    refreshListing: () => void,
+    refreshListing: () => Promise<void>,
     filter: (GalleryFile) => "hide" | "enabled" | "disabled",
     disableDragAndDrop?: boolean,
     orderBy: "name" | "modificationDate",
@@ -199,7 +199,7 @@ const CustomTreeItem = observer(
       useFileImportDropZone({
         onDrop: doNotAwait(async (files) => {
           await uploadFiles([...file.path, file], file.id, files);
-          refreshListing();
+          void refreshListing();
         }),
         disabled: !file.isFolder,
       });
@@ -384,7 +384,7 @@ type TreeViewArgs = {|
       |},
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: GallerySection,
-  refreshListing: () => void,
+  refreshListing: () => Promise<void>,
   filter?: (GalleryFile) => "hide" | "enabled" | "disabled",
   disableDragAndDrop?: boolean,
   sortOrder: "DESC" | "ASC",

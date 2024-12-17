@@ -27,7 +27,7 @@ type MoveDialogArgs = {|
   onClose: () => void,
   section: GallerySection,
   selectedFiles: RsSet<GalleryFile>,
-  refreshListing: () => void,
+  refreshListing: () => Promise<void>,
 |};
 
 const MoveDialog = observer(
@@ -53,7 +53,7 @@ const MoveDialog = observer(
     const selection = useGallerySelection();
 
     React.useEffect(() => {
-      if (open) refreshListingInsideDialog();
+      if (open) void refreshListingInsideDialog();
     }, [open]);
 
     const [topLevelLoading, setTopLevelLoading] = React.useState(false);
@@ -128,7 +128,7 @@ const MoveDialog = observer(
                   })
                   .then(() => {
                     setTopLevelLoading(false);
-                    refreshListing();
+                    void refreshListing();
                     onClose();
                   });
               }}
@@ -161,7 +161,7 @@ const MoveDialog = observer(
                   .toDestinationWithFolder(section, destinationFolder)
                   .then(() => {
                     setSubmitLoading(false);
-                    refreshListing();
+                    void refreshListing();
                     onClose();
                   });
               }}
