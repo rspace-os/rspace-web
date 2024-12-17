@@ -1766,8 +1766,8 @@ paths:
 
   '/gallery/filestores':
     get:
-      summary: Get filestores saved by the current user
-      description: Lists all the filestores saved by the current user
+      summary: Get filestores of the current user
+      description: Lists all the filestores created by the current user
       produces:
         - application/json
       tags:
@@ -1778,7 +1778,7 @@ paths:
     post:
       summary: Save new filestore
       description: >-
-        Creates new filestore for access by tthe current user
+        Creates new filestore for access by the current user
       produces:
         - application/json
       tags:
@@ -1790,14 +1790,13 @@ paths:
       responses:
         '201':
           description: Success
-        '400':
-          description: Bad request - format/scope is unsupported
-        '404':
-          description: unauthorised to make the export request
   '/gallery/filestores/{filestoreId}/browse':
     get:
       summary: Browse remote filestore
-      description: Lists the content of a path on remote filestore
+      description:
+        Lists the content of a path on remote filestore belonging to the user.
+        
+        User must be logged into the filesystem connected to the filestore (see /login endpoint).
       produces:
         - application/json
       tags:
@@ -1811,7 +1810,10 @@ paths:
   '/gallery/filestores/{filestoreId}/download':
     get:
       summary: Download from remote filestore
-      description: Download a resource from remote filestore
+      description:
+        Streams the resource retrieved from remote filestore.
+        
+        User must be logged into the filesystem connected to the filestore (see /login endpoint).
       produces:
         - application/octet-stream
         - application/json
@@ -1823,10 +1825,10 @@ paths:
         - $ref: '#/parameters/filestoreRemoteIdParam'
       responses:
         '200':
-          description: A resource
+          description: A resource (binary)
   '/gallery/filestores/{filestoreId}':
     delete:
-      summary: Delete a filestore by its id
+      summary: Delete a filestore
       description: >
         Marks filestore as deleted, it will no longer show up on user's filestore listing. 
         The filestore links added to RSpace documents based on this filestore will stay resolvable.
@@ -1838,11 +1840,10 @@ paths:
         '204':
           description: No content
 
-
   '/gallery/filesystems':
     get:
-      summary: List active  filesystems
-      description: Lists active filesystems configured no this RSpace instance
+      summary: List active filesystems
+      description: Lists active filesystems configured on this RSpace instance
       produces:
         - application/json
       tags:
@@ -1853,7 +1854,10 @@ paths:
   '/gallery/filesystems/{filesystemId}/browse':
     get:
       summary: Browse remote filesystem
-      description: Lists the content of a path on remote filesystem
+      description:
+        Lists the content of a remote filesystem. 
+        
+        User must be logged into the filesystem (see /login endpoint).
       produces:
         - application/json
       tags:
@@ -1863,11 +1867,11 @@ paths:
         - $ref: '#/parameters/filestoreRemotePathParam'
       responses:
         '200':
-          description: A list of FileStoreNode objects
+          description: A list of FileStoreNode objects.
   '/gallery/filesystems/{filesystemId}/login':
     post:
-      summary: Login to particular filesystem
-      description: Try connect to Filestore
+      summary: Login to the filesystem
+      description: Attempt to login, or start session between RSpace and remote filesystem
       produces:
         - application/json
       tags:
@@ -1885,8 +1889,8 @@ paths:
           description: Login success.
   '/gallery/filesystems/{filesystemId}/logout':
     post:
-      summary: Logout from a particular filesystem
-      description: Logout from a particular filesystem
+      summary: Logout from the filesystem
+      description: Finish RSpace session with the a remote filesystem
       produces:
         - application/json
       tags:

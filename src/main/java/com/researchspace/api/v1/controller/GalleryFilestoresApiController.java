@@ -24,6 +24,7 @@ import java.util.List;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.ws.rs.NotFoundException;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -153,11 +154,16 @@ public class GalleryFilestoresApiController extends BaseApiController
 
     assertFilestoresApiEnabled(user);
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
-    if (filestore == null || !user.getUsername().equals(filestore.getUser().getUsername())) {
-      throw new IllegalArgumentException("user has no access to filestore " + filestoreId);
-    }
+    assertFilestoreOwnedByUser(filestoreId, user, filestore);
 
     nfsManager.markFileStoreAsDeleted(filestore);
+  }
+
+  private void assertFilestoreOwnedByUser(Long filestoreId, User user, NfsFileStore filestore) {
+    if (filestore == null || !user.getUsername().equals(filestore.getUser().getUsername())) {
+      throw new NotFoundException(
+          "Filestore '" + filestoreId + "' not found " + "or not accessible to the user");
+    }
   }
 
   @Override

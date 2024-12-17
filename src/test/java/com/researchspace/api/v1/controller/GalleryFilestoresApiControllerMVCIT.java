@@ -25,10 +25,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
+@TestPropertySource(properties = {"netfilestores.enabled=true"})
 public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
 
   User anyUser;
@@ -134,7 +136,19 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(1, retrievedFilestoreInfos.size());
     assertEquals(createdFilestoreInfo, retrievedFilestoreInfos.get(0));
 
-    // delete filestore
+    // assert other user cannot delete user's filestore
+    User sysAdminUser = getSysAdminUser();
+    String sysAdminApiKey = createNewSysAdminApiKey();
+    this.mockMvc
+        .perform(
+            createBuilderForDelete(
+                sysAdminApiKey,
+                "/gallery/filestores/{id}",
+                sysAdminUser,
+                createdFilestoreInfo.getId()))
+        .andExpect(status().isNotFound());
+
+    // user deletes their filestore
     this.mockMvc
         .perform(
             createBuilderForDelete(
