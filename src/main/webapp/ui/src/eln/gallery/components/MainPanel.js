@@ -685,13 +685,13 @@ const FileCard = styled(
          * trigger useDraggable's listeners because otherwise react gets bogged
          * down in re-rendering all of the FileCards a couple of times over
          * before actually updating the new selection state. When the user taps,
-         * onMouseDown/onTouchDown trigger which causes a re-rendering with
-         * drag-and-drop active, then onMouseUp/onTouchUp fire immediately
+         * onMouseDown/onTouchStart trigger which causes a re-rendering with
+         * drag-and-drop active, then onMouseUp/onTouchEnd fire immediately
          * after triggering another re-rendering with drag-and-drop not active,
          * and then onClick fires to update the selection state.
          *
          * This state variable contains a reference to a setTimeout that is
-         * intended to only fire onMouseDown/onTouchDown if the user holds the
+         * intended to only fire onMouseDown/onTouchStart if the user holds the
          * mouse key/their finger down for more than half a second to prevent
          * these excessive re-renders and make the UI more responsive in
          * updating the selection state.
@@ -801,14 +801,14 @@ const FileCard = styled(
                 onMouseUp={() => {
                   clearTimeout(dndDebounce);
                 }}
-                onTouchDown={(...args) => {
+                onTouchStart={(...args) => {
                   setDndDebounce(
                     setTimeout(() => {
-                      listeners.onTouchDown(...args);
+                      listeners.onTouchStart(...args);
                     }, 500)
                   );
                 }}
-                onTouchUp={() => {
+                onTouchEnd={() => {
                   clearTimeout(dndDebounce);
                 }}
                 onKeyDown={listeners.onKeyDown}

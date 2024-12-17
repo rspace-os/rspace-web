@@ -228,6 +228,7 @@ const CustomTreeItem = observer(
       },
     });
     const dndContext = useDndContext();
+    const [dndDebounce, setDndDebounce] = React.useState(null);
     const dndInProgress = Boolean(dndContext.active);
 
     const dragStyle: { [string]: string | number } = transform
@@ -317,7 +318,27 @@ const CustomTreeItem = observer(
             setDropRef(node);
             setDragRef(node);
           }}
-          {...listeners}
+          onMouseDown={(...args) => {
+            setDndDebounce(
+              setTimeout(() => {
+                listeners.onMouseDown(...args);
+              }, 500)
+            );
+          }}
+          onMouseUp={() => {
+            clearTimeout(dndDebounce);
+          }}
+          onTouchStart={(...args) => {
+            setDndDebounce(
+              setTimeout(() => {
+                listeners.onTouchStart(...args);
+              }, 500)
+            );
+          }}
+          onTouchEnd={() => {
+            clearTimeout(dndDebounce);
+          }}
+          onKeyDown={listeners?.onKeyDown}
           {...attributes}
           style={{
             ...dragStyle,

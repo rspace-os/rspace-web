@@ -482,7 +482,14 @@ function ActionsMenu({
           disablePadding: true,
           "aria-label": "actions",
         }}
-        keepMounted
+        /*
+         * We don't use `keepMounted` here as otherwise every time the user
+         * changes the selection the menu would have to re-render. The response
+         * time for the UI to update after a selection change is already pretty
+         * long (>250ms) as the listing and info panel have to be completely
+         * re-rendered and so keeping the menu out of the DOM whenever possible
+         * helps in keeping the user interface as responsive as possible.
+         */
       >
         {openAllowed
           .get()

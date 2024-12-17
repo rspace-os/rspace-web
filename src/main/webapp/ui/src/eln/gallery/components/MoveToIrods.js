@@ -423,13 +423,15 @@ type WrapperArgs = {|
   setDialogOpen: (boolean) => void,
 |};
 
+const accentTheme = Object.freeze(createAccentedTheme(COLOR));
+
 export default function Wrapper({
   selectedIds,
   dialogOpen,
   setDialogOpen,
 }: WrapperArgs): Node {
   return (
-    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+    <ThemeProvider theme={accentTheme}>
       <MoveCopyDialog
         selectedIds={selectedIds}
         dialogOpen={dialogOpen}
