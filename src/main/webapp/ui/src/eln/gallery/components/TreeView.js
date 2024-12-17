@@ -228,7 +228,9 @@ const CustomTreeItem = observer(
       },
     });
     const dndContext = useDndContext();
-    const [dndDebounce, setDndDebounce] = React.useState(null);
+    const [dndDebounce, setDndDebounce] = React.useState<null | TimeoutID>(
+      null
+    );
     const dndInProgress = Boolean(dndContext.active);
 
     const dragStyle: { [string]: string | number } = transform
