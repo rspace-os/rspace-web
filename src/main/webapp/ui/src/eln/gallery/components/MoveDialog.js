@@ -70,6 +70,14 @@ const MoveDialog = observer(
       return Result.Ok(null);
     }
 
+    const selectedFileIds = selectedFiles.map(({ id }) => id);
+    function filterFile(file: GalleryFile) {
+      if (!file.isFolder) return "hide";
+      if (file.isSnippetFolder) return "hide";
+      if (selectedFileIds.has(file.id)) return "disabled";
+      return "enabled";
+    }
+
     return (
       <Dialog
         open={open}
@@ -98,7 +106,7 @@ const MoveDialog = observer(
                   path={[]}
                   selectedSection={section}
                   refreshListing={refreshListing}
-                  filter={(file) => file.isFolder && !file.isSnippetFolder}
+                  filter={filterFile}
                   disableDragAndDrop
                   sortOrder="ASC"
                   orderBy="name"

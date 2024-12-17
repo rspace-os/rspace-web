@@ -89,7 +89,7 @@ type TreeItemContentArgs = {|
   section: GallerySection,
   idMap: Map<string, GalleryFile>,
   refreshListing: () => void,
-  filter: (GalleryFile) => boolean,
+  filter: (GalleryFile) => "hide" | "enabled" | "disabled",
   disableDragAndDrop?: boolean,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
@@ -138,7 +138,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
         listing.tag === "list" ? (
           <>
             {listing.list.map((f, i) =>
-              filter(f) ? (
+              filter(f) !== "hide" ? (
                 <CustomTreeItem
                   file={f}
                   index={i}
@@ -152,6 +152,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   sortOrder={sortOrder}
                   orderBy={orderBy}
                   foldersOnly={foldersOnly}
+                  disabled={filter(f) === "disabled"}
                 />
               ) : null
             )}
@@ -177,6 +178,7 @@ const CustomTreeItem = observer(
     orderBy,
     sortOrder,
     foldersOnly,
+    disabled,
   }: {|
     file: GalleryFile,
     index: number,
@@ -184,11 +186,12 @@ const CustomTreeItem = observer(
     section: GallerySection,
     idMap: Map<string, GalleryFile>,
     refreshListing: () => void,
-    filter: (GalleryFile) => boolean,
+    filter: (GalleryFile) => "hide" | "enabled" | "disabled",
     disableDragAndDrop?: boolean,
     orderBy: "name" | "modificationDate",
     sortOrder: "DESC" | "ASC",
     foldersOnly: boolean,
+    disabled: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -277,6 +280,7 @@ const CustomTreeItem = observer(
       >
         <StyledTreeItem
           itemId={idToString(file.id)}
+          disabled={disabled}
           label={
             <Box
               sx={{
@@ -381,7 +385,7 @@ type TreeViewArgs = {|
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: GallerySection,
   refreshListing: () => void,
-  filter?: (GalleryFile) => boolean,
+  filter?: (GalleryFile) => "hide" | "enabled" | "disabled",
   disableDragAndDrop?: boolean,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
@@ -393,7 +397,7 @@ const TreeView = ({
   path,
   selectedSection,
   refreshListing,
-  filter = () => true,
+  filter = () => "enabled",
   disableDragAndDrop,
   sortOrder,
   orderBy,
@@ -420,7 +424,10 @@ const TreeView = ({
     return map;
   });
 
-  if (listing.tag === "empty" || listing.list.filter(filter).length === 0)
+  if (
+    listing.tag === "empty" ||
+    listing.list.every((file) => filter(file) === "hide")
+  )
     return (
       <div key={listing.reason}>
         <Fade
@@ -557,6 +564,7 @@ const TreeView = ({
             sortOrder={sortOrder}
             orderBy={orderBy}
             foldersOnly={foldersOnly}
+            disabled={filter(file) === "disabled"}
           />
         ) : null
       )}
