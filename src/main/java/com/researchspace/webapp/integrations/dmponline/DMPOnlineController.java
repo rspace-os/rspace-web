@@ -295,6 +295,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
     String accessToken;
     if (!isConnectionAlive(principal)) {
       refreshToken(model, principal);
+      optUserConnection = getExistingUserConnection(principal.getName());
     }
     accessToken = optUserConnection.get().getAccessToken();
     return accessToken;
