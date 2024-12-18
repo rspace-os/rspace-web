@@ -28,6 +28,13 @@ import { useFilestoreLogin } from "./FilestoreLoginDialog";
 
 type AddFilestoreDialogArgs = {|
   open: boolean,
+
+  /**
+   * Will be called with `true` if the user successfully added a new a
+   * filestore. Will be called with `false` if the user requests that the
+   * operation be cancelled for any other reason. In either case the caller
+   * MUST set `open` to `false`.
+   */
   onClose: (boolean) => void,
 |};
 
@@ -315,6 +322,13 @@ function NameStep(props: {|
   );
 }
 
+/**
+ * A three-step wizard for adding a new filestore to the filestores section of
+ * the Gallery. The user can choose from amongst the filesystems that the
+ * sysadmin has already configured, they can pick their folder on that
+ * filesystem, and they can give it a name. Once submitted, a new filesystem
+ * appears in the filesystems section.
+ */
 export default function AddFilestoreDialog({
   open,
   onClose,
