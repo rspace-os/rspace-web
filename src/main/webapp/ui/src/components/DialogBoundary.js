@@ -13,7 +13,7 @@ import MuiMenu from "@mui/material/Menu";
 import MuiDrawer from "@mui/material/Drawer";
 
 /**
- * This file contains a context and two components that collectively provide a
+ * This file contains a number of components that collectively provide a
  * mechanism for ensuring that UI elements that visually float above open
  * dialogs (such as toast alerts) are available to accessibility technologies
  * such as screen readers and braille keyboards.
@@ -46,11 +46,11 @@ import MuiDrawer from "@mui/material/Drawer";
  * elements, such as those alerts, can then be rendered as siblings of this
  * parent container div and will then not be subject to the code that applies
  * the `aria-hidden: true`. This is done by declaring a DialogBoundary, which
- * is simply a div with a ref that is placed in a context, and a Dialog
- * component that pulls the div from the context and uses it to set the
- * `container` property. At the root of the application, UI elements that
- * should always float above the dialogs should then be rendered as siblings
- * of the DialogBoundary.
+ * is simply a div with a ref that is placed in a context, and a UI component
+ * (e.g. dialog, menu, etc.) that pulls the div from the context and uses it to
+ * set the `container` property. At the root of the application, UI elements
+ * that should always float above the dialogs should then be rendered as
+ * siblings of the DialogBoundary.
  * ```
  * function App() {
  *   return (
@@ -61,8 +61,8 @@ import MuiDrawer from "@mui/material/Drawer";
  *   );
  * }
  * ```
- * Then, when a Dialog is needed in the code, simply use the Dialog exported
- * from this module rather than the one exported by MUI. In all other
+ * Then, when a UI component is needed in the code, simply use the UI component
+ * exported from this module rather than the one exported by MUI. In all other
  * respects, they behave exactly the same.
  *
  * And that it's it. The fact that a context is being used is purely an
@@ -83,6 +83,12 @@ const DialogBoundaryContext: Context<DialogBoundaryContextType> = createContext(
   DEFAULT_DIALOG_BOUNDARY_CONTEXT
 );
 
+/**
+ * This component defines a <div> into which all UI components exported by this
+ * module will be rendered within. By default, the UI components are added to
+ * the <body> element of the document but with this component they will be
+ * rendered as children of this <div> instead.
+ */
 export function DialogBoundary({ children }: {| children: Node |}): Node {
   const modalContainer = useRef<HTMLElement | null>(null);
   return (
@@ -119,6 +125,9 @@ type DialogArgs<T> = {|
    */
 |};
 
+/**
+ * A Dialog that is rendered within the boundary defined by DialogBoundary.
+ */
 export function Dialog<T>(props: DialogArgs<T>): Node {
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
@@ -141,13 +150,16 @@ export function Dialog<T>(props: DialogArgs<T>): Node {
 }
 
 // everything from MuiMenu except container
-type MenuArgs<T> = {|
+type MenuArgs = {|
   onClose: () => void,
   open: boolean,
   children: Node,
 |};
 
-export function Menu<T>(props: MenuArgs<T>): Node {
+/**
+ * A Menu that is rendered within the boundary defined by DialogBoundary.
+ */
+export function Menu(props: MenuArgs): Node {
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
 
@@ -180,6 +192,9 @@ type DrawerArgs = {|
   id: string,
 |};
 
+/**
+ * A Drawer that is rendered within the boundary defined by DialogBoundary.
+ */
 export function Drawer(props: DrawerArgs): Node {
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
