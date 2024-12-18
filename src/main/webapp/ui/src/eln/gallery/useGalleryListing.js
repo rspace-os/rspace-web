@@ -677,8 +677,9 @@ export function useGalleryListing({
       /*
        * If some of the selected files are no longer included in the listing
        * then we clear the selection as it would be quite confusing to allow
-       * the user to operate on files they can no longer see. An example of
-       * when this might happen is duplicating the last file in a page; the
+       * the user to operate on files they can no longer see. An obvious
+       * example is that the user has just performed a delete action but other
+       * such scenarios include when duplicating the last file in a page; the
        * selected one will become the first file of the next page that the user
        * needs to load by tapping the "Load More" button.
        */
