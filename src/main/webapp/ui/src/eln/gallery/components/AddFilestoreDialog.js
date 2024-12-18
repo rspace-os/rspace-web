@@ -256,6 +256,7 @@ function FolderSelectionStep(props: {|
           <Button
             disabled={!selectedFolderPath}
             variant="contained"
+            color="primary"
             onClick={() => {
               onConfirm(selectedFolderPath);
             }}
@@ -292,6 +293,7 @@ function NameStep(props: {|
           <Button
             disabled={name.length === 0}
             variant="contained"
+            color="primary"
             onClick={() => {
               onConfirm(name);
             }}
