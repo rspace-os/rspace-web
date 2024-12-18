@@ -540,13 +540,20 @@ const GridView = observer(
               onClick={(e) => {
                 if (e.shiftKey) {
                   if (!shiftOriginFileId) return;
+                  const indexOfShiftOriginFile = listing.list.findIndex(
+                    (f) => f.id === shiftOriginFileId
+                  );
+                  /*
+                   * if shiftOriginFileId is an Id of a file that has been
+                   * deleted then it will no longer be in the listing, will not
+                   * be visible and this code should act as if no file has been
+                   * focussed
+                   */
+                  if (indexOfShiftOriginFile === -1) return;
                   const tappedCoord = {
                     x: index % cols,
                     y: Math.floor(index / cols),
                   };
-                  const indexOfShiftOriginFile = listing.list.findIndex(
-                    (f) => f.id === shiftOriginFileId
-                  );
                   const shiftOriginX = indexOfShiftOriginFile % cols;
                   const shiftOriginY = Math.floor(
                     indexOfShiftOriginFile / cols
