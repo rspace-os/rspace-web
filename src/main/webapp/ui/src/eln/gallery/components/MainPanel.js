@@ -124,6 +124,18 @@ const DragCancelFab = () => {
 };
 
 const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
+  "& .MuiBreadcrumbs-ol": {
+    /*
+     * Scroll horizontally when there is no longer enough space. We don't want
+     * to wrap because deep hierarchies would end up taking up lots of space on
+     * mobile. We don't want to use the `maxItems` property as that prevents
+     * the possibility of using drag-and-drop to move files in to ancestor
+     * folders, and would only lead to wrapping once the button is tapped
+     * anyway.
+     */
+    flexWrap: "nowrap",
+    overflowX: "auto",
+  },
   "& .MuiBreadcrumbs-separator": {
     marginLeft: theme.spacing(0.5),
     marginRight: theme.spacing(0.5),
@@ -260,38 +272,27 @@ const Path = ({
       role="region"
       aria-label="breadcrumbs"
     >
-      {/*
-       * These two divs create a horizonally scrolling box without a scrollbar,
-       * mimicing the standard behaviour of a text field.
-       */}
-      <div
-        style={{
-          width: "calc(100% - 16px)",
-          overflow: "hidden",
-        }}
-      >
-        <StyledBreadcrumbs>
+      <StyledBreadcrumbs>
+        <BreadcrumbLink
+          section={section}
+          clearPath={clearPath}
+          sx={{
+            pl: 1,
+          }}
+          ref={getRef(0)}
+          tabIndex={getTabIndex(0)}
+        />
+        {path.map((f, i) => (
           <BreadcrumbLink
+            key={idToString(f.id)}
+            folder={f}
             section={section}
             clearPath={clearPath}
-            sx={{
-              pl: 1,
-            }}
-            ref={getRef(0)}
-            tabIndex={getTabIndex(0)}
+            ref={getRef(i + 1)}
+            tabIndex={getTabIndex(i + 1)}
           />
-          {path.map((f, i) => (
-            <BreadcrumbLink
-              key={idToString(f.id)}
-              folder={f}
-              section={section}
-              clearPath={clearPath}
-              ref={getRef(i + 1)}
-              tabIndex={getTabIndex(i + 1)}
-            />
-          ))}
-        </StyledBreadcrumbs>
-      </div>
+        ))}
+      </StyledBreadcrumbs>
     </div>
   );
 };
