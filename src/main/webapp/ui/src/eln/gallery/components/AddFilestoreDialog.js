@@ -4,6 +4,7 @@ import React, { type Node } from "react";
 import { Dialog } from "../../../components/DialogBoundary";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
@@ -419,6 +420,15 @@ export default function AddFilestoreDialog({
           />
         </Stepper>
       </DialogContent>
+      <DialogActions>
+        <Button
+          onClick={() => {
+            onClose(false);
+          }}
+        >
+          Cancel
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 }
