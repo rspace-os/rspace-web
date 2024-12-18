@@ -20,6 +20,7 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
@@ -47,6 +48,7 @@ class GalleryIrodsApiControllerTest {
   @Mock private BaseRecordManager baseRecordManager;
   @Mock private NfsAuthentication nfsAuthentication;
   @Mock private ExternalStorageManager externalStorageManager;
+  @Mock private IPropertyHolder propertyHolder;
   @Mock private User user;
 
   private Long validFilestorePathId_1 = 1L;
@@ -70,10 +72,12 @@ class GalleryIrodsApiControllerTest {
             deletionManager,
             baseRecordManager,
             credentialsStore,
-            externalStorageManager);
+            externalStorageManager,
+            propertyHolder);
     galleryIrodsApiController.irodsGalleryBaseLink =
         UriComponentsBuilder.fromHttpUrl("http://url").path(API_V1_GALLERY_IRODS);
 
+    when(propertyHolder.isNetFileStoresEnabled()).thenReturn(true);
     when(nfsManager.getNfsFileStore(validFilestorePathId_1))
         .thenReturn(
             GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(

@@ -40,25 +40,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Slf4j
 @NoArgsConstructor
 @ApiController
-public class GalleryFilestoresApiController extends BaseApiController
+public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiController
     implements GalleryFilestoresApi {
 
   @Autowired private NfsManager nfsManager;
   @Autowired private NfsFileHandler nfsFileHandler;
-  @Autowired private GalleryFilestoresCredentialsStore credentialsStore;
 
   @Override
   public List<NfsFileStoreInfo> getUserFilestores(@RequestAttribute(name = "user") User user) {
     assertFilestoresApiEnabled(user);
     return nfsManager.getFileStoreInfosForUser(user);
-  }
-
-  private void assertFilestoresApiEnabled(User subject) {
-    if (!properties.isNetFileStoresEnabled() && !subject.hasSysadminRole()) {
-      throw new UnsupportedOperationException(
-          "Gallery Filestores API is not enabled for use on this RSpace instance "
-              + "(netfilestores.enabled=false)");
-    }
   }
 
   @Override

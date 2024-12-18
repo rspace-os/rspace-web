@@ -14,6 +14,7 @@ import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsClient;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
@@ -46,17 +47,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Slf4j
 @NoArgsConstructor
 @ApiController
-public class GalleryIrodsApiController extends BaseApiController implements GalleryIrodsApi {
-
-  @Autowired private NfsManager nfsManager;
+public class GalleryIrodsApiController extends GalleryFilestoresBaseApiController implements GalleryIrodsApi {
 
   @Autowired private RecordDeletionManager deletionManager;
 
   @Autowired private BaseRecordManager baseRecordManager;
 
   @Autowired private ExternalStorageManager externalStorageManager;
-
-  @Autowired private GalleryFilestoresCredentialsStore credentialsStore;
 
   protected UriComponentsBuilder irodsGalleryBaseLink;
 
@@ -70,12 +67,14 @@ public class GalleryIrodsApiController extends BaseApiController implements Gall
       RecordDeletionManager deletionManager,
       BaseRecordManager baseRecordManager,
       GalleryFilestoresCredentialsStore credentialsStore,
-      ExternalStorageManager externalStorageManager) {
+      ExternalStorageManager externalStorageManager,
+      IPropertyHolder propertyHolder) {
     this.nfsManager = nfsManager;
     this.deletionManager = deletionManager;
     this.baseRecordManager = baseRecordManager;
     this.credentialsStore = credentialsStore;
     this.externalStorageManager = externalStorageManager;
+    this.properties = propertyHolder;
   }
 
   @PostConstruct
@@ -89,6 +88,7 @@ public class GalleryIrodsApiController extends BaseApiController implements Gall
       @RequestParam(value = PARAM_RECORD_IDS, required = false) List<Long> recordIds,
       @RequestAttribute(name = "user") User user) {
 
+    assertFilestoresApiEnabled(user);
     List<NfsFileStoreInfo> iRodsFileStoreInfos =
         nfsManager.getFileStoreInfosForUser(user).stream()
             .filter(fs -> NfsClientType.IRODS.toString().equals(fs.getFileSystem().getClientType()))
@@ -122,6 +122,8 @@ public class GalleryIrodsApiController extends BaseApiController implements Gall
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+
+    assertFilestoresApiEnabled(user);
     log.info("Begin copying files to IRODS");
     ApiExternalStorageOperationResult result =
         performCopyToIRODS(recordIds, filestorePathId, credentials, errors, user);
@@ -144,6 +146,8 @@ public class GalleryIrodsApiController extends BaseApiController implements Gall
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+
+    assertFilestoresApiEnabled(user);
     log.info("Begin moving files to IRODS");
     ApiExternalStorageOperationResult result =
         performMoveToIRODS(recordIds, filestorePathId, credentials, errors, user);

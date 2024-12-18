@@ -43,12 +43,14 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
+@TestPropertySource(properties = {"netfilestores.enabled=true"})
 public class GalleryIrodsApiControllerMVCIT extends API_MVC_TestBase {
 
   private String IRODS_URL = "irods-test.researchspace.com";
