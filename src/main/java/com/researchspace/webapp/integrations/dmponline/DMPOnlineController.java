@@ -134,6 +134,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       log.info("Connected DMPonline for user {}", principal.getName());
       redirectResult = "connect/dmponline/connected";
     } catch (Exception ex) {
+      log.error("Couldn't complete the token request on DMPonline", ex);
       error.errorMsg("Error during token creation");
       error.errorMsg(ex.getMessage());
       model.addAttribute("error", error.build());
@@ -175,7 +176,8 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       }
 
     } catch (Exception e) {
-      log.error("Couldn't perform test action {}", e.getMessage());
+      log.error("Couldn't perform test connection action on DMPonline. "
+          + "The connection will be flagged as NOT ALIVE", e);
       isConnectionAlive = Boolean.FALSE;
     }
 
@@ -200,10 +202,11 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       userConnection.setExpireTime(getExpireTime(accessToken.getExpiresIn()));
       userConnection.setDisplayName("DMPonline refreshed access token");
       userConnectionManager.save(userConnection);
-      log.info("Connected DMPonline for user {}", principal.getName());
+      log.info("Token refreshed for DMPonline for user {}", principal.getName());
       redirectResult = "connect/dmponline/connected";
 
     } catch (Exception e) {
+      log.error("Error while refreshing token on DMPonline: {}", e.getMessage());
       error.errorMsg("Error during token refresh");
       error.errorDetails(e.getMessage());
       model.addAttribute("error", error.build());
