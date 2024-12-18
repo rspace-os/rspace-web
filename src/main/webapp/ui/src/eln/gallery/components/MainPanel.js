@@ -455,7 +455,19 @@ const GridView = observer(
              */
             if (y * cols + (x + 1) > listing.list.length) return;
 
-            const origin = e.shiftKey ? shiftOrigin ?? tabIndexCoord : { x, y };
+            let origin = { x, y };
+            if (e.shiftKey) {
+              if (shiftOriginFileId) {
+                const indexOfShiftOriginFile = listing.list.findIndex(
+                  (f) => f.id === shiftOriginFileId
+                );
+                const shiftOriginX = indexOfShiftOriginFile % cols;
+                const shiftOriginY = Math.floor(indexOfShiftOriginFile / cols);
+                origin = { x: shiftOriginX, y: shiftOriginY };
+              } else {
+                origin = tabIndexCoord;
+              }
+            }
             const left = Math.min(x, origin.x);
             const right = Math.max(x, origin.x);
             const top = Math.min(y, origin.y);
@@ -474,8 +486,12 @@ const GridView = observer(
                 selection.append(file);
             });
 
-            setShiftOrigin(e.shiftKey ? shiftOrigin ?? tabIndexCoord : null);
-            // need to change this too
+            setShiftOrigin(shiftOrigin ?? tabIndexCoord);
+            setShiftOriginFileId(
+              e.shiftKey
+                ? shiftOriginFileId ?? listing.list[y * cols + x].id
+                : listing.list[y * cols + x].id
+            );
             setTabIndexCoord({ x, y });
           }}
           onFocus={() => {
