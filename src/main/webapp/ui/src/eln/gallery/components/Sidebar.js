@@ -306,9 +306,6 @@ const AddFilestoreMenuItem = ({
     name: string,
     url: string,
   |}>>(null);
-  const [filestoreIds, setFilestoreIds] = React.useState<null | Set<number>>(
-    null
-  );
   const { getToken } = useOauthToken();
   const api = React.useRef<Promise<Axios>>(
     (async () => {
@@ -357,27 +354,6 @@ const AddFilestoreMenuItem = ({
     })();
   }, []);
 
-  React.useEffect(() => {
-    void (async () => {
-      const { data } = await (await api.current).get<mixed>("filestores");
-      Parsers.isArray(data)
-        .flatMap((array) =>
-          Result.all(
-            ...array.map((m) =>
-              Parsers.isObject(m)
-                .flatMap(Parsers.isNotNull)
-                .flatMap(Parsers.getValueWithKey("fileSystem"))
-                .flatMap(Parsers.isObject)
-                .flatMap(Parsers.isNotNull)
-                .flatMap(Parsers.getValueWithKey("id"))
-                .flatMap(Parsers.isNumber)
-            )
-          )
-        )
-        .do((newFilesystemIds) => setFilestoreIds(new Set(newFilesystemIds)));
-    })();
-  }, []);
-
   return (
     <>
       <AddFilestoreDialog
@@ -410,7 +386,7 @@ const AddFilestoreMenuItem = ({
             tabIndex={tabIndex}
             aria-haspopup="dialog"
             compact
-            disabled={(filesystems ?? []).length === 0 && filestoreIds !== null}
+            disabled={(filesystems ?? []).length === 0}
           />
         ))
         .orElse(null)}
