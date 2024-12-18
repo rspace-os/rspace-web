@@ -388,7 +388,7 @@ export default function AddFilestoreDialog({
   }
 
   return (
-    <Dialog open={open} onClose={() => onClose(false)}>
+    <Dialog fullWidth maxWidth="sm" open={open} onClose={() => onClose(false)}>
       <DialogTitle>Add a Filestore</DialogTitle>
       <DialogContent>
         <Stepper activeStep={activeStep} orientation="vertical">
