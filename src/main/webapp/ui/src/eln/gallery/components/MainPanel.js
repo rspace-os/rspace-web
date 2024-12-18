@@ -387,6 +387,9 @@ const GridView = observer(
       x: number,
       y: number,
     |}>(null);
+    const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
+      null
+    );
 
     if (listing.tag === "empty")
       return (
@@ -472,6 +475,7 @@ const GridView = observer(
             });
 
             setShiftOrigin(e.shiftKey ? shiftOrigin ?? tabIndexCoord : null);
+            // need to change this too
             setTabIndexCoord({ x, y });
           }}
           onFocus={() => {
@@ -517,16 +521,23 @@ const GridView = observer(
                     x: index % cols,
                     y: Math.floor(index / cols),
                   };
+                  const indexOfShiftOriginFile = listing.list.findIndex(
+                    (f) => f.id === shiftOriginFileId
+                  );
+                  const shiftOriginX = indexOfShiftOriginFile % cols;
+                  const shiftOriginY = Math.floor(
+                    indexOfShiftOriginFile / cols
+                  );
                   const toSelect = listing.list.filter((_file, i) => {
                     const coord = {
                       x: i % cols,
                       y: Math.floor(i / cols),
                     };
                     return (
-                      coord.x >= Math.min(tappedCoord.x, shiftOrigin.x) &&
-                      coord.x <= Math.max(tappedCoord.x, shiftOrigin.x) &&
-                      coord.y >= Math.min(tappedCoord.y, shiftOrigin.y) &&
-                      coord.y <= Math.max(tappedCoord.y, shiftOrigin.y)
+                      coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
+                      coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
+                      coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
+                      coord.y <= Math.max(tappedCoord.y, shiftOriginY)
                     );
                   });
                   selection.clear();
@@ -583,6 +594,7 @@ const GridView = observer(
                     x: index % cols,
                     y: Math.floor(index / cols),
                   });
+                  setShiftOriginFileId(file.id);
                   setTabIndexCoord({
                     x: index % cols,
                     y: Math.floor(index / cols),
