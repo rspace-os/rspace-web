@@ -377,11 +377,23 @@ const GridView = observer(
     }, [tabIndexCoord]);
 
     /*
-     * When using the arrow keys or clicking with shift held down, the region
-     * of selected files expands relative to the current focussed file and the
-     * file that had focus when the shift key began being held down. This state
-     * variables holds that later coordinate for the duration of the shift key
-     * being held.
+     * This variable stores the Id of the last file that was focussed -- either
+     * by tapping or by moving the focus with the arrow keys -- without shift
+     * being held down. It forms the corner point of a selected region of
+     * files; the opposite corner being defined by the file that is focussed
+     * whilst shift is held.
+     *
+     * We use an Id, rather than a reference to the GalleryFile or the
+     * coordinates in the grid, because if the listing is refreshed after an
+     * action has been performed, the selection is maintained because it too is
+     * based on Ids (see ../useGallerySelection) and thus expanding the
+     * selection with shift should continue from that existing selection.
+     *
+     * It is null when this component is initially mounted but as soon as the
+     * user has focussed any file (without shift being held) it holds the Id of
+     * that last focussed file. Even if the selection is cleared with the
+     * escape key or the only selected files deleted, this variable maintains
+     * that Id.
      */
     const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
       null
