@@ -221,11 +221,11 @@ function TreeListing({
 }
 
 function FolderSelectionStep(props: {|
-  selectedFilestoreId: Optional<number>,
+  selectedFilesystem: Optional<{| id: number, name: string, url: string |}>,
   onConfirm: (string) => void,
   onCancel: () => void,
 |}) {
-  const { selectedFilestoreId, onConfirm, onCancel, ...rest } = props;
+  const { selectedFilesystem, onConfirm, onCancel, ...rest } = props;
   const [expandedItems, setExpandedItems] = React.useState<
     $ReadOnlyArray<number>
   >([]);
@@ -250,12 +250,12 @@ function FolderSelectionStep(props: {|
             setSelectedFolderPath(itemId);
           }}
         >
-          {selectedFilestoreId
-            .map((fsId) => (
+          {selectedFilesystem
+            .map(({ id, name }) => (
               <TreeListing
                 path="/"
-                fsId={fsId}
-                fsName={"Foo"}
+                fsId={id}
+                fsName={name}
                 key={null}
                 onFailToAuthenticate={() => {
                   onCancel();
@@ -415,7 +415,7 @@ export default function AddFilestoreDialog({
             }}
           />
           <FolderSelectionStep
-            selectedFilestoreId={selectedFilesystem.map((fs) => fs.id)}
+            selectedFilesystem={selectedFilesystem}
             onConfirm={(newPath) => {
               setPathOfSelectedFolder(newPath);
               setActiveStep(2);
