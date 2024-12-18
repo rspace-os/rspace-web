@@ -192,9 +192,13 @@ function TreeListing({
   return (
     <>
       {listing.map(
-        ({ folder, name, nfsId }) =>
+        ({ folder, name }) =>
           folder && (
-            <TreeItem itemId={`${path}${name}/`} label={name} key={nfsId}>
+            <TreeItem
+              itemId={`${path}${name}/`}
+              label={name}
+              key={`${path}${name}/`}
+            >
               <TreeListing
                 fsId={fsId}
                 fsName={name}
