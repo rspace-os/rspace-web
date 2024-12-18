@@ -2,7 +2,7 @@
 
 import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
-import Drawer from "@mui/material/Drawer";
+import { Drawer } from "../../../components/DialogBoundary";
 import { styled } from "@mui/material/styles";
 import { COLOR, gallerySectionLabel, type GallerySection } from "../common";
 import List from "@mui/material/List";

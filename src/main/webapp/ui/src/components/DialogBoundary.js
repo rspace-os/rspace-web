@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import MuiDialog from "@mui/material/Dialog";
 import MuiMenu from "@mui/material/Menu";
+import MuiDrawer from "@mui/material/Drawer";
 
 /**
  * This file contains a context and two components that collectively provide a
@@ -164,5 +165,38 @@ export function Menu<T>(props: MenuArgs<T>): Node {
     <MuiMenu container={() => modalContainer.current} open={open} {...rest}>
       {children}
     </MuiMenu>
+  );
+}
+
+// everything from MuiDrawer except container
+type DrawerArgs = {|
+  children: Node,
+  open: boolean,
+  anchor: "left",
+  variant: "temporary" | "permanent",
+  onClose: () => void,
+  role: "region",
+  "aria-label": string,
+  id: string,
+|};
+
+export function Drawer(props: DrawerArgs): Node {
+  const { modalContainer } = useContext(DialogBoundaryContext);
+  const { children, open, ...rest } = props;
+
+  React.useEffect(() => {
+    if (document.body) {
+      if (open) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "unset";
+      }
+    }
+  }, [open]);
+
+  return (
+    <MuiDrawer container={() => modalContainer.current} open={open} {...rest}>
+      {children}
+    </MuiDrawer>
   );
 }
