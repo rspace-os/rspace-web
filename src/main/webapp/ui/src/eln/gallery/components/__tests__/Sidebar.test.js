@@ -82,7 +82,7 @@ describe("Sidebar", () => {
       const user = userEvent.setup();
       const mockAxios = newMockAxios();
 
-      const { baseElement } = render(
+      render(
         <ThemeProvider theme={materialTheme}>
           <Sidebar
             selectedSection="Images"
@@ -124,7 +124,7 @@ describe("Sidebar", () => {
       const user = userEvent.setup();
       const mockAxios = newMockAxios();
 
-      const { baseElement } = render(
+      render(
         <ThemeProvider theme={materialTheme}>
           <Sidebar
             selectedSection="Images"
