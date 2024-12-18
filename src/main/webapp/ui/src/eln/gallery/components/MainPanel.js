@@ -383,10 +383,6 @@ const GridView = observer(
      * variables holds that later coordinate for the duration of the shift key
      * being held.
      */
-    const [shiftOrigin, setShiftOrigin] = React.useState<null | {|
-      x: number,
-      y: number,
-    |}>(null);
     const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
       null
     );
@@ -486,7 +482,6 @@ const GridView = observer(
                 selection.append(file);
             });
 
-            setShiftOrigin(shiftOrigin ?? tabIndexCoord);
             setShiftOriginFileId(
               e.shiftKey
                 ? shiftOriginFileId ?? listing.list[y * cols + x].id
@@ -532,7 +527,7 @@ const GridView = observer(
               }
               onClick={(e) => {
                 if (e.shiftKey) {
-                  if (!shiftOrigin) return;
+                  if (!shiftOriginFileId) return;
                   const tappedCoord = {
                     x: index % cols,
                     y: Math.floor(index / cols),
@@ -606,10 +601,6 @@ const GridView = observer(
                   }
                   selection.clear();
                   selection.append(file);
-                  setShiftOrigin({
-                    x: index % cols,
-                    y: Math.floor(index / cols),
-                  });
                   setShiftOriginFileId(file.id);
                   setTabIndexCoord({
                     x: index % cols,
