@@ -182,17 +182,18 @@ const NameFieldForLargeViewports = styled(
       const [name, setName] = React.useState(file.name);
       const textField = React.useRef(null);
 
+      function handleSubmit() {
+        void rename(file, name);
+        textField.current?.blur();
+        setName(file.transformFilename(() => name));
+      }
+
       return (
         <Stack sx={{ pr: 0.25, pl: 0.75 }}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              void rename(file, name);
-              textField.current?.blur();
-              setName(file.transformFilename(() => name));
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") setName(file.name);
+              handleSubmit();
             }}
           >
             <TextField
@@ -200,7 +201,7 @@ const NameFieldForLargeViewports = styled(
               placeholder="No Name"
               /*
                * We use multiline so that long names wrap, but prevent the user
-               * from typing in a return character by using string replacement
+               * from typing in a return character by using string replacement.
                */
               multiline
               onChange={({ target: { value } }) =>
@@ -220,6 +221,21 @@ const NameFieldForLargeViewports = styled(
               onBlur={() => {
                 if (name === filenameExceptExtension(file.name))
                   setName(file.name);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setName(file.name);
+                  textField.current?.blur();
+                }
+                /*
+                 * We have to explicitly handle enter key and can't rely on the
+                 * form's onSubmit being automaticaly called because we're using
+                 * a multiline textfield and so the enter key will naturally
+                 * enter a newline
+                 */
+                if (e.key === "Enter") {
+                  handleSubmit();
+                }
               }}
             />
             <Collapse
