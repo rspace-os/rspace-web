@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #fff;
+        stroke-linecap: round;
+        stroke-miterlimit: 10;
+        stroke-width: 3px;
+      }
+
+      .cls-1, .cls-2 {
+        fill: #fff;
+      }
+
+      .cls-3 {
+        fill: #ffe7b6;
+      }
+
+      .cls-4 {
+        fill: #ffcf7b;
+      }
+    </style>
+  </defs>
+  <!-- Generator: Adobe Illustrator 28.6.0, SVG Export Plug-In . SVG Version: 1.2.0 Build 709)  -->
+  <g>
+    <g id="Layer_1">
+      <g>
+        <g>
+          <rect class="cls-3" x="6.4" y="16.5" width="87" height="14"/>
+          <path class="cls-4" d="M46.1,25.4c-6.3,0-9-3.7-15.6-10.5H3.3v70.3h93.5V25.4h-50.6Z"/>
+        </g>
+        <g>
+          <path class="cls-2" d="M50.4,38.7c8.1,0,13.7,6.5,13,15.8,4.1-.1,10.3,1.8,10.3,8.7s-3.7,8.2-8.2,8.2h-30.3c-4.5,0-8.2-3.7-8.2-8.2,0-6.5,5.8-8.9,10.3-8.7-.4-9.8,5.2-15.8,13-15.8ZM50.4,34.1c-9.3,0-17,7.3-17.5,16.5-6,1.1-10.5,6.3-10.5,12.6s5.7,12.8,12.8,12.8h30.3c7.1,0,12.8-5.7,12.8-12.8s-4.6-11.5-10.5-12.6c-.5-9.2-8.1-16.5-17.5-16.5Z"/>
+          <line class="cls-1" x1="56.9" y1="54.2" x2="43.9" y2="54.2"/>
+          <line class="cls-1" x1="56.9" y1="59.7" x2="43.9" y2="59.7"/>
+          <line class="cls-1" x1="56.9" y1="65.3" x2="43.9" y2="65.3"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

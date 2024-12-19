@@ -435,7 +435,7 @@ export class Filestore implements GalleryFile {
   }
 
   get thumbnailUrl(): string {
-    return "/images/icons/fileStoreLink.png";
+    return "/images/icons/filestore.svg";
   }
 
   pathAsString(): string {
