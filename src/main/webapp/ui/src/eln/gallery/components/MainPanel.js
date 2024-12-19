@@ -1129,7 +1129,10 @@ function GalleryMainPanel({
       sx={{
         position: "relative",
         overflowY: "hidden",
-        pr: 2.5,
+        px: {
+          xs: 1,
+          sm: 2,
+        },
         ...(over
           ? {
               outline: `3px solid ${SELECTED_OR_FOCUS_BLUE}`,
@@ -1191,7 +1194,9 @@ function GalleryMainPanel({
                 section={selectedSection}
                 folderId={folderId}
               />
-              <Box sx={{ flexGrow: 1 }}></Box>
+              <Box
+                sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }}
+              ></Box>
               {viewMode === "grid" && (
                 <>
                   <Button
