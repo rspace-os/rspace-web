@@ -6,11 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class GalleryFilestoresBaseApiController extends BaseApiController {
 
-  @Autowired
-  protected NfsManager nfsManager;
+  @Autowired protected NfsManager nfsManager;
 
-  @Autowired
-  protected GalleryFilestoresCredentialsStore credentialsStore;
+  @Autowired protected GalleryFilestoresCredentialsStore credentialsStore;
 
   protected void assertFilestoresApiEnabled(User subject) {
     if (!properties.isNetFileStoresEnabled() && !subject.hasSysadminRole()) {
@@ -19,6 +17,4 @@ public class GalleryFilestoresBaseApiController extends BaseApiController {
               + "(netfilestores.enabled=false)");
     }
   }
-
 }
-

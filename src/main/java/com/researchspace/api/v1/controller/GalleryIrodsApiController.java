@@ -47,7 +47,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Slf4j
 @NoArgsConstructor
 @ApiController
-public class GalleryIrodsApiController extends GalleryFilestoresBaseApiController implements GalleryIrodsApi {
+public class GalleryIrodsApiController extends GalleryFilestoresBaseApiController
+    implements GalleryIrodsApi {
 
   @Autowired private RecordDeletionManager deletionManager;
 
