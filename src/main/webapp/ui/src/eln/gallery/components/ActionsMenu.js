@@ -13,7 +13,6 @@ import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutli
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
-import GroupIcon from "@mui/icons-material/Group";
 import EditIcon from "@mui/icons-material/Edit";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -423,12 +422,6 @@ function ActionsMenu({
     return Result.Ok(null);
   });
 
-  const sharingSnippetsAllowed = computed((): Result<null> => {
-    if (selection.asSet().some((f) => !f.isSnippet))
-      return Result.Error([new Error("Only snippets may be shared.")]);
-    return Result.Error([new Error("Not yet available.")]);
-  });
-
   const exportAllowed = computed((): Result<null> => {
     if (selection.size > 100)
       return Result.Error([
@@ -705,21 +698,6 @@ function ActionsMenu({
             allowFileStores={false}
           />
         </EventBoundary>
-        <NewMenuItem
-          title="Share"
-          subheader={sharingSnippetsAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<GroupIcon />}
-          onClick={() => {
-            setActionsMenuAnchorEl(null);
-          }}
-          compact
-          disabled={sharingSnippetsAllowed.get().isError}
-        />
         <NewMenuItem
           title="Move to iRODS"
           subheader={moveToIrodsAllowed
