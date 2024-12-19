@@ -80,6 +80,10 @@ import Carousel from "./Carousel";
 import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
+import DensityIcon from "@mui/icons-material/ViewModule";
+import CompactDensityIcon from "@mui/icons-material/ViewHeadline";
+import StandardDensityIcon from "@mui/icons-material/TableRows";
+import ComfortableDensityIcon from "@mui/icons-material/ViewStream";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -1050,6 +1054,15 @@ function GalleryMainPanel({
     }
   );
   const [sortMenuAnchorEl, setSortMenuAnchorEl] = React.useState(null);
+  const [densityForSmallerViewports, setDensityForSmallerViewports] =
+    useUiPreference(PREFERENCES.GALLERY_DENSITY_SMALL, {
+      defaultValue: "standard",
+    });
+  const [densityForLargerViewports, setDensityForLargerViewports] =
+    useUiPreference(PREFERENCES.GALLERY_DENSITY_LARGER, {
+      defaultValue: "standard",
+    });
+  const [densityMenuAnchorEl, setDensityMenuAnchorEl] = React.useState(null);
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
 
@@ -1142,6 +1155,77 @@ function GalleryMainPanel({
                 folderId={folderId}
               />
               <Box sx={{ flexGrow: 1 }}></Box>
+              {viewMode === "grid" && (
+                <>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<DensityIcon />}
+                    onClick={(e) => {
+                      setDensityMenuAnchorEl(e.target);
+                    }}
+                    aria-haspopup="menu"
+                    aria-expanded={densityMenuAnchorEl ? "true" : "false"}
+                  >
+                    Density
+                  </Button>
+                  <StyledMenu
+                    open={Boolean(densityMenuAnchorEl)}
+                    anchorEl={densityMenuAnchorEl}
+                    onClose={() => setDensityMenuAnchorEl(null)}
+                    MenuListProps={{
+                      disablePadding: true,
+                      "aria-label": "density toggle",
+                    }}
+                  >
+                    <NewMenuItem
+                      title="Compact"
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={<CompactDensityIcon />}
+                      compact
+                      onClick={() => {
+                        if (viewportDimensions.isViewportSmall) {
+                          setDensityForSmallerViewports("compact");
+                        } else {
+                          setDensityForLargerViewports("compact");
+                        }
+                        setViewMenuAnchorEl(null);
+                      }}
+                    />
+                    <NewMenuItem
+                      title="Standard"
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={<StandardDensityIcon />}
+                      compact
+                      onClick={() => {
+                        if (viewportDimensions.isViewportSmall) {
+                          setDensityForSmallerViewports("standard");
+                        } else {
+                          setDensityForLargerViewports("standard");
+                        }
+                        setViewMenuAnchorEl(null);
+                      }}
+                    />
+                    <NewMenuItem
+                      title="Comfortable"
+                      backgroundColor={COLOR.background}
+                      foregroundColor={COLOR.contrastText}
+                      avatar={<ComfortableDensityIcon />}
+                      compact
+                      onClick={() => {
+                        if (viewportDimensions.isViewportSmall) {
+                          setDensityForSmallerViewports("comfortable");
+                        } else {
+                          setDensityForLargerViewports("comfortable");
+                        }
+                        setViewMenuAnchorEl(null);
+                      }}
+                    />
+                  </StyledMenu>
+                </>
+              )}
               <Button
                 variant="outlined"
                 size="small"

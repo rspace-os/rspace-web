@@ -9,6 +9,8 @@ import { mapObject } from "./Util";
  * This constant ensures that we don't end up with clashing keys
  */
 export const PREFERENCES: { [string]: symbol } = {
+  GALLERY_DENSITY_LARGER: Symbol.for("GALLERY_DENSITY_LARGER"),
+  GALLERY_DENSITY_SMALL: Symbol.for("GALLERY_DENSITY_SMALL"),
   GALLERY_VIEW_MODE: Symbol.for("GALLERY_VIEW_MODE"),
   GALLERY_SORT_BY: Symbol.for("GALLERY_SORT_BY"),
   GALLERY_SORT_ORDER: Symbol.for("GALLERY_SORT_ORDER"),
