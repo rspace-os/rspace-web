@@ -314,6 +314,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 const GridView = observer(
   ({
     listing,
+    density,
   }: {|
     listing:
       | {| tag: "empty", reason: string |}
@@ -323,6 +324,7 @@ const GridView = observer(
           totalHits: number,
           loadMore: Optional<() => Promise<void>>,
         |},
+    density: "compact" | "standard" | "comfortable",
   |}) => {
     const dndContext = useDndContext();
     const selection = useGallerySelection();
@@ -333,13 +335,29 @@ const GridView = observer(
 
     const viewportDimensions = useViewportDimensions();
     const cardWidth = {
-      xs: 6,
-      sm: 4,
-      md: 4,
-      lg: 3,
-      xl: 2,
+      compact: {
+        xs: 4,
+        sm: 3,
+        md: 3,
+        lg: 2,
+        xl: 1,
+      },
+      standard: {
+        xs: 6,
+        sm: 4,
+        md: 4,
+        lg: 3,
+        xl: 2,
+      },
+      comfortable: {
+        xs: 12,
+        sm: 6,
+        md: 6,
+        lg: 4,
+        xl: 3,
+      },
     };
-    const cols = 12 / cardWidth[viewportDimensions.viewportSize];
+    const cols = 12 / cardWidth[density][viewportDimensions.viewportSize];
 
     /*
      * This coordinate specifies the roving tab-index.
@@ -481,6 +499,7 @@ const GridView = observer(
                 setHasFocus(false);
               }}
               selected={selection.includes(file)}
+              density={density}
               file={file}
               key={idToString(file.id)}
               index={index}
@@ -598,6 +617,7 @@ const FileCard = styled(
           tabIndex,
           onFocus,
           onBlur,
+          density,
         }: {|
           file: GalleryFile,
           className: string,
@@ -607,6 +627,7 @@ const FileCard = styled(
           tabIndex: number,
           onFocus: () => void,
           onBlur: () => void,
+          density: "compact" | "standard" | "comfortable",
         |},
         ref
       ) => {
@@ -717,11 +738,27 @@ const FileCard = styled(
 
         const viewportDimensions = useViewportDimensions();
         const cardWidth = {
-          xs: 6,
-          sm: 4,
-          md: 4,
-          lg: 3,
-          xl: 2,
+          compact: {
+            xs: 4,
+            sm: 3,
+            md: 3,
+            lg: 2,
+            xl: 1,
+          },
+          standard: {
+            xs: 6,
+            sm: 4,
+            md: 4,
+            lg: 3,
+            xl: 2,
+          },
+          comfortable: {
+            xs: 12,
+            sm: 6,
+            md: 6,
+            lg: 4,
+            xl: 3,
+          },
         };
 
         return (
@@ -735,7 +772,7 @@ const FileCard = styled(
           >
             <Grid
               item
-              {...cardWidth}
+              {...cardWidth[density]}
               sx={{
                 /*
                  * This way, the animation takes the same amount of time (36ms) for
@@ -747,7 +784,7 @@ const FileCard = styled(
                   ? "0s"
                   : `${
                       (index + 1) *
-                      cardWidth[viewportDimensions.viewportSize] *
+                      cardWidth[density][viewportDimensions.viewportSize] *
                       3
                     }ms !important`,
               }}
@@ -1190,7 +1227,7 @@ function GalleryMainPanel({
                         } else {
                           setDensityForLargerViewports("compact");
                         }
-                        setViewMenuAnchorEl(null);
+                        setDensityMenuAnchorEl(null);
                       }}
                     />
                     <NewMenuItem
@@ -1205,7 +1242,7 @@ function GalleryMainPanel({
                         } else {
                           setDensityForLargerViewports("standard");
                         }
-                        setViewMenuAnchorEl(null);
+                        setDensityMenuAnchorEl(null);
                       }}
                     />
                     <NewMenuItem
@@ -1220,7 +1257,7 @@ function GalleryMainPanel({
                         } else {
                           setDensityForLargerViewports("comfortable");
                         }
-                        setViewMenuAnchorEl(null);
+                        setDensityMenuAnchorEl(null);
                       }}
                     />
                   </StyledMenu>
@@ -1457,7 +1494,16 @@ function GalleryMainPanel({
                 FetchingData.match(galleryListing, {
                   loading: () => <></>,
                   error: (error) => <>{error}</>,
-                  success: (listing) => <GridView listing={listing} />,
+                  success: (listing) => (
+                    <GridView
+                      density={
+                        viewportDimensions.isViewportSmall
+                          ? densityForSmallerViewports
+                          : densityForLargerViewports
+                      }
+                      listing={listing}
+                    />
+                  ),
                 })}
               {viewMode === "carousel" &&
                 FetchingData.match(galleryListing, {
