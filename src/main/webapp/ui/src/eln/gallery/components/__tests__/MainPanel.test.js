@@ -64,7 +64,7 @@ describe("MainPanel", () => {
             clearPath={() => {}}
             galleryListing={{ tag: "loading" }}
             folderId={{ tag: "loading" }}
-            refreshListing={() => {}}
+            refreshListing={() => Promise.resolve()}
             sortOrder="DESC"
             orderBy="modificationDate"
             setSortOrder={() => {}}

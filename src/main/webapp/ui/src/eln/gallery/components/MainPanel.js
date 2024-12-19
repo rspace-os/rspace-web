@@ -382,16 +382,27 @@ const GridView = observer(
     }, [tabIndexCoord]);
 
     /*
-     * When using the arrow keys or clicking with shift held down, the region
-     * of selected files expands relative to the current focussed file and the
-     * file that had focus when the shift key began being held down. This state
-     * variables holds that later coordinate for the duration of the shift key
-     * being held.
+     * This variable stores the Id of the last file that was focussed -- either
+     * by tapping or by moving the focus with the arrow keys -- without shift
+     * being held down. It forms the corner point of a selected region of
+     * files; the opposite corner being defined by the file that is focussed
+     * whilst shift is held.
+     *
+     * We use an Id, rather than a reference to the GalleryFile or the
+     * coordinates in the grid, because if the listing is refreshed after an
+     * action has been performed, the selection is maintained because it too is
+     * based on Ids (see ../useGallerySelection) and thus expanding the
+     * selection with shift should continue from that existing selection.
+     *
+     * It is null when this component is initially mounted but as soon as the
+     * user has focussed any file (without shift being held) it holds the Id of
+     * that last focussed file. Even if the selection is cleared with the
+     * escape key or the only selected files deleted, this variable maintains
+     * that Id.
      */
-    const [shiftOrigin, setShiftOrigin] = React.useState<null | {|
-      x: number,
-      y: number,
-    |}>(null);
+    const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
+      null
+    );
 
     if (listing.tag === "empty")
       return (
@@ -457,7 +468,19 @@ const GridView = observer(
              */
             if (y * cols + (x + 1) > listing.list.length) return;
 
-            const origin = e.shiftKey ? shiftOrigin ?? tabIndexCoord : { x, y };
+            let origin = { x, y };
+            if (e.shiftKey) {
+              if (shiftOriginFileId) {
+                const indexOfShiftOriginFile = listing.list.findIndex(
+                  (f) => f.id === shiftOriginFileId
+                );
+                const shiftOriginX = indexOfShiftOriginFile % cols;
+                const shiftOriginY = Math.floor(indexOfShiftOriginFile / cols);
+                origin = { x: shiftOriginX, y: shiftOriginY };
+              } else {
+                origin = tabIndexCoord;
+              }
+            }
             const left = Math.min(x, origin.x);
             const right = Math.max(x, origin.x);
             const top = Math.min(y, origin.y);
@@ -476,7 +499,11 @@ const GridView = observer(
                 selection.append(file);
             });
 
-            setShiftOrigin(e.shiftKey ? shiftOrigin ?? tabIndexCoord : null);
+            setShiftOriginFileId(
+              e.shiftKey
+                ? shiftOriginFileId ?? listing.list[y * cols + x].id
+                : listing.list[y * cols + x].id
+            );
             setTabIndexCoord({ x, y });
           }}
           onFocus={() => {
@@ -517,21 +544,35 @@ const GridView = observer(
               }
               onClick={(e) => {
                 if (e.shiftKey) {
-                  if (!shiftOrigin) return;
+                  if (!shiftOriginFileId) return;
+                  const indexOfShiftOriginFile = listing.list.findIndex(
+                    (f) => f.id === shiftOriginFileId
+                  );
+                  /*
+                   * if shiftOriginFileId is an Id of a file that has been
+                   * deleted then it will no longer be in the listing, will not
+                   * be visible and this code should act as if no file has been
+                   * focussed
+                   */
+                  if (indexOfShiftOriginFile === -1) return;
                   const tappedCoord = {
                     x: index % cols,
                     y: Math.floor(index / cols),
                   };
+                  const shiftOriginX = indexOfShiftOriginFile % cols;
+                  const shiftOriginY = Math.floor(
+                    indexOfShiftOriginFile / cols
+                  );
                   const toSelect = listing.list.filter((_file, i) => {
                     const coord = {
                       x: i % cols,
                       y: Math.floor(i / cols),
                     };
                     return (
-                      coord.x >= Math.min(tappedCoord.x, shiftOrigin.x) &&
-                      coord.x <= Math.max(tappedCoord.x, shiftOrigin.x) &&
-                      coord.y >= Math.min(tappedCoord.y, shiftOrigin.y) &&
-                      coord.y <= Math.max(tappedCoord.y, shiftOrigin.y)
+                      coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
+                      coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
+                      coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
+                      coord.y <= Math.max(tappedCoord.y, shiftOriginY)
                     );
                   });
                   selection.clear();
@@ -584,10 +625,7 @@ const GridView = observer(
                   }
                   selection.clear();
                   selection.append(file);
-                  setShiftOrigin({
-                    x: index % cols,
-                    y: Math.floor(index / cols),
-                  });
+                  setShiftOriginFileId(file.id);
                   setTabIndexCoord({
                     x: index % cols,
                     y: Math.floor(index / cols),
@@ -1040,7 +1078,7 @@ type GalleryMainPanelArgs = {|
       |}
   >,
   folderId: FetchingData.Fetched<Id>,
-  refreshListing: () => void,
+  refreshListing: () => Promise<void>,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
   setSortOrder: ("DESC" | "ASC") => void,
@@ -1068,7 +1106,7 @@ function GalleryMainPanel({
           throw new Error("Unknown folder id");
         });
         await uploadFiles(path, fId, files);
-        refreshListing();
+        void refreshListing();
       }),
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
@@ -1144,7 +1182,7 @@ function GalleryMainPanel({
               section: selectedSection,
             })
             .then(() => {
-              refreshListing();
+              void refreshListing();
             });
         }}
       >

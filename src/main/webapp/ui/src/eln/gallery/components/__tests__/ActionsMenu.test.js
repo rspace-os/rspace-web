@@ -130,7 +130,7 @@ describe("ActionsMenu", () => {
             ]}
           />
           <ActionsMenu
-            refreshListing={() => {}}
+            refreshListing={() => Promise.resolve()}
             section="Images"
             folderId={{ tag: "success", value: dummyId() }}
           />
@@ -198,7 +198,7 @@ describe("ActionsMenu", () => {
             ]}
           />
           <ActionsMenu
-            refreshListing={() => {}}
+            refreshListing={() => Promise.resolve()}
             section="Images"
             folderId={{ tag: "success", value: dummyId() }}
           />
@@ -289,7 +289,7 @@ describe("ActionsMenu", () => {
             ]}
           />
           <ActionsMenu
-            refreshListing={() => {}}
+            refreshListing={() => Promise.resolve()}
             section="Images"
             folderId={{ tag: "success", value: dummyId() }}
           />

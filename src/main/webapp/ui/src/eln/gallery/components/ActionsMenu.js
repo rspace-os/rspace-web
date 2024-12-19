@@ -278,7 +278,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 }));
 
 type ActionsMenuArgs = {|
-  refreshListing: () => void,
+  refreshListing: () => Promise<void>,
   section: GallerySection,
   folderId: FetchingData.Fetched<Id>,
 |};
@@ -574,7 +574,7 @@ function ActionsMenu({
           avatar={<AddToPhotosIcon />}
           onClick={() => {
             void duplicateFiles(selection.asSet()).then(() => {
-              refreshListing();
+              void refreshListing();
               setActionsMenuAnchorEl(null);
             });
           }}
@@ -631,7 +631,7 @@ function ActionsMenu({
               onClose={() => {
                 setRenameOpen(false);
                 setActionsMenuAnchorEl(null);
-                refreshListing();
+                void refreshListing();
               }}
               file={file}
             />
@@ -641,7 +641,7 @@ function ActionsMenu({
           folderId={folderId}
           onSuccess={() => {
             setActionsMenuAnchorEl(null);
-            refreshListing();
+            void refreshListing();
           }}
           onError={() => {
             setActionsMenuAnchorEl(null);
@@ -746,7 +746,7 @@ function ActionsMenu({
             setIrodsOpen(newState);
             if (!newState) {
               setActionsMenuAnchorEl(null);
-              refreshListing();
+              void refreshListing();
             }
           }}
         />
@@ -762,7 +762,7 @@ function ActionsMenu({
           avatar={<DeleteOutlineOutlinedIcon />}
           onClick={() => {
             void deleteFiles(selection.asSet()).then(() => {
-              refreshListing();
+              void refreshListing();
               setActionsMenuAnchorEl(null);
             });
           }}
@@ -796,7 +796,7 @@ function ActionsMenu({
               .mapError(() => new Error("Current folder is not known"))
               .elseThrow();
             await uploadFiles(file.path, idOfFolderThatFileIsIn, [newFile]);
-            refreshListing();
+            void refreshListing();
           } catch (e) {
             addAlert(
               mkAlert({

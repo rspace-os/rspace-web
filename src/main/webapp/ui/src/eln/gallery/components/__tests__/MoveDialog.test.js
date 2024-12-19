@@ -36,7 +36,7 @@ describe("MoveDialog", () => {
           open={true}
           onClose={() => {}}
           section="Images"
-          refreshListing={() => {}}
+          refreshListing={() => Promise.resolve()}
         />
       </ThemeProvider>
     );

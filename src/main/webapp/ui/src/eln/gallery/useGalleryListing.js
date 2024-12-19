@@ -15,6 +15,7 @@ import { useGallerySelection } from "./useGallerySelection";
 import { observable, runInAction } from "mobx";
 import { Optional } from "../../util/optional";
 import { type URL } from "../../util/types";
+import { take, incrementForever } from "../../util/iterators";
 
 export opaque type Id = number;
 // dummyId is for use in tests ONLY
@@ -269,7 +270,7 @@ export function useGalleryListing({
         loadMore: Optional<() => Promise<void>>,
       |}
   >,
-  refreshListing: () => void,
+  refreshListing: () => Promise<void>,
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
   folderId: FetchingData.Fetched<Id>,
@@ -627,7 +628,7 @@ export function useGalleryListing({
       path,
       clearPath: () => {},
       folderId: { tag: "loading" },
-      refreshListing: () => {},
+      refreshListing: () => Promise.resolve(),
     };
 
   return {
@@ -651,9 +652,40 @@ export function useGalleryListing({
     folderId: parentId
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
-    refreshListing: () => {
-      setPage(0);
-      void getGalleryFiles();
+    refreshListing: async () => {
+      const newFiles = (
+        await Promise.all(
+          [...take(incrementForever(), page + 1)].map((p) =>
+            axios
+              .get<mixed>(`/gallery/getUploadedFiles`, {
+                params: new URLSearchParams({
+                  mediatype: section,
+                  currentFolderId:
+                    path.length > 0 ? `${path[path.length - 1].id}` : "0",
+                  name: searchTerm,
+                  pageNumber: `${p}`,
+                  sortOrder,
+                  orderBy,
+                }),
+              })
+              .then(({ data }) => parseGalleryFiles(data))
+          )
+        )
+      ).flat();
+      setGalleryListing(newFiles);
+
+      /*
+       * If some of the selected files are no longer included in the listing
+       * then we clear the selection as it would be quite confusing to allow
+       * the user to operate on files they can no longer see. An obvious
+       * example is that the user has just performed a delete action but other
+       * such scenarios include when duplicating the last file in a page; the
+       * selected one will become the first file of the next page that the user
+       * needs to load by tapping the "Load More" button.
+       */
+      const newFilesIds = new Set(newFiles.map(({ id }) => id));
+      if (selection.asSet().some((f) => !newFilesIds.has(f.id)))
+        selection.clear();
     },
   };
 }
