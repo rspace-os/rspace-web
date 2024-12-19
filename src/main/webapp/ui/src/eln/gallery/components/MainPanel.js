@@ -218,6 +218,7 @@ const Path = styled(({ className, section, path, clearPath }) => {
     max: path.length,
     direction: "row",
   });
+  const selection = useGallerySelection();
 
   return (
     <div
@@ -298,18 +299,22 @@ const Path = styled(({ className, section, path, clearPath }) => {
               ref={getRef(0)}
               tabIndex={getTabIndex(0)}
             />
-            {path.map((f, i) => (
-              <>
-                <span>›</span>
-                <BreadcrumbLink
-                  folder={f}
-                  section={section}
-                  clearPath={clearPath}
-                  ref={getRef(i + 1)}
-                  tabIndex={getTabIndex(i + 1)}
-                />
-              </>
-            ))}
+            {selection
+              .asSet()
+              .only.map((f) => f.path)
+              .orElse(path)
+              .map((f, i) => (
+                <>
+                  <span>›</span>
+                  <BreadcrumbLink
+                    folder={f}
+                    section={section}
+                    clearPath={clearPath}
+                    ref={getRef(i + 1)}
+                    tabIndex={getTabIndex(i + 1)}
+                  />
+                </>
+              ))}
           </Stack>
         </div>
       )}
