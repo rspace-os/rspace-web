@@ -65,7 +65,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
 
     String combinedPath = filestore.getPath();
-    if (StringUtils.isNotEmpty(browsePath)) {
+    if (StringUtils.isNotBlank(browsePath)) {
       combinedPath += browsePath;
     }
 
@@ -94,7 +94,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
       throws IOException {
 
     assertFilestoresApiEnabled(user);
-    if (StringUtils.isEmpty(remotePath) && remoteId == null) {
+    if (StringUtils.isBlank(remotePath) && remoteId == null) {
       throw new IllegalArgumentException("Neither 'remotePath' nor 'remoteId' param is provided");
     }
 
@@ -160,9 +160,6 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   @Override
   public List<NfsFileSystemInfo> getFilesystems(@RequestAttribute(name = "user") User user) {
     assertFilestoresApiEnabled(user);
-    if (user.hasSysadminRole()) {
-      // TODO return all, not just active
-    }
     return nfsManager.getActiveFileSystemInfos();
   }
 
