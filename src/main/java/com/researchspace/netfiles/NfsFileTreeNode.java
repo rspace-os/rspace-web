@@ -4,22 +4,24 @@ import com.researchspace.model.netfiles.NfsFileStore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 
 /** Model of tree node for network file store tree view. */
 public class NfsFileTreeNode {
 
-  private final List<NfsFileTreeNode> nodes = new ArrayList<>();
-  private NfsFileTreeOrderType orderType;
-
-  private boolean isFolder;
   private String name; /* a node name, displayed as a label and used in links for opening subtree */
-  private String nodePath; /* a path to be saved as user folder */
-  private String logicPath; /* nfsFileStoreId:relativePath */
-  private String fileDate; /* date displayed to user */
-  private String fileSize = "0";
-
-  private Long nfsId;
+  private boolean isFolder;
+  @Getter private final List<NfsFileTreeNode> nodes = new ArrayList<>();
+  @Getter @Setter private NfsFileTreeOrderType orderType;
+  @Getter @Setter private String nodePath; /* a path to be saved as user folder */
+  @Getter private String logicPath; /* nfsFileStoreId:relativePath */
+  @Getter @Setter private String fileDate; /* modification date, to displayed in JSP tree-view UI */
+  @Getter @Setter private Long modificationDateMillis; /* used by API */
+  @Getter @Setter private String fileSize = "0"; /* file size as human-readable string */
+  @Getter @Setter private Long fileSizeBytes = 0L;
+  @Getter @Setter private Long nfsId;
 
   /** file of folder name */
   public String getFileName() {
@@ -38,26 +40,6 @@ public class NfsFileTreeNode {
     name = newName;
   }
 
-  public boolean getIsFolder() {
-    return isFolder;
-  }
-
-  public void setIsFolder(boolean isFolder) {
-    this.isFolder = isFolder;
-  }
-
-  public String getNodePath() {
-    return nodePath;
-  }
-
-  public void setNodePath(String s) {
-    nodePath = s;
-  }
-
-  public List<NfsFileTreeNode> getNodes() {
-    return nodes;
-  }
-
   // add child node, put it in right place according to ordering type
   public void addNode(NfsFileTreeNode nd) {
     nodes.add(nd);
@@ -69,26 +51,6 @@ public class NfsFileTreeNode {
           }
           return nd1.name.compareToIgnoreCase(nd2.name);
         });
-  }
-
-  public String getFileDate() {
-    return fileDate;
-  }
-
-  public void setFileDate(String fileDate) {
-    this.fileDate = fileDate;
-  }
-
-  public NfsFileTreeOrderType getOrderType() {
-    return orderType;
-  }
-
-  public void setOrderType(NfsFileTreeOrderType orderType) {
-    this.orderType = orderType;
-  }
-
-  public String getLogicPath() {
-    return logicPath;
   }
 
   /*
@@ -117,19 +79,11 @@ public class NfsFileTreeNode {
     }
   }
 
-  public String getFileSize() {
-    return fileSize;
+  public boolean getIsFolder() {
+    return isFolder;
   }
 
-  public void setFileSize(String fileSize) {
-    this.fileSize = fileSize;
-  }
-
-  public Long getNfsId() {
-    return nfsId;
-  }
-
-  public void setNfsId(Long nfsId) {
-    this.nfsId = nfsId;
+  public void setIsFolder(boolean isFolder) {
+    this.isFolder = isFolder;
   }
 }

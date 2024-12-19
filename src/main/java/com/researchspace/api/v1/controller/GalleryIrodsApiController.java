@@ -1,25 +1,24 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.api.v1.GalleryApi;
+import com.researchspace.api.v1.GalleryIrodsApi;
 import com.researchspace.api.v1.model.ApiConfiguredLocation;
 import com.researchspace.api.v1.model.ApiExternalStorageInfo;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationInfo;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
-import com.researchspace.api.v1.model.NfsUserFileSystem;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.ExternalStorageLocation;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.netfiles.ApiNfsCredentials;
-import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.util.CollectionUtils;
@@ -49,9 +47,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Slf4j
 @NoArgsConstructor
 @ApiController
-public class GalleryApiController extends BaseApiController implements GalleryApi {
-
-  @Autowired private NfsManager nfsManager;
+public class GalleryIrodsApiController extends GalleryFilestoresBaseApiController
+    implements GalleryIrodsApi {
 
   @Autowired private RecordDeletionManager deletionManager;
 
@@ -59,57 +56,57 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
 
   @Autowired private ExternalStorageManager externalStorageManager;
 
-  @Autowired
-  @Qualifier("nfsUserPasswordAuthentication")
-  private NfsAuthentication nfsAuthentication;
-
-  protected UriComponentsBuilder rsBaseLink;
-  protected Map<NfsUserFileSystem, ApiNfsCredentials> credentialsMapCache = new LinkedHashMap<>();
+  protected UriComponentsBuilder irodsGalleryBaseLink;
 
   protected enum Operation {
     copy,
     move
   }
 
-  protected GalleryApiController(
+  protected GalleryIrodsApiController(
       NfsManager nfsManager,
       RecordDeletionManager deletionManager,
       BaseRecordManager baseRecordManager,
-      NfsAuthentication nfsAuthentication,
-      ExternalStorageManager externalStorageManager) {
+      GalleryFilestoresCredentialsStore credentialsStore,
+      ExternalStorageManager externalStorageManager,
+      IPropertyHolder propertyHolder) {
     this.nfsManager = nfsManager;
     this.deletionManager = deletionManager;
     this.baseRecordManager = baseRecordManager;
-    this.nfsAuthentication = nfsAuthentication;
+    this.credentialsStore = credentialsStore;
     this.externalStorageManager = externalStorageManager;
+    this.properties = propertyHolder;
   }
 
   @PostConstruct
   private void init() {
-    rsBaseLink = UriComponentsBuilder.fromHttpUrl(getServerURL()).path(API_GALLERY_V1);
+    irodsGalleryBaseLink =
+        UriComponentsBuilder.fromHttpUrl(getServerURL()).path(API_V1_GALLERY_IRODS);
   }
 
   @Override
   public ApiExternalStorageInfo getExternalLocationsInfo(
       @RequestParam(value = PARAM_RECORD_IDS, required = false) List<Long> recordIds,
-      @RequestAttribute(name = PARAM_USER) User user) {
+      @RequestAttribute(name = "user") User user) {
 
-    List<NfsFileStore> iRodsFileStores =
-        nfsManager.getFileStoresForUser(user.getId()).stream()
-            .filter(fs -> NfsClientType.IRODS.equals(fs.getFileSystem().getClientType()))
+    assertFilestoresApiEnabled(user);
+    List<NfsFileStoreInfo> iRodsFileStoreInfos =
+        nfsManager.getFileStoreInfosForUser(user).stream()
+            .filter(fs -> NfsClientType.IRODS.toString().equals(fs.getFileSystem().getClientType()))
             .collect(Collectors.toList());
 
     NfsFileSystem iRodsFileSystem = null;
-    if (!iRodsFileStores.isEmpty()) {
-      iRodsFileSystem = iRodsFileStores.get(0).getFileSystem();
+    if (!iRodsFileStoreInfos.isEmpty()) {
+      iRodsFileSystem =
+          nfsManager.getFileSystem(iRodsFileStoreInfos.get(0).getFileSystem().getId());
     }
 
     // getting only the file stores bound to the current file system
-    iRodsFileStores = filterNfsFileStoresByFilesystem(iRodsFileStores, iRodsFileSystem);
+    iRodsFileStoreInfos = filterNfsFileStoresByFilesystem(iRodsFileStoreInfos, iRodsFileSystem);
 
     // build Configured Locations
     Set<ApiConfiguredLocation> configuredLocations = new LinkedHashSet<>();
-    for (NfsFileStore currentFileStore : iRodsFileStores) {
+    for (NfsFileStoreInfo currentFileStore : iRodsFileStoreInfos) {
       ApiConfiguredLocation location = buildCurrentLocation(currentFileStore);
       addOperationLinks(location, recordIds, currentFileStore);
       configuredLocations.add(location);
@@ -124,19 +121,21 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
       @RequestParam(value = PARAM_FILESTORE_PATH_ID) Long filestorePathId,
       @RequestBody @Valid ApiNfsCredentials credentials,
       BindingResult errors,
-      @RequestAttribute(name = PARAM_USER) User user)
+      @RequestAttribute(name = "user") User user)
       throws BindException {
+
+    assertFilestoresApiEnabled(user);
     log.info("Begin copying files to IRODS");
     ApiExternalStorageOperationResult result =
         performCopyToIRODS(recordIds, filestorePathId, credentials, errors, user);
     log.info("End copying files to IRODS");
     result.buildAndAddSelfLink(
-        IRODS_ENDPOINT + "/copy",
+        "/copy",
         "",
         Map.of(
             PARAM_RECORD_IDS, StringUtils.join(recordIds, ','),
             PARAM_FILESTORE_PATH_ID, filestorePathId.toString()),
-        rsBaseLink);
+        irodsGalleryBaseLink);
     return result;
   }
 
@@ -146,21 +145,23 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
       @RequestParam(value = PARAM_FILESTORE_PATH_ID) Long filestorePathId,
       @RequestBody @Valid ApiNfsCredentials credentials,
       BindingResult errors,
-      @RequestAttribute(name = PARAM_USER) User user)
+      @RequestAttribute(name = "user") User user)
       throws BindException {
+
+    assertFilestoresApiEnabled(user);
     log.info("Begin moving files to IRODS");
     ApiExternalStorageOperationResult result =
         performMoveToIRODS(recordIds, filestorePathId, credentials, errors, user);
     log.info("End moving files to IRODS");
     result.buildAndAddSelfLink(
-        IRODS_ENDPOINT + "/move",
+        "/move",
         "",
         Map.of(
             PARAM_RECORD_IDS,
             StringUtils.join(recordIds, ','),
             PARAM_FILESTORE_PATH_ID,
             filestorePathId.toString()),
-        rsBaseLink);
+        irodsGalleryBaseLink);
     return result;
   }
 
@@ -175,7 +176,8 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
     ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
     NfsFileStore nfsFileStore = validateInputAndGetFilestore(recordIds, filestorePathId, errors);
     NfsClient nfsClient =
-        validateCredentialsAndLoginNfs(credentials, errors, user, nfsFileStore.getFileSystem());
+        credentialsStore.validateCredentialsAndLoginNfs(
+            credentials, errors, user, nfsFileStore.getFileSystem());
 
     Map<Long, EcatMediaFile> mediaFileMapById =
         retrieveMediaFiles(recordIds, user, errors).stream()
@@ -256,48 +258,6 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
   }
 
   @NotNull
-  private NfsClient validateCredentialsAndLoginNfs(
-      ApiNfsCredentials credentials,
-      BindingResult errors,
-      User user,
-      NfsFileSystem currentFileSystem)
-      throws BindException {
-    // add login for the filestore into the Map
-    NfsUserFileSystem currentUserFilesystemPair = new NfsUserFileSystem(user, currentFileSystem);
-    if (!credentialsMapCache.containsKey(currentUserFilesystemPair)
-        || (credentials != null
-            && StringUtils.isNotBlank(credentials.getUsername())
-            && StringUtils.isNotBlank(credentials.getPassword()))) {
-      credentialsMapCache.put(
-          currentUserFilesystemPair,
-          new ApiNfsCredentials(user, credentials.getUsername(), credentials.getPassword()));
-    }
-
-    String credentialValidationError =
-        nfsAuthentication.validateCredentials(
-            credentialsMapCache.get(currentUserFilesystemPair).getUsername(),
-            credentialsMapCache.get(currentUserFilesystemPair).getPassword(),
-            credentialsMapCache.get(currentUserFilesystemPair).getUser());
-
-    if (credentialValidationError != null) {
-      errors.addError(new ObjectError("credentials", credentialValidationError));
-      throwBindExceptionIfErrors(errors);
-    }
-
-    NfsClient nfsClient =
-        nfsAuthentication.login(
-            credentialsMapCache.get(currentUserFilesystemPair).getUsername(),
-            credentialsMapCache.get(currentUserFilesystemPair).getPassword(),
-            currentFileSystem,
-            user);
-    if (!nfsClient.isUserLoggedIn()) {
-      errors.addError(new ObjectError("nfsClient", "User is not logged in"));
-      throwBindExceptionIfErrors(errors);
-    }
-    return nfsClient;
-  }
-
-  @NotNull
   private NfsFileStore validateInputAndGetFilestore(
       Set<Long> recordIds, Long filestorePathId, BindingResult errors) throws BindException {
     if (CollectionUtils.isEmpty(recordIds)) {
@@ -333,14 +293,14 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
   }
 
   private void addOperationLinks(
-      ApiConfiguredLocation location, List<Long> recordIds, NfsFileStore currentFileStore) {
+      ApiConfiguredLocation location, List<Long> recordIds, NfsFileStoreInfo currentFileStore) {
     if (!CollectionUtils.isEmpty(recordIds)) {
       Map<String, String> parameters = new TreeMap<>();
       parameters.put("filestorePathId", currentFileStore.getId().toString());
       parameters.put("recordIds", StringUtils.join(recordIds, ','));
       for (Operation operation : Operation.values()) {
         String resourceLink =
-            location.getResourceLink(IRODS_ENDPOINT, operation.toString(), parameters, rsBaseLink);
+            location.getResourceLink("", operation.toString(), parameters, irodsGalleryBaseLink);
         location.addLink(resourceLink, HttpMethod.POST, operation.toString());
       }
     }
@@ -357,19 +317,16 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
             .configuredLocations(configuredLocations)
             .build();
     if (CollectionUtils.isEmpty(recordIds)) {
-      response.buildAndAddSelfLink(IRODS_ENDPOINT, "", rsBaseLink);
+      response.buildAndAddSelfLink("", "", irodsGalleryBaseLink);
     } else {
       response.buildAndAddSelfLink(
-          IRODS_ENDPOINT,
-          "",
-          Map.of(PARAM_RECORD_IDS, StringUtils.join(recordIds, ',')),
-          rsBaseLink);
+          "", "", Map.of(PARAM_RECORD_IDS, StringUtils.join(recordIds, ',')), irodsGalleryBaseLink);
     }
     return response;
   }
 
   @NotNull
-  private static ApiConfiguredLocation buildCurrentLocation(NfsFileStore currentFileStore) {
+  private static ApiConfiguredLocation buildCurrentLocation(NfsFileStoreInfo currentFileStore) {
     ApiConfiguredLocation location =
         ApiConfiguredLocation.builder()
             .id(currentFileStore.getId())
@@ -380,12 +337,13 @@ public class GalleryApiController extends BaseApiController implements GalleryAp
   }
 
   @NotNull
-  private static List<NfsFileStore> filterNfsFileStoresByFilesystem(
-      List<NfsFileStore> iRodsFileStores, NfsFileSystem iRodsFileSystem) {
-    iRodsFileStores =
+  private static List<NfsFileStoreInfo> filterNfsFileStoresByFilesystem(
+      List<NfsFileStoreInfo> iRodsFileStores, NfsFileSystem iRodsFileSystem) {
+
+    List<NfsFileStoreInfo> filteredStores =
         iRodsFileStores.stream()
-            .filter(fstore -> iRodsFileSystem.equals(fstore.getFileSystem()))
+            .filter(fstore -> iRodsFileSystem.getId().equals(fstore.getFileSystem().getId()))
             .collect(Collectors.toList());
-    return iRodsFileStores;
+    return filteredStores;
   }
 }

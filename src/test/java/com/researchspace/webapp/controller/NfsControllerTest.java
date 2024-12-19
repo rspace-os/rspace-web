@@ -23,6 +23,7 @@ import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemInfo;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
@@ -73,10 +74,10 @@ public class NfsControllerTest extends SpringTransactionalTest {
   private static final String TEST_FILE_SYSTEM_URL = "smb://test.com";
 
   private NfsFileStore testNfsFileStore;
-  private ArrayList<NfsFileStore> testNfsFileStoreList;
+  private ArrayList<NfsFileStoreInfo> testNfsFileStoreInfoList;
 
   private NfsFileSystem testNfsFileSystem;
-  private ArrayList<NfsFileSystem> testNfsFileSystemList;
+  private ArrayList<NfsFileSystemInfo> testNfsFileSystemInfoList;
 
   private NfsManager nfsManagerMock;
   private NfsClient nfsClientMock;
@@ -103,8 +104,8 @@ public class NfsControllerTest extends SpringTransactionalTest {
     testNfsFileSystem.setAuthType(NfsAuthenticationType.PASSWORD);
     testNfsFileSystem.setUrl(TEST_FILE_SYSTEM_URL);
 
-    testNfsFileSystemList = new ArrayList<>();
-    testNfsFileSystemList.add(testNfsFileSystem);
+    testNfsFileSystemInfoList = new ArrayList<>();
+    testNfsFileSystemInfoList.add(testNfsFileSystem.toFileSystemInfo());
 
     testNfsFileStore = new NfsFileStore();
     testNfsFileStore.setId(TEST_FILE_STORE_ID);
@@ -113,8 +114,8 @@ public class NfsControllerTest extends SpringTransactionalTest {
     testNfsFileStore.setUser(testUser);
     testNfsFileStore.setFileSystem(testNfsFileSystem);
 
-    testNfsFileStoreList = new ArrayList<>();
-    testNfsFileStoreList.add(testNfsFileStore);
+    testNfsFileStoreInfoList = new ArrayList<>();
+    testNfsFileStoreInfoList.add(testNfsFileStore.toFileStoreInfo());
 
     nfsClientMock = mock(NfsClient.class);
     when(nfsClientMock.isUserLoggedIn()).thenReturn(true);
@@ -142,8 +143,8 @@ public class NfsControllerTest extends SpringTransactionalTest {
     assertEquals("[]", model.asMap().get(NfsViewProperty.FILE_STORES_JSON.toString()));
     assertEquals(null, model.asMap().get(NfsViewProperty.PUBLIC_KEY.toString()));
 
-    when(nfsManagerMock.getFileStoresForUser(testUser.getId())).thenReturn(testNfsFileStoreList);
-    when(nfsManagerMock.getActiveFileSystems()).thenReturn(testNfsFileSystemList);
+    when(nfsManagerMock.getFileStoreInfosForUser(testUser)).thenReturn(testNfsFileStoreInfoList);
+    when(nfsManagerMock.getActiveFileSystemInfos()).thenReturn(testNfsFileSystemInfoList);
     controller.getNetFilesGalleryView(model, principalStub);
 
     // filesystem json double-escaped (RSPAC-2360)
@@ -170,10 +171,12 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
   @Test
   public void getNetFilesViewUserDirsRequiredTest() {
-    testNfsFileSystem.setClientOptions(USER_DIRS_REQUIRED.toString() + "=true");
+    testNfsFileSystem.setClientOptions(USER_DIRS_REQUIRED + "=true");
+    testNfsFileSystemInfoList.clear();
+    testNfsFileSystemInfoList.add(testNfsFileSystem.toFileSystemInfo());
 
-    when(nfsManagerMock.getFileStoresForUser(testUser.getId())).thenReturn(testNfsFileStoreList);
-    when(nfsManagerMock.getActiveFileSystems()).thenReturn(testNfsFileSystemList);
+    when(nfsManagerMock.getFileStoreInfosForUser(testUser)).thenReturn(testNfsFileStoreInfoList);
+    when(nfsManagerMock.getActiveFileSystemInfos()).thenReturn(testNfsFileSystemInfoList);
     controller.getNetFilesGalleryView(model, principalStub);
 
     // filesystem json double-escaped (RSPAC-2360)
@@ -188,10 +191,12 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
   @Test
   public void getNetFilesLoginViewUserDirsRequiredTest() {
-    testNfsFileSystem.setClientOptions(USER_DIRS_REQUIRED.toString() + "=true");
+    testNfsFileSystem.setClientOptions(USER_DIRS_REQUIRED + "=true");
+    testNfsFileSystemInfoList.clear();
+    testNfsFileSystemInfoList.add(testNfsFileSystem.toFileSystemInfo());
 
-    when(nfsManagerMock.getFileStoresForUser(testUser.getId())).thenReturn(testNfsFileStoreList);
-    when(nfsManagerMock.getActiveFileSystems()).thenReturn(testNfsFileSystemList);
+    when(nfsManagerMock.getFileStoreInfosForUser(testUser)).thenReturn(testNfsFileStoreInfoList);
+    when(nfsManagerMock.getActiveFileSystemInfos()).thenReturn(testNfsFileSystemInfoList);
     controller.getNetFilesLoginView(model, principalStub);
 
     // filesystem json double-escaped (RSPAC-2360)
@@ -239,33 +244,6 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
     String msg = controller.tryConnectToFileStore(TEST_FILE_STORE_ID, request, principalStub);
     assertEquals(NfsManager.LOGGED_AS_MSG + testUsername, msg);
-  }
-
-  @Test
-  public void sambaFilestoreSavedWithCorrectPath() {
-    loginTestUserToTestFileSystem();
-
-    AjaxReturnObject<String> jcifsPathSaveResult =
-        controller.saveFileStore(
-            TEST_FILE_SYSTEM_ID,
-            "jcifs path format",
-            "smb://test.com/samba-folder/BE/",
-            request,
-            principalStub);
-    assertEquals(
-        "{\"id\":null,\"name\":\"jcifs path format\",\"path\":\"/samba-folder/BE\",\"fileSystem\":"
-            + "{\"id\":11,\"name\":\"testFileSystem\",\"url\":\"smb://test.com\",\"clientType\":\"SAMBA\","
-            + "\"authType\":\"PASSWORD\",\"options\":{},\"loggedAs\":null}}",
-        jcifsPathSaveResult.getData());
-
-    AjaxReturnObject<String> smbjPathSaveResult =
-        controller.saveFileStore(
-            TEST_FILE_SYSTEM_ID, "smbj path format", "/BE/", request, principalStub);
-    assertEquals(
-        "{\"id\":null,\"name\":\"smbj path format\",\"path\":\"/BE\",\"fileSystem\":"
-            + "{\"id\":11,\"name\":\"testFileSystem\",\"url\":\"smb://test.com\",\"clientType\":\"SAMBA\","
-            + "\"authType\":\"PASSWORD\",\"options\":{},\"loggedAs\":null}}",
-        smbjPathSaveResult.getData());
   }
 
   @Test

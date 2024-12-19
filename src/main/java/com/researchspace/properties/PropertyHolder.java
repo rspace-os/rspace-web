@@ -474,6 +474,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   @Override
+  public boolean isNetFileStoresEnabled() {
+    return "true".equals(getNetFileStoresEnabled());
+  }
+
+  @Override
   public String getNetFileStoresExportEnabled() {
     return netFileStoresExportEnabled;
   }

@@ -88,6 +88,17 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
+  // 403
+  @ExceptionHandler({ExternalApiAuthorizationException.class})
+  public ResponseEntity<Object> hanleExternalApiAuthorizationException(
+      final ExternalApiAuthorizationException ex, final WebRequest request) {
+    log.error("external API authorization exception", ex);
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.FORBIDDEN, ApiErrorCodes.AUTH.getCode(), ex.getLocalizedMessage(), "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
   // 422 with errorCode
   @ExceptionHandler({ApiRuntimeException.class})
   public ResponseEntity<Object> handleApiRuntimeException(

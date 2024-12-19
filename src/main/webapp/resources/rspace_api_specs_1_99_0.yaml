@@ -1103,7 +1103,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - $ref: '#/parameters/pageNumberParam'
         - $ref: '#/parameters/pageSizeParam'
@@ -1211,7 +1211,7 @@ paths:
         'X-UploadLimitLimit' and 'X-UploadLimitRemaining'.
 
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - name: file
           in: formData
@@ -1255,7 +1255,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - $ref: '#/parameters/fileIdParam'
       responses:
@@ -1280,7 +1280,7 @@ paths:
         - application/octet-stream
         - application/json
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - $ref: '#/parameters/fileIdParam'
       responses:
@@ -1300,7 +1300,7 @@ paths:
       consumes:
         - multipart/form-data
       tags:
-        - Files
+        - Files (Gallery)
       parameters:
         - $ref: '#/parameters/fileIdParam'
         - name: file
@@ -1764,6 +1764,143 @@ paths:
               _links:
                 $ref: '#/definitions/LinkItemList'
 
+  '/gallery/filestores':
+    get:
+      summary: Get filestores of the current user
+      description: Lists all the filestores created by the current user
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      responses:
+        '200':
+          description: A list of FileStoreInfo objects
+    post:
+      summary: Save new filestore
+      description: >-
+        Creates new filestore for access by the current user
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: '#/parameters/filesystemIdPostParam'
+        - $ref: '#/parameters/filestoreNamePostParam'
+        - $ref: '#/parameters/filestorePathPostParam'
+      responses:
+        '201':
+          description: Success
+  '/gallery/filestores/{filestoreId}/browse':
+    get:
+      summary: Browse remote filestore
+      description:
+        Lists the content of a path on remote filestore belonging to the user.
+        
+        User must be logged into the filesystem connected to the filestore (see /login endpoint).
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: '#/parameters/filestoreIdParam'
+        - $ref: '#/parameters/filestoreRemotePathParam'
+      responses:
+        '200':
+          description: A list of FileStoreNode objects
+  '/gallery/filestores/{filestoreId}/download':
+    get:
+      summary: Download from remote filestore
+      description:
+        Streams the resource retrieved from remote filestore.
+        
+        User must be logged into the filesystem connected to the filestore (see /login endpoint).
+      produces:
+        - application/octet-stream
+        - application/json
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: '#/parameters/filestoreIdParam'
+        - $ref: '#/parameters/filestoreRemotePathParam'
+        - $ref: '#/parameters/filestoreRemoteIdParam'
+      responses:
+        '200':
+          description: A resource (binary)
+  '/gallery/filestores/{filestoreId}':
+    delete:
+      summary: Delete a filestore
+      description: >
+        Marks filestore as deleted, it will no longer show up on user's filestore listing. 
+        The filestore links added to RSpace documents based on this filestore will stay resolvable.
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: '#/parameters/filestoreIdParam'
+      responses:
+        '204':
+          description: No content
+
+  '/gallery/filesystems':
+    get:
+      summary: List active filesystems
+      description: Lists active filesystems configured on this RSpace instance
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      responses:
+        '200':
+          description: A list of FileSystemInfo objects
+  '/gallery/filesystems/{filesystemId}/browse':
+    get:
+      summary: Browse remote filesystem
+      description:
+        Lists the content of a remote filesystem. 
+        
+        User must be logged into the filesystem (see /login endpoint).
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: '#/parameters/filesystemIdParam'
+        - $ref: '#/parameters/filestoreRemotePathParam'
+      responses:
+        '200':
+          description: A list of FileStoreNode objects.
+  '/gallery/filesystems/{filesystemId}/login':
+    post:
+      summary: Login to the filesystem
+      description: Attempt to login, or start session between RSpace and remote filesystem
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: '#/parameters/filesystemIdParam'
+        - name: credentials
+          in: body
+          description: Credentials (username and password) for the FileSystem connected to this Filestore
+          required: false
+          schema:
+            $ref: '#/definitions/IrodsCredentials'
+      responses:
+        '200':
+          description: Login success.
+  '/gallery/filesystems/{filesystemId}/logout':
+    post:
+      summary: Logout from the filesystem
+      description: Finish RSpace session with the a remote filesystem
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: '#/parameters/filesystemIdParam'
+      responses:
+        '200':
+          description: Logout success.
+
   '/gallery/irods':
     get:
       summary: Get the IRODS server info and the end points to calls for each filestore
@@ -1773,7 +1910,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - name: recordIds
           description: A comma-separated list of IDs of records to copy/move the the gallery
@@ -1811,7 +1948,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - name: recordIds
           description: A comma-separated list of IDs of records to copy the the gallery
@@ -1870,7 +2007,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Gallery
+        - Gallery Filestores
       parameters:
         - name: recordIds
           description: A comma-separated list of IDs of records to move the the gallery
@@ -2652,6 +2789,53 @@ parameters:
     format: int64
     required: true
     description: A unique identifier for the Gallery file.
+  filestoreIdParam:
+    name: filestoreId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: A unique identifier for the Gallery filestore.
+  filestoreNamePostParam:
+    name: name
+    in: query
+    description: Name of a new filestore
+    type: string
+  filestoreRemotePathParam:
+    name: remotePath
+    in: query
+    description: Filestore/Filesystem path to operate on
+    type: string
+  filestorePathPostParam:
+    name: pathToSave
+    in: query
+    description: Path to the dir that filestore should be rooted at. The value should be taken from 'logicPath' property of filesystem's `/browse` response.
+    type: string
+  filestoreRemoteIdParam:
+    name: remoteId
+    in: query
+    description: Id of a remote resource to operate on (if supported)
+    type: integer
+    format: int64
+  filesystemIdParam:
+    name: filesystemId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: A unique identifier for the Institutional Filesystem.
+  filesystemIdPostParam:
+    name: filesystemId
+    in: query
+    description: Filesystem id
+    type: string
+  mediaFileIdParam:
+    name: mediaFileId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: A unique identifier for the RSpace Gallery file.
   userIdParam:
     name: userId
     in: path
