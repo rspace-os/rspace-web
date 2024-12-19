@@ -189,6 +189,7 @@ const NameFieldForLargeViewports = styled(
               e.preventDefault();
               void rename(file, name);
               textField.current?.blur();
+              setName(file.transformFilename(() => name));
             }}
             onKeyDown={(e) => {
               if (e.key === "Escape") setName(file.name);
