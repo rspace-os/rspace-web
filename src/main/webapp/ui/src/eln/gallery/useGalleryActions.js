@@ -220,7 +220,13 @@ export function useGalleryActions(): {|
             section,
             destination.folder
           );
+        const movingAlert = mkAlert({
+          message: "Moving...",
+          variant: "notice",
+          isInfinite: true,
+        });
         try {
+          addAlert(movingAlert);
           const formData = new FormData();
           formData.append(
             "target",
@@ -271,6 +277,8 @@ export function useGalleryActions(): {|
             })
           );
           throw e;
+        } finally {
+          removeAlert(movingAlert);
         }
       },
       toDestinationWithFolder: async (
@@ -288,7 +296,13 @@ export function useGalleryActions(): {|
           );
           return;
         }
+        const movingAlert = mkAlert({
+          message: "Moving...",
+          variant: "notice",
+          isInfinite: true,
+        });
         try {
+          addAlert(movingAlert);
           const formData = new FormData();
           formData.append("target", idToString(destinationFolder.id));
           for (const file of files)
@@ -336,6 +350,8 @@ export function useGalleryActions(): {|
             })
           );
           throw e;
+        } finally {
+          removeAlert(movingAlert);
         }
       },
     };
@@ -343,10 +359,16 @@ export function useGalleryActions(): {|
 
   async function deleteFiles(files: RsSet<GalleryFile>) {
     if (files.some((f) => f.isSystemFolder)) return;
+    const deletingAlert = mkAlert({
+      message: "Deleting...",
+      variant: "notice",
+      isInfinite: true,
+    });
     const formData = new FormData();
     for (const file of files)
       formData.append("idsToDelete[]", idToString(file.id));
     try {
+      addAlert(deletingAlert);
       const data = await galleryApi.post<FormData, mixed>(
         "deleteElementFromGallery",
         formData,
@@ -387,6 +409,8 @@ export function useGalleryActions(): {|
         })
       );
       throw e;
+    } finally {
+      removeAlert(deletingAlert);
     }
   }
 
@@ -400,7 +424,13 @@ export function useGalleryActions(): {|
         file.transformFilename((name) => name + "_copy")
       );
     }
+    const duplicatingAlert = mkAlert({
+      message: "Duplicating...",
+      variant: "notice",
+      isInfinite: true,
+    });
     try {
+      addAlert(duplicatingAlert);
       const data = await galleryApi.post<FormData, mixed>(
         "copyGalleries",
         formData,
@@ -443,11 +473,18 @@ export function useGalleryActions(): {|
         })
       );
       throw e;
+    } finally {
+      removeAlert(duplicatingAlert);
     }
   }
 
   async function rename(file: GalleryFile, newName: string) {
     if (file.isSystemFolder) return;
+    const renamingAlert = mkAlert({
+      message: "Renaming...",
+      variant: "notice",
+      isInfinite: true,
+    });
     const formData = new FormData();
     formData.append("recordId", idToString(file.id));
     formData.append(
@@ -455,6 +492,7 @@ export function useGalleryActions(): {|
       file.transformFilename(() => newName)
     );
     try {
+      addAlert(renamingAlert);
       const data = await structuredDocumentApi.post<FormData, mixed>(
         "rename",
         formData,
@@ -488,6 +526,8 @@ export function useGalleryActions(): {|
         })
       );
       throw e;
+    } finally {
+      removeAlert(renamingAlert);
     }
   }
 
@@ -501,7 +541,13 @@ export function useGalleryActions(): {|
     formData.append("selectedMediaId", idToString(file.id));
     formData.append("xfile", newFile);
     formData.append("targetFolderId", idToString(folderId));
+    const uploadingAlert = mkAlert({
+      message: "Uploading...",
+      variant: "notice",
+      isInfinite: true,
+    });
     try {
+      addAlert(uploadingAlert);
       const { data } = await galleryApi.post<FormData, mixed>(
         "uploadFile",
         formData,
@@ -542,6 +588,8 @@ export function useGalleryActions(): {|
         })
       );
       throw e;
+    } finally {
+      removeAlert(uploadingAlert);
     }
   }
 
