@@ -2,33 +2,22 @@
 
 import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
-import { Drawer } from "../../../components/DialogBoundary";
+import { Drawer, Menu } from "../../../components/DialogBoundary";
 import { styled } from "@mui/material/styles";
-import { COLOR, gallerySectionLabel, type GallerySection } from "../common";
+import {
+  COLOR,
+  gallerySectionLabel,
+  gallerySectionIcon,
+  type GallerySection,
+} from "../common";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import { darken } from "@mui/system";
-import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
-import ChemistryIcon from "../chemistryIcon";
-import FilestoreIcon from "../filestoreIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
-import { Menu } from "../../../components/DialogBoundary";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import {
-  faImage,
-  faFilm,
-  faFile,
-  faFileInvoice,
-  faDatabase,
-  faShapes,
-  faCircleDown,
-  faVolumeLow,
-} from "@fortawesome/free-solid-svg-icons";
-import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import AddIcon from "@mui/icons-material/Add";
@@ -57,16 +46,6 @@ import ValidatingSubmitButton, {
 } from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import DnsIcon from "@mui/icons-material/Dns";
-library.add(faImage);
-library.add(faFilm);
-library.add(faFile);
-library.add(faFileInvoice);
-library.add(faDatabase);
-library.add(faShapes);
-library.add(faNoteSticky);
-library.add(faCircleDown);
-library.add(faVolumeLow);
-library.add(faDatabase);
 import axios, { type Axios } from "axios";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
@@ -626,7 +605,7 @@ const Sidebar = ({
           <List sx={{ position: "static" }}>
             <DrawerTab
               label={gallerySectionLabel.Images}
-              icon={<FaIcon icon="image" />}
+              icon={gallerySectionIcon.Images}
               index={0}
               tabIndex={getTabIndex(0)}
               ref={(node) => {
@@ -642,7 +621,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Audios}
-              icon={<FaIcon icon="volume-low" />}
+              icon={gallerySectionIcon.Audios}
               index={1}
               tabIndex={getTabIndex(1)}
               ref={(node) => {
@@ -658,7 +637,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Videos}
-              icon={<FaIcon icon="film" />}
+              icon={gallerySectionIcon.Videos}
               index={2}
               tabIndex={getTabIndex(2)}
               ref={(node) => {
@@ -674,7 +653,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Documents}
-              icon={<FaIcon icon="file" />}
+              icon={gallerySectionIcon.Documents}
               index={3}
               tabIndex={getTabIndex(3)}
               ref={(node) => {
@@ -690,7 +669,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Chemistry}
-              icon={<ChemistryIcon />}
+              icon={gallerySectionIcon.Chemistry}
               index={4}
               tabIndex={getTabIndex(4)}
               ref={(node) => {
@@ -706,7 +685,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.DMPs}
-              icon={<FaIcon icon="file-invoice" />}
+              icon={gallerySectionIcon.DMPs}
               index={5}
               tabIndex={getTabIndex(5)}
               ref={(node) => {
@@ -722,7 +701,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Snippets}
-              icon={<FaIcon icon="fa-regular fa-note-sticky" />}
+              icon={gallerySectionIcon.Snippets}
               index={6}
               tabIndex={getTabIndex(6)}
               ref={(node) => {
@@ -738,7 +717,7 @@ const Sidebar = ({
             />
             <DrawerTab
               label={gallerySectionLabel.Miscellaneous}
-              icon={<FaIcon icon="shapes" />}
+              icon={gallerySectionIcon.Miscellaneous}
               index={7}
               tabIndex={getTabIndex(7)}
               ref={(node) => {
@@ -759,7 +738,7 @@ const Sidebar = ({
                 <DrawerTab
                   key={null}
                   label={gallerySectionLabel.NetworkFiles}
-                  icon={<FilestoreIcon />}
+                  icon={gallerySectionIcon.NetworkFiles}
                   index={7}
                   tabIndex={getTabIndex(7)}
                   ref={(node) => {
@@ -780,7 +759,7 @@ const Sidebar = ({
           <List sx={{ position: "static" }}>
             <DrawerTab
               label={gallerySectionLabel.PdfDocuments}
-              icon={<FaIcon icon="fa-circle-down" />}
+              icon={gallerySectionIcon.PdfDocuments}
               index={8}
               tabIndex={getTabIndex(8)}
               ref={(node) => {

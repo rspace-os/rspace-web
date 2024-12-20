@@ -653,6 +653,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               textTransform: "uppercase",
               borderBottom: accentedBorder,
             },
+            h4: {
+              fontWeight: 700,
+              textTransform: "uppercase",
+              fontSize: "0.9rem",
+              letterSpacing: "0.01em",
+            },
           },
         },
         MuiLink: {
