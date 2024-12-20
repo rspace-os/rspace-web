@@ -1254,6 +1254,7 @@ export function useGalleryListing({
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: async () => {
+      let newTotalHits: null | number = null;
       const newFiles = (
         await Promise.all(
           [...take(incrementForever(), page + 1)].map((p) =>
@@ -1269,11 +1270,19 @@ export function useGalleryListing({
                   orderBy,
                 }),
               })
-              .then(({ data }) => parseGalleryFiles(data))
+              .then(({ data }) => {
+                Parsers.objectPath(["data", "items", "totalHits"], data)
+                  .flatMap(Parsers.isNumber)
+                  .do((th) => {
+                    newTotalHits ??= th;
+                  });
+                return parseGalleryFiles(data);
+              })
           )
         )
       ).flat();
       setGalleryListing(newFiles);
+      if (newTotalHits !== null) setTotalHits(newTotalHits);
 
       /*
        * If some of the selected files are no longer included in the listing
