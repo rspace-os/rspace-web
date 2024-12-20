@@ -20,6 +20,7 @@ import { take, incrementForever } from "../../util/iterators";
 import useOauthToken from "../../common/useOauthToken";
 import { useFilestoreLogin } from "./components/FilestoreLoginDialog";
 import { LinkedDocumentsPanel } from "./components/LinkedDocumentsPanel";
+import EXT_BY_TYPE from "./fileExtensionsByType.json";
 
 export opaque type Id = number;
 // dummyId is for use in tests ONLY
@@ -30,6 +31,30 @@ export const dummyId: () => Id = () => {
 export function idToString(id: Id): string {
   return `${id}`;
 }
+
+/*
+ * Maps file extensions to icon files
+ */
+const mapToSvgImageIcon = (
+  extensions: $ReadOnlyArray<string>,
+  filename: string
+): $ReadOnlyArray<[string, string]> =>
+  extensions.map((ext) => [ext, `/images/icons/${filename}.svg`]);
+const fileIconMap = new Map([
+  ...mapToSvgImageIcon(EXT_BY_TYPE.CHEMISTRY, "chemistry"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.DNA, "dna"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.AUDIO, "audio"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.VIDEO, "video"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.SPREADSHEET, "sheet"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.IMAGES, "image"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.DOCUMENTS, "document"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.PRESENTATION, "presentation"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.HTML, "html"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.CSV, "csv"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.PDF, "pdf"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.XML, "xml"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.ZIP, "zip"),
+]);
 
 type DescriptionInternalState =
   | {| key: "missing" |}
@@ -74,94 +99,6 @@ export class Description {
 }
 
 /**
- * These are all the files types for which we have a thumbnail specific for the
- * file type.
- */
-function getIconPathForExtension(extension: string) {
-  const chemFileExtensions = [
-    "skc",
-    "mrv",
-    "cxsmiles",
-    "cxsmarts",
-    "cdx",
-    "cdxml",
-    "csrdf",
-    "cml",
-    "csmol",
-    "cssdf",
-    "csrxn",
-    "mol",
-    "mol2",
-    "pdb",
-    "rxn",
-    "rdf",
-    "smiles",
-    "smarts",
-    "sdf",
-    "inchi",
-  ];
-  const dnaFiles = [
-    "fa",
-    "gb",
-    "gbk",
-    "fasta",
-    "fa",
-    "dna",
-    "seq",
-    "sbd",
-    "embl",
-    "ab1",
-  ];
-  const iconOfSameName = [
-    "avi",
-    "bmp",
-    "doc",
-    "docx",
-    "flv",
-    "gif",
-    "jpg",
-    "jpeg",
-    "m4v",
-    "mov",
-    "mp3",
-    "mp4",
-    "mpg",
-    "ods",
-    "odp",
-    "csv",
-    "pps",
-    "odt",
-    "pdf",
-    "png",
-    "rtf",
-    "wav",
-    "wma",
-    "wmv",
-    "xls",
-    "xlsx",
-    "xml",
-    "zip",
-  ];
-
-  const ext = extension.toLowerCase();
-  if (chemFileExtensions.includes(ext))
-    return "/images/icons/chemistry-file.png";
-  if (dnaFiles.includes(ext)) return "/images/icons/dna-file.svg";
-  if (iconOfSameName.includes(ext)) return `/images/icons/${ext}.png`;
-  return (
-    ({
-      htm: "/images/icons/html.png",
-      html: "/images/icons/html.png",
-      ppt: "/images/icons/powerpoint.png",
-      pptx: "/images/icons/powerpoint.png",
-      txt: "/images/icons/txt.png",
-      text: "/images/icons/txt.png",
-      md: "/images/icons/txt.png",
-    }: { [string]: string })[ext] ?? "/images/icons/unknownDocument.png"
-  );
-}
-
-/**
  * For some file types we generate thumbnails of the content. For others we
  * have thumbnails to represent all files of that type.
  */
@@ -176,24 +113,21 @@ function generateIconSrc(
   isSystemFolder: boolean
 ) {
   if (isFolder) {
-    if (isSystemFolder) {
-      if (/snippets/i.test(name)) return "/images/icons/folder-shared.png";
-      return "/images/icons/folder-api-inbox.png";
-    }
-    return "/images/icons/folder.png";
+    if (isSystemFolder) return "/images/icons/system_folder.svg";
+    return "/images/icons/folder.svg";
   }
   if (type === "Image")
     return `/gallery/getThumbnail/${id}/${Math.floor(
       modificationDate.getTime() / 1000
     )}`;
-  if (type === "Documents" || type === "PdfDocuments")
-    return `/image/docThumbnail/${id}/${thumbnailId ?? "none"}`;
+  if ((type === "Documents" || type === "PdfDocuments") && thumbnailId !== null)
+    return `/image/docThumbnail/${id}/${thumbnailId}`;
   if (type === "Chemistry")
     return `/gallery/getChemThumbnail/${id}/${Math.floor(
       modificationDate.getTime() / 1000
     )}`;
-  if (extension === null) return "/images/icons/unknownDocument.png";
-  return getIconPathForExtension(extension);
+  if (extension === null) return "/images/icons/unknown.svg";
+  return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
 }
 
 /**
@@ -501,7 +435,7 @@ export class Filestore implements GalleryFile {
   }
 
   get thumbnailUrl(): string {
-    return "/images/icons/fileStoreLink.png";
+    return "/images/icons/filestore.svg";
   }
 
   pathAsString(): string {

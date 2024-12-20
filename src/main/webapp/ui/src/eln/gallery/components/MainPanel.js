@@ -684,6 +684,10 @@ const FileCard = styled(
         |},
         ref
       ) => {
+        const NAME_STYLES = {
+          LINE_HEIGHT: 1.5,
+          FONT_SIZE: "0.8125rem",
+        };
         const { uploadFiles } = useGalleryActions();
         const { openFolder } = useFolderOpen();
         const selection = useGallerySelection();
@@ -968,26 +972,31 @@ const FileCard = styled(
                       <Grid
                         item
                         sx={{
-                          textAlign: "center",
+                          // give room for two lines of text
+                          lineHeight: NAME_STYLES.LINE_HEIGHT,
+                          fontSize: NAME_STYLES.FONT_SIZE,
+                          minHeight: `calc(2* ${NAME_STYLES.LINE_HEIGHT}* ${NAME_STYLES.FONT_SIZE})`,
+
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "end",
                           flexGrow: 1,
-                          ...(selected
-                            ? {
-                                backgroundColor: (theme) =>
-                                  window.matchMedia("(prefers-contrast: more)")
-                                    .matches
-                                    ? "black"
-                                    : theme.palette.callToAction.main,
-                                p: 0.25,
-                                borderRadius: "4px",
-                                mx: 0.5,
-                              }
-                            : {}),
+                          textAlign: "center",
                         }}
                       >
                         <Typography
                           sx={{
                             ...(selected
                               ? {
+                                  backgroundColor: (theme) =>
+                                    window.matchMedia(
+                                      "(prefers-contrast: more)"
+                                    ).matches
+                                      ? "black"
+                                      : theme.palette.callToAction.main,
+                                  p: 0.25,
+                                  borderRadius: "4px",
+                                  mx: 0.5,
                                   color: window.matchMedia(
                                     "(prefers-contrast: more)"
                                   ).matches
