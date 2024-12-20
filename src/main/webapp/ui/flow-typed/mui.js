@@ -143,6 +143,7 @@ declare module "@mui/x-data-grid" {
       noRowsLabel?: string,
     |},
     onCellKeyDown?: (Row, KeyboardEvent) => void,
+    sx?: { ... }
   |}): Node;
 
   declare export function GridToolbarContainer({|
