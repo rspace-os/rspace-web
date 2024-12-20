@@ -989,6 +989,10 @@ export function useGalleryListing({
           )
         )
         .do(setGalleryListing);
+
+      Parsers.isArray(data)
+        .map((filestores) => filestores.length)
+        .do(setTotalHits);
     } catch (e) {
       console.error(e);
     } finally {
@@ -1084,6 +1088,13 @@ export function useGalleryListing({
           )
         )
         .do(setGalleryListing);
+
+      Parsers.isObject(data)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.getValueWithKey("content"))
+        .flatMap(Parsers.isArray)
+        .map((filestores) => filestores.length)
+        .do(setTotalHits);
     } catch (e) {
       console.error(e);
       if (
