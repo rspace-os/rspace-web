@@ -29,6 +29,7 @@ type GalleryAppBarArgs = {|
   appliedSearchTerm: string,
   setAppliedSearchTerm: (string) => void,
   setDrawerOpen: (boolean) => void,
+  hideSearch: boolean,
   drawerOpen: boolean,
   sidebarId: string,
 |};
@@ -36,6 +37,7 @@ type GalleryAppBarArgs = {|
 function GalleryAppBar({
   appliedSearchTerm,
   setAppliedSearchTerm,
+  hideSearch,
   setDrawerOpen,
   drawerOpen,
   sidebarId,
@@ -86,64 +88,68 @@ function GalleryAppBar({
             title="Search this folder"
           />
         )}
-        <Box
-          mx={1}
-          sx={{
-            flexGrow: isViewportSmall ? 1 : 0,
-            display: !isViewportVerySmall || showTextfield ? "block" : "none",
-          }}
-        >
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              setAppliedSearchTerm(searchTerm);
-              setShowTextfield(searchTerm !== "");
+        {!hideSearch && (
+          <Box
+            mx={1}
+            sx={{
+              flexGrow: isViewportSmall ? 1 : 0,
+              display: !isViewportVerySmall || showTextfield ? "block" : "none",
             }}
           >
-            <TextField
-              placeholder="Search"
-              sx={{
-                /*
-                 * This is so that it doesn't obscure the "Gallery" heading on
-                 * very small mobile viewports. 300px is arbitrary width that
-                 * does is smaller enough to not cause any overlapping issues.
-                 */
-                maxWidth: isViewportSmall ? "100%" : 300,
-                width: isViewportSmall ? "100%" : 300,
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                setAppliedSearchTerm(searchTerm);
+                setShowTextfield(searchTerm !== "");
               }}
-              value={searchTerm}
-              onChange={({ currentTarget: { value } }) => setSearchTerm(value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-                endAdornment:
-                  searchTerm !== "" ? (
-                    <IconButtonWithTooltip
-                      title="Clear"
-                      icon={<StyledCloseIcon />}
-                      size="small"
-                      onClick={() => {
-                        setSearchTerm("");
-                        setAppliedSearchTerm("");
-                        setShowTextfield(false);
-                      }}
-                    />
-                  ) : null,
-              }}
-              inputProps={{
-                ref: searchTextfield,
-                onBlur: () => {
-                  setSearchTerm(appliedSearchTerm);
-                  setShowTextfield(appliedSearchTerm !== "");
-                },
-                "aria-label": "Search current folder",
-              }}
-            />
-          </form>
-        </Box>
+            >
+              <TextField
+                placeholder="Search"
+                sx={{
+                  /*
+                   * This is so that it doesn't obscure the "Gallery" heading on
+                   * very small mobile viewports. 300px is arbitrary width that
+                   * does is smaller enough to not cause any overlapping issues.
+                   */
+                  maxWidth: isViewportSmall ? "100%" : 300,
+                  width: isViewportSmall ? "100%" : 300,
+                }}
+                value={searchTerm}
+                onChange={({ currentTarget: { value } }) =>
+                  setSearchTerm(value)
+                }
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment:
+                    searchTerm !== "" ? (
+                      <IconButtonWithTooltip
+                        title="Clear"
+                        icon={<StyledCloseIcon />}
+                        size="small"
+                        onClick={() => {
+                          setSearchTerm("");
+                          setAppliedSearchTerm("");
+                          setShowTextfield(false);
+                        }}
+                      />
+                    ) : null,
+                }}
+                inputProps={{
+                  ref: searchTextfield,
+                  onBlur: () => {
+                    setSearchTerm(appliedSearchTerm);
+                    setShowTextfield(appliedSearchTerm !== "");
+                  },
+                  "aria-label": "Search current folder",
+                }}
+              />
+            </form>
+          </Box>
+        )}
         <Box ml={1}>
           <AccessibilityTips
             elementType="dialog"

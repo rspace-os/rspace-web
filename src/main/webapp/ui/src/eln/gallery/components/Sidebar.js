@@ -2,14 +2,9 @@
 
 import React, { type Node, type ComponentType } from "react";
 import Box from "@mui/material/Box";
-import Drawer from "@mui/material/Drawer";
+import { Drawer } from "../../../components/DialogBoundary";
 import { styled } from "@mui/material/styles";
-import {
-  COLOR,
-  gallerySectionLabel,
-  type GallerySection,
-  GALLERY_SECTION,
-} from "../common";
+import { COLOR, gallerySectionLabel, type GallerySection } from "../common";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItem from "@mui/material/ListItem";
@@ -18,9 +13,10 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import { darken } from "@mui/system";
 import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
 import ChemistryIcon from "../chemistryIcon";
+import FilestoreIcon from "../filestoreIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
-import Menu from "@mui/material/Menu";
+import { Menu } from "../../../components/DialogBoundary";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faImage,
@@ -59,6 +55,8 @@ import ValidatingSubmitButton, {
   IsValid,
   IsInvalid,
 } from "../../../components/ValidatingSubmitButton";
+import Result from "../../../util/result";
+import DnsIcon from "@mui/icons-material/Dns";
 library.add(faImage);
 library.add(faFilm);
 library.add(faFile);
@@ -68,6 +66,12 @@ library.add(faShapes);
 library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
+library.add(faDatabase);
+import axios, { type Axios } from "axios";
+import useOauthToken from "../../../common/useOauthToken";
+import * as Parsers from "../../../util/parsers";
+import { useDeploymentProperty } from "../../useDeploymentProperty";
+import AddFilestoreDialog from "./AddFilestoreDialog";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -125,7 +129,7 @@ const UploadMenuItem = ({
   tabIndex,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
-  folderId: Id,
+  folderId: Result<Id>,
   onUploadComplete: () => void,
   onCancel: () => void,
 
@@ -166,19 +170,24 @@ const UploadMenuItem = ({
         autoFocus={autoFocus}
         tabIndex={tabIndex}
         compact
+        disabled={folderId.isError}
       />
-      <input
-        ref={inputRef}
-        accept="*"
-        hidden
-        multiple
-        onChange={({ target: { files } }) => {
-          void uploadFiles(path, folderId, [...files]).then(() => {
-            onUploadComplete();
-          });
-        }}
-        type="file"
-      />
+      {folderId
+        .map((fId) => (
+          <input
+            ref={inputRef}
+            accept="*"
+            hidden
+            multiple
+            onChange={({ target: { files } }) => {
+              void uploadFiles(path, fId, [...files]).then(() => {
+                onUploadComplete();
+              });
+            }}
+            type="file"
+          />
+        ))
+        .orElse(null)}
     </>
   );
 };
@@ -191,7 +200,7 @@ const NewFolderMenuItem = ({
   tabIndex,
 }: {|
   path: $ReadOnlyArray<GalleryFile>,
-  folderId: Id,
+  folderId: Result<Id>,
   onDialogClose: (boolean) => void,
 
   /*
@@ -243,7 +252,8 @@ const NewFolderMenuItem = ({
                 }
                 onClick={() => {
                   setSubmitting(true);
-                  void createFolder(path, folderId, name)
+                  const fId = folderId.elseThrow();
+                  void createFolder(path, fId, name)
                     .then(() => {
                       onDialogClose(true);
                     })
@@ -271,7 +281,115 @@ const NewFolderMenuItem = ({
         tabIndex={tabIndex}
         aria-haspopup="dialog"
         compact
+        disabled={folderId.isError}
       />
+    </>
+  );
+};
+
+const AddFilestoreMenuItem = ({
+  onMenuClose,
+  autoFocus,
+  tabIndex,
+}: {|
+  onMenuClose: (boolean) => void,
+  /*
+   * These properties are dynamically added by the MUI Menu parent component
+   */
+  autoFocus?: boolean,
+  tabIndex?: number,
+|}) => {
+  const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
+  const [open, setOpen] = React.useState(false);
+  const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
+    id: number,
+    name: string,
+    url: string,
+  |}>>(null);
+  const { getToken } = useOauthToken();
+  const api = React.useRef<Promise<Axios>>(
+    (async () => {
+      return axios.create({
+        baseURL: "/api/v1/gallery",
+        headers: {
+          Authorization: "Bearer " + (await getToken()),
+        },
+      });
+    })()
+  );
+
+  React.useEffect(() => {
+    void (async () => {
+      const { data } = await (await api.current).get<mixed>("filesystems");
+      Parsers.isArray(data)
+        .flatMap((array) =>
+          Result.all(
+            ...array.map((m) =>
+              Parsers.isObject(m)
+                .flatMap(Parsers.isNotNull)
+                .flatMap((obj) => {
+                  try {
+                    const id = Parsers.getValueWithKey("id")(obj)
+                      .flatMap(Parsers.isNumber)
+                      .elseThrow();
+                    const name = Parsers.getValueWithKey("name")(obj)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    const url = Parsers.getValueWithKey("url")(obj)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    return Result.Ok({ id, name, url });
+                  } catch (e) {
+                    return Result.Error<{|
+                      id: number,
+                      name: string,
+                      url: string,
+                    |}>([e]);
+                  }
+                })
+            )
+          )
+        )
+        .do((newFilesystems) => setFilesystems(newFilesystems));
+    })();
+  }, []);
+
+  return (
+    <>
+      <AddFilestoreDialog
+        open={open}
+        onClose={(success) => {
+          setOpen(false);
+          onMenuClose(success);
+        }}
+      />
+      {FetchingData.getSuccessValue(filestoresEnabled)
+        .flatMap(Parsers.isBoolean)
+        .flatMap(Parsers.isTrue)
+        .map(() => (
+          <NewMenuItem
+            key={null}
+            title="Add a Filestore"
+            subheader={
+              (filesystems ?? []).length === 0
+                ? "System Admin has not configured any external filestores."
+                : null
+            }
+            avatar={<DnsIcon />}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            onClick={() => {
+              setOpen(true);
+            }}
+            //eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus={autoFocus}
+            tabIndex={tabIndex}
+            aria-haspopup="dialog"
+            compact
+            disabled={(filesystems ?? []).length === 0}
+          />
+        ))
+        .orElse(null)}
     </>
   );
 };
@@ -317,21 +435,6 @@ const DmpMenuSection = ({
     </>
   );
 };
-
-const SelectedDrawerTabIndicator = styled(({ className }) => (
-  <div className={className}></div>
-))(({ verticalPosition }) => ({
-  width: "198px",
-  height: "43px",
-  backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
-    ? "black"
-    : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
-  position: "absolute",
-  top: verticalPosition,
-  transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "none"
-    : "top 400ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
-}));
 
 const DrawerTab = styled(
   //eslint-disable-next-line react/display-name
@@ -390,9 +493,11 @@ const DrawerTab = styled(
       ),
     },
     "&.Mui-selected": {
-      backgroundColor: "unset",
       "&:hover": {
-        backgroundColor: "unset",
+        backgroundColor: darken(
+          `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 100%)`,
+          0.05
+        ),
       },
     },
   },
@@ -419,36 +524,9 @@ const Sidebar = ({
   refreshListing,
   id,
 }: SidebarArgs): Node => {
-  const [selectedIndicatorOffset, setSelectedIndicatorOffset] =
-    React.useState(8);
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState(null);
   const viewport = useViewportDimensions();
-
-  const sectionRefs = React.useRef({
-    [GALLERY_SECTION.IMAGES]: null,
-    [GALLERY_SECTION.AUDIOS]: null,
-    [GALLERY_SECTION.VIDEOS]: null,
-    [GALLERY_SECTION.DOCUMENTS]: null,
-    [GALLERY_SECTION.CHEMISTRY]: null,
-    [GALLERY_SECTION.DMPS]: null,
-    [GALLERY_SECTION.NETWORKFILES]: null,
-    [GALLERY_SECTION.SNIPPETS]: null,
-    [GALLERY_SECTION.MISCELLANEOUS]: null,
-    [GALLERY_SECTION.PDFDOCUMENTS]: null,
-  });
-
-  React.useEffect(() => {
-    if (sectionRefs.current && sectionRefs.current[selectedSection])
-      setSelectedIndicatorOffset(
-        sectionRefs.current[selectedSection].offsetTop
-      );
-    /*
-     * On mobile, the sectionRefs are not immediately initialised as the
-     * sidebar is closed. By re-executing this effect when the IMAGES
-     * sectionRef has been initialised we know that all of the sectionRefs
-     * have been initialised and can calculate the selection indicator offset
-     */
-  }, [selectedSection, sectionRefs.current[GALLERY_SECTION.IMAGES]]);
+  const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
 
   React.useEffect(() => {
     autorun(() => {
@@ -489,38 +567,37 @@ const Sidebar = ({
             disablePadding: true,
           }}
         >
-          {FetchingData.getSuccessValue(folderId)
-            .map((fId) => (
-              <UploadMenuItem
-                key={"upload"}
-                path={path}
-                folderId={fId}
-                onUploadComplete={() => {
-                  void refreshListing();
-                  setNewMenuAnchorEl(null);
-                  if (viewport.isViewportSmall) setDrawerOpen(false);
-                }}
-                onCancel={() => {
-                  setNewMenuAnchorEl(null);
-                  if (viewport.isViewportSmall) setDrawerOpen(false);
-                }}
-              />
-            ))
-            .orElse(null)}
-          {FetchingData.getSuccessValue(folderId)
-            .map((fId) => (
-              <NewFolderMenuItem
-                key={"newFolder"}
-                path={path}
-                folderId={fId}
-                onDialogClose={(success) => {
-                  if (success) void refreshListing();
-                  setNewMenuAnchorEl(null);
-                  if (viewport.isViewportSmall) setDrawerOpen(false);
-                }}
-              />
-            ))
-            .orElse(null)}
+          <UploadMenuItem
+            key={"upload"}
+            path={path}
+            folderId={FetchingData.getSuccessValue(folderId)}
+            onUploadComplete={() => {
+              void refreshListing();
+              setNewMenuAnchorEl(null);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
+            }}
+            onCancel={() => {
+              setNewMenuAnchorEl(null);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
+            }}
+          />
+          <NewFolderMenuItem
+            key={"newFolder"}
+            path={path}
+            folderId={FetchingData.getSuccessValue(folderId)}
+            onDialogClose={(success) => {
+              if (success) void refreshListing();
+              setNewMenuAnchorEl(null);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
+            }}
+          />
+          <AddFilestoreMenuItem
+            onMenuClose={(success) => {
+              if (success) void refreshListing();
+              setNewMenuAnchorEl(null);
+              if (viewport.isViewportSmall) setDrawerOpen(false);
+            }}
+          />
           <DmpMenuSection
             onDialogClose={() => {
               setNewMenuAnchorEl(null);
@@ -545,9 +622,6 @@ const Sidebar = ({
           position: "relative",
         }}
       >
-        <SelectedDrawerTabIndicator
-          verticalPosition={selectedIndicatorOffset}
-        />
         <div role="navigation">
           <List sx={{ position: "static" }}>
             <DrawerTab
@@ -556,7 +630,6 @@ const Sidebar = ({
               index={0}
               tabIndex={getTabIndex(0)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.IMAGES] = node;
                 const ref = getRef(0);
                 if (ref) ref.current = node;
               }}
@@ -573,7 +646,6 @@ const Sidebar = ({
               index={1}
               tabIndex={getTabIndex(1)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.AUDIOS] = node;
                 const ref = getRef(1);
                 if (ref) ref.current = node;
               }}
@@ -590,7 +662,6 @@ const Sidebar = ({
               index={2}
               tabIndex={getTabIndex(2)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.VIDEOS] = node;
                 const ref = getRef(2);
                 if (ref) ref.current = node;
               }}
@@ -607,7 +678,6 @@ const Sidebar = ({
               index={3}
               tabIndex={getTabIndex(3)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.DOCUMENTS] = node;
                 const ref = getRef(3);
                 if (ref) ref.current = node;
               }}
@@ -624,7 +694,6 @@ const Sidebar = ({
               index={4}
               tabIndex={getTabIndex(4)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.CHEMISTRY] = node;
                 const ref = getRef(4);
                 if (ref) ref.current = node;
               }}
@@ -641,7 +710,6 @@ const Sidebar = ({
               index={5}
               tabIndex={getTabIndex(5)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.DMPS] = node;
                 const ref = getRef(5);
                 if (ref) ref.current = node;
               }}
@@ -658,7 +726,6 @@ const Sidebar = ({
               index={6}
               tabIndex={getTabIndex(6)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.SNIPPETS] = node;
                 const ref = getRef(6);
                 if (ref) ref.current = node;
               }}
@@ -675,7 +742,6 @@ const Sidebar = ({
               index={7}
               tabIndex={getTabIndex(7)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.MISCELLANEOUS] = node;
                 const ref = getRef(7);
                 if (ref) ref.current = node;
               }}
@@ -686,6 +752,29 @@ const Sidebar = ({
                 if (viewport.isViewportSmall) setDrawerOpen(false);
               }}
             />
+            {FetchingData.getSuccessValue(filestoresEnabled)
+              .flatMap(Parsers.isBoolean)
+              .flatMap(Parsers.isTrue)
+              .map(() => (
+                <DrawerTab
+                  key={null}
+                  label={gallerySectionLabel.NetworkFiles}
+                  icon={<FilestoreIcon />}
+                  index={7}
+                  tabIndex={getTabIndex(7)}
+                  ref={(node) => {
+                    const ref = getRef(8);
+                    if (ref) ref.current = node;
+                  }}
+                  drawerOpen={drawerOpen}
+                  selected={selectedSection === "NetworkFiles"}
+                  onClick={() => {
+                    setSelectedSection("NetworkFiles");
+                    if (viewport.isViewportSmall) setDrawerOpen(false);
+                  }}
+                />
+              ))
+              .orElse(null)}
           </List>
           <Divider />
           <List sx={{ position: "static" }}>
@@ -695,7 +784,6 @@ const Sidebar = ({
               index={8}
               tabIndex={getTabIndex(8)}
               ref={(node) => {
-                sectionRefs.current[GALLERY_SECTION.PDFDOCUMENTS] = node;
                 const ref = getRef(8);
                 if (ref) ref.current = node;
               }}

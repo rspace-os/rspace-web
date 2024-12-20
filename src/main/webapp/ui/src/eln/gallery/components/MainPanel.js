@@ -79,6 +79,7 @@ import { Optional, getByKey } from "../../../util/optional";
 import LoadMoreButton from "./LoadMoreButton";
 import Carousel from "./Carousel";
 import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
+import { useDeploymentProperty } from "../../useDeploymentProperty";
 
 const DragCancelFab = () => {
   const dndContext = useDndContext();
@@ -133,6 +134,9 @@ const BreadcrumbLink = React.forwardRef<
       clearPath,
       tabIndex,
     }: {|
+      /*
+       * Undefined means that it is a link to the root of the section
+       */
       folder?: GalleryFile,
       section: string,
       clearPath: () => void,
@@ -178,7 +182,12 @@ const BreadcrumbLink = React.forwardRef<
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          (folder?.open ?? clearPath)();
+          if (folder) {
+            const open = folder.canOpen.elseThrow();
+            open();
+          } else {
+            clearPath();
+          }
         }}
         ref={(node) => {
           setDropRef(node);
@@ -876,16 +885,16 @@ const FileCard = styled(
                  * keyDown event to propagate up to the KeyboardSensor of the
                  * drag-and-drop mechanism for all other files
                  */
-                {...(file.open
-                  ? {
-                      onKeyDown: (e) => {
-                        if (e.key === " ") file.open?.();
-                      },
-                    }
-                  : {})}
+                {...file.canOpen
+                  .map((open) => ({
+                    onKeyDown: (e: KeyboardEvent) => {
+                      if (e.key === " ") open();
+                    },
+                  }))
+                  .orElse({})}
               >
                 <CardActionArea
-                  role={file.open ? "button" : "checkbox"}
+                  role={file.canOpen.map(() => "button").orElse("checkbox")}
                   aria-checked={selected}
                   tabIndex={-1}
                   onFocus={(e) => {
@@ -1004,7 +1013,7 @@ const FileCard = styled(
                       </Grid>
                     </Grid>
                   </Grid>
-                  {file.version > 1 && (
+                  {typeof file.version === "number" && file.version > 1 && (
                     <div
                       className="versionIndicator"
                       aria-label={`version ${file.version}`}
@@ -1098,6 +1107,7 @@ function GalleryMainPanel({
   setOrderBy,
 }: GalleryMainPanelArgs): Node {
   const viewportDimensions = useViewportDimensions();
+  const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const { uploadFiles } = useGalleryActions();
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
@@ -1140,383 +1150,442 @@ function GalleryMainPanel({
   });
   const keyboardSensor = useSensor(KeyboardSensor, {});
 
-  return (
-    <DialogContent
-      aria-live="polite"
-      sx={{
-        position: "relative",
-        overflowY: "hidden",
-        pr: 2.5,
-        ...(over
-          ? {
-              outline: `3px solid ${SELECTED_OR_FOCUS_BLUE}`,
-              outlineOffset: "-3px",
-            }
-          : {}),
-      }}
-      onDragEnter={onDragEnter}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-    >
-      <DndContext
-        sensors={[mouseSensor, touchSensor, keyboardSensor]}
-        onDragEnd={(event) => {
-          if (!event.over?.data.current) return;
-          /*
-           * When tapping, holding, and then releasing on a folder onDragEnd is
-           * invoked with event.over.data.current.destination.folder being and
-           * event.active.data.current.filesBeingMoved including the container
-           * that is tapped. This is clearly an unintended operation and we
-           * should not attempt to move the container into itself.
-           */
-          if (
-            event.active.data.current.filesBeingMoved.has(
-              event.over.data.current.destination.folder
-            )
-          )
-            return;
-          void moveFiles(event.active.data.current.filesBeingMoved)
-            .to({
-              destination: event.over.data.current.destination,
-              section: selectedSection,
-            })
-            .then(() => {
-              void refreshListing();
-            });
-        }}
-      >
-        <Grid
-          container
-          direction="column"
-          sx={{ height: "100%", flexWrap: "nowrap" }}
-        >
-          <Grid item>
-            <Typography variant="h3" key={selectedSection}>
-              <Fade
-                in={true}
-                timeout={
-                  window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                    ? 0
-                    : 1000
+  return FetchingData.match(filestoresEnabled, {
+    loading: () => null,
+    error: () => (
+      <PlaceholderLabel>
+        Erorr checking if filestores are enabled.
+      </PlaceholderLabel>
+    ),
+    success: (filestoresEnabled) => {
+      const validGallerySections = new Set([
+        "Images",
+        "Audios",
+        "Videos",
+        "Documents",
+        "Chemistry",
+        "DMPs",
+        "Snippets",
+        "Miscellaneous",
+        ...(filestoresEnabled === true ? ["NetworkFiles"] : []),
+        "PdfDocuments",
+      ]);
+      if (!validGallerySections.has(selectedSection))
+        return (
+          <PlaceholderLabel>Not a valid Gallery section.</PlaceholderLabel>
+        );
+      return (
+        <DialogContent
+          aria-live="polite"
+          sx={{
+            position: "relative",
+            overflowY: "hidden",
+            pr: 2.5,
+            ...(over
+              ? {
+                  outline: `3px solid ${SELECTED_OR_FOCUS_BLUE}`,
+                  outlineOffset: "-3px",
                 }
-              >
-                <div>{gallerySectionLabel[selectedSection]}</div>
-              </Fade>
-            </Typography>
-          </Grid>
-          <Grid item sx={{ marginTop: 1.25 }}>
-            <Path section={selectedSection} path={path} clearPath={clearPath} />
-          </Grid>
-          <Grid
-            item
-            container
-            direction="row"
-            sx={{
-              marginTop: 0.75,
-              minHeight: 0,
+              : {}),
+          }}
+          onDragEnter={onDragEnter}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+        >
+          <DndContext
+            sensors={[mouseSensor, touchSensor, keyboardSensor]}
+            onDragEnd={(event) => {
+              if (!event.over?.data.current) return;
               /*
-               * This prevents content from being hidden underneath the
-               * floating info panel. 136px was found by visual inspection.
+               * When tapping, holding, and then releasing on a folder onDragEnd is
+               * invoked with event.over.data.current.destination.folder being and
+               * event.active.data.current.filesBeingMoved including the container
+               * that is tapped. This is clearly an unintended operation and we
+               * should not attempt to move the container into itself.
                */
-              maxHeight:
-                viewportDimensions.isViewportSmall && !selection.isEmpty
-                  ? "calc(100% - 136px)"
-                  : "100%",
+              if (
+                event.active.data.current.filesBeingMoved.has(
+                  event.over.data.current.destination.folder
+                )
+              )
+                return;
+              void moveFiles(event.active.data.current.filesBeingMoved)
+                .to({
+                  destination: event.over.data.current.destination,
+                  section: selectedSection,
+                })
+                .then(() => {
+                  void refreshListing();
+                });
             }}
-            flexWrap="nowrap"
-            flexGrow="1"
           >
             <Grid
-              item
               container
               direction="column"
-              md={7}
-              lg={8}
-              xl={9}
-              sx={{
-                mt: 0.75,
-              }}
-              flexWrap="nowrap"
-              role="region"
-              aria-label="files listing"
+              sx={{ height: "100%", flexWrap: "nowrap" }}
             >
-              <Grid item sx={{ maxWidth: "100% !important" }}>
-                <Stack
-                  direction="row"
-                  spacing={0.5}
-                  alignItems="center"
-                  role="region"
-                  aria-label="files listing controls"
-                >
-                  <ActionsMenu
-                    refreshListing={refreshListing}
-                    section={selectedSection}
-                    folderId={folderId}
-                  />
-                  <Box sx={{ flexGrow: 1 }}></Box>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<TreeIcon />}
-                    onClick={(e) => {
-                      setViewMenuAnchorEl(e.target);
-                    }}
-                    aria-haspopup="menu"
-                    aria-expanded={viewMenuAnchorEl ? "true" : "false"}
+              <Grid item>
+                <Typography variant="h3" key={selectedSection}>
+                  <Fade
+                    in={true}
+                    timeout={
+                      window.matchMedia("(prefers-reduced-motion: reduce)")
+                        .matches
+                        ? 0
+                        : 1000
+                    }
                   >
-                    Views
-                  </Button>
-                  <StyledMenu
-                    open={Boolean(viewMenuAnchorEl)}
-                    anchorEl={viewMenuAnchorEl}
-                    onClose={() => setViewMenuAnchorEl(null)}
-                    MenuListProps={{
-                      disablePadding: true,
-                      "aria-label": "view options",
-                    }}
-                  >
-                    <NewMenuItem
-                      title="Grid"
-                      subheader="Browse by thumbnail previews."
-                      backgroundColor={COLOR.background}
-                      foregroundColor={COLOR.contrastText}
-                      avatar={<GridIcon />}
-                      onClick={() => {
-                        setViewMode("grid");
-                        setViewMenuAnchorEl(null);
-                        selection.clear();
-                      }}
-                    />
-                    <NewMenuItem
-                      title="Tree"
-                      subheader="View and manage folder hierarchy."
-                      backgroundColor={COLOR.background}
-                      foregroundColor={COLOR.contrastText}
-                      avatar={<TreeIcon />}
-                      onClick={() => {
-                        setViewMode("tree");
-                        setViewMenuAnchorEl(null);
-                        selection.clear();
-                      }}
-                    />
-                    <NewMenuItem
-                      title="Carousel"
-                      subheader="Flick through all files to find one."
-                      backgroundColor={COLOR.background}
-                      foregroundColor={COLOR.contrastText}
-                      avatar={<ViewCarouselIcon />}
-                      onClick={() => {
-                        setViewMode("carousel");
-                        setViewMenuAnchorEl(null);
-                        /*
-                         * We don't clear the selection because we want
-                         * carousel view to default to the selected file,
-                         * if there is one
-                         */
-                      }}
-                    />
-                  </StyledMenu>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<SwapVertIcon />}
-                    onClick={(e) => {
-                      setSortMenuAnchorEl(e.target);
-                    }}
-                    aria-haspopup="menu"
-                    aria-expanded={sortMenuAnchorEl ? "true" : "false"}
-                  >
-                    Sort
-                  </Button>
-                  <StyledMenu
-                    open={Boolean(sortMenuAnchorEl)}
-                    anchorEl={sortMenuAnchorEl}
-                    onClose={() => setSortMenuAnchorEl(null)}
-                    MenuListProps={{
-                      disablePadding: true,
-                      "aria-label": "sort listing",
-                    }}
-                  >
-                    <NewMenuItem
-                      title={`Name${match<void, string>([
-                        [() => orderBy !== "name", ""],
-                        [() => sortOrder === "ASC", " (Sorted from A to Z)"],
-                        [() => sortOrder === "DESC", " (Sorted from Z to A)"],
-                      ])()}`}
-                      subheader={match<void, string>([
-                        [() => orderBy !== "name", "Tap to sort from A to Z"],
-                        [() => sortOrder === "ASC", "Tap to sort from Z to A"],
-                        [() => sortOrder === "DESC", "Tap to sort from A to Z"],
-                      ])()}
-                      backgroundColor={COLOR.background}
-                      foregroundColor={COLOR.contrastText}
-                      avatar={match<void, Node>([
-                        [
-                          () => orderBy !== "name",
-                          <HorizontalRuleIcon key={null} />,
-                        ],
-                        [
-                          () => sortOrder === "ASC",
-                          <ArrowDownwardIcon key={null} />,
-                        ],
-                        [
-                          () => sortOrder === "DESC",
-                          <ArrowUpwardIcon key={null} />,
-                        ],
-                      ])()}
-                      onClick={() => {
-                        setSortMenuAnchorEl(null);
-                        if (orderBy === "name") {
-                          if (sortOrder === "ASC") {
-                            setSortOrder("DESC");
-                          } else {
-                            setSortOrder("ASC");
-                          }
-                        } else {
-                          setOrderBy("name");
-                          setSortOrder("ASC");
-                        }
-                      }}
-                    />
-                    <NewMenuItem
-                      title={`Modification Date${match<void, string>([
-                        [() => orderBy !== "modificationDate", ""],
-                        [() => sortOrder === "ASC", " (Sorted oldest first)"],
-                        [() => sortOrder === "DESC", " (Sorted newest first)"],
-                      ])()}`}
-                      subheader={match<void, string>([
-                        [
-                          () => orderBy !== "modificationDate",
-                          "Tap to sort oldest first",
-                        ],
-                        [() => sortOrder === "ASC", "Tap to sort newest first"],
-                        [
-                          () => sortOrder === "DESC",
-                          "Tap to sort oldest first",
-                        ],
-                      ])()}
-                      backgroundColor={COLOR.background}
-                      foregroundColor={COLOR.contrastText}
-                      avatar={match<void, Node>([
-                        [
-                          () => orderBy !== "modificationDate",
-                          <HorizontalRuleIcon key={null} />,
-                        ],
-                        [
-                          () => sortOrder === "ASC",
-                          <ArrowDownwardIcon key={null} />,
-                        ],
-                        [
-                          () => sortOrder === "DESC",
-                          <ArrowUpwardIcon key={null} />,
-                        ],
-                      ])()}
-                      onClick={() => {
-                        setSortMenuAnchorEl(null);
-                        if (orderBy === "modificationDate") {
-                          if (sortOrder === "ASC") {
-                            setSortOrder("DESC");
-                          } else {
-                            setSortOrder("ASC");
-                          }
-                        } else {
-                          setOrderBy("modificationDate");
-                          setSortOrder("ASC");
-                        }
-                      }}
-                    />
-                  </StyledMenu>
-                </Stack>
+                    <div>{gallerySectionLabel[selectedSection]}</div>
+                  </Fade>
+                </Typography>
+              </Grid>
+              <Grid item sx={{ marginTop: 1.25 }}>
+                <Path
+                  section={selectedSection}
+                  path={path}
+                  clearPath={clearPath}
+                />
               </Grid>
               <Grid
                 item
-                sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}
-                flexGrow={1}
+                container
+                direction="row"
+                sx={{
+                  marginTop: 0.75,
+                  minHeight: 0,
+                  /*
+                   * This prevents content from being hidden underneath the
+                   * floating info panel. 136px was found by visual inspection.
+                   */
+                  maxHeight:
+                    viewportDimensions.isViewportSmall && !selection.isEmpty
+                      ? "calc(100% - 136px)"
+                      : "100%",
+                }}
+                flexWrap="nowrap"
+                flexGrow="1"
               >
-                {viewMode === "tree" &&
-                  FetchingData.match(galleryListing, {
-                    loading: () => <></>,
-                    error: (error) => <>{error}</>,
-                    success: (listing) => (
-                      <TreeView
-                        listing={listing}
-                        path={path}
-                        selectedSection={selectedSection}
+                <Grid
+                  item
+                  container
+                  direction="column"
+                  md={7}
+                  lg={8}
+                  xl={9}
+                  sx={{
+                    mt: 0.75,
+                  }}
+                  flexWrap="nowrap"
+                  role="region"
+                  aria-label="files listing"
+                >
+                  <Grid item sx={{ maxWidth: "100% !important" }}>
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      alignItems="center"
+                      role="region"
+                      aria-label="files listing controls"
+                    >
+                      <ActionsMenu
                         refreshListing={refreshListing}
-                        sortOrder={sortOrder}
-                        orderBy={orderBy}
-                        foldersOnly={false}
+                        section={selectedSection}
+                        folderId={folderId}
                       />
-                    ),
-                  })}
-                {viewMode === "grid" &&
-                  FetchingData.match(galleryListing, {
-                    loading: () => <></>,
-                    error: (error) => <>{error}</>,
-                    success: (listing) => <GridView listing={listing} />,
-                  })}
-                {viewMode === "carousel" &&
-                  FetchingData.match(galleryListing, {
-                    loading: () => <></>,
-                    error: (error) => <>{error}</>,
-                    success: (listing) => <Carousel listing={listing} />,
-                  })}
+                      <Box sx={{ flexGrow: 1 }}></Box>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<TreeIcon />}
+                        onClick={(e) => {
+                          setViewMenuAnchorEl(e.target);
+                        }}
+                        aria-haspopup="menu"
+                        aria-expanded={viewMenuAnchorEl ? "true" : "false"}
+                      >
+                        Views
+                      </Button>
+                      <StyledMenu
+                        open={Boolean(viewMenuAnchorEl)}
+                        anchorEl={viewMenuAnchorEl}
+                        onClose={() => setViewMenuAnchorEl(null)}
+                        MenuListProps={{
+                          disablePadding: true,
+                          "aria-label": "view options",
+                        }}
+                      >
+                        <NewMenuItem
+                          title="Grid"
+                          subheader="Browse by thumbnail previews."
+                          backgroundColor={COLOR.background}
+                          foregroundColor={COLOR.contrastText}
+                          avatar={<GridIcon />}
+                          onClick={() => {
+                            setViewMode("grid");
+                            setViewMenuAnchorEl(null);
+                            selection.clear();
+                          }}
+                        />
+                        <NewMenuItem
+                          title="Tree"
+                          subheader="View and manage folder hierarchy."
+                          backgroundColor={COLOR.background}
+                          foregroundColor={COLOR.contrastText}
+                          avatar={<TreeIcon />}
+                          onClick={() => {
+                            setViewMode("tree");
+                            setViewMenuAnchorEl(null);
+                            selection.clear();
+                          }}
+                        />
+                        <NewMenuItem
+                          title="Carousel"
+                          subheader="Flick through all files to find one."
+                          backgroundColor={COLOR.background}
+                          foregroundColor={COLOR.contrastText}
+                          avatar={<ViewCarouselIcon />}
+                          onClick={() => {
+                            setViewMode("carousel");
+                            setViewMenuAnchorEl(null);
+                            /*
+                             * We don't clear the selection because we want
+                             * carousel view to default to the selected file,
+                             * if there is one
+                             */
+                          }}
+                        />
+                      </StyledMenu>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<SwapVertIcon />}
+                        onClick={(e) => {
+                          setSortMenuAnchorEl(e.target);
+                        }}
+                        aria-haspopup="menu"
+                        aria-expanded={sortMenuAnchorEl ? "true" : "false"}
+                        disabled={selectedSection === "NetworkFiles"}
+                      >
+                        Sort
+                      </Button>
+                      <StyledMenu
+                        open={Boolean(sortMenuAnchorEl)}
+                        anchorEl={sortMenuAnchorEl}
+                        onClose={() => setSortMenuAnchorEl(null)}
+                        MenuListProps={{
+                          disablePadding: true,
+                          "aria-label": "sort listing",
+                        }}
+                      >
+                        <NewMenuItem
+                          title={`Name${match<void, string>([
+                            [() => orderBy !== "name", ""],
+                            [
+                              () => sortOrder === "ASC",
+                              " (Sorted from A to Z)",
+                            ],
+                            [
+                              () => sortOrder === "DESC",
+                              " (Sorted from Z to A)",
+                            ],
+                          ])()}`}
+                          subheader={match<void, string>([
+                            [
+                              () => orderBy !== "name",
+                              "Tap to sort from A to Z",
+                            ],
+                            [
+                              () => sortOrder === "ASC",
+                              "Tap to sort from Z to A",
+                            ],
+                            [
+                              () => sortOrder === "DESC",
+                              "Tap to sort from A to Z",
+                            ],
+                          ])()}
+                          backgroundColor={COLOR.background}
+                          foregroundColor={COLOR.contrastText}
+                          avatar={match<void, Node>([
+                            [
+                              () => orderBy !== "name",
+                              <HorizontalRuleIcon key={null} />,
+                            ],
+                            [
+                              () => sortOrder === "ASC",
+                              <ArrowDownwardIcon key={null} />,
+                            ],
+                            [
+                              () => sortOrder === "DESC",
+                              <ArrowUpwardIcon key={null} />,
+                            ],
+                          ])()}
+                          onClick={() => {
+                            setSortMenuAnchorEl(null);
+                            if (orderBy === "name") {
+                              if (sortOrder === "ASC") {
+                                setSortOrder("DESC");
+                              } else {
+                                setSortOrder("ASC");
+                              }
+                            } else {
+                              setOrderBy("name");
+                              setSortOrder("ASC");
+                            }
+                          }}
+                        />
+                        <NewMenuItem
+                          title={`Modification Date${match<void, string>([
+                            [() => orderBy !== "modificationDate", ""],
+                            [
+                              () => sortOrder === "ASC",
+                              " (Sorted oldest first)",
+                            ],
+                            [
+                              () => sortOrder === "DESC",
+                              " (Sorted newest first)",
+                            ],
+                          ])()}`}
+                          subheader={match<void, string>([
+                            [
+                              () => orderBy !== "modificationDate",
+                              "Tap to sort oldest first",
+                            ],
+                            [
+                              () => sortOrder === "ASC",
+                              "Tap to sort newest first",
+                            ],
+                            [
+                              () => sortOrder === "DESC",
+                              "Tap to sort oldest first",
+                            ],
+                          ])()}
+                          backgroundColor={COLOR.background}
+                          foregroundColor={COLOR.contrastText}
+                          avatar={match<void, Node>([
+                            [
+                              () => orderBy !== "modificationDate",
+                              <HorizontalRuleIcon key={null} />,
+                            ],
+                            [
+                              () => sortOrder === "ASC",
+                              <ArrowDownwardIcon key={null} />,
+                            ],
+                            [
+                              () => sortOrder === "DESC",
+                              <ArrowUpwardIcon key={null} />,
+                            ],
+                          ])()}
+                          onClick={() => {
+                            setSortMenuAnchorEl(null);
+                            if (orderBy === "modificationDate") {
+                              if (sortOrder === "ASC") {
+                                setSortOrder("DESC");
+                              } else {
+                                setSortOrder("ASC");
+                              }
+                            } else {
+                              setOrderBy("modificationDate");
+                              setSortOrder("ASC");
+                            }
+                          }}
+                        />
+                      </StyledMenu>
+                    </Stack>
+                  </Grid>
+                  <Grid
+                    item
+                    sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}
+                    flexGrow={1}
+                  >
+                    {viewMode === "tree" &&
+                      FetchingData.match(galleryListing, {
+                        loading: () => <></>,
+                        error: (error) => <>{error}</>,
+                        success: (listing) => (
+                          <TreeView
+                            listing={listing}
+                            path={path}
+                            selectedSection={selectedSection}
+                            refreshListing={refreshListing}
+                            sortOrder={sortOrder}
+                            orderBy={orderBy}
+                            foldersOnly={false}
+                          />
+                        ),
+                      })}
+                    {viewMode === "grid" &&
+                      FetchingData.match(galleryListing, {
+                        loading: () => <></>,
+                        error: (error) => <>{error}</>,
+                        success: (listing) => <GridView listing={listing} />,
+                      })}
+                    {viewMode === "carousel" &&
+                      FetchingData.match(galleryListing, {
+                        loading: () => <></>,
+                        error: (error) => <>{error}</>,
+                        success: (listing) => <Carousel listing={listing} />,
+                      })}
+                  </Grid>
+                </Grid>
+                <Grid
+                  item
+                  sx={{ mx: 1.5, display: { xs: "none", md: "block" } }}
+                >
+                  <Divider orientation="vertical" />
+                </Grid>
+                <Grid
+                  item
+                  md={5}
+                  lg={4}
+                  xl={3}
+                  sx={{
+                    display: { xs: "none", md: "block" },
+                    overflowX: "hidden",
+                    overflowY: "auto",
+                    mt: 0.75,
+                  }}
+                  role="region"
+                  aria-label="info panel"
+                >
+                  <InfoPanelForLargeViewports
+                    /*
+                     * When the selection changes we want to unmount the current
+                     * info panel and mount a new one, thereby resetting any
+                     * modified state. If we didn't have this key and simply
+                     * re-rendered then if there was and still is one file selected
+                     * then the new name would not match the state held by the name
+                     * field so the component would think that it is in a modified
+                     * state and should open the Save and Cancel buttons. Same
+                     * applies to the Description field.
+                     */
+                    key={selection
+                      .asSet()
+                      .reduce((acc, { id }) => `${acc},${idToString(id)}`, "")}
+                  />
+                </Grid>
+                {selection
+                  .asSet()
+                  .only.map((file) => (
+                    /*
+                     * Same applies here, in that we want to unmount and mount a
+                     * new info panel when the selection changes to reset any
+                     * modified state.
+                     */
+                    <InfoPanelForSmallViewports
+                      key={idToString(file.id)}
+                      file={file}
+                    />
+                  ))
+                  .orElse(null)}
               </Grid>
             </Grid>
-            <Grid item sx={{ mx: 1.5, display: { xs: "none", md: "block" } }}>
-              <Divider orientation="vertical" />
-            </Grid>
-            <Grid
-              item
-              md={5}
-              lg={4}
-              xl={3}
-              sx={{
-                display: { xs: "none", md: "block" },
-                overflowX: "hidden",
-                overflowY: "auto",
-                mt: 0.75,
-              }}
-              role="region"
-              aria-label="info panel"
-            >
-              <InfoPanelForLargeViewports
-                /*
-                 * When the selection changes we want to unmount the current
-                 * info panel and mount a new one, thereby resetting any
-                 * modified state. If we didn't have this key and simply
-                 * re-rendered then if there was and still is one file selected
-                 * then the new name would not match the state held by the name
-                 * field so the component would think that it is in a modified
-                 * state and should open the Save and Cancel buttons. Same
-                 * applies to the Description field.
-                 */
-                key={selection
-                  .asSet()
-                  .reduce((acc, { id }) => `${acc},${idToString(id)}`, "")}
-              />
-            </Grid>
-            {selection
-              .asSet()
-              .only.map((file) => (
-                /*
-                 * Same applies here, in that we want to unmount and mount a
-                 * new info panel when the selection changes to reset any
-                 * modified state.
-                 */
-                <InfoPanelForSmallViewports
-                  key={idToString(file.id)}
-                  file={file}
-                />
-              ))
-              .orElse(null)}
-          </Grid>
-        </Grid>
-        <DragCancelFab />
-      </DndContext>
-    </DialogContent>
-  );
+            <DragCancelFab />
+          </DndContext>
+        </DialogContent>
+      );
+    },
+  });
 }
 
 /**

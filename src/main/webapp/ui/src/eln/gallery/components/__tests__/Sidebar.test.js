@@ -67,6 +67,22 @@ function newMockAxios() {
     errorMsg: null,
   });
 
+  mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
+    data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
+  });
+
+  mockAxios.onGet("/api/v1/gallery/filesystems").reply(200, [
+    {
+      id: 1,
+      name: "irods test",
+      url: "irods-test.researchspace.com",
+      clientType: "IRODS",
+      authType: "PASSWORD",
+      options: {},
+      loggedAs: null,
+    },
+  ]);
+
   return mockAxios;
 }
 
@@ -82,7 +98,7 @@ describe("Sidebar", () => {
       const user = userEvent.setup();
       const mockAxios = newMockAxios();
 
-      const { baseElement } = render(
+      render(
         <ThemeProvider theme={materialTheme}>
           <Sidebar
             selectedSection="Images"
@@ -124,7 +140,7 @@ describe("Sidebar", () => {
       const user = userEvent.setup();
       const mockAxios = newMockAxios();
 
-      const { baseElement } = render(
+      render(
         <ThemeProvider theme={materialTheme}>
           <Sidebar
             selectedSection="Images"

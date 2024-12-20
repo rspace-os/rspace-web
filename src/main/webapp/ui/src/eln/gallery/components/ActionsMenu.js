@@ -40,7 +40,6 @@ import * as Parsers from "../../../util/parsers";
 import * as FetchingData from "../../../util/fetchingData";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import {
-  useOpen,
   useImagePreviewOfGalleryFile,
   useCollaboraEdit,
   useOfficeOnlineEdit,
@@ -108,19 +107,7 @@ const UploadNewVersionMenuItem = ({
         () =>
           new Error("Only one item may be updated with a new version at once.")
       )
-      .flatMap((file) => {
-        if (file.isFolder)
-          return Result.Error([
-            new Error("Cannot update folders with a new version."),
-          ]);
-        if (!file.extension)
-          return Result.Error([
-            new Error(
-              "An extension is required to be able to update the file with a new version"
-            ),
-          ]);
-        return Result.Ok(null);
-      });
+      .flatMap((file) => file.canUploadNewVersion);
   });
 
   return (
@@ -288,11 +275,11 @@ function ActionsMenu({
   folderId,
 }: ActionsMenuArgs): Node {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState(null);
-  const { deleteFiles, duplicateFiles, uploadFiles } = useGalleryActions();
+  const { deleteFiles, duplicateFiles, uploadFiles, download } =
+    useGalleryActions();
   const selection = useGallerySelection();
   const theme = useTheme();
   const { addAlert } = React.useContext(AlertContext);
-  const canOpenAsFolder = useOpen();
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
@@ -314,7 +301,7 @@ function ActionsMenu({
     return selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
-      .flatMap(canOpenAsFolder);
+      .flatMap((f) => f.canOpen);
   });
 
   const editingAllowed = computed(() =>
@@ -350,7 +337,7 @@ function ActionsMenu({
     selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
-      .map((file) => canOpenAsFolder(file).isOk)
+      .map((file) => file.canOpen.isOk)
       .orElse(false)
   );
 
@@ -386,40 +373,36 @@ function ActionsMenu({
   );
 
   const duplicateAllowed = computed((): Result<null> => {
-    if (selection.asSet().some((f) => f.isSystemFolder))
-      return Result.Error([new Error("Cannot duplicate system folders.")]);
     if (selection.size > 50)
       return Result.Error([
         new Error("Cannot duplicate more than 50 items at once."),
       ]);
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canDuplicate)).map(
+      () => null
+    );
   });
 
   const deleteAllowed = computed((): Result<null> => {
-    if (selection.asSet().some((f) => f.isSystemFolder))
-      return Result.Error([new Error("Cannot delete system folders.")]);
     if (selection.size > 50)
       return Result.Error([
         new Error("Cannot delete more than 50 items at once."),
       ]);
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canDelete)).map(
+      () => null
+    );
   });
 
   const renameAllowed = computed((): Result<null> => {
     return selection
       .asSet()
       .only.toResult(() => new Error("Only one item may be renamed at once."))
-      .flatMap((file) => {
-        if (file.isSystemFolder)
-          return Result.Error([new Error("Cannot rename system folders.")]);
-        return Result.Ok(null);
-      });
+      .flatMap((file) => file.canRename);
   });
 
   const moveToIrodsAllowed = computed((): Result<null> => {
-    if (selection.asSet().some((f) => f.isSystemFolder))
-      return Result.Error([new Error("Cannot move system folders to iRODS.")]);
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canMoveToIrods)).map(
+      () => null
+    );
   });
 
   const exportAllowed = computed((): Result<null> => {
@@ -427,20 +410,13 @@ function ActionsMenu({
       return Result.Error([
         new Error("Cannot export more than 100 itemes at once."),
       ]);
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(() => null);
   });
 
   const downloadAllowed = computed((): Result<null> => {
-    return selection
-      .asSet()
-      .only.toResult(
-        () => new Error("Only one item may be downloaded at once.")
-      )
-      .flatMap((file) => {
-        if (file.isFolder)
-          return Result.Error([new Error("Cannot download folders.")]);
-        return Result.Ok(null);
-      });
+    if (selection.asSet().some((f) => f.isFolder))
+      return Result.Error([new Error("Cannot download folders.")]);
+    return Result.Ok(null);
   });
 
   const moveAllowed = computed((): Result<null> => {
@@ -448,7 +424,9 @@ function ActionsMenu({
       return Result.Error([
         new Error("Cannot move more than 50 items at once."),
       ]);
-    return Result.Ok(null);
+    return Result.all(...selection.asSet().map((f) => f.canBeMoved)).map(
+      () => null
+    );
   });
 
   return (
@@ -650,10 +628,9 @@ function ActionsMenu({
           foregroundColor={COLOR.contrastText}
           avatar={<FileDownloadIcon />}
           onClick={() => {
-            selection.asSet().only.do((file) => {
-              window.open(file.downloadHref);
+            void download(selection.asSet()).then(() => {
+              setActionsMenuAnchorEl(null);
             });
-            setActionsMenuAnchorEl(null);
           }}
           compact
           disabled={downloadAllowed.get().isError}

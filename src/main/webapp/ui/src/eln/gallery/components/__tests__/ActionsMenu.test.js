@@ -22,6 +22,7 @@ import createAccentedTheme from "../../../../accentedTheme";
 import "../../../../../__mocks__/matchMedia";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
+import Result from "../../../../util/result";
 
 jest.mock("../CallablePdfPreview", () => ({
   usePdfPreview: () => ({
@@ -102,32 +103,41 @@ describe("ActionsMenu", () => {
       <ThemeProvider theme={createAccentedTheme(COLOR)}>
         <GallerySelection>
           <SetSelection
-            files={[
-              {
-                id: dummyId(),
-                globalId: "GF1",
-                name: "Foo",
-                extension: "txt",
-                creationDate: new Date(),
-                modificationDate: new Date(),
-                type: "image",
-                thumbnailUrl: "example.com",
-                ownerName: "Joe Bloggs",
-                description: new Description({ key: "empty" }),
-                version: 1,
-                size: 1024,
-                path: [],
-                pathAsString: () => "",
-                isFolder: false,
-                isSystemFolder: false,
-                isImage: true,
-                isSnippet: false,
-                isSnippetFolder: false,
-                transformFilename: (f) => f("Foo"),
-                setName: () => {},
-                setDescription: () => {},
+            files={[{
+              id: dummyId(),
+              globalId: "GF1",
+              name: "Foo",
+              extension: "txt",
+              creationDate: new Date(),
+              modificationDate: new Date(),
+              type: "image",
+              thumbnailUrl: "example.com",
+              ownerName: "Joe Bloggs",
+              description: new Description({ key: "empty" }),
+              version: 1,
+              size: 1024,
+              path: [],
+              pathAsString: () => "",
+              isFolder: false,
+              isSystemFolder: false,
+              isImage: true,
+              isSnippet: false,
+              isSnippetFolder: false,
+              transformFilename(f: (string) => string) {
+                return f("Foo");
               },
-            ]}
+              setName: () => {},
+              setDescription: () => {},
+              linkedDocuments: null,
+              canOpen: Result.Error([new Error("I'm a folder")]),
+              canDuplicate: Result.Ok(null),
+              canDelete: Result.Ok(null),
+              canRename: Result.Ok(null),
+              canMoveToIrods: Result.Ok(null),
+              canBeExported: Result.Ok(null),
+              canBeMoved: Result.Ok(null),
+              canUploadNewVersion: Result.Ok(null),
+            }]}
           />
           <ActionsMenu
             refreshListing={() => Promise.resolve()}
@@ -169,33 +179,41 @@ describe("ActionsMenu", () => {
       <ThemeProvider theme={createAccentedTheme(COLOR)}>
         <GallerySelection>
           <SetSelection
-            files={[
-              {
-                id: dummyId(),
-                globalId: "GF1",
-                name: "Foo",
-                extension: "",
-                creationDate: new Date(),
-                modificationDate: new Date(),
-                type: "folder",
-                thumbnailUrl: "example.com",
-                ownerName: "Joe Bloggs",
-                description: new Description({ key: "empty" }),
-                version: 1,
-                size: 1024,
-                path: [],
-                pathAsString: () => "",
-                isFolder: true,
-                isSystemFolder: false,
-                isImage: false,
-                isSnippet: false,
-                isSnippetFolder: false,
-                transformFilename: (f) => f("Foo"),
-                setName: () => {},
-                setDescription: () => {},
-                open: () => {},
+            files={[{
+              id: dummyId(),
+              globalId: "GF1",
+              name: "Foo",
+              extension: "",
+              creationDate: new Date(),
+              modificationDate: new Date(),
+              type: "folder",
+              thumbnailUrl: "example.com",
+              ownerName: "Joe Bloggs",
+              description: new Description({ key: "empty" }),
+              version: 1,
+              size: 1024,
+              path: [],
+              pathAsString: () => "",
+              isFolder: true,
+              isSystemFolder: false,
+              isImage: false,
+              isSnippet: false,
+              isSnippetFolder: false,
+              transformFilename(f: (string) => string) {
+                return f("Foo");
               },
-            ]}
+              setName: () => {},
+              setDescription: () => {},
+              linkedDocuments: null,
+              canOpen: Result.Ok(() => {}),
+              canDuplicate: Result.Ok(null),
+              canDelete: Result.Ok(null),
+              canRename: Result.Ok(null),
+              canMoveToIrods: Result.Ok(null),
+              canBeExported: Result.Ok(null),
+              canBeMoved: Result.Ok(null),
+              canUploadNewVersion: Result.Ok(null),
+            }]}
           />
           <ActionsMenu
             refreshListing={() => Promise.resolve()}
@@ -256,10 +274,21 @@ describe("ActionsMenu", () => {
                 isImage: false,
                 isSnippet: false,
                 isSnippetFolder: false,
-                transformFilename: (f) => f("Foo"),
+                transformFilename(f: (string) => string) {
+                  return f("Foo");
+                },
                 setName: () => {},
                 setDescription: () => {},
                 open: () => {},
+                linkedDocuments: null,
+                canOpen: Result.Error([new Error("I'm a folder")]),
+                canDuplicate: Result.Ok(null),
+                canDelete: Result.Ok(null),
+                canRename: Result.Ok(null),
+                canMoveToIrods: Result.Ok(null),
+                canBeExported: Result.Ok(null),
+                canBeMoved: Result.Ok(null),
+                canUploadNewVersion: Result.Ok(null),
               },
               {
                 id: dummyId(),
@@ -281,10 +310,21 @@ describe("ActionsMenu", () => {
                 isImage: false,
                 isSnippet: false,
                 isSnippetFolder: false,
-                transformFilename: (f) => f("Foo"),
+                transformFilename(f: (string) => string) {
+                  return f("Foo");
+                },
                 setName: () => {},
                 setDescription: () => {},
                 open: () => {},
+                linkedDocuments: null,
+                canOpen: Result.Error([new Error("I'm a folder")]),
+                canDuplicate: Result.Ok(null),
+                canDelete: Result.Ok(null),
+                canRename: Result.Ok(null),
+                canMoveToIrods: Result.Ok(null),
+                canBeExported: Result.Ok(null),
+                canBeMoved: Result.Ok(null),
+                canUploadNewVersion: Result.Ok(null),
               },
             ]}
           />

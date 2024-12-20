@@ -19,7 +19,6 @@ import { grey } from "@mui/material/colors";
 import DescriptionList from "../../../components/DescriptionList";
 import { formatFileSize, filenameExceptExtension } from "../../../util/files";
 import Result from "../../../util/result";
-import { LinkedDocumentsPanel } from "./LinkedDocumentsPanel";
 import { observer } from "mobx-react-lite";
 import { useGalleryActions } from "../useGalleryActions";
 import ImagePreview, {
@@ -32,6 +31,7 @@ import usePrimaryAction from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import { Optional } from "../../../util/optional";
 
 /*
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -324,8 +324,12 @@ const NameFieldForLargeViewports = styled(
  * submitting by keyboard requires tabbing to the submit button.
  *
  * @param file           The selected file whose description is being edited.
- *                       A description that is anything but `present` is
- *                       considered to be blank.
+ *                       The `description` prop should be derived from
+ *                       `file.description`.
+ * @param description    The current description, as a string. If the
+ *                       description is missing then this component should not
+ *                       be rendered at all. If the description is empty then
+ *                       this string should be the empty string.
  * @param minimalStyling Whether minimal styling is applied.
  *                       Ignored when high contrast mode is requested, with the
  *                       borders always being shown.
@@ -335,25 +339,19 @@ const DescriptionField = styled(
   observer(
     ({
       file,
+      description: initialDescription,
       minimalStyling = false,
       className,
     }: {|
       file: GalleryFile,
+      description: string,
       minimalStyling?: boolean,
       className: string,
     |}) => {
       const { changeDescription } = useGalleryActions();
-      function getDescValue(f: GalleryFile) {
-        return f.description.match({
-          missing: () => "",
-          empty: () => "",
-          present: (d) => d,
-        });
-      }
 
-      const [description, setDescription] = React.useState<string>(
-        getDescValue(file)
-      );
+      const [description, setDescription] =
+        React.useState<string>(initialDescription);
 
       const prefersMoreContrast = window.matchMedia(
         "(prefers-contrast: more)"
@@ -369,7 +367,7 @@ const DescriptionField = styled(
             className={clsx(
               className,
               minimalStyling && !prefersMoreContrast && MINIMAL_STYLING_CLASS,
-              description !== getDescValue(file) && "modified"
+              description !== initialDescription && "modified"
             )}
             onChange={({ target: { value } }) => setDescription(value)}
             multiline
@@ -382,7 +380,7 @@ const DescriptionField = styled(
             }}
           />
           <Collapse
-            in={description !== getDescValue(file)}
+            in={description !== initialDescription}
             timeout={
               window.matchMedia("(prefers-reduced-motion: reduce)").matches
                 ? 0
@@ -393,7 +391,7 @@ const DescriptionField = styled(
               <Button
                 size="small"
                 onClick={() => {
-                  setDescription(getDescValue(file));
+                  setDescription(initialDescription);
                 }}
               >
                 Cancel
@@ -477,21 +475,45 @@ const InfoPanelContent = ({
     <Stack sx={{ height: "100%" }}>
       <DescriptionList
         content={[
-          {
-            label: "Global ID",
-            value: file.globalId,
-          },
-          {
-            label: "Owner",
-            value: file.ownerName,
-          },
-          {
-            label: "Description",
-            value: (
-              <DescriptionField file={file} minimalStyling={!smallViewport} />
+          ...(typeof file.globalId === "string"
+            ? [
+                {
+                  label: "Global ID",
+                  value: file.globalId,
+                },
+              ]
+            : []),
+          ...(typeof file.ownerName === "string"
+            ? [
+                {
+                  label: "Owner",
+                  value: file.ownerName,
+                },
+              ]
+            : []),
+          ...file.description
+            .toString()
+            .map((desc) => [
+              {
+                label: "Description",
+                value: (
+                  <DescriptionField
+                    file={file}
+                    description={desc}
+                    minimalStyling={!smallViewport}
+                  />
+                ),
+                below: true,
+              },
+            ])
+            .orElse(
+              ([]: $ReadOnlyArray<{|
+                label: string,
+                value: Node,
+                below?: boolean,
+                reducedPadding?: boolean,
+              |}>)
             ),
-            below: true,
-          },
         ]}
         sx={{
           "& dd.below": {
@@ -506,30 +528,46 @@ const InfoPanelContent = ({
         </Typography>
         <DescriptionList
           content={[
-            {
-              label: "Type",
-              value: file.type,
-            },
+            ...(typeof file.type === "string"
+              ? [
+                  {
+                    label: "Type",
+                    value: file.type,
+                  },
+                ]
+              : []),
             {
               label: "Size",
               value: formatFileSize(file.size),
             },
-            {
-              label: "Created",
-              value: file.creationDate.toLocaleString(),
-            },
-            {
-              label: "Modified",
-              value: file.modificationDate.toLocaleString(),
-            },
-            {
-              label: "Version",
-              value: file.version,
-            },
+            ...(typeof file.creationDate !== "undefined"
+              ? [
+                  {
+                    label: "Created",
+                    value: file.creationDate.toLocaleString(),
+                  },
+                ]
+              : []),
+            ...(typeof file.modificationDate !== "undefined"
+              ? [
+                  {
+                    label: "Modified",
+                    value: file.modificationDate.toLocaleString(),
+                  },
+                ]
+              : []),
+            ...(typeof file.version === "number"
+              ? [
+                  {
+                    label: "Version",
+                    value: file.version,
+                  },
+                ]
+              : []),
           ]}
         />
       </Box>
-      <LinkedDocumentsPanel file={file} />
+      {file.linkedDocuments}
     </Stack>
   );
 };
@@ -538,16 +576,20 @@ const InfoPanelMultipleContent = (): Node => {
   const selection = useGallerySelection();
   const sortedByCreated = selection
     .asSet()
-    .toArray(
-      (fileA, fileB) =>
-        fileA.creationDate.getTime() - fileB.creationDate.getTime()
-    );
+    .mapOptional((file) =>
+      typeof file.creationDate === "undefined"
+        ? Optional.empty<Date>()
+        : Optional.present(file.creationDate)
+    )
+    .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
   const sortedByModified = selection
     .asSet()
-    .toArray(
-      (fileA, fileB) =>
-        fileA.modificationDate.getTime() - fileB.modificationDate.getTime()
-    );
+    .mapOptional((file) =>
+      typeof file.modificationDate === "undefined"
+        ? Optional.empty<Date>()
+        : Optional.present(file.modificationDate)
+    )
+    .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
   return (
     <DescriptionList
       content={[
@@ -557,35 +599,31 @@ const InfoPanelMultipleContent = (): Node => {
             selection.asSet().reduce((sum, file) => sum + file.size, 0)
           ),
         },
-        ...Result.lift2<GalleryFile, GalleryFile, _>(
-          (oldestFile, newestFile) => [
-            {
-              label: "Created",
-              value: (
-                <>
-                  {oldestFile.creationDate.toLocaleDateString()} &ndash;{" "}
-                  {newestFile.creationDate.toLocaleDateString()}
-                </>
-              ),
-            },
-          ]
-        )(
+        ...Result.lift2<Date, Date, _>((oldestDate, newestDate) => [
+          {
+            label: "Created",
+            value: (
+              <>
+                {oldestDate.toLocaleDateString()} &ndash;{" "}
+                {newestDate.toLocaleDateString()}
+              </>
+            ),
+          },
+        ])(
           ArrayUtils.head(sortedByCreated),
           ArrayUtils.last(sortedByCreated)
         ).orElse([]),
-        ...Result.lift2<GalleryFile, GalleryFile, _>(
-          (oldestFile, newestFile) => [
-            {
-              label: "Modified",
-              value: (
-                <>
-                  {oldestFile.modificationDate.toLocaleDateString()} &ndash;{" "}
-                  {newestFile.modificationDate.toLocaleDateString()}
-                </>
-              ),
-            },
-          ]
-        )(
+        ...Result.lift2<Date, Date, _>((oldestDate, newestDate) => [
+          {
+            label: "Modified",
+            value: (
+              <>
+                {oldestDate.toLocaleDateString()} &ndash;{" "}
+                {newestDate.toLocaleDateString()}
+              </>
+            ),
+          },
+        ])(
           ArrayUtils.head(sortedByModified),
           ArrayUtils.last(sortedByModified)
         ).orElse(
@@ -645,13 +683,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
           {selection
             .asSet()
             .only.toResult(() => new Error("Empty or multiple selected"))
-            .flatMap((f) =>
-              f.isSystemFolder
-                ? Result.Error<GalleryFile>([
-                    new Error("Cannot rename system folder"),
-                  ])
-                : Result.Ok(f)
-            )
+            .flatMapDiscarding((f) => f.canRename)
             .map((f) => <NameFieldForLargeViewports key={null} file={f} />)
             .orElse(
               <Typography
@@ -889,23 +921,25 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                   {file.name}
                 </Typography>
               </Grid>
-              {file.open && (
-                <Grid item>
-                  <ActionButton
-                    label="Open"
-                    sx={{
-                      borderRadius: 3,
-                      px: 2.5,
-                      py: 0.5,
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      file.open?.();
-                      setMobileInfoPanelOpen(false);
-                    }}
-                  />
-                </Grid>
-              )}
+              {file.canOpen
+                .map((open) => (
+                  <Grid item>
+                    <ActionButton
+                      label="Open"
+                      sx={{
+                        borderRadius: 3,
+                        px: 2.5,
+                        py: 0.5,
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        open();
+                        setMobileInfoPanelOpen(false);
+                      }}
+                    />
+                  </Grid>
+                ))
+                .orElse(null)}
               {file.isImage && file.downloadHref && (
                 <Grid item>
                   <ActionButton

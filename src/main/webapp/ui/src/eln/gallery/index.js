@@ -29,6 +29,7 @@ import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
+import { FilestoreLoginContextualDialog } from "./components/FilestoreLoginDialog";
 
 const WholePage = styled(() => {
   const [searchParams, setSelectedSection] = useSearchParamState({
@@ -68,6 +69,7 @@ const WholePage = styled(() => {
           <AppBar
             appliedSearchTerm={appliedSearchTerm}
             setAppliedSearchTerm={setAppliedSearchTerm}
+            hideSearch={selectedSection === "NetworkFiles"}
             setDrawerOpen={setDrawerOpen}
             drawerOpen={drawerOpen}
             sidebarId={sidebarId}
@@ -155,7 +157,9 @@ window.addEventListener("load", () => {
                             <Alerts>
                               <RouterNavigationContext>
                                 <GallerySelection>
-                                  <WholePage />
+                                  <FilestoreLoginContextualDialog>
+                                    <WholePage />
+                                  </FilestoreLoginContextualDialog>
                                 </GallerySelection>
                               </RouterNavigationContext>
                             </Alerts>

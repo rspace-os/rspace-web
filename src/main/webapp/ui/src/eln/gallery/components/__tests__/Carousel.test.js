@@ -111,7 +111,10 @@ describe("Carousel", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("img")).toHaveAttribute("src", "/Streamfile/444");
+      expect(screen.getByRole("img")).toHaveAttribute(
+        "src",
+        "/api/v1/files/444/file"
+      );
     });
   });
 
@@ -166,7 +169,7 @@ describe("Carousel", () => {
       await waitFor(() => {
         expect(screen.getByRole("img")).toHaveAttribute(
           "src",
-          `/Streamfile/${page2.data.items.lastResult.id}`
+          `/api/v1/files/${page2.data.items.lastResult.id}/file`
         );
       });
     },

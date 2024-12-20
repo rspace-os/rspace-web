@@ -9,7 +9,7 @@ import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import RsSet from "../../../util/set";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";
-import { dummyId, Description } from "../useGalleryListing";
+import { dummyId, Description, LocalGalleryFile } from "../useGalleryListing";
 import Alerts from "../../../components/Alerts/Alerts";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
@@ -29,7 +29,7 @@ describe("useGalleryActions", () => {
           onClick={() => {
             void duplicateFiles(
               new RsSet([
-                {
+                new LocalGalleryFile({
                   id: dummyId(),
                   globalId: "GF1",
                   name: "Foo",
@@ -37,22 +37,15 @@ describe("useGalleryActions", () => {
                   creationDate: new Date(),
                   modificationDate: new Date(),
                   type: "image",
-                  thumbnailUrl: "example.com",
                   ownerName: "Joe Bloggs",
                   description: new Description({ key: "empty" }),
                   version: 1,
                   size: 1024,
                   path: [],
-                  pathAsString: () => "",
-                  isFolder: false,
-                  isSystemFolder: false,
-                  isImage: true,
-                  isSnippet: false,
-                  isSnippetFolder: false,
-                  transformFilename: (f) => f("Foo"),
-                  setName: () => {},
-                  setDescription: () => {},
-                },
+                  setPath: () => {},
+                  thumbnailId: null,
+                  gallerySection: "Images",
+                }),
               ])
             );
           }}
@@ -124,7 +117,7 @@ describe("useGalleryActions", () => {
           onClick={() => {
             void deleteFiles(
               new RsSet([
-                {
+                new LocalGalleryFile({
                   id: dummyId(),
                   globalId: "GF1",
                   name: "Foo",
@@ -132,22 +125,15 @@ describe("useGalleryActions", () => {
                   creationDate: new Date(),
                   modificationDate: new Date(),
                   type: "image",
-                  thumbnailUrl: "example.com",
                   ownerName: "Joe Bloggs",
                   description: new Description({ key: "empty" }),
                   version: 1,
                   size: 1024,
                   path: [],
-                  pathAsString: () => "",
-                  isFolder: false,
-                  isSystemFolder: false,
-                  isImage: true,
-                  isSnippet: false,
-                  isSnippetFolder: false,
-                  transformFilename: (f) => f("Foo"),
-                  setName: () => {},
-                  setDescription: () => {},
-                },
+                  setPath: () => {},
+                  thumbnailId: null,
+                  gallerySection: "Images",
+                }),
               ])
             );
           }}
@@ -219,7 +205,7 @@ describe("useGalleryActions", () => {
           onClick={() => {
             void moveFiles(
               new RsSet([
-                {
+                new LocalGalleryFile({
                   id: dummyId(),
                   globalId: "GF1",
                   name: "Foo",
@@ -227,22 +213,15 @@ describe("useGalleryActions", () => {
                   creationDate: new Date(),
                   modificationDate: new Date(),
                   type: "image",
-                  thumbnailUrl: "example.com",
                   ownerName: "Joe Bloggs",
                   description: new Description({ key: "empty" }),
                   version: 1,
                   size: 1024,
                   path: [],
-                  pathAsString: () => "",
-                  isFolder: false,
-                  isSystemFolder: false,
-                  isImage: true,
-                  isSnippet: false,
-                  isSnippetFolder: false,
-                  transformFilename: (f) => f("Foo"),
-                  setName: () => {},
-                  setDescription: () => {},
-                },
+                  setPath: () => {},
+                  thumbnailId: null,
+                  gallerySection: "Images",
+                }),
               ])
             ).to({
               destination: rootDestination(),

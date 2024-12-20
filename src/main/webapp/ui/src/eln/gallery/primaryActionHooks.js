@@ -10,16 +10,6 @@ import useOfficeOnline from "./useOfficeOnline";
 import { supportedAsposeFile } from "./components/CallableAsposePreview";
 import { type URL } from "../../util/types";
 
-export function useOpen(): (file: GalleryFile) => Result<() => void> {
-  return (file) => {
-    if (file.open) {
-      const f = file.open;
-      return Result.Ok(() => f());
-    }
-    return Result.Error([new Error("Not a folder.")]);
-  };
-}
-
 export function useImagePreviewOfGalleryFile(): (
   file: GalleryFile
 ) => Result<URL> {
@@ -47,8 +37,10 @@ export function useCollaboraEdit(): (file: GalleryFile) => Result<string> {
               ),
             ])
       )
-      .map(() => {
-        return "/collaboraOnline/" + file.globalId + "/edit";
+      .map(() => file.globalId)
+      .flatMap(Parsers.isNotBottom)
+      .map((globalId) => {
+        return "/collaboraOnline/" + globalId + "/edit";
       });
   };
 }
@@ -71,8 +63,10 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
               ),
             ])
       )
-      .map(() => {
-        return "/officeOnline/" + file.globalId + "/view";
+      .map(() => file.globalId)
+      .flatMap(Parsers.isNotBottom)
+      .map((globalId) => {
+        return "/officeOnline/" + globalId + "/view";
       });
   };
 }
@@ -112,7 +106,6 @@ export default function usePrimaryAction(): (
   | {| tag: "pdf", downloadHref: string |}
   | {| tag: "aspose" |}
 > {
-  const canOpenAsFolder = useOpen();
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
@@ -120,7 +113,7 @@ export default function usePrimaryAction(): (
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
 
   return (file) =>
-    canOpenAsFolder(file)
+    file.canOpen
       .map((open) => ({ tag: "open", open }))
       .orElseTry(() =>
         canPreviewAsImage(file).map((downloadHref) => ({

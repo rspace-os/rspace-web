@@ -8,11 +8,15 @@ import RsSet from "../../util/set";
 import Result from "../../util/result";
 import {
   type GalleryFile,
-  Description,
+  LocalGalleryFile,
+  Filestore,
+  type Description,
   idToString,
   type Id,
 } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import useOauthToken from "../../common/useOauthToken";
+import { partitionAllSettled } from "../../util/Util";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -60,8 +64,10 @@ export function useGalleryActions(): {|
     newFile: File
   ) => Promise<void>,
   changeDescription: (GalleryFile, Description) => Promise<void>,
+  download: (RsSet<GalleryFile>) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
+  const { getToken } = useOauthToken();
 
   /*
    * We create these axios objects because the global axios object is polluted
@@ -357,18 +363,17 @@ export function useGalleryActions(): {|
     };
   }
 
-  async function deleteFiles(files: RsSet<GalleryFile>) {
-    if (files.some((f) => f.isSystemFolder)) return;
+  async function deleteLocalFiles(files: RsSet<LocalGalleryFile>) {
     const deletingAlert = mkAlert({
       message: "Deleting...",
       variant: "notice",
       isInfinite: true,
     });
-    const formData = new FormData();
-    for (const file of files)
-      formData.append("idsToDelete[]", idToString(file.id));
     try {
       addAlert(deletingAlert);
+      const formData = new FormData();
+      for (const file of files)
+        formData.append("idsToDelete[]", idToString(file.id));
       const data = await galleryApi.post<FormData, mixed>(
         "deleteElementFromGallery",
         formData,
@@ -400,6 +405,48 @@ export function useGalleryActions(): {|
             })
           )
       );
+    } finally {
+      removeAlert(deletingAlert);
+    }
+  }
+
+  async function deleteFilestore(filestore: Filestore) {
+    const api = axios.create({
+      baseURL: "/api/v1/gallery",
+      headers: {
+        Authorization: "Bearer " + (await getToken()),
+      },
+    });
+    try {
+      await api.delete<mixed>(`filestores/${idToString(filestore.id)}`);
+      addAlert(
+        mkAlert({
+          message: "Successfully deleted filestore.",
+          variant: "success",
+        })
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to delete filestore.",
+          message: e.message,
+        })
+      );
+      throw e;
+    }
+  }
+
+  async function deleteFiles(files: RsSet<GalleryFile>) {
+    if (files.some((f) => f.isSystemFolder)) return;
+    if (files.every((f) => f instanceof Filestore)) {
+      await Promise.all(files.filterClass(Filestore).map(deleteFilestore));
+      return;
+    }
+    try {
+      if (files.some((f) => !(f instanceof LocalGalleryFile)))
+        throw new Error("Can only delete local files");
+      await deleteLocalFiles(files.filterClass(LocalGalleryFile));
     } catch (e) {
       addAlert(
         mkAlert({
@@ -409,8 +456,6 @@ export function useGalleryActions(): {|
         })
       );
       throw e;
-    } finally {
-      removeAlert(deletingAlert);
     }
   }
 
@@ -493,6 +538,9 @@ export function useGalleryActions(): {|
     );
     try {
       addAlert(renamingAlert);
+      if (typeof file.setName === "undefined")
+        throw new Error("This file cannot be renamed");
+      const setName = file.setName;
       const data = await structuredDocumentApi.post<FormData, mixed>(
         "rename",
         formData,
@@ -516,7 +564,7 @@ export function useGalleryActions(): {|
         })
       );
 
-      file.setName(file.transformFilename(() => newName));
+      setName(file.transformFilename(() => newName));
     } catch (e) {
       addAlert(
         mkAlert({
@@ -610,6 +658,9 @@ export function useGalleryActions(): {|
       })
     );
     try {
+      if (typeof file.setDescription === "undefined")
+        throw new Error("Cannot edit description");
+      const setDescription = file.setDescription;
       const data = await structuredDocumentApi.post<FormData, mixed>(
         "description",
         formData,
@@ -633,7 +684,7 @@ export function useGalleryActions(): {|
         })
       );
 
-      file.setDescription(newDescription);
+      setDescription(newDescription);
     } catch (e) {
       addAlert(
         mkAlert({
@@ -646,6 +697,75 @@ export function useGalleryActions(): {|
     }
   }
 
+  async function download(files: RsSet<GalleryFile>) {
+    const api = axios.create({
+      baseURL: "",
+      headers: {
+        Authorization: "Bearer " + (await getToken()),
+      },
+    });
+    try {
+      const { fulfilled, rejected } = partitionAllSettled(
+        await Promise.allSettled(
+          [...files].map(async (file) => {
+            if (!file.downloadHref)
+              throw new Error(`Cannot download ${file.name}`);
+            const { data: blob } = await api.get<Blob>(file.downloadHref, {
+              responseType: "blob",
+            });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(url);
+            return file;
+          })
+        )
+      );
+      if (fulfilled.length > 0) {
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: `Successfully downloaded ${
+              rejected.length > 0 ? "some of " : ""
+            }the files.`,
+            ...(rejected.length > 0
+              ? {
+                  details: fulfilled.map((f) => ({
+                    variant: "success",
+                    title: f.name,
+                  })),
+                }
+              : {}),
+          })
+        );
+      }
+      if (rejected.length > 0) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            message: `Failed to download ${
+              fulfilled.length > 0 ? "some of " : ""
+            }the files.`,
+            details: rejected.map((e) => ({
+              variant: "error",
+              title: e.message,
+            })),
+          })
+        );
+      }
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to download all the files.",
+          message: e.message,
+        })
+      );
+    }
+  }
+
   return {
     uploadFiles,
     createFolder,
@@ -655,5 +775,6 @@ export function useGalleryActions(): {|
     rename,
     uploadNewVersion,
     changeDescription,
+    download,
   };
 }

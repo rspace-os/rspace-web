@@ -1,0 +1,44 @@
+{
+  "remotePath" : "/",
+  "filesystemInfo" : {
+    "id" : 1,
+    "name" : "irods test",
+    "url" : "irods-test.researchspace.com",
+    "clientType" : "IRODS",
+    "authType" : "PASSWORD",
+    "options" : { },
+    "loggedAs" : null
+  },
+  "loggedUser" : "alice",
+  "showExtraDirs" : false,
+  "showCurrentDir" : false,
+  "content" : [ {
+    "name" : "selenium",
+    "logicPath" : "/tempZone/home/alice/selenium",
+    "fileSize" : 0,
+    "nfsId" : 10809,
+    "folder" : true,
+    "modificationDate" : "2024-07-02T08:16:38.000Z"
+  }, {
+    "name" : "test",
+    "logicPath" : "/tempZone/home/alice/test",
+    "fileSize" : 0,
+    "nfsId" : 10111,
+    "folder" : true,
+    "modificationDate" : "2024-12-16T01:32:36.000Z"
+  }, {
+    "name" : "training_jpgs",
+    "logicPath" : "/tempZone/home/alice/training_jpgs",
+    "fileSize" : 0,
+    "nfsId" : 10024,
+    "folder" : true,
+    "modificationDate" : "2024-05-17T06:30:18.000Z"
+  }, {
+    "name" : "unit_test_DO_NOT_MANUAL_USE",
+    "logicPath" : "/tempZone/home/alice/unit_test_DO_NOT_MANUAL_USE",
+    "fileSize" : 0,
+    "nfsId" : 10851,
+    "folder" : true,
+    "modificationDate" : "2024-12-16T01:18:08.000Z"
+  } ]
+}

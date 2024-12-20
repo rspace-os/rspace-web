@@ -444,6 +444,10 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 border: accentedBorder,
                 borderColor: darken(accentedBackground, hoverDarkenCoefficient),
               },
+              [`&.${buttonClasses.disabled}`]: {
+                border: accentedBorder,
+                borderColor: disabledColor,
+              },
             },
             outlinedPrimary: {
               color: interactiveColor,
