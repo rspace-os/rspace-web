@@ -37,6 +37,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
+import { useFolderOpen } from "./OpenFolderProvider";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -409,6 +410,7 @@ const TreeView = ({
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
   const primaryAction = usePrimaryAction();
+  const { openFolder } = useFolderOpen();
 
   const [expandedItems, setExpandedItems] = React.useState<
     $ReadOnlyArray<GalleryFile["id"]>
@@ -515,7 +517,7 @@ const TreeView = ({
             MapUtils.get(idMap, itemId).do((file) => {
               primaryAction(file).do((action) => {
                 if (action.tag === "open") {
-                  action.open();
+                  openFolder(file);
                   return;
                 }
                 if (action.tag === "image") {

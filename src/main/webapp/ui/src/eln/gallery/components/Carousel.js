@@ -34,6 +34,7 @@ import { styled } from "@mui/material/styles";
 import { COLOR } from "../common";
 import ResetZoomIcon from "./ResetZoomIcon";
 import Typography from "@mui/material/Typography";
+import { useFolderOpen } from "./OpenFolderProvider";
 
 /*
  * When a drag is in progress, this cursor style applied.
@@ -79,6 +80,7 @@ const PreviewWrapper = ({
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
+  const { openFolder } = useFolderOpen();
   const primaryAction = usePrimaryAction();
   const [scrollPos, setScrollPos] = React.useState<null | {|
     scrollLeft: number,
@@ -145,7 +147,7 @@ const PreviewWrapper = ({
         if (e.key === "Enter") {
           primaryAction(file).do((action) => {
             if (action.tag === "open") {
-              action.open();
+              openFolder(file);
               return;
             }
             if (action.tag === "image") {
@@ -174,7 +176,7 @@ const PreviewWrapper = ({
         if (e.detail > 1) {
           primaryAction(file).do((action) => {
             if (action.tag === "open") {
-              action.open();
+              openFolder(file);
               return;
             }
             if (action.tag === "image") {

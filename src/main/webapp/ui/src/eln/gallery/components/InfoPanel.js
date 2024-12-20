@@ -32,6 +32,7 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { Optional } from "../../../util/optional";
+import { useFolderOpen } from "./OpenFolderProvider";
 
 /*
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -664,6 +665,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const primaryAction = usePrimaryAction();
+  const { openFolder } = useFolderOpen();
 
   return (
     <>
@@ -719,7 +721,9 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   return (
                     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                       <ActionButton
-                        onClick={action.open}
+                        onClick={() => {
+                          openFolder(file);
+                        }}
                         label="Open"
                         sx={{
                           borderRadius: 1,
@@ -851,6 +855,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const selection = useGallerySelection();
   const mobileInfoPanelId = React.useId();
+  const { openFolder } = useFolderOpen();
 
   return (
     <CustomSwipeableDrawer
@@ -922,7 +927,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                 </Typography>
               </Grid>
               {file.canOpen
-                .map((open) => (
+                .map(() => (
                   <Grid item>
                     <ActionButton
                       label="Open"
@@ -933,7 +938,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        open();
+                        openFolder(file);
                         setMobileInfoPanelOpen(false);
                       }}
                     />

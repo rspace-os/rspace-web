@@ -30,6 +30,7 @@ import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginContextualDialog } from "./components/FilestoreLoginDialog";
+import OpenFolderProvider from "./components/OpenFolderProvider";
 
 const WholePage = styled(() => {
   const [searchParams, setSelectedSection] = useSearchParamState({
@@ -50,7 +51,7 @@ const WholePage = styled(() => {
       defaultValue: "DESC",
     }
   );
-  const { galleryListing, path, clearPath, folderId, refreshListing } =
+  const { galleryListing, path, setPath, folderId, refreshListing } =
     useGalleryListing({
       section: selectedSection,
       searchTerm: appliedSearchTerm,
@@ -66,56 +67,58 @@ const WholePage = styled(() => {
     <CallableImagePreview>
       <CallablePdfPreview>
         <CallableAsposePreview>
-          <AppBar
-            appliedSearchTerm={appliedSearchTerm}
-            setAppliedSearchTerm={setAppliedSearchTerm}
-            hideSearch={selectedSection === "NetworkFiles"}
-            setDrawerOpen={setDrawerOpen}
-            drawerOpen={drawerOpen}
-            sidebarId={sidebarId}
-          />
-          <Box
-            sx={{ display: "flex", height: "calc(100% - 48px)" }}
-            component="main"
-          >
-            <Sidebar
-              selectedSection={selectedSection}
-              setSelectedSection={(mediaType) => {
-                setSelectedSection({ mediaType });
-                clearPath();
-                setAppliedSearchTerm("");
-              }}
-              drawerOpen={drawerOpen}
+          <OpenFolderProvider setPath={setPath}>
+            <AppBar
+              appliedSearchTerm={appliedSearchTerm}
+              setAppliedSearchTerm={setAppliedSearchTerm}
+              hideSearch={selectedSection === "NetworkFiles"}
               setDrawerOpen={setDrawerOpen}
-              path={path}
-              folderId={folderId}
-              refreshListing={refreshListing}
-              id={sidebarId}
+              drawerOpen={drawerOpen}
+              sidebarId={sidebarId}
             />
             <Box
-              sx={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                flexGrow: 1,
-                minWidth: 0,
-              }}
+              sx={{ display: "flex", height: "calc(100% - 48px)" }}
+              component="main"
             >
-              <MainPanel
+              <Sidebar
                 selectedSection={selectedSection}
+                setSelectedSection={(mediaType) => {
+                  setSelectedSection({ mediaType });
+                  setPath([]);
+                  setAppliedSearchTerm("");
+                }}
+                drawerOpen={drawerOpen}
+                setDrawerOpen={setDrawerOpen}
                 path={path}
-                clearPath={clearPath}
-                galleryListing={galleryListing}
                 folderId={folderId}
                 refreshListing={refreshListing}
-                key={null}
-                sortOrder={sortOrder}
-                orderBy={orderBy}
-                setSortOrder={setSortOrder}
-                setOrderBy={setOrderBy}
+                id={sidebarId}
               />
+              <Box
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  flexGrow: 1,
+                  minWidth: 0,
+                }}
+              >
+                <MainPanel
+                  selectedSection={selectedSection}
+                  path={path}
+                  clearPath={() => setPath([])}
+                  galleryListing={galleryListing}
+                  folderId={folderId}
+                  refreshListing={refreshListing}
+                  key={null}
+                  sortOrder={sortOrder}
+                  orderBy={orderBy}
+                  setSortOrder={setSortOrder}
+                  setOrderBy={setOrderBy}
+                />
+              </Box>
             </Box>
-          </Box>
+          </OpenFolderProvider>
         </CallableAsposePreview>
       </CallablePdfPreview>
     </CallableImagePreview>

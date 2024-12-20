@@ -99,7 +99,7 @@ export function useAsposePreviewOfGalleryFile(): (
 export default function usePrimaryAction(): (
   file: GalleryFile
 ) => Result<
-  | {| tag: "open", open: () => void |}
+  | {| tag: "open" |}
   | {| tag: "image", downloadHref: string, caption: $ReadOnlyArray<string> |}
   | {| tag: "collabora", url: string |}
   | {| tag: "officeonline", url: string |}
@@ -114,7 +114,7 @@ export default function usePrimaryAction(): (
 
   return (file) =>
     file.canOpen
-      .map((open) => ({ tag: "open", open }))
+      .map(() => ({ tag: "open" }))
       .orElseTry(() =>
         canPreviewAsImage(file).map((downloadHref) => ({
           tag: "image",
