@@ -202,6 +202,12 @@ export interface GalleryFile {
   +canBeExported: Result<null>;
   +canBeMoved: Result<null>;
   +canUploadNewVersion: Result<null>;
+
+  /*
+   * A unique identifier across all possible trees that this file may be
+   * rendered in.
+   */
+  +treeViewItemId: string;
 }
 
 export class LocalGalleryFile implements GalleryFile {
@@ -391,6 +397,10 @@ export class LocalGalleryFile implements GalleryFile {
       ]);
     return Result.Ok(null);
   }
+
+  get treeViewItemId(): string {
+    return `LOCAL_${idToString(this.id)}`;
+  }
 }
 
 export class Filestore implements GalleryFile {
@@ -498,6 +508,10 @@ export class Filestore implements GalleryFile {
     return Result.Error([
       new Error("Filestores cannot be updated by uploading new versions."),
     ]);
+  }
+
+  get treeViewItemId(): string {
+    return `FILESTORE_${idToString(this.id)}`;
   }
 }
 
@@ -663,6 +677,11 @@ class RemoteFile implements GalleryFile {
         "Contents of filestores cannot be updated by uploading new versions."
       ),
     ]);
+  }
+
+  get treeViewItemId(): string {
+    const filestoreId = this.path[0].id;
+    return `REMOTE_FILE_${idToString(filestoreId)}_${idToString(this.id)}`;
   }
 }
 

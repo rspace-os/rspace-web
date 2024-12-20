@@ -280,7 +280,7 @@ const CustomTreeItem = observer(
         }}
       >
         <StyledTreeItem
-          itemId={idToString(file.id)}
+          itemId={file.treeViewItemId}
           disabled={disabled}
           label={
             <Box
