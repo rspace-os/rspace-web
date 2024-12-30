@@ -98,4 +98,8 @@ public class GalleryFilestoresCredentialsStore {
   public void removeUserCredentialsForFilesystem(User user, Long fileSystemId) {
     credentialsMapCache.remove(new NfsUserFileSystem(user, fileSystemId));
   }
+
+  public void removeAllCachedCredentials() {
+    credentialsMapCache.clear();
+  }
 }
