@@ -63,6 +63,7 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareRecordMessageOrRequestDTO;
 import com.researchspace.service.UserFolderCreator;
 import com.researchspace.service.UserManager;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -674,7 +675,9 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
       // either add to individual shared folder, or lab group shared folder.
+      log.info("before addChild:" + Instant.now().toString());
       folderToShareInto.addChild(docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy);
+      log.info("after addChild:" + Instant.now().toString());
       saveRecordOrFolder(docOrNotebook);
       folderDao.save(folderToShareInto);
       log.info(
@@ -777,6 +780,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         }
       }
 
+      log.info("doUnshare-beforeUsersLoop:" + Instant.now().toString());
       Set<Folder> deletedFrom = new HashSet<>();
       // now we remove this shared item from other users's shared folders
       for (Long id : users) {
@@ -794,12 +798,15 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
           deletedFrom.add(sharedGrpFolderRoot);
         }
       }
+      log.info("doUnshare-afterUsersLoop:" + Instant.now().toString());
     }
     return unshared;
   }
 
   private void removeUnsharedChild(Folder sharedParent, BaseRecord toUnshare) {
+    log.info("before removeChild:" + Instant.now().toString());
     sharedParent.removeChild(toUnshare);
+    log.info("after removeChild:" + Instant.now().toString());
     folderDao.save(sharedParent);
     saveRecordOrFolder(toUnshare);
   }

@@ -1710,7 +1710,7 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>rspace-core-model</artifactId>
+        <artifactId>rspace-core-model-rsdev-441</artifactId>
         <version>${rspace-core-model.version}</version>
         <exclusions>
           <exclusion>
@@ -1737,7 +1737,7 @@
     </dependency>
     <dependency>
         <groupId>com.github.rspace-os</groupId>
-        <artifactId>rspace-core-model</artifactId>
+        <artifactId>rspace-core-model-rsdev-441</artifactId>
         <version>${rspace-core-model.version}</version>
         <scope>test</scope>
         <type>test-jar</type>
@@ -3004,7 +3004,7 @@
     <jstl.version>1.1.2</jstl.version>
     <lucene.version>5.5.5</lucene.version>
     <netty.version>4.1.63.Final</netty.version>
-    <rspace-core-model.version>2.4.1</rspace-core-model.version>
+    <rspace-core-model.version>2.6.0</rspace-core-model.version>
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
