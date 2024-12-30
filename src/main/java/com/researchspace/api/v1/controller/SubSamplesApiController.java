@@ -87,6 +87,7 @@ public class SubSamplesApiController extends BaseApiInventoryController implemen
 
     ApiSubSample subSample = retrieveSubSampleIfExists(id, user);
     buildAndAddInventoryRecordLinks(subSample);
+    buildAndAddInventoryRecordLinks(subSample.getSampleInfo());
     return subSample;
   }
 
