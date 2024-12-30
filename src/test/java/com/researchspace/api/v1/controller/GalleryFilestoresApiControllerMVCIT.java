@@ -45,6 +45,7 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
     apiKey = createNewApiKeyForUser(anyUser);
+    credentialsStore.removeAllCachedCredentials();
   }
 
   @Test
