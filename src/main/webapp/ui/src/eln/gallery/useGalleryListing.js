@@ -134,6 +134,12 @@ function generateIconSrc(
  * Objects of this shape model files and folders in the Gallery.
  */
 export interface GalleryFile {
+  /*
+   * clean up any resources that the object may have created
+   * that wont be cleaned up by the garbage collector
+   */
+  deconstructor(): void;
+
   +id: Id;
   +globalId?: string;
   name: string;
@@ -314,6 +320,10 @@ export class LocalGalleryFile implements GalleryFile {
     }
   }
 
+  deconstructor() {
+    if (this.#cachedDownloadHref) URL.revokeObjectURL(this.#cachedDownloadHref);
+  }
+
   get isFolder(): boolean {
     return /Folder/.test(this.type);
   }
@@ -457,6 +467,8 @@ export class Filestore implements GalleryFile {
     this.path = path;
   }
 
+  deconstructor() {}
+
   get extension(): string | null {
     return null;
   }
@@ -593,6 +605,10 @@ class RemoteFile implements GalleryFile {
         return url;
       };
     }
+  }
+
+  deconstructor() {
+    if (this.#cachedDownloadHref) URL.revokeObjectURL(this.#cachedDownloadHref);
   }
 
   get id(): Id {
@@ -818,6 +834,13 @@ export function useGalleryListing({
     return `There are no top-level ${gallerySectionCollectiveNoun[section]}.`;
   }
 
+  function clearAndSetGalleryListing(list: $ReadOnlyArray<GalleryFile>) {
+    galleryListing.forEach((file) => {
+      file.deconstructor();
+    });
+    setGalleryListing(list);
+  }
+
   function parseGalleryFiles(data: mixed, token: string) {
     return Parsers.objectPath(["data", "items", "results"], data)
       .flatMap(Parsers.isArray)
@@ -963,7 +986,7 @@ export function useGalleryListing({
 
   async function getFilestores(): Promise<void> {
     selection.clear();
-    setGalleryListing([]);
+    clearAndSetGalleryListing([]);
     setLoading(true);
     const api = axios.create({
       baseURL: "/api/v1/gallery",
@@ -1025,7 +1048,7 @@ export function useGalleryListing({
             )
           )
         )
-        .do(setGalleryListing);
+        .do(clearAndSetGalleryListing);
 
       Parsers.isArray(data)
         .map((filestores) => filestores.length)
@@ -1039,7 +1062,7 @@ export function useGalleryListing({
 
   async function getRemoteFiles(): Promise<void> {
     selection.clear();
-    setGalleryListing([]);
+    clearAndSetGalleryListing([]);
     setLoading(true);
     const api = axios.create({
       baseURL: "/api/v1/gallery",
@@ -1126,7 +1149,7 @@ export function useGalleryListing({
             )
           )
         )
-        .do(setGalleryListing);
+        .do(clearAndSetGalleryListing);
 
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -1171,7 +1194,7 @@ export function useGalleryListing({
       return getRemoteFiles();
     }
     selection.clear();
-    setGalleryListing([]);
+    clearAndSetGalleryListing([]);
     setLoading(true);
     try {
       const token = await getToken();
@@ -1212,7 +1235,7 @@ export function useGalleryListing({
           .orElse(1)
       );
 
-      setGalleryListing(parseGalleryFiles(data, token));
+      clearAndSetGalleryListing(parseGalleryFiles(data, token));
     } catch (e) {
       console.error(e);
     } finally {
@@ -1337,7 +1360,7 @@ export function useGalleryListing({
             )
           )
         ).flat();
-        setGalleryListing(newFiles);
+        clearAndSetGalleryListing(newFiles);
         if (newTotalHits !== null) setTotalHits(newTotalHits);
 
         /*
