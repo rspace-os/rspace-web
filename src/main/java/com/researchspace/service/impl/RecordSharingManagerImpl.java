@@ -528,6 +528,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     String usernameInSession = SecurityUtils.getSubject().getPrincipal().toString();
     User userInSession = userDao.getUserByUsername(usernameInSession);
 
+    log.info("doSharing start:" + Instant.now().toString());
     if (toShareWith.isUser()) {
       boolean sysAdminUnsharingAPublicLink = false;
       boolean communityAdminUnsharingACommunityMemberPublication = false;
@@ -656,8 +657,11 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
     // set of folders we'll share into, so we don't do this twice.
     Set<Folder> foldersToShareInto = new HashSet<>();
+    log.info("foldersToShareIntoLoop collecting start:" + Instant.now().toString());
     for (Long id : userIds) {
+      log.info("foldersToShareIntoLoop1:" + Instant.now().toString());
       User user = initUserAndCheckSubjectCanShareWith(id, subject);
+      log.info("foldersToShareIntoLoop2:" + Instant.now().toString());
       Folder folderToShareInto = selectedTargetFolder;
       if (folderToShareInto == null && !user.hasRole(Role.ANONYMOUS_ROLE)) {
         folderToShareInto = getTopLevelSharingFolder(subject, toShareWith, user, docOrNotebook);
@@ -667,7 +671,9 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       } else {
         saveRecordOrFolder(docOrNotebook);
       }
+      log.info("foldersToShareIntoLoop3:" + Instant.now().toString());
     }
+    log.info("foldersToShareIntoLoop collecting end:" + Instant.now().toString());
 
     for (Folder folderToShareInto : foldersToShareInto) {
       ACLPropagationPolicy aclPolicy = ACLPropagationPolicy.DEFAULT_POLICY;
@@ -686,6 +692,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
           folderToShareInto.getId());
     }
     allShared.add(rgs);
+    log.info("doSharing end:" + Instant.now().toString());
     return allShared;
   }
 
