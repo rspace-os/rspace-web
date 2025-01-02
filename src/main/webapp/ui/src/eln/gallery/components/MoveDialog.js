@@ -96,25 +96,19 @@ const MoveDialog = observer(
           </DialogContentText>
         </DialogContent>
         <DialogContent sx={{ pt: 0 }}>
-          {FetchingData.match(galleryListing, {
-            loading: () => <></>,
-            error: (error) => <>{error}</>,
-            success: (listing) => (
-              <Box sx={{ overflowY: "auto" }}>
-                <TreeView
-                  listing={listing}
-                  path={[]}
-                  selectedSection={section}
-                  refreshListing={refreshListing}
-                  filter={filterFile}
-                  disableDragAndDrop
-                  sortOrder="ASC"
-                  orderBy="name"
-                  foldersOnly
-                />
-              </Box>
-            ),
-          })}
+          <Box sx={{ overflowY: "auto" }}>
+            <TreeView
+              listing={galleryListing}
+              path={[]}
+              selectedSection={section}
+              refreshListing={refreshListing}
+              filter={filterFile}
+              disableDragAndDrop
+              sortOrder="ASC"
+              orderBy="name"
+              foldersOnly
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Stack direction="row" spacing={1}>

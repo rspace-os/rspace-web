@@ -377,13 +377,20 @@ const CustomTreeItem = observer(
 );
 
 type TreeViewArgs = {|
-  listing: | {| tag: "empty", reason: string |}
+  /**
+   * The listing of files to display in the tree view. This component takes the
+   * whole FetchingData object so that it can display the loading and error
+   * states and doesn't lose the expanded state when the listing is refreshed.
+   */
+  listing: FetchingData.Fetched<
+    | {| tag: "empty", reason: string |}
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
-      |},
+      |}
+  >,
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: GallerySection,
   refreshListing: () => Promise<void>,
@@ -422,173 +429,183 @@ const TreeView = ({
    * used to determine the file object that the user has selected in the tree.
    */
   const treeViewItemIdMap = useLocalObservable(() => {
-    const map = new Map<string, GalleryFile>();
-    if (listing.tag === "empty") return map;
-    for (const file of listing.list) map.set(file.treeViewItemId, file);
-    return map;
+    return FetchingData.getSuccessValue(listing)
+      .map((listing) => {
+        const map = new Map<string, GalleryFile>();
+        if (listing.tag === "empty") return map;
+        for (const file of listing.list) map.set(file.treeViewItemId, file);
+        return map;
+      })
+      .orElseGet(() => new Map<string, GalleryFile>());
   });
 
-  if (
-    listing.tag === "empty" ||
-    listing.list.every((file) => filter(file) === "hide")
-  )
-    return (
-      <div key={listing.reason}>
-        <Fade
-          in={true}
-          timeout={
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              ? 0
-              : 300
-          }
-        >
-          <div>
-            <PlaceholderLabel>
-              {listing.reason ?? "There are no folders."}
-            </PlaceholderLabel>
+  return FetchingData.match(listing, {
+    loading: () => <PlaceholderLabel>Loading...</PlaceholderLabel>,
+    error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
+    success: (listing) => {
+      if (
+        listing.tag === "empty" ||
+        listing.list.every((file) => filter(file) === "hide")
+      )
+        return (
+          <div key={listing.reason}>
+            <Fade
+              in={true}
+              timeout={
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                  ? 0
+                  : 300
+              }
+            >
+              <div>
+                <PlaceholderLabel>
+                  {listing.reason ?? "There are no folders."}
+                </PlaceholderLabel>
+              </div>
+            </Fade>
           </div>
-        </Fade>
-      </div>
-    );
-  return (
-    <SimpleTreeView
-      role="region"
-      aria-label="tree view of files"
-      expandedItems={expandedItems}
-      onExpandedItemsChange={(_event, nodeIds) => {
-        setExpandedItems(nodeIds);
-      }}
-      selectedItems={selection
-        .asSet()
-        .map((file) => file.treeViewItemId)
-        .toArray()}
-      onItemSelectionToggle={(
-        event,
-        itemId: string | $ReadOnlyArray<string>,
-        selected
-      ) => {
-        /*
-         * If there are multiple files selected and the user taps any file
-         * (already selected or not) then this function is called twice: first
-         * with `itemId` as an array of all of the selected nodes with
-         * `selected` set to false, followed by `itemId` as a string value and
-         * `selected` set to true. The idea being, that you can first clear the
-         * data structure being passed as `selectedItems` and then add back the
-         * singular selected item. However, because we wish to handle ctrl/meta
-         * keys, we ignore this first invocation and instead just consider
-         * whether the tapped file is already selected or not to toggle its
-         * state. As such, we can ignore the first invocation where `itemId` is
-         * an array.
-         */
-        if (Array.isArray(itemId)) return;
-        /*
-         * It's not possible for us to support shift-clicking in tree view
-         * because there's no data structure we can query to find a range of
-         * adjacent nodes. There's simply no way for us to get the itemIds of
-         * the nodes between two selected nodes; even more so if the user were
-         * to attempt to select nodes are different levels of the hierarchy.
-         * SimpleTreeView does have a multiSelect mode but attempting to use it
-         * just results in console errors.
-         */
-        if (event.shiftKey) {
-          if (selected) {
-            addAlert(
-              mkAlert({
-                title: "Shift selection is not supported in tree view.",
-                message:
-                  "Either use command/ctrl to select each in turn, or use grid view.",
-                variant: "warning",
-              })
-            );
-          }
-          return;
-        }
-        if (event.ctrlKey || event.metaKey) {
-          MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
-            if (selection.includes(file)) {
-              selection.remove(file);
-            } else {
-              selection.append(file);
+        );
+      return (
+        <SimpleTreeView
+          role="region"
+          aria-label="tree view of files"
+          expandedItems={expandedItems}
+          onExpandedItemsChange={(_event, nodeIds) => {
+            setExpandedItems(nodeIds);
+          }}
+          selectedItems={selection
+            .asSet()
+            .map((file) => file.treeViewItemId)
+            .toArray()}
+          onItemSelectionToggle={(
+            event,
+            itemId: string | $ReadOnlyArray<string>,
+            selected
+          ) => {
+            /*
+             * If there are multiple files selected and the user taps any file
+             * (already selected or not) then this function is called twice: first
+             * with `itemId` as an array of all of the selected nodes with
+             * `selected` set to false, followed by `itemId` as a string value and
+             * `selected` set to true. The idea being, that you can first clear the
+             * data structure being passed as `selectedItems` and then add back the
+             * singular selected item. However, because we wish to handle ctrl/meta
+             * keys, we ignore this first invocation and instead just consider
+             * whether the tapped file is already selected or not to toggle its
+             * state. As such, we can ignore the first invocation where `itemId` is
+             * an array.
+             */
+            if (Array.isArray(itemId)) return;
+            /*
+             * It's not possible for us to support shift-clicking in tree view
+             * because there's no data structure we can query to find a range of
+             * adjacent nodes. There's simply no way for us to get the itemIds of
+             * the nodes between two selected nodes; even more so if the user were
+             * to attempt to select nodes are different levels of the hierarchy.
+             * SimpleTreeView does have a multiSelect mode but attempting to use it
+             * just results in console errors.
+             */
+            if (event.shiftKey) {
+              if (selected) {
+                addAlert(
+                  mkAlert({
+                    title: "Shift selection is not supported in tree view.",
+                    message:
+                      "Either use command/ctrl to select each in turn, or use grid view.",
+                    variant: "warning",
+                  })
+                );
+              }
+              return;
             }
-          });
-        } else {
-          // on double click, try and figure out what the user would want
-          // to do with a file of this type based on what services are
-          // configured
-          if (event.detail > 1) {
-            MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
-              primaryAction(file).do((action) => {
-                if (action.tag === "open") {
-                  openFolder(file);
-                  return;
-                }
-                if (action.tag === "image") {
-                  openImagePreview(action.downloadHref);
-                  return;
-                }
-                if (action.tag === "collabora") {
-                  window.open(action.url);
-                  return;
-                }
-                if (action.tag === "officeonline") {
-                  window.open(action.url);
-                  return;
-                }
-                if (action.tag === "pdf") {
-                  openPdfPreview(action.downloadHref);
-                  return;
-                }
-                if (action.tag === "aspose") {
-                  void openAsposePreview(file);
+            if (event.ctrlKey || event.metaKey) {
+              MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
+                if (selection.includes(file)) {
+                  selection.remove(file);
+                } else {
+                  selection.append(file);
                 }
               });
-            });
-          }
-          if (selected) {
-            MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
-              /*
-               * If the user is just opening or closing the node that is
-               * already selected, then this event handler will have been
-               * called twice with the `itemId` of that file: first with
-               * `selected` set to false (which will have been dropped above)
-               * and secondly with `selected` set to true. If the selection is
-               * already that one file then there is no need to clear and reset
-               * that selection as it will only result in unnecessary
-               * re-renders and a slower response time to actually
-               * opening/closing the tree node.
-               */
-              if (selection.size === 1 && selection.includes(file)) return;
-              selection.clear();
-              selection.append(file);
-            });
-          }
-        }
-      }}
-    >
-      {listing.list.map((file, index) =>
-        filter(file) ? (
-          <CustomTreeItem
-            index={index}
-            file={file}
-            path={path}
-            key={idToString(file.id)}
-            section={selectedSection}
-            treeViewItemIdMap={treeViewItemIdMap}
-            refreshListing={refreshListing}
-            filter={filter}
-            disableDragAndDrop={disableDragAndDrop}
-            sortOrder={sortOrder}
-            orderBy={orderBy}
-            foldersOnly={foldersOnly}
-            disabled={filter(file) === "disabled"}
-          />
-        ) : null
-      )}
-      {listing.loadMore
-        .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
-        .orElse(null)}
-    </SimpleTreeView>
-  );
+            } else {
+              // on double click, try and figure out what the user would want
+              // to do with a file of this type based on what services are
+              // configured
+              if (event.detail > 1) {
+                MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
+                  primaryAction(file).do((action) => {
+                    if (action.tag === "open") {
+                      openFolder(file);
+                      return;
+                    }
+                    if (action.tag === "image") {
+                      openImagePreview(action.downloadHref);
+                      return;
+                    }
+                    if (action.tag === "collabora") {
+                      window.open(action.url);
+                      return;
+                    }
+                    if (action.tag === "officeonline") {
+                      window.open(action.url);
+                      return;
+                    }
+                    if (action.tag === "pdf") {
+                      openPdfPreview(action.downloadHref);
+                      return;
+                    }
+                    if (action.tag === "aspose") {
+                      void openAsposePreview(file);
+                    }
+                  });
+                });
+              }
+              if (selected) {
+                MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
+                  /*
+                   * If the user is just opening or closing the node that is
+                   * already selected, then this event handler will have been
+                   * called twice with the `itemId` of that file: first with
+                   * `selected` set to false (which will have been dropped above)
+                   * and secondly with `selected` set to true. If the selection is
+                   * already that one file then there is no need to clear and reset
+                   * that selection as it will only result in unnecessary
+                   * re-renders and a slower response time to actually
+                   * opening/closing the tree node.
+                   */
+                  if (selection.size === 1 && selection.includes(file)) return;
+                  selection.clear();
+                  selection.append(file);
+                });
+              }
+            }
+          }}
+        >
+          {listing.list.map((file, index) =>
+            filter(file) ? (
+              <CustomTreeItem
+                index={index}
+                file={file}
+                path={path}
+                key={idToString(file.id)}
+                section={selectedSection}
+                treeViewItemIdMap={treeViewItemIdMap}
+                refreshListing={refreshListing}
+                filter={filter}
+                disableDragAndDrop={disableDragAndDrop}
+                sortOrder={sortOrder}
+                orderBy={orderBy}
+                foldersOnly={foldersOnly}
+                disabled={filter(file) === "disabled"}
+              />
+            ) : null
+          )}
+          {listing.loadMore
+            .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+            .orElse(null)}
+        </SimpleTreeView>
+      );
+    },
+  });
 };
 
 export default (observer(TreeView): ComponentType<TreeViewArgs>);

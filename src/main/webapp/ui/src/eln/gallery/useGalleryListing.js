@@ -1255,47 +1255,60 @@ export function useGalleryListing({
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: async () => {
       let newTotalHits: null | number = null;
-      const newFiles = (
-        await Promise.all(
-          [...take(incrementForever(), page + 1)].map((p) =>
-            axios
-              .get<mixed>(`/gallery/getUploadedFiles`, {
-                params: new URLSearchParams({
-                  mediatype: section,
-                  currentFolderId:
-                    path.length > 0 ? `${path[path.length - 1].id}` : "0",
-                  name: searchTerm,
-                  pageNumber: `${p}`,
-                  sortOrder,
-                  orderBy,
-                }),
-              })
-              .then(({ data }) => {
-                Parsers.objectPath(["data", "items", "totalHits"], data)
-                  .flatMap(Parsers.isNumber)
-                  .do((th) => {
-                    newTotalHits ??= th;
-                  });
-                return parseGalleryFiles(data);
-              })
+      try {
+        setLoading(true);
+        const newFiles = (
+          await Promise.all(
+            [...take(incrementForever(), page + 1)].map((p) =>
+              axios
+                .get<mixed>(`/gallery/getUploadedFiles`, {
+                  params: new URLSearchParams({
+                    mediatype: section,
+                    currentFolderId:
+                      path.length > 0 ? `${path[path.length - 1].id}` : "0",
+                    name: searchTerm,
+                    pageNumber: `${p}`,
+                    sortOrder,
+                    orderBy,
+                  }),
+                })
+                .then(({ data }) => {
+                  Parsers.objectPath(["data", "items", "totalHits"], data)
+                    .flatMap(Parsers.isNumber)
+                    .do((th) => {
+                      newTotalHits ??= th;
+                    });
+                  return parseGalleryFiles(data);
+                })
+            )
           )
-        )
-      ).flat();
-      setGalleryListing(newFiles);
-      if (newTotalHits !== null) setTotalHits(newTotalHits);
+        ).flat();
+        setGalleryListing(newFiles);
+        if (newTotalHits !== null) setTotalHits(newTotalHits);
 
-      /*
-       * If some of the selected files are no longer included in the listing
-       * then we clear the selection as it would be quite confusing to allow
-       * the user to operate on files they can no longer see. An obvious
-       * example is that the user has just performed a delete action but other
-       * such scenarios include when duplicating the last file in a page; the
-       * selected one will become the first file of the next page that the user
-       * needs to load by tapping the "Load More" button.
-       */
-      const newFilesIds = new Set(newFiles.map(({ id }) => id));
-      if (selection.asSet().some((f) => !newFilesIds.has(f.id)))
-        selection.clear();
+        /*
+         * If some of the selected files are no longer included in the listing
+         * then we clear the selection as it would be quite confusing to allow
+         * the user to operate on files they can no longer see. An obvious
+         * example is that the user has just performed a delete action but other
+         * such scenarios include when duplicating the last file in a page; the
+         * selected one will become the first file of the next page that the user
+         * needs to load by tapping the "Load More" button.
+         */
+        const newFilesIds = new Set(newFiles.map(({ id }) => id));
+        if (selection.asSet().some((f) => !newFilesIds.has(f.id)))
+          selection.clear();
+      } catch (e) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error refreshing Gallery listing.",
+            message: e.message,
+          })
+        );
+      } finally {
+        setLoading(false);
+      }
     },
   };
 }
