@@ -2942,7 +2942,7 @@
     <!-- Application settings -->
     <artifactName>${project.artifactId}-${project.version}</artifactName>
     <timestamp>${maven.build.timestamp}</timestamp>
-    <copyright.year>2024</copyright.year>
+    <copyright.year>2025</copyright.year>
     <dao.framework>hibernate</dao.framework>
     <web.framework>spring</web.framework>
     <context.path>/</context.path>
