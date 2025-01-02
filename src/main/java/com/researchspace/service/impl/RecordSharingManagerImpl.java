@@ -236,7 +236,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   @Override
-  public ServiceOperationResult<Set<RecordGroupSharing>> shareRecord(
+  public ServiceOperationResult<RecordGroupSharing> shareRecord(
       User subject, Long recordToShareId, ShareConfigElement[] sharingConfigs)
       throws IllegalAddChildOperation {
 
@@ -281,7 +281,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       commMgr.notify(
           subject, recordOrNotebook, cfg, createSharingMessage(subject, recordOrNotebook));
     }
-    return new ServiceOperationResult<>(shared, !shared.isEmpty());
+    RecordGroupSharing firstRecordGroupShare = shared.isEmpty() ? null : shared.iterator().next();
+    return new ServiceOperationResult<>(firstRecordGroupShare, !shared.isEmpty());
   }
 
   private String createSharingMessage(User subject, BaseRecord recordOrNotebook) {
@@ -429,11 +430,11 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
    * Helper method with common code param share
    *
    * @param subject
-   * @param recordId
+   * @param recordOrNotebook
    * @param groupShareCfgs
    * @param share true= sharing, false = unsharing
-   * @return operation result, whether the record was shared/unshared with at least one from
-   *     selected sharees
+   * @return operation result (whether the record was shared/unshared with at least one from
+   *     selected sharees) with set of created recordGroupSharings
    * @throws IllegalAddChildOperation
    */
   private Set<RecordGroupSharing> doRecordOrNotebookShare(
@@ -507,7 +508,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
   /**
    * @param subject
-   * @param groupShareCfgs
+   * @param groupShareCfg
    * @param share
    * @param userIds
    * @param docOrNotebook

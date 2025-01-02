@@ -7,7 +7,6 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
-import java.util.Set;
 import java.util.concurrent.Future;
 import org.springframework.scheduling.annotation.Async;
 
@@ -24,7 +23,7 @@ public interface AutoshareManager {
    * <p>This method should be used to autoshare when a document is created. It shouldn't be used for
    * bulk autosharing (e.g. scanning and updating all shared items)
    */
-  ServiceOperationResult<Set<RecordGroupSharing>> shareRecord(BaseRecord toShare, User subject);
+  ServiceOperationResult<RecordGroupSharing> shareRecord(BaseRecord toShare, User subject);
 
   /**
    * Shares all previously unshared notebooks and documents into the user's autoshare target folder.

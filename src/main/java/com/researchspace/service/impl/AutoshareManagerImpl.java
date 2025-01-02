@@ -80,8 +80,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
    */
   @Override
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public ServiceOperationResult<Set<RecordGroupSharing>> shareRecord(
-      BaseRecord toShare, User subject) {
+  public ServiceOperationResult<RecordGroupSharing> shareRecord(BaseRecord toShare, User subject) {
 
     if (!toShare.isAutosharable()) {
       String message =
@@ -109,7 +108,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
       ShareConfigElement element = createShareConfig(grp, target);
       shareConfigsList.add(element);
     }
-    ServiceOperationResult<Set<RecordGroupSharing>> shareResult;
+    ServiceOperationResult<RecordGroupSharing> shareResult;
 
     // share, if there is something to share
     if (shareConfigsList.size() > 0) {
@@ -118,7 +117,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
       // let sharing manager decide whether to share or not
       shareResult = recordSharingMgr.shareRecord(subject, toShare.getId(), configs);
       if (shareResult.isSucceeded()) {
-        RecordGroupSharing rgs = shareResult.getEntity().iterator().next();
+        RecordGroupSharing rgs = shareResult.getEntity();
         notifyAuditTrail(subject, configs, rgs);
       }
     } else {
@@ -199,15 +198,15 @@ public class AutoshareManagerImpl implements AutoshareManager {
       ShareConfigElement[] configs = new ShareConfigElement[] {element};
 
       try {
-        ServiceOperationResult<Set<RecordGroupSharing>> sharingResult =
+        ServiceOperationResult<RecordGroupSharing> sharingResult =
             recordSharingMgr.shareRecord(subject, idLong, configs);
         if (sharingResult.isSucceeded()) {
-          RecordGroupSharing rgs = sharingResult.getEntity().iterator().next();
+          RecordGroupSharing rgs = sharingResult.getEntity();
           notifyAuditTrail(subject, configs, rgs);
           rc.addResult(rgs);
         } else {
-          if (!sharingResult.getEntity().isEmpty()) {
-            rc.addFailure(sharingResult.getEntity().iterator().next());
+          if (sharingResult.getEntity() != null) {
+            rc.addFailure(sharingResult.getEntity());
           }
         }
       } catch (Exception e) {
