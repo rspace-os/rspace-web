@@ -88,7 +88,7 @@ type TreeItemContentArgs = {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: GallerySection,
-  idMap: Map<string, GalleryFile>,
+  treeViewItemIdMap: Map<string, GalleryFile>,
   refreshListing: () => Promise<void>,
   filter: (GalleryFile) => "hide" | "enabled" | "disabled",
   disableDragAndDrop?: boolean,
@@ -102,7 +102,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     path,
     file,
     section,
-    idMap,
+    treeViewItemIdMap,
     refreshListing,
     filter,
     disableDragAndDrop,
@@ -123,7 +123,8 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
         if (listing.tag === "empty") return;
         runInAction(() => {
-          for (const f of listing.list) idMap.set(idToString(f.id), f);
+          for (const f of listing.list)
+            treeViewItemIdMap.set(f.treeViewItemId, f);
         });
       });
     }, [galleryListing]);
@@ -146,7 +147,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   path={[...path, file]}
                   section={section}
                   key={idToString(f.id)}
-                  idMap={idMap}
+                  treeViewItemIdMap={treeViewItemIdMap}
                   refreshListing={refreshListing}
                   filter={filter}
                   disableDragAndDrop={disableDragAndDrop}
@@ -172,7 +173,7 @@ const CustomTreeItem = observer(
     index,
     path,
     section,
-    idMap,
+    treeViewItemIdMap,
     refreshListing,
     filter,
     disableDragAndDrop,
@@ -185,7 +186,7 @@ const CustomTreeItem = observer(
     index: number,
     path: $ReadOnlyArray<GalleryFile>,
     section: GallerySection,
-    idMap: Map<string, GalleryFile>,
+    treeViewItemIdMap: Map<string, GalleryFile>,
     refreshListing: () => Promise<void>,
     filter: (GalleryFile) => "hide" | "enabled" | "disabled",
     disableDragAndDrop?: boolean,
@@ -360,7 +361,7 @@ const CustomTreeItem = observer(
               file={file}
               path={path}
               section={section}
-              idMap={idMap}
+              treeViewItemIdMap={treeViewItemIdMap}
               refreshListing={refreshListing}
               filter={filter}
               disableDragAndDrop={disableDragAndDrop}
@@ -417,12 +418,13 @@ const TreeView = ({
   >([]);
 
   /*
-   * Problem is, this map only contains the root level files/folders
+   * Maps the item id used by the tree nodes to the actual file object. This is
+   * used to determine the file object that the user has selected in the tree.
    */
-  const idMap = useLocalObservable(() => {
+  const treeViewItemIdMap = useLocalObservable(() => {
     const map = new Map<string, GalleryFile>();
     if (listing.tag === "empty") return map;
-    for (const file of listing.list) map.set(idToString(file.id), file);
+    for (const file of listing.list) map.set(file.treeViewItemId, file);
     return map;
   });
 
@@ -458,7 +460,7 @@ const TreeView = ({
       }}
       selectedItems={selection
         .asSet()
-        .map(({ id }) => idToString(id))
+        .map((file) => file.treeViewItemId)
         .toArray()}
       onItemSelectionToggle={(
         event,
@@ -502,7 +504,7 @@ const TreeView = ({
           return;
         }
         if (event.ctrlKey || event.metaKey) {
-          MapUtils.get(idMap, itemId).do((file) => {
+          MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
             if (selection.includes(file)) {
               selection.remove(file);
             } else {
@@ -514,7 +516,7 @@ const TreeView = ({
           // to do with a file of this type based on what services are
           // configured
           if (event.detail > 1) {
-            MapUtils.get(idMap, itemId).do((file) => {
+            MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
               primaryAction(file).do((action) => {
                 if (action.tag === "open") {
                   openFolder(file);
@@ -543,7 +545,7 @@ const TreeView = ({
             });
           }
           if (selected) {
-            MapUtils.get(idMap, itemId).do((file) => {
+            MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
               /*
                * If the user is just opening or closing the node that is
                * already selected, then this event handler will have been
@@ -571,7 +573,7 @@ const TreeView = ({
             path={path}
             key={idToString(file.id)}
             section={selectedSection}
-            idMap={idMap}
+            treeViewItemIdMap={treeViewItemIdMap}
             refreshListing={refreshListing}
             filter={filter}
             disableDragAndDrop={disableDragAndDrop}
