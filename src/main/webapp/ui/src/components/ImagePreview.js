@@ -66,6 +66,18 @@ export default function ImagePreview({
            */
           ".pswp__img": {
             cursor: "default !important",
+            /*
+             * When the image doesn't have a background, we apply a checkerboard
+             * pattern to make the image as clear as possible. We assume that
+             * when there is text, it will be dark and thus a lighter background
+             * is preferable.
+             */
+            ".pswp__img": {
+              background:
+                "-webkit-linear-gradient(45deg, rgba(0, 0, 0, 0.0980392) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.0980392) 75%, rgba(0, 0, 0, 0.0980392) 0), -webkit-linear-gradient(45deg, rgba(0, 0, 0, 0.0980392) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.0980392) 75%, rgba(0, 0, 0, 0.0980392) 0), white",
+              backgroundPosition: "0px 0, 5px 5px",
+              backgroundSize: "10px 10px, 10px 10px",
+            },
           },
           ".pswp--click-to-zoom.pswp--zoom-allowed .pswp__img": {
             cursor: "zoom-in !important",
