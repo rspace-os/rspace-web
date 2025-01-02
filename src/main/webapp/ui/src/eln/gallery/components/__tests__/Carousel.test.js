@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import Carousel from "../Carousel";
@@ -37,6 +37,10 @@ jest.mock("react-pdf", () => ({
 }));
 
 const mockAxios = new MockAdapter(axios);
+
+mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
+  data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
+});
 
 describe("Carousel", () => {
   test("Should show an indicator of progress through listing.", async () => {
@@ -138,8 +142,23 @@ describe("Carousel", () => {
       }
       const user = userEvent.setup();
 
+      let blob;
+      const createObjectURL = jest
+        .fn<[Blob], string>()
+        .mockImplementation((b) => {
+          console.debug("createObjectUrl", b);
+          return "";
+        });
+      window.URL.createObjectURL = createObjectURL;
+      window.URL.revokeObjectURL = jest.fn();
+
       //eslint-disable-next-line no-shadow
       const mockAxios = new MockAdapter(axios);
+
+      mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
+        data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
+      });
+
       mockAxios
         .onGet("/collaboraOnline/supportedExts")
         .reply(200, { data: {} });
@@ -163,7 +182,9 @@ describe("Carousel", () => {
       const progressLabel = screen.getByText("1 / 34");
 
       while (progressLabel.textContent !== "34 / 34") {
-        await user.click(nextButton);
+        await act(async () => {
+          await user.click(nextButton);
+        });
       }
 
       await waitFor(() => {
