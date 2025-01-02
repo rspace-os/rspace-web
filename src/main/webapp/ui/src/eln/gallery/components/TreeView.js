@@ -577,7 +577,9 @@ const TreeView = ({
                   return;
                 }
                 if (action.tag === "image") {
-                  openImagePreview(action.downloadHref);
+                  void action.downloadHref().then((url) => {
+                    openImagePreview(url);
+                  });
                   return;
                 }
                 if (action.tag === "collabora") {
@@ -589,7 +591,9 @@ const TreeView = ({
                   return;
                 }
                 if (action.tag === "pdf") {
-                  openPdfPreview(action.downloadHref);
+                  void action.downloadHref().then((url) => {
+                    openPdfPreview(url);
+                  });
                   return;
                 }
                 if (action.tag === "aspose") {

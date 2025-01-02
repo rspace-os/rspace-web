@@ -581,8 +581,10 @@ const GridView = observer(
                         return;
                       }
                       if (action.tag === "image") {
-                        openImagePreview(action.downloadHref, {
-                          caption: action.caption,
+                        void action.downloadHref().then((downloadHref) => {
+                          openImagePreview(downloadHref, {
+                            caption: action.caption,
+                          });
                         });
                         return;
                       }
@@ -595,7 +597,9 @@ const GridView = observer(
                         return;
                       }
                       if (action.tag === "pdf") {
-                        openPdfPreview(action.downloadHref);
+                        void action.downloadHref().then((downloadHref) => {
+                          openPdfPreview(downloadHref);
+                        });
                         return;
                       }
                       if (action.tag === "aspose") {

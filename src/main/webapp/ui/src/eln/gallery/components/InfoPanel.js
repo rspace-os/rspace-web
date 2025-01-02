@@ -742,8 +742,10 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                       <ActionButton
                         onClick={() => {
-                          openImagePreview(action.downloadHref, {
-                            caption: action.caption,
+                          void action.downloadHref().then((url) => {
+                            openImagePreview(url, {
+                              caption: action.caption,
+                            });
                           });
                         }}
                         label="View"
@@ -792,7 +794,9 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                     <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
                       <ActionButton
                         onClick={() => {
-                          openPdfPreview(action.downloadHref);
+                          void action.downloadHref().then((href) => {
+                            openPdfPreview(href);
+                          });
                         }}
                         label="View"
                         sx={{
@@ -856,7 +860,9 @@ export const InfoPanelForSmallViewports: ComponentType<{|
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
     null
   );
-  const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = React.useState<null | string>(
+    null
+  );
   const selection = useGallerySelection();
   const mobileInfoPanelId = React.useId();
   const { openFolder } = useFolderOpen();
@@ -953,7 +959,10 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                 <Grid item>
                   <ActionButton
                     onClick={() => {
-                      setPreviewOpen(true);
+                      if (file.downloadHref)
+                        void file.downloadHref().then((url) => {
+                          setPreviewImageUrl(url);
+                        });
                     }}
                     label="View"
                     sx={{
@@ -962,12 +971,12 @@ export const InfoPanelForSmallViewports: ComponentType<{|
                       py: 0.5,
                     }}
                   />
-                  {previewOpen && (
+                  {previewImageUrl && (
                     <ImagePreview
                       closePreview={() => {
-                        setPreviewOpen(false);
+                        setPreviewImageUrl(null);
                       }}
-                      link={file.downloadHref}
+                      link={previewImageUrl}
                       size={previewSize}
                       setSize={(s) => setPreviewSize(s)}
                     />
