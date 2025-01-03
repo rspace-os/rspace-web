@@ -144,6 +144,12 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       });
 
     React.useEffect(() => {
+      /*
+       * Note that if the user has just deleted this folder, then refreshing
+       * the listing will fail. The logic in `useGalleryListing` will ignore
+       * the error and then this tree node will be removed when the parent
+       * folder is done refreshing.
+       */
       if (refeshing) void refreshingThisListing();
     }, [refeshing]);
 

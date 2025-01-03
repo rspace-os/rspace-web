@@ -1276,6 +1276,11 @@ export function useGalleryListing({
                   }),
                 })
                 .then(({ data }) => {
+                  Parsers.objectPath(["exceptionMessage"], data)
+                    .flatMap(Parsers.isString)
+                    .do((exceptionMessage) => {
+                      throw new Error(exceptionMessage);
+                    });
                   Parsers.objectPath(["data", "items", "totalHits"], data)
                     .flatMap(Parsers.isNumber)
                     .do((th) => {
@@ -1307,6 +1312,17 @@ export function useGalleryListing({
         if (selection.asSet().some((f) => !newFilesIds.has(f.id)))
           selection.clear();
       } catch (e) {
+        /*
+         * This error is thrown when the user tries to open a folder that has
+         * just been deleted. We don't want to show an alert for this as the
+         * tree node will be removed as soon as the parent folder is done
+         * refreshing itself. We could avoid this by only refreshing folders
+         * once the parent is done refreshing, propagating the refresh
+         * downwards, but that would make the refreshing of deep folder
+         * hierarchies substantially slower.
+         */
+        if (/open a deleted folder/.test(e.message)) return;
+
         addAlert(
           mkAlert({
             variant: "error",
