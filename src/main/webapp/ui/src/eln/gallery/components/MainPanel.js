@@ -121,6 +121,7 @@ const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
 }));
 
 const StyledBreadcrumb = styled(
+  //eslint-disable-next-line react/display-name
   React.forwardRef((props, ref) => <Chip ref={ref} {...props} clickable />)
 )(({ theme }) => ({
   height: theme.spacing(3.5),
@@ -139,6 +140,7 @@ const StyledBreadcrumb = styled(
     color: alpha(theme.palette.primary.contrastText, 0.85),
   },
 }));
+StyledBreadcrumb.displayName = "StyledBreadcrumb";
 
 const DragOverlayContents = styled(
   observer(({ className }) => {
@@ -307,6 +309,7 @@ const BreadcrumbLink = React.forwardRef<
     );
   }
 );
+BreadcrumbLink.displayName = "BreadcrumbLink";
 
 const Path = ({
   section,
@@ -1102,6 +1105,7 @@ const FileCard = styled(
     ? "none"
     : `hsl(${COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
 }));
+FileCard.displayName = "FileCard";
 
 type GalleryMainPanelArgs = {|
   selectedSection: GallerySection,
