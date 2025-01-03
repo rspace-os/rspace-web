@@ -142,7 +142,7 @@ const FilestoreLoginDialog = ({
   );
 };
 
-export function FilestoreLoginContextualDialog({
+export function FilestoreLoginProvider({
   children,
 }: {|
   children: Node,

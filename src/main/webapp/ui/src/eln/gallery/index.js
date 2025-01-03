@@ -29,7 +29,7 @@ import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
-import { FilestoreLoginContextualDialog } from "./components/FilestoreLoginDialog";
+import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
 
 const WholePage = styled(() => {
@@ -160,9 +160,9 @@ window.addEventListener("load", () => {
                             <Alerts>
                               <RouterNavigationContext>
                                 <GallerySelection>
-                                  <FilestoreLoginContextualDialog>
+                                  <FilestoreLoginProvider>
                                     <WholePage />
-                                  </FilestoreLoginContextualDialog>
+                                  </FilestoreLoginProvider>
                                 </GallerySelection>
                               </RouterNavigationContext>
                             </Alerts>
