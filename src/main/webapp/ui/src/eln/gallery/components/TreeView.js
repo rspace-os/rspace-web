@@ -478,9 +478,6 @@ const TreeView = ({
       .orElseGet(() => new Map<string, GalleryFile>());
   });
 
-  // maybe we shouldn't unmount when loading occurs
-  // but instead pass an incrementing value to trigger refreshListing
-  // in each of the tree items. Otherwise subsequent pages will not be loaded.
   return FetchingData.match(listing, {
     loading: () => <PlaceholderLabel>Loading...</PlaceholderLabel>,
     error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
