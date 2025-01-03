@@ -323,6 +323,10 @@ const Preview = ({
           }
         })
       );
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - canPreviewWithAspose will not change
+     * - file will not change because the call site use `file.id` as the key
+     */
   }, []);
 
   function onDocumentLoadSuccess({
@@ -430,6 +434,9 @@ export default function Carousel({ listing }: CarouselArgs): Node {
       setVisibleIndex(0);
       selection.append(listing.list[0]);
     }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - selection will not change
+     */
   }, [listing]);
 
   function incrementVisibleIndex() {
@@ -469,6 +476,10 @@ export default function Carousel({ listing }: CarouselArgs): Node {
     };
     window.addEventListener("keydown", f);
     return () => window.removeEventListener("keydown", f);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - decrementVisibleIndex will not meaningfully change
+     * - incrementVisibleIndex will not meaningfully change
+     */
   }, [visibleIndex, listing]);
 
   if (listing.tag === "empty")
