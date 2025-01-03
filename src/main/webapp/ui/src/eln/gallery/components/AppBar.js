@@ -176,4 +176,7 @@ function GalleryAppBar({
   );
 }
 
+/**
+ * GalleryAppBar is the header bar for the gallery page.
+ */
 export default (observer(GalleryAppBar): ComponentType<GalleryAppBarArgs>);
