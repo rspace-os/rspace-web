@@ -401,7 +401,7 @@ const Preview = ({
   return null;
 };
 
-type CarouselArgs = {
+type CarouselArgs = {|
   listing:
     | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
@@ -411,7 +411,7 @@ type CarouselArgs = {
         loadMore: Optional<() => Promise<void>>,
         refreshing: boolean,
       |},
-};
+|};
 
 export default function Carousel({ listing }: CarouselArgs): Node {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
