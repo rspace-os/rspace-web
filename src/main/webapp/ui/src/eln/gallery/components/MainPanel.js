@@ -322,6 +322,11 @@ const GridView = observer(
           list: $ReadOnlyArray<GalleryFile>,
           totalHits: number,
           loadMore: Optional<() => Promise<void>>,
+        |}
+      | {|
+          tag: "refreshing",
+          totalHits: number,
+          list: $ReadOnlyArray<GalleryFile>,
         |},
   |}) => {
     const dndContext = useDndContext();
@@ -612,7 +617,7 @@ const GridView = observer(
           ))}
         </Grid>
         {listing.loadMore
-          .map((loadMore) => (
+          ?.map((loadMore) => (
             <Box key={null} sx={{ mt: 1 }}>
               <LoadMoreButton onClick={loadMore} />
             </Box>
@@ -1061,6 +1066,11 @@ type GalleryMainPanelArgs = {|
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
+      |}
+    | {|
+        tag: "refreshing",
+        totalHits: number,
+        list: $ReadOnlyArray<GalleryFile>,
       |}
   >,
   folderId: FetchingData.Fetched<Id>,

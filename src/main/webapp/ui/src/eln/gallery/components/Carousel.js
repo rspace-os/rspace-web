@@ -372,6 +372,11 @@ type CarouselArgs = {
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
+      |}
+    | {|
+        tag: "refreshing",
+        totalHits: number,
+        list: $ReadOnlyArray<GalleryFile>,
       |},
 };
 

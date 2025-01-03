@@ -95,6 +95,7 @@ type TreeItemContentArgs = {|
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
   foldersOnly: boolean,
+  refeshing: boolean,
 |};
 
 const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
@@ -109,15 +110,21 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     sortOrder,
     orderBy,
     foldersOnly,
+    refeshing,
   }: TreeItemContentArgs): Node => {
-    const { galleryListing } = useGalleryListing({
-      section,
-      searchTerm: "",
-      path: [...path, file],
-      orderBy,
-      sortOrder,
-      foldersOnly,
-    });
+    const { galleryListing, refreshListing: refreshingThisListing } =
+      useGalleryListing({
+        section,
+        searchTerm: "",
+        path: [...path, file],
+        orderBy,
+        sortOrder,
+        foldersOnly,
+      });
+
+    React.useEffect(() => {
+      if (refeshing) void refreshingThisListing();
+    }, [refeshing]);
 
     React.useEffect(() => {
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
@@ -137,7 +144,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       loading: () => null,
       error: (error) => <>{error}</>,
       success: (listing) =>
-        listing.tag === "list" ? (
+        listing.tag !== "empty" ? (
           <>
             {listing.list.map((f, i) =>
               filter(f) !== "hide" ? (
@@ -155,11 +162,12 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   orderBy={orderBy}
                   foldersOnly={foldersOnly}
                   disabled={filter(f) === "disabled"}
+                  refeshing={refeshing}
                 />
               ) : null
             )}
             {listing.loadMore
-              .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+              ?.map((loadMore) => <LoadMoreButton onClick={loadMore} />)
               .orElse(null)}
           </>
         ) : null,
@@ -181,6 +189,7 @@ const CustomTreeItem = observer(
     sortOrder,
     foldersOnly,
     disabled,
+    refeshing,
   }: {|
     file: GalleryFile,
     index: number,
@@ -194,6 +203,7 @@ const CustomTreeItem = observer(
     sortOrder: "DESC" | "ASC",
     foldersOnly: boolean,
     disabled: boolean,
+    refeshing: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -368,6 +378,7 @@ const CustomTreeItem = observer(
               sortOrder={sortOrder}
               orderBy={orderBy}
               foldersOnly={foldersOnly}
+              refeshing={refeshing}
             />
           )}
         </StyledTreeItem>
@@ -389,6 +400,11 @@ type TreeViewArgs = {|
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
+      |}
+    | {|
+        tag: "refreshing",
+        totalHits: number,
+        list: $ReadOnlyArray<GalleryFile>,
       |}
   >,
   path: $ReadOnlyArray<GalleryFile>,
@@ -439,6 +455,9 @@ const TreeView = ({
       .orElseGet(() => new Map<string, GalleryFile>());
   });
 
+  // maybe we shouldn't unmount when loading occurs
+  // but instead pass an incrementing value to trigger refreshListing
+  // in each of the tree items. Otherwise subsequent pages will not be loaded.
   return FetchingData.match(listing, {
     loading: () => <PlaceholderLabel>Loading...</PlaceholderLabel>,
     error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
@@ -596,11 +615,12 @@ const TreeView = ({
                 orderBy={orderBy}
                 foldersOnly={foldersOnly}
                 disabled={filter(file) === "disabled"}
+                refeshing={listing.tag === "refreshing"}
               />
             ) : null
           )}
           {listing.loadMore
-            .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+            ?.map((loadMore) => <LoadMoreButton onClick={loadMore} />)
             .orElse(null)}
         </SimpleTreeView>
       );

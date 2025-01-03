@@ -744,6 +744,11 @@ export function useGalleryListing({
         list: $ReadOnlyArray<GalleryFile>,
         loadMore: Optional<() => Promise<void>>,
       |}
+    | {|
+        tag: "refreshing",
+        totalHits: number,
+        list: $ReadOnlyArray<GalleryFile>,
+      |}
   >,
   refreshListing: () => Promise<void>,
   path: $ReadOnlyArray<GalleryFile>,
@@ -753,6 +758,7 @@ export function useGalleryListing({
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
@@ -1235,18 +1241,23 @@ export function useGalleryListing({
   return {
     galleryListing: {
       tag: "success",
-      value:
-        galleryListing.length > 0
-          ? {
-              tag: "list",
-              list: galleryListing,
-              totalHits,
-              loadMore:
-                page + 1 < totalPages
-                  ? Optional.present(loadMore)
-                  : Optional.empty(),
-            }
-          : { tag: "empty", reason: emptyReason() },
+      value: refreshing
+        ? {
+            tag: "refreshing",
+            list: galleryListing,
+            totalHits,
+          }
+        : galleryListing.length > 0
+        ? {
+            tag: "list",
+            list: galleryListing,
+            totalHits,
+            loadMore:
+              page + 1 < totalPages
+                ? Optional.present(loadMore)
+                : Optional.empty(),
+          }
+        : { tag: "empty", reason: emptyReason() },
     },
     path,
     setPath,
@@ -1256,7 +1267,7 @@ export function useGalleryListing({
     refreshListing: async () => {
       let newTotalHits: null | number = null;
       try {
-        setLoading(true);
+        setRefreshing(true);
         const newFiles = (
           await Promise.all(
             [...take(incrementForever(), page + 1)].map((p) =>
@@ -1307,7 +1318,7 @@ export function useGalleryListing({
           })
         );
       } finally {
-        setLoading(false);
+        setRefreshing(false);
       }
     },
   };
