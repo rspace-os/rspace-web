@@ -451,7 +451,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertEquals(pi.getRootFolder().getId(), doc.getParent().getId());
 
     // share a document with group
-    doc = shareRecordWithGroup(pi, gp, doc).getEntity().getShared().asStrucDoc();
+    doc = shareRecordWithGroup(pi, gp, doc).getShared().asStrucDoc();
     assertEquals(2, doc.getParents().size());
 
     // copy the doc and assert it's in the right folder

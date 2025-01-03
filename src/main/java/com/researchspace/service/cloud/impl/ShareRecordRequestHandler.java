@@ -13,6 +13,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.impl.AbstractRSpaceRequestUpdateHandler;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,10 +57,10 @@ public class ShareRecordRequestHandler extends AbstractRSpaceRequestUpdateHandle
     values[0].setUserId(target.getId());
     values[0].setOperation(permission);
 
-    ServiceOperationResult<RecordGroupSharing> sharingResult =
+    ServiceOperationResult<List<RecordGroupSharing>> sharingResult =
         sharingManager.shareRecord(originator, record.getId(), values);
     if (sharingResult.isSucceeded()) {
-      BaseRecord shared = sharingResult.getEntity().getShared();
+      BaseRecord shared = sharingResult.getEntity().get(0).getShared();
       auditService.notify(new ShareRecordAuditEvent(originator, shared, values));
     }
     permissnUtils.notifyUserOrGroupToRefreshCache(target);

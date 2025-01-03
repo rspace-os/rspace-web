@@ -236,7 +236,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   @Override
-  public ServiceOperationResult<RecordGroupSharing> shareRecord(
+  public ServiceOperationResult<List<RecordGroupSharing>> shareRecord(
       User subject, Long recordToShareId, ShareConfigElement[] sharingConfigs)
       throws IllegalAddChildOperation {
 
@@ -264,7 +264,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
           "Only document owner can share " + recordOrNotebook.getName());
     }
 
-    Set<RecordGroupSharing> shared =
+    List<RecordGroupSharing> shared =
         doRecordOrNotebookShare(subject, recordOrNotebook, sharingConfigs, true);
     // don't notify if autoshare is set
     // we dont mix sharing and publishing in the same 'share' action
@@ -281,8 +281,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       commMgr.notify(
           subject, recordOrNotebook, cfg, createSharingMessage(subject, recordOrNotebook));
     }
-    RecordGroupSharing firstRecordGroupShare = shared.isEmpty() ? null : shared.iterator().next();
-    return new ServiceOperationResult<>(firstRecordGroupShare, !shared.isEmpty());
+    return new ServiceOperationResult<>(shared, !shared.isEmpty());
   }
 
   private String createSharingMessage(User subject, BaseRecord recordOrNotebook) {
@@ -303,7 +302,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       throws IllegalAddChildOperation {
 
     BaseRecord recordOrNotebook = getRecordOrNotebook(recordToUnshareId);
-    Set<RecordGroupSharing> unshared =
+    List<RecordGroupSharing> unshared =
         doRecordOrNotebookShare(unsharing, recordOrNotebook, groupIdsToUnshareWith, false);
     if (!unshared.isEmpty() && !isAutoshare(groupIdsToUnshareWith)) {
       NotificationConfig cfg =
@@ -328,18 +327,18 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   // gets those users affected by unshare who can no longer see the document
-  private Set<User> getSharedToNotify(Set<RecordGroupSharing> shared) {
+  private Set<User> getSharedToNotify(List<RecordGroupSharing> shared) {
     return doGetUsersToNotify(shared, g -> Collections.emptySet());
   }
 
   // gets those users affected by unshare who can no longer see the document
-  private Set<User> getUnsharedToNotify(Set<RecordGroupSharing> unshared) {
+  private Set<User> getUnsharedToNotify(List<RecordGroupSharing> unshared) {
     Function<Group, Set<User>> modulator = Group::getMembersWithDefaultViewAllPermissions;
     return doGetUsersToNotify(unshared, modulator);
   }
 
   private Set<User> doGetUsersToNotify(
-      Set<RecordGroupSharing> shareDelta, Function<Group, Set<User>> userModulator) {
+      List<RecordGroupSharing> shareDelta, Function<Group, Set<User>> userModulator) {
     Set<User> toNotify = new HashSet<>();
     Set<AbstractUserOrGroupImpl> inputToNotify =
         shareDelta.stream().map(RecordGroupSharing::getSharee).collect(toSet());
@@ -437,11 +436,11 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
    *     selected sharees) with set of created/removed recordGroupSharings
    * @throws IllegalAddChildOperation
    */
-  private Set<RecordGroupSharing> doRecordOrNotebookShare(
+  private List<RecordGroupSharing> doRecordOrNotebookShare(
       User subject, BaseRecord recordOrNotebook, ShareConfigElement[] groupShareCfgs, boolean share)
       throws IllegalAddChildOperation {
 
-    Set<RecordGroupSharing> sharees = new HashSet<>();
+    List<RecordGroupSharing> sharees = new ArrayList<>();
 
     // iterate over the groups/users we're going to share with:
     for (ShareConfigElement grpShareCfg : groupShareCfgs) {

@@ -132,8 +132,9 @@ public class RecordSharingTest extends SpringTransactionalTest {
     assertEquals(3, userDoc.getShortestPathToParent(groupFolder).size());
   }
 
-  private StructuredDocument extractDoc(ServiceOperationResult<RecordGroupSharing> shareRecord) {
-    return shareRecord.getEntity().getShared().asStrucDoc();
+  private StructuredDocument extractDoc(
+      ServiceOperationResult<List<RecordGroupSharing>> shareRecord) {
+    return shareRecord.getEntity().get(0).getShared().asStrucDoc();
   }
 
   @Test
@@ -551,7 +552,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     // only one can be set
     gsCommand.setUserId(other.getId());
 
-    ServiceOperationResult<RecordGroupSharing> sharedRecord =
+    ServiceOperationResult<List<RecordGroupSharing>> sharedRecord =
         sharingMgr.shareRecord(
             userDao.get(piUser.getId()),
             recordToShare.getId(),

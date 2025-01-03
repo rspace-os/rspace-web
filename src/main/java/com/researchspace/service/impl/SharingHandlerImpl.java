@@ -44,16 +44,16 @@ public class SharingHandlerImpl implements SharingHandler {
         new ServiceOperationResultCollection<>();
     for (Long id : shareConfig.getIdsToShare()) {
       try {
-        ServiceOperationResult<RecordGroupSharing> sharingResult =
+        ServiceOperationResult<List<RecordGroupSharing>> sharingResult =
             sharingManager.shareRecord(sharer, id, shareConfig.getValues());
         if (sharingResult.isSucceeded()) {
-          RecordGroupSharing rgs = sharingResult.getEntity();
+          RecordGroupSharing rgs = sharingResult.getEntity().get(0);
           auditService.notify(
               new ShareRecordAuditEvent(sharer, rgs.getShared(), shareConfig.getValues()));
           rc.addResult(rgs);
         } else {
-          if (sharingResult.getEntity() != null) {
-            rc.addFailure(sharingResult.getEntity());
+          if (!sharingResult.getEntity().isEmpty()) {
+            rc.addFailure(sharingResult.getEntity().get(0));
           }
         }
       } catch (IllegalAddChildOperation | AuthorizationException | IllegalArgumentException e) {
