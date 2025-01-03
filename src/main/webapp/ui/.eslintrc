@@ -42,6 +42,10 @@
     "default-param-last": "warn",
     "dot-notation": "warn",
     "eqeqeq": "error",
+
+    // prettier adds in the spaces around generics to break up long lines
+    "ft-flow/generic-spacing": ["off"],
+
     "guard-for-in": "error",
 
     // this raises a warning if an export doesn't have a comment
