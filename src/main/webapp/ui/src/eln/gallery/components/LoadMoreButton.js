@@ -4,6 +4,9 @@ import React, { type ComponentType } from "react";
 import Button from "@mui/material/Button";
 import { styled } from "@mui/material/styles";
 
+/**
+ * A simple button, styled for use in the gallery listing to load more items.
+ */
 export default (styled(
   ({
     onClick,
