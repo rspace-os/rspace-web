@@ -737,12 +737,13 @@ export function useGalleryListing({
   foldersOnly?: boolean,
 |}): {|
   galleryListing: FetchingData.Fetched<
-    | {| tag: "empty", reason: string |}
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         totalHits: number,
         list: $ReadOnlyArray<GalleryFile>,
         loadMore: Optional<() => Promise<void>>,
+        refreshing: boolean,
       |}
   >,
   refreshListing: () => Promise<void>,
@@ -753,6 +754,7 @@ export function useGalleryListing({
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
@@ -1245,8 +1247,9 @@ export function useGalleryListing({
                 page + 1 < totalPages
                   ? Optional.present(loadMore)
                   : Optional.empty(),
+              refreshing,
             }
-          : { tag: "empty", reason: emptyReason() },
+          : { tag: "empty", reason: emptyReason(), refreshing },
     },
     path,
     setPath,
@@ -1256,7 +1259,7 @@ export function useGalleryListing({
     refreshListing: async () => {
       let newTotalHits: null | number = null;
       try {
-        setLoading(true);
+        setRefreshing(true);
         const newFiles = (
           await Promise.all(
             [...take(incrementForever(), page + 1)].map((p) =>
@@ -1273,6 +1276,11 @@ export function useGalleryListing({
                   }),
                 })
                 .then(({ data }) => {
+                  Parsers.objectPath(["exceptionMessage"], data)
+                    .flatMap(Parsers.isString)
+                    .do((exceptionMessage) => {
+                      throw new Error(exceptionMessage);
+                    });
                   Parsers.objectPath(["data", "items", "totalHits"], data)
                     .flatMap(Parsers.isNumber)
                     .do((th) => {
@@ -1294,11 +1302,27 @@ export function useGalleryListing({
          * such scenarios include when duplicating the last file in a page; the
          * selected one will become the first file of the next page that the user
          * needs to load by tapping the "Load More" button.
+         *
+         * This has the downside of losing the selection when the user is using
+         * tree view as if the selected file is within another folder then this
+         * logic will not find the whole selection in the root listing and
+         * clear the selection.
          */
         const newFilesIds = new Set(newFiles.map(({ id }) => id));
         if (selection.asSet().some((f) => !newFilesIds.has(f.id)))
           selection.clear();
       } catch (e) {
+        /*
+         * This error is thrown when the user tries to open a folder that has
+         * just been deleted. We don't want to show an alert for this as the
+         * tree node will be removed as soon as the parent folder is done
+         * refreshing itself. We could avoid this by only refreshing folders
+         * once the parent is done refreshing, propagating the refresh
+         * downwards, but that would make the refreshing of deep folder
+         * hierarchies substantially slower.
+         */
+        if (/open a deleted folder/.test(e.message)) return;
+
         addAlert(
           mkAlert({
             variant: "error",
@@ -1307,7 +1331,7 @@ export function useGalleryListing({
           })
         );
       } finally {
-        setLoading(false);
+        setRefreshing(false);
       }
     },
   };

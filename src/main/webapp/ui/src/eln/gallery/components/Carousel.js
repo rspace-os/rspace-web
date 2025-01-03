@@ -366,12 +366,13 @@ const Preview = ({
 
 type CarouselArgs = {
   listing:
-    | {| tag: "empty", reason: string |}
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
+        refreshing: boolean,
       |},
 };
 
@@ -438,7 +439,13 @@ export default function Carousel({ listing }: CarouselArgs): Node {
   }, [visibleIndex, listing]);
 
   if (listing.tag === "empty")
-    return <PlaceholderLabel>{listing.reason}</PlaceholderLabel>;
+    return (
+      <PlaceholderLabel>
+        {listing.refreshing
+          ? "Refreshing..."
+          : listing.reason ?? "There are no folders."}
+      </PlaceholderLabel>
+    );
   return (
     <Grid
       container

@@ -95,6 +95,28 @@ type TreeItemContentArgs = {|
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
   foldersOnly: boolean,
+
+  /**
+   * If true, then the listing is being refreshed and so the tree view should
+   * trigger a refresh of its listing.
+   *
+   * Note that after a refresh is comlete we do not always keep the user's
+   * selection (e.g. after duplicating a file) for two reasons:
+   *
+   *   1. When the root listing refreshes, if there are any selected files that
+   *      are not in the new listing then the selection is cleared. This is to
+   *      ensure that the selection does not include any now deleted files.
+   *      However, this means that if the selection includes a file that is
+   *      within a folder then it too will trigger this selection clearing.
+   *
+   *   2. If the user has just duplicated a folder, then the new folder will
+   *      fetch its contents by calling `useGalleryListing`'s `getGalleryFiles`
+   *      which triggers a clearing of the selection. All of the other folders
+   *      will call their `refreshListing` functions but we have to call
+   *      `getGalleryFiles` to get the new folder's contents in the first
+   *      instance.
+   */
+  refeshing: boolean,
 |};
 
 const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
@@ -109,15 +131,27 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     sortOrder,
     orderBy,
     foldersOnly,
+    refeshing,
   }: TreeItemContentArgs): Node => {
-    const { galleryListing } = useGalleryListing({
-      section,
-      searchTerm: "",
-      path: [...path, file],
-      orderBy,
-      sortOrder,
-      foldersOnly,
-    });
+    const { galleryListing, refreshListing: refreshingThisListing } =
+      useGalleryListing({
+        section,
+        searchTerm: "",
+        path: [...path, file],
+        orderBy,
+        sortOrder,
+        foldersOnly,
+      });
+
+    React.useEffect(() => {
+      /*
+       * Note that if the user has just deleted this folder, then refreshing
+       * the listing will fail. The logic in `useGalleryListing` will ignore
+       * the error and then this tree node will be removed when the parent
+       * folder is done refreshing.
+       */
+      if (refeshing) void refreshingThisListing();
+    }, [refeshing]);
 
     React.useEffect(() => {
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
@@ -137,7 +171,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       loading: () => null,
       error: (error) => <>{error}</>,
       success: (listing) =>
-        listing.tag === "list" ? (
+        listing.tag !== "empty" ? (
           <>
             {listing.list.map((f, i) =>
               filter(f) !== "hide" ? (
@@ -155,6 +189,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   orderBy={orderBy}
                   foldersOnly={foldersOnly}
                   disabled={filter(f) === "disabled"}
+                  refeshing={refeshing}
                 />
               ) : null
             )}
@@ -181,6 +216,7 @@ const CustomTreeItem = observer(
     sortOrder,
     foldersOnly,
     disabled,
+    refeshing,
   }: {|
     file: GalleryFile,
     index: number,
@@ -194,6 +230,7 @@ const CustomTreeItem = observer(
     sortOrder: "DESC" | "ASC",
     foldersOnly: boolean,
     disabled: boolean,
+    refeshing: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -368,6 +405,7 @@ const CustomTreeItem = observer(
               sortOrder={sortOrder}
               orderBy={orderBy}
               foldersOnly={foldersOnly}
+              refeshing={refeshing}
             />
           )}
         </StyledTreeItem>
@@ -383,12 +421,13 @@ type TreeViewArgs = {|
    * states and doesn't lose the expanded state when the listing is refreshed.
    */
   listing: FetchingData.Fetched<
-    | {| tag: "empty", reason: string |}
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
+        refreshing: boolean,
       |}
   >,
   path: $ReadOnlyArray<GalleryFile>,
@@ -459,7 +498,9 @@ const TreeView = ({
             >
               <div>
                 <PlaceholderLabel>
-                  {listing.reason ?? "There are no folders."}
+                  {listing.refreshing
+                    ? "Refreshing..."
+                    : listing.reason ?? "There are no folders."}
                 </PlaceholderLabel>
               </div>
             </Fade>
@@ -596,6 +637,7 @@ const TreeView = ({
                 orderBy={orderBy}
                 foldersOnly={foldersOnly}
                 disabled={filter(file) === "disabled"}
+                refeshing={listing.refreshing}
               />
             ) : null
           )}

@@ -33,10 +33,11 @@ function WrapperComponent() {
   return FetchingData.match(galleryListing, {
     loading: () => "loading",
     error: () => "error",
-    success: (listing) =>
-      listing.tag === "empty" ? (
-        listing.reason
-      ) : (
+    success: (listing) => {
+      if (listing.tag === "empty") {
+        return listing.reason;
+      }
+      return (
         <div>
           There are {listing.list.length} results.
           {listing.loadMore
@@ -54,7 +55,8 @@ function WrapperComponent() {
             Refresh
           </button>
         </div>
-      ),
+      );
+    },
   });
 }
 

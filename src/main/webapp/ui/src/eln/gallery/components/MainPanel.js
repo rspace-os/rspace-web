@@ -316,12 +316,13 @@ const GridView = observer(
     listing,
   }: {|
     listing:
-      | {| tag: "empty", reason: string |}
+      | {| tag: "empty", reason: string, refreshing: boolean |}
       | {|
           tag: "list",
           list: $ReadOnlyArray<GalleryFile>,
           totalHits: number,
           loadMore: Optional<() => Promise<void>>,
+          refreshing: boolean,
         |},
   |}) => {
     const dndContext = useDndContext();
@@ -392,7 +393,11 @@ const GridView = observer(
             }
           >
             <div>
-              <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
+              <PlaceholderLabel>
+                {listing.refreshing
+                  ? "Refreshing..."
+                  : listing.reason ?? "There are no folders."}
+              </PlaceholderLabel>
             </div>
           </Fade>
         </div>
@@ -1055,12 +1060,13 @@ type GalleryMainPanelArgs = {|
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
   galleryListing: FetchingData.Fetched<
-    | {| tag: "empty", reason: string |}
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
+        refreshing: boolean,
       |}
   >,
   folderId: FetchingData.Fetched<Id>,
