@@ -820,10 +820,8 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 return null;
               })
               .orElseGet((errors) => {
-                console.info("Could not provide view");
-                errors.forEach((e) => {
-                  console.info(e);
-                });
+                // eslint-disable-next-line no-console -- hard to debug why the button is not shown otherwise
+                console.info("Could not provide view", errors);
                 return (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
                     <ActionButton
