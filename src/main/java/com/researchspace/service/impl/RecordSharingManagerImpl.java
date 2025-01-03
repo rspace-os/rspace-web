@@ -759,7 +759,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   /**
    * @param subject
    * @param groupShareCfg
-   * @param documentOrNotebook
+   * @param docOrNotebook
    * @param toUnshareWith
    * @return list of the deleted RecordGroupSharing entries; may be more than 1 for a single unshare
    *     action, e.g. when unsharing a notebook with separately shared entries;
@@ -767,17 +767,17 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   private List<RecordGroupSharing> doUnshare(
       User subject,
       ShareConfigElement groupShareCfg,
-      BaseRecord documentOrNotebook,
+      BaseRecord docOrNotebook,
       AbstractUserOrGroupImpl toUnshareWith) {
 
     List<RecordGroupSharing> unshared = new ArrayList<>();
-    List<BaseRecord> originalItemsToUnshare = TransformerUtils.toList(documentOrNotebook);
+    List<BaseRecord> originalItemsToUnshare = TransformerUtils.toList(docOrNotebook);
     // there may be more items to unshare, e.g. shared entries of a shared notebook
     List<BaseRecord> otherItemsToUnshare = new ArrayList<>();
     if (toUnshareWith.isGroup()
         || (toUnshareWith.isUser() && !toUnshareWith.asUser().hasRole(Role.ANONYMOUS_ROLE))) {
       // populate entries of a notebook for unshare but not for unpublish
-      otherItemsToUnshare = addOtherItemsToUnshare(documentOrNotebook, toUnshareWith);
+      otherItemsToUnshare = addOtherItemsToUnshare(docOrNotebook, toUnshareWith);
     }
 
     // probably best to put entries at front of list, so these are deleted first.
@@ -816,27 +816,28 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         }
       }
 
-      log.info("doUnshare-beforeUsersLoop:" + Instant.now().toString());
-      Set<Folder> deletedFrom = new HashSet<>();
-
-      // now we remove this shared item from other userIds's shared folders
-      Set<Long> userIds = getUserIdsToUnshareWith(toUnshareWith);
-      for (Long id : userIds) {
-        User user = userDao.get(id);
+      // now we remove this shared item from its location in user's/group shared folder
+      Folder sharedTopLevelFolder = null;
+      if (toUnshareWith.isUser()) {
+        User user = toUnshareWith.asUser();
         if (user.getSharedFolder() != null) {
-          Folder sharedGrpFolderRoot =
-              getTopLevelSharingFolder(subject, toUnshareWith, user, documentOrNotebook);
-          // we only need to delete once from group shared folder of a particular user
-          if (deletedFrom.contains(sharedGrpFolderRoot)) {
-            continue;
-          }
-          RSPath path = toUnshare.getShortestPathToParent(sharedGrpFolderRoot);
-          path.getImmediateParentOf(toUnshare)
-              .ifPresent(sharedParent -> removeUnsharedChild(sharedParent, toUnshare));
-          deletedFrom.add(sharedGrpFolderRoot);
+          sharedTopLevelFolder =
+              getTopLevelSharingFolder(subject, toUnshareWith, user, docOrNotebook);
         }
+      } else {
+        sharedTopLevelFolder =
+            getTopLevelSharingFolder(subject, toUnshareWith, null, docOrNotebook);
       }
-      log.info("doUnshare-afterUsersLoop:" + Instant.now().toString());
+
+      RSPath path = toUnshare.getShortestPathToParent(sharedTopLevelFolder);
+      Optional<Folder> sharedParent = path.getImmediateParentOf(toUnshare);
+      if (sharedParent.isPresent()) {
+        removeUnsharedChild(sharedParent.get(), toUnshare);
+        log.info(
+            "Removed RTF for doc [{}] and folder [{}]",
+            docOrNotebook.getId(),
+            sharedParent.get().getId());
+      }
     }
     return unshared;
   }
