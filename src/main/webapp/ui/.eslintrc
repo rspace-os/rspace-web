@@ -43,8 +43,9 @@
     "dot-notation": "warn",
     "eqeqeq": "error",
 
-    // prettier adds in the spaces around generics to break up long lines
+    // prettier adds in whitespace around code elements to break up long lines
     "ft-flow/generic-spacing": ["off"],
+    "ft-flow/space-after-type-colon": ["off"],
 
     "guard-for-in": "error",
 
