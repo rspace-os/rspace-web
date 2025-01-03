@@ -37,9 +37,6 @@ function WrapperComponent() {
       if (listing.tag === "empty") {
         return listing.reason;
       }
-      if (listing.tag === "refreshing") {
-        return "refreshing";
-      }
       return (
         <div>
           There are {listing.list.length} results.

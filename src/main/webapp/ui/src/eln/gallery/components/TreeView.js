@@ -167,7 +167,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
               ) : null
             )}
             {listing.loadMore
-              ?.map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+              .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
               .orElse(null)}
           </>
         ) : null,
@@ -394,17 +394,13 @@ type TreeViewArgs = {|
    * states and doesn't lose the expanded state when the listing is refreshed.
    */
   listing: FetchingData.Fetched<
-    | {| tag: "empty", reason: string |}
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
-      |}
-    | {|
-        tag: "refreshing",
-        totalHits: number,
-        list: $ReadOnlyArray<GalleryFile>,
+        refreshing: boolean,
       |}
   >,
   path: $ReadOnlyArray<GalleryFile>,
@@ -478,7 +474,9 @@ const TreeView = ({
             >
               <div>
                 <PlaceholderLabel>
-                  {listing.reason ?? "There are no folders."}
+                  {listing.refreshing
+                    ? "Refreshing..."
+                    : listing.reason ?? "There are no folders."}
                 </PlaceholderLabel>
               </div>
             </Fade>
@@ -615,12 +613,12 @@ const TreeView = ({
                 orderBy={orderBy}
                 foldersOnly={foldersOnly}
                 disabled={filter(file) === "disabled"}
-                refeshing={listing.tag === "refreshing"}
+                refeshing={listing.refreshing}
               />
             ) : null
           )}
           {listing.loadMore
-            ?.map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+            .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
             .orElse(null)}
         </SimpleTreeView>
       );

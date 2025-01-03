@@ -737,17 +737,13 @@ export function useGalleryListing({
   foldersOnly?: boolean,
 |}): {|
   galleryListing: FetchingData.Fetched<
-    | {| tag: "empty", reason: string |}
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         totalHits: number,
         list: $ReadOnlyArray<GalleryFile>,
         loadMore: Optional<() => Promise<void>>,
-      |}
-    | {|
-        tag: "refreshing",
-        totalHits: number,
-        list: $ReadOnlyArray<GalleryFile>,
+        refreshing: boolean,
       |}
   >,
   refreshListing: () => Promise<void>,
@@ -1241,23 +1237,19 @@ export function useGalleryListing({
   return {
     galleryListing: {
       tag: "success",
-      value: refreshing
-        ? {
-            tag: "refreshing",
-            list: galleryListing,
-            totalHits,
-          }
-        : galleryListing.length > 0
-        ? {
-            tag: "list",
-            list: galleryListing,
-            totalHits,
-            loadMore:
-              page + 1 < totalPages
-                ? Optional.present(loadMore)
-                : Optional.empty(),
-          }
-        : { tag: "empty", reason: emptyReason() },
+      value:
+        galleryListing.length > 0
+          ? {
+              tag: "list",
+              list: galleryListing,
+              totalHits,
+              loadMore:
+                page + 1 < totalPages
+                  ? Optional.present(loadMore)
+                  : Optional.empty(),
+              refreshing,
+            }
+          : { tag: "empty", reason: emptyReason(), refreshing },
     },
     path,
     setPath,
