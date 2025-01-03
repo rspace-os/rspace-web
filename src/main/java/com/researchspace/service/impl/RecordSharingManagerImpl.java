@@ -63,7 +63,6 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareRecordMessageOrRequestDTO;
 import com.researchspace.service.UserFolderCreator;
 import com.researchspace.service.UserManager;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -469,23 +468,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   /**
-   * @param userOrGroup
-   * @return
-   */
-  private Set<Long> getUserIdsToUnshareWith(AbstractUserOrGroupImpl userOrGroup) {
-    Set<Long> userIdss = new HashSet<>();
-    if (userOrGroup.isGroup()) {
-      Set<User> users = userOrGroup.asGroup().getMembers();
-      for (User u : users) {
-        userIdss.add(u.getId());
-      }
-    } else if (userOrGroup.isUser()) {
-      userIdss.add(userOrGroup.getId());
-    }
-    return userIdss;
-  }
-
-  /**
    * @param grpShareCfg
    * @return
    */
@@ -526,16 +508,13 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     User userInSession = userDao.getUserByUsername(usernameInSession);
     boolean isGroupShare = toShareWith.isGroup();
 
-    log.info("doSharing start:" + Instant.now().toString());
     if (isGroupShare) {
       assertCanDoSharingWithGroup(subject, share, docOrNotebook, toShareWith, userInSession);
     } else {
       assertCanDoSharingWithUser(subject, share, docOrNotebook, toShareWith, userInSession);
     }
 
-    /* create a set of users we're going to share with, either in lab groups or individuals */
-
-    /* unshare operation handled separately */
+    /* unshare operation handled by a separate method */
     if (!share) {
       log.info("Unsharing doc [{}] with [{}]", docOrNotebook.getId(), toShareWith.getDisplayName());
       return doUnshare(subject, groupShareCfg, docOrNotebook, toShareWith);
@@ -545,7 +524,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
     /* calculate target folder; it could be pointed to by user in share dialog when sharing with group,
      * if not it will default to top-level share folder for individual or group share */
-    log.info("calculating target folder - start:" + Instant.now().toString());
     Folder selectedTargetFolder = null;
     boolean isShareWithAnonyomusUser = false;
     if (isGroupShare) {
@@ -559,7 +537,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         selectedTargetFolder = getTopLevelSharingFolder(subject, toShareWith, user, docOrNotebook);
       }
     }
-    log.info("calculating target folder - end:" + Instant.now().toString());
 
     /* actual share operation - saving RecordGroupSharing entity */
     RecordGroupSharing rgs = null;
@@ -610,9 +587,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       if (selectedTargetFolder.isNotebook()) {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
-      log.info("before addChild:" + Instant.now().toString());
       selectedTargetFolder.addChild(docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy);
-      log.info("after addChild:" + Instant.now().toString());
       saveRecordOrFolder(docOrNotebook);
       folderDao.save(selectedTargetFolder);
       log.info(
@@ -621,7 +596,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
           selectedTargetFolder.getId());
     }
 
-    log.info("doSharing end:" + Instant.now().toString());
     return List.of(rgs);
   }
 
@@ -842,9 +816,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   private void removeUnsharedChild(Folder sharedParent, BaseRecord toUnshare) {
-    log.info("before removeChild:" + Instant.now().toString());
     sharedParent.removeChild(toUnshare);
-    log.info("after removeChild:" + Instant.now().toString());
     folderDao.save(sharedParent);
     saveRecordOrFolder(toUnshare);
   }
