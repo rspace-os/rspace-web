@@ -664,7 +664,7 @@ function ActionsMenu({
               exportTypes: selection
                 .asSet()
                 .toArray()
-                .map(() => "MEDIA_FILE"),
+                .map((f) => (f.isFolder ? "FOLDER" : "MEDIA_FILE")),
               exportNames: selection
                 .asSet()
                 .toArray()
