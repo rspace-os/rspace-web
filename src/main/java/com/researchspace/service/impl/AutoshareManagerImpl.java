@@ -105,7 +105,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
         continue;
       }
       Long target = grp.getUserGroupForUser(subject).getAutoShareFolder().getId();
-      ShareConfigElement element = createShareConfig(grp, target);
+      ShareConfigElement element = createShareConfigForAutosharing(grp, target);
       shareConfigsList.add(element);
     }
     ServiceOperationResult<RecordGroupSharing> shareResult;
@@ -131,7 +131,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
     return shareResult;
   }
 
-  private ShareConfigElement createShareConfig(Group grp, Long target) {
+  private ShareConfigElement createShareConfigForAutosharing(Group grp, Long target) {
     ShareConfigElement element = new ShareConfigElement(grp.getId(), "read");
     element.setGroupFolderId(target);
     element.setAutoshare(true);
@@ -194,7 +194,8 @@ public class AutoshareManagerImpl implements AutoshareManager {
         new ServiceOperationResultCollection<>();
 
     for (Long idLong : itemsToShare) {
-      ShareConfigElement element = createShareConfig(grpToShareWith, destinationFolder.getId());
+      ShareConfigElement element =
+          createShareConfigForAutosharing(grpToShareWith, destinationFolder.getId());
       ShareConfigElement[] configs = new ShareConfigElement[] {element};
 
       try {

@@ -114,7 +114,8 @@ public class RecordGroupSharingDaoHibernateImpl
   }
 
   @Override
-  public Optional<RecordGroupSharing> findByRecordAndUserOrGroup(Long userOrGroupId, Long recordId) {
+  public Optional<RecordGroupSharing> findByRecordAndUserOrGroup(
+      Long userOrGroupId, Long recordId) {
     Query<RecordGroupSharing> query =
         getSession()
             .createQuery(
