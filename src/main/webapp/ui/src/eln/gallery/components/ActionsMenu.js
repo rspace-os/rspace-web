@@ -832,4 +832,17 @@ function ActionsMenu({
   );
 }
 
+/**
+ * The actions menu is how users operate on existing files and folders. It
+ * follows the convention that we are increasingly rolling out across the
+ * product of having a single button labelled "Actions" positioned in the top
+ * left corner of the main part of the UI, rather than a toolbar with buttons.
+ *
+ * This component largely just handles the UI of the menu and some of the
+ * dialogs opened by the menu items. The actual logic for triggering the
+ * actions and performing error handling is in the `useGalleryActions` hook.
+ * The most complex logic here is determining which menu items are available
+ * based on the current selection, which can include folders, files of various
+ * types, and even files in external filestores.
+ */
 export default (observer(ActionsMenu): ComponentType<ActionsMenuArgs>);
