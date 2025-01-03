@@ -413,6 +413,12 @@ type CarouselArgs = {|
       |},
 |};
 
+/**
+ * The carousel view of files allows the user to view files one at a time,
+ * using the preview (image or pdf) of the file to identify it. The user can
+ * also zoom in and out of the preview; crucial when working with large image
+ * files that vary only in small details.
+ */
 export default function Carousel({ listing }: CarouselArgs): Node {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
