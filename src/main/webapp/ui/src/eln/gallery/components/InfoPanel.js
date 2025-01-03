@@ -940,7 +940,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
               </Grid>
               {file.canOpen
                 .map(() => (
-                  <Grid item>
+                  <Grid item key={null}>
                     <ActionButton
                       label="Open"
                       sx={{
