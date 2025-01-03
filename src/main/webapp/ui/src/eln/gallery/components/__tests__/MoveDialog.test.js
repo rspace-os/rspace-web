@@ -27,6 +27,8 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const mockAxios = new MockAdapter(axios);
+    mockAxios.onGet("/collaboraOnline/supportedExts").reply(200, { data: {} });
+    mockAxios.onGet("/officeOnline/supportedExts").reply(200, { data: {} });
 
 describe("MoveDialog", () => {
   test("Should request only folders", () => {
@@ -41,7 +43,10 @@ describe("MoveDialog", () => {
       </ThemeProvider>
     );
 
-    expect(mockAxios.history.get.length).toBe(1);
-    expect(mockAxios.history.get[0].params.get("foldersOnly")).toBe("true");
+const getUploadedFilesCalls = mockAxios.history.get.filter(({ url }) =>
+      /getUploadedFiles/.test(url)
+    );
+    expect(getUploadedFilesCalls.length).toBe(1);
+    expect(getUploadedFilesCalls[0].params.get("foldersOnly")).toBe("true");
   });
 });

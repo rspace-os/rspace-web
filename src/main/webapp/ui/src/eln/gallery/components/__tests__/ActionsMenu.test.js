@@ -103,42 +103,44 @@ describe("ActionsMenu", () => {
       <ThemeProvider theme={createAccentedTheme(COLOR)}>
         <GallerySelection>
           <SetSelection
-            files={[{
-              id: dummyId(),
-              globalId: "GF1",
-              name: "Foo",
-              extension: "txt",
-              creationDate: new Date(),
-              modificationDate: new Date(),
-              type: "image",
-              thumbnailUrl: "example.com",
-              ownerName: "Joe Bloggs",
-              description: new Description({ key: "empty" }),
-              version: 1,
-              size: 1024,
-              path: [],
-              pathAsString: () => "",
-              isFolder: false,
-              isSystemFolder: false,
-              isImage: true,
-              isSnippet: false,
-              isSnippetFolder: false,
-              transformFilename(f: (string) => string) {
-                return f("Foo");
+            files={[
+              {
+                id: dummyId(),
+                globalId: "GF1",
+                name: "Foo",
+                extension: "txt",
+                creationDate: new Date(),
+                modificationDate: new Date(),
+                type: "image",
+                thumbnailUrl: "example.com",
+                ownerName: "Joe Bloggs",
+                description: new Description({ key: "empty" }),
+                version: 1,
+                size: 1024,
+                path: [],
+                pathAsString: () => "",
+                isFolder: false,
+                isSystemFolder: false,
+                isImage: true,
+                isSnippet: false,
+                isSnippetFolder: false,
+                transformFilename(f: (string) => string) {
+                  return f("Foo");
+                },
+                setName: () => {},
+                setDescription: () => {},
+                linkedDocuments: null,
+                canOpen: Result.Error([new Error("I'm a folder")]),
+                canDuplicate: Result.Ok(null),
+                canDelete: Result.Ok(null),
+                canRename: Result.Ok(null),
+                canMoveToIrods: Result.Ok(null),
+                canBeExported: Result.Ok(null),
+                canBeMoved: Result.Ok(null),
+                canUploadNewVersion: Result.Ok(null),
+                treeViewItemId: "GF1",
               },
-              setName: () => {},
-              setDescription: () => {},
-              linkedDocuments: null,
-              canOpen: Result.Error([new Error("I'm a folder")]),
-              canDuplicate: Result.Ok(null),
-              canDelete: Result.Ok(null),
-              canRename: Result.Ok(null),
-              canMoveToIrods: Result.Ok(null),
-              canBeExported: Result.Ok(null),
-              canBeMoved: Result.Ok(null),
-              canUploadNewVersion: Result.Ok(null),
-              treeViewItemId: "GF1",
-            }]}
+            ]}
           />
           <ActionsMenu
             refreshListing={() => Promise.resolve()}
@@ -180,42 +182,44 @@ describe("ActionsMenu", () => {
       <ThemeProvider theme={createAccentedTheme(COLOR)}>
         <GallerySelection>
           <SetSelection
-            files={[{
-              id: dummyId(),
-              globalId: "GF1",
-              name: "Foo",
-              extension: "",
-              creationDate: new Date(),
-              modificationDate: new Date(),
-              type: "folder",
-              thumbnailUrl: "example.com",
-              ownerName: "Joe Bloggs",
-              description: new Description({ key: "empty" }),
-              version: 1,
-              size: 1024,
-              path: [],
-              pathAsString: () => "",
-              isFolder: true,
-              isSystemFolder: false,
-              isImage: false,
-              isSnippet: false,
-              isSnippetFolder: false,
-              transformFilename(f: (string) => string) {
-                return f("Foo");
+            files={[
+              {
+                id: dummyId(),
+                globalId: "GF1",
+                name: "Foo",
+                extension: "",
+                creationDate: new Date(),
+                modificationDate: new Date(),
+                type: "folder",
+                thumbnailUrl: "example.com",
+                ownerName: "Joe Bloggs",
+                description: new Description({ key: "empty" }),
+                version: 1,
+                size: 1024,
+                path: [],
+                pathAsString: () => "",
+                isFolder: true,
+                isSystemFolder: false,
+                isImage: false,
+                isSnippet: false,
+                isSnippetFolder: false,
+                transformFilename(f: (string) => string) {
+                  return f("Foo");
+                },
+                setName: () => {},
+                setDescription: () => {},
+                linkedDocuments: null,
+                canOpen: Result.Ok(null),
+                canDuplicate: Result.Ok(null),
+                canDelete: Result.Ok(null),
+                canRename: Result.Ok(null),
+                canMoveToIrods: Result.Ok(null),
+                canBeExported: Result.Ok(null),
+                canBeMoved: Result.Ok(null),
+                canUploadNewVersion: Result.Ok(null),
+                treeViewItemId: "GF1",
               },
-              setName: () => {},
-              setDescription: () => {},
-              linkedDocuments: null,
-              canOpen: Result.Ok(null),
-              canDuplicate: Result.Ok(null),
-              canDelete: Result.Ok(null),
-              canRename: Result.Ok(null),
-              canMoveToIrods: Result.Ok(null),
-              canBeExported: Result.Ok(null),
-              canBeMoved: Result.Ok(null),
-              canUploadNewVersion: Result.Ok(null),
-              treeViewItemId: "GF1",
-            }]}
+            ]}
           />
           <ActionsMenu
             refreshListing={() => Promise.resolve()}
@@ -366,7 +370,7 @@ describe("ActionsMenu", () => {
       expect.objectContaining({
         exportSelection: expect.objectContaining({
           type: "selection",
-          exportTypes: ["MEDIA_FILE", "MEDIA_FILE"],
+          exportTypes: ["FOLDER", "FOLDER"],
           exportNames: ["Foo", "Foo"],
           exportIds: [
             expect.stringMatching(/[0-9]+/),
