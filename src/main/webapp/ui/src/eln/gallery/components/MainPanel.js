@@ -261,17 +261,6 @@ const BreadcrumbLink = React.forwardRef<
     });
     const dndContext = useDndContext();
     const dndInProgress = Boolean(dndContext.active);
-    const dropStyle: { [string]: string | number } = isOver
-      ? {
-          border: SELECTED_OR_FOCUS_BORDER,
-        }
-      : dndInProgress
-      ? {
-          border: "2px solid white",
-          borderWidth: "2px",
-          animation: "drop 2s linear infinite",
-        }
-      : {};
     const { openFolder } = useFolderOpen();
 
     return (
@@ -294,7 +283,13 @@ const BreadcrumbLink = React.forwardRef<
           else ref.current = node;
         }}
         style={{
-          ...dropStyle,
+          ...((dndInProgress && !isOver
+            ? { animation: "drop 2s linear infinite" }
+            : {}): { animation?: string, border?: string }),
+          ...((isOver ? { border: SELECTED_OR_FOCUS_BORDER } : {}): {
+            border?: string,
+            animation?: string,
+          }),
         }}
         tabIndex={tabIndex}
         label={
