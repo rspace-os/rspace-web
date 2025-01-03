@@ -33,6 +33,9 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
         includeOutliers: true,
       });
     }, 10); // 10ms for react to re-render
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - apiRef wont change
+     */
   }, [linkedDocuments.documents]);
 
   return (
