@@ -431,8 +431,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
    * @param recordOrNotebook
    * @param groupShareCfgs
    * @param share true= sharing, false = unsharing
-   * @return operation result (whether the record was shared/unshared with at least one from
-   *     selected sharees) with set of created/removed recordGroupSharings
+   * @return a list of created/removed recordGroupSharings
    * @throws IllegalAddChildOperation
    */
   private List<RecordGroupSharing> doRecordOrNotebookShare(
@@ -522,8 +521,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
     log.info("Sharing doc [{}] with [{}]", docOrNotebook.getId(), toShareWith.getDisplayName());
 
-    /* calculate target folder; it could be pointed to by user in share dialog when sharing with group,
-     * if not it will default to top-level share folder for individual or group share */
+    /* calculate target folder for this doSharing run; target folder may be specified by the user
+     * when sharing with group, otherwise defaults to top-level of individual/group share folder */
     Folder selectedTargetFolder = null;
     boolean isShareWithAnonyomusUser = false;
     if (isGroupShare) {
