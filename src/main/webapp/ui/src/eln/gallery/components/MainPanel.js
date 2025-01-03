@@ -273,7 +273,7 @@ const Path = ({
   const selection = useGallerySelection();
 
   return (
-    <StyledBreadcrumbs>
+    <StyledBreadcrumbs onFocus={onFocus} onBlur={onBlur} onKeyDown={onKeyDown}>
       <BreadcrumbLink
         section={section}
         clearPath={clearPath}
