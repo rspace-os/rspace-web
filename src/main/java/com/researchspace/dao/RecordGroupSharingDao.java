@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /** Accesses state of records shared within a group. */
 public interface RecordGroupSharingDao extends GenericDao<RecordGroupSharing, Long> {
@@ -177,7 +178,7 @@ public interface RecordGroupSharingDao extends GenericDao<RecordGroupSharing, Lo
    * @param recordId
    * @return
    */
-  List<RecordGroupSharing> findByRecordAndUserOrGroup(Long userOrGroupId, Long recordId);
+  Optional<RecordGroupSharing> findByRecordAndUserOrGroup(Long userOrGroupId, Long recordId);
 
   ISearchResults<RecordGroupSharing> listAllPublishedRecords(
       PaginationCriteria<RecordGroupSharing> pcg);
