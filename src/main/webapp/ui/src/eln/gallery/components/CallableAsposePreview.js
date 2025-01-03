@@ -120,7 +120,10 @@ export function CallableAsposePreview({
   );
 }
 
-export function supportedAsposeFile(file: GalleryFile): Result<GalleryFile> {
+/**
+ * Check if the file is supported by Aspose based on its extension.
+ */
+export function supportedAsposeFile(file: GalleryFile): Result<null> {
   const ASPOSE_EXTENSIONS = [
     "doc",
     "docx",
@@ -142,5 +145,5 @@ export function supportedAsposeFile(file: GalleryFile): Result<GalleryFile> {
     return Result.Error([
       new Error("Aspose does not support the extension of the file"),
     ]);
-  return Result.Ok(file);
+  return Result.Ok(null);
 }

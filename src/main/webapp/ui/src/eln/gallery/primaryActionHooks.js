@@ -91,8 +91,7 @@ export function useAsposePreviewOfGalleryFile(): (
       .flatMap(Parsers.isBoolean)
       .flatMap(Parsers.isTrue)
       .mapError(() => new Error("Aspose is not enabled"))
-      .flatMap(() => supportedAsposeFile(file))
-      .map(() => null);
+      .flatMap(() => supportedAsposeFile(file));
   };
 }
 
