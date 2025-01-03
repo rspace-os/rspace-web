@@ -1297,6 +1297,11 @@ export function useGalleryListing({
          * such scenarios include when duplicating the last file in a page; the
          * selected one will become the first file of the next page that the user
          * needs to load by tapping the "Load More" button.
+         *
+         * This has the downside of losing the selection when the user is using
+         * tree view as if the selected file is within another folder then this
+         * logic will not find the whole selection in the root listing and
+         * clear the selection.
          */
         const newFilesIds = new Set(newFiles.map(({ id }) => id));
         if (selection.asSet().some((f) => !newFilesIds.has(f.id)))

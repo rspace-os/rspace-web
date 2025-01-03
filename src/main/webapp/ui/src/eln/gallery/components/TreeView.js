@@ -95,6 +95,27 @@ type TreeItemContentArgs = {|
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
   foldersOnly: boolean,
+
+  /**
+   * If true, then the listing is being refreshed and so the tree view should
+   * trigger a refresh of its listing.
+   *
+   * Note that after a refresh is comlete we do not always keep the user's
+   * selection (e.g. after duplicating a file) for two reasons:
+   *
+   *   1. When the root listing refreshes, if there are any selected files that
+   *      are not in the new listing then the selection is cleared. This is to
+   *      ensure that the selection does not include any now deleted files.
+   *      However, this means that if the selection includes a file that is
+   *      within a folder then it too will trigger this selection clearing.
+   *
+   *   2. If the user has just duplicated a folder, then the new folder will
+   *      fetch its contents by calling `useGalleryListing`'s `getGalleryFiles`
+   *      which triggers a clearing of the selection. All of the other folders
+   *      will call their `refreshListing` functions but we have to call
+   *      `getGalleryFiles` to get the new folder's contents in the first
+   *      instance.
+   */
   refeshing: boolean,
 |};
 
