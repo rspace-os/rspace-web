@@ -770,12 +770,6 @@ export function useGalleryActions(): {|
   }
 
   async function download(files: RsSet<GalleryFile>) {
-    const api = axios.create({
-      baseURL: "",
-      headers: {
-        Authorization: "Bearer " + (await getToken()),
-      },
-    });
     try {
       const { fulfilled, rejected } = partitionAllSettled(
         await Promise.allSettled(
