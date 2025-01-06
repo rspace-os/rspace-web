@@ -5,6 +5,16 @@ import axios from "axios";
 import * as Parsers from "../../util/parsers";
 
 /**
+ * This context is a performance optimisation. By storing the set of supported
+ * file extensions in a context at the root of the application, the network
+ * call to get this list need not be made by each and every component that uses
+ * the information.
+ */
+export const OfficeOnlineContext: Context<{|
+  supportedExts: Set<string> | null,
+|}> = React.createContext({ supportedExts: null });
+
+/**
  * For fetching metadata about the integration with Office Online.
  *
  * The Office Online integration is used to allow users to quickly edit
@@ -50,11 +60,10 @@ export default function useOfficeOnline(): {|
     });
     // we should probably store the result in session storage
     // as it doesn't need to be loaded everytime this component is mounted
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - context will not meaningfully change
+     */
   }, []);
 
   return { supportedExts };
 }
-
-export const OfficeOnlineContext: Context<{|
-  supportedExts: Set<string> | null,
-|}> = React.createContext({ supportedExts: null });
