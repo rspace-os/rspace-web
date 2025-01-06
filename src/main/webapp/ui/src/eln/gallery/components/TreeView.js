@@ -23,8 +23,7 @@ import { doNotAwait } from "../../../util/Util";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { useDroppable, useDraggable, useDndContext } from "@dnd-kit/core";
-import Box, { boxClasses } from "@mui/material/Box";
-import Collapse, { collapseClasses } from "@mui/material/Collapse";
+import Box from "@mui/material/Box";
 import { runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
@@ -168,7 +167,9 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
               ) : null
             )}
             {listing.loadMore
-              .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+              .map((loadMore) => (
+                <LoadMoreButton key={null} onClick={loadMore} />
+              ))
               .orElse(null)}
           </>
         ) : null,
@@ -373,7 +374,8 @@ type TreeViewArgs = {|
    * whole FetchingData object so that it can display the loading and error
    * states and doesn't lose the expanded state when the listing is refreshed.
    */
-  listing: | {| tag: "empty", reason: string, refreshing: boolean |}
+  listing:
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
@@ -611,7 +613,7 @@ const TreeView = ({
         )}
       </GallerySelection>
       {listing.loadMore
-        .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+        .map((loadMore) => <LoadMoreButton key={null} onClick={loadMore} />)
         .orElse(null)}
     </SimpleTreeView>
   );
