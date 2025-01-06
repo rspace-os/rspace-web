@@ -1201,7 +1201,7 @@ function GalleryMainPanel({
         Erorr checking if filestores are enabled.
       </PlaceholderLabel>
     ),
-    success: (filestoresEnabled) => {
+    success: (fsEnabled) => {
       const validGallerySections = new Set([
         "Images",
         "Audios",
@@ -1211,7 +1211,7 @@ function GalleryMainPanel({
         "DMPs",
         "Snippets",
         "Miscellaneous",
-        ...(filestoresEnabled === true ? ["NetworkFiles"] : []),
+        ...(fsEnabled === true ? ["NetworkFiles"] : []),
         "PdfDocuments",
       ]);
       if (!validGallerySections.has(selectedSection))
