@@ -154,6 +154,7 @@ const UploadMenuItem = ({
       {folderId
         .map((fId) => (
           <input
+            key={null}
             ref={inputRef}
             accept="*"
             hidden
