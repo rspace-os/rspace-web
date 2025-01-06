@@ -124,6 +124,9 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
        * folder is done refreshing.
        */
       if (refeshing) void refreshingThisListing();
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - refreshingThisListing will not meaningfully change
+       */
     }, [refeshing]);
 
     React.useEffect(() => {
@@ -134,6 +137,9 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
             treeViewItemIdMap.set(f.treeViewItemId, f);
         });
       });
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - treeViewItemId will not change as it is mobx observable that gets mutated
+       */
     }, [galleryListing]);
 
     return FetchingData.match(galleryListing, {
@@ -433,6 +439,9 @@ const TreeView = ({
     runInAction(() => {
       for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
     });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - treeViewItemId will not change as it is mobx observable that gets mutated
+     */
   }, [listing]);
 
   /*
