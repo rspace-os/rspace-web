@@ -35,7 +35,13 @@ type NewMenuItemArgs = {|
   ...ElementConfig<typeof CardHeader>,
 |};
 
+/**
+ * A menu item for the various menus in the application. It can be styled
+ * according to the branding of a third-party integration, or to match the
+ * accent colour of the current page.
+ */
 export default (styled(
+  // eslint-disable-next-line react/display-name -- Just a styled wrapper around MenuItem
   React.forwardRef(
     (
       {
