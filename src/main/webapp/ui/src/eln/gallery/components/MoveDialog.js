@@ -197,6 +197,7 @@ const MoveDialog = observer(
  * rendered, and will make network requests to fetch the folder structure
  * immediately.
  */
+// eslint-disable-next-line react/display-name -- This is a wrapper component
 export default (
   props: $Diff<MoveDialogArgs, {| selectedFiles: mixed |}>
 ): Node => {
