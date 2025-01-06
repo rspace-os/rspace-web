@@ -8,7 +8,7 @@ type RouterNavigationContextArgs = {|
   children: Node,
 |};
 
-/*
+/**
  * This NavigationContext encompasses all of the pages under this React app.
  * All navigations within the app are forward to react-router and any
  * navigations to outside are opened in a new window.
