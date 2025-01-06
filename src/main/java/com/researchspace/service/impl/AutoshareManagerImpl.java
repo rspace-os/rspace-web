@@ -73,14 +73,14 @@ public class AutoshareManagerImpl implements AutoshareManager {
   }
 
   /**
-   * Performs sharing a single record in a new transaction. This is needed in case this is called
-   * from a TransactionEventListener to ensure clean separation between a creation event and an
-   * autoshare event, and ensure creation occurs OK even if there is a subsequent problem in
-   * sharing.
+   * Performs sharing a single record, into all user's autoshare groups, in a new transaction. This
+   * is needed in case this is called from a TransactionEventListener to ensure clean separation
+   * between a creation event and an autoshare event, and ensure creation occurs OK even if there is
+   * a subsequent problem in sharing.
    */
   @Override
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public ServiceOperationResult<Set<RecordGroupSharing>> shareRecord(
+  public ServiceOperationResult<List<RecordGroupSharing>> shareRecord(
       BaseRecord toShare, User subject) {
 
     if (!toShare.isAutosharable()) {
@@ -106,20 +106,18 @@ public class AutoshareManagerImpl implements AutoshareManager {
         continue;
       }
       Long target = grp.getUserGroupForUser(subject).getAutoShareFolder().getId();
-      ShareConfigElement element = createShareConfig(grp, target);
+      ShareConfigElement element = createShareConfigForAutosharing(grp, target);
       shareConfigsList.add(element);
     }
-    ServiceOperationResult<Set<RecordGroupSharing>> shareResult;
+    ServiceOperationResult<List<RecordGroupSharing>> shareResult;
 
     // share, if there is something to share
     if (shareConfigsList.size() > 0) {
       ShareConfigElement[] configs = new ShareConfigElement[shareConfigsList.size()];
       shareConfigsList.toArray(configs);
-      // let sharing manager decide whether to share or not
       shareResult = recordSharingMgr.shareRecord(subject, toShare.getId(), configs);
       if (shareResult.isSucceeded()) {
-        RecordGroupSharing rgs = shareResult.getEntity().iterator().next();
-        notifyAuditTrail(subject, configs, rgs);
+        notifyAuditTrail(subject, configs, shareResult.getEntity().get(0).getShared());
       }
     } else {
       String msgString =
@@ -132,7 +130,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
     return shareResult;
   }
 
-  private ShareConfigElement createShareConfig(Group grp, Long target) {
+  private ShareConfigElement createShareConfigForAutosharing(Group grp, Long target) {
     ShareConfigElement element = new ShareConfigElement(grp.getId(), "read");
     element.setGroupFolderId(target);
     element.setAutoshare(true);
@@ -140,8 +138,8 @@ public class AutoshareManagerImpl implements AutoshareManager {
   }
 
   private void notifyAuditTrail(
-      User subject, ShareConfigElement[] configs, RecordGroupSharing rgs) {
-    auditService.notify(new ShareRecordAuditEvent(subject, rgs.getShared(), configs));
+      User subject, ShareConfigElement[] configs, BaseRecord sharedRecord) {
+    auditService.notify(new ShareRecordAuditEvent(subject, sharedRecord, configs));
   }
 
   @Override
@@ -195,19 +193,20 @@ public class AutoshareManagerImpl implements AutoshareManager {
         new ServiceOperationResultCollection<>();
 
     for (Long idLong : itemsToShare) {
-      ShareConfigElement element = createShareConfig(grpToShareWith, destinationFolder.getId());
+      ShareConfigElement element =
+          createShareConfigForAutosharing(grpToShareWith, destinationFolder.getId());
       ShareConfigElement[] configs = new ShareConfigElement[] {element};
 
       try {
-        ServiceOperationResult<Set<RecordGroupSharing>> sharingResult =
+        ServiceOperationResult<List<RecordGroupSharing>> sharingResult =
             recordSharingMgr.shareRecord(subject, idLong, configs);
         if (sharingResult.isSucceeded()) {
-          RecordGroupSharing rgs = sharingResult.getEntity().iterator().next();
-          notifyAuditTrail(subject, configs, rgs);
+          RecordGroupSharing rgs = sharingResult.getEntity().get(0);
+          notifyAuditTrail(subject, configs, rgs.getShared());
           rc.addResult(rgs);
         } else {
           if (!sharingResult.getEntity().isEmpty()) {
-            rc.addFailure(sharingResult.getEntity().iterator().next());
+            rc.addFailure(sharingResult.getEntity().get(0));
           }
         }
       } catch (Exception e) {

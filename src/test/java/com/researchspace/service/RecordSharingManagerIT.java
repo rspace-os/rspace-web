@@ -32,7 +32,6 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
 import java.io.FileNotFoundException;
 import java.util.List;
-import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -306,8 +305,9 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
     withU2.setUserId(u2.getId());
     withU2.setOperation("read");
 
-    ServiceOperationResult<Set<RecordGroupSharing>> result =
+    ServiceOperationResult<List<RecordGroupSharing>> result =
         sharingMgr.shareRecord(u1, doc1.getId(), new ShareConfigElement[] {withGroup, withU2});
+    assertTrue(result.isSucceeded());
     assertEquals(2, result.getEntity().size());
 
     doc1 = recordMgr.get(doc1.getId()).asStrucDoc();

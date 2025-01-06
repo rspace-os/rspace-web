@@ -1129,11 +1129,17 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @param user - must be a group member, probably the doc owner
    * @param group - the group to share with, must be initialised with sharing folders etc
    * @param sd The document to share.
+   * @return RecordGroupSharing entity created as a result of sharing
    */
-  protected ServiceOperationResult<Set<RecordGroupSharing>> shareRecordWithGroup(
+  protected RecordGroupSharing shareRecordWithGroup(
       final User user, Group group, StructuredDocument sd) {
-    return sharingMgr.shareRecord(
-        user, sd.getId(), new ShareConfigElement[] {new ShareConfigElement(group.getId(), "read")});
+    return sharingMgr
+        .shareRecord(
+            user,
+            sd.getId(),
+            new ShareConfigElement[] {new ShareConfigElement(group.getId(), "read")})
+        .getEntity()
+        .get(0);
   }
 
   /**
@@ -1153,11 +1159,11 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     cfg.setGroupid(group.getId());
     cfg.setOperation("read"); // doesn't matter, notebook permission will decide
 
-    ServiceOperationResult<Set<RecordGroupSharing>> shared =
+    ServiceOperationResult<List<RecordGroupSharing>> shared =
         sharingMgr.shareRecord(docOwner, record.getId(), new ShareConfigElement[] {cfg});
     return shared.getEntity().isEmpty()
         ? Optional.empty()
-        : Optional.ofNullable(shared.getEntity().iterator().next());
+        : Optional.ofNullable(shared.getEntity().get(0));
   }
 
   /**
@@ -1166,9 +1172,9 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @param owner - must be a group member, probably the doc owner
    * @param sharee - the user to share with, must be initialised with sharing folders etc
    * @param toShare The document to share.
-   * @return
+   * @return entity created as a result of sharing action
    */
-  protected ServiceOperationResult<Set<RecordGroupSharing>> shareRecordWithUser(
+  protected RecordGroupSharing shareRecordWithUser(
       User owner, StructuredDocument toShare, User sharee) {
     return doShare(owner, sharee, toShare, false);
   }
@@ -1178,22 +1184,21 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    *
    * @param owner - must be a group member, probably the doc owner
    * @param sharee - the user to share with, must be initialised with sharing folders etc
-   * @param toShare The document to share.
-   * @return
+   * @param toShare The document to share. @@return entity created as a result of sharing action
    */
-  protected ServiceOperationResult<Set<RecordGroupSharing>> shareRecordWithUserForEdit(
+  protected RecordGroupSharing shareRecordWithUserForEdit(
       User owner, StructuredDocument toShare, User sharee) {
     return doShare(owner, sharee, toShare, true);
   }
 
-  private ServiceOperationResult<Set<RecordGroupSharing>> doShare(
+  private RecordGroupSharing doShare(
       User owner, User sharee, StructuredDocument toShare, boolean write) {
-    ShareConfigElement cfg = new ShareConfigElement(sharee.getId(), "read");
+    ShareConfigElement cfg = new ShareConfigElement(sharee.getId(), write ? "write" : "read");
     cfg.setUserId(sharee.getId());
-    if (write) {
-      cfg.setOperation("write");
-    }
-    return sharingMgr.shareRecord(owner, toShare.getId(), new ShareConfigElement[] {cfg});
+    return sharingMgr
+        .shareRecord(owner, toShare.getId(), new ShareConfigElement[] {cfg})
+        .getEntity()
+        .get(0);
   }
 
   /**
@@ -1347,10 +1352,10 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   }
 
   private Optional<BaseRecord> extractDoc(
-      ServiceOperationResult<Set<RecordGroupSharing>> shareRecord) {
+      ServiceOperationResult<List<RecordGroupSharing>> shareRecord) {
     return shareRecord.getEntity().isEmpty()
         ? Optional.empty()
-        : Optional.ofNullable(shareRecord.getEntity().iterator().next().getShared());
+        : Optional.ofNullable(shareRecord.getEntity().get(0).getShared());
   }
 
   /**

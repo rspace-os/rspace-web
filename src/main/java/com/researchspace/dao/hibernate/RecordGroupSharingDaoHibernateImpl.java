@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
@@ -113,7 +114,8 @@ public class RecordGroupSharingDaoHibernateImpl
   }
 
   @Override
-  public List<RecordGroupSharing> findByRecordAndUserOrGroup(Long userOrGroupId, Long recordId) {
+  public Optional<RecordGroupSharing> findByRecordAndUserOrGroup(
+      Long userOrGroupId, Long recordId) {
     Query<RecordGroupSharing> query =
         getSession()
             .createQuery(
@@ -121,7 +123,7 @@ public class RecordGroupSharingDaoHibernateImpl
                 RecordGroupSharing.class);
     query.setParameter("id", userOrGroupId);
     query.setParameter("recordId", recordId);
-    return query.list();
+    return query.uniqueResultOptional();
   }
 
   @Override
