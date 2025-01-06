@@ -461,20 +461,19 @@ const FileCard = styled(
           null
         );
 
-        const dropStyle: { [string]: string | number } = isOver
-          ? {
-              borderColor: SELECTED_OR_FOCUS_BLUE,
-            }
-          : dndInProgress &&
-            file.isFolder &&
-            !isBeingMoved(file, dndContext.active?.data.current.fileBeingMoved)
-          ? {
-              border: "2px solid white",
-              borderWidth: "2px",
-              borderRadius: "8px",
-              animation: "drop 2s linear infinite",
-            }
-          : {};
+        const dropStyle = {
+          ...((isOver ? { borderColor: SELECTED_OR_FOCUS_BLUE } : {}): {
+            [string]: string | number,
+          }),
+          ...((!isOver && dndInProgress && file.isFolder && !isBeingMoved(file, dndContext.active?.data.current.fileBeingMoved)
+            ? {
+                border: "2px solid white",
+                borderWidth: "2px",
+                borderRadius: "8px",
+                animation: "drop 2s linear infinite",
+              }
+            : {}): { [string]: string | number }),
+        };
         const inGroupBeingDraggedStyle: { [string]: string | number } =
           Boolean(dndContext.active?.data.current?.fileBeingMoved) &&
           (selection.includes(dndContext.active.data.current.fileBeingMoved)
