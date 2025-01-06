@@ -18,6 +18,9 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
+/**
+ * A cloud icon for use as a generic icon for filestore.
+ */
 export default function ChemistryIcon(): Node {
   const { classes } = useStyles();
   return (
