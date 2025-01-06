@@ -29,6 +29,9 @@ library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
 
+/**
+ * A string identifying a particular gallery section.
+ */
 export type GallerySection =
   | "Images"
   | "Audios"
@@ -41,6 +44,9 @@ export type GallerySection =
   | "Miscellaneous"
   | "PdfDocuments";
 
+/**
+ * Constants for the strings that identify gallery sections.
+ */
 export const GALLERY_SECTION = {
   IMAGES: "Images",
   AUDIOS: "Audios",
@@ -54,6 +60,11 @@ export const GALLERY_SECTION = {
   PDFDOCUMENTS: "PdfDocuments",
 };
 
+/**
+ * Given a URLSearchParams, get the gallery section as referred to by the
+ * 'mediaType' search parameter. Most of this logic is to satify flow that the
+ * string is indeed one of the valid strings that identify a gallery section.
+ */
 export const parseGallerySectionFromUrlSearchParams = (
   searchParams: URLSearchParams
 ): Result<GallerySection> =>
@@ -75,6 +86,9 @@ export const parseGallerySectionFromUrlSearchParams = (
     )
   );
 
+/**
+ * Mapping of gallery sections to a label that can be shown in the UI.
+ */
 export const gallerySectionLabel = {
   Images: "Images",
   Audios: "Audio",
@@ -88,6 +102,9 @@ export const gallerySectionLabel = {
   PdfDocuments: "Exports",
 };
 
+/**
+ * Mapping of gallery sections to icons that can be shown in the UI.
+ */
 export const gallerySectionIcon: { [string]: Node } = {
   Images: <FaIcon icon="image" />,
   Audios: <FaIcon icon="volume-low" />,
@@ -101,6 +118,11 @@ export const gallerySectionIcon: { [string]: Node } = {
   PdfDocuments: <FaIcon icon="fa-circle-down" />,
 };
 
+/**
+ * Mapping of gallery sections to pieces of text that can be used to refer to
+ * multiple files of the type typically found in the particular gallery
+ * section.
+ */
 export const gallerySectionCollectiveNoun = {
   Images: "images",
   Audios: "audio files",
@@ -114,6 +136,10 @@ export const gallerySectionCollectiveNoun = {
   PdfDocuments: "exports",
 };
 
+/**
+ * The accent colour of the gallery; giving the part of the product a
+ * distinguishing identity from Inventory and the other parts of the ELN.
+ */
 export const COLOR = {
   main: {
     hue: 280,
@@ -142,5 +168,13 @@ export const COLOR = {
   },
 };
 
+/**
+ * The blue colour used when an element is selected or focussed. Wherever
+ * possible, prefer to use the `callToAction` palette colour instead.
+ */
 export const SELECTED_OR_FOCUS_BLUE = `hsl(${baseThemeColors.primary.hue}deg, ${baseThemeColors.primary.saturation}%, ${baseThemeColors.primary.lightness}%)`;
+/**
+ * The blue border used when an element is selected or focussed. Wherever
+ * possible, prefer to use the `callToAction` palette colour instead.
+ */
 export const SELECTED_OR_FOCUS_BORDER = `2px solid ${SELECTED_OR_FOCUS_BLUE}`;
