@@ -1194,6 +1194,8 @@ export function useGalleryListing({
           pageNumber: `${page + 1}`,
           sortOrder,
           orderBy,
+          foldersOnly:
+            foldersOnly !== null && Boolean(foldersOnly) ? "true" : "false",
         }),
       });
 
@@ -1273,6 +1275,10 @@ export function useGalleryListing({
                     pageNumber: `${p}`,
                     sortOrder,
                     orderBy,
+                    foldersOnly:
+                      foldersOnly !== null && Boolean(foldersOnly)
+                        ? "true"
+                        : "false",
                   }),
                 })
                 .then(({ data }) => {
