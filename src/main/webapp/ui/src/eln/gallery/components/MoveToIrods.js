@@ -35,6 +35,9 @@ import Result from "../../../util/result";
 import AccessibilityTips from "../../../components/AccessibilityTips";
 import docLinks from "../../../assets/DocLinks";
 
+/**
+ * The color scheme to match the iRODS branding.
+ */
 export const COLOR = {
   main: {
     hue: 180,
@@ -425,6 +428,9 @@ type WrapperArgs = {|
 
 const accentTheme = Object.freeze(createAccentedTheme(COLOR));
 
+/**
+ * A dialog for copying or moving files to an iRODS server.
+ */
 export default function Wrapper({
   selectedIds,
   dialogOpen,
