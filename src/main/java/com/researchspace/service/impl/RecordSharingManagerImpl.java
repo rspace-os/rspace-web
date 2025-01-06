@@ -39,7 +39,6 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.RecordSharingACL;
-import com.researchspace.model.permissions.UserPermissionAdapter;
 import com.researchspace.model.record.ACLPropagationPolicy;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
@@ -526,10 +525,11 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     Folder selectedTargetFolder = null;
     boolean isShareWithAnonyomusUser = false;
     if (isGroupShare) {
+      checkUserCanShareWithGroup(subject, toShareWith.asGroup());
       selectedTargetFolder =
           getGroupShareTargetFolder(subject, groupShareCfg, docOrNotebook, toShareWith);
     } else {
-      User user = initUserAndCheckSubjectCanShareWith(toShareWith.getId(), subject);
+      User user = initUserAndCheckUserCanShareWithOtherUser(subject, toShareWith.getId());
       if (user.hasRole(Role.ANONYMOUS_ROLE)) {
         isShareWithAnonyomusUser = true;
       } else {
@@ -847,30 +847,77 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   /**
-   * @param userId
-   * @param subject
+   * @param user
+   * @param otherUserId
    * @return
    */
-  private User initUserAndCheckSubjectCanShareWith(Long userId, User subject) {
-    User user = userDao.get(userId);
-    if (user.hasRole(Role.ANONYMOUS_ROLE)) {
-      return user;
+  private User initUserAndCheckUserCanShareWithOtherUser(User user, Long otherUserId) {
+    User otherUser = userDao.get(otherUserId);
+    if (otherUser.hasRole(Role.ANONYMOUS_ROLE)) {
+      return otherUser;
     }
-    Folder userRoot = user.getRootFolder();
+    Folder userRoot = otherUser.getRootFolder();
     // Need to reload user after initializing, to set RF id and shared folder
     if (userRoot == null) {
-      userRoot = contentInitializer.init(user.getId()).getUserRoot();
-      userDao.save(user);
+      userRoot = contentInitializer.init(otherUser.getId()).getUserRoot();
+      userDao.save(otherUser);
     }
     userRoot.getName();
 
-    // In this point, The subject (user) could not belong to any
+    // In this point, The user may not belong to any
     // group in a cloud environment. So we do not check share
     // permission within a group.
     if (!properties.isCloud()) {
-      checkSubjectCanShareWithUser(subject, user);
+      checkUserCanShareWithOtherUser(user, otherUser);
     }
-    return user;
+    return otherUser;
+  }
+
+  /**
+   * This method checks if the user can share their records with given group. That boils down to
+   * group membership, i.e. users can share with groups they belong to.
+   *
+   * @param user
+   * @param group
+   * @throws AuthorizationException if user not a member of group they try to share with
+   */
+  private void checkUserCanShareWithGroup(User user, Group group) {
+    boolean canShareWithGroup = user.getGroups().contains(group);
+    if (!canShareWithGroup) {
+      throw new AuthorizationException(
+          "Unauthorized attempt by ["
+              + user.getUsername()
+              + "] to share with group ["
+              + group.getUniqueName()
+              + "]");
+    }
+  }
+
+  /**
+   * This method checks if the user can individually share their records with another. Outside of
+   * RSpace Community that boils down to group membership, i.e. users can share with anyone in the
+   * group they belong to.
+   *
+   * @param user
+   * @param otherUser
+   * @throws AuthorizationException if other user not a member of any group with user
+   */
+  private void checkUserCanShareWithOtherUser(User user, User otherUser)
+      throws AuthorizationException {
+    Set<Group> groups = user.getGroups();
+    List<String> validUsernames =
+        Group.getUniqueUsersInGroups(groups, null).stream()
+            .map(User::getUsername)
+            .collect(Collectors.toList());
+
+    if (!validUsernames.contains(otherUser.getUsername())) {
+      throw new AuthorizationException(
+          "Unauthorized attempt by ["
+              + user.getUsername()
+              + "] to share with user ["
+              + otherUser.getUsername()
+              + "]");
+    }
   }
 
   /**
@@ -1050,29 +1097,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       }
     }
     return null;
-  }
-
-  /**
-   * This method checks if the subject (user) has SHARE permission with in a group (user). We used
-   * this method in standard environment when the share functionality is strictly related to groups.
-   * Subject (user) could not belong to any group in a cloud environment.
-   *
-   * @param subject
-   * @param user
-   * @throws AuthorizationException if permissions not present
-   */
-  private void checkSubjectCanShareWithUser(User subject, User user) throws AuthorizationException {
-    UserPermissionAdapter userAdpter = new UserPermissionAdapter(user);
-    userAdpter.setDomain(PermissionDomain.GROUP);
-    userAdpter.setAction(PermissionType.SHARE);
-    if (subject != null && !subject.isPermitted(userAdpter, true)) {
-      throw new AuthorizationException(
-          "Unauthorized attempt by "
-              + subject.getUsername()
-              + " to share with other user ["
-              + user.getUsername()
-              + "]");
-    }
   }
 
   /**
