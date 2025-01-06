@@ -401,6 +401,9 @@ const DmpMenuSection = ({
      * could pass `showDmpPanel` down into each DMPDialog component.
      */
     window.gallery = showDmpPanel;
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - showDmpPanel will not meaningfully change
+     */
   }, []);
 
   if (!showArgos && !showDmponline && !showDmptool) return null;
@@ -514,6 +517,9 @@ const Sidebar = ({
     autorun(() => {
       if (viewport.isViewportSmall) setDrawerOpen(false);
     });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - setDrawerOpen should not meaningfully change
+     */
   }, [viewport]);
 
   const { getTabIndex, getRef, eventHandlers } =
