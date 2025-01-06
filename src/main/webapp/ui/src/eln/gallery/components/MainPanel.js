@@ -48,7 +48,7 @@ import Button from "@mui/material/Button";
 import GridIcon from "@mui/icons-material/ViewCompact";
 import TreeIcon from "@mui/icons-material/AccountTree";
 import Menu from "@mui/material/Menu";
-import NewMenuItem from "./NewMenuItem";
+import AccentMenuItem from "./AccentMenuItem";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
@@ -1315,7 +1315,7 @@ function GalleryMainPanel({
                       "aria-label": "view options",
                     }}
                   >
-                    <NewMenuItem
+                    <AccentMenuItem
                       title="Grid"
                       subheader="Browse by thumbnail previews."
                       backgroundColor={COLOR.background}
@@ -1327,7 +1327,7 @@ function GalleryMainPanel({
                         selection.clear();
                       }}
                     />
-                    <NewMenuItem
+                    <AccentMenuItem
                       title="Tree"
                       subheader="View and manage folder hierarchy."
                       backgroundColor={COLOR.background}
@@ -1339,7 +1339,7 @@ function GalleryMainPanel({
                         selection.clear();
                       }}
                     />
-                    <NewMenuItem
+                    <AccentMenuItem
                       title="Carousel"
                       subheader="Flick through all files to find one."
                       backgroundColor={COLOR.background}
@@ -1378,7 +1378,7 @@ function GalleryMainPanel({
                       "aria-label": "sort listing",
                     }}
                   >
-                    <NewMenuItem
+                    <AccentMenuItem
                       title={`Name${match<void, string>([
                         [() => orderBy !== "name", ""],
                         [() => sortOrder === "ASC", " (Sorted from A to Z)"],
@@ -1419,7 +1419,7 @@ function GalleryMainPanel({
                         }
                       }}
                     />
-                    <NewMenuItem
+                    <AccentMenuItem
                       title={`Modification Date${match<void, string>([
                         [() => orderBy !== "modificationDate", ""],
                         [() => sortOrder === "ASC", " (Sorted oldest first)"],

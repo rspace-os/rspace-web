@@ -10,7 +10,7 @@ import MenuItem from "@mui/material/MenuItem";
 import CardHeader from "@mui/material/CardHeader";
 import { alpha } from "@mui/system";
 
-type NewMenuItemArgs = {|
+type AccentMenuItemArgs = {|
   title: string,
   avatar: Node,
   subheader: string,
@@ -56,7 +56,7 @@ export default (styled(
         tabIndex,
         "aria-haspopup": ariaHasPopup,
         ...props
-      }: NewMenuItemArgs,
+      }: AccentMenuItemArgs,
       ref
     ) => (
       <MenuItem
@@ -138,4 +138,4 @@ export default (styled(
       fontWeight: 500,
     },
   };
-}): ComponentType<NewMenuItemArgs>);
+}): ComponentType<AccentMenuItemArgs>);

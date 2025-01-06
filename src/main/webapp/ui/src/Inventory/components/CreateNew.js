@@ -6,7 +6,7 @@ import NavigateContext from "../../stores/contexts/Navigate";
 import { UserCancelledAction } from "../../util/error";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
-import NewMenuItem from "../../eln/gallery/components/NewMenuItem";
+import AccentMenuItem from "../../eln/gallery/components/AccentMenuItem";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
@@ -124,7 +124,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
           disablePadding: true,
         }}
       >
-        <NewMenuItem
+        <AccentMenuItem
           compact
           title="New Sample"
           avatar={
@@ -149,7 +149,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             void handleCreate("sample");
           }}
         />
-        <NewMenuItem
+        <AccentMenuItem
           compact
           title="New Container"
           avatar={
@@ -174,7 +174,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             void handleCreate("container");
           }}
         />
-        <NewMenuItem
+        <AccentMenuItem
           compact
           title="New Template"
           avatar={
@@ -204,7 +204,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
         <Divider textAlign="left" aria-label="CSV import">
           CSV Import
         </Divider>
-        <NewMenuItem
+        <AccentMenuItem
           compact
           title="Samples"
           avatar={
@@ -229,7 +229,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             void handleImport("SAMPLES");
           }}
         />
-        <NewMenuItem
+        <AccentMenuItem
           compact
           title="Subsamples"
           avatar={
@@ -254,7 +254,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             void handleImport("SUBSAMPLES");
           }}
         />
-        <NewMenuItem
+        <AccentMenuItem
           compact
           title="Containers"
           avatar={
@@ -284,7 +284,7 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
             <Divider textAlign="left" aria-label="Other import">
               Third-Party Import
             </Divider>
-            <NewMenuItem
+            <AccentMenuItem
               compact
               title="Fieldmark"
               avatar={<CardMedia image={FieldmarkIcon} />}

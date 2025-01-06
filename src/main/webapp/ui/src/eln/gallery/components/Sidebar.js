@@ -21,10 +21,10 @@ import Button from "@mui/material/Button";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import AddIcon from "@mui/icons-material/Add";
-import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuItem";
-import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
-import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
-import NewMenuItem from "./NewMenuItem";
+import ArgosAccentMenuItem from "../../../eln-dmp-integration/Argos/ArgosAccentMenuItem";
+import DMPOnlineAccentMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineAccentMenuItem";
+import DMPToolAccentMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
+import AccentMenuItem from "./AccentMenuItem";
 import { type GalleryFile, type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import * as FetchingData from "../../../util/fetchingData";
@@ -134,7 +134,7 @@ const UploadMenuItem = ({
 
   return (
     <>
-      <NewMenuItem
+      <AccentMenuItem
         title="Upload Files"
         avatar={<UploadFileIcon />}
         backgroundColor={COLOR.background}
@@ -247,7 +247,7 @@ const NewFolderMenuItem = ({
           </form>
         </Dialog>
       </EventBoundary>
-      <NewMenuItem
+      <AccentMenuItem
         title="New Folder"
         avatar={<CreateNewFolderIcon />}
         backgroundColor={COLOR.background}
@@ -346,7 +346,7 @@ const AddFilestoreMenuItem = ({
         .flatMap(Parsers.isBoolean)
         .flatMap(Parsers.isTrue)
         .map(() => (
-          <NewMenuItem
+          <AccentMenuItem
             key={null}
             title="Add a Filestore"
             subheader={
@@ -408,9 +408,11 @@ const DmpMenuSection = ({
       <Divider textAlign="left" aria-label="DMPs">
         DMP Import
       </Divider>
-      {showArgos && <ArgosNewMenuItem onDialogClose={onDialogClose} />}
-      {showDmponline && <DMPOnlineNewMenuItem onDialogClose={onDialogClose} />}
-      {showDmptool && <DMPToolNewMenuItem onDialogClose={onDialogClose} />}
+      {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
+      {showDmponline && (
+        <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />
+      )}
+      {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
     </>
   );
 };

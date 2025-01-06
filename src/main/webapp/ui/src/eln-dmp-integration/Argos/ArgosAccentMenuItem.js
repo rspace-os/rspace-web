@@ -2,24 +2,24 @@
 
 import React, { type Node } from "react";
 import DMPDialog from "./DMPDialog";
-import NewMenuItem from "../../eln/gallery/components/NewMenuItem";
+import AccentMenuItem from "../../eln/gallery/components/AccentMenuItem";
 import ArgosIcon from "../../eln/apps/icons/Argos.svg";
 import { COLOR } from "../../eln/apps/integrations/Argos";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
 
-type ArgosNewMenuItemArgs = {|
+type ArgosAccentMenuItemArgs = {|
   onDialogClose: () => void,
 |};
 
-export default function ArgosNewMenuItem({
+export default function ArgosMenuItem({
   onDialogClose,
-}: ArgosNewMenuItemArgs): Node {
+}: ArgosAccentMenuItemArgs): Node {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
     <>
-      <NewMenuItem
+      <AccentMenuItem
         title="Argos"
         avatar={<CardMedia image={ArgosIcon} />}
         backgroundColor={COLOR}

@@ -7,7 +7,7 @@ import { COLOR, type GallerySection } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import { styled, useTheme, darken, lighten } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
-import NewMenuItem from "./NewMenuItem";
+import AccentMenuItem from "./AccentMenuItem";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -114,7 +114,7 @@ const UploadNewVersionMenuItem = ({
 
   return (
     <>
-      <NewMenuItem
+      <AccentMenuItem
         title="Upload New Version"
         subheader={uploadNewVersionAllowed
           .get()
@@ -470,7 +470,7 @@ function ActionsMenu({
         {openAllowed
           .get()
           .map((file) => (
-            <NewMenuItem
+            <AccentMenuItem
               title="Open"
               backgroundColor={COLOR.background}
               foregroundColor={COLOR.contrastText}
@@ -485,7 +485,7 @@ function ActionsMenu({
           ))
           .orElse(null)}
         {!viewHidden.get() && (
-          <NewMenuItem
+          <AccentMenuItem
             title="View"
             subheader={viewAllowed
               .get()
@@ -515,7 +515,7 @@ function ActionsMenu({
             disabled={viewAllowed.get().isError}
           />
         )}
-        <NewMenuItem
+        <AccentMenuItem
           title="Edit"
           subheader={editingAllowed
             .get()
@@ -552,7 +552,7 @@ function ActionsMenu({
           compact
           disabled={editingAllowed.get().isError}
         />
-        <NewMenuItem
+        <AccentMenuItem
           title="Duplicate"
           subheader={duplicateAllowed
             .get()
@@ -570,7 +570,7 @@ function ActionsMenu({
           compact
           disabled={duplicateAllowed.get().isError}
         />
-        <NewMenuItem
+        <AccentMenuItem
           title="Move"
           subheader={moveAllowed
             .get()
@@ -595,7 +595,7 @@ function ActionsMenu({
           section={section}
           refreshListing={refreshListing}
         />
-        <NewMenuItem
+        <AccentMenuItem
           title="Rename"
           subheader={renameAllowed
             .get()
@@ -636,7 +636,7 @@ function ActionsMenu({
             setActionsMenuAnchorEl(null);
           }}
         />
-        <NewMenuItem
+        <AccentMenuItem
           title="Download"
           subheader={downloadAllowed
             .get()
@@ -653,7 +653,7 @@ function ActionsMenu({
           compact
           disabled={downloadAllowed.get().isError}
         />
-        <NewMenuItem
+        <AccentMenuItem
           title="Export"
           subheader={exportAllowed
             .get()
@@ -693,7 +693,7 @@ function ActionsMenu({
             allowFileStores={false}
           />
         </EventBoundary>
-        <NewMenuItem
+        <AccentMenuItem
           title="Move to iRODS"
           subheader={moveToIrodsAllowed
             .get()
@@ -724,7 +724,7 @@ function ActionsMenu({
           }}
         />
         <Divider aria-orientation="horizontal" />
-        <NewMenuItem
+        <AccentMenuItem
           title="Delete"
           subheader={deleteAllowed
             .get()
