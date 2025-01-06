@@ -364,342 +364,6 @@ const StyledMenu = styled(Menu)(({ open }) => ({
   },
 }));
 
-const GridView = observer(
-  ({
-    listing,
-  }: {|
-    listing:
-      | {| tag: "empty", reason: string, refreshing: boolean |}
-      | {|
-          tag: "list",
-          list: $ReadOnlyArray<GalleryFile>,
-          totalHits: number,
-          loadMore: Optional<() => Promise<void>>,
-          refreshing: boolean,
-        |},
-  |}) => {
-    const dndContext = useDndContext();
-    const selection = useGallerySelection();
-    const { openImagePreview } = useImagePreview();
-    const { openPdfPreview } = usePdfPreview();
-    const { openAsposePreview } = useAsposePreview();
-    const { openFolder } = useFolderOpen();
-    const primaryAction = usePrimaryAction();
-
-    const viewportDimensions = useViewportDimensions();
-    const cardWidth = {
-      xs: 6,
-      sm: 4,
-      md: 4,
-      lg: 3,
-      xl: 2,
-    };
-    const cols = 12 / cardWidth[viewportDimensions.viewportSize];
-
-    /*
-     * This coordinate specifies the roving tab-index.
-     * When user tabs to the grid, initially the first card has focus.  They
-     * can then use the arrow keys, as implemented below, to move that focus.
-     * If they then tab away from the table and back again, the last card they
-     * had focussed is remembered and returned to.
-     */
-    const [tabIndexCoord, setTabIndexCoord] = React.useState({ x: 0, y: 0 });
-
-    /*
-     * the ref of the card that has focus, if the grid has focus, otherwise the
-     * ref of the card that would have focus if the grid had focus
-     */
-    const focusFileCardRef = React.useRef(null);
-
-    /*
-     * When tabIndexCoord changes, perhaps because an arrow key has been
-     * tapped, we want to set focus to the card that should have focus.
-     * focusFileCardRef.current is automatically set to the card that should
-     * have focus when it is rendered, so we just need to call focus() on it.
-     */
-    const [gridHasFocus, setGridHasFocus] = React.useState(false);
-    React.useEffect(() => {
-      if (gridHasFocus) focusFileCardRef.current?.focus();
-      /* eslint-disable-next-line react-hooks/exhaustive-deps --
-       * - We don't want to run this effect when gridHasFocus changes, as that
-       *   would result in an infinite loop
-       */
-    }, [tabIndexCoord]);
-
-    /*
-     * This variable stores the Id of the last file that was focussed -- either
-     * by tapping or by moving the focus with the arrow keys -- without shift
-     * being held down. It forms the corner point of a selected region of
-     * files; the opposite corner being defined by the file that is focussed
-     * whilst shift is held.
-     *
-     * We use an Id, rather than a reference to the GalleryFile or the
-     * coordinates in the grid, because if the listing is refreshed after an
-     * action has been performed, the selection is maintained because it too is
-     * based on Ids (see ../useGallerySelection) and thus expanding the
-     * selection with shift should continue from that existing selection.
-     *
-     * It is null when this component is initially mounted but as soon as the
-     * user has focussed any file (without shift being held) it holds the Id of
-     * that last focussed file. Even if the selection is cleared with the
-     * escape key or the only selected files deleted, this variable maintains
-     * that Id.
-     */
-    const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
-      null
-    );
-
-    if (listing.tag === "empty")
-      return (
-        <div key={listing.reason}>
-          <Fade
-            in={true}
-            timeout={
-              window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                ? 0
-                : 300
-            }
-          >
-            <div>
-              <PlaceholderLabel>
-                {listing.refreshing
-                  ? "Refreshing..."
-                  : listing.reason ?? "There are no folders."}
-              </PlaceholderLabel>
-            </div>
-          </Fade>
-        </div>
-      );
-    return (
-      <>
-        <Grid
-          role="region"
-          aria-label="grid view of files"
-          container
-          spacing={2}
-          onKeyDown={(e) => {
-            if (dndContext.active) return;
-            if (e.key === "Escape") {
-              selection.clear();
-              return;
-            }
-            const newCoord: {
-              [string]: ({ x: number, y: number }) => {
-                x: number,
-                y: number,
-              },
-            } = {
-              ArrowRight: ({ x, y }) => ({
-                x: Math.min(x + 1, cols),
-                y,
-              }),
-              ArrowLeft: ({ x, y }) => ({
-                x: Math.max(x - 1, 0),
-                y,
-              }),
-              ArrowDown: ({ x, y }) => ({
-                x,
-                y: Math.min(y + 1, Math.floor(listing.list.length / cols)),
-              }),
-              ArrowUp: ({ x, y }) => ({
-                x,
-                y: Math.max(y - 1, 0),
-              }),
-            };
-            if (!(e.key in newCoord)) return;
-            e.preventDefault();
-            const { x, y } = newCoord[e.key](tabIndexCoord);
-
-            /*
-             * This check prevents the user from moving passed the end of the
-             * last row if it doesn't fill a complete row or down in a column
-             * that doesn't have `listing.list.length / cols` rows
-             */
-            if (y * cols + (x + 1) > listing.list.length) return;
-
-            let origin = { x, y };
-            if (e.shiftKey) {
-              if (shiftOriginFileId) {
-                const indexOfShiftOriginFile = listing.list.findIndex(
-                  (f) => f.id === shiftOriginFileId
-                );
-                const shiftOriginX = indexOfShiftOriginFile % cols;
-                const shiftOriginY = Math.floor(indexOfShiftOriginFile / cols);
-                origin = { x: shiftOriginX, y: shiftOriginY };
-              } else {
-                origin = tabIndexCoord;
-              }
-            }
-            const left = Math.min(x, origin.x);
-            const right = Math.max(x, origin.x);
-            const top = Math.min(y, origin.y);
-            const bottom = Math.max(y, origin.y);
-
-            selection.clear();
-            listing.list.forEach((file, i) => {
-              const fileX = i % cols;
-              const fileY = Math.floor(i / cols);
-              if (
-                fileX >= left &&
-                fileX <= right &&
-                fileY >= top &&
-                fileY <= bottom
-              )
-                selection.append(file);
-            });
-
-            setShiftOriginFileId(
-              e.shiftKey
-                ? shiftOriginFileId ?? listing.list[y * cols + x].id
-                : listing.list[y * cols + x].id
-            );
-            setTabIndexCoord({ x, y });
-          }}
-          onFocus={() => {
-            /*
-             * This is so that when the grid first receives tab focus, and thus
-             * no files have been selected, the file card with a tabIndex of 0 is
-             * selected. This way, the selected styling acts as a focus ring.
-             * Pressing the escape key will clear the selection so when the grid
-             * regains focus this will then run again
-             */
-            const { x, y } = tabIndexCoord;
-            if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
-          }}
-        >
-          {listing.list.map((file, index) => (
-            <FileCard
-              ref={
-                index % cols === tabIndexCoord.x &&
-                Math.floor(index / cols) === tabIndexCoord.y
-                  ? focusFileCardRef
-                  : null
-              }
-              onFocus={() => {
-                setGridHasFocus(true);
-              }}
-              onBlur={() => {
-                setGridHasFocus(false);
-              }}
-              selected={selection.includes(file)}
-              file={file}
-              key={idToString(file.id)}
-              index={index}
-              tabIndex={
-                index % cols === tabIndexCoord.x &&
-                Math.floor(index / cols) === tabIndexCoord.y
-                  ? 0
-                  : -1
-              }
-              onClick={(e) => {
-                if (e.shiftKey) {
-                  if (!shiftOriginFileId) return;
-                  const indexOfShiftOriginFile = listing.list.findIndex(
-                    (f) => f.id === shiftOriginFileId
-                  );
-                  /*
-                   * if shiftOriginFileId is an Id of a file that has been
-                   * deleted then it will no longer be in the listing, will not
-                   * be visible and this code should act as if no file has been
-                   * focussed
-                   */
-                  if (indexOfShiftOriginFile === -1) return;
-                  const tappedCoord = {
-                    x: index % cols,
-                    y: Math.floor(index / cols),
-                  };
-                  const shiftOriginX = indexOfShiftOriginFile % cols;
-                  const shiftOriginY = Math.floor(
-                    indexOfShiftOriginFile / cols
-                  );
-                  const toSelect = listing.list.filter((_file, i) => {
-                    const coord = {
-                      x: i % cols,
-                      y: Math.floor(i / cols),
-                    };
-                    return (
-                      coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
-                      coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
-                      coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
-                      coord.y <= Math.max(tappedCoord.y, shiftOriginY)
-                    );
-                  });
-                  selection.clear();
-                  toSelect.forEach((f) => {
-                    selection.append(f);
-                  });
-                  setTabIndexCoord({
-                    x: index % cols,
-                    y: Math.floor(index / cols),
-                  });
-                } else if (e.ctrlKey || e.metaKey) {
-                  if (selection.includes(file)) {
-                    selection.remove(file);
-                  } else {
-                    selection.append(file);
-                  }
-                } else {
-                  // on double click, try and figure out what the user would want
-                  // to do with a file of this type based on what services are
-                  // configured
-                  if (e.detail > 1) {
-                    primaryAction(file).do((action) => {
-                      if (action.tag === "open") {
-                        openFolder(file);
-                        return;
-                      }
-                      if (action.tag === "image") {
-                        void action.downloadHref().then((downloadHref) => {
-                          openImagePreview(downloadHref, {
-                            caption: action.caption,
-                          });
-                        });
-                        return;
-                      }
-                      if (action.tag === "collabora") {
-                        window.open(action.url);
-                        return;
-                      }
-                      if (action.tag === "officeonline") {
-                        window.open(action.url);
-                        return;
-                      }
-                      if (action.tag === "pdf") {
-                        void action.downloadHref().then((downloadHref) => {
-                          openPdfPreview(downloadHref);
-                        });
-                        return;
-                      }
-                      if (action.tag === "aspose") {
-                        void openAsposePreview(file);
-                      }
-                    });
-                    return;
-                  }
-                  selection.clear();
-                  selection.append(file);
-                  setShiftOriginFileId(file.id);
-                  setTabIndexCoord({
-                    x: index % cols,
-                    y: Math.floor(index / cols),
-                  });
-                }
-              }}
-            />
-          ))}
-        </Grid>
-        {listing.loadMore
-          .map((loadMore) => (
-            <Box key={null} sx={{ mt: 1 }}>
-              <LoadMoreButton onClick={loadMore} />
-            </Box>
-          ))
-          .orElse(null)}
-      </>
-    );
-  }
-);
-
 const FileCard = styled(
   observer(
     //eslint-disable-next-line react/display-name
@@ -1116,6 +780,342 @@ const FileCard = styled(
     : `hsl(${COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
 }));
 FileCard.displayName = "FileCard";
+
+const GridView = observer(
+  ({
+    listing,
+  }: {|
+    listing:
+      | {| tag: "empty", reason: string, refreshing: boolean |}
+      | {|
+          tag: "list",
+          list: $ReadOnlyArray<GalleryFile>,
+          totalHits: number,
+          loadMore: Optional<() => Promise<void>>,
+          refreshing: boolean,
+        |},
+  |}) => {
+    const dndContext = useDndContext();
+    const selection = useGallerySelection();
+    const { openImagePreview } = useImagePreview();
+    const { openPdfPreview } = usePdfPreview();
+    const { openAsposePreview } = useAsposePreview();
+    const { openFolder } = useFolderOpen();
+    const primaryAction = usePrimaryAction();
+
+    const viewportDimensions = useViewportDimensions();
+    const cardWidth = {
+      xs: 6,
+      sm: 4,
+      md: 4,
+      lg: 3,
+      xl: 2,
+    };
+    const cols = 12 / cardWidth[viewportDimensions.viewportSize];
+
+    /*
+     * This coordinate specifies the roving tab-index.
+     * When user tabs to the grid, initially the first card has focus.  They
+     * can then use the arrow keys, as implemented below, to move that focus.
+     * If they then tab away from the table and back again, the last card they
+     * had focussed is remembered and returned to.
+     */
+    const [tabIndexCoord, setTabIndexCoord] = React.useState({ x: 0, y: 0 });
+
+    /*
+     * the ref of the card that has focus, if the grid has focus, otherwise the
+     * ref of the card that would have focus if the grid had focus
+     */
+    const focusFileCardRef = React.useRef(null);
+
+    /*
+     * When tabIndexCoord changes, perhaps because an arrow key has been
+     * tapped, we want to set focus to the card that should have focus.
+     * focusFileCardRef.current is automatically set to the card that should
+     * have focus when it is rendered, so we just need to call focus() on it.
+     */
+    const [gridHasFocus, setGridHasFocus] = React.useState(false);
+    React.useEffect(() => {
+      if (gridHasFocus) focusFileCardRef.current?.focus();
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - We don't want to run this effect when gridHasFocus changes, as that
+       *   would result in an infinite loop
+       */
+    }, [tabIndexCoord]);
+
+    /*
+     * This variable stores the Id of the last file that was focussed -- either
+     * by tapping or by moving the focus with the arrow keys -- without shift
+     * being held down. It forms the corner point of a selected region of
+     * files; the opposite corner being defined by the file that is focussed
+     * whilst shift is held.
+     *
+     * We use an Id, rather than a reference to the GalleryFile or the
+     * coordinates in the grid, because if the listing is refreshed after an
+     * action has been performed, the selection is maintained because it too is
+     * based on Ids (see ../useGallerySelection) and thus expanding the
+     * selection with shift should continue from that existing selection.
+     *
+     * It is null when this component is initially mounted but as soon as the
+     * user has focussed any file (without shift being held) it holds the Id of
+     * that last focussed file. Even if the selection is cleared with the
+     * escape key or the only selected files deleted, this variable maintains
+     * that Id.
+     */
+    const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
+      null
+    );
+
+    if (listing.tag === "empty")
+      return (
+        <div key={listing.reason}>
+          <Fade
+            in={true}
+            timeout={
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? 0
+                : 300
+            }
+          >
+            <div>
+              <PlaceholderLabel>
+                {listing.refreshing
+                  ? "Refreshing..."
+                  : listing.reason ?? "There are no folders."}
+              </PlaceholderLabel>
+            </div>
+          </Fade>
+        </div>
+      );
+    return (
+      <>
+        <Grid
+          role="region"
+          aria-label="grid view of files"
+          container
+          spacing={2}
+          onKeyDown={(e) => {
+            if (dndContext.active) return;
+            if (e.key === "Escape") {
+              selection.clear();
+              return;
+            }
+            const newCoord: {
+              [string]: ({ x: number, y: number }) => {
+                x: number,
+                y: number,
+              },
+            } = {
+              ArrowRight: ({ x, y }) => ({
+                x: Math.min(x + 1, cols),
+                y,
+              }),
+              ArrowLeft: ({ x, y }) => ({
+                x: Math.max(x - 1, 0),
+                y,
+              }),
+              ArrowDown: ({ x, y }) => ({
+                x,
+                y: Math.min(y + 1, Math.floor(listing.list.length / cols)),
+              }),
+              ArrowUp: ({ x, y }) => ({
+                x,
+                y: Math.max(y - 1, 0),
+              }),
+            };
+            if (!(e.key in newCoord)) return;
+            e.preventDefault();
+            const { x, y } = newCoord[e.key](tabIndexCoord);
+
+            /*
+             * This check prevents the user from moving passed the end of the
+             * last row if it doesn't fill a complete row or down in a column
+             * that doesn't have `listing.list.length / cols` rows
+             */
+            if (y * cols + (x + 1) > listing.list.length) return;
+
+            let origin = { x, y };
+            if (e.shiftKey) {
+              if (shiftOriginFileId) {
+                const indexOfShiftOriginFile = listing.list.findIndex(
+                  (f) => f.id === shiftOriginFileId
+                );
+                const shiftOriginX = indexOfShiftOriginFile % cols;
+                const shiftOriginY = Math.floor(indexOfShiftOriginFile / cols);
+                origin = { x: shiftOriginX, y: shiftOriginY };
+              } else {
+                origin = tabIndexCoord;
+              }
+            }
+            const left = Math.min(x, origin.x);
+            const right = Math.max(x, origin.x);
+            const top = Math.min(y, origin.y);
+            const bottom = Math.max(y, origin.y);
+
+            selection.clear();
+            listing.list.forEach((file, i) => {
+              const fileX = i % cols;
+              const fileY = Math.floor(i / cols);
+              if (
+                fileX >= left &&
+                fileX <= right &&
+                fileY >= top &&
+                fileY <= bottom
+              )
+                selection.append(file);
+            });
+
+            setShiftOriginFileId(
+              e.shiftKey
+                ? shiftOriginFileId ?? listing.list[y * cols + x].id
+                : listing.list[y * cols + x].id
+            );
+            setTabIndexCoord({ x, y });
+          }}
+          onFocus={() => {
+            /*
+             * This is so that when the grid first receives tab focus, and thus
+             * no files have been selected, the file card with a tabIndex of 0 is
+             * selected. This way, the selected styling acts as a focus ring.
+             * Pressing the escape key will clear the selection so when the grid
+             * regains focus this will then run again
+             */
+            const { x, y } = tabIndexCoord;
+            if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
+          }}
+        >
+          {listing.list.map((file, index) => (
+            <FileCard
+              ref={
+                index % cols === tabIndexCoord.x &&
+                Math.floor(index / cols) === tabIndexCoord.y
+                  ? focusFileCardRef
+                  : null
+              }
+              onFocus={() => {
+                setGridHasFocus(true);
+              }}
+              onBlur={() => {
+                setGridHasFocus(false);
+              }}
+              selected={selection.includes(file)}
+              file={file}
+              key={idToString(file.id)}
+              index={index}
+              tabIndex={
+                index % cols === tabIndexCoord.x &&
+                Math.floor(index / cols) === tabIndexCoord.y
+                  ? 0
+                  : -1
+              }
+              onClick={(e) => {
+                if (e.shiftKey) {
+                  if (!shiftOriginFileId) return;
+                  const indexOfShiftOriginFile = listing.list.findIndex(
+                    (f) => f.id === shiftOriginFileId
+                  );
+                  /*
+                   * if shiftOriginFileId is an Id of a file that has been
+                   * deleted then it will no longer be in the listing, will not
+                   * be visible and this code should act as if no file has been
+                   * focussed
+                   */
+                  if (indexOfShiftOriginFile === -1) return;
+                  const tappedCoord = {
+                    x: index % cols,
+                    y: Math.floor(index / cols),
+                  };
+                  const shiftOriginX = indexOfShiftOriginFile % cols;
+                  const shiftOriginY = Math.floor(
+                    indexOfShiftOriginFile / cols
+                  );
+                  const toSelect = listing.list.filter((_file, i) => {
+                    const coord = {
+                      x: i % cols,
+                      y: Math.floor(i / cols),
+                    };
+                    return (
+                      coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
+                      coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
+                      coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
+                      coord.y <= Math.max(tappedCoord.y, shiftOriginY)
+                    );
+                  });
+                  selection.clear();
+                  toSelect.forEach((f) => {
+                    selection.append(f);
+                  });
+                  setTabIndexCoord({
+                    x: index % cols,
+                    y: Math.floor(index / cols),
+                  });
+                } else if (e.ctrlKey || e.metaKey) {
+                  if (selection.includes(file)) {
+                    selection.remove(file);
+                  } else {
+                    selection.append(file);
+                  }
+                } else {
+                  // on double click, try and figure out what the user would want
+                  // to do with a file of this type based on what services are
+                  // configured
+                  if (e.detail > 1) {
+                    primaryAction(file).do((action) => {
+                      if (action.tag === "open") {
+                        openFolder(file);
+                        return;
+                      }
+                      if (action.tag === "image") {
+                        void action.downloadHref().then((downloadHref) => {
+                          openImagePreview(downloadHref, {
+                            caption: action.caption,
+                          });
+                        });
+                        return;
+                      }
+                      if (action.tag === "collabora") {
+                        window.open(action.url);
+                        return;
+                      }
+                      if (action.tag === "officeonline") {
+                        window.open(action.url);
+                        return;
+                      }
+                      if (action.tag === "pdf") {
+                        void action.downloadHref().then((downloadHref) => {
+                          openPdfPreview(downloadHref);
+                        });
+                        return;
+                      }
+                      if (action.tag === "aspose") {
+                        void openAsposePreview(file);
+                      }
+                    });
+                    return;
+                  }
+                  selection.clear();
+                  selection.append(file);
+                  setShiftOriginFileId(file.id);
+                  setTabIndexCoord({
+                    x: index % cols,
+                    y: Math.floor(index / cols),
+                  });
+                }
+              }}
+            />
+          ))}
+        </Grid>
+        {listing.loadMore
+          .map((loadMore) => (
+            <Box key={null} sx={{ mt: 1 }}>
+              <LoadMoreButton onClick={loadMore} />
+            </Box>
+          ))
+          .orElse(null)}
+      </>
+    );
+  }
+);
 
 type GalleryMainPanelArgs = {|
   selectedSection: GallerySection,
