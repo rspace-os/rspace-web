@@ -148,6 +148,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
           <>
             {listing.list.map((f, i) =>
               filter(f) !== "hide" ? (
+                // eslint-disable-next-line no-use-before-define -- CustomTreeItem and TreeItemContent are mutually recursive
                 <CustomTreeItem
                   file={f}
                   index={i}
