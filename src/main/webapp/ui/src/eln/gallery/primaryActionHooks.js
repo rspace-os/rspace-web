@@ -10,6 +10,11 @@ import useOfficeOnline from "./useOfficeOnline";
 import { supportedAsposeFile } from "./components/CallableAsposePreview";
 import { type URL } from "../../util/types";
 
+/**
+ * Hook that provides a function that can be used to check if a file can be
+ * previewed as an image. If it can, then a function that produces a URL to
+ * image file of such a preview is returned.
+ */
 export function useImagePreviewOfGalleryFile(): (
   file: GalleryFile
 ) => Result<() => Promise<URL>> {
@@ -19,6 +24,11 @@ export function useImagePreviewOfGalleryFile(): (
   };
 }
 
+/**
+ * Hook that provides a function that can be used to check if a file can be
+ * edited with Collabora. If it can, then a URL to the collabora instance where
+ * the document can be edited it returned.
+ */
 export function useCollaboraEdit(): (file: GalleryFile) => Result<string> {
   const collaboraEnabled = useDeploymentProperty("collabora.wopi.enabled");
   const { supportedExts: supportedCollaboraExts } = useCollabora();
@@ -45,6 +55,11 @@ export function useCollaboraEdit(): (file: GalleryFile) => Result<string> {
   };
 }
 
+/**
+ * Hook that provides a function that can be used to check if a file can be
+ * edited with Office Online. If it can, then a URL to the collabora instance
+ * where the document can be edited it returned.
+ */
 export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
   const officeOnlineEnabled = useDeploymentProperty("msoffice.wopi.enabled");
   const { supportedExts: supportedOfficeOnlineExts } = useOfficeOnline();
@@ -71,6 +86,10 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
   };
 }
 
+/**
+ * Hook that returns a function that can be used to check if a file is a PDF.
+ * If it is, then a function that produces a URL to the PDF file is returned.
+ */
 export function usePdfPreviewOfGalleryFile(): (
   file: GalleryFile
 ) => Result<() => Promise<URL>> {
@@ -82,6 +101,10 @@ export function usePdfPreviewOfGalleryFile(): (
   };
 }
 
+/**
+ * Hook that returns a function that can be used to check if a file can be
+ * previewed by having Aspose generate a PDF.
+ */
 export function useAsposePreviewOfGalleryFile(): (
   file: GalleryFile
 ) => Result<null> {
@@ -95,6 +118,11 @@ export function useAsposePreviewOfGalleryFile(): (
   };
 }
 
+/**
+ * A hook that returns a function that can be used to determine what primary
+ * action should be presented to the user given a particular file. This will
+ * depend on the file type and what services as available.
+ */
 export default function usePrimaryAction(): (file: GalleryFile) => Result<
   | {| tag: "open" |}
   | {|
