@@ -405,10 +405,25 @@ const GridView = observer(
      */
     const [tabIndexCoord, setTabIndexCoord] = React.useState({ x: 0, y: 0 });
 
+    /*
+     * the ref of the card that has focus, if the grid has focus, otherwise the
+     * ref of the card that would have focus if the grid had focus
+     */
     const focusFileCardRef = React.useRef(null);
-    const [hasFocus, setHasFocus] = React.useState(false);
+
+    /*
+     * When tabIndexCoord changes, perhaps because an arrow key has been
+     * tapped, we want to set focus to the card that should have focus.
+     * focusFileCardRef.current is automatically set to the card that should
+     * have focus when it is rendered, so we just need to call focus() on it.
+     */
+    const [gridHasFocus, setGridHasFocus] = React.useState(false);
     React.useEffect(() => {
-      if (hasFocus) focusFileCardRef.current?.focus();
+      if (gridHasFocus) focusFileCardRef.current?.focus();
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - We don't want to run this effect when gridHasFocus changes, as that
+       *   would result in an infinite loop
+       */
     }, [tabIndexCoord]);
 
     /*
@@ -561,10 +576,10 @@ const GridView = observer(
                   : null
               }
               onFocus={() => {
-                setHasFocus(true);
+                setGridHasFocus(true);
               }}
               onBlur={() => {
-                setHasFocus(false);
+                setGridHasFocus(false);
               }}
               selected={selection.includes(file)}
               file={file}
