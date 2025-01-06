@@ -57,33 +57,6 @@ const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   },
 }));
 
-const CustomTransition = styled(({ children, in: open, className }) => (
-  <div className={className}>
-    <Collapse
-      in={open}
-      timeout={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200
-      }
-    >
-      {children}
-    </Collapse>
-  </div>
-))(({ in: open }) => ({
-  [`& .${collapseClasses.wrappedInner} > .${boxClasses.root}`]: {
-    transform:
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
-        ? "none"
-        : "translateX(-10px) !important",
-    opacity:
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
-        ? 1
-        : "0 !important",
-    transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "none"
-      : "all .2s ease",
-  },
-}));
-
 type TreeItemContentArgs = {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
@@ -348,7 +321,6 @@ const CustomTreeItem = observer(
               {file.name}
             </Box>
           }
-          slots={{ groupTransition: CustomTransition }}
           /*
            * These are for dragging files from outside the browser
            */
