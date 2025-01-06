@@ -789,4 +789,9 @@ const Sidebar = ({
   );
 };
 
+/**
+ * The gallery's main sidebar for navigating between the different sections,
+ * for creating new folders, uploading new files, and connecting to external
+ * filestores.
+ */
 export default (observer(Sidebar): ComponentType<SidebarArgs>);
