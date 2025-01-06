@@ -4,7 +4,7 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import * as ReactRouter from "react-router";
 import { useLocation } from "react-router-dom";
 
-type RouterNavigationContextArgs = {|
+type RouterNavigationProviderArgs = {|
   children: Node,
 |};
 
@@ -13,9 +13,9 @@ type RouterNavigationContextArgs = {|
  * All navigations within the app are forward to react-router and any
  * navigations to outside are opened in a new window.
  */
-export default function RouterNavigationContext({
+export default function RouterNavigationProvider({
   children,
-}: RouterNavigationContextArgs): Node {
+}: RouterNavigationProviderArgs): Node {
   const navigate = ReactRouter.useNavigate();
 
   const useNavigate = () => (url: string) => {

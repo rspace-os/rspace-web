@@ -24,7 +24,7 @@ import useUiPreference, {
   PREFERENCES,
   UiPreferences,
 } from "../../util/useUiPreference";
-import RouterNavigationContext from "./components/RouterNavigationContext";
+import RouterNavigationProvider from "./components/RouterNavigationProvider";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
@@ -158,13 +158,13 @@ window.addEventListener("load", () => {
                           path="/newGallery"
                           element={
                             <Alerts>
-                              <RouterNavigationContext>
+                              <RouterNavigationProvider>
                                 <GallerySelection>
                                   <FilestoreLoginProvider>
                                     <WholePage />
                                   </FilestoreLoginProvider>
                                 </GallerySelection>
-                              </RouterNavigationContext>
+                              </RouterNavigationProvider>
                             </Alerts>
                           }
                         />
