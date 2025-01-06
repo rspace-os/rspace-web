@@ -35,6 +35,8 @@ import { COLOR } from "../common";
 import ResetZoomIcon from "./ResetZoomIcon";
 import Typography from "@mui/material/Typography";
 import { useFolderOpen } from "./OpenFolderProvider";
+import { doNotAwait } from "../../../util/Util";
+import { type URL as Url } from "../../../util/types";
 
 /*
  * When a drag is in progress, this cursor style applied.
@@ -151,7 +153,7 @@ const PreviewWrapper = ({
               return;
             }
             if (action.tag === "image") {
-              openImagePreview(action.downloadHref);
+              void action.downloadHref().then(openImagePreview);
               return;
             }
             if (action.tag === "collabora") {
@@ -163,7 +165,7 @@ const PreviewWrapper = ({
               return;
             }
             if (action.tag === "pdf") {
-              openPdfPreview(action.downloadHref);
+              void action.downloadHref().then(openPdfPreview);
               return;
             }
             if (action.tag === "aspose") {
@@ -180,7 +182,7 @@ const PreviewWrapper = ({
               return;
             }
             if (action.tag === "image") {
-              openImagePreview(action.downloadHref);
+              void action.downloadHref().then(openImagePreview);
               return;
             }
             if (action.tag === "collabora") {
@@ -192,7 +194,7 @@ const PreviewWrapper = ({
               return;
             }
             if (action.tag === "pdf") {
-              openPdfPreview(action.downloadHref);
+              void action.downloadHref().then(openPdfPreview);
               return;
             }
             if (action.tag === "aspose") {
@@ -222,96 +224,105 @@ const Preview = ({
   const [numPages, setNumPages] = React.useState<number>(0);
   const [asposePdfUrl, setAsposePdfUrl] = React.useState<
     | {| tag: "loading" |}
-    | {| tag: "loaded", url: string |}
+    | {| tag: "loaded", url: Url |}
+    | {| tag: "error" |}
+    | null
+  >(null);
+  const [imageUrl, setImageUrl] = React.useState<
+    | {| tag: "loading" |}
+    | {| tag: "loaded", url: Url |}
+    | {| tag: "error" |}
+    | null
+  >(null);
+  const [pdfUrl, setPdfUrl] = React.useState<
+    | {| tag: "loading" |}
+    | {| tag: "loaded", url: Url |}
     | {| tag: "error" |}
     | null
   >(null);
 
-  const { key, url, message } = canPreviewAsImage(file)
-    .map((downloadHref) => ({
-      key: "image",
-      url: downloadHref,
-      message: "",
-    }))
-    .orElseTry(() =>
-      canPreviewAsPdf(file).map((downloadHref) => ({
-        key: "pdf",
-        url: downloadHref,
-        message: "",
-      }))
-    )
-    .orElseTry(() => {
-      if (asposePdfUrl === null)
-        return Result.Error<{| key: string, url: string, message: string |}>([
-          new Error("Can't preview with aspose"),
-        ]);
-      if (asposePdfUrl.tag === "loaded")
-        return Result.Ok({ key: "pdf", url: asposePdfUrl.url, message: "" });
-      if (asposePdfUrl.tag === "error")
-        return Result.Ok({
-          key: "image",
-          url: file.thumbnailUrl,
-          message: "",
-        });
-      return Result.Ok({
-        key: "aspose_message",
-        url: "",
-        message: "Generating preview",
-      });
-    })
-    .orElseGet(() => ({
-      key: "image",
-      url: file.thumbnailUrl,
-      message: "",
-    }));
-
   React.useEffect(() => {
-    canPreviewWithAspose(file).do(() => {
-      void (async () => {
-        setAsposePdfUrl({ tag: "loading" });
-        try {
-          const { data } = await axios.get<mixed>(
-            "/Streamfile/ajax/convert/" +
-              idToString(file.id) +
-              "?outputFormat=pdf"
-          );
-          const fileName = Parsers.isObject(data)
-            .flatMap(Parsers.isNotNull)
-            .flatMap(Parsers.getValueWithKey("data"))
-            .flatMap(Parsers.isString)
-            .orElse(null);
-          if (fileName) {
-            setAsposePdfUrl({
-              tag: "loaded",
-              url:
-                "/Streamfile/direct/" +
-                idToString(file.id) +
-                "?fileName=" +
-                fileName,
-            });
+    canPreviewAsImage(file)
+      .map((getDownloadHref) => ({ key: "image", getDownloadHref }))
+      .orElseTry(() =>
+        canPreviewAsPdf(file).map((getDownloadHref) => ({
+          key: "pdf",
+          getDownloadHref,
+        }))
+      )
+      .orElseTry<
+        | {| key: "image", getDownloadHref: () => Promise<Url> |}
+        | {| key: "pdf", getDownloadHref: () => Promise<Url> |}
+        | {| key: "aspose" |}
+      >(() =>
+        canPreviewWithAspose(file).map(() => ({
+          key: "aspose",
+        }))
+      )
+      .do(
+        doNotAwait(async (preview) => {
+          if (preview.key === "image") {
+            setImageUrl({ tag: "loading" });
+            try {
+              const downloadHref = await preview.getDownloadHref();
+              setImageUrl({ tag: "loaded", url: downloadHref });
+            } catch (error) {
+              setImageUrl({ tag: "error" });
+            }
+          } else if (preview.key === "pdf") {
+            setPdfUrl({ tag: "loading" });
+            try {
+              const downloadHref = await preview.getDownloadHref();
+              setPdfUrl({ tag: "loaded", url: downloadHref });
+            } catch (error) {
+              setPdfUrl({ tag: "error" });
+            }
           } else {
-            Parsers.isObject(data)
-              .flatMap(Parsers.isNotNull)
-              .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-              .flatMap(Parsers.isString)
-              .do((msg) => {
-                throw new Error(msg);
+            setAsposePdfUrl({ tag: "loading" });
+            try {
+              const { data } = await axios.get<mixed>(
+                "/Streamfile/ajax/convert/" +
+                  idToString(file.id) +
+                  "?outputFormat=pdf"
+              );
+              const fileName = Parsers.isObject(data)
+                .flatMap(Parsers.isNotNull)
+                .flatMap(Parsers.getValueWithKey("data"))
+                .flatMap(Parsers.isString)
+                .orElse(null);
+              if (fileName) {
+                setAsposePdfUrl({
+                  tag: "loaded",
+                  url:
+                    "/Streamfile/direct/" +
+                    idToString(file.id) +
+                    "?fileName=" +
+                    fileName,
+                });
+              } else {
+                Parsers.isObject(data)
+                  .flatMap(Parsers.isNotNull)
+                  .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+                  .flatMap(Parsers.isString)
+                  .do((msg) => {
+                    throw new Error(msg);
+                  });
+                Parsers.objectPath(["error", "errorMessages"], data)
+                  .flatMap(Parsers.isArray)
+                  .flatMap(ArrayUtils.head)
+                  .flatMap(Parsers.isString)
+                  .do((msg) => {
+                    throw new Error(msg);
+                  });
+              }
+            } catch (error) {
+              setAsposePdfUrl({
+                tag: "error",
               });
-            Parsers.objectPath(["error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head)
-              .flatMap(Parsers.isString)
-              .do((msg) => {
-                throw new Error(msg);
-              });
+            }
           }
-        } catch (error) {
-          setAsposePdfUrl({
-            tag: "error",
-          });
-        }
-      })();
-    });
+        })
+      );
   }, []);
 
   function onDocumentLoadSuccess({
@@ -323,12 +334,35 @@ const Preview = ({
     setNumPages(nextNumPages);
   }
 
-  if (key === "image")
+  let loadingLabel = null;
+  if (imageUrl !== null && imageUrl.tag === "loading")
+    loadingLabel = "Loading image...";
+  if (pdfUrl !== null && pdfUrl.tag === "loading")
+    loadingLabel = "Loading PDF...";
+  if (asposePdfUrl !== null && asposePdfUrl.tag === "loading")
+    loadingLabel = "Generating PDF...";
+  if (loadingLabel !== null)
+    return (
+      <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
+        {loadingLabel}
+      </PreviewWrapper>
+    );
+
+  let imageSrc = null;
+  if (imageUrl === null && pdfUrl === null && asposePdfUrl === null)
+    imageSrc = file.thumbnailUrl;
+  if (imageUrl !== null && imageUrl.tag === "loaded") imageSrc = imageUrl.url;
+  if (imageUrl !== null && imageUrl.tag === "error")
+    imageSrc = file.thumbnailUrl;
+  if (pdfUrl !== null && pdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
+  if (asposePdfUrl !== null && asposePdfUrl.tag === "error")
+    imageSrc = file.thumbnailUrl;
+  if (imageSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
         <img
           alt={`Preview of ${file.name}`}
-          src={url}
+          src={imageSrc}
           style={{
             maxHeight: "100%",
             maxWidth: "100%",
@@ -336,14 +370,19 @@ const Preview = ({
             transition: "transform .5s ease-in-out",
             transformOrigin: "left top",
           }}
-          key={url}
+          key={imageSrc}
         />
       </PreviewWrapper>
     );
-  if (key === "pdf")
+
+  let pdfSrc = null;
+  if (pdfUrl !== null && pdfUrl.tag === "loaded") pdfSrc = pdfUrl.url;
+  if (asposePdfUrl !== null && asposePdfUrl.tag === "loaded")
+    pdfSrc = asposePdfUrl.url;
+  if (pdfSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
-        <StyledDocument file={url} onLoadSuccess={onDocumentLoadSuccess}>
+        <StyledDocument file={pdfSrc} onLoadSuccess={onDocumentLoadSuccess}>
           {[...take(incrementForever(), numPages)].map((index) => (
             <Page
               key={`page_${index + 1}`}
@@ -354,14 +393,8 @@ const Preview = ({
         </StyledDocument>
       </PreviewWrapper>
     );
-  if (key === "aspose_message") {
-    return (
-      <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
-        {message}
-      </PreviewWrapper>
-    );
-  }
-  throw new Error("Don't know how to render that preview");
+
+  return null;
 };
 
 type CarouselArgs = {

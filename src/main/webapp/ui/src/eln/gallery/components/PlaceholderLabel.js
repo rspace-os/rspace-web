@@ -13,6 +13,7 @@ export default (styled(({ children, className }) => (
         pt: 2,
         pr: 5,
       }}
+      role="status"
     >
       {children}
     </Grid>

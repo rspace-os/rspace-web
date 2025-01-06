@@ -105,6 +105,7 @@ describe("ActionsMenu", () => {
           <SetSelection
             files={[
               {
+                deconstructor: () => {},
                 id: dummyId(),
                 globalId: "GF1",
                 name: "Foo",
@@ -184,6 +185,7 @@ describe("ActionsMenu", () => {
           <SetSelection
             files={[
               {
+                deconstructor: () => {},
                 id: dummyId(),
                 globalId: "GF1",
                 name: "Foo",
@@ -261,6 +263,7 @@ describe("ActionsMenu", () => {
           <SetSelection
             files={[
               {
+                deconstructor: () => {},
                 id: dummyId(),
                 globalId: "GF1",
                 name: "Foo",
@@ -298,6 +301,7 @@ describe("ActionsMenu", () => {
                 treeViewItemId: "GF1",
               },
               {
+                deconstructor: () => {},
                 id: dummyId(),
                 globalId: "GF1",
                 name: "Foo",

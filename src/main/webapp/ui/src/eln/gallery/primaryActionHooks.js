@@ -12,7 +12,7 @@ import { type URL } from "../../util/types";
 
 export function useImagePreviewOfGalleryFile(): (
   file: GalleryFile
-) => Result<URL> {
+) => Result<() => Promise<URL>> {
   return (file) => {
     if (file.isImage && file.downloadHref) return Result.Ok(file.downloadHref);
     return Result.Error([new Error("Not an image")]);
@@ -73,7 +73,7 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
 
 export function usePdfPreviewOfGalleryFile(): (
   file: GalleryFile
-) => Result<string> {
+) => Result<() => Promise<URL>> {
   return (file) => {
     if (file.extension !== "pdf") return Result.Error([new Error("Not a PDF")]);
     if (!file.downloadHref)
@@ -96,14 +96,16 @@ export function useAsposePreviewOfGalleryFile(): (
   };
 }
 
-export default function usePrimaryAction(): (
-  file: GalleryFile
-) => Result<
+export default function usePrimaryAction(): (file: GalleryFile) => Result<
   | {| tag: "open" |}
-  | {| tag: "image", downloadHref: string, caption: $ReadOnlyArray<string> |}
+  | {|
+      tag: "image",
+      downloadHref: () => Promise<URL>,
+      caption: $ReadOnlyArray<string>,
+    |}
   | {| tag: "collabora", url: string |}
   | {| tag: "officeonline", url: string |}
-  | {| tag: "pdf", downloadHref: string |}
+  | {| tag: "pdf", downloadHref: () => Promise<URL> |}
   | {| tag: "aspose" |}
 > {
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
