@@ -1450,17 +1450,22 @@ function GalleryMainPanel({
                     sx={{ overflowY: "auto", mt: 1, userSelect: "none" }}
                     flexGrow={1}
                   >
-                    {viewMode === "tree" && (
-                      <TreeView
-                        listing={galleryListing}
-                        path={path}
-                        selectedSection={selectedSection}
-                        refreshListing={refreshListing}
-                        sortOrder={sortOrder}
-                        orderBy={orderBy}
-                        foldersOnly={false}
-                      />
-                    )}
+                    {viewMode === "tree" &&
+                      FetchingData.match(galleryListing, {
+                        loading: () => <></>,
+                        error: (error) => <>{error}</>,
+                        success: (listing) => (
+                          <TreeView
+                            listing={listing}
+                            path={path}
+                            selectedSection={selectedSection}
+                            refreshListing={refreshListing}
+                            sortOrder={sortOrder}
+                            orderBy={orderBy}
+                            foldersOnly={false}
+                          />
+                        ),
+                      })}
                     {viewMode === "grid" &&
                       FetchingData.match(galleryListing, {
                         loading: () => <></>,
