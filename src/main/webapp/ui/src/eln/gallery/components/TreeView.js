@@ -249,26 +249,18 @@ const CustomTreeItem = observer(
     );
     const dndInProgress = Boolean(dndContext.active);
 
-    const dropStyle: { [string]: string | number } = isOver
-      ? {
-          border: SELECTED_OR_FOCUS_BORDER,
-        }
-      : dndInProgress && file.isFolder
-      ? {
-          border: "2px solid white",
-          animation: "drop 2s linear infinite",
-        }
-      : {
-          border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-        };
-    /*
-     * In grid view we make the files being dragged mostly transparent so
-     * that it is obvious which items are being moved and that then cannot also
-     * be the destination of the move operation. It is not possible to do that
-     * here becuase TreeView does not have access to the GallerySelection of
-     * the whole listing as if it did then each folder would clear the
-     * selection when it loaded its content.
-     */
+    const normalBorder = `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`;
+    const dropStyle: { [string]: string | number } = {};
+    if (dndInProgress && file.isFolder) {
+      if (isOver) {
+        dropStyle.borderColor = SELECTED_OR_FOCUS_BORDER;
+      } else {
+        dropStyle.border = "2px solid white";
+        dropStyle.animation = "drop 2s linear infinite";
+      }
+    } else {
+      dropStyle.border = normalBorder;
+    }
     const fileUploadDropping: { [string]: string | number } = over
       ? {
           border: SELECTED_OR_FOCUS_BORDER,
