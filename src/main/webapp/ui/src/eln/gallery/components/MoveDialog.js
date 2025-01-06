@@ -29,6 +29,12 @@ type MoveDialogArgs = {|
   onClose: () => void,
   section: GallerySection,
   selectedFiles: RsSet<GalleryFile>,
+
+  /**
+   * A function to refresh the page's main listing after a move operation.
+   * Note that this is distinct from the refreshListing function for refreshing
+   * the tree view inside of the dialog.
+   */
   refreshListing: () => Promise<void>,
 |};
 
@@ -184,6 +190,13 @@ const MoveDialog = observer(
   }
 );
 
+/**
+ * A dialog for moving files between folders.
+ *
+ * Note that the dialog is added to the DOM as soon as the component is
+ * rendered, and will make network requests to fetch the folder structure
+ * immediately.
+ */
 export default (
   props: $Diff<MoveDialogArgs, {| selectedFiles: mixed |}>
 ): Node => {
