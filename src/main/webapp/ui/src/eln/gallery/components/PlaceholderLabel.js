@@ -4,6 +4,10 @@ import React, { type Node, type ComponentType } from "react";
 import Grid from "@mui/material/Grid";
 import { styled } from "@mui/material/styles";
 
+/**
+ * Simple label for displaying a message about the status of the listing e.g.
+ * error messages, indicating that there are no files, etc.
+ */
 export default (styled(({ children, className }) => (
   <Grid container className={className}>
     <Grid
