@@ -56,6 +56,9 @@ const MoveDialog = observer(
 
     React.useEffect(() => {
       if (open) void refreshListingInsideDialog();
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - refreshListingInsideDialog will not meaningfully change between renders
+       */
     }, [open]);
 
     const [topLevelLoading, setTopLevelLoading] = React.useState(false);
