@@ -472,6 +472,13 @@ const TreeView = ({
     return map;
   });
 
+  React.useEffect(() => {
+    if (listing.tag === "empty") return;
+    runInAction(() => {
+      for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
+    });
+  }, [listing]);
+
   /*
    * TreeView does not like focussed nodes being removed, which is what happens
    * when a drag-and-drop operation concludes. As such, we completely unmount
