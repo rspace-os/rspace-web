@@ -621,4 +621,9 @@ const TreeView = ({
   );
 };
 
+/**
+ * The hierarchical listing of files and folders can be viewed as tree, making
+ * it easy to drag-and-drop files between folders and to operate on files in
+ * different folders.
+ */
 export default (observer(TreeView): ComponentType<TreeViewArgs>);
