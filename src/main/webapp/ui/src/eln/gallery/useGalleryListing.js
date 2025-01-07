@@ -26,12 +26,24 @@ import { useFilestoreLogin } from "./components/FilestoreLoginDialog";
 import { LinkedDocumentsPanel } from "./components/LinkedDocumentsPanel";
 import EXT_BY_TYPE from "./fileExtensionsByType.json";
 
+/**
+ * The Id of a Gallery file
+ */
 export opaque type Id = number;
-// dummyId is for use in tests ONLY
+
+/*
+ * dummyId is for use in tests ONLY. All other Ids MUST be got from API calls.
+ */
 let nextDummyId = 0;
+/**
+ * Create a new dummy Id
+ */
 export const dummyId: () => Id = () => {
   return nextDummyId++;
 };
+/**
+ * Produce a string representation of the Id
+ */
 export function idToString(id: Id): string {
   return `${id}`;
 }
@@ -64,6 +76,10 @@ type DescriptionInternalState =
   | {| key: "missing" |}
   | {| key: "empty" |}
   | {| key: "present", value: string |};
+/**
+ * All local Gallery files have a description, but this description may be
+ * empty. Filestores and filestores in filestores will not have a description.
+ */
 export class Description {
   +#state: DescriptionInternalState;
 
@@ -220,6 +236,11 @@ export interface GalleryFile {
   +treeViewItemId: string;
 }
 
+/**
+ * These are files that are stored and managed by the RSpace system. They are
+ * accessible across all sections of the Gallery with the exception of the
+ * filestores section.
+ */
 export class LocalGalleryFile implements GalleryFile {
   +id: Id;
   +globalId: string;
@@ -434,6 +455,12 @@ export class LocalGalleryFile implements GalleryFile {
   }
 }
 
+/**
+ * Filestores are remote filesystems (e.g. iRODS, SAMBA, SFTP) that the
+ * sysadmin has configured and the user has set up. They can then reference the
+ * files in those filestores as if they were stored locally in the RSpace
+ * instance.
+ */
 export class Filestore implements GalleryFile {
   id: Id;
   filesystemId: number;
@@ -739,6 +766,9 @@ class RemoteFile implements GalleryFile {
   }
 }
 
+/**
+ * Hook that gets a listing of Gallery files, for displaying in the UI.
+ */
 export function useGalleryListing({
   section,
   searchTerm,
