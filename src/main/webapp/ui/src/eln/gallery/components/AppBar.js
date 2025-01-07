@@ -12,6 +12,8 @@ import AccessibilityTips from "../../../components/AccessibilityTips";
 import HelpDocs from "../../../components/Help/HelpDocs";
 import HelpIcon from "@mui/icons-material/Help";
 import { observer } from "mobx-react-lite";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
+import useViewportDimensions from "../../../util/useViewportDimensions";
 
 type GalleryAppBarArgs = {|
   setDrawerOpen: (boolean) => void,
@@ -24,6 +26,8 @@ function GalleryAppBar({
   drawerOpen,
   sidebarId,
 }: GalleryAppBarArgs): Node {
+  const { trackEvent } = React.useContext(AnalyticsContext);
+  const { isViewportSmall } = useViewportDimensions();
   return (
     <AppBar position="relative" open={true} aria-label="page header">
       <Toolbar variant="dense">
@@ -33,6 +37,10 @@ function GalleryAppBar({
           aria-expanded={drawerOpen ? "true" : "false"}
           onClick={() => {
             setDrawerOpen(!drawerOpen);
+            if (!isViewportSmall)
+              trackEvent(`user:toggle:sidebar:gallery`, {
+                open: !drawerOpen,
+              });
           }}
         >
           <MenuIcon />
