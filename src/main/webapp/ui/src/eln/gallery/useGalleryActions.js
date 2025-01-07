@@ -231,88 +231,6 @@ export function useGalleryActions(): {|
     destination: Destination,
     files: RsSet<GalleryFile>
   ): Promise<void> {
-    const toDestinationWithFolder = async (
-      destinationFolder: GalleryFile
-    ): Promise<void> => {
-      if (files.some((f) => f.canBeMoved.isError)) {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Failed to move files.",
-            message: "Some of the selected files cannot be moved.",
-          })
-        );
-        throw new Error("Some of the files cannot be moved");
-      }
-      if (destinationFolder.isSnippetFolder) {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Cannot move files into SNIPPETS folders.",
-            message:
-              "Share them and they will automatically appear in these folders.",
-          })
-        );
-        return;
-      }
-      const movingAlert = mkAlert({
-        message: "Moving...",
-        variant: "notice",
-        isInfinite: true,
-      });
-      try {
-        addAlert(movingAlert);
-        const formData = new FormData();
-        formData.append("target", idToString(destinationFolder.id));
-        for (const file of files)
-          formData.append("filesId[]", idToString(file.id));
-        formData.append("mediaType", section);
-        const data = await galleryApi.post<FormData, mixed>(
-          "moveGalleriesElements",
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-        addAlert(
-          Parsers.objectPath(["data", "exceptionMessage"], data)
-            .orElseTry(() =>
-              Parsers.objectPath(["data", "error", "errorMessages"], data)
-                .flatMap(Parsers.isArray)
-                .flatMap(ArrayUtils.head)
-            )
-            .flatMap(Parsers.isString)
-            .map((exceptionMessage) =>
-              mkAlert({
-                title: `Failed to move item.`,
-                message: exceptionMessage,
-                variant: "error",
-              })
-            )
-            .orElse(
-              mkAlert({
-                message: `Successfully moved item${files.size > 0 ? "s" : ""}.`,
-                variant: "success",
-              })
-            )
-        );
-      } catch (e) {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: `Failed to move item${files.size > 0 ? "s" : ""}.`,
-            message: e.message,
-          })
-        );
-        throw e;
-      } finally {
-        removeAlert(movingAlert);
-      }
-    };
-    if (destination.key === "folder")
-      return toDestinationWithFolder(destination.folder);
     if (files.some((f) => f.canBeMoved.isError)) {
       addAlert(
         mkAlert({
@@ -322,6 +240,17 @@ export function useGalleryActions(): {|
         })
       );
       throw new Error("Some of the files cannot be moved");
+    }
+    if (destination.key === "folder" && destination.folder.isSnippetFolder) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Cannot move files into SNIPPETS folders.",
+          message:
+            "Share them and they will automatically appear in these folders.",
+        })
+      );
+      return;
     }
     const movingAlert = mkAlert({
       message: "Moving...",
@@ -333,8 +262,7 @@ export function useGalleryActions(): {|
       const formData = new FormData();
       formData.append(
         "target",
-        // this is redundant
-        destination.key === "root" ? "0" : destination.folder.id
+        destination.key === "root" ? "0" : idToString(destination.folder.id)
       );
       for (const file of files)
         formData.append("filesId[]", idToString(file.id));
