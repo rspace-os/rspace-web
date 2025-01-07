@@ -7,6 +7,10 @@ import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
 
+/**
+ * An ELN document, to the extent that the Gallery needs to know to provide a
+ * table of back-references.
+ */
 export type Document = {|
   id: number,
   globalId: string,
@@ -130,6 +134,9 @@ export default function useLinkedDocuments(file: GalleryFile): {|
 
   React.useEffect(() => {
     void getLinkedDocuments();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - getLinkedDocuments will not meaningfully change
+     */
   }, [file]);
 
   return {
