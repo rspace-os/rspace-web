@@ -8,6 +8,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.RecordGroupSharingDao;
@@ -152,7 +153,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     addUsersToGroup(pi, labGroup, user, secondUser, thirdUser);
 
     Group secondLabGroup = createGroup("g2", secondGroupPi);
-    addUsersToGroup(secondGroupPi, secondLabGroup, secondGroupUser);
+    addUsersToGroup(secondGroupPi, secondLabGroup, user, secondGroupUser);
 
     // user creates a notebook and shares it with both groups for read
     logoutAndLoginAs(user);
@@ -522,6 +523,65 @@ public class RecordSharingTest extends SpringTransactionalTest {
     assertEquals(0, sharedIndivid.getChildren().size());
     group = reloadGroup(group);
     assertEquals(0, folderDao.getSharedFolderForGroup(group).getChildren().size());
+  }
+
+  @Test
+  public void cannotShareWithUnrelatedUserOrGroup() throws Exception {
+
+    // create user and them to own group, with just a piuser
+    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
+    initialiseContentWithEmptyContent(user);
+    Group userGroup = createGroup("userGroup", piUser);
+    addUsersToGroup(piUser, userGroup, user);
+    // create new doc and confirm not shared
+    StructuredDocument testDoc = createBasicDocumentInRootFolderWithText(user, "testDoc");
+    sharingMgr.updateSharedStatusOfRecords(toList(testDoc), user);
+    assertEquals(SharedStatus.UNSHARED, testDoc.getSharedStatus());
+
+    // init other user in other group
+    setUpOtherUserAndRecordToShare();
+
+    // attempt individual share with other user
+    ShareConfigElement indivCommand = new ShareConfigElement(other.getId(), "write");
+    indivCommand.setUserId(other.getId());
+    ShareConfigElement[] indivSharingCfgElem = new ShareConfigElement[] {indivCommand};
+
+    AuthorizationException authorizationException =
+        assertThrows(
+            AuthorizationException.class,
+            () ->
+                sharingMgr.shareRecord(
+                    userDao.get(user.getId()), testDoc.getId(), indivSharingCfgElem));
+    assertEquals(
+        "Unauthorized attempt by ["
+            + user.getUsername()
+            + "] to share with user ["
+            + other.getUsername()
+            + "]",
+        authorizationException.getMessage());
+
+    // attempt group share, with other group
+    ShareConfigElement groupCommand = new ShareConfigElement(group.getId(), "write");
+    groupCommand.setGroupid(group.getId());
+    ShareConfigElement[] groupSharingCfgElem = new ShareConfigElement[] {groupCommand};
+    authorizationException =
+        assertThrows(
+            AuthorizationException.class,
+            () ->
+                sharingMgr.shareRecord(
+                    userDao.get(user.getId()), testDoc.getId(), groupSharingCfgElem));
+    assertEquals(
+        "Unauthorized attempt by ["
+            + user.getUsername()
+            + "] to share with group ["
+            + group.getUniqueName()
+            + "]",
+        authorizationException.getMessage());
+
+    // confirm test record not shared with anyone
+    sharingMgr.updateSharedStatusOfRecords(toList(testDoc), piUser);
+    assertEquals(SharedStatus.UNSHARED, testDoc.getSharedStatus());
+    assertEquals(0, regGrpDao.getRecordsSharedByGroup(other.getId()).size());
   }
 
   // RSPAC-345
