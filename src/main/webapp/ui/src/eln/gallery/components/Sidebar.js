@@ -25,7 +25,7 @@ import ArgosAccentMenuItem from "../../../eln-dmp-integration/Argos/ArgosAccentM
 import DMPOnlineAccentMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineAccentMenuItem";
 import DMPToolAccentMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
 import AccentMenuItem from "./AccentMenuItem";
-import { type GalleryFile, type Id } from "../useGalleryListing";
+import { type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import * as FetchingData from "../../../util/fetchingData";
 import Dialog from "@mui/material/Dialog";
@@ -100,14 +100,12 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
 }));
 
 const UploadMenuItem = ({
-  path,
   folderId,
   onUploadComplete,
   onCancel,
   autoFocus,
   tabIndex,
 }: {|
-  path: $ReadOnlyArray<GalleryFile>,
   folderId: Result<Id>,
   onUploadComplete: () => void,
   onCancel: () => void,
@@ -173,13 +171,11 @@ const UploadMenuItem = ({
 };
 
 const NewFolderMenuItem = ({
-  path,
   folderId,
   onDialogClose,
   autoFocus,
   tabIndex,
 }: {|
-  path: $ReadOnlyArray<GalleryFile>,
   folderId: Result<Id>,
   onDialogClose: (boolean) => void,
 
@@ -493,7 +489,6 @@ type SidebarArgs = {|
   setSelectedSection: (GallerySection) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,
-  path: $ReadOnlyArray<GalleryFile>,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => Promise<void>,
   id: string,
@@ -504,7 +499,6 @@ const Sidebar = ({
   setSelectedSection,
   drawerOpen,
   setDrawerOpen,
-  path,
   folderId,
   refreshListing,
   id,
@@ -557,7 +551,6 @@ const Sidebar = ({
         >
           <UploadMenuItem
             key={"upload"}
-            path={path}
             folderId={FetchingData.getSuccessValue(folderId)}
             onUploadComplete={() => {
               void refreshListing();
@@ -571,7 +564,6 @@ const Sidebar = ({
           />
           <NewFolderMenuItem
             key={"newFolder"}
-            path={path}
             folderId={FetchingData.getSuccessValue(folderId)}
             onDialogClose={(success) => {
               if (success) void refreshListing();

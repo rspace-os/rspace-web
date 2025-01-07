@@ -89,7 +89,6 @@ const WholePage = styled(() => {
                 }}
                 drawerOpen={drawerOpen}
                 setDrawerOpen={setDrawerOpen}
-                path={path}
                 folderId={folderId}
                 refreshListing={refreshListing}
                 id={sidebarId}

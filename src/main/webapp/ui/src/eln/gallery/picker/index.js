@@ -156,7 +156,6 @@ const Picker = observer(
                     }}
                     drawerOpen={drawerOpen}
                     setDrawerOpen={setDrawerOpen}
-                    path={path}
                     folderId={folderId}
                     refreshListing={refreshListing}
                     id={sidebarId}
