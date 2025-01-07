@@ -702,7 +702,7 @@ export function useGalleryActions(): {|
     newDescription: Description
   ) {
     if (
-      file.description.match({
+      !file.description.match({
         missing: () => false,
         empty: () => true,
         present: () => true,
