@@ -300,7 +300,7 @@ export function useGalleryActions(): {|
                 "Share them and they will automatically appear in these folders.",
             })
           );
-          return;
+          throw new Error("Some of the files cannot be moved");
         }
         const movingAlert = mkAlert({
           message: "Moving...",

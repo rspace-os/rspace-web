@@ -22,6 +22,7 @@ import useViewportDimensions from "../../../util/useViewportDimensions";
 import { type GallerySection } from "../common";
 import { observer } from "mobx-react-lite";
 import PlaceholderLabel from "./PlaceholderLabel";
+import { doNotAwait } from "../../../util/Util";
 
 type MoveDialogArgs = {|
   open: boolean,
@@ -120,19 +121,19 @@ const MoveDialog = observer(
         <DialogActions>
           <Stack direction="row" spacing={1}>
             <SubmitSpinnerButton
-              onClick={() => {
+              onClick={doNotAwait(async () => {
                 setTopLevelLoading(true);
-                void moveFiles(selectedFiles)
-                  .to({
+                try {
+                  await moveFiles(selectedFiles).to({
                     destination: rootDestination(),
                     section,
-                  })
-                  .then(() => {
-                    setTopLevelLoading(false);
-                    void refreshListing();
-                    onClose();
                   });
-              }}
+                  void refreshListing();
+                  onClose();
+                } finally {
+                  setTopLevelLoading(false);
+                }
+              })}
               disabled={topLevelLoading}
               loading={topLevelLoading}
               label="Make top-level"
@@ -147,25 +148,28 @@ const MoveDialog = observer(
             </Button>
             <ValidatingSubmitButton
               loading={submitLoading}
-              onClick={() => {
+              onClick={doNotAwait(async () => {
                 setSubmitLoading(true);
-                const destinationFolder = selection
-                  .asSet()
-                  .only.toResult(
-                    () =>
-                      new Error(
-                        "Impossible; submit button requires a selection of one"
-                      )
-                  )
-                  .elseThrow();
-                void moveFiles(selectedFiles)
-                  .toDestinationWithFolder(section, destinationFolder)
-                  .then(() => {
-                    setSubmitLoading(false);
-                    void refreshListing();
-                    onClose();
-                  });
-              }}
+                try {
+                  const destinationFolder = selection
+                    .asSet()
+                    .only.toResult(
+                      () =>
+                        new Error(
+                          "Impossible; submit button requires a selection of one"
+                        )
+                    )
+                    .elseThrow();
+                  await moveFiles(selectedFiles).toDestinationWithFolder(
+                    section,
+                    destinationFolder
+                  );
+                  void refreshListing();
+                  onClose();
+                } finally {
+                  setSubmitLoading(false);
+                }
+              })}
               validationResult={computeValidation()}
             >
               Move
