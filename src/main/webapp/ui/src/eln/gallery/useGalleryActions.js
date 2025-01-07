@@ -20,23 +20,63 @@ import { partitionAllSettled } from "../../util/Util";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
+/**
+ * The destination of a move operation.
+ */
 export opaque type Destination =
-  | {| key: "root" |}
+  | {| key: "root" |} // the gallery section depends on the type of the file being moved
   | {| key: "folder", folder: GalleryFile |};
 
+/**
+ * Constructor function for specifying that the destination of a move operation
+ * should be the root of the gallery section based on the type of the file
+ * being moved.
+ */
 export function rootDestination(): Destination {
   return { key: "root" };
 }
 
+/**
+ * Constructor function for specifying that the destination of a move operation
+ * should be a specific folder.
+ */
 export function folderDestination(folder: GalleryFile): Destination {
   return { key: "folder", folder };
 }
 
+/**
+ * Hook that exposes several functions for uploading files, creating new
+ * folders, and performing operations on existing files and folders.
+ */
 export function useGalleryActions(): {|
+  /**
+   * For uploading new files.
+   *
+   * @arg parentId The id of the folder or gallery section that the file should
+   *               be uploaded to. The server will ignore this if the type of
+   *               the files do not match the specified gallery section or the
+   *               gallery section at the root of the specified folder, placing
+   *               the files at the root of the corresponding gallery sections
+   *               instead.
+   * @arg files    The File objects being uploaded.
+   */
   uploadFiles: (parentId: Id, files: $ReadOnlyArray<File>) => Promise<void>,
 
+  /**
+   * For creating new folders.
+   *
+   * @arg parentId The id of the folder or gallery section that the new folder
+   *               will be created within.
+   * @arg name     The name of the new folder.
+   */
   createFolder: (parentId: Id, name: string) => Promise<void>,
-  moveFiles: (RsSet<GalleryFile>) => {|
+
+  /**
+   * Move files to a different folder.
+   *
+   * @arg files The files being moved.
+   */
+  moveFiles: (files: RsSet<GalleryFile>) => {|
     to: ({|
       destination: Destination,
       section: string,
