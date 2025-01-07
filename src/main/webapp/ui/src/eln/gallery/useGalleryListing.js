@@ -1309,6 +1309,9 @@ export function useGalleryListing({
     setPage(0);
     setTotalPages(0);
     void getGalleryFiles();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - getGalleryFiles will not meaningfully change
+     */
   }, [searchTerm, path, sortOrder, orderBy]);
 
   /*
@@ -1326,6 +1329,10 @@ export function useGalleryListing({
       setPath(defaultPath ?? []);
     }
     setMounted(true);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - defaultPath SHOULD NOT change
+     * - mounted is designed to prevent duplicate calls; no need to watch for changes
+     */
   }, [section]);
 
   if (loading)
