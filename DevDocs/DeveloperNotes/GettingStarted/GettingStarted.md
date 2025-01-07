@@ -1,6 +1,6 @@
 # Getting started with RSpace source code
 
-These instructions are for anyone wanting to run RSpace from source code, on their local machine.
+These instructions are for anyone wanting to run RSpace from source code, on their local machine. **Do NOT use these instructions if you want to run RSpace on a production server or even a pilot / trial server, use rspace-docker for this.**
 
 ## Initial Setup
 
