@@ -75,32 +75,71 @@ export function useGalleryActions(): {|
   /**
    * Move files to a different folder.
    *
-   * @arg files The files being moved.
+   * @arg section     The relevant gallery section for the files being operated
+   *                  on. Whilst it would seem that this would only be required
+   *                  if the destination is the root of a gallery section, the
+   *                  API always requires it.
+   * @arg destination Either the root of the specified *section* or a
+   *                  particular folder.
+   * @arg files       The files being moved.
    */
   moveFiles: (
     section: GallerySection,
     destination: Destination,
     files: RsSet<GalleryFile>
   ) => Promise<void>,
-  deleteFiles: (RsSet<GalleryFile>) => Promise<void>,
-  duplicateFiles: (RsSet<GalleryFile>) => Promise<void>,
-  rename: (GalleryFile, string) => Promise<void>,
 
   /**
-   * The contents of `file` is replaced with `newFile`. The filename is also
+   * Delete the specified files. If the files are Filestores then they are disconnected.
+   *
+   * @arg files The files being deleted.
+   */
+  deleteFiles: (files: RsSet<GalleryFile>) => Promise<void>,
+
+  /**
+   * Duplicate the specified files.
+   */
+  duplicateFiles: (files: RsSet<GalleryFile>) => Promise<void>,
+
+  /**
+   * Rename the specified file.
+   *
+   * @arg file The file being renamed.
+   * @arg newName The new name for the file.
+   */
+  rename: (file: GalleryFile, newName: string) => Promise<void>,
+
+  /**
+   * The contents of *file* is replaced with *newFile*. The filename is also
    * replaced and the version number incremented.
    *
-   * @arg folderId The Id of the folder that `file` currently resides in.
+   * @arg folderId The Id of the folder that *file* currently resides in.
    * @arg file     The file whose contents are being updated.
-   * @arg newFile  The contents that `file` is being updated to.
+   * @arg newFile  The contents that *file* is being updated to.
    */
   uploadNewVersion: (
     folderId: Id,
     file: GalleryFile,
     newFile: File
   ) => Promise<void>,
-  changeDescription: (GalleryFile, Description) => Promise<void>,
-  download: (RsSet<GalleryFile>) => Promise<void>,
+
+  /**
+   * Modify the description of a specified file.
+   *
+   * @arg file           The file whose description is being modified.
+   * @arg newDescription The new description.
+   */
+  changeDescription: (
+    file: GalleryFile,
+    newDescription: Description
+  ) => Promise<void>,
+
+  /**
+   * Download the specified files.
+   *
+   * @arg files The files being downloaded.
+   */
+  download: (files: RsSet<GalleryFile>) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
@@ -266,6 +305,7 @@ export function useGalleryActions(): {|
       );
       for (const file of files)
         formData.append("filesId[]", idToString(file.id));
+      // mediaType is required, but only actually used if target is 0
       formData.append("mediaType", section);
       const data = await galleryApi.post<FormData, mixed>(
         "moveGalleriesElements",
