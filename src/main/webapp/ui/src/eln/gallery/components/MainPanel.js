@@ -90,6 +90,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
@@ -1292,7 +1293,7 @@ function GalleryMainPanel({
       }),
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
-  const [viewMode, setViewMode] = useUiPreference(
+  const [viewMode, _setViewMode] = useUiPreference(
     PREFERENCES.GALLERY_VIEW_MODE,
     {
       defaultValue: "grid",
@@ -1301,6 +1302,7 @@ function GalleryMainPanel({
   const [sortMenuAnchorEl, setSortMenuAnchorEl] = React.useState(null);
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -1321,6 +1323,14 @@ function GalleryMainPanel({
     },
   });
   const keyboardSensor = useSensor(KeyboardSensor, {});
+
+  const setViewMode = (newViewMode: "grid" | "tree" | "carousel") => {
+    _setViewMode(newViewMode);
+    setViewMenuAnchorEl(null);
+    trackEvent("user:change:view:gallery", {
+      view: newViewMode,
+    });
+  };
 
   return FetchingData.match(filestoresEnabled, {
     loading: () => null,
@@ -1452,7 +1462,6 @@ function GalleryMainPanel({
                       avatar={<GridIcon />}
                       onClick={() => {
                         setViewMode("grid");
-                        setViewMenuAnchorEl(null);
                         selection.clear();
                       }}
                     />
@@ -1464,7 +1473,6 @@ function GalleryMainPanel({
                       avatar={<TreeIcon />}
                       onClick={() => {
                         setViewMode("tree");
-                        setViewMenuAnchorEl(null);
                         selection.clear();
                       }}
                     />
@@ -1476,7 +1484,6 @@ function GalleryMainPanel({
                       avatar={<ViewCarouselIcon />}
                       onClick={() => {
                         setViewMode("carousel");
-                        setViewMenuAnchorEl(null);
                         /*
                          * We don't clear the selection because we want
                          * carousel view to default to the selected file,
