@@ -1257,14 +1257,13 @@ function GalleryMainPanel({
                 filesBeingMoved.has(event.over.data.current.destination.folder)
               )
                 return;
-              void moveFiles(filesBeingMoved)
-                .to({
-                  destination: event.over.data.current.destination,
-                  section: selectedSection,
-                })
-                .then(() => {
-                  void refreshListing();
-                });
+              void moveFiles(
+                selectedSection,
+                event.over.data.current.destination,
+                filesBeingMoved
+              ).then(() => {
+                void refreshListing();
+              });
             }}
           >
             <Grid

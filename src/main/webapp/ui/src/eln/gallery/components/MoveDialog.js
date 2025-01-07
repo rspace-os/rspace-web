@@ -16,7 +16,11 @@ import TreeView from "./TreeView";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
-import { useGalleryActions, rootDestination } from "../useGalleryActions";
+import {
+  useGalleryActions,
+  rootDestination,
+  folderDestination,
+} from "../useGalleryActions";
 import RsSet from "../../../util/set";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { type GallerySection } from "../common";
@@ -133,10 +137,7 @@ const MoveDialog = observer(
               onClick={doNotAwait(async () => {
                 setTopLevelLoading(true);
                 try {
-                  await moveFiles(selectedFiles).to({
-                    destination: rootDestination(),
-                    section,
-                  });
+                  await moveFiles(section, rootDestination(), selectedFiles);
                   void refreshListing();
                   onClose();
                 } finally {
@@ -169,9 +170,10 @@ const MoveDialog = observer(
                         )
                     )
                     .elseThrow();
-                  await moveFiles(selectedFiles).toDestinationWithFolder(
+                  await moveFiles(
                     section,
-                    destinationFolder
+                    folderDestination(destinationFolder),
+                    selectedFiles
                   );
                   void refreshListing();
                   onClose();
