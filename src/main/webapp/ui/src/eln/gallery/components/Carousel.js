@@ -24,7 +24,6 @@ import { take, incrementForever } from "../../../util/iterators";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import Result from "../../../util/result";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as Parsers from "../../../util/parsers";
 import axios from "axios";
@@ -209,6 +208,7 @@ const PreviewWrapper = ({
   );
 };
 
+// eslint-disable-next-line complexity -- Lots of options of what to show in preview
 const Preview = ({
   file,
   zoom,
