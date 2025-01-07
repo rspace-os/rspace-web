@@ -92,6 +92,9 @@ const WholePage = styled(() => {
                   setSelectedSection({ mediaType });
                   setPath([]);
                   setAppliedSearchTerm("");
+                  trackEvent("user:change:section:gallery", {
+                    section: mediaType,
+                  });
                 }}
                 drawerOpen={drawerOpen}
                 setDrawerOpen={setDrawerOpen}
