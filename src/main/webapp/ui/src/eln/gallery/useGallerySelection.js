@@ -90,6 +90,10 @@ const SelectionContext: Context<Selection> = React.createContext(
   DEFAULT_SELECTION_CONTEXT
 );
 
+/**
+ * A provider component for scoping the selection of the GalleryFiles to a
+ * section of the UI.
+ */
 export const GallerySelection = ({
   children,
   ...rest
@@ -102,6 +106,9 @@ export const GallerySelection = ({
   </SelectionContext.Provider>
 );
 
+/**
+ * Hook for getting the nearest Selection.
+ */
 export function useGallerySelection(): Selection {
   return React.useContext(SelectionContext);
 }
