@@ -465,117 +465,119 @@ const DescriptionField = styled(
   },
 }));
 
-const InfoPanelContent = ({
-  file,
-  smallViewport = false,
-}: {
-  file: GalleryFile,
-  smallViewport?: boolean,
-}): Node => {
-  return (
-    <Stack sx={{ height: "100%" }}>
-      <DescriptionList
-        content={[
-          ...(typeof file.globalId === "string"
-            ? [
-                {
-                  label: "Global ID",
-                  value: file.globalId,
-                },
-              ]
-            : []),
-          ...(typeof file.ownerName === "string"
-            ? [
-                {
-                  label: "Owner",
-                  value: file.ownerName,
-                },
-              ]
-            : []),
-          ...file.description
-            .toString()
-            .map((desc) => [
-              {
-                label: "Description",
-                value: (
-                  <DescriptionField
-                    file={file}
-                    description={desc}
-                    minimalStyling={!smallViewport}
-                  />
-                ),
-                below: true,
-              },
-            ])
-            .orElse(
-              ([]: $ReadOnlyArray<{|
-                label: string,
-                value: Node,
-                below?: boolean,
-                reducedPadding?: boolean,
-              |}>)
-            ),
-        ]}
-        sx={{
-          pl: 2,
-          "& dd.below": {
-            justifySelf: "start",
-            width: "100%",
-          },
-        }}
-      />
-      <Box component="section" sx={{ mt: 0.5 }}>
-        <Typography variant="h4" component="h4">
-          Details
-        </Typography>
+const InfoPanelContent = observer(
+  ({
+    file,
+    smallViewport = false,
+  }: {
+    file: GalleryFile,
+    smallViewport?: boolean,
+  }): Node => {
+    return (
+      <Stack sx={{ height: "100%" }}>
         <DescriptionList
           content={[
-            ...(typeof file.type === "string"
+            ...(typeof file.globalId === "string"
               ? [
                   {
-                    label: "Type",
-                    value: file.type,
+                    label: "Global ID",
+                    value: file.globalId,
                   },
                 ]
               : []),
-            {
-              label: "Size",
-              value: formatFileSize(file.size),
-            },
-            ...(typeof file.creationDate !== "undefined"
+            ...(typeof file.ownerName === "string"
               ? [
                   {
-                    label: "Created",
-                    value: file.creationDate.toLocaleString(),
+                    label: "Owner",
+                    value: file.ownerName,
                   },
                 ]
               : []),
-            ...(typeof file.modificationDate !== "undefined"
-              ? [
-                  {
-                    label: "Modified",
-                    value: file.modificationDate.toLocaleString(),
-                  },
-                ]
-              : []),
-            ...(typeof file.version === "number"
-              ? [
-                  {
-                    label: "Version",
-                    value: file.version,
-                  },
-                ]
-              : []),
+            ...file.description
+              .toString()
+              .map((desc) => [
+                {
+                  label: "Description",
+                  value: (
+                    <DescriptionField
+                      file={file}
+                      description={desc}
+                      minimalStyling={!smallViewport}
+                    />
+                  ),
+                  below: true,
+                },
+              ])
+              .orElse(
+                ([]: $ReadOnlyArray<{|
+                  label: string,
+                  value: Node,
+                  below?: boolean,
+                  reducedPadding?: boolean,
+                |}>)
+              ),
           ]}
           sx={{
             pl: 2,
+            "& dd.below": {
+              justifySelf: "start",
+              width: "100%",
+            },
           }}
         />
-      </Box>
-      {file.linkedDocuments}
-    </Stack>
-  );
-};
+        <Box component="section" sx={{ mt: 0.5 }}>
+          <Typography variant="h4" component="h4">
+            Details
+          </Typography>
+          <DescriptionList
+            content={[
+              ...(typeof file.type === "string"
+                ? [
+                    {
+                      label: "Type",
+                      value: file.type,
+                    },
+                  ]
+                : []),
+              {
+                label: "Size",
+                value: formatFileSize(file.size),
+              },
+              ...(typeof file.creationDate !== "undefined"
+                ? [
+                    {
+                      label: "Created",
+                      value: file.creationDate.toLocaleString(),
+                    },
+                  ]
+                : []),
+              ...(typeof file.modificationDate !== "undefined"
+                ? [
+                    {
+                      label: "Modified",
+                      value: file.modificationDate.toLocaleString(),
+                    },
+                  ]
+                : []),
+              ...(typeof file.version === "number"
+                ? [
+                    {
+                      label: "Version",
+                      value: file.version,
+                    },
+                  ]
+                : []),
+            ]}
+            sx={{
+              pl: 2,
+            }}
+          />
+        </Box>
+        {file.linkedDocuments}
+      </Stack>
+    );
+  }
+);
 
 const InfoPanelMultipleContent = (): Node => {
   const selection = useGallerySelection();
