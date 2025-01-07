@@ -55,6 +55,7 @@ import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import CardMedia from "@mui/material/CardMedia";
 import { useFolderOpen } from "./OpenFolderProvider";
+import { type URL } from "../../../util/types";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -311,16 +312,16 @@ function ActionsMenu({
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
       .flatMap<
-        | {| key: "image", downloadHref: ?string |}
+        | {| key: "image", downloadHref: () => Promise<URL> |}
         | {| key: "document", url: string |}
       >((file) => {
-        if (file.isImage)
+        if (file.isImage && typeof file.downloadHref !== "undefined")
           return Result.Ok({ key: "image", downloadHref: file.downloadHref });
         return canEditWithCollabora(file)
           .orElseTry(() => canEditWithOfficeOnline(file))
           .map<
             Result<
-              | {| key: "image", downloadHref: ?string |}
+              | {| key: "image", downloadHref: () => Promise<URL> |}
               | {| key: "document", url: string |}
             >
           >((url) =>
@@ -412,7 +413,9 @@ function ActionsMenu({
       return Result.Error([
         new Error("Cannot export more than 100 itemes at once."),
       ]);
-    return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(() => null);
+    return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(
+      () => null
+    );
   });
 
   const downloadAllowed = computed((): Result<null> => {
@@ -494,11 +497,15 @@ function ActionsMenu({
             onClick={() => {
               viewAllowed.get().do((viewAction) => {
                 if (viewAction.key === "image")
-                  openImagePreview(viewAction.downloadHref, {
-                    caption: viewAction.caption,
+                  void viewAction.downloadHref().then((downloadHref) => {
+                    openImagePreview(downloadHref, {
+                      caption: viewAction.caption,
+                    });
                   });
                 if (viewAction.key === "pdf")
-                  openPdfPreview(viewAction.downloadHref);
+                  void viewAction.downloadHref().then((downloadHref) => {
+                    openPdfPreview(downloadHref);
+                  });
                 if (viewAction.key === "aspose")
                   void openAsposePreview(viewAction.file);
               });
@@ -518,19 +525,28 @@ function ActionsMenu({
           foregroundColor={COLOR.contrastText}
           avatar={<EditIcon />}
           onClick={() => {
-            editingAllowed.get().do((action) => {
-              if (action.key === "document") window.open(action.url);
-              if (action.key === "image") {
-                if (!action.downloadHref) return;
-                void axios
-                  .get<Blob>(action.downloadHref, {
-                    responseType: "blob",
-                  })
-                  .then(({ data }) => {
+            editingAllowed.get().do(
+              doNotAwait(async (action) => {
+                if (action.key === "document") window.open(action.url);
+                if (action.key === "image") {
+                  try {
+                    const downloadHref = await action.downloadHref();
+                    const { data } = await axios.get<Blob>(downloadHref, {
+                      responseType: "blob",
+                    });
                     setImageEditorBlob(data);
-                  });
-              }
-            });
+                  } catch (e) {
+                    addAlert(
+                      mkAlert({
+                        variant: "error",
+                        title: "Failed to download image for editing",
+                        message: e.message,
+                      })
+                    );
+                  }
+                }
+              })
+            );
             setActionsMenuAnchorEl(null);
           }}
           compact
@@ -664,7 +680,7 @@ function ActionsMenu({
               exportTypes: selection
                 .asSet()
                 .toArray()
-                .map(() => "MEDIA_FILE"),
+                .map((f) => (f.isFolder ? "FOLDER" : "MEDIA_FILE")),
               exportNames: selection
                 .asSet()
                 .toArray()

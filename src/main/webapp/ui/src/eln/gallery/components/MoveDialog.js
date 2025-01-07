@@ -21,6 +21,7 @@ import RsSet from "../../../util/set";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { type GallerySection } from "../common";
 import { observer } from "mobx-react-lite";
+import PlaceholderLabel from "./PlaceholderLabel";
 
 type MoveDialogArgs = {|
   open: boolean,
@@ -96,11 +97,11 @@ const MoveDialog = observer(
           </DialogContentText>
         </DialogContent>
         <DialogContent sx={{ pt: 0 }}>
-          {FetchingData.match(galleryListing, {
-            loading: () => <></>,
-            error: (error) => <>{error}</>,
-            success: (listing) => (
-              <Box sx={{ overflowY: "auto" }}>
+          <Box sx={{ overflowY: "auto" }}>
+            {FetchingData.match(galleryListing, {
+              loading: () => <PlaceholderLabel>Loading...</PlaceholderLabel>,
+              error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
+              success: (listing) => (
                 <TreeView
                   listing={listing}
                   path={[]}
@@ -112,9 +113,9 @@ const MoveDialog = observer(
                   orderBy="name"
                   foldersOnly
                 />
-              </Box>
-            ),
-          })}
+              ),
+            })}
+          </Box>
         </DialogContent>
         <DialogActions>
           <Stack direction="row" spacing={1}>

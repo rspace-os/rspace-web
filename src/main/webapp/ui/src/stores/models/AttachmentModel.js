@@ -77,7 +77,7 @@ type FromUpload = {|
 type FromGallery = {|
   ...CommonAttrs,
   galleryId: string,
-  downloadHref: string | null,
+  downloadHref: null | (() => Promise<Url>),
 |};
 
 /**
@@ -762,7 +762,7 @@ export class NewGalleryAttachment implements Attachment {
   removed: boolean = false;
   onRemoveCallback: (Attachment) => void;
   permalinkURL: ?Url;
-  downloadHref: string | null;
+  downloadHref: null | (() => Promise<Url>);
 
   /*
    * Dummy values to satisfy Attachment interface
@@ -813,13 +813,11 @@ export class NewGalleryAttachment implements Attachment {
     getRootStore().trackingStore.trackEvent("RemovedAttachment");
   }
 
-  download(): Promise<void> {
+  async download(): Promise<void> {
     const anchor = document.createElement("a");
     if (!this.downloadHref)
-      return Promise.reject(
-        new Error("There isn't a URL to download the file from")
-      );
-    anchor.href = this.downloadHref;
+      throw new Error("There isn't a URL to download the file from");
+    anchor.href = await this.downloadHref();
     anchor.download = this.name;
     if (document.body) document.body.appendChild(anchor);
     anchor.click();

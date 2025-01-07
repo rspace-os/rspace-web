@@ -22,6 +22,10 @@ afterEach(cleanup);
 
 const mockAxios = new MockAdapter(axios);
 
+mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
+  data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
+});
+
 function WrapperComponent() {
   const { galleryListing, refreshListing } = useGalleryListing({
     section: "Images",
@@ -33,10 +37,11 @@ function WrapperComponent() {
   return FetchingData.match(galleryListing, {
     loading: () => "loading",
     error: () => "error",
-    success: (listing) =>
-      listing.tag === "empty" ? (
-        listing.reason
-      ) : (
+    success: (listing) => {
+      if (listing.tag === "empty") {
+        return listing.reason;
+      }
+      return (
         <div>
           There are {listing.list.length} results.
           {listing.loadMore
@@ -54,7 +59,8 @@ function WrapperComponent() {
             Refresh
           </button>
         </div>
-      ),
+      );
+    },
   });
 }
 
@@ -100,8 +106,11 @@ describe("useGalleryListing", () => {
       ).not.toBeInTheDocument();
     });
 
-    expect(mockAxios.history.get.length).toBe(2);
-    expect(mockAxios.history.get[0].params.get("pageNumber")).toBe("0");
-    expect(mockAxios.history.get[1].params.get("pageNumber")).toBe("1");
+    const getUploadedFilesCalls = mockAxios.history.get.filter(({ url }) =>
+      /getUploadedFiles/.test(url)
+    );
+    expect(getUploadedFilesCalls.length).toBe(2);
+    expect(getUploadedFilesCalls[0].params.get("pageNumber")).toBe("0");
+    expect(getUploadedFilesCalls[1].params.get("pageNumber")).toBe("1");
   });
 });

@@ -708,17 +708,12 @@ export function useGalleryActions(): {|
       const { fulfilled, rejected } = partitionAllSettled(
         await Promise.allSettled(
           [...files].map(async (file) => {
+            const link = document.createElement("a");
             if (!file.downloadHref)
               throw new Error(`Cannot download ${file.name}`);
-            const { data: blob } = await api.get<Blob>(file.downloadHref, {
-              responseType: "blob",
-            });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.href = url;
+            link.href = await file.downloadHref();
             link.download = file.name;
             link.click();
-            URL.revokeObjectURL(url);
             return file;
           })
         )

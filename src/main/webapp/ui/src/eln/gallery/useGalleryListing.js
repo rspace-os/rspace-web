@@ -15,7 +15,7 @@ import {
 import { useGallerySelection } from "./useGallerySelection";
 import { observable, action, makeObservable } from "mobx";
 import { Optional } from "../../util/optional";
-import { type URL } from "../../util/types";
+import { type URL as UrlType } from "../../util/types";
 import { take, incrementForever } from "../../util/iterators";
 import useOauthToken from "../../common/useOauthToken";
 import { useFilestoreLogin } from "./components/FilestoreLoginDialog";
@@ -134,6 +134,12 @@ function generateIconSrc(
  * Objects of this shape model files and folders in the Gallery.
  */
 export interface GalleryFile {
+  /*
+   * clean up any resources that the object may have created
+   * that wont be cleaned up by the garbage collector
+   */
+  deconstructor(): void;
+
   +id: Id;
   +globalId?: string;
   name: string;
@@ -144,7 +150,7 @@ export interface GalleryFile {
   +creationDate?: Date;
   +modificationDate?: Date;
   +type?: string;
-  +thumbnailUrl: string;
+  +thumbnailUrl: UrlType;
   +ownerName?: string;
   description: Description;
 
@@ -168,7 +174,7 @@ export interface GalleryFile {
    */
   pathAsString(): string;
 
-  downloadHref?: URL;
+  downloadHref?: () => Promise<UrlType>;
 
   /*
    * These predicates should be false whenever the implementing class cannot
@@ -225,7 +231,8 @@ export class LocalGalleryFile implements GalleryFile {
   +version: number;
   +thumbnailId: number | null;
   #open: () => void | void;
-  downloadHref: URL | void;
+  downloadHref: void | (() => Promise<UrlType>);
+  #cachedDownloadHref: UrlType | void;
 
   // this will only ever actually be an array of LocalGalleryFile,
   // but getting the types correct here is tricky
@@ -250,6 +257,7 @@ export class LocalGalleryFile implements GalleryFile {
     size,
     version,
     thumbnailId,
+    token,
   }: {|
     id: Id,
     globalId: string,
@@ -266,6 +274,7 @@ export class LocalGalleryFile implements GalleryFile {
     size: number,
     version: number,
     thumbnailId: number | null,
+    token: string,
   |}) {
     makeObservable(this, {
       name: observable,
@@ -286,15 +295,33 @@ export class LocalGalleryFile implements GalleryFile {
     this.version = version;
     this.thumbnailId = thumbnailId;
     this.#open = () => setPath([...path, this]);
-    if (!this.isFolder) {
-      this.downloadHref = `/api/v1/files/${idToString(this.id)}/file`;
-    }
     this.setName = action((newName) => {
       this.name = newName;
     });
     this.setDescription = action((newDescription) => {
       this.description = newDescription;
     });
+    if (!this.isFolder) {
+      this.downloadHref = async () => {
+        if (this.#cachedDownloadHref) return this.#cachedDownloadHref;
+        const { data: blob } = await axios.get<Blob>(
+          `/api/v1/files/${idToString(this.id)}/file`,
+          {
+            responseType: "blob",
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          }
+        );
+        const url = URL.createObjectURL(blob);
+        this.#cachedDownloadHref = url;
+        return url;
+      };
+    }
+  }
+
+  deconstructor() {
+    if (this.#cachedDownloadHref) URL.revokeObjectURL(this.#cachedDownloadHref);
   }
 
   get isFolder(): boolean {
@@ -440,6 +467,8 @@ export class Filestore implements GalleryFile {
     this.path = path;
   }
 
+  deconstructor() {}
+
   get extension(): string | null {
     return null;
   }
@@ -524,7 +553,8 @@ class RemoteFile implements GalleryFile {
   +modificationDate: Date;
   #open: () => void;
   +path: $ReadOnlyArray<GalleryFile>;
-  downloadHref: URL | void;
+  downloadHref: void | (() => Promise<UrlType>);
+  #cachedDownloadHref: UrlType | void;
 
   constructor({
     nfsId,
@@ -535,6 +565,7 @@ class RemoteFile implements GalleryFile {
     path,
     setPath,
     remotePath,
+    token,
   }: {|
     nfsId: number,
     name: string,
@@ -544,6 +575,7 @@ class RemoteFile implements GalleryFile {
     path: $ReadOnlyArray<GalleryFile>,
     setPath: ($ReadOnlyArray<GalleryFile>) => void,
     remotePath: string,
+    token: string,
   |}) {
     this.nfsId = nfsId;
     this.name = name;
@@ -555,10 +587,28 @@ class RemoteFile implements GalleryFile {
     this.#open = () => setPath([...path, this]);
     if (!this.isFolder) {
       const filestoreId = path[0].id;
-      this.downloadHref = `/api/v1/gallery/filestores/${idToString(
-        filestoreId
-      )}/download?remoteId=${idToString(this.id)}&remotePath=${remotePath}`;
+      this.downloadHref = async () => {
+        if (this.#cachedDownloadHref) return this.#cachedDownloadHref;
+        const { data: blob } = await axios.get<Blob>(
+          `/api/v1/gallery/filestores/${idToString(
+            filestoreId
+          )}/download?remoteId=${idToString(this.id)}&remotePath=${remotePath}`,
+          {
+            responseType: "blob",
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          }
+        );
+        const url = URL.createObjectURL(blob);
+        this.#cachedDownloadHref = url;
+        return url;
+      };
     }
+  }
+
+  deconstructor() {
+    if (this.#cachedDownloadHref) URL.revokeObjectURL(this.#cachedDownloadHref);
   }
 
   get id(): Id {
@@ -737,12 +787,13 @@ export function useGalleryListing({
   foldersOnly?: boolean,
 |}): {|
   galleryListing: FetchingData.Fetched<
-    | {| tag: "empty", reason: string |}
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         totalHits: number,
         list: $ReadOnlyArray<GalleryFile>,
         loadMore: Optional<() => Promise<void>>,
+        refreshing: boolean,
       |}
   >,
   refreshListing: () => Promise<void>,
@@ -753,6 +804,7 @@ export function useGalleryListing({
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
@@ -782,7 +834,14 @@ export function useGalleryListing({
     return `There are no top-level ${gallerySectionCollectiveNoun[section]}.`;
   }
 
-  function parseGalleryFiles(data: mixed) {
+  function clearAndSetGalleryListing(list: $ReadOnlyArray<GalleryFile>) {
+    galleryListing.forEach((file) => {
+      file.deconstructor();
+    });
+    setGalleryListing(list);
+  }
+
+  function parseGalleryFiles(data: mixed, token: string) {
     return Parsers.objectPath(["data", "items", "results"], data)
       .flatMap(Parsers.isArray)
       .map((array) => {
@@ -885,6 +944,7 @@ export function useGalleryListing({
                       version,
                       thumbnailId,
                       setPath,
+                      token,
                     })
                   );
                 } catch (e) {
@@ -926,7 +986,7 @@ export function useGalleryListing({
 
   async function getFilestores(): Promise<void> {
     selection.clear();
-    setGalleryListing([]);
+    clearAndSetGalleryListing([]);
     setLoading(true);
     const api = axios.create({
       baseURL: "/api/v1/gallery",
@@ -988,7 +1048,7 @@ export function useGalleryListing({
             )
           )
         )
-        .do(setGalleryListing);
+        .do(clearAndSetGalleryListing);
 
       Parsers.isArray(data)
         .map((filestores) => filestores.length)
@@ -1002,7 +1062,7 @@ export function useGalleryListing({
 
   async function getRemoteFiles(): Promise<void> {
     selection.clear();
-    setGalleryListing([]);
+    clearAndSetGalleryListing([]);
     setLoading(true);
     const api = axios.create({
       baseURL: "/api/v1/gallery",
@@ -1025,6 +1085,7 @@ export function useGalleryListing({
       .elseThrow();
 
     try {
+      const token = await getToken();
       const { data } = await api.get<mixed>(
         `filestores/${filestore.id}/browse?remotePath=${ArrayUtils.last(path)
           .map((file) => file.pathAsString())
@@ -1078,6 +1139,7 @@ export function useGalleryListing({
                         path,
                         setPath,
                         remotePath,
+                        token,
                       })
                     );
                   } catch (e) {
@@ -1087,7 +1149,7 @@ export function useGalleryListing({
             )
           )
         )
-        .do(setGalleryListing);
+        .do(clearAndSetGalleryListing);
 
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -1132,9 +1194,10 @@ export function useGalleryListing({
       return getRemoteFiles();
     }
     selection.clear();
-    setGalleryListing([]);
+    clearAndSetGalleryListing([]);
     setLoading(true);
     try {
+      const token = await getToken();
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: section,
@@ -1172,7 +1235,7 @@ export function useGalleryListing({
           .orElse(1)
       );
 
-      setGalleryListing(parseGalleryFiles(data));
+      clearAndSetGalleryListing(parseGalleryFiles(data, token));
     } catch (e) {
       console.error(e);
     } finally {
@@ -1183,6 +1246,7 @@ export function useGalleryListing({
   async function loadMore(): Promise<void> {
     setPage(page + 1);
     try {
+      const token = await getToken();
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: section,
@@ -1192,10 +1256,12 @@ export function useGalleryListing({
           pageNumber: `${page + 1}`,
           sortOrder,
           orderBy,
+          foldersOnly:
+            foldersOnly !== null && Boolean(foldersOnly) ? "true" : "false",
         }),
       });
 
-      setGalleryListing([...galleryListing, ...parseGalleryFiles(data)]);
+      setGalleryListing([...galleryListing, ...parseGalleryFiles(data, token)]);
     } catch (e) {
       console.error(e);
     }
@@ -1245,8 +1311,9 @@ export function useGalleryListing({
                 page + 1 < totalPages
                   ? Optional.present(loadMore)
                   : Optional.empty(),
+              refreshing,
             }
-          : { tag: "empty", reason: emptyReason() },
+          : { tag: "empty", reason: emptyReason(), refreshing },
     },
     path,
     setPath,
@@ -1255,47 +1322,86 @@ export function useGalleryListing({
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: async () => {
       let newTotalHits: null | number = null;
-      const newFiles = (
-        await Promise.all(
-          [...take(incrementForever(), page + 1)].map((p) =>
-            axios
-              .get<mixed>(`/gallery/getUploadedFiles`, {
-                params: new URLSearchParams({
-                  mediatype: section,
-                  currentFolderId:
-                    path.length > 0 ? `${path[path.length - 1].id}` : "0",
-                  name: searchTerm,
-                  pageNumber: `${p}`,
-                  sortOrder,
-                  orderBy,
-                }),
-              })
-              .then(({ data }) => {
-                Parsers.objectPath(["data", "items", "totalHits"], data)
-                  .flatMap(Parsers.isNumber)
-                  .do((th) => {
-                    newTotalHits ??= th;
-                  });
-                return parseGalleryFiles(data);
-              })
+      try {
+        const token = await getToken();
+        setRefreshing(true);
+        const newFiles = (
+          await Promise.all(
+            [...take(incrementForever(), page + 1)].map((p) =>
+              axios
+                .get<mixed>(`/gallery/getUploadedFiles`, {
+                  params: new URLSearchParams({
+                    mediatype: section,
+                    currentFolderId:
+                      path.length > 0 ? `${path[path.length - 1].id}` : "0",
+                    name: searchTerm,
+                    pageNumber: `${p}`,
+                    sortOrder,
+                    orderBy,
+                    foldersOnly:
+                      foldersOnly !== null && Boolean(foldersOnly)
+                        ? "true"
+                        : "false",
+                  }),
+                })
+                .then(({ data }) => {
+                  Parsers.objectPath(["exceptionMessage"], data)
+                    .flatMap(Parsers.isString)
+                    .do((exceptionMessage) => {
+                      throw new Error(exceptionMessage);
+                    });
+                  Parsers.objectPath(["data", "items", "totalHits"], data)
+                    .flatMap(Parsers.isNumber)
+                    .do((th) => {
+                      newTotalHits ??= th;
+                    });
+                  return parseGalleryFiles(data, token);
+                })
+            )
           )
-        )
-      ).flat();
-      setGalleryListing(newFiles);
-      if (newTotalHits !== null) setTotalHits(newTotalHits);
+        ).flat();
+        clearAndSetGalleryListing(newFiles);
+        if (newTotalHits !== null) setTotalHits(newTotalHits);
 
-      /*
-       * If some of the selected files are no longer included in the listing
-       * then we clear the selection as it would be quite confusing to allow
-       * the user to operate on files they can no longer see. An obvious
-       * example is that the user has just performed a delete action but other
-       * such scenarios include when duplicating the last file in a page; the
-       * selected one will become the first file of the next page that the user
-       * needs to load by tapping the "Load More" button.
-       */
-      const newFilesIds = new Set(newFiles.map(({ id }) => id));
-      if (selection.asSet().some((f) => !newFilesIds.has(f.id)))
-        selection.clear();
+        /*
+         * If some of the selected files are no longer included in the listing
+         * then we clear the selection as it would be quite confusing to allow
+         * the user to operate on files they can no longer see. An obvious
+         * example is that the user has just performed a delete action but other
+         * such scenarios include when duplicating the last file in a page; the
+         * selected one will become the first file of the next page that the user
+         * needs to load by tapping the "Load More" button.
+         *
+         * This has the downside of losing the selection when the user is using
+         * tree view as if the selected file is within another folder then this
+         * logic will not find the whole selection in the root listing and
+         * clear the selection.
+         */
+        const newFilesIds = new Set(newFiles.map(({ id }) => id));
+        if (selection.asSet().some((f) => !newFilesIds.has(f.id)))
+          selection.clear();
+      } catch (e) {
+        /*
+         * This error is thrown when the user tries to open a folder that has
+         * just been deleted. We don't want to show an alert for this as the
+         * tree node will be removed as soon as the parent folder is done
+         * refreshing itself. We could avoid this by only refreshing folders
+         * once the parent is done refreshing, propagating the refresh
+         * downwards, but that would make the refreshing of deep folder
+         * hierarchies substantially slower.
+         */
+        if (/open a deleted folder/.test(e.message)) return;
+
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error refreshing Gallery listing.",
+            message: e.message,
+          })
+        );
+      } finally {
+        setRefreshing(false);
+      }
     },
   };
 }

@@ -11,9 +11,9 @@ Thank you for your interest in the RSpace open-source project! We're excited to 
 [Releasing RSpace as an open-source project](http://www.researchspace.com/blog/research-space-embraces-open-source-to-empower-fair-data-workflows) is huge step for us and we likely won't have everything as polished as we'd like it to be in the beginning. Please bear with us as we're taking one step at a time to build an inclusive and efficient contributor experience. If you have any questions, concerns, or ideas how we can improve, don't hesitate to reach out to us 🙏.
 
 # About the RSpace open-source project
-🗺️ You are currently on the main repository for building RSpace
+🗺️ You are currently on the main repository for developers building RSpace
 - The RSpace open-source project maintained by [Research Space](https://www.researchspace.com).
-- 🚧 The central hub for project and community related information is the [Wiki](https://github.com/rspace-os/rspace-web/wiki/) located on this repository.
+- The central hub for project and community related information is the [Wiki](https://github.com/rspace-os/rspace-web/wiki/) located on this repository.
   
 ## Getting started
 - Please make sure you've read and understood our [code of conduct](https://github.com/rspace-os/.github/blob/1be658989ec362844d1f8b2ef590f28bbc989a1e/CODE_OF_CONDUCT.md) for maintaining an inclusive and productive community.

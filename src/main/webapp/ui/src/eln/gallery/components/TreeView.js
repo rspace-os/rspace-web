@@ -57,44 +57,39 @@ const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   },
 }));
 
-const CustomTransition = styled(({ children, in: open, className }) => (
-  <div className={className}>
-    <Collapse
-      in={open}
-      timeout={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200
-      }
-    >
-      {children}
-    </Collapse>
-  </div>
-))(({ in: open }) => ({
-  [`& .${collapseClasses.wrappedInner} > .${boxClasses.root}`]: {
-    transform:
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
-        ? "none"
-        : "translateX(-10px) !important",
-    opacity:
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches || open
-        ? 1
-        : "0 !important",
-    transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "none"
-      : "all .2s ease",
-  },
-}));
-
 type TreeItemContentArgs = {|
   file: GalleryFile,
   path: $ReadOnlyArray<GalleryFile>,
   section: GallerySection,
-  idMap: Map<string, GalleryFile>,
+  treeViewItemIdMap: Map<string, GalleryFile>,
   refreshListing: () => Promise<void>,
   filter: (GalleryFile) => "hide" | "enabled" | "disabled",
   disableDragAndDrop?: boolean,
   sortOrder: "DESC" | "ASC",
   orderBy: "name" | "modificationDate",
   foldersOnly: boolean,
+
+  /**
+   * If true, then the listing is being refreshed and so the tree view should
+   * trigger a refresh of its listing.
+   *
+   * Note that after a refresh is comlete we do not always keep the user's
+   * selection (e.g. after duplicating a file) for two reasons:
+   *
+   *   1. When the root listing refreshes, if there are any selected files that
+   *      are not in the new listing then the selection is cleared. This is to
+   *      ensure that the selection does not include any now deleted files.
+   *      However, this means that if the selection includes a file that is
+   *      within a folder then it too will trigger this selection clearing.
+   *
+   *   2. If the user has just duplicated a folder, then the new folder will
+   *      fetch its contents by calling `useGalleryListing`'s `getGalleryFiles`
+   *      which triggers a clearing of the selection. All of the other folders
+   *      will call their `refreshListing` functions but we have to call
+   *      `getGalleryFiles` to get the new folder's contents in the first
+   *      instance.
+   */
+  refeshing: boolean,
 |};
 
 const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
@@ -102,28 +97,41 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     path,
     file,
     section,
-    idMap,
+    treeViewItemIdMap,
     refreshListing,
     filter,
     disableDragAndDrop,
     sortOrder,
     orderBy,
     foldersOnly,
+    refeshing,
   }: TreeItemContentArgs): Node => {
-    const { galleryListing } = useGalleryListing({
-      section,
-      searchTerm: "",
-      path: [...path, file],
-      orderBy,
-      sortOrder,
-      foldersOnly,
-    });
+    const { galleryListing, refreshListing: refreshingThisListing } =
+      useGalleryListing({
+        section,
+        searchTerm: "",
+        path: [...path, file],
+        orderBy,
+        sortOrder,
+        foldersOnly,
+      });
+
+    React.useEffect(() => {
+      /*
+       * Note that if the user has just deleted this folder, then refreshing
+       * the listing will fail. The logic in `useGalleryListing` will ignore
+       * the error and then this tree node will be removed when the parent
+       * folder is done refreshing.
+       */
+      if (refeshing) void refreshingThisListing();
+    }, [refeshing]);
 
     React.useEffect(() => {
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
         if (listing.tag === "empty") return;
         runInAction(() => {
-          for (const f of listing.list) idMap.set(idToString(f.id), f);
+          for (const f of listing.list)
+            treeViewItemIdMap.set(f.treeViewItemId, f);
         });
       });
     }, [galleryListing]);
@@ -136,7 +144,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
       loading: () => null,
       error: (error) => <>{error}</>,
       success: (listing) =>
-        listing.tag === "list" ? (
+        listing.tag !== "empty" ? (
           <>
             {listing.list.map((f, i) =>
               filter(f) !== "hide" ? (
@@ -146,7 +154,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   path={[...path, file]}
                   section={section}
                   key={idToString(f.id)}
-                  idMap={idMap}
+                  treeViewItemIdMap={treeViewItemIdMap}
                   refreshListing={refreshListing}
                   filter={filter}
                   disableDragAndDrop={disableDragAndDrop}
@@ -154,6 +162,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   orderBy={orderBy}
                   foldersOnly={foldersOnly}
                   disabled={filter(f) === "disabled"}
+                  refeshing={refeshing}
                 />
               ) : null
             )}
@@ -172,7 +181,7 @@ const CustomTreeItem = observer(
     index,
     path,
     section,
-    idMap,
+    treeViewItemIdMap,
     refreshListing,
     filter,
     disableDragAndDrop,
@@ -180,12 +189,13 @@ const CustomTreeItem = observer(
     sortOrder,
     foldersOnly,
     disabled,
+    refeshing,
   }: {|
     file: GalleryFile,
     index: number,
     path: $ReadOnlyArray<GalleryFile>,
     section: GallerySection,
-    idMap: Map<string, GalleryFile>,
+    treeViewItemIdMap: Map<string, GalleryFile>,
     refreshListing: () => Promise<void>,
     filter: (GalleryFile) => "hide" | "enabled" | "disabled",
     disableDragAndDrop?: boolean,
@@ -193,6 +203,7 @@ const CustomTreeItem = observer(
     sortOrder: "DESC" | "ASC",
     foldersOnly: boolean,
     disabled: boolean,
+    refeshing: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -310,7 +321,6 @@ const CustomTreeItem = observer(
               {file.name}
             </Box>
           }
-          slots={{ groupTransition: CustomTransition }}
           /*
            * These are for dragging files from outside the browser
            */
@@ -360,13 +370,14 @@ const CustomTreeItem = observer(
               file={file}
               path={path}
               section={section}
-              idMap={idMap}
+              treeViewItemIdMap={treeViewItemIdMap}
               refreshListing={refreshListing}
               filter={filter}
               disableDragAndDrop={disableDragAndDrop}
               sortOrder={sortOrder}
               orderBy={orderBy}
               foldersOnly={foldersOnly}
+              refeshing={refeshing}
             />
           )}
         </StyledTreeItem>
@@ -376,12 +387,18 @@ const CustomTreeItem = observer(
 );
 
 type TreeViewArgs = {|
-  listing: | {| tag: "empty", reason: string |}
+  /**
+   * The listing of files to display in the tree view. This component takes the
+   * whole FetchingData object so that it can display the loading and error
+   * states and doesn't lose the expanded state when the listing is refreshed.
+   */
+  listing: | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
+        refreshing: boolean,
       |},
   path: $ReadOnlyArray<GalleryFile>,
   selectedSection: GallerySection,
@@ -417,14 +434,30 @@ const TreeView = ({
   >([]);
 
   /*
-   * Problem is, this map only contains the root level files/folders
+   * Maps the item id used by the tree nodes to the actual file object. This is
+   * used to determine the file object that the user has selected in the tree.
    */
-  const idMap = useLocalObservable(() => {
+  const treeViewItemIdMap = useLocalObservable(() => {
     const map = new Map<string, GalleryFile>();
     if (listing.tag === "empty") return map;
-    for (const file of listing.list) map.set(idToString(file.id), file);
+    for (const file of listing.list) map.set(file.treeViewItemId, file);
     return map;
   });
+
+  React.useEffect(() => {
+    if (listing.tag === "empty") return;
+    runInAction(() => {
+      for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
+    });
+  }, [listing]);
+
+  /*
+   * TreeView does not like focussed nodes being removed, which is what happens
+   * when a drag-and-drop operation concludes. As such, we completely unmount
+   * the TreeView component when the listing is refreshed, and remount it when
+   * the listing is done refreshing. This is a bit of a hack, but it works.
+   */
+  if (listing.refreshing) return null;
 
   if (
     listing.tag === "empty" ||
@@ -442,7 +475,9 @@ const TreeView = ({
         >
           <div>
             <PlaceholderLabel>
-              {listing.reason ?? "There are no folders."}
+              {listing.refreshing
+                ? "Refreshing..."
+                : listing.reason ?? "There are no folders."}
             </PlaceholderLabel>
           </div>
         </Fade>
@@ -458,7 +493,7 @@ const TreeView = ({
       }}
       selectedItems={selection
         .asSet()
-        .map(({ id }) => idToString(id))
+        .map((file) => file.treeViewItemId)
         .toArray()}
       onItemSelectionToggle={(
         event,
@@ -502,7 +537,7 @@ const TreeView = ({
           return;
         }
         if (event.ctrlKey || event.metaKey) {
-          MapUtils.get(idMap, itemId).do((file) => {
+          MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
             if (selection.includes(file)) {
               selection.remove(file);
             } else {
@@ -514,14 +549,16 @@ const TreeView = ({
           // to do with a file of this type based on what services are
           // configured
           if (event.detail > 1) {
-            MapUtils.get(idMap, itemId).do((file) => {
+            MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
               primaryAction(file).do((action) => {
                 if (action.tag === "open") {
                   openFolder(file);
                   return;
                 }
                 if (action.tag === "image") {
-                  openImagePreview(action.downloadHref);
+                  void action.downloadHref().then((url) => {
+                    openImagePreview(url);
+                  });
                   return;
                 }
                 if (action.tag === "collabora") {
@@ -533,7 +570,9 @@ const TreeView = ({
                   return;
                 }
                 if (action.tag === "pdf") {
-                  openPdfPreview(action.downloadHref);
+                  void action.downloadHref().then((url) => {
+                    openPdfPreview(url);
+                  });
                   return;
                 }
                 if (action.tag === "aspose") {
@@ -543,7 +582,7 @@ const TreeView = ({
             });
           }
           if (selected) {
-            MapUtils.get(idMap, itemId).do((file) => {
+            MapUtils.get(treeViewItemIdMap, itemId).do((file) => {
               /*
                * If the user is just opening or closing the node that is
                * already selected, then this event handler will have been
@@ -571,7 +610,7 @@ const TreeView = ({
             path={path}
             key={idToString(file.id)}
             section={selectedSection}
-            idMap={idMap}
+            treeViewItemIdMap={treeViewItemIdMap}
             refreshListing={refreshListing}
             filter={filter}
             disableDragAndDrop={disableDragAndDrop}
@@ -579,6 +618,7 @@ const TreeView = ({
             orderBy={orderBy}
             foldersOnly={foldersOnly}
             disabled={filter(file) === "disabled"}
+            refeshing={listing.refreshing}
           />
         ) : null
       )}

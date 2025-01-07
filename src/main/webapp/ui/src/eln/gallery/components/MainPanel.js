@@ -273,7 +273,7 @@ const Path = ({
   const selection = useGallerySelection();
 
   return (
-    <StyledBreadcrumbs>
+    <StyledBreadcrumbs onFocus={onFocus} onBlur={onBlur} onKeyDown={onKeyDown}>
       <BreadcrumbLink
         section={section}
         clearPath={clearPath}
@@ -316,12 +316,13 @@ const GridView = observer(
     listing,
   }: {|
     listing:
-      | {| tag: "empty", reason: string |}
+      | {| tag: "empty", reason: string, refreshing: boolean |}
       | {|
           tag: "list",
           list: $ReadOnlyArray<GalleryFile>,
           totalHits: number,
           loadMore: Optional<() => Promise<void>>,
+          refreshing: boolean,
         |},
   |}) => {
     const dndContext = useDndContext();
@@ -392,7 +393,11 @@ const GridView = observer(
             }
           >
             <div>
-              <PlaceholderLabel>{listing.reason}</PlaceholderLabel>
+              <PlaceholderLabel>
+                {listing.refreshing
+                  ? "Refreshing..."
+                  : listing.reason ?? "There are no folders."}
+              </PlaceholderLabel>
             </div>
           </Fade>
         </div>
@@ -576,8 +581,10 @@ const GridView = observer(
                         return;
                       }
                       if (action.tag === "image") {
-                        openImagePreview(action.downloadHref, {
-                          caption: action.caption,
+                        void action.downloadHref().then((downloadHref) => {
+                          openImagePreview(downloadHref, {
+                            caption: action.caption,
+                          });
                         });
                         return;
                       }
@@ -590,7 +597,9 @@ const GridView = observer(
                         return;
                       }
                       if (action.tag === "pdf") {
-                        openPdfPreview(action.downloadHref);
+                        void action.downloadHref().then((downloadHref) => {
+                          openPdfPreview(downloadHref);
+                        });
                         return;
                       }
                       if (action.tag === "aspose") {
@@ -1055,12 +1064,13 @@ type GalleryMainPanelArgs = {|
   path: $ReadOnlyArray<GalleryFile>,
   clearPath: () => void,
   galleryListing: FetchingData.Fetched<
-    | {| tag: "empty", reason: string |}
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
         totalHits: number,
         loadMore: Optional<() => Promise<void>>,
+        refreshing: boolean,
       |}
   >,
   folderId: FetchingData.Fetched<Id>,
