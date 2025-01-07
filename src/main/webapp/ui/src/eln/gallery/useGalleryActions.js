@@ -35,7 +35,7 @@ export function folderDestination(folder: GalleryFile): Destination {
 export function useGalleryActions(): {|
   uploadFiles: (parentId: Id, files: $ReadOnlyArray<File>) => Promise<void>,
 
-  createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
+  createFolder: (parentId: Id, name: string) => Promise<void>,
   moveFiles: (RsSet<GalleryFile>) => {|
     to: ({|
       destination: Destination,
@@ -143,17 +143,13 @@ export function useGalleryActions(): {|
   }
 
   async function createFolder(
-    path: $ReadOnlyArray<GalleryFile>,
     parentId: Id,
     name: string
   ) {
-    const parentFolderId = ArrayUtils.last(path)
-      .map(({ id }) => idToString(id))
-      .orElse(idToString(parentId));
     try {
       const formData = new FormData();
       formData.append("folderName", name);
-      formData.append("parentId", parentFolderId);
+      formData.append("parentId", idToString(parentId));
       formData.append("isMedia", "true");
       const data = await galleryApi.post<FormData, mixed>(
         "createFolder",

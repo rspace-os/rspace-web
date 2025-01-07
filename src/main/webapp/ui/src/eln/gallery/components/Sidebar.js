@@ -233,7 +233,7 @@ const NewFolderMenuItem = ({
                 onClick={() => {
                   setSubmitting(true);
                   const fId = folderId.elseThrow();
-                  void createFolder(path, fId, name)
+                  void createFolder(fId, name)
                     .then(() => {
                       onDialogClose(true);
                     })
