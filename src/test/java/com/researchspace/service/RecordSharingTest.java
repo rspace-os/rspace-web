@@ -153,7 +153,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     addUsersToGroup(pi, labGroup, user, secondUser, thirdUser);
 
     Group secondLabGroup = createGroup("g2", secondGroupPi);
-    addUsersToGroup(secondGroupPi, secondLabGroup, secondGroupUser);
+    addUsersToGroup(secondGroupPi, secondLabGroup, user, secondGroupUser);
 
     // user creates a notebook and shares it with both groups for read
     logoutAndLoginAs(user);

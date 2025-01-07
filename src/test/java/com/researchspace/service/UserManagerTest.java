@@ -312,11 +312,29 @@ public class UserManagerTest extends SpringTransactionalTest {
     assertTrue(pi.isConnectedToGroup(group1));
     assertTrue(pi.isConnectedToGroup(group2));
 
-    // user who made an individual share is also added to connected users list
+    // add and remove user1 from group2, confirm still not connected to user3
+    logoutAndLoginAs(pi);
+    grpMgr.addUserToGroup(user1.getUsername(), group2.getId(), RoleInGroup.DEFAULT);
+    group2 = reloadGroup(group2);
+    grpMgr.removeUserFromGroup(user1.getUsername(), group2.getId(), pi);
+    group2 = reloadGroup(group2);
+    connectedUsers = userMgr.populateConnectedUserList(user1);
+    assertEquals(3, connectedUsers.size());
+    assertTrue(user1.isConnectedToUser(pi));
+    assertTrue(user1.isConnectedToUser(user2));
+    assertFalse(user1.isConnectedToUser(user3));
+
+    // add user1 to group2, then let user3 share with user1
+    grpMgr.addUserToGroup(user1.getUsername(), group2.getId(), RoleInGroup.DEFAULT);
+    group2 = reloadGroup(group2);
     logoutAndLoginAs(user3);
     StructuredDocument docD1 = createBasicDocumentInRootFolderWithText(user3, "test");
     shareRecordWithUser(user3, docD1, user1);
 
+    // due to individual share, user1 and user3 should stay connected even after user1 leaves the group
+    logoutAndLoginAs(pi);
+    grpMgr.removeUserFromGroup(user1.getUsername(), group2.getId(), pi);
+    group2 = reloadGroup(group2);
     connectedUsers = userMgr.populateConnectedUserList(user1);
     assertEquals(4, connectedUsers.size());
     assertTrue(user1.isConnectedToUser(user3)); // connected now through share
