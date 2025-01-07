@@ -768,7 +768,7 @@ function ActionsMenu({
               .orElseTry(() => FetchingData.getSuccessValue(folderId))
               .mapError(() => new Error("Current folder is not known"))
               .elseThrow();
-            await uploadFiles(file.path, idOfFolderThatFileIsIn, [newFile]);
+            await uploadFiles(idOfFolderThatFileIsIn, [newFile]);
             void refreshListing();
           } catch (e) {
             addAlert(

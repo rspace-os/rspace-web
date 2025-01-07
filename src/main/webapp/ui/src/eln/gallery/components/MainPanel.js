@@ -404,7 +404,7 @@ const FileCard = styled(
         const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
           useFileImportDropZone({
             onDrop: (files) => {
-              void uploadFiles([...file.path, file], file.id, files);
+              void uploadFiles(file.id, files);
               /*
                * No need to refresh the listing as the uploaded file has been
                * placed inside a folder into which the user cannot currently see
@@ -1159,7 +1159,7 @@ function GalleryMainPanel({
         const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(() => {
           throw new Error("Unknown folder id");
         });
-        await uploadFiles(path, fId, files);
+        await uploadFiles(fId, files);
         void refreshListing();
       }),
     });

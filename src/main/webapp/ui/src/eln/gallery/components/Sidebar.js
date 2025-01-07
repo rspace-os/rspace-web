@@ -160,7 +160,7 @@ const UploadMenuItem = ({
             hidden
             multiple
             onChange={({ target: { files } }) => {
-              void uploadFiles(path, fId, [...files]).then(() => {
+              void uploadFiles(fId, [...files]).then(() => {
                 onUploadComplete();
               });
             }}

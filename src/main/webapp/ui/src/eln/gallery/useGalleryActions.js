@@ -33,11 +33,8 @@ export function folderDestination(folder: GalleryFile): Destination {
 }
 
 export function useGalleryActions(): {|
-  uploadFiles: (
-    $ReadOnlyArray<GalleryFile>,
-    Id,
-    $ReadOnlyArray<File>
-  ) => Promise<void>,
+  uploadFiles: (parentId: Id, files: $ReadOnlyArray<File>) => Promise<void>,
+
   createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
   moveFiles: (RsSet<GalleryFile>) => {|
     to: ({|
@@ -82,11 +79,7 @@ export function useGalleryActions(): {|
     timeout: ONE_MINUTE_IN_MS,
   });
 
-  async function uploadFiles(
-    path: $ReadOnlyArray<GalleryFile>,
-    parentId: Id,
-    files: $ReadOnlyArray<File>
-  ) {
+  async function uploadFiles(parentId: Id, files: $ReadOnlyArray<File>) {
     const uploadingAlert = mkAlert({
       message: "Uploading...",
       variant: "notice",
@@ -94,15 +87,12 @@ export function useGalleryActions(): {|
     });
     addAlert(uploadingAlert);
 
-    const targetFolderId = ArrayUtils.last(path)
-      .map(({ id }) => idToString(id))
-      .orElse(idToString(parentId));
     try {
       const data = await Promise.all(
         files.map((file) => {
           const formData = new FormData();
           formData.append("xfile", file);
-          formData.append("targetFolderId", targetFolderId);
+          formData.append("targetFolderId", idToString(parentId));
           return galleryApi.post<FormData, mixed>("uploadFile", formData, {
             headers: {
               "Content-Type": "multipart/form-data",

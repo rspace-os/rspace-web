@@ -219,7 +219,7 @@ const CustomTreeItem = observer(
     const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
       useFileImportDropZone({
         onDrop: doNotAwait(async (files) => {
-          await uploadFiles([...file.path, file], file.id, files);
+          await uploadFiles(file.id, files);
           void refreshListing();
         }),
         disabled: !file.isFolder,
