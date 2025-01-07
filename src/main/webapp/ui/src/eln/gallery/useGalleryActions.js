@@ -39,7 +39,7 @@ export function useGalleryActions(): {|
     $ReadOnlyArray<File>
   ) => Promise<void>,
   createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
-  moveFiles: (Set<GalleryFile>) => {|
+  moveFiles: (RsSet<GalleryFile>) => {|
     to: ({|
       destination: Destination,
       section: string,
@@ -204,7 +204,7 @@ export function useGalleryActions(): {|
     }
   }
 
-  function moveFiles(files: Set<GalleryFile>): {|
+  function moveFiles(files: RsSet<GalleryFile>): {|
     to: ({|
       destination: Destination,
       section: string,
@@ -221,6 +221,16 @@ export function useGalleryActions(): {|
           | {| key: "folder", folder: GalleryFile |},
         section: string,
       |}): Promise<void> => {
+        if (files.some((f) => f.canBeMoved.isError)) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Failed to move files.",
+              message: "Some of the selected files cannot be moved.",
+            })
+          );
+          throw new Error("Some of the files cannot be moved");
+        }
         if (destination.key === "folder")
           return moveFiles(files).toDestinationWithFolder(
             section,
@@ -291,6 +301,16 @@ export function useGalleryActions(): {|
         section: string,
         destinationFolder: GalleryFile
       ): Promise<void> => {
+        if (files.some((f) => f.canBeMoved.isError)) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Failed to move files.",
+              message: "Some of the selected files cannot be moved.",
+            })
+          );
+          throw new Error("Some of the files cannot be moved");
+        }
         if (destinationFolder.isSnippetFolder) {
           addAlert(
             mkAlert({
@@ -438,7 +458,16 @@ export function useGalleryActions(): {|
   }
 
   async function deleteFiles(files: RsSet<GalleryFile>) {
-    if (files.some((f) => f.isSystemFolder)) return;
+    if (files.some((f) => f.canDelete.isError)) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to delete files.",
+          message: "Some of the selected files cannot be deleted.",
+        })
+      );
+      throw new Error("Some of the files cannot be deleted");
+    }
     if (files.every((f) => f instanceof Filestore)) {
       await Promise.all(files.filterClass(Filestore).map(deleteFilestore));
       return;
@@ -460,7 +489,16 @@ export function useGalleryActions(): {|
   }
 
   async function duplicateFiles(files: RsSet<GalleryFile>) {
-    if (files.some((f) => f.isSystemFolder)) return;
+    if (files.some((f) => f.canDuplicate.isError)) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to duplicate files.",
+          message: "Some of the selected files cannot be duplicated.",
+        })
+      );
+      throw new Error("Some of the files cannot be duplicated");
+    }
     const formData = new FormData();
     for (const file of files) {
       formData.append("idToCopy[]", idToString(file.id));
@@ -524,7 +562,16 @@ export function useGalleryActions(): {|
   }
 
   async function rename(file: GalleryFile, newName: string) {
-    if (file.isSystemFolder) return;
+    if (file.canRename.isError) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to rename file.",
+          message: "The selected file cannot be renamed.",
+        })
+      );
+      throw new Error("The file cannot be renamed");
+    }
     const renamingAlert = mkAlert({
       message: "Renaming...",
       variant: "notice",
@@ -584,7 +631,16 @@ export function useGalleryActions(): {|
     file: GalleryFile,
     newFile: File
   ) {
-    if (file.isSystemFolder) return;
+    if (file.canUploadNewVersion.isError) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to upload new version for the file.",
+          message: "A new version for this file cannot be set.",
+        })
+      );
+      throw new Error("The selected file cannot be updated with a new version");
+    }
     const formData = new FormData();
     formData.append("selectedMediaId", idToString(file.id));
     formData.append("xfile", newFile);
@@ -645,6 +701,22 @@ export function useGalleryActions(): {|
     file: GalleryFile,
     newDescription: Description
   ) {
+    if (
+      file.description.match({
+        missing: () => false,
+        empty: () => true,
+        present: () => true,
+      })
+    ) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to change file description.",
+          message: "The file does not have a description.",
+        })
+      );
+      throw new Error("The file does not have a description");
+    }
     const formData = new FormData();
     formData.append("recordId", idToString(file.id));
     formData.append(
