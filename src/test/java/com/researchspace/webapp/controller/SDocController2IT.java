@@ -561,12 +561,13 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
   public void testOpeningDocumentSharedIntoOthersNotebook()
       throws InterruptedException, RecordAccessDeniedException {
 
-    User pi = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
+    User pi = createAndSaveUser("pi" + getRandomName(8), Constants.PI_ROLE);
     User user = createAndSaveUser(getRandomName(10));
     User secondUser = createAndSaveUser(getRandomName(10));
-    initUsers(pi, user, secondUser);
+    User otherUser = createAndSaveUser(getRandomName(10));
+    initUsers(pi, user, secondUser, otherUser);
 
-    Group group = createGroupForUsersWithDefaultPi(pi, user, secondUser);
+    Group group = createGroupForPiAndUsers(pi, new User[] {pi, user, secondUser, otherUser});
     group = grpMgr.getGroup(group.getId());
 
     // pi creates notebook and shares for edit
@@ -580,11 +581,13 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "test");
     doc = shareRecordIntoGroupNotebook(doc, notebook, group, user).get().getShared().asStrucDoc();
 
-    // also shares it with another user, who is not in a group
-    User otherUser = createAndSaveUser(getRandomName(10));
+    // also shares it individually with other user, who is later removed from the group
     shareRecordWithUser(user, doc, otherUser);
+    logoutAndLoginAs(pi);
+    grpMgr.removeUserFromGroup(otherUser.getUsername(), group.getId(), pi);
 
     // for user, the doc should open it in document view
+    logoutAndLoginAs(user);
     String documentViewUrl = StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_VIEW_NAME;
     String notebookRedirectUrl = controller.redirectToNotebookView(doc, "");
     ModelAndView userOpensDocument =
