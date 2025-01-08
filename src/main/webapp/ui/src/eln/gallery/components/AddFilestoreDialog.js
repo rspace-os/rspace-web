@@ -25,6 +25,7 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useFilestoreLogin } from "./FilestoreLoginDialog";
+import Typography from "@mui/material/Typography";
 
 type AddFilestoreDialogArgs = {|
   open: boolean,
@@ -106,7 +107,16 @@ function FilesystemSelectionStep(props: {|
 
   return (
     <Step key="filesystemSelection" {...rest}>
-      <StepLabel>Select a Filesystem</StepLabel>
+      <StepLabel
+        optional={
+          <Typography variant="body2">
+            Your sysadmin needs to configure a file system before it appears
+            here.
+          </Typography>
+        }
+      >
+        Select a File system
+      </StepLabel>
       <StepContent>
         <RadioGroup
           value={selectedFilesystem.orElse(null)}
@@ -233,7 +243,17 @@ function FolderSelectionStep(props: {|
 
   return (
     <Step key="folderSelection" {...rest}>
-      <StepLabel>Select your Folder</StepLabel>
+      <StepLabel
+        optional={
+          <Typography variant="body2">
+            You can configure multiple Filestores from the same File system with
+            different top-level folders, to facilitate accessing deeply-nested
+            content.
+          </Typography>
+        }
+      >
+        Select the top-level Folder for the Filestore
+      </StepLabel>
       <StepContent>
         <SimpleTreeView
           expandedItems={expandedItems}
@@ -293,7 +313,15 @@ function NameStep(props: {|
   const [name, setName] = React.useState("");
   return (
     <Step key="name" {...rest}>
-      <StepLabel>Name the Filestore</StepLabel>
+      <StepLabel
+        optional={
+          <Typography variant="body2">
+            This name is used in RSpace to help you identify the Filestore.
+          </Typography>
+        }
+      >
+        Name the Filestore
+      </StepLabel>
       <StepContent>
         <TextField
           value={name}
