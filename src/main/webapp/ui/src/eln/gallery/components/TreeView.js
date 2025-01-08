@@ -38,6 +38,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { useFolderOpen } from "./OpenFolderProvider";
+import { GallerySelection } from "../useGallerySelection";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -602,26 +603,33 @@ const TreeView = ({
         }
       }}
     >
-      {listing.list.map((file, index) =>
-        filter(file) ? (
-          <CustomTreeItem
-            index={index}
-            file={file}
-            path={path}
-            key={idToString(file.id)}
-            section={selectedSection}
-            treeViewItemIdMap={treeViewItemIdMap}
-            refreshListing={refreshListing}
-            filter={filter}
-            disableDragAndDrop={disableDragAndDrop}
-            sortOrder={sortOrder}
-            orderBy={orderBy}
-            foldersOnly={foldersOnly}
-            disabled={filter(file) === "disabled"}
-            refeshing={listing.refreshing}
-          />
-        ) : null
-      )}
+      {/*
+       * We wrap the tree in a GallerySelection so that changes to the listings
+       * of each folder do not change the selection of the whole tree which is
+       * managed by the `selectedItems` prop above.
+       */}
+      <GallerySelection>
+        {listing.list.map((file, index) =>
+          filter(file) ? (
+            <CustomTreeItem
+              index={index}
+              file={file}
+              path={path}
+              key={idToString(file.id)}
+              section={selectedSection}
+              treeViewItemIdMap={treeViewItemIdMap}
+              refreshListing={refreshListing}
+              filter={filter}
+              disableDragAndDrop={disableDragAndDrop}
+              sortOrder={sortOrder}
+              orderBy={orderBy}
+              foldersOnly={foldersOnly}
+              disabled={filter(file) === "disabled"}
+              refeshing={listing.refreshing}
+            />
+          ) : null
+        )}
+      </GallerySelection>
       {listing.loadMore
         .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
         .orElse(null)}
