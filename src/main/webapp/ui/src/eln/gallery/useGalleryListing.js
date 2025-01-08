@@ -7,7 +7,11 @@ import * as Parsers from "../../util/parsers";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import { gallerySectionCollectiveNoun, type GallerySection } from "./common";
+import {
+  gallerySectionCollectiveNoun,
+  type GallerySection,
+  GALLERY_SECTION,
+} from "./common";
 import {
   filenameExceptExtension,
   justFilenameExtension,
@@ -1327,6 +1331,14 @@ export function useGalleryListing({
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: async () => {
       let newTotalHits: null | number = null;
+      if (section === GALLERY_SECTION.NETWORKFILES) {
+        if (path.length === 0) {
+          return getFilestores();
+        }
+        throw new Error(
+          "refreshListing is not implemented for filestore contents"
+        );
+      }
       try {
         const token = await getToken();
         setRefreshing(true);
