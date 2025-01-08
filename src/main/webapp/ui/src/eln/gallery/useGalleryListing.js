@@ -1053,6 +1053,8 @@ export function useGalleryListing({
       Parsers.isArray(data)
         .map((filestores) => filestores.length)
         .do(setTotalHits);
+
+      setTotalPages(1);
     } catch (e) {
       console.error(e);
     } finally {
@@ -1157,6 +1159,8 @@ export function useGalleryListing({
         .flatMap(Parsers.isArray)
         .map((filestores) => filestores.length)
         .do(setTotalHits);
+
+      setTotalPages(1);
     } catch (e) {
       console.error(e);
       if (
@@ -1269,6 +1273,7 @@ export function useGalleryListing({
 
   React.useEffect(() => {
     setPage(0);
+    setTotalPages(0);
     void getGalleryFiles();
   }, [searchTerm, path, sortOrder, orderBy]);
 
