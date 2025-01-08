@@ -1360,6 +1360,20 @@ export function useGalleryListing({
                     .do((th) => {
                       newTotalHits ??= th;
                     });
+                  const newTotalPages = Parsers.objectPath(
+                    ["data", "items", "totalPages"],
+                    data
+                  )
+                    .flatMap(Parsers.isNumber)
+                    .orElse(1);
+                  setTotalPages(newTotalPages);
+                  /*
+                   * After deleting some files, the number of pages may have
+                   * decreased and we don't want to keep making unnecessary
+                   * requests for empty pages.
+                   */
+                  setPage(Math.min(page, newTotalPages - 1));
+
                   return parseGalleryFiles(data, token);
                 })
             )
