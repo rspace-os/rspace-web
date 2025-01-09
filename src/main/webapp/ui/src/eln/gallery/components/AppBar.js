@@ -43,7 +43,7 @@ function GalleryAppBar({
   drawerOpen,
   sidebarId,
 }: GalleryAppBarArgs): Node {
-  const { isViewportVerySmall, isViewportSmall } = useViewportDimensions();
+  const { isViewportSmall } = useViewportDimensions();
   const [showTextfield, setShowTextfield] = React.useState(false);
   const searchTextfield = React.useRef();
 
@@ -71,7 +71,7 @@ function GalleryAppBar({
           <MenuIcon />
         </IconButton>
         <Box flexGrow={1}></Box>
-        {!isViewportVerySmall && (
+        {!isViewportSmall && (
           <Stack direction="row" spacing={1} sx={{ mx: 1 }}>
             <Button href="/workspace">Workspace</Button>
             <Button aria-current="page" href="/gallery">
@@ -81,7 +81,7 @@ function GalleryAppBar({
             <Button href="/apps">Apps</Button>
           </Stack>
         )}
-        {isViewportVerySmall && !showTextfield && (
+        {isViewportSmall && !showTextfield && (
           <IconButtonWithTooltip
             size="small"
             onClick={() => {
@@ -99,7 +99,7 @@ function GalleryAppBar({
             mx={1}
             sx={{
               flexGrow: isViewportSmall ? 1 : 0,
-              display: !isViewportVerySmall || showTextfield ? "block" : "none",
+              display: !isViewportSmall || showTextfield ? "block" : "none",
             }}
           >
             <form
@@ -113,12 +113,10 @@ function GalleryAppBar({
                 placeholder="Search"
                 sx={{
                   /*
-                   * This is so that it doesn't obscure the "Gallery" heading on
-                   * very small mobile viewports. 300px is arbitrary width that
-                   * does is smaller enough to not cause any overlapping issues.
+                   * 300px is just an arbitrary width so that the search box
+                   * doesn't fill the entire app bar as the viewport grows
                    */
                   maxWidth: isViewportSmall ? "100%" : 300,
-                  width: isViewportSmall ? "100%" : 300,
                 }}
                 value={searchTerm}
                 onChange={({ currentTarget: { value } }) =>
