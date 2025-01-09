@@ -248,6 +248,23 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   ? "rgb(0,0,0)"
                   : alpha(contrastTextColor, 0.2),
               },
+              [`& .${buttonClasses.root}`]: {
+                textTransform: "capitalize",
+                color: contrastTextColor,
+                border: accentedBorder,
+                borderColor: darken(accentedBackground, hoverDarkenCoefficient),
+                "&[href]": {
+                  cursor: "pointer",
+                  fontWeight: "500",
+                  letterSpacing: "0.02em",
+                  fontSize: "0.95rem",
+                  paddingTop: "0",
+                  paddingBottom: "0",
+                  [`&[aria-current="page"]`]: {
+                    borderBottomColor: contrastTextColor,
+                  },
+                },
+              },
             },
           },
         },

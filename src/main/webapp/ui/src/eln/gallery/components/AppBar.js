@@ -6,7 +6,6 @@ import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
 import useViewportDimensions from "../../../util/useViewportDimensions";
-import Typography from "@mui/material/Typography";
 import MenuIcon from "@mui/icons-material/Menu";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SearchIcon from "@mui/icons-material/Search";
@@ -18,6 +17,8 @@ import AccessibilityTips from "../../../components/AccessibilityTips";
 import HelpDocs from "../../../components/Help/HelpDocs";
 import HelpIcon from "@mui/icons-material/Help";
 import { observer } from "mobx-react-lite";
+import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -69,12 +70,17 @@ function GalleryAppBar({
         >
           <MenuIcon />
         </IconButton>
-        {(!isViewportVerySmall || !showTextfield) && (
-          <Typography variant="h6" noWrap component="h2">
-            Gallery
-          </Typography>
+        <Box flexGrow={1}></Box>
+        {!isViewportVerySmall && (
+          <Stack direction="row" spacing={1} sx={{ mx: 1 }}>
+            <Button href="/workspace">Workspace</Button>
+            <Button aria-current="page" href="/gallery">
+              Gallery
+            </Button>
+            <Button href="/inventory">Inventory</Button>
+            <Button href="/apps">Apps</Button>
+          </Stack>
         )}
-        <Box flexGrow={isViewportVerySmall && showTextfield ? 0 : 1}></Box>
         {isViewportVerySmall && !showTextfield && (
           <IconButtonWithTooltip
             size="small"
