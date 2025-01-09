@@ -18,7 +18,7 @@ import {
   idToString,
 } from "../useGalleryListing";
 import { useGalleryActions, folderDestination } from "../useGalleryActions";
-import { useGallerySelection } from "../useGallerySelection";
+import { useGallerySelection, GallerySelection } from "../useGallerySelection";
 import { doNotAwait } from "../../../util/Util";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
@@ -37,7 +37,6 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { useFolderOpen } from "./OpenFolderProvider";
-import { GallerySelection } from "../useGallerySelection";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
