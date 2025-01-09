@@ -19,6 +19,11 @@ import HelpIcon from "@mui/icons-material/Help";
 import { observer } from "mobx-react-lite";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -70,29 +75,58 @@ function GalleryAppBar({
         >
           <MenuIcon />
         </IconButton>
-        <Box flexGrow={1}></Box>
         {!isViewportSmall && (
-          <Stack direction="row" spacing={1} sx={{ mx: 1 }}>
-            <Button href="/workspace">Workspace</Button>
-            <Button aria-current="page" href="/gallery">
-              Gallery
-            </Button>
-            <Button href="/inventory">Inventory</Button>
-            <Button href="/apps">Apps</Button>
-          </Stack>
+          <>
+            <Box flexGrow={1}></Box>
+            <Stack direction="row" spacing={1} sx={{ mx: 1 }}>
+              <Button href="/workspace">Workspace</Button>
+              <Button aria-current="page" href="/gallery">
+                Gallery
+              </Button>
+              <Button href="/inventory">Inventory</Button>
+              <Button href="/apps">Apps</Button>
+            </Stack>
+          </>
         )}
         {isViewportSmall && !showTextfield && (
-          <IconButtonWithTooltip
-            size="small"
-            onClick={() => {
-              setShowTextfield(true);
-              setTimeout(() => {
-                searchTextfield.current?.focus();
-              }, 0);
-            }}
-            icon={<SearchIcon />}
-            title="Search this folder"
-          />
+          <>
+            <List
+              component="nav"
+              aria-label="Main Navigation"
+              disablePadding
+              sx={{ ml: 1 }}
+            >
+              <ListItemButton
+                dense
+                id="lock-button"
+                aria-haspopup="menu"
+                aria-controls="lock-menu"
+                {...(open
+                  ? {
+                      ["aria-expanded"]: "true",
+                    }
+                  : {})}
+                onClick={() => {}}
+              >
+                <ListItemText primary="Gallery" />
+                <ListItemIcon>
+                  <ArrowDropDownIcon />
+                </ListItemIcon>
+              </ListItemButton>
+            </List>
+            <Box flexGrow={1}></Box>
+            <IconButtonWithTooltip
+              size="small"
+              onClick={() => {
+                setShowTextfield(true);
+                setTimeout(() => {
+                  searchTextfield.current?.focus();
+                }, 0);
+              }}
+              icon={<SearchIcon />}
+              title="Search this folder"
+            />
+          </>
         )}
         {!hideSearch && (
           <Box

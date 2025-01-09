@@ -12,6 +12,7 @@ import { inputBaseClasses } from "@mui/material/InputBase";
 import { dividerClasses } from "@mui/material/Divider";
 import { listItemButtonClasses } from "@mui/material/ListItemButton";
 import { listItemIconClasses } from "@mui/material/ListItemIcon";
+import { listItemTextClasses } from "@mui/material/ListItemText";
 import { paperClasses } from "@mui/material/Paper";
 import { cardActionAreaClasses } from "@mui/material/CardActionArea";
 import { buttonClasses } from "@mui/material/Button";
@@ -262,6 +263,29 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   paddingBottom: "0",
                   [`&[aria-current="page"]`]: {
                     borderBottomColor: contrastTextColor,
+                  },
+                },
+              },
+              [`& .${listItemButtonClasses.root}`]: {
+                boxShadow: "unset",
+                backgroundColor: accentedBackground,
+                border: accentedBorder,
+                borderColor: darken(accentedBackground, hoverDarkenCoefficient),
+                padding: "0 12px",
+                borderRadius: "3px",
+                [`& .${listItemTextClasses.root}`]: {
+                  margin: "3px 0",
+                },
+                [`& .${listItemTextClasses.primary}`]: {
+                  fontWeight: "500",
+                  letterSpacing: "0.02em",
+                  fontSize: "0.95rem",
+                },
+                [`& .${listItemIconClasses.root}`]: {
+                  minWidth: "unset",
+                  [`& .${svgIconClasses.root}`]: {
+                    fontSize: "1.3em",
+                    marginLeft: "4px",
                   },
                 },
               },
