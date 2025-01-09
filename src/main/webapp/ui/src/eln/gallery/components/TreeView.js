@@ -253,13 +253,14 @@ const CustomTreeItem = observer(
       : {
           border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
         };
-    const inGroupBeingDraggedStyle: { [string]: string | number } = (
-      dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
-    ).hasWithEq(file, (a, b) => a.id === b.id)
-      ? {
-          opacity: 0.2,
-        }
-      : {};
+    /*
+     * In grid view we make the files being dragged mostly transparent so
+     * that it is obvious which items are being moved and that then cannot also
+     * be the destination of the move operation. It is not possible to do that
+     * here becuase TreeView does not have access to the GallerySelection of
+     * the whole listing as if it did then each folder would clear the
+     * selection when it loaded its content.
+     */
     const fileUploadDropping: { [string]: string | number } = over
       ? {
           border: SELECTED_OR_FOCUS_BORDER,
@@ -341,7 +342,6 @@ const CustomTreeItem = observer(
           {...attributes}
           style={{
             ...dropStyle,
-            ...inGroupBeingDraggedStyle,
             ...fileUploadDropping,
             borderRadius: "4px",
           }}
