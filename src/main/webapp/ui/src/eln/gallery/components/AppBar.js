@@ -48,7 +48,7 @@ function GalleryAppBar({
   drawerOpen,
   sidebarId,
 }: GalleryAppBarArgs): Node {
-  const { isViewportSmall } = useViewportDimensions();
+  const { isViewportVerySmall, isViewportSmall } = useViewportDimensions();
   const [showTextfield, setShowTextfield] = React.useState(false);
   const searchTextfield = React.useRef();
 
@@ -88,7 +88,7 @@ function GalleryAppBar({
             </Stack>
           </>
         )}
-        {isViewportSmall && !showTextfield && (
+        {isViewportSmall && (!isViewportVerySmall || !showTextfield) && (
           <>
             <List
               component="nav"
@@ -115,78 +115,89 @@ function GalleryAppBar({
               </ListItemButton>
             </List>
             <Box flexGrow={1}></Box>
-            <IconButtonWithTooltip
-              size="small"
-              onClick={() => {
-                setShowTextfield(true);
-                setTimeout(() => {
-                  searchTextfield.current?.focus();
-                }, 0);
-              }}
-              icon={<SearchIcon />}
-              title="Search this folder"
-            />
+            {!showTextfield && (
+              <IconButtonWithTooltip
+                size="small"
+                onClick={() => {
+                  setShowTextfield(true);
+                  setTimeout(() => {
+                    searchTextfield.current?.focus();
+                  }, 0);
+                }}
+                icon={<SearchIcon />}
+                title="Search this folder"
+              />
+            )}
           </>
         )}
         {!hideSearch && (
-          <Box
-            mx={1}
-            sx={{
-              flexGrow: isViewportSmall ? 1 : 0,
-              display: !isViewportSmall || showTextfield ? "block" : "none",
-            }}
-          >
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                setAppliedSearchTerm(searchTerm);
-                setShowTextfield(searchTerm !== "");
+          <>
+            <Box
+              flexGrow={1}
+              sx={{
+                //flexGrow: isViewportSmall ? 1 : 0,
+                display: isViewportSmall && showTextfield ? "block" : "none",
+              }}
+            ></Box>
+            <Box
+              mx={1}
+              sx={{
+                //flexGrow: isViewportSmall ? 1 : 0,
+                display: !isViewportSmall || showTextfield ? "block" : "none",
               }}
             >
-              <TextField
-                placeholder="Search"
-                sx={{
-                  /*
-                   * 300px is just an arbitrary width so that the search box
-                   * doesn't fill the entire app bar as the viewport grows
-                   */
-                  maxWidth: isViewportSmall ? "100%" : 300,
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setAppliedSearchTerm(searchTerm);
+                  setShowTextfield(searchTerm !== "");
                 }}
-                value={searchTerm}
-                onChange={({ currentTarget: { value } }) =>
-                  setSearchTerm(value)
-                }
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                  endAdornment:
-                    searchTerm !== "" ? (
-                      <IconButtonWithTooltip
-                        title="Clear"
-                        icon={<StyledCloseIcon />}
-                        size="small"
-                        onClick={() => {
-                          setSearchTerm("");
-                          setAppliedSearchTerm("");
-                          setShowTextfield(false);
-                        }}
-                      />
-                    ) : null,
-                }}
-                inputProps={{
-                  ref: searchTextfield,
-                  onBlur: () => {
-                    setSearchTerm(appliedSearchTerm);
-                    setShowTextfield(appliedSearchTerm !== "");
-                  },
-                  "aria-label": "Search current folder",
-                }}
-              />
-            </form>
-          </Box>
+              >
+                <TextField
+                  placeholder="Search"
+                  sx={{
+                    /*
+                     * 300px is just an arbitrary width so that the search box
+                     * doesn't fill the entire app bar as the viewport grows
+                     */
+                    maxWidth: isViewportSmall ? "100%" : 300,
+                  }}
+                  value={searchTerm}
+                  onChange={({ currentTarget: { value } }) =>
+                    setSearchTerm(value)
+                  }
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                    endAdornment:
+                      searchTerm !== "" ? (
+                        <IconButtonWithTooltip
+                          title="Clear"
+                          icon={<StyledCloseIcon />}
+                          size="small"
+                          onClick={() => {
+                            setSearchTerm("");
+                            setAppliedSearchTerm("");
+                            setShowTextfield(false);
+                          }}
+                        />
+                      ) : null,
+                  }}
+                  inputProps={{
+                    ref: searchTextfield,
+                    onBlur: () => {
+                      setSearchTerm(appliedSearchTerm);
+                      setShowTextfield(appliedSearchTerm !== "");
+                    },
+                    "aria-label": "Search current folder",
+                  }}
+                />
+              </form>
+            </Box>
+          </>
         )}
         <Box ml={1}>
           <AccessibilityTips
