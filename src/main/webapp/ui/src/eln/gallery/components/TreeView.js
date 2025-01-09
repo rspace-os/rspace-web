@@ -232,14 +232,7 @@ const CustomTreeItem = observer(
       disabled: disableDragAndDrop,
       id: file.id,
       data: {
-        /*
-         * If this `file` is one of the selected files then all of the selected
-         * files are to be moved by the drag operation. If it is not included
-         * then just move this file.
-         */
-        filesBeingMoved: selection.includes(file)
-          ? selection.asSet()
-          : new RsSet([file]),
+        fileBeingMoved: file,
       },
     });
     const dndContext = useDndContext();
