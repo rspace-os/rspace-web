@@ -24,7 +24,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ArgosAccentMenuItem from "../../../eln-dmp-integration/Argos/ArgosAccentMenuItem";
 import DMPOnlineAccentMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineAccentMenuItem";
 import DMPToolAccentMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
-import AccentMenuItem from "./AccentMenuItem";
+import AccentMenuItem from "../../../components/AccentMenuItem";
 import { type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import * as FetchingData from "../../../util/fetchingData";

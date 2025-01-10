@@ -2,7 +2,7 @@
 
 import React, { type Node } from "react";
 import DMPDialog from "./DMPDialog";
-import AccentMenuItem from "../../eln/gallery/components/AccentMenuItem";
+import AccentMenuItem from "../../components/AccentMenuItem";
 import ArgosIcon from "../../eln/apps/icons/Argos.svg";
 import { COLOR } from "../../eln/apps/integrations/Argos";
 import CardMedia from "@mui/material/CardMedia";

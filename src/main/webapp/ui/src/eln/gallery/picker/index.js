@@ -3,7 +3,7 @@
 import Dialog from "@mui/material/Dialog";
 import React, { type Node, type ElementConfig, type Ref } from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
-import AppBar from "../components/AppBar";
+import AppBar from "../../../components/AppBar";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";

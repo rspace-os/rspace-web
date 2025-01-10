@@ -2,7 +2,7 @@
 
 import React, { type Node } from "react";
 import DMPDialog from "./DMPDialog";
-import AccentMenuItem from "../../eln/gallery/components/AccentMenuItem";
+import AccentMenuItem from "../../components/AccentMenuItem";
 import DMPonlineIcon from "../../eln/apps/icons/dmponline.svg";
 import { COLOR } from "../../eln/apps/integrations/DMPonline";
 import CardMedia from "@mui/material/CardMedia";

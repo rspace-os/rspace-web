@@ -6,7 +6,7 @@ import ErrorBoundary from "../../components/ErrorBoundary";
 import { ThemeProvider, styled, lighten } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import { COLOR, SELECTED_OR_FOCUS_BLUE, GALLERY_SECTION } from "./common";
-import AppBar from "./components/AppBar";
+import AppBar from "../../components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
 import Box from "@mui/material/Box";

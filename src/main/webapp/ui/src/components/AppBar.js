@@ -5,16 +5,16 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
-import useViewportDimensions from "../../../util/useViewportDimensions";
+import useViewportDimensions from "../util/useViewportDimensions";
 import MenuIcon from "@mui/icons-material/Menu";
-import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import SearchIcon from "@mui/icons-material/Search";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import { styled } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
-import AccessibilityTips from "../../../components/AccessibilityTips";
-import HelpDocs from "../../../components/Help/HelpDocs";
+import AccessibilityTips from "./AccessibilityTips";
+import HelpDocs from "./Help/HelpDocs";
 import HelpIcon from "@mui/icons-material/Help";
 import { observer } from "mobx-react-lite";
 import Stack from "@mui/material/Stack";
@@ -33,14 +33,14 @@ import NotebookIcon from "@mui/icons-material/AutoStories";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import FlaskIcon from "@mui/icons-material/Science";
 import AppsIcon from "@mui/icons-material/AppRegistration";
-import { COLOR as GALLERY_COLOR } from "../common";
-import { COLOR as INVENTORY_COLOR } from "../../../Inventory/components/Layout/Sidebar";
+import { COLOR as GALLERY_COLOR } from "../eln/gallery/common";
+import { COLOR as INVENTORY_COLOR } from "../Inventory/components/Layout/Sidebar";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import MessageIcon from "@mui/icons-material/Message";
 import SettingsIcon from "@mui/icons-material/Settings";
 import PublicIcon from "@mui/icons-material/Public";
 import LogoutIcon from "@mui/icons-material/Logout";
-import JwtService from "../../../common/JwtService";
+import JwtService from "../common/JwtService";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,

@@ -7,7 +7,7 @@ import { COLOR, type GallerySection } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import { styled, useTheme, darken, lighten } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
-import AccentMenuItem from "./AccentMenuItem";
+import AccentMenuItem from "../../../components/AccentMenuItem";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
