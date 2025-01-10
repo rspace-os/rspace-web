@@ -141,6 +141,7 @@ const Picker = observer(
                 aria-label="Gallery Picker"
               >
                 <AppBar
+                  currentPage="Gallery"
                   appliedSearchTerm={appliedSearchTerm}
                   setAppliedSearchTerm={setAppliedSearchTerm}
                   hideSearch={selectedSection === "NetworkFiles"}

@@ -35,6 +35,7 @@ import FlaskIcon from "@mui/icons-material/Science";
 import AppsIcon from "@mui/icons-material/AppRegistration";
 import { COLOR as GALLERY_COLOR } from "../eln/gallery/common";
 import { COLOR as INVENTORY_COLOR } from "../Inventory/components/Layout/Sidebar";
+import { COLOR as APPS_COLOR } from "../eln/apps/App";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import MessageIcon from "@mui/icons-material/Message";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -49,6 +50,7 @@ const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
 }));
 
 type GalleryAppBarArgs = {|
+  currentPage: "Apps" | "Gallery",
   appliedSearchTerm: string,
   setAppliedSearchTerm: (string) => void,
   setDrawerOpen: (boolean) => void,
@@ -58,6 +60,7 @@ type GalleryAppBarArgs = {|
 |};
 
 function GalleryAppBar({
+  currentPage,
   appliedSearchTerm,
   setAppliedSearchTerm,
   hideSearch,
@@ -103,11 +106,19 @@ function GalleryAppBar({
             <Box flexGrow={1}></Box>
             <Stack direction="row" spacing={1} sx={{ mx: 1 }}>
               <Button href="/workspace">Workspace</Button>
-              <Button aria-current="page" href="/gallery">
+              <Button
+                aria-current={currentPage === "Gallery" ? "page" : "false"}
+                href="/gallery"
+              >
                 Gallery
               </Button>
               <Button href="/inventory">Inventory</Button>
-              <Button href="/apps">Apps</Button>
+              <Button
+                aria-current={currentPage === "Apps" ? "page" : "false"}
+                href="/apps"
+              >
+                Apps
+              </Button>
             </Stack>
           </>
         )}
@@ -133,7 +144,7 @@ function GalleryAppBar({
                   setAppMenuAnchorEl(event.currentTarget);
                 }}
               >
-                <ListItemText primary="Gallery" />
+                <ListItemText primary={currentPage} />
                 <ListItemIcon>
                   <ArrowDropDownIcon />
                 </ListItemIcon>
@@ -213,16 +224,8 @@ function GalleryAppBar({
                 title="Apps"
                 avatar={<AppsIcon />}
                 subheader="Integrations and third-party applications"
-                foregroundColor={{
-                  hue: 200,
-                  saturation: 10,
-                  lightness: 20,
-                }}
-                backgroundColor={{
-                  hue: 200,
-                  saturation: 10,
-                  lightness: 70,
-                }}
+                foregroundColor={APPS_COLOR.contrastText}
+                backgroundColor={APPS_COLOR.main}
                 onClick={() => {
                   window.location = "/apps";
                   handleAppMenuClose();
@@ -230,7 +233,7 @@ function GalleryAppBar({
               />
             </Menu>
             <Box flexGrow={1}></Box>
-            {!showTextfield && (
+            {!showTextfield && !hideSearch && (
               <IconButtonWithTooltip
                 size="small"
                 onClick={() => {

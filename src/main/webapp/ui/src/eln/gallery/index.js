@@ -69,6 +69,7 @@ const WholePage = styled(() => {
         <CallableAsposePreview>
           <OpenFolderProvider setPath={setPath}>
             <AppBar
+              currentPage="Gallery"
               appliedSearchTerm={appliedSearchTerm}
               setAppliedSearchTerm={setAppliedSearchTerm}
               hideSearch={selectedSection === "NetworkFiles"}
