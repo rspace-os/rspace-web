@@ -2,7 +2,22 @@ This document records significant changes to RSpace.
 It includes a summary of new features, bugfixes and server-side configuration changes.
 The intended audience is on-prem RSpace technical administrators who maintain RSpace.
 
-You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog 
+You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
+
+# 2.6.0 2025-01-10
+
+### ELN Features
+
+- RSDEV-359 DMPOnline integration with new oauth authentication flow
+- RSDEV-445 improved performance of sharing/autosharing with group(s) having a lot of users
+
+### ELN Bugfix
+
+- RSDEV-425 more robust permission checks when sharing, to stop the possibility of sharing with unrelated users/groups
+
+### Inventory Features
+
+- RSDEV-294, RSDEV-342, RSDEV-434 various updates to 'Browse Gallery' dialog, including new 'Filestores' section
 
 # 2.5.0 2024-12-06
 
@@ -12,9 +27,9 @@ You can find official changelog at https://documentation.researchspace.com/artic
 
 ### ELN Bugfix
 
-- RSDEV-425: update OneDrive integration to make it work with latest OneDrive API 
-- RSDEV-418: fix delivery of notifications for some types of PDF export problems   
-- RSDEV-411: fix problem with PDF export of documents having html-entity char sequence in document name
+- RSDEV-425 update OneDrive integration to make it work with latest OneDrive API
+- RSDEV-418 fix delivery of notifications for some types of PDF export problems
+- RSDEV-411 fix problem with PDF export of documents having html-entity char sequence in document name
 
 ### Inventory Features
 
@@ -53,7 +68,7 @@ You can find official changelog at https://documentation.researchspace.com/artic
 
 - RSDEV-174 Gallery files can be now attached to Inventory items
 - RSDEV-292 new API endpoint for retrieving images/thumbnails by their contentsHash, for better performance
-- RSDEV-308 UX improvments around subsample deletion
+- RSDEV-308 UX improvements around subsample deletion
 - RSDEV-340 persisting more of UI state, e.g. single-column toggle
 
 # 2.2.0 2024-08-30
@@ -77,7 +92,7 @@ You can find official changelog at https://documentation.researchspace.com/artic
 ### ELN Features
 
 - RSDEV-258 reactivated Google Drive integration
-- RSDEV-301, RSDEV-302 enhancements to table inserted with PyRAT integration 
+- RSDEV-301, RSDEV-302 enhancements to table inserted with PyRAT integration
 
 ### ELN Bugfix
 - it should no longer be possible for sysadmin to see user's API key (https://github.com/rspace-os/rspace-web/issues/73)
@@ -104,11 +119,11 @@ Additionally: all rspace-os dependencies required for building 2.1.0 version are
 
 # 2.0.0 2024-06-26
 
-- first public release of open-source RSpace 
+- first public release of open-source RSpace
 
 # 2.0.0-RC2 2024-06-25
 
-- all project dependencies updated to versions available at https://github.com/rspace-os/ repos 
+- all project dependencies updated to versions available at https://github.com/rspace-os/ repos
 
 # 2.0.0-RC1 2024-06-04
 
