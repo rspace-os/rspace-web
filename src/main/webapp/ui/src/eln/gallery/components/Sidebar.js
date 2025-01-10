@@ -51,6 +51,7 @@ import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import AddFilestoreDialog from "./AddFilestoreDialog";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -189,6 +190,7 @@ const NewFolderMenuItem = ({
   const [name, setName] = React.useState("");
   const { createFolder } = useGalleryActions();
   const [submitting, setSubmitting] = React.useState(false);
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   return (
     <>
@@ -232,6 +234,7 @@ const NewFolderMenuItem = ({
                   void createFolder(fId, name)
                     .then(() => {
                       onDialogClose(true);
+                      trackEvent("user:create:folder:gallery");
                     })
                     .finally(() => {
                       setSubmitting(false);
