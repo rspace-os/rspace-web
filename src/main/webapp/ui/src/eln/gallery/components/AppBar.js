@@ -23,15 +23,24 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
+import Divider from "@mui/material/Divider";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import Menu, { menuClasses } from "@mui/material/Menu";
 import AccentMenuItem from "./AccentMenuItem";
+import MenuItem from "@mui/material/MenuItem";
+import ListItem from "@mui/material/ListItem";
 import NotebookIcon from "@mui/icons-material/AutoStories";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import FlaskIcon from "@mui/icons-material/Science";
 import AppsIcon from "@mui/icons-material/AppRegistration";
 import { COLOR as GALLERY_COLOR } from "../common";
 import { COLOR as INVENTORY_COLOR } from "../../../Inventory/components/Layout/Sidebar";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import MessageIcon from "@mui/icons-material/Message";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import SettingsIcon from "@mui/icons-material/Settings";
+import PublicIcon from "@mui/icons-material/Public";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -63,6 +72,8 @@ function GalleryAppBar({
   function handleAppMenuClose() {
     setAppMenuAnchorEl(null);
   }
+  const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
+    React.useState<null | EventTarget>(null);
 
   /*
    * We use a copy of the search term string so that edits the user makes are
@@ -113,7 +124,7 @@ function GalleryAppBar({
                 id="app-menu-button"
                 aria-haspopup="menu"
                 aria-controls="app-menu"
-                {...(open
+                {...(appMenuAnchorEl
                   ? {
                       ["aria-expanded"]: "true",
                     }
@@ -135,6 +146,7 @@ function GalleryAppBar({
               onClose={handleAppMenuClose}
               MenuListProps={{
                 "aria-labelledby": "app-menu-button",
+                disablePadding: true,
               }}
               anchorOrigin={{
                 vertical: "bottom",
@@ -302,6 +314,96 @@ function GalleryAppBar({
             </Box>
           </>
         )}
+        <Box ml={1}>
+          <IconButtonWithTooltip
+            size="small"
+            onClick={(event) => {
+              setAccountMenuAnchorEl(event.currentTarget);
+            }}
+            icon={<AccountCircleIcon />}
+            title="Account Menu"
+            id="account-menu-button"
+            aria-haspopup="menu"
+            aria-controls="account-menu"
+            {...(accountMenuAnchorEl
+              ? {
+                  ["aria-expanded"]: "true",
+                }
+              : {})}
+          />
+          <Menu
+            id="account-menu"
+            anchorEl={accountMenuAnchorEl}
+            open={Boolean(accountMenuAnchorEl)}
+            onClose={() => {
+              setAccountMenuAnchorEl(null);
+            }}
+            MenuListProps={{
+              "aria-labelledby": "account-menu-button",
+              //disablePadding: true,
+              sx: { pt: 0.5 },
+            }}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "left",
+            }}
+            sx={{
+              [`.${menuClasses.paper}`]: {
+                /*
+                 * Generally we don't add box shadows to menus, but we do add
+                 * box shadows to popups opened from the app bar to make them
+                 * hover over the page's content.
+                 */
+                boxShadow:
+                  "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
+              },
+            }}
+          >
+            <ListItem sx={{ py: 0 }}>
+              <ListItemText
+                sx={{ mt: 0.5 }}
+                primary="Joe Bloggs"
+                secondary="ORCID: -----"
+              />
+            </ListItem>
+            <Divider sx={{ my: 0.5 }} />
+            <MenuItem>
+              <ListItemIcon>
+                <MessageIcon />
+              </ListItemIcon>
+              <ListItemText primary="Messages" />
+            </MenuItem>
+            <MenuItem>
+              <ListItemIcon>
+                <NotificationsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Notifications" />
+            </MenuItem>
+            <MenuItem>
+              <ListItemIcon>
+                <SettingsIcon />
+              </ListItemIcon>
+              <ListItemText primary="My RSpace" />
+            </MenuItem>
+            <MenuItem>
+              <ListItemIcon>
+                <PublicIcon />
+              </ListItemIcon>
+              <ListItemText primary="Published" />
+            </MenuItem>
+            <Divider />
+            <MenuItem>
+              <ListItemIcon>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText primary="Log Out" />
+            </MenuItem>
+          </Menu>
+        </Box>
         <Box ml={1}>
           <AccessibilityTips
             elementType="dialog"
