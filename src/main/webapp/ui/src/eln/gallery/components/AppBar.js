@@ -37,7 +37,6 @@ import { COLOR as GALLERY_COLOR } from "../common";
 import { COLOR as INVENTORY_COLOR } from "../../../Inventory/components/Layout/Sidebar";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import MessageIcon from "@mui/icons-material/Message";
-import NotificationsIcon from "@mui/icons-material/Notifications";
 import SettingsIcon from "@mui/icons-material/Settings";
 import PublicIcon from "@mui/icons-material/Public";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -372,25 +371,34 @@ function GalleryAppBar({
               />
             </ListItem>
             <Divider sx={{ my: 0.5 }} />
-            <MenuItem>
+            <MenuItem
+              onClick={() => {
+                setAccountMenuAnchorEl(null);
+                window.location = "/dashboard";
+              }}
+            >
               <ListItemIcon>
                 <MessageIcon />
               </ListItemIcon>
-              <ListItemText primary="Messages" />
+              <ListItemText primary="Messaging" />
             </MenuItem>
-            <MenuItem>
-              <ListItemIcon>
-                <NotificationsIcon />
-              </ListItemIcon>
-              <ListItemText primary="Notifications" />
-            </MenuItem>
-            <MenuItem>
+            <MenuItem
+              onClick={() => {
+                setAccountMenuAnchorEl(null);
+                window.location = "/userform";
+              }}
+            >
               <ListItemIcon>
                 <SettingsIcon />
               </ListItemIcon>
               <ListItemText primary="My RSpace" />
             </MenuItem>
-            <MenuItem>
+            <MenuItem
+              onClick={() => {
+                setAccountMenuAnchorEl(null);
+                window.location = "/public/publishedView/publishedDocuments";
+              }}
+            >
               <ListItemIcon>
                 <PublicIcon />
               </ListItemIcon>
