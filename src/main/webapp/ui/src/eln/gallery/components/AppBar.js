@@ -41,6 +41,7 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import SettingsIcon from "@mui/icons-material/Settings";
 import PublicIcon from "@mui/icons-material/Public";
 import LogoutIcon from "@mui/icons-material/Logout";
+import JwtService from "../../../common/JwtService";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -396,7 +397,13 @@ function GalleryAppBar({
               <ListItemText primary="Published" />
             </MenuItem>
             <Divider />
-            <MenuItem>
+            <MenuItem
+              onClick={() => {
+                JwtService.destroyToken();
+                setAccountMenuAnchorEl(null);
+                window.location = "/logout";
+              }}
+            >
               <ListItemIcon>
                 <LogoutIcon />
               </ListItemIcon>
