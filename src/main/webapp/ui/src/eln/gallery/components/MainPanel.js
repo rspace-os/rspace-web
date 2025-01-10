@@ -269,6 +269,7 @@ const BreadcrumbLink = React.forwardRef<
     const dndContext = useDndContext();
     const dndInProgress = Boolean(dndContext.active);
     const { openFolder } = useFolderOpen();
+    const { trackEvent } = React.useContext(AnalyticsContext);
 
     return (
       <StyledBreadcrumb
@@ -277,6 +278,7 @@ const BreadcrumbLink = React.forwardRef<
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          trackEvent("user:tap:breadcrumb:gallery");
           if (folder) {
             openFolder(folder);
           } else {
