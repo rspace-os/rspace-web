@@ -24,7 +24,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import Menu from "@mui/material/Menu";
+import Menu, { menuClasses } from "@mui/material/Menu";
 import AccentMenuItem from "./AccentMenuItem";
 import NotebookIcon from "@mui/icons-material/AutoStories";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
@@ -143,6 +143,17 @@ function GalleryAppBar({
               transformOrigin={{
                 vertical: "top",
                 horizontal: "left",
+              }}
+              sx={{
+                [`.${menuClasses.paper}`]: {
+                  /*
+                   * Generally we don't add box shadows to menus, but we do add
+                   * box shadows to popups opened from the app bar to make them
+                   * hover over the page's content.
+                   */
+                  boxShadow:
+                    "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
+                },
               }}
             >
               <AccentMenuItem
