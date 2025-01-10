@@ -119,6 +119,7 @@ const UploadMenuItem = ({
 |}) => {
   const { uploadFiles } = useGalleryActions();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   /*
    * This is necessary because React does not yet support the new cancel event
@@ -161,6 +162,7 @@ const UploadMenuItem = ({
             onChange={({ target: { files } }) => {
               void uploadFiles(fId, [...files]).then(() => {
                 onUploadComplete();
+                trackEvent("user:uploaded:file:gallery");
               });
             }}
             type="file"
