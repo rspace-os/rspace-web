@@ -1543,16 +1543,15 @@ function GalleryMainPanel({
                       ])()}
                       onClick={() => {
                         setSortMenuAnchorEl(null);
-                        if (orderBy === "name") {
-                          if (sortOrder === "ASC") {
-                            setSortOrder("DESC");
-                          } else {
-                            setSortOrder("ASC");
-                          }
-                        } else {
-                          setOrderBy("name");
-                          setSortOrder("ASC");
-                        }
+                        let newSortOrder = "ASC";
+                        if (orderBy === "name" && sortOrder === "ASC")
+                          newSortOrder = "DESC";
+                        setSortOrder(newSortOrder);
+                        setOrderBy("name");
+                        trackEvent("user:change:sorting:gallery", {
+                          sortOrder: newSortOrder,
+                          orderBy: "name",
+                        });
                       }}
                     />
                     <AccentMenuItem
@@ -1590,16 +1589,18 @@ function GalleryMainPanel({
                       ])()}
                       onClick={() => {
                         setSortMenuAnchorEl(null);
-                        if (orderBy === "modificationDate") {
-                          if (sortOrder === "ASC") {
-                            setSortOrder("DESC");
-                          } else {
-                            setSortOrder("ASC");
-                          }
-                        } else {
-                          setOrderBy("modificationDate");
-                          setSortOrder("ASC");
-                        }
+                        let newSortOrder = "ASC";
+                        if (
+                          orderBy === "modificationDate" &&
+                          sortOrder === "ASC"
+                        )
+                          newSortOrder = "DESC";
+                        setSortOrder(newSortOrder);
+                        setOrderBy("modificationDate");
+                        trackEvent("user:change:sorting:gallery", {
+                          sortOrder: newSortOrder,
+                          orderBy: "modificationDate",
+                        });
                       }}
                     />
                   </StyledMenu>
