@@ -27,3 +27,7 @@ Thank you for your interest in the RSpace open-source project! We're excited to 
 # Getting in touch
 - Various ways of connecting and communicating with the RSpace open source project can be found on this [wiki page](https://github.com/rspace-os/rspace-web/wiki/Contact).
 - For inquiries about Research Space's enterprise solutions, please visit the Research Space website [here](https://www.researchspace.com/pricing).
+
+<HR>
+
+[![DOI](https://zenodo.org/badge/809392922.svg)](https://doi.org/10.5281/zenodo.14628345)
