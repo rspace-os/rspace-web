@@ -1239,7 +1239,7 @@ function GalleryMainPanel({
                     size="small"
                     startIcon={<TreeIcon />}
                     onClick={(e) => {
-                      setViewMenuAnchorEl(e.target);
+                      setViewMenuAnchorEl(e.currentTarget);
                     }}
                     aria-haspopup="menu"
                     aria-expanded={viewMenuAnchorEl ? "true" : "false"}
@@ -1301,7 +1301,7 @@ function GalleryMainPanel({
                     size="small"
                     startIcon={<SwapVertIcon />}
                     onClick={(e) => {
-                      setSortMenuAnchorEl(e.target);
+                      setSortMenuAnchorEl(e.currentTarget);
                     }}
                     aria-haspopup="menu"
                     aria-expanded={sortMenuAnchorEl ? "true" : "false"}

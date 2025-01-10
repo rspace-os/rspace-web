@@ -400,7 +400,7 @@ function FieldCard<
             <>
               <AddButton
                 disabled={!editable}
-                onClick={({ target }) => setAnchorEl(target)}
+                onClick={({ currentTarget }) => setAnchorEl(currentTarget)}
                 title={
                   editable
                     ? "Scan a barcode to associate."

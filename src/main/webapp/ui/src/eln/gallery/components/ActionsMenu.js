@@ -445,7 +445,7 @@ function ActionsMenu({
         aria-expanded={actionsMenuAnchorEl ? "true" : "false"}
         startIcon={<ChecklistIcon />}
         onClick={(e) => {
-          setActionsMenuAnchorEl(e.target);
+          setActionsMenuAnchorEl(e.currentTarget);
         }}
       >
         Actions

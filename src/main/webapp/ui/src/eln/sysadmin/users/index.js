@@ -220,7 +220,7 @@ const TagDialog = ({
                     color="primary"
                     skipFocusWhenDisabled
                     onClick={(e) => {
-                      setAnchorEl(e.target);
+                      setAnchorEl(e.currentTarget);
                     }}
                   />
                   <TagsCombobox
@@ -902,7 +902,7 @@ const SelectionActions = ({
                 }}
                 startIcon={<ChecklistIcon />}
                 onClick={(e) => {
-                  setActionsAnchorEl(e.target);
+                  setActionsAnchorEl(e.currentTarget);
                 }}
                 aria-label="Actions menu for selected rows"
                 aria-haspopup="menu"
@@ -1265,7 +1265,7 @@ const Toolbar = ({
           color={tagsChecked && tags.length > 0 ? "primary" : "standardIcon"}
           startIcon={<FilterListIcon />}
           onClick={(e) => {
-            setFilterAnchorEl(e.target);
+            setFilterAnchorEl(e.currentTarget);
           }}
           aria-label="Filter users"
           aria-haspopup="dialog"
@@ -1340,7 +1340,7 @@ const Toolbar = ({
                         color="primary"
                         skipFocusWhenDisabled
                         onClick={(e) => {
-                          setTagsComboboxAnchorEl(e.target);
+                          setTagsComboboxAnchorEl(e.currentTarget);
                         }}
                         disabled={!tagsChecked}
                       />
@@ -1612,7 +1612,7 @@ export const UsersPage = (): Node => {
               params.value.length === 1 ? "" : "s"
             }`}
             onDelete={(e) => {
-              setGroupsAnchorEl(e.target);
+              setGroupsAnchorEl(e.currentTarget);
               setGroupsList(params.value);
             }}
             deleteIcon={
@@ -1647,7 +1647,7 @@ export const UsersPage = (): Node => {
               params.value.length === 1 ? "" : "s"
             }`}
             onDelete={(e) => {
-              setTagsAnchorEl(e.target);
+              setTagsAnchorEl(e.currentTarget);
               setTagsList(params.value);
             }}
             deleteIcon={

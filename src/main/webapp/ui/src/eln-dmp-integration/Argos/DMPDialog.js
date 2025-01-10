@@ -175,7 +175,7 @@ const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
       <DropdownButton
         name={name}
         onClick={(e) => {
-          setAnchorEl(e.target);
+          setAnchorEl(e.currentTarget);
         }}
       >
         <Panel
