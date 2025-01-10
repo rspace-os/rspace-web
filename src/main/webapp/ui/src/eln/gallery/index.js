@@ -124,7 +124,14 @@ const WholePage = styled(() => {
                   setSortOrder={setSortOrder}
                   setOrderBy={setOrderBy}
                   appliedSearchTerm={appliedSearchTerm}
-                  setAppliedSearchTerm={setAppliedSearchTerm}
+                  setAppliedSearchTerm={(newTerm) => {
+                    if (path.length > 0) {
+                      trackEvent("user:search:folder:gallery");
+                    } else {
+                      trackEvent("user:search:section:gallery");
+                    }
+                    setAppliedSearchTerm(newTerm);
+                  }}
                 />
               </Box>
             </Box>
