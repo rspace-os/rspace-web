@@ -24,6 +24,8 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -51,6 +53,10 @@ function GalleryAppBar({
   const { isViewportVerySmall, isViewportSmall } = useViewportDimensions();
   const [showTextfield, setShowTextfield] = React.useState(false);
   const searchTextfield = React.useRef();
+  const [appMenuAnchorEl, setAppMenuAnchorEl] = React.useState(null);
+  function handleAppMenuClose() {
+    setAppMenuAnchorEl(null);
+  }
 
   /*
    * We use a copy of the search term string so that edits the user makes are
@@ -98,15 +104,17 @@ function GalleryAppBar({
             >
               <ListItemButton
                 dense
-                id="lock-button"
+                id="app-menu-button"
                 aria-haspopup="menu"
-                aria-controls="lock-menu"
+                aria-controls="app-menu"
                 {...(open
                   ? {
                       ["aria-expanded"]: "true",
                     }
                   : {})}
-                onClick={() => {}}
+                onClick={(event) => {
+                  setAppMenuAnchorEl(event.currentTarget);
+                }}
               >
                 <ListItemText primary="Gallery" />
                 <ListItemIcon>
@@ -114,6 +122,56 @@ function GalleryAppBar({
                 </ListItemIcon>
               </ListItemButton>
             </List>
+            <Menu
+              id="app-menu"
+              anchorEl={appMenuAnchorEl}
+              open={Boolean(appMenuAnchorEl)}
+              onClose={handleAppMenuClose}
+              MenuListProps={{
+                "aria-labelledby": "app-menu-button",
+              }}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "left",
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "left",
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  window.location = "/workspace";
+                  handleAppMenuClose();
+                }}
+              >
+                Workspace
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  window.location = "/gallery";
+                  handleAppMenuClose();
+                }}
+              >
+                Gallery
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  window.location = "/inventory";
+                  handleAppMenuClose();
+                }}
+              >
+                Inventory
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  window.location = "/apps";
+                  handleAppMenuClose();
+                }}
+              >
+                Apps
+              </MenuItem>
+            </Menu>
             <Box flexGrow={1}></Box>
             {!showTextfield && (
               <IconButtonWithTooltip
