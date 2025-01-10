@@ -25,7 +25,13 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
+import AccentMenuItem from "./AccentMenuItem";
+import NotebookIcon from "@mui/icons-material/AutoStories";
+import FileIcon from "@mui/icons-material/InsertDriveFile";
+import FlaskIcon from "@mui/icons-material/Science";
+import AppsIcon from "@mui/icons-material/AppRegistration";
+import { COLOR as GALLERY_COLOR } from "../common";
+import { COLOR as INVENTORY_COLOR } from "../../../Inventory/components/Layout/Sidebar";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -139,38 +145,66 @@ function GalleryAppBar({
                 horizontal: "left",
               }}
             >
-              <MenuItem
+              <AccentMenuItem
+                title="Workspace"
+                avatar={<NotebookIcon />}
+                subheader="Notebooks and documents"
+                foregroundColor={{
+                  hue: 120,
+                  saturation: 18,
+                  lightness: 20,
+                }}
+                backgroundColor={{
+                  hue: 120,
+                  saturation: 18,
+                  lightness: 71,
+                }}
                 onClick={() => {
                   window.location = "/workspace";
                   handleAppMenuClose();
                 }}
-              >
-                Workspace
-              </MenuItem>
-              <MenuItem
+              />
+              <AccentMenuItem
+                title="Gallery"
+                avatar={<FileIcon />}
+                subheader="Your files in RSpace and connected filestores"
+                foregroundColor={GALLERY_COLOR.contrastText}
+                backgroundColor={GALLERY_COLOR.main}
                 onClick={() => {
                   window.location = "/gallery";
                   handleAppMenuClose();
                 }}
-              >
-                Gallery
-              </MenuItem>
-              <MenuItem
+              />
+              <AccentMenuItem
+                title="Inventory"
+                avatar={<FlaskIcon />}
+                subheader="Samples and laboratory resources"
+                foregroundColor={INVENTORY_COLOR.contrastText}
+                backgroundColor={INVENTORY_COLOR.main}
                 onClick={() => {
                   window.location = "/inventory";
                   handleAppMenuClose();
                 }}
-              >
-                Inventory
-              </MenuItem>
-              <MenuItem
+              />
+              <AccentMenuItem
+                title="Apps"
+                avatar={<AppsIcon />}
+                subheader="Integrations and third-party applications"
+                foregroundColor={{
+                  hue: 200,
+                  saturation: 10,
+                  lightness: 20,
+                }}
+                backgroundColor={{
+                  hue: 200,
+                  saturation: 10,
+                  lightness: 70,
+                }}
                 onClick={() => {
                   window.location = "/apps";
                   handleAppMenuClose();
                 }}
-              >
-                Apps
-              </MenuItem>
+              />
             </Menu>
             <Box flexGrow={1}></Box>
             {!showTextfield && (

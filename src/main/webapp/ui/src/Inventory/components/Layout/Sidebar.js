@@ -40,7 +40,10 @@ import { useTheme, ThemeProvider } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import createAccentedTheme from "../../../accentedTheme";
 
-const COLOR = {
+/**
+ * Theme colour for the Inventory part of the product
+ */
+export const COLOR = {
   main: {
     hue: 197,
     saturation: 50,
