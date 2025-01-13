@@ -1,12 +1,10 @@
 //@flow
 
-import React, { type Node, type ComponentType } from "react";
+import React, { type Node, type ComponentType, type Element } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
-import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
 import useViewportDimensions from "../../util/useViewportDimensions";
-import MenuIcon from "@mui/icons-material/Menu";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import SearchIcon from "@mui/icons-material/Search";
 import TextField from "@mui/material/TextField";
@@ -41,6 +39,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import PublicIcon from "@mui/icons-material/Public";
 import LogoutIcon from "@mui/icons-material/Logout";
 import JwtService from "../../common/JwtService";
+import SidebarToggle from "./SidebarToggle";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -52,10 +51,8 @@ type GalleryAppBarArgs = {|
   currentPage: "Apps" | "Gallery" | "Inventory",
   appliedSearchTerm: string,
   setAppliedSearchTerm: (string) => void,
-  setDrawerOpen: (boolean) => void,
   hideSearch: boolean,
-  drawerOpen: boolean,
-  sidebarId: string,
+  sidebarToggle?: Element<typeof SidebarToggle>,
 |};
 
 function GalleryAppBar({
@@ -63,9 +60,7 @@ function GalleryAppBar({
   appliedSearchTerm,
   setAppliedSearchTerm,
   hideSearch,
-  setDrawerOpen,
-  drawerOpen,
-  sidebarId,
+  sidebarToggle,
 }: GalleryAppBarArgs): Node {
   const { isViewportVerySmall, isViewportSmall } = useViewportDimensions();
   const [showTextfield, setShowTextfield] = React.useState(false);
@@ -90,16 +85,7 @@ function GalleryAppBar({
   return (
     <AppBar position="relative" open={true} aria-label="page header">
       <Toolbar variant="dense">
-        <IconButton
-          aria-label={drawerOpen ? "close drawer" : "open drawer"}
-          aria-controls={sidebarId}
-          aria-expanded={drawerOpen ? "true" : "false"}
-          onClick={() => {
-            setDrawerOpen(!drawerOpen);
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
+        {sidebarToggle}
         {!isViewportSmall && (
           <>
             <Box flexGrow={1}></Box>

@@ -26,6 +26,7 @@ import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
 import RsSet from "../../../util/set";
 import { DisableDragAndDropByDefault } from "../../../components/useFileImportDragAndDrop";
 import OpenFolderProvider from "../components/OpenFolderProvider";
+import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   zIndex: 1100, // less than the SwipeableDrawer so that mobile info panel is shown
@@ -145,9 +146,13 @@ const Picker = observer(
                   appliedSearchTerm={appliedSearchTerm}
                   setAppliedSearchTerm={setAppliedSearchTerm}
                   hideSearch={selectedSection === "NetworkFiles"}
-                  setDrawerOpen={setDrawerOpen}
-                  drawerOpen={drawerOpen}
-                  sidebarId={sidebarId}
+                  sidebarToggle={
+                    <SidebarToggle
+                      setSidebarOpen={setDrawerOpen}
+                      sidebarOpen={drawerOpen}
+                      sidebarId={sidebarId}
+                    />
+                  }
                 />
                 <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
                   <Sidebar

@@ -7,6 +7,7 @@ import AppBar from "../../../components/AppBar";
 import createAccentedTheme from "../../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
 import { COLOR } from "./Sidebar";
+import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 
 function Header(): Node {
   const { uiStore } = useStores();
@@ -22,9 +23,13 @@ function Header(): Node {
         appliedSearchTerm=""
         setAppliedSearchTerm={() => {}}
         hideSearch={true}
-        setDrawerOpen={handleToggleOpen}
-        drawerOpen={uiStore.sidebarOpen}
-        sidebarId={"foo"}
+        sidebarToggle={
+          <SidebarToggle
+            sidebarId={"foo"}
+            setSidebarOpen={handleToggleOpen}
+            sidebarOpen={uiStore.sidebarOpen}
+          />
+        }
       />
     </ThemeProvider>
   );

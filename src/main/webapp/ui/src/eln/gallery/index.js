@@ -31,6 +31,7 @@ import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
+import SidebarToggle from "../../components/AppBar/SidebarToggle";
 
 const WholePage = styled(() => {
   const [searchParams, setSelectedSection] = useSearchParamState({
@@ -73,9 +74,13 @@ const WholePage = styled(() => {
               appliedSearchTerm={appliedSearchTerm}
               setAppliedSearchTerm={setAppliedSearchTerm}
               hideSearch={selectedSection === "NetworkFiles"}
-              setDrawerOpen={setDrawerOpen}
-              drawerOpen={drawerOpen}
-              sidebarId={sidebarId}
+              sidebarToggle={
+                <SidebarToggle
+                  setSidebarOpen={setDrawerOpen}
+                  sidebarOpen={drawerOpen}
+                  sidebarId={sidebarId}
+                />
+              }
             />
             <Box
               sx={{ display: "flex", height: "calc(100% - 48px)" }}

@@ -28,7 +28,6 @@ import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { getByKey } from "../../util/optional";
-import { useDeploymentProperty } from "../useDeploymentProperty";
 import AppBar from "../../components/AppBar";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
@@ -158,9 +157,6 @@ function App(): Node {
             appliedSearchTerm={""}
             setAppliedSearchTerm={() => {}}
             hideSearch={true}
-            setDrawerOpen={() => {}}
-            drawerOpen={false}
-            sidebarId="no-sidebar"
           />
           <Grid container direction="row" spacing={1}>
             <Grid item xs={1} md={2}></Grid>
