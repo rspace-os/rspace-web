@@ -24,12 +24,12 @@ import useUiPreference, {
   PREFERENCES,
   UiPreferences,
 } from "../../util/useUiPreference";
-import RouterNavigationContext from "./components/RouterNavigationContext";
+import RouterNavigationProvider from "./components/RouterNavigationProvider";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
-import { FilestoreLoginContextualDialog } from "./components/FilestoreLoginDialog";
+import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
 
 const WholePage = styled(() => {
@@ -89,7 +89,6 @@ const WholePage = styled(() => {
                 }}
                 drawerOpen={drawerOpen}
                 setDrawerOpen={setDrawerOpen}
-                path={path}
                 folderId={folderId}
                 refreshListing={refreshListing}
                 id={sidebarId}
@@ -158,13 +157,13 @@ window.addEventListener("load", () => {
                           path="/newGallery"
                           element={
                             <Alerts>
-                              <RouterNavigationContext>
+                              <RouterNavigationProvider>
                                 <GallerySelection>
-                                  <FilestoreLoginContextualDialog>
+                                  <FilestoreLoginProvider>
                                     <WholePage />
-                                  </FilestoreLoginContextualDialog>
+                                  </FilestoreLoginProvider>
                                 </GallerySelection>
-                              </RouterNavigationContext>
+                              </RouterNavigationProvider>
                             </Alerts>
                           }
                         />

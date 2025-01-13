@@ -34,11 +34,20 @@ const OpenFolderContext = React.createContext({
   open: (_file: GalleryFile) => {},
 });
 
+/**
+ * A provider component for any part of the UI to open a folder in the listing
+ * that is manipulated by the passed `setPath` function.
+ */
 export default function OpenFolderProvider({
   children,
   setPath,
 }: {|
   children: Node,
+
+  /**
+   * Whenever the `open` function exposed by `useFolderOpen` is invoked, this
+   * function will be called with the new path.
+   */
   setPath: ($ReadOnlyArray<GalleryFile>) => void,
 |}): Node {
   return (
@@ -54,6 +63,11 @@ export default function OpenFolderProvider({
   );
 }
 
+/**
+ * A hook to get the function to open a folder in the listing that is
+ * manipulated by the `setPath` function passed to the nearest
+ * `OpenFolderProvider`.
+ */
 export function useFolderOpen(): {| openFolder: (GalleryFile) => void |} {
   const { open } = React.useContext(OpenFolderContext);
   return {

@@ -5,14 +5,13 @@
 /* eslint-env jest */
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import userEvent from "@testing-library/user-event";
 import { axe, toHaveNoViolations } from "jest-axe";
 import MainPanel from "../MainPanel";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-import { BrowserRouter, Navigate } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import page1 from "../../__tests__/getUploadedFiles_1";

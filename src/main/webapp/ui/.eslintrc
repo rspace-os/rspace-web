@@ -42,6 +42,11 @@
     "default-param-last": "warn",
     "dot-notation": "warn",
     "eqeqeq": "error",
+
+    // prettier adds in whitespace around code elements to break up long lines
+    "ft-flow/generic-spacing": ["off"],
+    "ft-flow/space-after-type-colon": ["off"],
+
     "guard-for-in": "error",
 
     // this raises a warning if an export doesn't have a comment

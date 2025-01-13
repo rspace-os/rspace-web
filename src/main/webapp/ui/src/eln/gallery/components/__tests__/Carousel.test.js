@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
+import { render, cleanup, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import Carousel from "../Carousel";
@@ -13,12 +13,6 @@ import { useGalleryListing } from "../../useGalleryListing";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import page1 from "../../__tests__/getUploadedFiles_1.json";
-import page2 from "../../__tests__/getUploadedFiles_2.json";
-import {
-  useGallerySelection,
-  GallerySelection,
-} from "../../useGallerySelection";
-import { observer } from "mobx-react-lite";
 
 beforeEach(() => {
   jest.clearAllMocks();

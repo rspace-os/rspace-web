@@ -21,11 +21,11 @@ import Button from "@mui/material/Button";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import AddIcon from "@mui/icons-material/Add";
-import ArgosNewMenuItem from "../../../eln-dmp-integration/Argos/ArgosNewMenuItem";
-import DMPOnlineNewMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineNewMenuItem";
-import DMPToolNewMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolNewMenuItem";
-import NewMenuItem from "./NewMenuItem";
-import { type GalleryFile, type Id } from "../useGalleryListing";
+import ArgosAccentMenuItem from "../../../eln-dmp-integration/Argos/ArgosAccentMenuItem";
+import DMPOnlineAccentMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineAccentMenuItem";
+import DMPToolAccentMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
+import AccentMenuItem from "./AccentMenuItem";
+import { type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import * as FetchingData from "../../../util/fetchingData";
 import Dialog from "@mui/material/Dialog";
@@ -100,14 +100,12 @@ const CustomDrawer = styled(Drawer)(({ open }) => ({
 }));
 
 const UploadMenuItem = ({
-  path,
   folderId,
   onUploadComplete,
   onCancel,
   autoFocus,
   tabIndex,
 }: {|
-  path: $ReadOnlyArray<GalleryFile>,
   folderId: Result<Id>,
   onUploadComplete: () => void,
   onCancel: () => void,
@@ -134,7 +132,7 @@ const UploadMenuItem = ({
 
   return (
     <>
-      <NewMenuItem
+      <AccentMenuItem
         title="Upload Files"
         avatar={<UploadFileIcon />}
         backgroundColor={COLOR.background}
@@ -154,12 +152,13 @@ const UploadMenuItem = ({
       {folderId
         .map((fId) => (
           <input
+            key={null}
             ref={inputRef}
             accept="*"
             hidden
             multiple
             onChange={({ target: { files } }) => {
-              void uploadFiles(path, fId, [...files]).then(() => {
+              void uploadFiles(fId, [...files]).then(() => {
                 onUploadComplete();
               });
             }}
@@ -172,13 +171,11 @@ const UploadMenuItem = ({
 };
 
 const NewFolderMenuItem = ({
-  path,
   folderId,
   onDialogClose,
   autoFocus,
   tabIndex,
 }: {|
-  path: $ReadOnlyArray<GalleryFile>,
   folderId: Result<Id>,
   onDialogClose: (boolean) => void,
 
@@ -232,7 +229,7 @@ const NewFolderMenuItem = ({
                 onClick={() => {
                   setSubmitting(true);
                   const fId = folderId.elseThrow();
-                  void createFolder(path, fId, name)
+                  void createFolder(fId, name)
                     .then(() => {
                       onDialogClose(true);
                     })
@@ -247,7 +244,7 @@ const NewFolderMenuItem = ({
           </form>
         </Dialog>
       </EventBoundary>
-      <NewMenuItem
+      <AccentMenuItem
         title="New Folder"
         avatar={<CreateNewFolderIcon />}
         backgroundColor={COLOR.background}
@@ -346,7 +343,7 @@ const AddFilestoreMenuItem = ({
         .flatMap(Parsers.isBoolean)
         .flatMap(Parsers.isTrue)
         .map(() => (
-          <NewMenuItem
+          <AccentMenuItem
             key={null}
             title="Add a Filestore"
             subheader={
@@ -400,6 +397,9 @@ const DmpMenuSection = ({
      * could pass `showDmpPanel` down into each DMPDialog component.
      */
     window.gallery = showDmpPanel;
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - showDmpPanel will not meaningfully change
+     */
   }, []);
 
   if (!showArgos && !showDmponline && !showDmptool) return null;
@@ -408,9 +408,11 @@ const DmpMenuSection = ({
       <Divider textAlign="left" aria-label="DMPs">
         DMP Import
       </Divider>
-      {showArgos && <ArgosNewMenuItem onDialogClose={onDialogClose} />}
-      {showDmponline && <DMPOnlineNewMenuItem onDialogClose={onDialogClose} />}
-      {showDmptool && <DMPToolNewMenuItem onDialogClose={onDialogClose} />}
+      {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
+      {showDmponline && (
+        <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />
+      )}
+      {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
     </>
   );
 };
@@ -487,7 +489,6 @@ type SidebarArgs = {|
   setSelectedSection: (GallerySection) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,
-  path: $ReadOnlyArray<GalleryFile>,
   folderId: FetchingData.Fetched<Id>,
   refreshListing: () => Promise<void>,
   id: string,
@@ -498,7 +499,6 @@ const Sidebar = ({
   setSelectedSection,
   drawerOpen,
   setDrawerOpen,
-  path,
   folderId,
   refreshListing,
   id,
@@ -511,6 +511,9 @@ const Sidebar = ({
     autorun(() => {
       if (viewport.isViewportSmall) setDrawerOpen(false);
     });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - setDrawerOpen should not meaningfully change
+     */
   }, [viewport]);
 
   const { getTabIndex, getRef, eventHandlers } =
@@ -548,7 +551,6 @@ const Sidebar = ({
         >
           <UploadMenuItem
             key={"upload"}
-            path={path}
             folderId={FetchingData.getSuccessValue(folderId)}
             onUploadComplete={() => {
               void refreshListing();
@@ -562,7 +564,6 @@ const Sidebar = ({
           />
           <NewFolderMenuItem
             key={"newFolder"}
-            path={path}
             folderId={FetchingData.getSuccessValue(folderId)}
             onDialogClose={(success) => {
               if (success) void refreshListing();
@@ -780,4 +781,9 @@ const Sidebar = ({
   );
 };
 
+/**
+ * The gallery's main sidebar for navigating between the different sections,
+ * for creating new folders, uploading new files, and connecting to external
+ * filestores.
+ */
 export default (observer(Sidebar): ComponentType<SidebarArgs>);

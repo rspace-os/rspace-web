@@ -105,7 +105,6 @@ describe("Sidebar", () => {
             setSelectedSection={() => {}}
             drawerOpen
             setDrawerOpen={() => {}}
-            path={[]}
             folderId={{ tag: "success", value: dummyId() }}
             refreshListing={() => Promise.resolve()}
             id="1"
@@ -147,7 +146,6 @@ describe("Sidebar", () => {
             setSelectedSection={() => {}}
             drawerOpen
             setDrawerOpen={() => {}}
-            path={[]}
             folderId={{ tag: "success", value: dummyId() }}
             refreshListing={() => Promise.resolve()}
             id="1"

@@ -27,6 +27,10 @@ const FilestoreLoginContext = React.createContext<{|
     ),
 });
 
+/**
+ * Use this hook to trigger a filestore login dialog. Returns true if the login
+ * was successful, false if the user cancels the dialog.
+ */
 export function useFilestoreLogin(): {|
   login: ({|
     filesystemName: string,
@@ -39,7 +43,7 @@ export function useFilestoreLogin(): {|
   };
 }
 
-/*
+/**
  * This component is a performance optimisation: We don't want a change to
  * username or password to trigger a re-rendering of the whole page.
  */
@@ -142,7 +146,12 @@ const FilestoreLoginDialog = ({
   );
 };
 
-export function FilestoreLoginContextualDialog({
+/**
+ * This component provides a context that allows other components to trigger a
+ * filestore login dialog. The dialog will prompt the user for a username and
+ * password, and then attempt to authenticate with the filestore.
+ */
+export function FilestoreLoginProvider({
   children,
 }: {|
   children: Node,

@@ -1,27 +1,27 @@
-//@flow
+// @flow
 
 import React, { type Node } from "react";
 import DMPDialog from "./DMPDialog";
-import NewMenuItem from "../../eln/gallery/components/NewMenuItem";
-import DMPToolIcon from "../../eln/apps/icons/dmptool.svg";
-import { COLOR } from "../../eln/apps/integrations/DMPTool";
+import AccentMenuItem from "../../eln/gallery/components/AccentMenuItem";
+import DMPonlineIcon from "../../eln/apps/icons/dmponline.svg";
+import { COLOR } from "../../eln/apps/integrations/DMPonline";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
 
-type DMPToolNewMenuItemArgs = {|
+type DMPonlineAccentMenuItemArgs = {|
   onDialogClose: () => void,
 |};
 
-export default function DMPToolNewMenuItem({
+export default function DMPonlineAccentMenuItem({
   onDialogClose,
-}: DMPToolNewMenuItemArgs): Node {
+}: DMPonlineAccentMenuItemArgs): Node {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
     <>
-      <NewMenuItem
-        title="DMPTool"
-        avatar={<CardMedia image={DMPToolIcon} />}
+      <AccentMenuItem
+        title="DMPonline"
+        avatar={<CardMedia image={DMPonlineIcon} />}
         backgroundColor={COLOR}
         foregroundColor={{ ...COLOR, lightness: 30 }}
         onClick={() => {

@@ -24,7 +24,6 @@ import { take, incrementForever } from "../../../util/iterators";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import Result from "../../../util/result";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as Parsers from "../../../util/parsers";
 import axios from "axios";
@@ -209,6 +208,7 @@ const PreviewWrapper = ({
   );
 };
 
+// eslint-disable-next-line complexity -- Lots of options of what to show in preview
 const Preview = ({
   file,
   zoom,
@@ -323,6 +323,10 @@ const Preview = ({
           }
         })
       );
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - canPreviewWithAspose will not change
+     * - file will not change because the call site use `file.id` as the key
+     */
   }, []);
 
   function onDocumentLoadSuccess({
@@ -397,7 +401,7 @@ const Preview = ({
   return null;
 };
 
-type CarouselArgs = {
+type CarouselArgs = {|
   listing:
     | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
@@ -407,8 +411,14 @@ type CarouselArgs = {
         loadMore: Optional<() => Promise<void>>,
         refreshing: boolean,
       |},
-};
+|};
 
+/**
+ * The carousel view of files allows the user to view files one at a time,
+ * using the preview (image or pdf) of the file to identify it. The user can
+ * also zoom in and out of the preview; crucial when working with large image
+ * files that vary only in small details.
+ */
 export default function Carousel({ listing }: CarouselArgs): Node {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
@@ -430,6 +440,9 @@ export default function Carousel({ listing }: CarouselArgs): Node {
       setVisibleIndex(0);
       selection.append(listing.list[0]);
     }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - selection will not change
+     */
   }, [listing]);
 
   function incrementVisibleIndex() {
@@ -469,6 +482,10 @@ export default function Carousel({ listing }: CarouselArgs): Node {
     };
     window.addEventListener("keydown", f);
     return () => window.removeEventListener("keydown", f);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - decrementVisibleIndex will not meaningfully change
+     * - incrementVisibleIndex will not meaningfully change
+     */
   }, [visibleIndex, listing]);
 
   if (listing.tag === "empty")

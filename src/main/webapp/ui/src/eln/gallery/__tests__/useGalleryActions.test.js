@@ -206,6 +206,8 @@ describe("useGalleryActions", () => {
         <button
           onClick={() => {
             void moveFiles(
+              "Images",
+              rootDestination(),
               new RsSet([
                 new LocalGalleryFile({
                   id: dummyId(),
@@ -226,10 +228,7 @@ describe("useGalleryActions", () => {
                   token: "",
                 }),
               ])
-            ).to({
-              destination: rootDestination(),
-              section: "Images",
-            });
+            );
           }}
         >
           click me

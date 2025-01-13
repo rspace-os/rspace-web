@@ -158,6 +158,9 @@ function handleErrors(response: mixed): Alert {
     );
 }
 
+/**
+ * A folder on an iRODS system.
+ */
 export type IrodsLocation = {|
   id: number,
   name: string,
@@ -395,6 +398,9 @@ export default function useIrods(
   );
   React.useEffect(() => {
     void fetchConfiguredLocations();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - fetchConfiguredLocations wont meaningfully change
+     */
   }, [sortedStringOfSelectedIds]);
 
   if (loading) return { tag: "loading" };

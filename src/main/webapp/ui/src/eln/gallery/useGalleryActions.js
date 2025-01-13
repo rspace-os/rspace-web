@@ -17,54 +17,129 @@ import {
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useOauthToken from "../../common/useOauthToken";
 import { partitionAllSettled } from "../../util/Util";
+import { type GallerySection } from "./common";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
+/**
+ * The destination of a move operation.
+ */
 export opaque type Destination =
-  | {| key: "root" |}
+  | {| key: "root" |} // the gallery section depends on the type of the file being moved
   | {| key: "folder", folder: GalleryFile |};
 
+/**
+ * Constructor function for specifying that the destination of a move operation
+ * should be the root of the gallery section based on the type of the file
+ * being moved.
+ */
 export function rootDestination(): Destination {
   return { key: "root" };
 }
 
+/**
+ * Constructor function for specifying that the destination of a move operation
+ * should be a specific folder.
+ */
 export function folderDestination(folder: GalleryFile): Destination {
   return { key: "folder", folder };
 }
 
+/**
+ * Hook that exposes several functions for uploading files, creating new
+ * folders, and performing operations on existing files and folders.
+ */
 export function useGalleryActions(): {|
-  uploadFiles: (
-    $ReadOnlyArray<GalleryFile>,
-    Id,
-    $ReadOnlyArray<File>
-  ) => Promise<void>,
-  createFolder: ($ReadOnlyArray<GalleryFile>, Id, string) => Promise<void>,
-  moveFiles: (RsSet<GalleryFile>) => {|
-    to: ({|
-      destination: Destination,
-      section: string,
-    |}) => Promise<void>,
-    toDestinationWithFolder: (string, GalleryFile) => Promise<void>,
-  |},
-  deleteFiles: (RsSet<GalleryFile>) => Promise<void>,
-  duplicateFiles: (RsSet<GalleryFile>) => Promise<void>,
-  rename: (GalleryFile, string) => Promise<void>,
+  /**
+   * For uploading new files.
+   *
+   * @arg parentId The id of the folder or gallery section that the file should
+   *               be uploaded to. The server will ignore this if the type of
+   *               the files do not match the specified gallery section or the
+   *               gallery section at the root of the specified folder, placing
+   *               the files at the root of the corresponding gallery sections
+   *               instead.
+   * @arg files    The File objects being uploaded.
+   */
+  uploadFiles: (parentId: Id, files: $ReadOnlyArray<File>) => Promise<void>,
 
   /**
-   * The contents of `file` is replaced with `newFile`. The filename is also
+   * For creating new folders.
+   *
+   * @arg parentId The id of the folder or gallery section that the new folder
+   *               will be created within.
+   * @arg name     The name of the new folder.
+   */
+  createFolder: (parentId: Id, name: string) => Promise<void>,
+
+  /**
+   * Move files to a different folder.
+   *
+   * @arg section     The relevant gallery section for the files being operated
+   *                  on. Whilst it would seem that this would only be required
+   *                  if the destination is the root of a gallery section, the
+   *                  API always requires it.
+   * @arg destination Either the root of the specified *section* or a
+   *                  particular folder.
+   * @arg files       The files being moved.
+   */
+  moveFiles: (
+    section: GallerySection,
+    destination: Destination,
+    files: RsSet<GalleryFile>
+  ) => Promise<void>,
+
+  /**
+   * Delete the specified files. If the files are Filestores then they are disconnected.
+   *
+   * @arg files The files being deleted.
+   */
+  deleteFiles: (files: RsSet<GalleryFile>) => Promise<void>,
+
+  /**
+   * Duplicate the specified files.
+   */
+  duplicateFiles: (files: RsSet<GalleryFile>) => Promise<void>,
+
+  /**
+   * Rename the specified file.
+   *
+   * @arg file The file being renamed.
+   * @arg newName The new name for the file.
+   */
+  rename: (file: GalleryFile, newName: string) => Promise<void>,
+
+  /**
+   * The contents of *file* is replaced with *newFile*. The filename is also
    * replaced and the version number incremented.
    *
-   * @arg folderId The Id of the folder that `file` currently resides in.
+   * @arg folderId The Id of the folder that *file* currently resides in.
    * @arg file     The file whose contents are being updated.
-   * @arg newFile  The contents that `file` is being updated to.
+   * @arg newFile  The contents that *file* is being updated to.
    */
   uploadNewVersion: (
     folderId: Id,
     file: GalleryFile,
     newFile: File
   ) => Promise<void>,
-  changeDescription: (GalleryFile, Description) => Promise<void>,
-  download: (RsSet<GalleryFile>) => Promise<void>,
+
+  /**
+   * Modify the description of a specified file.
+   *
+   * @arg file           The file whose description is being modified.
+   * @arg newDescription The new description.
+   */
+  changeDescription: (
+    file: GalleryFile,
+    newDescription: Description
+  ) => Promise<void>,
+
+  /**
+   * Download the specified files.
+   *
+   * @arg files The files being downloaded.
+   */
+  download: (files: RsSet<GalleryFile>) => Promise<void>,
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
@@ -82,11 +157,7 @@ export function useGalleryActions(): {|
     timeout: ONE_MINUTE_IN_MS,
   });
 
-  async function uploadFiles(
-    path: $ReadOnlyArray<GalleryFile>,
-    parentId: Id,
-    files: $ReadOnlyArray<File>
-  ) {
+  async function uploadFiles(parentId: Id, files: $ReadOnlyArray<File>) {
     const uploadingAlert = mkAlert({
       message: "Uploading...",
       variant: "notice",
@@ -94,15 +165,12 @@ export function useGalleryActions(): {|
     });
     addAlert(uploadingAlert);
 
-    const targetFolderId = ArrayUtils.last(path)
-      .map(({ id }) => idToString(id))
-      .orElse(idToString(parentId));
     try {
       const data = await Promise.all(
         files.map((file) => {
           const formData = new FormData();
           formData.append("xfile", file);
-          formData.append("targetFolderId", targetFolderId);
+          formData.append("targetFolderId", idToString(parentId));
           return galleryApi.post<FormData, mixed>("uploadFile", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
@@ -152,18 +220,11 @@ export function useGalleryActions(): {|
     }
   }
 
-  async function createFolder(
-    path: $ReadOnlyArray<GalleryFile>,
-    parentId: Id,
-    name: string
-  ) {
-    const parentFolderId = ArrayUtils.last(path)
-      .map(({ id }) => idToString(id))
-      .orElse(idToString(parentId));
+  async function createFolder(parentId: Id, name: string) {
     try {
       const formData = new FormData();
       formData.append("folderName", name);
-      formData.append("parentId", parentFolderId);
+      formData.append("parentId", idToString(parentId));
       formData.append("isMedia", "true");
       const data = await galleryApi.post<FormData, mixed>(
         "createFolder",
@@ -204,183 +265,91 @@ export function useGalleryActions(): {|
     }
   }
 
-  function moveFiles(files: RsSet<GalleryFile>): {|
-    to: ({|
-      destination: Destination,
-      section: string,
-    |}) => Promise<void>,
-    toDestinationWithFolder: (string, GalleryFile) => Promise<void>,
-  |} {
-    return {
-      to: async ({
-        destination,
-        section,
-      }: {|
-        destination:
-          | {| key: "root" |}
-          | {| key: "folder", folder: GalleryFile |},
-        section: string,
-      |}): Promise<void> => {
-        if (files.some((f) => f.canBeMoved.isError)) {
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: "Failed to move files.",
-              message: "Some of the selected files cannot be moved.",
-            })
-          );
-          throw new Error("Some of the files cannot be moved");
+  async function moveFiles(
+    section: GallerySection,
+    destination: Destination,
+    files: RsSet<GalleryFile>
+  ): Promise<void> {
+    if (files.some((f) => f.canBeMoved.isError)) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to move files.",
+          message: "Some of the selected files cannot be moved.",
+        })
+      );
+      throw new Error("Some of the files cannot be moved");
+    }
+    if (destination.key === "folder" && destination.folder.isSnippetFolder) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Cannot move files into SNIPPETS folders.",
+          message:
+            "Share them and they will automatically appear in these folders.",
+        })
+      );
+      return;
+    }
+    const movingAlert = mkAlert({
+      message: "Moving...",
+      variant: "notice",
+      isInfinite: true,
+    });
+    try {
+      addAlert(movingAlert);
+      const formData = new FormData();
+      formData.append(
+        "target",
+        destination.key === "root" ? "0" : idToString(destination.folder.id)
+      );
+      for (const file of files)
+        formData.append("filesId[]", idToString(file.id));
+      // mediaType is required, but only actually used if target is 0
+      formData.append("mediaType", section);
+      const data = await galleryApi.post<FormData, mixed>(
+        "moveGalleriesElements",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
-        if (destination.key === "folder")
-          return moveFiles(files).toDestinationWithFolder(
-            section,
-            destination.folder
-          );
-        const movingAlert = mkAlert({
-          message: "Moving...",
-          variant: "notice",
-          isInfinite: true,
-        });
-        try {
-          addAlert(movingAlert);
-          const formData = new FormData();
-          formData.append(
-            "target",
-            destination.key === "root" ? "0" : destination.folder.id
-          );
-          for (const file of files)
-            formData.append("filesId[]", idToString(file.id));
-          formData.append("mediaType", section);
-          const data = await galleryApi.post<FormData, mixed>(
-            "moveGalleriesElements",
-            formData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
-          );
-          addAlert(
-            Parsers.objectPath(["data", "exceptionMessage"], data)
-              .orElseTry(() =>
-                Parsers.objectPath(["data", "error", "errorMessages"], data)
-                  .flatMap(Parsers.isArray)
-                  .flatMap(ArrayUtils.head)
-              )
-              .flatMap(Parsers.isString)
-              .map((exceptionMessage) =>
-                mkAlert({
-                  title: `Failed to move item.`,
-                  message: exceptionMessage,
-                  variant: "error",
-                })
-              )
-              .orElse(
-                mkAlert({
-                  message: `Successfully moved item${
-                    files.size > 0 ? "s" : ""
-                  }.`,
-                  variant: "success",
-                })
-              )
-          );
-        } catch (e) {
-          addAlert(
+      );
+      addAlert(
+        Parsers.objectPath(["data", "exceptionMessage"], data)
+          .orElseTry(() =>
+            Parsers.objectPath(["data", "error", "errorMessages"], data)
+              .flatMap(Parsers.isArray)
+              .flatMap(ArrayUtils.head)
+          )
+          .flatMap(Parsers.isString)
+          .map((exceptionMessage) =>
             mkAlert({
+              title: `Failed to move item.`,
+              message: exceptionMessage,
               variant: "error",
-              title: `Failed to move item${files.size > 0 ? "s" : ""}.`,
-              message: e.message,
             })
-          );
-          throw e;
-        } finally {
-          removeAlert(movingAlert);
-        }
-      },
-      toDestinationWithFolder: async (
-        section: string,
-        destinationFolder: GalleryFile
-      ): Promise<void> => {
-        if (files.some((f) => f.canBeMoved.isError)) {
-          addAlert(
+          )
+          .orElse(
             mkAlert({
-              variant: "error",
-              title: "Failed to move files.",
-              message: "Some of the selected files cannot be moved.",
+              message: `Successfully moved item${files.size > 0 ? "s" : ""}.`,
+              variant: "success",
             })
-          );
-          throw new Error("Some of the files cannot be moved");
-        }
-        if (destinationFolder.isSnippetFolder) {
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: "Cannot drag files into SNIPPETS folders.",
-              message:
-                "Share them and they will automatically appear in these folders.",
-            })
-          );
-          throw new Error("Some of the files cannot be moved");
-        }
-        const movingAlert = mkAlert({
-          message: "Moving...",
-          variant: "notice",
-          isInfinite: true,
-        });
-        try {
-          addAlert(movingAlert);
-          const formData = new FormData();
-          formData.append("target", idToString(destinationFolder.id));
-          for (const file of files)
-            formData.append("filesId[]", idToString(file.id));
-          formData.append("mediaType", section);
-          const data = await galleryApi.post<FormData, mixed>(
-            "moveGalleriesElements",
-            formData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
-          );
-          addAlert(
-            Parsers.objectPath(["data", "exceptionMessage"], data)
-              .orElseTry(() =>
-                Parsers.objectPath(["data", "error", "errorMessages"], data)
-                  .flatMap(Parsers.isArray)
-                  .flatMap(ArrayUtils.head)
-              )
-              .flatMap(Parsers.isString)
-              .map((exceptionMessage) =>
-                mkAlert({
-                  title: `Failed to move item.`,
-                  message: exceptionMessage,
-                  variant: "error",
-                })
-              )
-              .orElse(
-                mkAlert({
-                  message: `Successfully moved item${
-                    files.size > 0 ? "s" : ""
-                  }.`,
-                  variant: "success",
-                })
-              )
-          );
-        } catch (e) {
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: `Failed to move item${files.size > 0 ? "s" : ""}.`,
-              message: e.message,
-            })
-          );
-          throw e;
-        } finally {
-          removeAlert(movingAlert);
-        }
-      },
-    };
+          )
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: `Failed to move item${files.size > 0 ? "s" : ""}.`,
+          message: e.message,
+        })
+      );
+      throw e;
+    } finally {
+      removeAlert(movingAlert);
+    }
   }
 
   async function deleteLocalFiles(files: RsSet<LocalGalleryFile>) {
@@ -770,12 +739,6 @@ export function useGalleryActions(): {|
   }
 
   async function download(files: RsSet<GalleryFile>) {
-    const api = axios.create({
-      baseURL: "",
-      headers: {
-        Authorization: "Bearer " + (await getToken()),
-      },
-    });
     try {
       const { fulfilled, rejected } = partitionAllSettled(
         await Promise.allSettled(

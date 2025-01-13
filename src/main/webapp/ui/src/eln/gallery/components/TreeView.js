@@ -18,18 +18,16 @@ import {
   idToString,
 } from "../useGalleryListing";
 import { useGalleryActions, folderDestination } from "../useGalleryActions";
-import { useGallerySelection } from "../useGallerySelection";
+import { useGallerySelection, GallerySelection } from "../useGallerySelection";
 import { doNotAwait } from "../../../util/Util";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { useDroppable, useDraggable, useDndContext } from "@dnd-kit/core";
-import Box, { boxClasses } from "@mui/material/Box";
-import Collapse, { collapseClasses } from "@mui/material/Collapse";
+import Box from "@mui/material/Box";
 import { runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
 import { Optional } from "../../../util/optional";
 import LoadMoreButton from "./LoadMoreButton";
@@ -38,7 +36,6 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { useFolderOpen } from "./OpenFolderProvider";
-import { GallerySelection } from "../useGallerySelection";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -125,6 +122,9 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
        * folder is done refreshing.
        */
       if (refeshing) void refreshingThisListing();
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - refreshingThisListing will not meaningfully change
+       */
     }, [refeshing]);
 
     React.useEffect(() => {
@@ -135,6 +135,9 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
             treeViewItemIdMap.set(f.treeViewItemId, f);
         });
       });
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - treeViewItemId will not change as it is mobx observable that gets mutated
+       */
     }, [galleryListing]);
 
     return FetchingData.match(galleryListing, {
@@ -149,6 +152,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
           <>
             {listing.list.map((f, i) =>
               filter(f) !== "hide" ? (
+                // eslint-disable-next-line no-use-before-define -- CustomTreeItem and TreeItemContent are mutually recursive
                 <CustomTreeItem
                   file={f}
                   index={i}
@@ -168,7 +172,9 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
               ) : null
             )}
             {listing.loadMore
-              .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+              .map((loadMore) => (
+                <LoadMoreButton key={null} onClick={loadMore} />
+              ))
               .orElse(null)}
           </>
         ) : null,
@@ -207,11 +213,10 @@ const CustomTreeItem = observer(
     refeshing: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
-    const selection = useGallerySelection();
     const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
       useFileImportDropZone({
         onDrop: doNotAwait(async (files) => {
-          await uploadFiles([...file.path, file], file.id, files);
+          await uploadFiles(file.id, files);
           void refreshListing();
         }),
         disabled: !file.isFolder,
@@ -241,26 +246,18 @@ const CustomTreeItem = observer(
     );
     const dndInProgress = Boolean(dndContext.active);
 
-    const dropStyle: { [string]: string | number } = isOver
-      ? {
-          border: SELECTED_OR_FOCUS_BORDER,
-        }
-      : dndInProgress && file.isFolder
-      ? {
-          border: "2px solid white",
-          animation: "drop 2s linear infinite",
-        }
-      : {
-          border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
-        };
-    /*
-     * In grid view we make the files being dragged mostly transparent so
-     * that it is obvious which items are being moved and that then cannot also
-     * be the destination of the move operation. It is not possible to do that
-     * here becuase TreeView does not have access to the GallerySelection of
-     * the whole listing as if it did then each folder would clear the
-     * selection when it loaded its content.
-     */
+    const normalBorder = `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`;
+    const dropStyle: { [string]: string | number } = {};
+    if (dndInProgress && file.isFolder) {
+      if (isOver) {
+        dropStyle.borderColor = SELECTED_OR_FOCUS_BORDER;
+      } else {
+        dropStyle.border = "2px solid white";
+        dropStyle.animation = "drop 2s linear infinite";
+      }
+    } else {
+      dropStyle.border = normalBorder;
+    }
     const fileUploadDropping: { [string]: string | number } = over
       ? {
           border: SELECTED_OR_FOCUS_BORDER,
@@ -373,7 +370,8 @@ type TreeViewArgs = {|
    * whole FetchingData object so that it can display the loading and error
    * states and doesn't lose the expanded state when the listing is refreshed.
    */
-  listing: | {| tag: "empty", reason: string, refreshing: boolean |}
+  listing:
+    | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
         tag: "list",
         list: $ReadOnlyArray<GalleryFile>,
@@ -430,6 +428,9 @@ const TreeView = ({
     runInAction(() => {
       for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
     });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - treeViewItemId will not change as it is mobx observable that gets mutated
+     */
   }, [listing]);
 
   /*
@@ -611,10 +612,15 @@ const TreeView = ({
         )}
       </GallerySelection>
       {listing.loadMore
-        .map((loadMore) => <LoadMoreButton onClick={loadMore} />)
+        .map((loadMore) => <LoadMoreButton key={null} onClick={loadMore} />)
         .orElse(null)}
     </SimpleTreeView>
   );
 };
 
+/**
+ * The hierarchical listing of files and folders can be viewed as tree, making
+ * it easy to drag-and-drop files between folders and to operate on files in
+ * different folders.
+ */
 export default (observer(TreeView): ComponentType<TreeViewArgs>);

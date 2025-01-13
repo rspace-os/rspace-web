@@ -16,7 +16,11 @@ import TreeView from "./TreeView";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
-import { useGalleryActions, rootDestination } from "../useGalleryActions";
+import {
+  useGalleryActions,
+  rootDestination,
+  folderDestination,
+} from "../useGalleryActions";
 import RsSet from "../../../util/set";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { type GallerySection } from "../common";
@@ -29,6 +33,12 @@ type MoveDialogArgs = {|
   onClose: () => void,
   section: GallerySection,
   selectedFiles: RsSet<GalleryFile>,
+
+  /**
+   * A function to refresh the page's main listing after a move operation.
+   * Note that this is distinct from the refreshListing function for refreshing
+   * the tree view inside of the dialog.
+   */
   refreshListing: () => Promise<void>,
 |};
 
@@ -56,6 +66,9 @@ const MoveDialog = observer(
 
     React.useEffect(() => {
       if (open) void refreshListingInsideDialog();
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - refreshListingInsideDialog will not meaningfully change between renders
+       */
     }, [open]);
 
     const [topLevelLoading, setTopLevelLoading] = React.useState(false);
@@ -124,10 +137,7 @@ const MoveDialog = observer(
               onClick={doNotAwait(async () => {
                 setTopLevelLoading(true);
                 try {
-                  await moveFiles(selectedFiles).to({
-                    destination: rootDestination(),
-                    section,
-                  });
+                  await moveFiles(section, rootDestination(), selectedFiles);
                   void refreshListing();
                   onClose();
                 } finally {
@@ -160,9 +170,10 @@ const MoveDialog = observer(
                         )
                     )
                     .elseThrow();
-                  await moveFiles(selectedFiles).toDestinationWithFolder(
+                  await moveFiles(
                     section,
-                    destinationFolder
+                    folderDestination(destinationFolder),
+                    selectedFiles
                   );
                   void refreshListing();
                   onClose();
@@ -181,6 +192,14 @@ const MoveDialog = observer(
   }
 );
 
+/**
+ * A dialog for moving files between folders.
+ *
+ * Note that the dialog is added to the DOM as soon as the component is
+ * rendered, and will make network requests to fetch the folder structure
+ * immediately.
+ */
+// eslint-disable-next-line react/display-name -- This is a wrapper component
 export default (
   props: $Diff<MoveDialogArgs, {| selectedFiles: mixed |}>
 ): Node => {

@@ -77,6 +77,9 @@ function SetSelection({ files }: {| files: $ReadOnlyArray<GalleryFile> |}) {
   React.useEffect(() => {
     selection.clear();
     for (const f of files) selection.append(f);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - selection will not change
+     */
   }, [files]);
   return null;
 }

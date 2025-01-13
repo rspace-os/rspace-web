@@ -10,7 +10,7 @@ import MenuItem from "@mui/material/MenuItem";
 import CardHeader from "@mui/material/CardHeader";
 import { alpha } from "@mui/system";
 
-type NewMenuItemArgs = {|
+type AccentMenuItemArgs = {|
   title: string,
   avatar: Node,
   subheader: string,
@@ -35,7 +35,13 @@ type NewMenuItemArgs = {|
   ...ElementConfig<typeof CardHeader>,
 |};
 
+/**
+ * A menu item for the various menus in the application. It can be styled
+ * according to the branding of a third-party integration, or to match the
+ * accent colour of the current page.
+ */
 export default (styled(
+  // eslint-disable-next-line react/display-name -- Just a styled wrapper around MenuItem
   React.forwardRef(
     (
       {
@@ -50,7 +56,7 @@ export default (styled(
         tabIndex,
         "aria-haspopup": ariaHasPopup,
         ...props
-      }: NewMenuItemArgs,
+      }: AccentMenuItemArgs,
       ref
     ) => (
       <MenuItem
@@ -132,4 +138,4 @@ export default (styled(
       fontWeight: 500,
     },
   };
-}): ComponentType<NewMenuItemArgs>);
+}): ComponentType<AccentMenuItemArgs>);

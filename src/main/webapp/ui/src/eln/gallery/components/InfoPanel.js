@@ -34,7 +34,7 @@ import { useAsposePreview } from "./CallableAsposePreview";
 import { Optional } from "../../../util/optional";
 import { useFolderOpen } from "./OpenFolderProvider";
 
-/*
+/**
  * The height, in pixels, of the region that responds to touch/pointer events
  * to trigger the opening and closing of the floating info panel that is shown
  * on small viewports. When the panel is closed only the trigger region is shown.
@@ -666,6 +666,12 @@ const AsposePreviewButton = ({ file }: {| file: GalleryFile |}) => {
   );
 };
 
+/**
+ * On larger viewports, the info panel is shown in the right column of the
+ * gallery. This component is responsible for rendering the metadata of the
+ * selected file, including the name, description, and details such as the
+ * documents that link to the file.
+ */
 export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const selection = useGallerySelection();
   const { openImagePreview } = useImagePreview();
@@ -814,10 +820,8 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                 return null;
               })
               .orElseGet((errors) => {
-                console.info("Could not provide view");
-                errors.forEach((e) => {
-                  console.info(e);
-                });
+                // eslint-disable-next-line no-console -- hard to debug why the button is not shown otherwise
+                console.info("Could not provide view", errors);
                 return (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
                     <ActionButton
@@ -855,6 +859,14 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   );
 };
 
+/**
+ * On smaller viewports, the info panel is shown in a floating panel that
+ * slides up from the bottom of the screen when the user has selected a file.
+ * Initially, only the name of the file is shown with the primary action
+ * button, with the rest of the metadata shown when the panel is expanded. This
+ * other data includes the name, description, and details such as the documents
+ * that link to the file.
+ */
 export const InfoPanelForSmallViewports: ComponentType<{|
   file: GalleryFile,
 |}> = ({ file }) => {
@@ -940,7 +952,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
               </Grid>
               {file.canOpen
                 .map(() => (
-                  <Grid item>
+                  <Grid item key={null}>
                     <ActionButton
                       label="Open"
                       sx={{
