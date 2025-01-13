@@ -3,12 +3,14 @@
  <img alt="Map of how the RSpace platform creates an ecosystem of digital tools to support workflows for preparing, conducting and reporting on research." src="https://github.com/rspace-os/rspace-marketing-resources/blob/217a4cbd3d50a1e7cc82020b3a8e69915d7b13df/main_graphic.png" width = 400 align = right>
 </picture>
 RSpace is an open-source collaborative research data management platform that interoperates with many tools and services researchers and their research organizations already use. It is designed to enable frictionless workflows when researchers plan their research, record experimental data, keep track of physical samples, manage their digital research objects, report on their work and share it with their communities. 
+<P>
 
-<br clear="right"/>
-
-# 🚧 Construction ahead!
+**🚧 Construction ahead!**
 Thank you for your interest in the RSpace open-source project! We're excited to have you here!
 [Releasing RSpace as an open-source project](http://www.researchspace.com/blog/research-space-embraces-open-source-to-empower-fair-data-workflows) is huge step for us and we likely won't have everything as polished as we'd like it to be in the beginning. Please bear with us as we're taking one step at a time to build an inclusive and efficient contributor experience. If you have any questions, concerns, or ideas how we can improve, don't hesitate to reach out to us 🙏.
+<br clear="right"/>
+
+
 
 # About the RSpace open-source project
 🗺️ You are currently on the main repository for developers building RSpace
