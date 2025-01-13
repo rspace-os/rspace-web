@@ -243,14 +243,12 @@ function GalleryAppBar({
             <Box
               flexGrow={1}
               sx={{
-                //flexGrow: isViewportSmall ? 1 : 0,
                 display: isViewportSmall && showTextfield ? "block" : "none",
               }}
             ></Box>
             <Box
               mx={1}
               sx={{
-                //flexGrow: isViewportSmall ? 1 : 0,
                 display: !isViewportSmall || showTextfield ? "block" : "none",
               }}
             >
