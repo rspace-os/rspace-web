@@ -16,7 +16,6 @@ import HelpDocs from "../Help/HelpDocs";
 import HelpIcon from "@mui/icons-material/Help";
 import { observer } from "mobx-react-lite";
 import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
@@ -40,6 +39,7 @@ import PublicIcon from "@mui/icons-material/Public";
 import LogoutIcon from "@mui/icons-material/Logout";
 import JwtService from "../../common/JwtService";
 import SidebarToggle from "./SidebarToggle";
+import Link from "@mui/material/Link";
 
 const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   color: theme.palette.standardIcon.main,
@@ -53,31 +53,35 @@ function NavButtons({
   currentPage: "Apps" | "Gallery" | "Inventory" | "Workspace",
 |}) {
   return (
-    <Stack direction="row" spacing={1} sx={{ mx: 1 }}>
-      <Button
+    <Stack direction="row" spacing={2} sx={{ mx: 1 }}>
+      <Link
+        target="_self"
         aria-current={currentPage === "Workspace" ? "page" : false}
         href="/workspace"
       >
         Workspace
-      </Button>
-      <Button
+      </Link>
+      <Link
+        target="_self"
         aria-current={currentPage === "Gallery" ? "page" : false}
         href="/gallery"
       >
         Gallery
-      </Button>
-      <Button
+      </Link>
+      <Link
+        target="_self"
         aria-current={currentPage === "Inventory" ? "page" : false}
         href="/inventory"
       >
         Inventory
-      </Button>
-      <Button
+      </Link>
+      <Link
+        target="_self"
         aria-current={currentPage === "Apps" ? "page" : false}
         href="/apps"
       >
         Apps
-      </Button>
+      </Link>
     </Stack>
   );
 }
