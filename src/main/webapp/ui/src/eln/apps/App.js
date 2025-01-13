@@ -23,7 +23,6 @@ import * as FetchingData from "../../util/fetchingData";
 import { doNotAwait, mapObject } from "../../util/Util";
 import Alert from "@mui/material/Alert";
 import Skeleton from "@mui/material/Skeleton";
-import HelpFab from "../../components/Help/Fab";
 import { DialogBoundary } from "../../components/DialogBoundary";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
@@ -133,7 +132,6 @@ function App(): Node {
 
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <HelpFab />
       <DialogBoundary>
         <AnalyticsContext.Provider
           value={{
