@@ -49,7 +49,7 @@ const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
 }));
 
 type GalleryAppBarArgs = {|
-  currentPage: "Apps" | "Gallery",
+  currentPage: "Apps" | "Gallery" | "Inventory",
   appliedSearchTerm: string,
   setAppliedSearchTerm: (string) => void,
   setDrawerOpen: (boolean) => void,
@@ -111,7 +111,12 @@ function GalleryAppBar({
               >
                 Gallery
               </Button>
-              <Button href="/inventory">Inventory</Button>
+              <Button
+                aria-current={currentPage === "Inventory" ? "page" : false}
+                href="/inventory"
+              >
+                Inventory
+              </Button>
               <Button
                 aria-current={currentPage === "Apps" ? "page" : "false"}
                 href="/apps"

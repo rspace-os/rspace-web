@@ -24,6 +24,7 @@ import { UserCancelledAction } from "../../util/error";
 import MainSearchNavigationContext from "./MainSearchNavigationContext";
 import { UiPreferences } from "../../util/useUiPreference";
 import LeftPanelView from "./LeftPanelView";
+import Box from "@mui/material/Box";
 
 type SearchRouterArgs = {|
   paramsOverride?: CoreFetcherArgs,
@@ -83,11 +84,16 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
 
   return (
     <>
-      {uiStore.isVerySmall && <Header />}
-      <Sidebar />
-      <Main>
-        <Layout colLeft={<LeftPanelView />} colRight={<RightPanelView />} />
-      </Main>
+      <Header />
+      <Box
+        sx={{ display: "flex", height: "calc(100% - 48px)" }}
+        component="main"
+      >
+        <Sidebar />
+        <Main>
+          <Layout colLeft={<LeftPanelView />} colRight={<RightPanelView />} />
+        </Main>
+      </Box>
     </>
   );
 });

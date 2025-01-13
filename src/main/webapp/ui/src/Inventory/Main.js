@@ -1,6 +1,5 @@
 // @flow
 
-import useStores from "../stores/use-stores";
 import { makeStyles } from "tss-react/mui";
 import React, { type Node } from "react";
 import clsx from "clsx";
@@ -20,17 +19,7 @@ type MainArgs = {|
 |};
 
 export default function Main({ children }: MainArgs): Node {
-  const { uiStore } = useStores();
   const { classes } = useStyles();
 
-  return (
-    <main
-      className={clsx(
-        classes.main,
-        !uiStore.alwaysVisibleSidebar && classes.hiddenSidebar
-      )}
-    >
-      {children}
-    </main>
-  );
+  return <main className={clsx(classes.main)}>{children}</main>;
 }
