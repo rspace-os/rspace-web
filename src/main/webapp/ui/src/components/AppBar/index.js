@@ -47,8 +47,43 @@ const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   width: 20,
 }));
 
+function NavButtons({
+  currentPage,
+}: {|
+  currentPage: "Apps" | "Gallery" | "Inventory" | "Workspace",
+|}) {
+  return (
+    <Stack direction="row" spacing={1} sx={{ mx: 1 }}>
+      <Button
+        aria-current={currentPage === "Workspace" ? "page" : false}
+        href="/workspace"
+      >
+        Workspace
+      </Button>
+      <Button
+        aria-current={currentPage === "Gallery" ? "page" : false}
+        href="/gallery"
+      >
+        Gallery
+      </Button>
+      <Button
+        aria-current={currentPage === "Inventory" ? "page" : false}
+        href="/inventory"
+      >
+        Inventory
+      </Button>
+      <Button
+        aria-current={currentPage === "Apps" ? "page" : false}
+        href="/apps"
+      >
+        Apps
+      </Button>
+    </Stack>
+  );
+}
+
 type GalleryAppBarArgs = {|
-  currentPage: "Apps" | "Gallery" | "Inventory",
+  currentPage: "Apps" | "Gallery" | "Inventory" | "Workspace",
   appliedSearchTerm: string,
   setAppliedSearchTerm: (string) => void,
   hideSearch: boolean,
@@ -88,27 +123,7 @@ function GalleryAppBar({
         {sidebarToggle}
         {!isViewportSmall && (
           <>
-            <Stack direction="row" spacing={1} sx={{ mx: 1 }}>
-              <Button href="/workspace">Workspace</Button>
-              <Button
-                aria-current={currentPage === "Gallery" ? "page" : "false"}
-                href="/gallery"
-              >
-                Gallery
-              </Button>
-              <Button
-                aria-current={currentPage === "Inventory" ? "page" : false}
-                href="/inventory"
-              >
-                Inventory
-              </Button>
-              <Button
-                aria-current={currentPage === "Apps" ? "page" : "false"}
-                href="/apps"
-              >
-                Apps
-              </Button>
-            </Stack>
+            <NavButtons currentPage={currentPage} />
             <Box flexGrow={1}></Box>
           </>
         )}
