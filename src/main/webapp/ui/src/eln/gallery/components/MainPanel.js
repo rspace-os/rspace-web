@@ -124,16 +124,27 @@ const StyledBreadcrumb = styled(
   },
 }));
 
-const DragOverlayContents = styled(({ className }) => {
-  const dndContext = useDndContext();
-  return (
-    <Badge
-      badgeContent={dndContext.active?.data.current.filesBeingMoved.size}
-      color="callToAction"
-      className={className}
-    ></Badge>
-  );
-})(({ theme }) => ({
+const DragOverlayContents = styled(
+  observer(({ className }) => {
+    const dndContext = useDndContext();
+    const selection = useGallerySelection();
+
+    let numberBeingMoved = 0;
+    if (dndContext.active) {
+      if (selection.includes(dndContext.active?.data.current.fileBeingMoved))
+        numberBeingMoved = selection.size;
+      else numberBeingMoved = 1;
+    }
+
+    return (
+      <Badge
+        badgeContent={numberBeingMoved}
+        color="callToAction"
+        className={className}
+      ></Badge>
+    );
+  })
+)(({ theme }) => ({
   width: "100%",
   height: "100%",
   borderRadius: "5px",
@@ -720,14 +731,7 @@ const FileCard = styled(
           disabled: false,
           id: file.id,
           data: {
-            /*
-             * If this `file` is one of the selected files then all of the
-             * selected files are to be moved by the drag operation. If it is not
-             * included then just move this file.
-             */
-            filesBeingMoved: selection.includes(file)
-              ? selection.asSet()
-              : new RsSet([file]),
+            fileBeingMoved: file,
           },
         });
         /*
@@ -772,13 +776,15 @@ const FileCard = styled(
               animation: "drop 2s linear infinite",
             }
           : {};
-        const inGroupBeingDraggedStyle: { [string]: string | number } = (
-          dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
-        ).hasWithEq(file, (a, b) => a.id === b.id)
-          ? {
-              opacity: 0.2,
-            }
-          : {};
+        const inGroupBeingDraggedStyle: { [string]: string | number } =
+          Boolean(dndContext.active?.data.current?.fileBeingMoved) &&
+          (selection.includes(dndContext.active.data.current.fileBeingMoved)
+            ? selection.includes(file)
+            : file.id === dndContext.active.data.current.fileBeingMoved.id)
+            ? {
+                opacity: 0.2,
+              }
+            : {};
         const fileUploadDropping: { [string]: string | number } = over
           ? {
               borderColor: SELECTED_OR_FOCUS_BLUE,
@@ -1200,20 +1206,23 @@ function GalleryMainPanel({
             sensors={[mouseSensor, touchSensor, keyboardSensor]}
             onDragEnd={(event) => {
               if (!event.over?.data.current) return;
+              const filesBeingMoved = selection.includes(
+                event.active.data.current.fileBeingMoved
+              )
+                ? selection.asSet()
+                : new RsSet([event.active.data.current.fileBeingMoved]);
               /*
                * When tapping, holding, and then releasing on a folder onDragEnd is
-               * invoked with event.over.data.current.destination.folder being and
-               * event.active.data.current.filesBeingMoved including the container
-               * that is tapped. This is clearly an unintended operation and we
-               * should not attempt to move the container into itself.
+               * invoked with event.over.data.current.destination.folder and
+               * event.active.data.current.fileBeingMoved being the same. This
+               * is clearly an unintended operation and we should not attempt
+               * to move the container into itself.
                */
               if (
-                event.active.data.current.filesBeingMoved.has(
-                  event.over.data.current.destination.folder
-                )
+                filesBeingMoved.has(event.over.data.current.destination.folder)
               )
                 return;
-              void moveFiles(event.active.data.current.filesBeingMoved)
+              void moveFiles(filesBeingMoved)
                 .to({
                   destination: event.over.data.current.destination,
                   section: selectedSection,
