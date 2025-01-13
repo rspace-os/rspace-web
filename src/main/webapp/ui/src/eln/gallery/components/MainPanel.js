@@ -704,6 +704,9 @@ const FileCard = styled(
         const { uploadFiles } = useGalleryActions();
         const { openFolder } = useFolderOpen();
         const selection = useGallerySelection();
+        const dndContext = useDndContext();
+        const dndInProgress = Boolean(dndContext.active);
+
         const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
           useFileImportDropZone({
             onDrop: (files) => {
@@ -715,9 +718,21 @@ const FileCard = styled(
             },
             disabled: !file.isFolder,
           });
+
+        let isBeingMoved = false;
+        if (dndContext.active?.data.current.fileBeingMoved) {
+          if (
+            selection.includes(dndContext.active.data.current.fileBeingMoved) &&
+            selection.includes(file)
+          )
+            isBeingMoved = true;
+          if (file.id === dndContext.active.data.current.fileBeingMoved)
+            isBeingMoved = true;
+        }
+
         const { setNodeRef: setDropRef, isOver } = useDroppable({
           id: file.id,
-          disabled: !file.isFolder,
+          disabled: !file.isFolder || isBeingMoved,
           data: {
             path: file.path,
             destination: folderDestination(file),
@@ -740,9 +755,6 @@ const FileCard = styled(
          * correct role for tree items doesn't prevent DndKit from working.
          */
         delete attributes.role;
-
-        const dndContext = useDndContext();
-        const dndInProgress = Boolean(dndContext.active);
 
         /*
          * When the user taps the FileCard, we don't want to immediately
@@ -768,7 +780,7 @@ const FileCard = styled(
           ? {
               borderColor: SELECTED_OR_FOCUS_BLUE,
             }
-          : dndInProgress && file.isFolder
+          : dndInProgress && file.isFolder && !isBeingMoved
           ? {
               border: "2px solid white",
               borderWidth: "2px",
