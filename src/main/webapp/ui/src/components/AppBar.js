@@ -27,7 +27,6 @@ import Divider from "@mui/material/Divider";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import Menu, { menuClasses } from "@mui/material/Menu";
 import AccentMenuItem from "./AccentMenuItem";
-import MenuItem from "@mui/material/MenuItem";
 import ListItem from "@mui/material/ListItem";
 import NotebookIcon from "@mui/icons-material/AutoStories";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
@@ -343,7 +342,7 @@ function GalleryAppBar({
             }}
             MenuListProps={{
               "aria-labelledby": "account-menu-button",
-              //disablePadding: true,
+              disablePadding: true,
               sx: { pt: 0.5 },
             }}
             anchorOrigin={{
@@ -374,52 +373,44 @@ function GalleryAppBar({
               />
             </ListItem>
             <Divider sx={{ my: 0.5 }} />
-            <MenuItem
+            <AccentMenuItem
+              title="Messaging"
+              avatar={<MessageIcon />}
+              compact
               onClick={() => {
                 setAccountMenuAnchorEl(null);
                 window.location = "/dashboard";
               }}
-            >
-              <ListItemIcon>
-                <MessageIcon />
-              </ListItemIcon>
-              <ListItemText primary="Messaging" />
-            </MenuItem>
-            <MenuItem
+            />
+            <AccentMenuItem
+              title="My RSpace"
+              avatar={<SettingsIcon />}
+              compact
               onClick={() => {
                 setAccountMenuAnchorEl(null);
                 window.location = "/userform";
               }}
-            >
-              <ListItemIcon>
-                <SettingsIcon />
-              </ListItemIcon>
-              <ListItemText primary="My RSpace" />
-            </MenuItem>
-            <MenuItem
+            />
+            <AccentMenuItem
+              title="Published"
+              avatar={<PublicIcon />}
+              compact
               onClick={() => {
                 setAccountMenuAnchorEl(null);
                 window.location = "/public/publishedView/publishedDocuments";
               }}
-            >
-              <ListItemIcon>
-                <PublicIcon />
-              </ListItemIcon>
-              <ListItemText primary="Published" />
-            </MenuItem>
+            />
             <Divider />
-            <MenuItem
+            <AccentMenuItem
+              title="Log Out"
+              avatar={<LogoutIcon />}
+              compact
               onClick={() => {
                 JwtService.destroyToken();
                 setAccountMenuAnchorEl(null);
                 window.location = "/logout";
               }}
-            >
-              <ListItemIcon>
-                <LogoutIcon />
-              </ListItemIcon>
-              <ListItemText primary="Log Out" />
-            </MenuItem>
+            />
           </Menu>
         </Box>
         <Box ml={1}>
