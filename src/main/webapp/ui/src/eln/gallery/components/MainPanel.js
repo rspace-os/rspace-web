@@ -42,6 +42,7 @@ import {
   MouseSensor,
   TouchSensor,
   KeyboardSensor,
+  DragOverlay,
 } from "@dnd-kit/core";
 import Button from "@mui/material/Button";
 import GridIcon from "@mui/icons-material/ViewCompact";
@@ -82,6 +83,7 @@ import { useDeploymentProperty } from "../../useDeploymentProperty";
 import { useFolderOpen } from "./OpenFolderProvider";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
+import Badge from "@mui/material/Badge";
 
 const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
   "& .MuiBreadcrumbs-ol": {
@@ -119,6 +121,32 @@ const StyledBreadcrumb = styled(
     fontSize: "1.05rem",
     marginRight: theme.spacing(-0.5),
     color: alpha(theme.palette.primary.contrastText, 0.85),
+  },
+}));
+
+const DragOverlayContents = styled(({ className }) => {
+  const dndContext = useDndContext();
+  return (
+    <Badge
+      badgeContent={dndContext.active?.data.current.filesBeingMoved.size}
+      color="callToAction"
+      className={className}
+    ></Badge>
+  );
+})(({ theme }) => ({
+  width: "100%",
+  height: "100%",
+  borderRadius: "5px",
+  backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
+  border: `2px solid ${theme.palette.callToAction.main}`,
+  cursor: "grabbing",
+  "& .MuiBadge-badge": {
+    height: "75px",
+    width: "75px",
+    right: "50%",
+    top: "50%",
+    fontSize: "2em",
+    borderRadius: "50%",
   },
 }));
 
@@ -688,7 +716,6 @@ const FileCard = styled(
           attributes,
           listeners,
           setNodeRef: setDragRef,
-          transform,
         } = useDraggable({
           disabled: false,
           id: file.id,
@@ -733,14 +760,6 @@ const FileCard = styled(
           null
         );
 
-        const dragStyle: { [string]: string | number } = transform
-          ? {
-              transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
-              zIndex: 1400, // Above the sidebar
-              position: "fixed",
-              boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
-            }
-          : {};
         const dropStyle: { [string]: string | number } = isOver
           ? {
               borderColor: SELECTED_OR_FOCUS_BLUE,
@@ -753,15 +772,13 @@ const FileCard = styled(
               animation: "drop 2s linear infinite",
             }
           : {};
-        const inGroupBeingDraggedStyle: { [string]: string | number } =
-          (
-            dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
-          ).hasWithEq(file, (a, b) => a.id === b.id) &&
-          dndContext.active?.id !== file.id
-            ? {
-                opacity: 0.2,
-              }
-            : {};
+        const inGroupBeingDraggedStyle: { [string]: string | number } = (
+          dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
+        ).hasWithEq(file, (a, b) => a.id === b.id)
+          ? {
+              opacity: 0.2,
+            }
+          : {};
         const fileUploadDropping: { [string]: string | number } = over
           ? {
               borderColor: SELECTED_OR_FOCUS_BLUE,
@@ -850,7 +867,6 @@ const FileCard = styled(
                 onFocus={onFocus}
                 onBlur={onBlur}
                 style={{
-                  ...dragStyle,
                   ...dropStyle,
                   ...inGroupBeingDraggedStyle,
                   ...fileUploadDropping,
@@ -1536,6 +1552,9 @@ function GalleryMainPanel({
                   .orElse(null)}
               </Grid>
             </Grid>
+            <DragOverlay>
+              <DragOverlayContents />
+            </DragOverlay>
             <DragCancelFab />
           </DndContext>
         </DialogContent>

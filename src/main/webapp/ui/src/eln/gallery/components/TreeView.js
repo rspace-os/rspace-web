@@ -228,7 +228,6 @@ const CustomTreeItem = observer(
       attributes,
       listeners,
       setNodeRef: setDragRef,
-      transform,
     } = useDraggable({
       disabled: disableDragAndDrop,
       id: file.id,
@@ -249,15 +248,6 @@ const CustomTreeItem = observer(
     );
     const dndInProgress = Boolean(dndContext.active);
 
-    const dragStyle: { [string]: string | number } = transform
-      ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.1)`,
-          zIndex: 1400, // Above the sidebar
-          position: "fixed",
-          boxShadow: `hsl(${COLOR.main.hue}deg 66% 10% / 20%) 0px 2px 16px 8px`,
-          maxWidth: "max-content",
-        }
-      : {};
     const dropStyle: { [string]: string | number } = isOver
       ? {
           border: SELECTED_OR_FOCUS_BORDER,
@@ -270,15 +260,13 @@ const CustomTreeItem = observer(
       : {
           border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
         };
-    const inGroupBeingDraggedStyle: { [string]: string | number } =
-      (
-        dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
-      ).hasWithEq(file, (a, b) => a.id === b.id) &&
-      dndContext.active?.id !== file.id
-        ? {
-            opacity: 0.2,
-          }
-        : {};
+    const inGroupBeingDraggedStyle: { [string]: string | number } = (
+      dndContext.active?.data.current?.filesBeingMoved ?? new RsSet()
+    ).hasWithEq(file, (a, b) => a.id === b.id)
+      ? {
+          opacity: 0.2,
+        }
+      : {};
     const fileUploadDropping: { [string]: string | number } = over
       ? {
           border: SELECTED_OR_FOCUS_BORDER,
@@ -359,7 +347,6 @@ const CustomTreeItem = observer(
           onKeyDown={listeners?.onKeyDown}
           {...attributes}
           style={{
-            ...dragStyle,
             ...dropStyle,
             ...inGroupBeingDraggedStyle,
             ...fileUploadDropping,
