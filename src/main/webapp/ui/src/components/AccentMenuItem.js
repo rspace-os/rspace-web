@@ -1,10 +1,6 @@
 //@flow
 
-import React, {
-  type Node,
-  type ComponentType,
-  type ElementConfig,
-} from "react";
+import React, { type Node, type ComponentType } from "react";
 import { styled } from "@mui/material/styles";
 import MenuItem from "@mui/material/MenuItem";
 import CardHeader from "@mui/material/CardHeader";
@@ -13,11 +9,11 @@ import { alpha } from "@mui/system";
 type AccentMenuItemArgs = {|
   title: string,
   avatar: Node,
-  subheader: string,
-  foregroundColor:
+  subheader?: Node,
+  foregroundColor?:
     | string
     | {| hue: number, saturation: number, lightness: number |},
-  backgroundColor:
+  backgroundColor?:
     | string
     | {| hue: number, saturation: number, lightness: number |},
   onClick?: () => void,
@@ -31,8 +27,6 @@ type AccentMenuItemArgs = {|
    */
   autoFocus?: boolean,
   tabIndex?: number,
-
-  ...ElementConfig<typeof CardHeader>,
 |};
 
 /**
@@ -54,9 +48,12 @@ export default (styled(
         disabled,
         autoFocus,
         tabIndex,
+        // eslint-disable-next-line react/prop-types -- flow will handle this just fine
         "aria-haspopup": ariaHasPopup,
-        ...props
-      }: AccentMenuItemArgs,
+        title,
+        subheader,
+        avatar,
+      }: {| ...AccentMenuItemArgs, className: string |},
       ref
     ) => (
       <MenuItem
@@ -71,7 +68,9 @@ export default (styled(
         aria-haspopup={ariaHasPopup}
       >
         <CardHeader
-          {...props}
+          title={title}
+          avatar={avatar}
+          subheader={subheader}
           subheaderTypographyProps={{
             sx: {
               whiteSpace: "break-spaces",
@@ -81,61 +80,68 @@ export default (styled(
       </MenuItem>
     )
   )
-)(({ theme, backgroundColor, foregroundColor, compact }) => {
-  const prefersMoreContrast = window.matchMedia(
-    "(prefers-contrast: more)"
-  ).matches;
-  const fg =
-    typeof foregroundColor === "string"
-      ? foregroundColor
-      : `hsl(${foregroundColor.hue}deg, ${foregroundColor.saturation}%, ${foregroundColor.lightness}%, 100%)`;
-  const bg =
-    typeof backgroundColor === "string"
-      ? backgroundColor
-      : `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
-  return {
-    margin: theme.spacing(1),
-    padding: 0,
-    borderRadius: "2px",
-    border: prefersMoreContrast ? "2px solid #000" : "none",
-    backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.24),
-    transition: "background-color ease-in-out .2s",
-    "&:hover": {
-      backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.36),
-    },
-    "& .MuiCardHeader-root": {
-      padding: theme.spacing(compact ? 1 : 2),
-    },
-    "& .MuiCardHeader-avatar": {
-      border: `${compact ? 3 : 4}px solid ${bg}`,
-      borderRadius: `${compact ? 4 : 6}px`,
-      backgroundColor: bg,
-      "& svg": {
-        margin: "2px",
+)(
+  ({
+    theme,
+    backgroundColor = theme.palette.primary.main,
+    foregroundColor = theme.palette.primary.contrastText,
+    compact,
+  }) => {
+    const prefersMoreContrast = window.matchMedia(
+      "(prefers-contrast: more)"
+    ).matches;
+    const fg =
+      typeof foregroundColor === "string"
+        ? foregroundColor
+        : `hsl(${foregroundColor.hue}deg, ${foregroundColor.saturation}%, ${foregroundColor.lightness}%, 100%)`;
+    const bg =
+      typeof backgroundColor === "string"
+        ? backgroundColor
+        : `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
+    return {
+      margin: theme.spacing(1),
+      padding: 0,
+      borderRadius: "2px",
+      border: prefersMoreContrast ? "2px solid #000" : "none",
+      backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.24),
+      transition: "background-color ease-in-out .2s",
+      "&:hover": {
+        backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.36),
       },
-    },
-    "& .MuiCardMedia-root": {
-      width: compact ? 28 : 36,
-      height: compact ? 28 : 36,
-      borderRadius: "4px",
-      margin: theme.spacing(0.25),
-    },
-    "& .MuiSvgIcon-root": {
-      width: compact ? 28 : 36,
-      height: compact ? 28 : 36,
-      background: bg,
-      padding: theme.spacing(0.5),
-      color: fg,
-    },
-    "& .MuiTypography-root": {
-      color: prefersMoreContrast ? "#000" : fg,
-    },
-    "& .MuiCardHeader-content": {
-      marginRight: theme.spacing(2),
-    },
-    "& .MuiCardHeader-title": {
-      fontSize: "1rem",
-      fontWeight: 500,
-    },
-  };
-}): ComponentType<AccentMenuItemArgs>);
+      "& .MuiCardHeader-root": {
+        padding: theme.spacing(compact ? 1 : 2),
+      },
+      "& .MuiCardHeader-avatar": {
+        border: `${compact ? 3 : 4}px solid ${bg}`,
+        borderRadius: `${compact ? 4 : 6}px`,
+        backgroundColor: bg,
+        "& svg": {
+          margin: "2px",
+        },
+      },
+      "& .MuiCardMedia-root": {
+        width: compact ? 28 : 36,
+        height: compact ? 28 : 36,
+        borderRadius: "4px",
+        margin: theme.spacing(0.25),
+      },
+      "& .MuiSvgIcon-root": {
+        width: compact ? 28 : 36,
+        height: compact ? 28 : 36,
+        background: bg,
+        padding: theme.spacing(0.5),
+        color: fg,
+      },
+      "& .MuiTypography-root": {
+        color: prefersMoreContrast ? "#000" : fg,
+      },
+      "& .MuiCardHeader-content": {
+        marginRight: theme.spacing(2),
+      },
+      "& .MuiCardHeader-title": {
+        fontSize: "1rem",
+        fontWeight: 500,
+      },
+    };
+  }
+): ComponentType<AccentMenuItemArgs>);
