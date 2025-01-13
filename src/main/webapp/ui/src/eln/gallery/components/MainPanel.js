@@ -465,7 +465,10 @@ const FileCard = styled(
           ...((isOver ? { borderColor: SELECTED_OR_FOCUS_BLUE } : {}): {
             [string]: string | number,
           }),
-          ...((!isOver && dndInProgress && file.isFolder && !isBeingMoved(file, dndContext.active?.data.current.fileBeingMoved)
+          ...((!isOver &&
+          dndInProgress &&
+          file.isFolder &&
+          !isBeingMoved(file, dndContext.active?.data.current.fileBeingMoved)
             ? {
                 border: "2px solid white",
                 borderWidth: "2px",
