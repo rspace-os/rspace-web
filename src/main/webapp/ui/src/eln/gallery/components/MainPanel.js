@@ -85,6 +85,20 @@ import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
 import Badge from "@mui/material/Badge";
 
+function useIsBeingMoved(): (
+  file: GalleryFile,
+  fileBeingMoved: GalleryFile | null
+) => boolean {
+  const selection = useGallerySelection();
+  return (file, fileBeingMoved) => {
+    if (fileBeingMoved === null) return false;
+    if (selection.includes(fileBeingMoved) && selection.includes(file))
+      return true;
+    if (file.id === fileBeingMoved.id) return true;
+    return false;
+  };
+}
+
 const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
   "& .MuiBreadcrumbs-ol": {
     /*
@@ -704,6 +718,7 @@ const FileCard = styled(
         const { uploadFiles } = useGalleryActions();
         const { openFolder } = useFolderOpen();
         const selection = useGallerySelection();
+        const isBeingMoved = useIsBeingMoved();
         const dndContext = useDndContext();
         const dndInProgress = Boolean(dndContext.active);
 
@@ -719,20 +734,11 @@ const FileCard = styled(
             disabled: !file.isFolder,
           });
 
-        let isBeingMoved = false;
-        if (dndContext.active?.data.current.fileBeingMoved) {
-          if (
-            selection.includes(dndContext.active.data.current.fileBeingMoved) &&
-            selection.includes(file)
-          )
-            isBeingMoved = true;
-          if (file.id === dndContext.active.data.current.fileBeingMoved)
-            isBeingMoved = true;
-        }
-
         const { setNodeRef: setDropRef, isOver } = useDroppable({
           id: file.id,
-          disabled: !file.isFolder || isBeingMoved,
+          disabled:
+            !file.isFolder ||
+            isBeingMoved(file, dndContext.active?.data.current.fileBeingMoved),
           data: {
             path: file.path,
             destination: folderDestination(file),
@@ -780,7 +786,9 @@ const FileCard = styled(
           ? {
               borderColor: SELECTED_OR_FOCUS_BLUE,
             }
-          : dndInProgress && file.isFolder && !isBeingMoved
+          : dndInProgress &&
+            file.isFolder &&
+            !isBeingMoved(file, dndContext.active?.data.current.fileBeingMoved)
           ? {
               border: "2px solid white",
               borderWidth: "2px",
