@@ -28,7 +28,6 @@ import { runInAction } from "mobx";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import RsSet from "../../../util/set";
 import PlaceholderLabel from "./PlaceholderLabel";
 import { Optional } from "../../../util/optional";
 import LoadMoreButton from "./LoadMoreButton";
@@ -214,7 +213,6 @@ const CustomTreeItem = observer(
     refeshing: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
-    const selection = useGallerySelection();
     const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
       useFileImportDropZone({
         onDrop: doNotAwait(async (files) => {
