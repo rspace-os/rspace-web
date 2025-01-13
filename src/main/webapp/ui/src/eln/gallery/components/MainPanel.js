@@ -87,11 +87,13 @@ import Badge from "@mui/material/Badge";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
-  fileBeingMoved: GalleryFile | null
+  // eslint-disable-next-line no-undefined -- undefined in types is fine
+  fileBeingMoved: GalleryFile | null | typeof undefined
 ) => boolean {
   const selection = useGallerySelection();
   return (file, fileBeingMoved) => {
-    if (fileBeingMoved === null) return false;
+    if (fileBeingMoved === null || typeof fileBeingMoved === "undefined")
+      return false;
     if (selection.includes(fileBeingMoved) && selection.includes(file))
       return true;
     if (file.id === fileBeingMoved.id) return true;
