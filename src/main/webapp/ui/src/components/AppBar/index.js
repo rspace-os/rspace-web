@@ -88,7 +88,6 @@ function GalleryAppBar({
         {sidebarToggle}
         {!isViewportSmall && (
           <>
-            <Box flexGrow={1}></Box>
             <Stack direction="row" spacing={1} sx={{ mx: 1 }}>
               <Button href="/workspace">Workspace</Button>
               <Button
@@ -110,6 +109,7 @@ function GalleryAppBar({
                 Apps
               </Button>
             </Stack>
+            <Box flexGrow={1}></Box>
           </>
         )}
         {isViewportSmall && (!isViewportVerySmall || !showTextfield) && (
