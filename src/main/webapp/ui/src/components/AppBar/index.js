@@ -354,13 +354,6 @@ function GalleryAppBar({
                 />
               </Stack>
             </ListItem>
-            <ListItem sx={{ py: 0 }}>
-              <img
-                src="/images/icons/rspaceLogoLarge.svg"
-                alt="rspace logo"
-                style={{ width: "max(100%, 240px)" }}
-              />
-            </ListItem>
             <Divider sx={{ my: 0.5 }} />
             <AccentMenuItem
               title="Messaging"
@@ -417,6 +410,14 @@ function GalleryAppBar({
                 window.location = "/logout";
               }}
             />
+            <Divider />
+            <ListItem sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}>
+              <img
+                src="/images/icons/rspaceLogoLarge.svg"
+                alt="rspace logo"
+                style={{ width: "min(100%, 120px)" }}
+              />
+            </ListItem>
           </Menu>
         </Box>
       </Toolbar>
