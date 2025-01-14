@@ -34,6 +34,50 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import JwtService from "../../common/JwtService";
 import SidebarToggle from "./SidebarToggle";
 import Link from "@mui/material/Link";
+import Avatar from "@mui/material/Avatar";
+import SvgIcon from "@mui/material/SvgIcon";
+import { styled } from "@mui/material/styles";
+
+const OrcidIcon = styled(({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    version="1.1"
+    viewBox="0 0 50 50"
+    className={className}
+  >
+    <g>
+      <g id="Layer_1">
+        <g>
+          <path
+            className="greenElements"
+            d="M49.3,25c0,13.4-10.9,24.3-24.3,24.3S.7,38.4.7,25,11.6.7,25,.7s24.3,10.9,24.3,24.3Z"
+          />
+          <g>
+            <path
+              className="whiteElements"
+              d="M17.1,36.1h-2.9V15.7h2.9v20.3Z"
+            />
+            <path
+              className="whiteElements"
+              d="M21.4,15.7h7.9c7.5,0,10.8,5.4,10.8,10.2s-4.1,10.2-10.8,10.2h-7.9s0-20.4,0-20.4ZM24.3,33.4h4.7c6.6,0,8.1-5,8.1-7.5,0-4.1-2.6-7.5-8.3-7.5h-4.5v15.1h0Z"
+            />
+            <path
+              className="whiteElements"
+              d="M17.5,11.5c0,1-.9,1.9-1.9,1.9s-1.9-.9-1.9-1.9.9-1.9,1.9-1.9c1.1,0,1.9.9,1.9,1.9Z"
+            />
+          </g>
+        </g>
+      </g>
+    </g>
+  </svg>
+))(() => ({
+  "& .greenElements": {
+    fill: "#a6ce39",
+  },
+  "& .whiteElements": {
+    fill: "#fff",
+  },
+}));
 
 function NavButtons({
   currentPage,
@@ -254,17 +298,52 @@ function GalleryAppBar({
             }}
           >
             <ListItem sx={{ py: 0 }}>
-              <ListItemText
-                sx={{ mt: 0.5 }}
-                primary="Joe Bloggs"
-                secondary={
-                  <>
-                    email: -----
-                    <br />
-                    ORCID: -----
-                  </>
-                }
-              />
+              <ListItemIcon>
+                <Avatar
+                  sx={{
+                    /*
+                     * These colours are just for the mockup. We should generate
+                     * a pair of colours from the username when there isn't an
+                     * avatar to show
+                     */
+                    color: "#FBE9E7",
+                    backgroundColor: "#FF5722",
+                  }}
+                >
+                  J
+                </Avatar>
+              </ListItemIcon>
+              <Stack>
+                <ListItemText
+                  sx={{ mt: 0.5 }}
+                  primary="Joe Bloggs (jbloggs)"
+                  secondary={<>bloggs@example.com</>}
+                />
+                <ListItemText
+                  /*
+                   * The styling of this component is dictated by the ORCID display guidelines
+                   * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
+                   */
+                  sx={{ mt: -0.5 }}
+                  primaryTypographyProps={{
+                    sx: {
+                      fontFamily: "monospace",
+                      lineHeight: "1em",
+                      fontSize: "0.8em",
+                      alignItems: "center",
+                      textDecoration: "underline",
+                    },
+                  }}
+                  primary={
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      <SvgIcon>
+                        <OrcidIcon />
+                      </SvgIcon>
+                      <span>0000-0000-0000-0000</span>
+                    </Stack>
+                  }
+                />
+              </Stack>
             </ListItem>
             <ListItem sx={{ py: 0 }}>
               <ListItemText sx={{ mt: 0.5 }} primary="BRANDING PLACEHOLDER" />
