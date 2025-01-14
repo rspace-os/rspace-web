@@ -33,7 +33,7 @@ import { doNotAwait } from "../../util/Util";
 import createAccentedTheme from "../../accentedTheme";
 import Toolbar from "@mui/material/Toolbar";
 import AppBar from "@mui/material/AppBar";
-import AccessibilityTipsIconButton from "../../components/AccessibilityTips";
+import { AccessibilityTipsIconButton } from "../../components/AccessibilityTips";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import Box from "@mui/material/Box";
 import ValidatingSubmitButton, {

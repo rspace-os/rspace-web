@@ -7,7 +7,7 @@ import { Dialog } from "../../components/DialogBoundary";
 import createAccentedTheme from "../../accentedTheme";
 import Toolbar from "@mui/material/Toolbar";
 import AppBar from "@mui/material/AppBar";
-import AccessibilityTipsIconButton from "../../components/AccessibilityTips";
+import { AccessibilityTipsIconButton } from "../../components/AccessibilityTips";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";

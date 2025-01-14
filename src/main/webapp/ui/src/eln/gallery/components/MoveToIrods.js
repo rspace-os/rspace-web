@@ -32,7 +32,7 @@ import AlertTitle from "@mui/lab/AlertTitle";
 import * as FetchingData from "../../../util/fetchingData";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
-import AccessibilityTipsIconButton from "../../../components/AccessibilityTips";
+import { AccessibilityTipsIconButton } from "../../../components/AccessibilityTips";
 import docLinks from "../../../assets/DocLinks";
 
 /**

@@ -45,7 +45,7 @@ type AccessibilityTipsIconButtonArgs = {|
  * by this part of the UI, with links to the documentation for each major
  * operation system so that they can discover how to enable it.
  */
-export default function AccessibilityTipsIconButton({
+export function AccessibilityTipsIconButton({
   supportsHighContrastMode,
   supportsReducedMotion,
   supports2xZoom,

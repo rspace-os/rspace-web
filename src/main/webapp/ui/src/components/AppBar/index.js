@@ -11,7 +11,7 @@ import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import { styled } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
-import AccessibilityTipsIconButton from "../AccessibilityTips";
+import { AccessibilityTipsIconButton } from "../AccessibilityTips";
 import HelpDocs from "../Help/HelpDocs";
 import HelpIcon from "@mui/icons-material/Help";
 import { observer } from "mobx-react-lite";

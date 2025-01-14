@@ -37,7 +37,7 @@ import docLinks from "../../assets/DocLinks";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
-import AccessibilityTipsIconButton from "../../components/AccessibilityTips";
+import { AccessibilityTipsIconButton } from "../../components/AccessibilityTips";
 import { DataGrid } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import Radio from "@mui/material/Radio";
