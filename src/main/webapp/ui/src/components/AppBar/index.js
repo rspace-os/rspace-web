@@ -307,7 +307,7 @@ function GalleryAppBar({
             }}
           >
             <ListItem sx={{ py: 0 }}>
-              <ListItemIcon>
+              <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
                 <Avatar
                   sx={{
                     /*
