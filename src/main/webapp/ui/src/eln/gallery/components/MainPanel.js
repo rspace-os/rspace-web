@@ -1144,7 +1144,17 @@ function PathAndSearch({
   clearPath: () => void,
 |}) {
   const { isViewportVerySmall } = useViewportDimensions();
-  const [searchTerm, setSearchTerm] = React.useState(appliedSearchTerm);
+
+  /*
+   * We use a copy of the search term string so that edits the user makes are
+   * not immediately passed to useGalleryListing which will immediately make a
+   * network call.
+   */
+  const [searchTerm, setSearchTerm] = React.useState("");
+  React.useEffect(() => {
+    setSearchTerm(appliedSearchTerm);
+  }, [appliedSearchTerm]);
+
   const [searchOpen, setSearchOpen] = React.useState(false);
   const searchTextfield = React.useRef();
   return (
