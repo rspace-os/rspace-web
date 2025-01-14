@@ -9,6 +9,7 @@ import { styled } from "@mui/material/styles";
 import AlertTitle from "@mui/lab/AlertTitle";
 import Link from "@mui/material/Link";
 import SvgIcon from "@mui/material/SvgIcon";
+import AccentMenuItem from "./AccentMenuItem";
 
 const StyledPopover = styled(
   ({ highContrastMode: _highContrastMode, ...rest }) => <Popover {...rest} />
@@ -44,12 +45,16 @@ function AccessibilityTipsPopup({
   supportsHighContrastMode,
   supportsReducedMotion,
   supports2xZoom,
+  anchorOrigin,
+  transformOrigin,
 }: {|
   anchorEl: null | EventTarget,
   setAnchorEl: (null) => void,
   supportsHighContrastMode: boolean,
   supportsReducedMotion: boolean,
   supports2xZoom: boolean,
+  anchorOrigin: {| vertical: "bottom" | "top", horizontal: "center" | "left" |},
+  transformOrigin: {| vertical: "top", horizontal: "center" | "right" |},
 |}) {
   const highContrastModeIsEnabled = window.matchMedia(
     "(prefers-contrast: more)"
@@ -63,18 +68,12 @@ function AccessibilityTipsPopup({
       open={Boolean(anchorEl)}
       anchorEl={anchorEl}
       highContrastMode={highContrastModeIsEnabled}
-      anchorOrigin={{
-        vertical: "bottom",
-        horizontal: "center",
-      }}
-      transformOrigin={{
-        vertical: "top",
-        horizontal: "center",
-      }}
       onClose={() => setAnchorEl(null)}
       PaperProps={{
         role: "dialog",
       }}
+      anchorOrigin={anchorOrigin}
+      transformOrigin={transformOrigin}
     >
       <Stack spacing={0.25}>
         {supportsHighContrastMode && (
@@ -162,7 +161,30 @@ function AccessibilityTipsPopup({
   );
 }
 
-type AccessibilityTipsIconButtonArgs = {|
+function AccessibilityIcon() {
+  return (
+    <SvgIcon viewBox="0 0 24 24">
+      <mask id="man">
+        <rect x="0" y="0" width="24" height="24" fill="white" />
+        <path
+          style={{
+            transform: "scale(0.75)",
+            transformOrigin: "center",
+            fill: "black",
+          }}
+          d="M20.5 6c-2.61.7-5.67 1-8.5 1s-5.89-.3-8.5-1L3 8c1.86.5 4 .83 6 1v13h2v-6h2v6h2V9c2-.17 4.14-.5 6-1zM12 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2"
+        ></path>
+      </mask>
+
+      <path
+        mask="url(#man)"
+        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2"
+      ></path>
+    </SvgIcon>
+  );
+}
+
+type AccessibilityTipsComponentArgs = {|
   supportsHighContrastMode?: boolean,
   supportsReducedMotion?: boolean,
   supports2xZoom?: boolean,
@@ -178,33 +200,14 @@ export function AccessibilityTipsIconButton({
   supportsHighContrastMode,
   supportsReducedMotion,
   supports2xZoom,
-}: AccessibilityTipsIconButtonArgs): Node {
+}: AccessibilityTipsComponentArgs): Node {
   const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
 
   return (
     <>
       <IconButtonWithTooltip
         title="Accessibility tips"
-        icon={
-          <SvgIcon viewBox="0 0 24 24">
-            <mask id="man">
-              <rect x="0" y="0" width="24" height="24" fill="white" />
-              <path
-                style={{
-                  transform: "scale(0.75)",
-                  transformOrigin: "center",
-                  fill: "black",
-                }}
-                d="M20.5 6c-2.61.7-5.67 1-8.5 1s-5.89-.3-8.5-1L3 8c1.86.5 4 .83 6 1v13h2v-6h2v6h2V9c2-.17 4.14-.5 6-1zM12 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2"
-              ></path>
-            </mask>
-
-            <path
-              mask="url(#man)"
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2"
-            ></path>
-          </SvgIcon>
-        }
+        icon={<AccessibilityIcon />}
         size="small"
         onClick={(e: Event & { +currentTarget: EventTarget, ... }) => {
           setAnchorEl(e.currentTarget);
@@ -216,6 +219,64 @@ export function AccessibilityTipsIconButton({
         supportsHighContrastMode={supportsHighContrastMode ?? false}
         supportsReducedMotion={supportsReducedMotion ?? false}
         supports2xZoom={supports2xZoom ?? false}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      />
+    </>
+  );
+}
+
+/**
+ * @summary This component provides an accented menu item for use in the
+ *          profile/account menu of the App Bar that is designed to inform the
+ *          user that the current page has support for configurable
+ *          accessibility options.
+ * @see     {@link module:AccessibilityTips} for more info.
+ */
+export function AccessibilityTipsMenuItem({
+  supportsHighContrastMode,
+  supportsReducedMotion,
+  supports2xZoom,
+  onClose,
+}: {|
+  ...AccessibilityTipsComponentArgs,
+  onClose: () => void,
+|}): Node {
+  const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
+
+  return (
+    <>
+      <AccentMenuItem
+        title="Accessibility Tips"
+        avatar={<AccessibilityIcon />}
+        onClick={(e) => {
+          setAnchorEl(e.currentTarget);
+        }}
+        compact
+      />
+      <AccessibilityTipsPopup
+        anchorEl={anchorEl}
+        setAnchorEl={() => {
+          setAnchorEl(null);
+          onClose();
+        }}
+        supportsHighContrastMode={supportsHighContrastMode ?? false}
+        supportsReducedMotion={supportsReducedMotion ?? false}
+        supports2xZoom={supports2xZoom ?? false}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
       />
     </>
   );

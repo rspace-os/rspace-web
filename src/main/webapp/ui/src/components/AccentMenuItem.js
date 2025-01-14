@@ -16,7 +16,7 @@ type AccentMenuItemArgs = {|
   backgroundColor?:
     | string
     | {| hue: number, saturation: number, lightness: number |},
-  onClick?: () => void,
+  onClick?: (Event) => void,
   onKeyDown?: (KeyboardEvent) => void,
   compact?: boolean,
   disabled?: boolean,

@@ -11,7 +11,7 @@ import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import { styled } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
-import { AccessibilityTipsIconButton } from "../AccessibilityTips";
+import { AccessibilityTipsMenuItem } from "../AccessibilityTips";
 import HelpDocs from "../Help/HelpDocs";
 import HelpIcon from "@mui/icons-material/Help";
 import { observer } from "mobx-react-lite";
@@ -409,6 +409,14 @@ function GalleryAppBar({
               }}
             />
             <Divider />
+            <AccessibilityTipsMenuItem
+              supportsReducedMotion
+              supportsHighContrastMode
+              supports2xZoom
+              onClose={() => {
+                setAccountMenuAnchorEl(null);
+              }}
+            />
             <AccentMenuItem
               title="Log Out"
               avatar={<LogoutIcon />}
@@ -420,13 +428,6 @@ function GalleryAppBar({
               }}
             />
           </Menu>
-        </Box>
-        <Box ml={1}>
-          <AccessibilityTipsIconButton
-            supportsReducedMotion
-            supportsHighContrastMode
-            supports2xZoom
-          />
         </Box>
         <Box ml={1}>
           <HelpDocs
