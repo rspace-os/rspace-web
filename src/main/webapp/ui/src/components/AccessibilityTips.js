@@ -23,17 +23,16 @@ const StyledPopover = styled(
   },
 }));
 
-type AccessibilityTipsArgs = {|
+type AccessibilityTipsIconButtonArgs = {|
   supportsHighContrastMode?: boolean,
   supportsReducedMotion?: boolean,
   supports2xZoom?: boolean,
-  elementType: "dialog" | "panel" | "page",
 |};
 
 /**
- * @summary This component is designed to inform the user that the current
- *          page, panel, or dialog has support for configurable accessibility
- *          options.
+ * @summary This component provides an icon button for use in the headers of
+ *          dialogs that is designed to inform the user that the current dialog
+ *          has support for configurable accessibility options.
  *
  * Via the "prefers-contrast" and "prefers-reduced-motion" media queries the
  * user's device and browser may inform us that the user wishes for the page to
@@ -46,12 +45,11 @@ type AccessibilityTipsArgs = {|
  * by this part of the UI, with links to the documentation for each major
  * operation system so that they can discover how to enable it.
  */
-export default function AccessibilityTips({
+export default function AccessibilityTipsIconButton({
   supportsHighContrastMode,
   supportsReducedMotion,
   supports2xZoom,
-  elementType,
-}: AccessibilityTipsArgs): Node {
+}: AccessibilityTipsIconButtonArgs): Node {
   const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
 
   const highContrastModeIsEnabled = window.matchMedia(
@@ -117,7 +115,7 @@ export default function AccessibilityTips({
               <AlertTitle>
                 {highContrastModeIsEnabled
                   ? "High contrast mode is enabled."
-                  : `This ${elementType} supports a high contrast mode.`}
+                  : "This dialog supports a high contrast mode."}
               </AlertTitle>
               To {highContrastModeIsEnabled ? "disable" : "enable"}, turn{" "}
               {highContrastModeIsEnabled ? "off" : "on"} your device&apos;s high
@@ -145,7 +143,7 @@ export default function AccessibilityTips({
               <AlertTitle>
                 {reducedMotionModeIsEnabled
                   ? "Reduced motion mode is enabled."
-                  : `This ${elementType} supports a reduced motion mode.`}
+                  : "This dialog supports a reduced motion mode."}
               </AlertTitle>
               To {reducedMotionModeIsEnabled ? "disable" : "enable"}, turn{" "}
               {reducedMotionModeIsEnabled ? "off" : "on"} your device&apos;s
@@ -167,7 +165,7 @@ export default function AccessibilityTips({
           {supports2xZoom && (
             <Alert severity="info" elevation={0} aria-label="Tip">
               <AlertTitle>
-                This {elementType} supports up to 200% zoom magnification.
+                This dialog supports up to 200% zoom magnification.
               </AlertTitle>
               To enable, adjust your browser&apos;s settings:
               <br />

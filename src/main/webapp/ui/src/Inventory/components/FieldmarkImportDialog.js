@@ -7,7 +7,7 @@ import { Dialog } from "../../components/DialogBoundary";
 import createAccentedTheme from "../../accentedTheme";
 import Toolbar from "@mui/material/Toolbar";
 import AppBar from "@mui/material/AppBar";
-import AccessibilityTips from "../../components/AccessibilityTips";
+import AccessibilityTipsIconButton from "../../components/AccessibilityTips";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -281,10 +281,7 @@ export default function FieldmarkImportDialog({
             </Typography>
             <Box flexGrow={1}></Box>
             <Box ml={1}>
-              <AccessibilityTips
-                supportsHighContrastMode
-                elementType="dialog"
-              />
+              <AccessibilityTipsIconButton supportsHighContrastMode />
             </Box>
             <Box ml={1} sx={{ transform: "translateY(2px)" }}>
               <HelpLinkIcon title="Fieldmark help" link={docLinks.fieldmark} />

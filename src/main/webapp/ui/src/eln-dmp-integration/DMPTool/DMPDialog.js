@@ -37,7 +37,7 @@ import docLinks from "../../assets/DocLinks";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
-import AccessibilityTips from "../../components/AccessibilityTips";
+import AccessibilityTipsIconButton from "../../components/AccessibilityTips";
 import { DataGrid } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import Radio from "@mui/material/Radio";
@@ -208,7 +208,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           </Typography>
           <Box flexGrow={1}></Box>
           <Box ml={1}>
-            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
+            <AccessibilityTipsIconButton supportsHighContrastMode />
           </Box>
           <Box ml={1} sx={{ transform: "translateY(2px)" }}>
             <HelpLinkIcon title="DMPTool help" link={docLinks.dmptool} />

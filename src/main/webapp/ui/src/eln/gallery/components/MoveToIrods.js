@@ -32,7 +32,7 @@ import AlertTitle from "@mui/lab/AlertTitle";
 import * as FetchingData from "../../../util/fetchingData";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
-import AccessibilityTips from "../../../components/AccessibilityTips";
+import AccessibilityTipsIconButton from "../../../components/AccessibilityTips";
 import docLinks from "../../../assets/DocLinks";
 
 /**
@@ -239,7 +239,7 @@ function MoveCopyDialog({
           </Typography>
           <Box flexGrow={1}></Box>
           <Box ml={1}>
-            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
+            <AccessibilityTipsIconButton supportsHighContrastMode />
           </Box>
           <Box ml={1} sx={{ transform: "translateY(2px)" }}>
             <HelpLinkIcon title="iRODS help" link={docLinks.irods} />
