@@ -26,7 +26,6 @@ import FlaskIcon from "@mui/icons-material/Science";
 import AppsIcon from "@mui/icons-material/AppRegistration";
 import { COLOR as GALLERY_COLOR } from "../../eln/gallery/common";
 import { COLOR as INVENTORY_COLOR } from "../../Inventory/components/Layout/Sidebar";
-import { COLOR as APPS_COLOR } from "../../eln/apps/App";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import MessageIcon from "@mui/icons-material/Message";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -39,7 +38,8 @@ import Link from "@mui/material/Link";
 function NavButtons({
   currentPage,
 }: {|
-  currentPage: "Apps" | "Gallery" | "Inventory" | "Workspace",
+  // eslint-disable-next-line no-undefined -- undefined in types is fine
+  currentPage: "Gallery" | "Inventory" | "Workspace" | typeof undefined,
 |}) {
   return (
     <Stack direction="row" spacing={2} sx={{ mx: 1 }}>
@@ -64,19 +64,12 @@ function NavButtons({
       >
         Inventory
       </Link>
-      <Link
-        target="_self"
-        aria-current={currentPage === "Apps" ? "page" : false}
-        href="/apps"
-      >
-        Apps
-      </Link>
     </Stack>
   );
 }
 
 type GalleryAppBarArgs = {|
-  currentPage: "Apps" | "Gallery" | "Inventory" | "Workspace",
+  currentPage?: "Gallery" | "Inventory" | "Workspace",
   sidebarToggle?: Element<typeof SidebarToggle>,
 |};
 
@@ -207,17 +200,6 @@ function GalleryAppBar({
                   handleAppMenuClose();
                 }}
               />
-              <AccentMenuItem
-                title="Apps"
-                avatar={<AppsIcon />}
-                subheader="Integrations and third-party applications"
-                foregroundColor={APPS_COLOR.contrastText}
-                backgroundColor={APPS_COLOR.main}
-                onClick={() => {
-                  window.location = "/apps";
-                  handleAppMenuClose();
-                }}
-              />
             </Menu>
             <Box flexGrow={1}></Box>
           </>
@@ -304,6 +286,15 @@ function GalleryAppBar({
               onClick={() => {
                 setAccountMenuAnchorEl(null);
                 window.location = "/userform";
+              }}
+            />
+            <AccentMenuItem
+              title="Apps"
+              avatar={<AppsIcon />}
+              compact
+              onClick={() => {
+                setAccountMenuAnchorEl(null);
+                window.location = "/apps";
               }}
             />
             <AccentMenuItem
