@@ -107,7 +107,6 @@ const useStyles = makeStyles()((theme) => ({
     display: ({ hideLeftPanel }) => (hideLeftPanel ? "none" : "flex"),
     flexDirection: "column",
     padding: theme.spacing(1),
-    paddingTop: 0,
   },
   dialogWrapper: {
     height: "calc(100vh - 100px)",
