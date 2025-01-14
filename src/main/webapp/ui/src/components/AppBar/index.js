@@ -355,11 +355,11 @@ function GalleryAppBar({
             }}
             anchorOrigin={{
               vertical: "bottom",
-              horizontal: "left",
+              horizontal: "right",
             }}
             transformOrigin={{
               vertical: "top",
-              horizontal: "left",
+              horizontal: "right",
             }}
             sx={{
               [`.${menuClasses.paper}`]: {
