@@ -377,7 +377,13 @@ function GalleryAppBar({
               <ListItemText
                 sx={{ mt: 0.5 }}
                 primary="Joe Bloggs"
-                secondary="ORCID: -----"
+                secondary={
+                  <>
+                    email: -----
+                    <br />
+                    ORCID: -----
+                  </>
+                }
               />
             </ListItem>
             <Divider sx={{ my: 0.5 }} />
