@@ -84,6 +84,11 @@ import { useFolderOpen } from "./OpenFolderProvider";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
 import Badge from "@mui/material/Badge";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import CloseIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
@@ -1119,6 +1124,58 @@ const GridView = observer(
   }
 );
 
+const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
+  color: theme.palette.standardIcon.main,
+  height: 20,
+  width: 20,
+}));
+
+function Search({
+  appliedSearchTerm,
+  setAppliedSearchTerm,
+}: {|
+  appliedSearchTerm: string,
+  setAppliedSearchTerm: (string) => void,
+|}) {
+  const [searchTerm, setSearchTerm] = React.useState(appliedSearchTerm);
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setAppliedSearchTerm(searchTerm);
+      }}
+    >
+      <TextField
+        placeholder="Search"
+        value={searchTerm}
+        onChange={({ currentTarget: { value } }) => setSearchTerm(value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+          endAdornment:
+            searchTerm !== "" ? (
+              <IconButtonWithTooltip
+                title="Clear"
+                icon={<StyledCloseIcon />}
+                size="small"
+                onClick={() => {
+                  setSearchTerm("");
+                  setAppliedSearchTerm("");
+                }}
+              />
+            ) : null,
+        }}
+        inputProps={{
+          "aria-label": "Search current folder",
+        }}
+      />
+    </form>
+  );
+}
+
 type GalleryMainPanelArgs = {|
   selectedSection: GallerySection,
   path: $ReadOnlyArray<GalleryFile>,
@@ -1139,6 +1196,8 @@ type GalleryMainPanelArgs = {|
   orderBy: "name" | "modificationDate",
   setSortOrder: ("DESC" | "ASC") => void,
   setOrderBy: ("name" | "modificationDate") => void,
+  appliedSearchTerm: string,
+  setAppliedSearchTerm: (string) => void,
 |};
 
 function GalleryMainPanel({
@@ -1152,6 +1211,8 @@ function GalleryMainPanel({
   orderBy,
   setSortOrder,
   setOrderBy,
+  appliedSearchTerm,
+  setAppliedSearchTerm,
 }: GalleryMainPanelArgs): Node {
   const viewportDimensions = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
@@ -1275,12 +1336,20 @@ function GalleryMainPanel({
               sx={{ height: "100%", flexWrap: "nowrap" }}
               spacing={1}
             >
-              <Grid item sx={{ pt: "0 !important" }}>
-                <Path
-                  section={selectedSection}
-                  path={path}
-                  clearPath={clearPath}
-                />
+              <Grid item container sx={{ pt: "0 !important" }}>
+                <Grid item sx={{ flexGrow: 1 }}>
+                  <Path
+                    section={selectedSection}
+                    path={path}
+                    clearPath={clearPath}
+                  />
+                </Grid>
+                <Grid item>
+                  <Search
+                    appliedSearchTerm={appliedSearchTerm}
+                    setAppliedSearchTerm={setAppliedSearchTerm}
+                  />
+                </Grid>
               </Grid>
               <Grid item sx={{ maxWidth: "100% !important" }}>
                 <Stack

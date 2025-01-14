@@ -180,6 +180,8 @@ const Picker = observer(
                       orderBy={orderBy}
                       setSortOrder={setSortOrder}
                       setOrderBy={setOrderBy}
+                      appliedSearchTerm={appliedSearchTerm}
+                      setAppliedSearchTerm={setAppliedSearchTerm}
                     />
                     <DialogActions>
                       <Button onClick={() => onClose()}>Cancel</Button>

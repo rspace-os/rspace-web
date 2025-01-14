@@ -114,6 +114,8 @@ const WholePage = styled(() => {
                   orderBy={orderBy}
                   setSortOrder={setSortOrder}
                   setOrderBy={setOrderBy}
+                  appliedSearchTerm={appliedSearchTerm}
+                  setAppliedSearchTerm={setAppliedSearchTerm}
                 />
               </Box>
             </Box>
