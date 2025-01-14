@@ -71,9 +71,6 @@ const WholePage = styled(() => {
           <OpenFolderProvider setPath={setPath}>
             <AppBar
               currentPage="Gallery"
-              appliedSearchTerm={appliedSearchTerm}
-              setAppliedSearchTerm={setAppliedSearchTerm}
-              hideSearch={selectedSection === "NetworkFiles"}
               sidebarToggle={
                 <SidebarToggle
                   setSidebarOpen={setDrawerOpen}
@@ -120,6 +117,8 @@ const WholePage = styled(() => {
                   orderBy={orderBy}
                   setSortOrder={setSortOrder}
                   setOrderBy={setOrderBy}
+                  appliedSearchTerm={appliedSearchTerm}
+                  setAppliedSearchTerm={setAppliedSearchTerm}
                 />
               </Box>
             </Box>

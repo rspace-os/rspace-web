@@ -20,9 +20,6 @@ function Header(): Node {
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
       <AppBar
         currentPage="Inventory"
-        appliedSearchTerm=""
-        setAppliedSearchTerm={() => {}}
-        hideSearch={true}
         sidebarToggle={
           <SidebarToggle
             sidebarId={"foo"}

@@ -152,12 +152,7 @@ function App(): Node {
             },
           }}
         >
-          <AppBar
-            currentPage="Apps"
-            appliedSearchTerm={""}
-            setAppliedSearchTerm={() => {}}
-            hideSearch={true}
-          />
+          <AppBar currentPage="Apps" />
           <Grid container direction="row" spacing={1}>
             <Grid item xs={1} md={2}></Grid>
             <Grid item xs={10} md={8}>

@@ -143,9 +143,6 @@ const Picker = observer(
               >
                 <AppBar
                   currentPage="Gallery"
-                  appliedSearchTerm={appliedSearchTerm}
-                  setAppliedSearchTerm={setAppliedSearchTerm}
-                  hideSearch={selectedSection === "NetworkFiles"}
                   sidebarToggle={
                     <SidebarToggle
                       setSidebarOpen={setDrawerOpen}
@@ -186,6 +183,8 @@ const Picker = observer(
                       orderBy={orderBy}
                       setSortOrder={setSortOrder}
                       setOrderBy={setOrderBy}
+                      appliedSearchTerm={appliedSearchTerm}
+                      setAppliedSearchTerm={setAppliedSearchTerm}
                     />
                     <DialogActions>
                       <Button onClick={() => onClose()}>Cancel</Button>

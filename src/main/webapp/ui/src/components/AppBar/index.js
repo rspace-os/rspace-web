@@ -6,11 +6,6 @@ import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
-import SearchIcon from "@mui/icons-material/Search";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import { styled } from "@mui/material/styles";
-import CloseIcon from "@mui/icons-material/Close";
 import { AccessibilityTipsMenuItem } from "../AccessibilityTips";
 import HelpDocs from "../Help/HelpDocs";
 import HelpIcon from "@mui/icons-material/Help";
@@ -40,12 +35,6 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import JwtService from "../../common/JwtService";
 import SidebarToggle from "./SidebarToggle";
 import Link from "@mui/material/Link";
-
-const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
-  color: theme.palette.standardIcon.main,
-  height: 20,
-  width: 20,
-}));
 
 function NavButtons({
   currentPage,
@@ -88,38 +77,20 @@ function NavButtons({
 
 type GalleryAppBarArgs = {|
   currentPage: "Apps" | "Gallery" | "Inventory" | "Workspace",
-  appliedSearchTerm: string,
-  setAppliedSearchTerm: (string) => void,
-  hideSearch: boolean,
   sidebarToggle?: Element<typeof SidebarToggle>,
 |};
 
 function GalleryAppBar({
   currentPage,
-  appliedSearchTerm,
-  setAppliedSearchTerm,
-  hideSearch,
   sidebarToggle,
 }: GalleryAppBarArgs): Node {
-  const { isViewportVerySmall, isViewportSmall } = useViewportDimensions();
-  const [showTextfield, setShowTextfield] = React.useState(false);
-  const searchTextfield = React.useRef();
+  const { isViewportSmall } = useViewportDimensions();
   const [appMenuAnchorEl, setAppMenuAnchorEl] = React.useState(null);
   function handleAppMenuClose() {
     setAppMenuAnchorEl(null);
   }
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
     React.useState<null | EventTarget>(null);
-
-  /*
-   * We use a copy of the search term string so that edits the user makes are
-   * not immediately passed to useGalleryListing which will immediately make a
-   * network call.
-   */
-  const [searchTerm, setSearchTerm] = React.useState("");
-  React.useEffect(() => {
-    setSearchTerm(appliedSearchTerm);
-  }, [appliedSearchTerm]);
 
   return (
     <AppBar position="relative" open={true} aria-label="page header">
@@ -138,7 +109,7 @@ function GalleryAppBar({
             <Box flexGrow={1}></Box>
           </>
         )}
-        {isViewportSmall && (!isViewportVerySmall || !showTextfield) && (
+        {isViewportSmall && (
           <>
             <List
               component="nav"
@@ -249,86 +220,6 @@ function GalleryAppBar({
               />
             </Menu>
             <Box flexGrow={1}></Box>
-            {!showTextfield && !hideSearch && (
-              <IconButtonWithTooltip
-                size="small"
-                onClick={() => {
-                  setShowTextfield(true);
-                  setTimeout(() => {
-                    searchTextfield.current?.focus();
-                  }, 0);
-                }}
-                icon={<SearchIcon />}
-                title="Search this folder"
-              />
-            )}
-          </>
-        )}
-        {!hideSearch && (
-          <>
-            <Box
-              flexGrow={1}
-              sx={{
-                display: isViewportSmall && showTextfield ? "block" : "none",
-              }}
-            ></Box>
-            <Box
-              mx={1}
-              sx={{
-                display: !isViewportSmall || showTextfield ? "block" : "none",
-              }}
-            >
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  setAppliedSearchTerm(searchTerm);
-                  setShowTextfield(searchTerm !== "");
-                }}
-              >
-                <TextField
-                  placeholder="Search"
-                  sx={{
-                    /*
-                     * 300px is just an arbitrary width so that the search box
-                     * doesn't fill the entire app bar as the viewport grows
-                     */
-                    maxWidth: isViewportSmall ? "100%" : 300,
-                  }}
-                  value={searchTerm}
-                  onChange={({ currentTarget: { value } }) =>
-                    setSearchTerm(value)
-                  }
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    endAdornment:
-                      searchTerm !== "" ? (
-                        <IconButtonWithTooltip
-                          title="Clear"
-                          icon={<StyledCloseIcon />}
-                          size="small"
-                          onClick={() => {
-                            setSearchTerm("");
-                            setAppliedSearchTerm("");
-                            setShowTextfield(false);
-                          }}
-                        />
-                      ) : null,
-                  }}
-                  inputProps={{
-                    ref: searchTextfield,
-                    onBlur: () => {
-                      setSearchTerm(appliedSearchTerm);
-                      setShowTextfield(appliedSearchTerm !== "");
-                    },
-                    "aria-label": "Search current folder",
-                  }}
-                />
-              </form>
-            </Box>
           </>
         )}
         <Box ml={1}>
