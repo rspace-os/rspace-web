@@ -133,12 +133,8 @@ function GalleryAppBar({
     <AppBar position="relative" open={true} aria-label="page header">
       <Toolbar variant="dense">
         {sidebarToggle}
-        <Box
-          width="30px"
-          height="30px"
-          sx={{ border: "2px solid #2d4653", ml: 1 }}
-        >
-          {/* logo to go here */}
+        <Box width="40px" height="40px" sx={{ ml: 0.5 }}>
+          <img src="/images/icons/rspaceLogo.svg" alt="rspace logo" />
         </Box>
         {!isViewportSmall && (
           <>
