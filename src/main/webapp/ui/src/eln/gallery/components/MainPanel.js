@@ -1336,8 +1336,13 @@ function GalleryMainPanel({
               sx={{ height: "100%", flexWrap: "nowrap" }}
               spacing={1}
             >
-              <Grid item container sx={{ pt: "0 !important" }}>
-                <Grid item sx={{ flexGrow: 1 }}>
+              <Grid
+                item
+                container
+                sx={{ pt: "0 !important", flexWrap: "nowrap" }}
+                spacing={1}
+              >
+                <Grid item sx={{ flexGrow: 1, minWidth: 0 }}>
                   <Path
                     section={selectedSection}
                     path={path}
