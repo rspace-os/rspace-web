@@ -47,6 +47,7 @@ function AccessibilityTipsPopup({
   supports2xZoom,
   anchorOrigin,
   transformOrigin,
+  elementType,
 }: {|
   anchorEl: null | EventTarget,
   setAnchorEl: (null) => void,
@@ -55,6 +56,7 @@ function AccessibilityTipsPopup({
   supports2xZoom: boolean,
   anchorOrigin: {| vertical: "bottom" | "top", horizontal: "center" | "left" |},
   transformOrigin: {| vertical: "top", horizontal: "center" | "right" |},
+  elementType: "dialog" | "page",
 |}) {
   const highContrastModeIsEnabled = window.matchMedia(
     "(prefers-contrast: more)"
@@ -85,7 +87,7 @@ function AccessibilityTipsPopup({
             <AlertTitle>
               {highContrastModeIsEnabled
                 ? "High contrast mode is enabled."
-                : "This dialog supports a high contrast mode."}
+                : `This ${elementType} supports a high contrast mode.`}
             </AlertTitle>
             To {highContrastModeIsEnabled ? "disable" : "enable"}, turn{" "}
             {highContrastModeIsEnabled ? "off" : "on"} your device&apos;s high
@@ -113,7 +115,7 @@ function AccessibilityTipsPopup({
             <AlertTitle>
               {reducedMotionModeIsEnabled
                 ? "Reduced motion mode is enabled."
-                : "This dialog supports a reduced motion mode."}
+                : `This ${elementType} supports a reduced motion mode.`}
             </AlertTitle>
             To {reducedMotionModeIsEnabled ? "disable" : "enable"}, turn{" "}
             {reducedMotionModeIsEnabled ? "off" : "on"} your device&apos;s
@@ -135,7 +137,7 @@ function AccessibilityTipsPopup({
         {supports2xZoom && (
           <Alert severity="info" elevation={0} aria-label="Tip">
             <AlertTitle>
-              This dialog supports up to 200% zoom magnification.
+              This {elementType} supports up to 200% zoom magnification.
             </AlertTitle>
             To enable, adjust your browser&apos;s settings:
             <br />
@@ -227,6 +229,7 @@ export function AccessibilityTipsIconButton({
           vertical: "top",
           horizontal: "center",
         }}
+        elementType="dialog"
       />
     </>
   );
@@ -277,6 +280,7 @@ export function AccessibilityTipsMenuItem({
           vertical: "top",
           horizontal: "right",
         }}
+        elementType="page"
       />
     </>
   );
