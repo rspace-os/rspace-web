@@ -245,6 +245,19 @@ function GalleryAppBar({
           </>
         )}
         <Box ml={1}>
+          <HelpDocs
+            Action={({ onClick, disabled }) => (
+              <IconButtonWithTooltip
+                size="small"
+                onClick={onClick}
+                icon={<HelpIcon />}
+                title="Open Help"
+                disabled={disabled}
+              />
+            )}
+          />
+        </Box>
+        <Box ml={1}>
           <IconButtonWithTooltip
             size="small"
             onClick={(event) => {
@@ -405,19 +418,6 @@ function GalleryAppBar({
               }}
             />
           </Menu>
-        </Box>
-        <Box ml={1}>
-          <HelpDocs
-            Action={({ onClick, disabled }) => (
-              <IconButtonWithTooltip
-                size="small"
-                onClick={onClick}
-                icon={<HelpIcon />}
-                title="Open Help"
-                disabled={disabled}
-              />
-            )}
-          />
         </Box>
       </Toolbar>
     </AppBar>
