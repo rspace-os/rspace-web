@@ -1156,8 +1156,14 @@ function PathAndSearch({
     setSearchTerm(appliedSearchTerm);
   }, [appliedSearchTerm]);
 
+  /*
+   * On the smallest viewports, we only show the search textfield when it is
+   * requested, hiding it behind an icon button. The ref allows us to focus the
+   * text field when it is opened , triggering the virtual keyboard.
+   */
   const [searchOpen, setSearchOpen] = React.useState(false);
   const searchTextfield = React.useRef();
+
   return (
     <Grid
       container
