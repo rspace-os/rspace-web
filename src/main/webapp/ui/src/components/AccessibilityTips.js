@@ -23,16 +23,8 @@ const StyledPopover = styled(
   },
 }));
 
-type AccessibilityTipsIconButtonArgs = {|
-  supportsHighContrastMode?: boolean,
-  supportsReducedMotion?: boolean,
-  supports2xZoom?: boolean,
-|};
-
 /**
- * @summary This component provides an icon button for use in the headers of
- *          dialogs that is designed to inform the user that the current dialog
- *          has support for configurable accessibility options.
+ * @module AccessibilityTips
  *
  * Via the "prefers-contrast" and "prefers-reduced-motion" media queries the
  * user's device and browser may inform us that the user wishes for the page to
@@ -44,6 +36,19 @@ type AccessibilityTipsIconButtonArgs = {|
  * button that opens a popup listing the accessibility functionality provided
  * by this part of the UI, with links to the documentation for each major
  * operation system so that they can discover how to enable it.
+ */
+
+type AccessibilityTipsIconButtonArgs = {|
+  supportsHighContrastMode?: boolean,
+  supportsReducedMotion?: boolean,
+  supports2xZoom?: boolean,
+|};
+
+/**
+ * @summary This component provides an icon button for use in the headers of
+ *          dialogs that is designed to inform the user that the current dialog
+ *          has support for configurable accessibility options.
+ * @see     {@link module:AccessibilityTips} for more info.
  */
 export function AccessibilityTipsIconButton({
   supportsHighContrastMode,
