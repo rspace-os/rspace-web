@@ -38,6 +38,130 @@ const StyledPopover = styled(
  * operation system so that they can discover how to enable it.
  */
 
+function AccessibilityTipsPopup({
+  anchorEl,
+  setAnchorEl,
+  supportsHighContrastMode,
+  supportsReducedMotion,
+  supports2xZoom,
+}: {|
+  anchorEl: null | EventTarget,
+  setAnchorEl: (null) => void,
+  supportsHighContrastMode: boolean,
+  supportsReducedMotion: boolean,
+  supports2xZoom: boolean,
+|}) {
+  const highContrastModeIsEnabled = window.matchMedia(
+    "(prefers-contrast: more)"
+  ).matches;
+  const reducedMotionModeIsEnabled = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+
+  return (
+    <StyledPopover
+      open={Boolean(anchorEl)}
+      anchorEl={anchorEl}
+      highContrastMode={highContrastModeIsEnabled}
+      anchorOrigin={{
+        vertical: "bottom",
+        horizontal: "center",
+      }}
+      transformOrigin={{
+        vertical: "top",
+        horizontal: "center",
+      }}
+      onClose={() => setAnchorEl(null)}
+      PaperProps={{
+        role: "dialog",
+      }}
+    >
+      <Stack spacing={0.25}>
+        {supportsHighContrastMode && (
+          <Alert
+            severity={highContrastModeIsEnabled ? "success" : "info"}
+            elevation={0}
+            aria-label="Tip"
+          >
+            <AlertTitle>
+              {highContrastModeIsEnabled
+                ? "High contrast mode is enabled."
+                : "This dialog supports a high contrast mode."}
+            </AlertTitle>
+            To {highContrastModeIsEnabled ? "disable" : "enable"}, turn{" "}
+            {highContrastModeIsEnabled ? "off" : "on"} your device&apos;s high
+            contrast setting:
+            <br />
+            <Link href="https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696">
+              Windows
+            </Link>
+            ,{" "}
+            <Link href="https://support.apple.com/en-gb/guide/mac-help/unac089/mac">
+              macOS
+            </Link>
+            , <Link href="https://support.apple.com/en-us/111773">iOS</Link>,{" "}
+            <Link href="https://support.google.com/accessibility/android/answer/11183305">
+              Android
+            </Link>
+          </Alert>
+        )}
+        {supportsReducedMotion && (
+          <Alert
+            severity={reducedMotionModeIsEnabled ? "success" : "info"}
+            elevation={0}
+            aria-label="Tip"
+          >
+            <AlertTitle>
+              {reducedMotionModeIsEnabled
+                ? "Reduced motion mode is enabled."
+                : "This dialog supports a reduced motion mode."}
+            </AlertTitle>
+            To {reducedMotionModeIsEnabled ? "disable" : "enable"}, turn{" "}
+            {reducedMotionModeIsEnabled ? "off" : "on"} your device&apos;s
+            reduced motion setting:
+            <br />
+            <Link href="https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0">
+              macOS
+            </Link>
+            ,{" "}
+            <Link href="https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios">
+              iOS
+            </Link>
+            ,{" "}
+            <Link href="https://support.google.com/accessibility/android/answer/11183305">
+              Android
+            </Link>
+          </Alert>
+        )}
+        {supports2xZoom && (
+          <Alert severity="info" elevation={0} aria-label="Tip">
+            <AlertTitle>
+              This dialog supports up to 200% zoom magnification.
+            </AlertTitle>
+            To enable, adjust your browser&apos;s settings:
+            <br />
+            <Link href="https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop">
+              Chrome
+            </Link>
+            ,{" "}
+            <Link href="https://support.apple.com/en-gb/guide/safari/ibrw1068/mac">
+              Safari
+            </Link>
+            ,{" "}
+            <Link href="https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a">
+              Edge
+            </Link>
+            ,{" "}
+            <Link href="https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages">
+              Firefox
+            </Link>
+          </Alert>
+        )}
+      </Stack>
+    </StyledPopover>
+  );
+}
+
 type AccessibilityTipsIconButtonArgs = {|
   supportsHighContrastMode?: boolean,
   supportsReducedMotion?: boolean,
@@ -56,13 +180,6 @@ export function AccessibilityTipsIconButton({
   supports2xZoom,
 }: AccessibilityTipsIconButtonArgs): Node {
   const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
-
-  const highContrastModeIsEnabled = window.matchMedia(
-    "(prefers-contrast: more)"
-  ).matches;
-  const reducedMotionModeIsEnabled = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  ).matches;
 
   return (
     <>
@@ -93,106 +210,13 @@ export function AccessibilityTipsIconButton({
           setAnchorEl(e.currentTarget);
         }}
       />
-      <StyledPopover
-        open={Boolean(anchorEl)}
+      <AccessibilityTipsPopup
         anchorEl={anchorEl}
-        highContrastMode={highContrastModeIsEnabled}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-        onClose={() => setAnchorEl(null)}
-        PaperProps={{
-          role: "dialog",
-        }}
-      >
-        <Stack spacing={0.25}>
-          {supportsHighContrastMode && (
-            <Alert
-              severity={highContrastModeIsEnabled ? "success" : "info"}
-              elevation={0}
-              aria-label="Tip"
-            >
-              <AlertTitle>
-                {highContrastModeIsEnabled
-                  ? "High contrast mode is enabled."
-                  : "This dialog supports a high contrast mode."}
-              </AlertTitle>
-              To {highContrastModeIsEnabled ? "disable" : "enable"}, turn{" "}
-              {highContrastModeIsEnabled ? "off" : "on"} your device&apos;s high
-              contrast setting:
-              <br />
-              <Link href="https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696">
-                Windows
-              </Link>
-              ,{" "}
-              <Link href="https://support.apple.com/en-gb/guide/mac-help/unac089/mac">
-                macOS
-              </Link>
-              , <Link href="https://support.apple.com/en-us/111773">iOS</Link>,{" "}
-              <Link href="https://support.google.com/accessibility/android/answer/11183305">
-                Android
-              </Link>
-            </Alert>
-          )}
-          {supportsReducedMotion && (
-            <Alert
-              severity={reducedMotionModeIsEnabled ? "success" : "info"}
-              elevation={0}
-              aria-label="Tip"
-            >
-              <AlertTitle>
-                {reducedMotionModeIsEnabled
-                  ? "Reduced motion mode is enabled."
-                  : "This dialog supports a reduced motion mode."}
-              </AlertTitle>
-              To {reducedMotionModeIsEnabled ? "disable" : "enable"}, turn{" "}
-              {reducedMotionModeIsEnabled ? "off" : "on"} your device&apos;s
-              reduced motion setting:
-              <br />
-              <Link href="https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0">
-                macOS
-              </Link>
-              ,{" "}
-              <Link href="https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios">
-                iOS
-              </Link>
-              ,{" "}
-              <Link href="https://support.google.com/accessibility/android/answer/11183305">
-                Android
-              </Link>
-            </Alert>
-          )}
-          {supports2xZoom && (
-            <Alert severity="info" elevation={0} aria-label="Tip">
-              <AlertTitle>
-                This dialog supports up to 200% zoom magnification.
-              </AlertTitle>
-              To enable, adjust your browser&apos;s settings:
-              <br />
-              <Link href="https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop">
-                Chrome
-              </Link>
-              ,{" "}
-              <Link href="https://support.apple.com/en-gb/guide/safari/ibrw1068/mac">
-                Safari
-              </Link>
-              ,{" "}
-              <Link href="https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a">
-                Edge
-              </Link>
-              ,{" "}
-              <Link href="https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages">
-                Firefox
-              </Link>
-            </Alert>
-          )}
-        </Stack>
-      </StyledPopover>
+        setAnchorEl={setAnchorEl}
+        supportsHighContrastMode={supportsHighContrastMode ?? false}
+        supportsReducedMotion={supportsReducedMotion ?? false}
+        supports2xZoom={supports2xZoom ?? false}
+      />
     </>
   );
 }
