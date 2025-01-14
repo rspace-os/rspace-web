@@ -125,6 +125,13 @@ function GalleryAppBar({
     <AppBar position="relative" open={true} aria-label="page header">
       <Toolbar variant="dense">
         {sidebarToggle}
+        <Box
+          width="30px"
+          height="30px"
+          sx={{ border: "2px solid #2d4653", ml: 1 }}
+        >
+          {/* logo to go here */}
+        </Box>
         {!isViewportSmall && (
           <>
             <NavButtons currentPage={currentPage} />
@@ -385,6 +392,9 @@ function GalleryAppBar({
                   </>
                 }
               />
+            </ListItem>
+            <ListItem sx={{ py: 0 }}>
+              <ListItemText sx={{ mt: 0.5 }} primary="BRANDING PLACEHOLDER" />
             </ListItem>
             <Divider sx={{ my: 0.5 }} />
             <AccentMenuItem
