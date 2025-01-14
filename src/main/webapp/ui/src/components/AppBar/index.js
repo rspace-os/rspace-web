@@ -342,7 +342,11 @@ function GalleryAppBar({
               </Stack>
             </ListItem>
             <ListItem sx={{ py: 0 }}>
-              <ListItemText sx={{ mt: 0.5 }} primary="BRANDING PLACEHOLDER" />
+              <img
+                src="/images/icons/rspaceLogoLarge.svg"
+                alt="rspace logo"
+                style={{ width: "max(100%, 240px)" }}
+              />
             </ListItem>
             <Divider sx={{ my: 0.5 }} />
             <AccentMenuItem
