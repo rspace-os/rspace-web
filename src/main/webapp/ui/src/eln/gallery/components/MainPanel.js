@@ -410,10 +410,13 @@ const FileCard = styled(
         const dndContext = useDndContext();
         const dndInProgress = Boolean(dndContext.active);
 
+        const { trackEvent } = React.useContext(AnalyticsContext);
         const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
           useFileImportDropZone({
             onDrop: (files) => {
-              void uploadFiles(file.id, files);
+              void uploadFiles(file.id, files).then(() => {
+                trackEvent("user:drag_uploads:file:into_folder");
+              });
               /*
                * No need to refresh the listing as the uploaded file has been
                * placed inside a folder into which the user cannot currently see
@@ -1284,6 +1287,7 @@ function GalleryMainPanel({
   const viewportDimensions = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const { uploadFiles } = useGalleryActions();
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
       onDrop: doNotAwait(async (files) => {
@@ -1292,6 +1296,13 @@ function GalleryMainPanel({
         });
         await uploadFiles(fId, files);
         void refreshListing();
+        if (path.length > 0) {
+          trackEvent("user:drag_uploads:file:into_current_folder");
+        } else {
+          trackEvent("user:drag_uploads:file:section_root", {
+            section: selectedSection,
+          });
+        }
       }),
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
@@ -1304,7 +1315,6 @@ function GalleryMainPanel({
   const [sortMenuAnchorEl, setSortMenuAnchorEl] = React.useState(null);
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
-  const { trackEvent } = React.useContext(AnalyticsContext);
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
