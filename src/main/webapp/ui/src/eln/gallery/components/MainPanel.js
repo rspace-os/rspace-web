@@ -1130,49 +1130,90 @@ const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   width: 20,
 }));
 
-function Search({
+function PathAndSearch({
   appliedSearchTerm,
   setAppliedSearchTerm,
+  selectedSection,
+  path,
+  clearPath,
 }: {|
   appliedSearchTerm: string,
   setAppliedSearchTerm: (string) => void,
+  selectedSection: GallerySection,
+  path: $ReadOnlyArray<GalleryFile>,
+  clearPath: () => void,
 |}) {
+  const { isViewportVerySmall } = useViewportDimensions();
   const [searchTerm, setSearchTerm] = React.useState(appliedSearchTerm);
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const searchTextfield = React.useRef();
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        setAppliedSearchTerm(searchTerm);
-      }}
+    <Grid
+      container
+      sx={{ pt: "0 !important", flexWrap: "nowrap" }}
+      spacing={1}
+      direction={searchOpen ? "column" : "row"}
     >
-      <TextField
-        placeholder="Search"
-        value={searchTerm}
-        onChange={({ currentTarget: { value } }) => setSearchTerm(value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
-          endAdornment:
-            searchTerm !== "" ? (
-              <IconButtonWithTooltip
-                title="Clear"
-                icon={<StyledCloseIcon />}
-                size="small"
-                onClick={() => {
-                  setSearchTerm("");
-                  setAppliedSearchTerm("");
-                }}
-              />
-            ) : null,
-        }}
-        inputProps={{
-          "aria-label": "Search current folder",
-        }}
-      />
-    </form>
+      <Grid item sx={{ flexGrow: 1, minWidth: 0 }}>
+        <Path section={selectedSection} path={path} clearPath={clearPath} />
+      </Grid>
+      {isViewportVerySmall && !searchOpen && (
+        <IconButtonWithTooltip
+          size="small"
+          onClick={() => {
+            setSearchOpen(true);
+            setTimeout(() => {
+              searchTextfield.current?.focus();
+            }, 0);
+          }}
+          icon={<SearchIcon />}
+          title="Search this folder"
+        />
+      )}
+      {(!isViewportVerySmall || searchOpen) && (
+        <Grid item>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              setAppliedSearchTerm(searchTerm);
+            }}
+          >
+            <TextField
+              placeholder="Search"
+              value={searchTerm}
+              onChange={({ currentTarget: { value } }) => setSearchTerm(value)}
+              sx={{
+                ...(searchOpen ? { width: "100%" } : {}),
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment:
+                  searchTerm !== "" || searchOpen ? (
+                    <IconButtonWithTooltip
+                      title="Clear"
+                      icon={<StyledCloseIcon />}
+                      size="small"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setAppliedSearchTerm("");
+                        setSearchOpen(false);
+                      }}
+                    />
+                  ) : null,
+              }}
+              inputProps={{
+                "aria-label": "Search current folder",
+                ref: searchTextfield,
+              }}
+            />
+          </form>
+        </Grid>
+      )}
+    </Grid>
   );
 }
 
@@ -1336,25 +1377,14 @@ function GalleryMainPanel({
               sx={{ height: "100%", flexWrap: "nowrap" }}
               spacing={1}
             >
-              <Grid
-                item
-                container
-                sx={{ pt: "0 !important", flexWrap: "nowrap" }}
-                spacing={1}
-              >
-                <Grid item sx={{ flexGrow: 1, minWidth: 0 }}>
-                  <Path
-                    section={selectedSection}
-                    path={path}
-                    clearPath={clearPath}
-                  />
-                </Grid>
-                <Grid item>
-                  <Search
-                    appliedSearchTerm={appliedSearchTerm}
-                    setAppliedSearchTerm={setAppliedSearchTerm}
-                  />
-                </Grid>
+              <Grid item>
+                <PathAndSearch
+                  appliedSearchTerm={appliedSearchTerm}
+                  setAppliedSearchTerm={setAppliedSearchTerm}
+                  selectedSection={selectedSection}
+                  path={path}
+                  clearPath={clearPath}
+                />
               </Grid>
               <Grid item sx={{ maxWidth: "100% !important" }}>
                 <Stack
