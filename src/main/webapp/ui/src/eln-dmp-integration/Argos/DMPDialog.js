@@ -510,7 +510,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: "argos",
+          docLink: docLinks.argos,
           title: "Argos help",
         }}
       />

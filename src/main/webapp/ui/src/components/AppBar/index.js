@@ -132,7 +132,7 @@ type GalleryAppBarArgs = {|
    * specified then the lighthouse dialog is opened allowing the user to browse
    * the documentation.
    */
-  helpPage?: {| docLink: string, title: string |},
+  helpPage?: {| docLink: $Values<typeof docLinks>, title: string |},
 |};
 
 function GalleryAppBar({
@@ -274,10 +274,7 @@ function GalleryAppBar({
         <Box ml={1}>
           {helpPage ? (
             <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-              <HelpLinkIcon
-                title={helpPage.title}
-                link={docLinks[helpPage.docLink]}
-              />
+              <HelpLinkIcon title={helpPage.title} link={helpPage.docLink} />
             </Box>
           ) : (
             <HelpDocs
