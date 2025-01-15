@@ -82,8 +82,7 @@ const OrcidIcon = styled(({ className }) => (
 function NavButtons({
   currentPage,
 }: {|
-  // eslint-disable-next-line no-undefined -- undefined in types is fine
-  currentPage: "Gallery" | "Inventory" | "Workspace" | typeof undefined,
+  currentPage: "Gallery" | "Inventory" | "Workspace" | string,
 |}) {
   return (
     <Stack direction="row" spacing={2} sx={{ mx: 1 }}>
@@ -113,7 +112,7 @@ function NavButtons({
 }
 
 type GalleryAppBarArgs = {|
-  currentPage?: "Gallery" | "Inventory" | "Workspace",
+  currentPage: "Gallery" | "Inventory" | "Workspace" | string,
   sidebarToggle?: Element<typeof SidebarToggle>,
   accessibilityTips?: {|
     supportsReducedMotion?: boolean,
