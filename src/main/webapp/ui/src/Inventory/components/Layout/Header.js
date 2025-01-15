@@ -27,6 +27,9 @@ function Header(): Node {
             sidebarOpen={uiStore.sidebarOpen}
           />
         }
+        accessibilityTips={{
+          supports2xZoom: true,
+        }}
       />
     </ThemeProvider>
   );

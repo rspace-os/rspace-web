@@ -115,11 +115,17 @@ function NavButtons({
 type GalleryAppBarArgs = {|
   currentPage?: "Gallery" | "Inventory" | "Workspace",
   sidebarToggle?: Element<typeof SidebarToggle>,
+  accessibilityTips?: {|
+    supportsReducedMotion?: boolean,
+    supportsHighContrastMode?: boolean,
+    supports2xZoom?: boolean,
+  |},
 |};
 
 function GalleryAppBar({
   currentPage,
   sidebarToggle,
+  accessibilityTips,
 }: GalleryAppBarArgs): Node {
   const { isViewportSmall } = useViewportDimensions();
   const [appMenuAnchorEl, setAppMenuAnchorEl] = React.useState(null);
@@ -393,9 +399,7 @@ function GalleryAppBar({
             />
             <Divider />
             <AccessibilityTipsMenuItem
-              supportsReducedMotion
-              supportsHighContrastMode
-              supports2xZoom
+              {...(accessibilityTips ?? {})}
               onClose={() => {
                 setAccountMenuAnchorEl(null);
               }}

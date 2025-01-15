@@ -78,6 +78,11 @@ const WholePage = styled(() => {
                   sidebarId={sidebarId}
                 />
               }
+              accessibilityTips={{
+                supportsHighContrastMode: true,
+                supportsReducedMotion: true,
+                supports2xZoom: true,
+              }}
             />
             <Box
               sx={{ display: "flex", height: "calc(100% - 48px)" }}
