@@ -31,11 +31,7 @@ import docLinks from "../../assets/DocLinks";
 import NoValue from "../../components/NoValue";
 import { doNotAwait } from "../../util/Util";
 import createAccentedTheme from "../../accentedTheme";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
-import { AccessibilityTipsIconButton } from "../../components/AccessibilityTips";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
-import Box from "@mui/material/Box";
+import AppBar from "../../components/AppBar";
 import ValidatingSubmitButton, {
   IsValid,
   IsInvalid,
@@ -175,20 +171,17 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
 
   return (
     <>
-      <AppBar position="relative" open={true}>
-        <Toolbar variant="dense">
-          <Typography variant="h6" noWrap component="h2">
-            DMPonline
-          </Typography>
-          <Box flexGrow={1}></Box>
-          <Box ml={1}>
-            <AccessibilityTipsIconButton supportsHighContrastMode />
-          </Box>
-          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-            <HelpLinkIcon title="DMPonline help" link={docLinks.dmponline} />
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <AppBar
+        variant="dialog"
+        currentPage="DMPonline"
+        accessibilityTips={{
+          supportsHighContrastMode: true,
+        }}
+        helpPage={{
+          docLink: docLinks.dmponline,
+          title: "DMPonline help",
+        }}
+      />
       <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
         <Grid
