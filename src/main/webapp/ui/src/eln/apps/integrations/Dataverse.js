@@ -278,6 +278,7 @@ const DialogContent = observer(
                                 config.dirty = true;
                               });
                             }}
+                            type="password"
                             label="API key"
                             error={config.DATAVERSE_APIKEY === ""}
                             helperText={
@@ -418,6 +419,7 @@ const DialogContent = observer(
                                 newConfig.DATAVERSE_APIKEY = value;
                               });
                             }}
+                            type="password"
                             label="API key"
                             error={newConfig.DATAVERSE_APIKEY === ""}
                             helperText={
