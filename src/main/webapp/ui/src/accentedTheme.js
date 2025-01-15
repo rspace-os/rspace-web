@@ -19,8 +19,6 @@ import { iconButtonClasses } from "@mui/material/IconButton";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { gridClasses } from "@mui/x-data-grid";
 import { alertTitleClasses } from "@mui/material/AlertTitle";
-import { checkboxClasses } from "@mui/material/Checkbox";
-import { radioClasses } from "@mui/material/Radio";
 import { chipClasses } from "@mui/material/Chip";
 import { formLabelClasses } from "@mui/material/FormLabel";
 import { inputLabelClasses } from "@mui/material/InputLabel";
@@ -524,6 +522,21 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   fontWeight: 700,
                   fontSize: "0.8125rem",
                   lineHeight: "20px",
+                },
+              },
+              [`&.${outlinedInputClasses.disabled}`]: {
+                borderColor: disabledColor,
+                [`& .${outlinedInputClasses.notchedOutline}`]: {
+                  borderColor: disabledColor,
+                },
+                [`& .${inputAdornmentClasses.root}`]: {
+                  borderRightColor: disabledColor,
+                  color: disabledColor,
+                },
+                "&:hover": {
+                  [`& .${outlinedInputClasses.notchedOutline}`]: {
+                    borderColor: `${disabledColor} !important`,
+                  },
                 },
               },
             },
