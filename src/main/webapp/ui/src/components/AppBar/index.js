@@ -40,6 +40,7 @@ import Link from "@mui/material/Link";
 import Avatar from "@mui/material/Avatar";
 import SvgIcon from "@mui/material/SvgIcon";
 import { styled } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
 
 const OrcidIcon = styled(({ className }) => (
   <svg
@@ -148,7 +149,13 @@ function GalleryAppBar({
             <img src="/images/icons/rspaceLogo.svg" alt="rspace logo" />
           </Box>
         )}
-        {variant === "dialog" && <Box sx={{ ml: 0.5 }}>{currentPage}</Box>}
+        {variant === "dialog" && (
+          <Box sx={{ ml: 0.5 }}>
+            <Typography variant="h6" noWrap component="h2">
+              {currentPage}
+            </Typography>
+          </Box>
+        )}
         {!isViewportSmall && variant === "page" && (
           <NavButtons currentPage={currentPage} />
         )}
