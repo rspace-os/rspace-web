@@ -141,9 +141,6 @@ const Picker = observer(
                 aria-label="Gallery Picker"
               >
                 <AppBar
-                  appliedSearchTerm={appliedSearchTerm}
-                  setAppliedSearchTerm={setAppliedSearchTerm}
-                  hideSearch={selectedSection === "NetworkFiles"}
                   setDrawerOpen={setDrawerOpen}
                   drawerOpen={drawerOpen}
                   sidebarId={sidebarId}
@@ -180,6 +177,8 @@ const Picker = observer(
                       orderBy={orderBy}
                       setSortOrder={setSortOrder}
                       setOrderBy={setOrderBy}
+                      appliedSearchTerm={appliedSearchTerm}
+                      setAppliedSearchTerm={setAppliedSearchTerm}
                     />
                     <DialogActions>
                       <Button onClick={() => onClose()}>Cancel</Button>

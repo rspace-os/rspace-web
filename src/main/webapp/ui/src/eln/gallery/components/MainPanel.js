@@ -17,6 +17,7 @@ import {
   SELECTED_OR_FOCUS_BORDER,
   SELECTED_OR_FOCUS_BLUE,
   type GallerySection,
+  GALLERY_SECTION,
 } from "../common";
 import { styled, alpha } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
@@ -84,6 +85,11 @@ import { useFolderOpen } from "./OpenFolderProvider";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
 import Badge from "@mui/material/Badge";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import CloseIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
@@ -1119,6 +1125,121 @@ const GridView = observer(
   }
 );
 
+const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
+  color: theme.palette.standardIcon.main,
+  height: 20,
+  width: 20,
+}));
+
+const PathAndSearch = observer(
+  ({
+    appliedSearchTerm,
+    setAppliedSearchTerm,
+    selectedSection,
+    path,
+    clearPath,
+  }: {|
+    appliedSearchTerm: string,
+    setAppliedSearchTerm: (string) => void,
+    selectedSection: GallerySection,
+    path: $ReadOnlyArray<GalleryFile>,
+    clearPath: () => void,
+  |}) => {
+    const { isViewportVerySmall } = useViewportDimensions();
+
+    /*
+     * We use a copy of the search term string so that edits the user makes are
+     * not immediately passed to useGalleryListing which will immediately make a
+     * network call.
+     */
+    const [searchTerm, setSearchTerm] = React.useState("");
+    React.useEffect(() => {
+      setSearchTerm(appliedSearchTerm);
+    }, [appliedSearchTerm]);
+
+    /*
+     * On the smallest viewports, we only show the search textfield when it is
+     * requested, hiding it behind an icon button. The ref allows us to focus the
+     * text field when it is opened , triggering the virtual keyboard.
+     */
+    const [searchOpen, setSearchOpen] = React.useState(false);
+    const searchTextfield = React.useRef();
+
+    return (
+      <Grid
+        container
+        sx={{ pt: "0 !important", flexWrap: "nowrap" }}
+        spacing={1}
+        direction={searchOpen ? "column" : "row"}
+      >
+        <Grid item sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Path section={selectedSection} path={path} clearPath={clearPath} />
+        </Grid>
+        {isViewportVerySmall && !searchOpen && (
+          <IconButtonWithTooltip
+            size="small"
+            onClick={() => {
+              setSearchOpen(true);
+              setTimeout(() => {
+                searchTextfield.current?.focus();
+              }, 0);
+            }}
+            icon={<SearchIcon />}
+            title="Search this folder"
+            disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
+          />
+        )}
+        {(!isViewportVerySmall || searchOpen) && (
+          <Grid item>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                setAppliedSearchTerm(searchTerm);
+              }}
+            >
+              <TextField
+                disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
+                placeholder="Search"
+                value={searchTerm}
+                onChange={({ currentTarget: { value } }) =>
+                  setSearchTerm(value)
+                }
+                sx={{
+                  ...(searchOpen ? { width: "100%" } : {}),
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment:
+                    searchTerm !== "" || searchOpen ? (
+                      <IconButtonWithTooltip
+                        title="Clear"
+                        icon={<StyledCloseIcon />}
+                        size="small"
+                        onClick={() => {
+                          setSearchTerm("");
+                          setAppliedSearchTerm("");
+                          setSearchOpen(false);
+                        }}
+                      />
+                    ) : null,
+                }}
+                inputProps={{
+                  "aria-label": "Search current folder",
+                  ref: searchTextfield,
+                }}
+              />
+            </form>
+          </Grid>
+        )}
+      </Grid>
+    );
+  }
+);
+
 type GalleryMainPanelArgs = {|
   selectedSection: GallerySection,
   path: $ReadOnlyArray<GalleryFile>,
@@ -1139,6 +1260,8 @@ type GalleryMainPanelArgs = {|
   orderBy: "name" | "modificationDate",
   setSortOrder: ("DESC" | "ASC") => void,
   setOrderBy: ("name" | "modificationDate") => void,
+  appliedSearchTerm: string,
+  setAppliedSearchTerm: (string) => void,
 |};
 
 function GalleryMainPanel({
@@ -1152,6 +1275,8 @@ function GalleryMainPanel({
   orderBy,
   setSortOrder,
   setOrderBy,
+  appliedSearchTerm,
+  setAppliedSearchTerm,
 }: GalleryMainPanelArgs): Node {
   const viewportDimensions = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
@@ -1275,9 +1400,11 @@ function GalleryMainPanel({
               sx={{ height: "100%", flexWrap: "nowrap" }}
               spacing={1}
             >
-              <Grid item sx={{ pt: "0 !important" }}>
-                <Path
-                  section={selectedSection}
+              <Grid item>
+                <PathAndSearch
+                  appliedSearchTerm={appliedSearchTerm}
+                  setAppliedSearchTerm={setAppliedSearchTerm}
+                  selectedSection={selectedSection}
                   path={path}
                   clearPath={clearPath}
                 />

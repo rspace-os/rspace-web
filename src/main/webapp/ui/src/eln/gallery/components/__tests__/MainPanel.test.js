@@ -68,6 +68,8 @@ describe("MainPanel", () => {
             orderBy="modificationDate"
             setSortOrder={() => {}}
             setOrderBy={() => {}}
+            appliedSearchTerm=""
+            setAppliedSearchTerm={() => {}}
           />
         </ThemeProvider>
       </BrowserRouter>

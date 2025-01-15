@@ -69,9 +69,6 @@ const WholePage = styled(() => {
         <CallableAsposePreview>
           <OpenFolderProvider setPath={setPath}>
             <AppBar
-              appliedSearchTerm={appliedSearchTerm}
-              setAppliedSearchTerm={setAppliedSearchTerm}
-              hideSearch={selectedSection === "NetworkFiles"}
               setDrawerOpen={setDrawerOpen}
               drawerOpen={drawerOpen}
               sidebarId={sidebarId}
@@ -114,6 +111,8 @@ const WholePage = styled(() => {
                   orderBy={orderBy}
                   setSortOrder={setSortOrder}
                   setOrderBy={setOrderBy}
+                  appliedSearchTerm={appliedSearchTerm}
+                  setAppliedSearchTerm={setAppliedSearchTerm}
                 />
               </Box>
             </Box>
