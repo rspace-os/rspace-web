@@ -142,6 +142,7 @@ const Picker = observer(
                 aria-label="Gallery Picker"
               >
                 <AppBar
+                  variant="dialog"
                   currentPage="Gallery"
                   sidebarToggle={
                     <SidebarToggle
@@ -150,6 +151,11 @@ const Picker = observer(
                       sidebarId={sidebarId}
                     />
                   }
+                  accessibilityTips={{
+                    supportsHighContrastMode: true,
+                    supportsReducedMotion: true,
+                    supports2xZoom: true,
+                  }}
                 />
                 <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
                   <Sidebar

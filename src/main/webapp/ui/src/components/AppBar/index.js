@@ -6,7 +6,10 @@ import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
-import { AccessibilityTipsMenuItem } from "../AccessibilityTips";
+import {
+  AccessibilityTipsMenuItem,
+  AccessibilityTipsIconButton,
+} from "../AccessibilityTips";
 import HelpDocs from "../Help/HelpDocs";
 import HelpIcon from "@mui/icons-material/Help";
 import { observer } from "mobx-react-lite";
@@ -112,6 +115,7 @@ function NavButtons({
 }
 
 type GalleryAppBarArgs = {|
+  variant: "page" | "dialog",
   currentPage: "Gallery" | "Inventory" | "Workspace" | string,
   sidebarToggle?: Element<typeof SidebarToggle>,
   accessibilityTips?: {|
@@ -122,6 +126,7 @@ type GalleryAppBarArgs = {|
 |};
 
 function GalleryAppBar({
+  variant,
   currentPage,
   sidebarToggle,
   accessibilityTips,
@@ -138,16 +143,16 @@ function GalleryAppBar({
     <AppBar position="relative" open={true} aria-label="page header">
       <Toolbar variant="dense">
         {sidebarToggle}
-        <Box width="40px" height="40px" sx={{ ml: 0.5 }}>
-          <img src="/images/icons/rspaceLogo.svg" alt="rspace logo" />
-        </Box>
-        {!isViewportSmall && (
-          <>
-            <NavButtons currentPage={currentPage} />
-            <Box flexGrow={1}></Box>
-          </>
+        {variant === "page" && (
+          <Box width="40px" height="40px" sx={{ ml: 0.5 }}>
+            <img src="/images/icons/rspaceLogo.svg" alt="rspace logo" />
+          </Box>
         )}
-        {isViewportSmall && (
+        {variant === "dialog" && <Box sx={{ ml: 0.5 }}>{currentPage}</Box>}
+        {!isViewportSmall && variant === "page" && (
+          <NavButtons currentPage={currentPage} />
+        )}
+        {isViewportSmall && variant === "page" && (
           <>
             <List
               component="nav"
@@ -246,9 +251,9 @@ function GalleryAppBar({
                 }}
               />
             </Menu>
-            <Box flexGrow={1}></Box>
           </>
         )}
+        <Box flexGrow={1}></Box>
         <Box ml={1}>
           <HelpDocs
             Action={({ onClick, disabled }) => (
@@ -262,167 +267,174 @@ function GalleryAppBar({
             )}
           />
         </Box>
-        <Box ml={1}>
-          <IconButtonWithTooltip
-            size="small"
-            onClick={(event) => {
-              setAccountMenuAnchorEl(event.currentTarget);
-            }}
-            icon={<AccountCircleIcon />}
-            title="Account Menu"
-            id="account-menu-button"
-            aria-haspopup="menu"
-            aria-controls="account-menu"
-            {...(accountMenuAnchorEl
-              ? {
-                  ["aria-expanded"]: "true",
-                }
-              : {})}
-          />
-          <Menu
-            id="account-menu"
-            anchorEl={accountMenuAnchorEl}
-            open={Boolean(accountMenuAnchorEl)}
-            onClose={() => {
-              setAccountMenuAnchorEl(null);
-            }}
-            MenuListProps={{
-              "aria-labelledby": "account-menu-button",
-              disablePadding: true,
-              sx: { pt: 0.5 },
-            }}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "right",
-            }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            sx={{
-              [`.${menuClasses.paper}`]: {
-                /*
-                 * Generally we don't add box shadows to menus, but we do add
-                 * box shadows to popups opened from the app bar to make them
-                 * hover over the page's content.
-                 */
-                boxShadow:
-                  "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
-              },
-            }}
-          >
-            <ListItem sx={{ py: 0 }}>
-              <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
-                <Avatar
-                  sx={{
-                    /*
-                     * These colours are just for the mockup. We should generate
-                     * a pair of colours from the username when there isn't an
-                     * avatar to show
-                     */
-                    color: "#FBE9E7",
-                    backgroundColor: "#FF5722",
-                  }}
-                >
-                  J
-                </Avatar>
-              </ListItemIcon>
-              <Stack>
-                <ListItemText
-                  sx={{ mt: 0.5 }}
-                  primary="Joe Bloggs (jbloggs)"
-                  secondary={<>bloggs@example.com</>}
-                />
-                <ListItemText
-                  /*
-                   * The styling of this component is dictated by the ORCID display guidelines
-                   * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
-                   */
-                  sx={{ mt: -0.5 }}
-                  primaryTypographyProps={{
-                    sx: {
-                      fontFamily: "monospace",
-                      lineHeight: "1em",
-                      fontSize: "0.8em",
-                      alignItems: "center",
-                      textDecoration: "underline",
-                    },
-                  }}
-                  primary={
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                      <SvgIcon>
-                        <OrcidIcon />
-                      </SvgIcon>
-                      <span>0000-0000-0000-0000</span>
-                    </Stack>
+        {variant === "page" && (
+          <Box ml={1}>
+            <IconButtonWithTooltip
+              size="small"
+              onClick={(event) => {
+                setAccountMenuAnchorEl(event.currentTarget);
+              }}
+              icon={<AccountCircleIcon />}
+              title="Account Menu"
+              id="account-menu-button"
+              aria-haspopup="menu"
+              aria-controls="account-menu"
+              {...(accountMenuAnchorEl
+                ? {
+                    ["aria-expanded"]: "true",
                   }
-                />
-              </Stack>
-            </ListItem>
-            <Divider sx={{ my: 0.5 }} />
-            <AccentMenuItem
-              title="Messaging"
-              avatar={<MessageIcon />}
-              compact
-              onClick={() => {
-                setAccountMenuAnchorEl(null);
-                window.location = "/dashboard";
-              }}
+                : {})}
             />
-            <AccentMenuItem
-              title="My RSpace"
-              avatar={<SettingsIcon />}
-              compact
-              onClick={() => {
-                setAccountMenuAnchorEl(null);
-                window.location = "/userform";
-              }}
-            />
-            <AccentMenuItem
-              title="Apps"
-              avatar={<AppsIcon />}
-              compact
-              onClick={() => {
-                setAccountMenuAnchorEl(null);
-                window.location = "/apps";
-              }}
-            />
-            <AccentMenuItem
-              title="Published"
-              avatar={<PublicIcon />}
-              compact
-              onClick={() => {
-                setAccountMenuAnchorEl(null);
-                window.location = "/public/publishedView/publishedDocuments";
-              }}
-            />
-            <Divider />
-            <AccessibilityTipsMenuItem
-              {...(accessibilityTips ?? {})}
+            <Menu
+              id="account-menu"
+              anchorEl={accountMenuAnchorEl}
+              open={Boolean(accountMenuAnchorEl)}
               onClose={() => {
                 setAccountMenuAnchorEl(null);
               }}
-            />
-            <AccentMenuItem
-              title="Log Out"
-              avatar={<LogoutIcon />}
-              compact
-              onClick={() => {
-                JwtService.destroyToken();
-                setAccountMenuAnchorEl(null);
-                window.location = "/logout";
+              MenuListProps={{
+                "aria-labelledby": "account-menu-button",
+                disablePadding: true,
+                sx: { pt: 0.5 },
               }}
-            />
-            <Divider />
-            <ListItem sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}>
-              <img
-                src="/images/icons/rspaceLogoLarge.svg"
-                alt="rspace logo"
-                style={{ width: "min(100%, 120px)" }}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right",
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+              sx={{
+                [`.${menuClasses.paper}`]: {
+                  /*
+                   * Generally we don't add box shadows to menus, but we do add
+                   * box shadows to popups opened from the app bar to make them
+                   * hover over the page's content.
+                   */
+                  boxShadow:
+                    "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
+                },
+              }}
+            >
+              <ListItem sx={{ py: 0 }}>
+                <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
+                  <Avatar
+                    sx={{
+                      /*
+                       * These colours are just for the mockup. We should generate
+                       * a pair of colours from the username when there isn't an
+                       * avatar to show
+                       */
+                      color: "#FBE9E7",
+                      backgroundColor: "#FF5722",
+                    }}
+                  >
+                    J
+                  </Avatar>
+                </ListItemIcon>
+                <Stack>
+                  <ListItemText
+                    sx={{ mt: 0.5 }}
+                    primary="Joe Bloggs (jbloggs)"
+                    secondary={<>bloggs@example.com</>}
+                  />
+                  <ListItemText
+                    /*
+                     * The styling of this component is dictated by the ORCID display guidelines
+                     * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
+                     */
+                    sx={{ mt: -0.5 }}
+                    primaryTypographyProps={{
+                      sx: {
+                        fontFamily: "monospace",
+                        lineHeight: "1em",
+                        fontSize: "0.8em",
+                        alignItems: "center",
+                        textDecoration: "underline",
+                      },
+                    }}
+                    primary={
+                      <Stack direction="row" spacing={0.5} alignItems="center">
+                        <SvgIcon>
+                          <OrcidIcon />
+                        </SvgIcon>
+                        <span>0000-0000-0000-0000</span>
+                      </Stack>
+                    }
+                  />
+                </Stack>
+              </ListItem>
+              <Divider sx={{ my: 0.5 }} />
+              <AccentMenuItem
+                title="Messaging"
+                avatar={<MessageIcon />}
+                compact
+                onClick={() => {
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/dashboard";
+                }}
               />
-            </ListItem>
-          </Menu>
-        </Box>
+              <AccentMenuItem
+                title="My RSpace"
+                avatar={<SettingsIcon />}
+                compact
+                onClick={() => {
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/userform";
+                }}
+              />
+              <AccentMenuItem
+                title="Apps"
+                avatar={<AppsIcon />}
+                compact
+                onClick={() => {
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/apps";
+                }}
+              />
+              <AccentMenuItem
+                title="Published"
+                avatar={<PublicIcon />}
+                compact
+                onClick={() => {
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/public/publishedView/publishedDocuments";
+                }}
+              />
+              <Divider />
+              <AccessibilityTipsMenuItem
+                {...(accessibilityTips ?? {})}
+                onClose={() => {
+                  setAccountMenuAnchorEl(null);
+                }}
+              />
+              <AccentMenuItem
+                title="Log Out"
+                avatar={<LogoutIcon />}
+                compact
+                onClick={() => {
+                  JwtService.destroyToken();
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/logout";
+                }}
+              />
+              <Divider />
+              <ListItem sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}>
+                <img
+                  src="/images/icons/rspaceLogoLarge.svg"
+                  alt="rspace logo"
+                  style={{ width: "min(100%, 120px)" }}
+                />
+              </ListItem>
+            </Menu>
+          </Box>
+        )}
+        {variant === "dialog" && (
+          <Box sx={{ ml: 0.5 }}>
+            <AccessibilityTipsIconButton {...(accessibilityTips ?? {})} />
+          </Box>
+        )}
       </Toolbar>
     </AppBar>
   );

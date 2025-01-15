@@ -70,6 +70,7 @@ const WholePage = styled(() => {
         <CallableAsposePreview>
           <OpenFolderProvider setPath={setPath}>
             <AppBar
+              variant="page"
               currentPage="Gallery"
               sidebarToggle={
                 <SidebarToggle

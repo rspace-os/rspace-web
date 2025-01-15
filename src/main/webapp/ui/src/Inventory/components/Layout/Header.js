@@ -19,6 +19,7 @@ function Header(): Node {
   return (
     <ThemeProvider theme={createAccentedTheme(COLOR)}>
       <AppBar
+        variant="page"
         currentPage="Inventory"
         sidebarToggle={
           <SidebarToggle

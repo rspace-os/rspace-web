@@ -153,6 +153,7 @@ function App(): Node {
           }}
         >
           <AppBar
+            variant="page"
             currentPage="Apps"
             accessibilityTips={{
               supportsHighContrastMode: true,
