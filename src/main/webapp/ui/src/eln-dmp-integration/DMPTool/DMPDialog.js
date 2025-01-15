@@ -31,13 +31,9 @@ import ValidatingSubmitButton, {
   IsValid,
 } from "../../components/ValidatingSubmitButton";
 import Link from "@mui/material/Link";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
+import AppBar from "../../components/AppBar";
 import docLinks from "../../assets/DocLinks";
-import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
-import { AccessibilityTipsIconButton } from "../../components/AccessibilityTips";
 import { DataGrid } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import Radio from "@mui/material/Radio";
@@ -201,20 +197,17 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   return (
     <>
-      <AppBar position="relative" open={true}>
-        <Toolbar variant="dense">
-          <Typography variant="h6" noWrap component="h2">
-            DMPTool
-          </Typography>
-          <Box flexGrow={1}></Box>
-          <Box ml={1}>
-            <AccessibilityTipsIconButton supportsHighContrastMode />
-          </Box>
-          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-            <HelpLinkIcon title="DMPTool help" link={docLinks.dmptool} />
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <AppBar
+        variant="dialog"
+        currentPage="DMPTool"
+        accessibilityTips={{
+          supportsHighContrastMode: true,
+        }}
+        helpPage={{
+          docLink: docLinks.dmptool,
+          title: "DMPTool help",
+        }}
+      />
       <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
         <Grid
