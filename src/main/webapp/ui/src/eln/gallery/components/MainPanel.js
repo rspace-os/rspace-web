@@ -1131,110 +1131,114 @@ const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
   width: 20,
 }));
 
-function PathAndSearch({
-  appliedSearchTerm,
-  setAppliedSearchTerm,
-  selectedSection,
-  path,
-  clearPath,
-}: {|
-  appliedSearchTerm: string,
-  setAppliedSearchTerm: (string) => void,
-  selectedSection: GallerySection,
-  path: $ReadOnlyArray<GalleryFile>,
-  clearPath: () => void,
-|}) {
-  const { isViewportVerySmall } = useViewportDimensions();
+const PathAndSearch = observer(
+  ({
+    appliedSearchTerm,
+    setAppliedSearchTerm,
+    selectedSection,
+    path,
+    clearPath,
+  }: {|
+    appliedSearchTerm: string,
+    setAppliedSearchTerm: (string) => void,
+    selectedSection: GallerySection,
+    path: $ReadOnlyArray<GalleryFile>,
+    clearPath: () => void,
+  |}) => {
+    const { isViewportVerySmall } = useViewportDimensions();
 
-  /*
-   * We use a copy of the search term string so that edits the user makes are
-   * not immediately passed to useGalleryListing which will immediately make a
-   * network call.
-   */
-  const [searchTerm, setSearchTerm] = React.useState("");
-  React.useEffect(() => {
-    setSearchTerm(appliedSearchTerm);
-  }, [appliedSearchTerm]);
+    /*
+     * We use a copy of the search term string so that edits the user makes are
+     * not immediately passed to useGalleryListing which will immediately make a
+     * network call.
+     */
+    const [searchTerm, setSearchTerm] = React.useState("");
+    React.useEffect(() => {
+      setSearchTerm(appliedSearchTerm);
+    }, [appliedSearchTerm]);
 
-  /*
-   * On the smallest viewports, we only show the search textfield when it is
-   * requested, hiding it behind an icon button. The ref allows us to focus the
-   * text field when it is opened , triggering the virtual keyboard.
-   */
-  const [searchOpen, setSearchOpen] = React.useState(false);
-  const searchTextfield = React.useRef();
+    /*
+     * On the smallest viewports, we only show the search textfield when it is
+     * requested, hiding it behind an icon button. The ref allows us to focus the
+     * text field when it is opened , triggering the virtual keyboard.
+     */
+    const [searchOpen, setSearchOpen] = React.useState(false);
+    const searchTextfield = React.useRef();
 
-  return (
-    <Grid
-      container
-      sx={{ pt: "0 !important", flexWrap: "nowrap" }}
-      spacing={1}
-      direction={searchOpen ? "column" : "row"}
-    >
-      <Grid item sx={{ flexGrow: 1, minWidth: 0 }}>
-        <Path section={selectedSection} path={path} clearPath={clearPath} />
-      </Grid>
-      {isViewportVerySmall && !searchOpen && (
-        <IconButtonWithTooltip
-          size="small"
-          onClick={() => {
-            setSearchOpen(true);
-            setTimeout(() => {
-              searchTextfield.current?.focus();
-            }, 0);
-          }}
-          icon={<SearchIcon />}
-          title="Search this folder"
-          disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
-        />
-      )}
-      {(!isViewportVerySmall || searchOpen) && (
-        <Grid item>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              setAppliedSearchTerm(searchTerm);
-            }}
-          >
-            <TextField
-              disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
-              placeholder="Search"
-              value={searchTerm}
-              onChange={({ currentTarget: { value } }) => setSearchTerm(value)}
-              sx={{
-                ...(searchOpen ? { width: "100%" } : {}),
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-                endAdornment:
-                  searchTerm !== "" || searchOpen ? (
-                    <IconButtonWithTooltip
-                      title="Clear"
-                      icon={<StyledCloseIcon />}
-                      size="small"
-                      onClick={() => {
-                        setSearchTerm("");
-                        setAppliedSearchTerm("");
-                        setSearchOpen(false);
-                      }}
-                    />
-                  ) : null,
-              }}
-              inputProps={{
-                "aria-label": "Search current folder",
-                ref: searchTextfield,
-              }}
-            />
-          </form>
+    return (
+      <Grid
+        container
+        sx={{ pt: "0 !important", flexWrap: "nowrap" }}
+        spacing={1}
+        direction={searchOpen ? "column" : "row"}
+      >
+        <Grid item sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Path section={selectedSection} path={path} clearPath={clearPath} />
         </Grid>
-      )}
-    </Grid>
-  );
-}
+        {isViewportVerySmall && !searchOpen && (
+          <IconButtonWithTooltip
+            size="small"
+            onClick={() => {
+              setSearchOpen(true);
+              setTimeout(() => {
+                searchTextfield.current?.focus();
+              }, 0);
+            }}
+            icon={<SearchIcon />}
+            title="Search this folder"
+            disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
+          />
+        )}
+        {(!isViewportVerySmall || searchOpen) && (
+          <Grid item>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                setAppliedSearchTerm(searchTerm);
+              }}
+            >
+              <TextField
+                disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
+                placeholder="Search"
+                value={searchTerm}
+                onChange={({ currentTarget: { value } }) =>
+                  setSearchTerm(value)
+                }
+                sx={{
+                  ...(searchOpen ? { width: "100%" } : {}),
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment:
+                    searchTerm !== "" || searchOpen ? (
+                      <IconButtonWithTooltip
+                        title="Clear"
+                        icon={<StyledCloseIcon />}
+                        size="small"
+                        onClick={() => {
+                          setSearchTerm("");
+                          setAppliedSearchTerm("");
+                          setSearchOpen(false);
+                        }}
+                      />
+                    ) : null,
+                }}
+                inputProps={{
+                  "aria-label": "Search current folder",
+                  ref: searchTextfield,
+                }}
+              />
+            </form>
+          </Grid>
+        )}
+      </Grid>
+    );
+  }
+);
 
 type GalleryMainPanelArgs = {|
   selectedSection: GallerySection,
