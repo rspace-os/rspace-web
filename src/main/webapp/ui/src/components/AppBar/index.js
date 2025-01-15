@@ -41,6 +41,8 @@ import Avatar from "@mui/material/Avatar";
 import SvgIcon from "@mui/material/SvgIcon";
 import { styled } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import HelpLinkIcon from "../HelpLinkIcon";
+import docLinks from "../../assets/DocLinks";
 
 const OrcidIcon = styled(({ className }) => (
   <svg
@@ -124,6 +126,13 @@ type GalleryAppBarArgs = {|
     supportsHighContrastMode?: boolean,
     supports2xZoom?: boolean,
   |},
+
+  /*
+   * A page of documentation to link to in the top right corner. If one is not
+   * specified then the lighthouse dialog is opened allowing the user to browse
+   * the documentation.
+   */
+  helpPage?: {| docLink: string, title: string |},
 |};
 
 function GalleryAppBar({
@@ -131,6 +140,7 @@ function GalleryAppBar({
   currentPage,
   sidebarToggle,
   accessibilityTips,
+  helpPage,
 }: GalleryAppBarArgs): Node {
   const { isViewportSmall } = useViewportDimensions();
   const [appMenuAnchorEl, setAppMenuAnchorEl] = React.useState(null);
@@ -262,17 +272,26 @@ function GalleryAppBar({
         )}
         <Box flexGrow={1}></Box>
         <Box ml={1}>
-          <HelpDocs
-            Action={({ onClick, disabled }) => (
-              <IconButtonWithTooltip
-                size="small"
-                onClick={onClick}
-                icon={<HelpIcon />}
-                title="Open Help"
-                disabled={disabled}
+          {helpPage ? (
+            <Box ml={1} sx={{ transform: "translateY(2px)" }}>
+              <HelpLinkIcon
+                title={helpPage.title}
+                link={docLinks[helpPage.docLink]}
               />
-            )}
-          />
+            </Box>
+          ) : (
+            <HelpDocs
+              Action={({ onClick, disabled }) => (
+                <IconButtonWithTooltip
+                  size="small"
+                  onClick={onClick}
+                  icon={<HelpIcon />}
+                  title="Open Help"
+                  disabled={disabled}
+                />
+              )}
+            />
+          )}
         </Box>
         {variant === "page" && (
           <Box ml={1}>
