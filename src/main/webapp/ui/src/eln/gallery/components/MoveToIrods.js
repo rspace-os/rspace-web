@@ -5,8 +5,7 @@ import { ThemeProvider, styled } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
+import AppBar from "../../../components/AppBar";
 import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
 import DialogActions from "@mui/material/DialogActions";
@@ -14,7 +13,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Box from "@mui/material/Box";
-import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import FormField from "../../../components/Inputs/FormField";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
@@ -32,7 +30,6 @@ import AlertTitle from "@mui/lab/AlertTitle";
 import * as FetchingData from "../../../util/fetchingData";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
-import { AccessibilityTipsIconButton } from "../../../components/AccessibilityTips";
 import docLinks from "../../../assets/DocLinks";
 
 /**
@@ -232,20 +229,17 @@ function MoveCopyDialog({
         e.stopPropagation();
       }}
     >
-      <AppBar position="relative" open={true}>
-        <Toolbar variant="dense">
-          <Typography variant="h6" noWrap component="h2">
-            iRODS
-          </Typography>
-          <Box flexGrow={1}></Box>
-          <Box ml={1}>
-            <AccessibilityTipsIconButton supportsHighContrastMode />
-          </Box>
-          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-            <HelpLinkIcon title="iRODS help" link={docLinks.irods} />
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <AppBar
+        variant="dialog"
+        currentPage="iRODS"
+        accessibilityTips={{
+          supportsHighContrastMode: true,
+        }}
+        helpPage={{
+          docLink: docLinks.irods,
+          title: "iRODS help",
+        }}
+      />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <Box
           component="form"
