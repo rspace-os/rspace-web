@@ -113,6 +113,13 @@ function NavButtons({
       >
         Inventory
       </Link>
+      {currentPage !== "Workspace" &&
+        currentPage !== "Gallery" &&
+        currentPage !== "Inventory" && (
+          <Link target="_self" aria-current="page" href="#">
+            {currentPage}
+          </Link>
+        )}
     </Stack>
   );
 }
