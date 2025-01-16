@@ -44,6 +44,7 @@ import Typography from "@mui/material/Typography";
 import HelpLinkIcon from "../HelpLinkIcon";
 import docLinks from "../../assets/DocLinks";
 import useOneDimensionalRovingTabIndex from "../useOneDimensionalRovingTabIndex";
+import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 
 const OrcidIcon = styled(({ className }) => (
   <svg
@@ -197,6 +198,11 @@ function GalleryAppBar({
           <Box width="40px" height="40px" sx={{ ml: 0.5 }}>
             <img src="/images/icons/rspaceLogo.svg" alt="rspace logo" />
           </Box>
+        )}
+        {variant === "page" && (
+          <VisuallyHiddenHeading variant="h1">
+            {currentPage}
+          </VisuallyHiddenHeading>
         )}
         {variant === "dialog" && (
           <Box sx={{ ml: 0.5 }}>
