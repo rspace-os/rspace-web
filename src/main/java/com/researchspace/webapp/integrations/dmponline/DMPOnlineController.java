@@ -176,8 +176,10 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       }
 
     } catch (Exception e) {
-      log.error("Couldn't perform test connection action on DMPonline. "
-          + "The connection will be flagged as NOT ALIVE", e);
+      log.error(
+          "Couldn't perform test connection action on DMPonline. "
+              + "The connection will be flagged as NOT ALIVE",
+          e);
       isConnectionAlive = Boolean.FALSE;
     }
 

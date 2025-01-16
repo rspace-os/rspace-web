@@ -80,7 +80,7 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         mockMvc
             .perform(get("/apps/dmponline/test_connection").principal(user::getUsername))
-            .andExpect(status().is(200))  // end point exists
+            .andExpect(status().is(200)) // end point exists
             .andReturn();
 
     // assert is redirected to the error page

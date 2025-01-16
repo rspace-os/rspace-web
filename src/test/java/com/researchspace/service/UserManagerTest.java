@@ -12,7 +12,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.Constants;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.ISearchResults;
-import com.researchspace.model.*;
+import com.researchspace.model.Community;
+import com.researchspace.model.Group;
+import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.Role;
+import com.researchspace.model.RoleInGroup;
+import com.researchspace.model.SignupSource;
+import com.researchspace.model.TokenBasedVerification;
+import com.researchspace.model.TokenBasedVerificationType;
+import com.researchspace.model.User;
+import com.researchspace.model.UserPreference;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
@@ -331,7 +340,8 @@ public class UserManagerTest extends SpringTransactionalTest {
     StructuredDocument docD1 = createBasicDocumentInRootFolderWithText(user3, "test");
     shareRecordWithUser(user3, docD1, user1);
 
-    // due to individual share, user1 and user3 should stay connected even after user1 leaves the group
+    // due to individual share, user1 and user3 should stay connected even after user1 leaves the
+    // group
     logoutAndLoginAs(pi);
     grpMgr.removeUserFromGroup(user1.getUsername(), group2.getId(), pi);
     group2 = reloadGroup(group2);
