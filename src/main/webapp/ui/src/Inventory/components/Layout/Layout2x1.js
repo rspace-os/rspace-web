@@ -93,18 +93,15 @@ const useStyles = makeStyles()((theme) => ({
     position: "sticky",
     top: 0,
     padding: "0px !important",
-    display: ({ hideLeftPanel }) => (hideLeftPanel ? "none" : "flex"),
     flexDirection: "column",
     maxHeight: "100vh",
   },
   rightPanel: {
     height: "100%",
     padding: "0px !important",
-    display: ({ hideRightPanel }) => (hideRightPanel ? "none" : "flex"),
     flexDirection: "column",
   },
   leftPanelMobile: {
-    display: ({ hideLeftPanel }) => (hideLeftPanel ? "none" : "flex"),
     flexDirection: "column",
     padding: theme.spacing(1),
     paddingTop: 0,
