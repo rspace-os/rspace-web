@@ -43,6 +43,7 @@ import { styled } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import HelpLinkIcon from "../HelpLinkIcon";
 import docLinks from "../../assets/DocLinks";
+import useOneDimensionalRovingTabIndex from "../useOneDimensionalRovingTabIndex";
 
 const OrcidIcon = styled(({ className }) => (
   <svg
@@ -90,12 +91,33 @@ function NavButtons({
 }: {|
   currentPage: "Gallery" | "Inventory" | "Workspace" | string,
 |}) {
+  const currentPageIsNotOneOfAlwaysShownLinks =
+    currentPage !== "Workspace" &&
+    currentPage !== "Gallery" &&
+    currentPage !== "Inventory";
+  const {
+    eventHandlers: { onFocus, onBlur, onKeyDown },
+    getTabIndex,
+    getRef,
+  } = useOneDimensionalRovingTabIndex<typeof Link>({
+    max: 2 + (currentPageIsNotOneOfAlwaysShownLinks ? 1 : 0),
+    direction: "row",
+  });
   return (
-    <Stack direction="row" spacing={2} sx={{ mx: 1 }}>
+    <Stack
+      direction="row"
+      spacing={2}
+      sx={{ mx: 1 }}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+    >
       <Link
         target="_self"
         aria-current={currentPage === "Workspace" ? "page" : false}
         href="/workspace"
+        ref={getRef(0)}
+        tabIndex={getTabIndex(0)}
       >
         Workspace
       </Link>
@@ -103,6 +125,8 @@ function NavButtons({
         target="_self"
         aria-current={currentPage === "Gallery" ? "page" : false}
         href="/gallery"
+        ref={getRef(1)}
+        tabIndex={getTabIndex(1)}
       >
         Gallery
       </Link>
@@ -110,16 +134,22 @@ function NavButtons({
         target="_self"
         aria-current={currentPage === "Inventory" ? "page" : false}
         href="/inventory"
+        ref={getRef(2)}
+        tabIndex={getTabIndex(2)}
       >
         Inventory
       </Link>
-      {currentPage !== "Workspace" &&
-        currentPage !== "Gallery" &&
-        currentPage !== "Inventory" && (
-          <Link target="_self" aria-current="page" href="#">
-            {currentPage}
-          </Link>
-        )}
+      {currentPageIsNotOneOfAlwaysShownLinks && (
+        <Link
+          target="_self"
+          aria-current="page"
+          href="#"
+          ref={getRef(3)}
+          tabIndex={getTabIndex(3)}
+        >
+          {currentPage}
+        </Link>
+      )}
     </Stack>
   );
 }
