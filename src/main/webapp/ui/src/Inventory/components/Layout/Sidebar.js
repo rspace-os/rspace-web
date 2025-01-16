@@ -69,7 +69,7 @@ export const COLOR = {
 const drawerWidth = 200;
 
 const CustomDrawer = withStyles<
-  {| children: Node, drawerWidth?: number |},
+  {| children: Node, drawerWidth?: number, id: string |},
   {
     drawer: string,
     drawerPaper: string,
@@ -124,7 +124,7 @@ const CustomDrawer = withStyles<
     },
   },
 }))(
-  observer(({ classes, children }) => {
+  observer(({ classes, children, id }) => {
     const { uiStore } = useStores();
 
     return (
@@ -132,6 +132,7 @@ const CustomDrawer = withStyles<
         open={uiStore.alwaysVisibleSidebar || uiStore.sidebarOpen}
         variant={uiStore.alwaysVisibleSidebar ? "persistent" : "temporary"}
         onClose={() => uiStore.toggleSidebar(false)}
+        id={id}
         className={
           !uiStore.alwaysVisibleSidebar
             ? classes.drawer
@@ -507,7 +508,11 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-function Sidebar(): Node {
+type SidebarArgs = {|
+  id: string,
+|};
+
+function Sidebar({ id }: SidebarArgs): Node {
   const { classes } = useStyles();
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
@@ -518,7 +523,7 @@ function Sidebar(): Node {
   };
 
   return (
-    <CustomDrawer>
+    <CustomDrawer id={id}>
       <div className={classes.drawerContainer}>
         <List component="nav" aria-label="Create new Inventory items">
           <ThemeProvider theme={createAccentedTheme(COLOR)}>
@@ -546,4 +551,4 @@ function Sidebar(): Node {
   );
 }
 
-export default (observer(Sidebar): ComponentType<{||}>);
+export default (observer(Sidebar): ComponentType<SidebarArgs>);

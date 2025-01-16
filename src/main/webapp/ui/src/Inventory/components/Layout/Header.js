@@ -9,7 +9,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import { COLOR } from "./Sidebar";
 import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 
-function Header(): Node {
+type HeaderArgs = {|
+  sidebarId: string,
+|};
+
+function Header({ sidebarId }: HeaderArgs): Node {
   const { uiStore } = useStores();
 
   const handleToggleOpen = () => {
@@ -23,7 +27,7 @@ function Header(): Node {
         currentPage="Inventory"
         sidebarToggle={
           <SidebarToggle
-            sidebarId={"foo"}
+            sidebarId={sidebarId}
             setSidebarOpen={handleToggleOpen}
             sidebarOpen={uiStore.sidebarOpen}
           />
@@ -36,4 +40,4 @@ function Header(): Node {
   );
 }
 
-export default (observer(Header): ComponentType<{||}>);
+export default (observer(Header): ComponentType<HeaderArgs>);

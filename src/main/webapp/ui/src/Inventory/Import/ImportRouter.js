@@ -27,6 +27,8 @@ export default function ImportRouter(): Node {
     );
   }, [location.search]);
 
+  const sidebarId = React.useId();
+
   const recordType = importStore.importData?.recordType;
   if (
     recordType === "SAMPLES" ||
@@ -35,9 +37,9 @@ export default function ImportRouter(): Node {
   ) {
     return (
       <NavigationContext>
-        <Header />
+        <Header sidebarId={sidebarId} />
         <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-          <Sidebar />
+          <Sidebar id={sidebarId} />
           <Main>
             <RecordsImport />
           </Main>

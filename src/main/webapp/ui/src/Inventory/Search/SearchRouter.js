@@ -82,11 +82,13 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
     };
   }, [search]);
 
+  const sidebarId = React.useId();
+
   return (
     <>
-      <Header />
+      <Header sidebarId={sidebarId} />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-        <Sidebar />
+        <Sidebar id={sidebarId} />
         <Main>
           <Layout colLeft={<LeftPanelView />} colRight={<RightPanelView />} />
         </Main>

@@ -45,7 +45,7 @@ describe("Sidebar", () => {
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>
-          <Sidebar />
+          <Sidebar id="foo" />
         </storesContext.Provider>
       </ThemeProvider>
     );
