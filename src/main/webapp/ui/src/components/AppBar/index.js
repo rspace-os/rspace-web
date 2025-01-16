@@ -111,6 +111,8 @@ function NavButtons({
       onFocus={onFocus}
       onBlur={onBlur}
       onKeyDown={onKeyDown}
+      component="nav"
+      aria-label="main links"
     >
       <Link
         target="_self"
