@@ -88,6 +88,7 @@ const useStyles = makeStyles()((theme) => ({
     padding: 0,
     width: "100%",
     margin: "0",
+    height: "100%",
   },
   leftPanel: {
     position: "sticky",
@@ -95,11 +96,13 @@ const useStyles = makeStyles()((theme) => ({
     padding: "0px !important",
     flexDirection: "column",
     maxHeight: "100vh",
+    height: "100%",
   },
   rightPanel: {
     height: "100%",
     padding: "0px !important",
     flexDirection: "column",
+    height: "100%",
   },
   leftPanelMobile: {
     flexDirection: "column",

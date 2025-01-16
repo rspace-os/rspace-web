@@ -28,11 +28,10 @@ import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/C
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
-const FOOTER_WHITESPACE = 10;
-
 const useStyles = makeStyles()((theme) => ({
   relativeBox: {
-    paddingBottom: theme.spacing(FOOTER_WHITESPACE),
+    height: "calc(100% - 106px)",
+    overflowY: "auto",
   },
   rightSpacing: {
     marginRight: theme.spacing(0.75),
