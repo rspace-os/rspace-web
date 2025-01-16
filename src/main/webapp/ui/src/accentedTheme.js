@@ -187,6 +187,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
       components: {
         MuiAppBar: {
           styleOverrides: {
+            /*
+             * Generally, we convert the accent colour to black when the user
+             * has requested more contrast, but in the app bar we convert to
+             * white as otherwise there would be a big block of black at the
+             * top of the viewport, which is excessively distracting.
+             */
             root: {
               boxShadow: "unset",
               [`& > .${toolbarClasses.root}`]: {
@@ -194,7 +200,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 paddingLeft: `${baseTheme.spacing(1.5)} !important`,
                 paddingRight: `${baseTheme.spacing(1)} !important`,
                 color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
-                background: prefersMoreContrast ? "white" : accentedBackground,
+                background: prefersMoreContrast
+                  ? "rgb(0,0,0)"
+                  : accentedBackground,
                 borderBottom: prefersMoreContrast ? accentedBorder : "none",
                 [`& .${svgIconClasses.root}`]: {
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
@@ -255,7 +263,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   paddingLeft: baseTheme.spacing(0.5),
                   paddingRight: baseTheme.spacing(0.5),
                   textDecoration: "unset !important",
-                  color: `${contrastTextColor} !important`,
+                  color: `${
+                    prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor
+                  } !important`,
                   [`&::after`]: {
                     content: "''",
                     width: "100%",
@@ -296,7 +306,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               },
               [`& .${listItemButtonClasses.root}`]: {
                 boxShadow: "unset",
-                backgroundColor: accentedBackground,
+                backgroundColor: prefersMoreContrast
+                  ? "rgb(255,255,255)"
+                  : accentedBackground,
                 border: accentedBorder,
                 borderColor: darken(accentedBackground, hoverDarkenCoefficient),
                 padding: "0 12px",
