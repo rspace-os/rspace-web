@@ -9,6 +9,7 @@ import Sidebar from "../components/Layout/Sidebar";
 import useStores from "../../stores/use-stores";
 import NavigationContext from "./NavigationContext";
 import Main from "../Main";
+import Box from "@mui/material/Box";
 
 export default function ImportRouter(): Node {
   const { uiStore, importStore } = useStores();
@@ -34,11 +35,13 @@ export default function ImportRouter(): Node {
   ) {
     return (
       <NavigationContext>
-        {uiStore.isVerySmall && <Header />}
-        <Sidebar />
-        <Main>
-          <RecordsImport />
-        </Main>
+        <Header />
+        <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+          <Sidebar />
+          <Main>
+            <RecordsImport />
+          </Main>
+        </Box>
       </NavigationContext>
     );
   }

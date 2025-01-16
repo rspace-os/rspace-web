@@ -85,10 +85,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   return (
     <>
       <Header />
-      <Box
-        sx={{ display: "flex", height: "calc(100% - 48px)" }}
-        component="main"
-      >
+      <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <Sidebar />
         <Main>
           <Layout colLeft={<LeftPanelView />} colRight={<RightPanelView />} />
