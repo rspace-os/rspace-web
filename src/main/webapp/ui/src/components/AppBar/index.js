@@ -390,12 +390,14 @@ function GalleryAppBar({
                   <Avatar
                     sx={{
                       /*
-                       * These colours are just for the mockup. We should generate
-                       * a pair of colours from the username when there isn't an
-                       * avatar to show
+                       * This pink colour is taken from the RSpace logo, a
+                       * colour that we don't otherwise use in the product. The
+                       * pair of colours do not quite have sufficient contrast
+                       * to meet the WCAG standard, but this is only for
+                       * aesthetic purposes.
                        */
-                      color: "#FBE9E7",
-                      backgroundColor: "#FF5722",
+                      color: "#fce8f0",
+                      backgroundColor: "#ed1064",
                     }}
                   >
                     J
