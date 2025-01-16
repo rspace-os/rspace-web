@@ -298,7 +298,7 @@ function App(): Node {
                               <Typography
                                 variant="h5"
                                 component="h2"
-                                sx={{ p: 1, mb: 1 }}
+                                sx={{ p: 1, mb: 1, whiteSpace: "break-spaces" }}
                                 id="third-party-rspace-integrations"
                               >
                                 Third-party RSpace Integrations
