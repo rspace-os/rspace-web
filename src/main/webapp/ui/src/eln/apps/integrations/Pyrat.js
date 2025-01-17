@@ -3,7 +3,10 @@
 import Grid from "@mui/material/Grid";
 import React, { type Node, useState, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import {
+  useIntegrationsEndpoint,
+  type IntegrationStates,
+} from "../useIntegrationsEndpoint";
 import TextField from "@mui/material/TextField";
 import { Optional } from "../../../util/optional";
 import { observer } from "mobx-react-lite";
@@ -25,6 +28,7 @@ type PyratArgs = {|
  * Pyrat uses API-key based authentication, as implemeted by the form below.
  */
 function Pyrat({ integrationState, update }: PyratArgs): Node {
+  const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const [apiKey, setApiKey] = useState(
     // TODO
     "hi"
@@ -104,7 +108,17 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                   >
                     {integrationState.credentials.configuredServers.map(
                       ({ alias, url }) => (
-                        <MenuItem>
+                        <MenuItem
+                          onClick={() => {
+                            void saveAppOptions("PYRAT", Optional.empty(), {
+                              PYRAT_ALIAS: alias,
+                              PYRAT_URL: url,
+                              PYRAT_APIKEY: "",
+                            }).then(() => {
+                              setAddMenuAnchorEl(null);
+                            });
+                          }}
+                        >
                           <ListItemText primary={alias} secondary={url} />
                         </MenuItem>
                       )

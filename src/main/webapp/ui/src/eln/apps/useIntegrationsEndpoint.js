@@ -148,6 +148,7 @@ export type IntegrationStates = {|
       url: string,
       alias: string,
       apiKey: string,
+      optionsId: OptionsId,
     |}>,
   |}>,
   SLACK: IntegrationState<
@@ -529,7 +530,7 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
         )
         .flatMap((servers) =>
           Result.all(
-            ...servers.map(([_key, config]) => {
+            ...servers.map(([key, config]) => {
               try {
                 const server = Parsers.isObject(config)
                   .flatMap(Parsers.isNotNull)
@@ -543,12 +544,14 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
                 const apiKey = Parsers.getValueWithKey("PYRAT_APIKEY")(server)
                   .flatMap(Parsers.isString)
                   .elseThrow();
-                return Result.Ok({ alias, url, apiKey });
+                const optionsId = Parsers.isString(key).elseThrow();
+                return Result.Ok({ alias, url, apiKey, optionsId });
               } catch {
                 return Result.Error<{|
                   url: string,
                   alias: string,
                   apiKey: string,
+                  optionsId: OptionsId,
                 |}>([
                   new Error("Could not parse out pyrat authenticated server"),
                 ]);
@@ -976,22 +979,27 @@ const encodeIntegrationState = <I: Integration>(
       options: {},
     };
   }
-  // TODO
   if (integration === "PYRAT") {
     return {
       name: "PYRAT",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      options: {
+      options: Object.fromEntries(
+        // $FlowExpectedError[incompatible-use]
         // $FlowExpectedError[prop-missing]
         // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.PYRAT_USER_TOKEN.map((token) => ({
-          PYRAT_USER_TOKEN: token,
-        })).orElse({
-          PYRAT_USER_TOKEN: "",
-        }),
-      },
+        data.credentials.authenticatedServers.map(
+          // $FlowExpectedError[prop-missing]
+          ({ alias, url, apiKey, optionsId }) => [
+            optionsId,
+            {
+              PYRAT_ALIAS: alias,
+              PYRAT_URL: url,
+              PYRAT_APIKEY: apiKey,
+            },
+          ]
+        )
+      ),
     };
   }
   if (integration === "SLACK") {
