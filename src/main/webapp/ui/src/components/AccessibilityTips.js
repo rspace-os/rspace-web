@@ -31,12 +31,15 @@ const StyledPopover = styled(
  * user's device and browser may inform us that the user wishes for the page to
  * adapt to their visual needs. There are various places in the UI in which we
  * do this (with the ultimate aim that the whole product will), in particular
- * through use of the [accented theme]{@link ../accentedTheme.js}. However, it
- * is not apparent to an uninformed user that this functionality is provided if
- * they do not already have it enabled. As such, this component provides a
- * button that opens a popup listing the accessibility functionality provided
- * by this part of the UI, with links to the documentation for each major
- * operation system so that they can discover how to enable it.
+ * through use of the [accented theme]{@link ../accentedTheme.js}. Moreover,
+ * responsive web design means that it should be possible to zoom a large
+ * viewport by up to 200%, doubling the size of all of the UI elements.
+ *
+ * All of this functionality may not be immediately apparent to the user. As
+ * such, this module provides a couple of components that open a popup listing
+ * the accessibility functionality provided by this part of the UI, with links
+ * to the documentation for each major operation system/browser so that they
+ * can discover how to enable it.
  */
 
 function AccessibilityTipsPopup({

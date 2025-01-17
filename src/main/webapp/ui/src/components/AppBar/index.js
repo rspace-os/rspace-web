@@ -158,10 +158,35 @@ function NavButtons({
 }
 
 type GalleryAppBarArgs = {|
+  /**
+   * The app bar is used across the top of the pages that consistitute most of
+   * the product, as wel as several dialogs. The behaviour of this component is
+   * slightly different based on this, providing navigation only when `variant`
+   * is "page".
+   */
   variant: "page" | "dialog",
+
+  /**
+   * The app bar is used across the product on whole pages and some dialogs. If
+   * the variant is "page" then we provide a series of links for jumping
+   * between the main parts of the product and if the `currentPage` is one of
+   * them then it is shown as active. If the variant is "dialog" then
+   * `currentPage` is just used to show a heading.
+   */
   currentPage: "Gallery" | "Inventory" | "Workspace" | string,
+
+  /**
+   * Some pages have a sidebar that needs a toggle for opening and closing.
+   * Those pages should pass an instance of SidebarToggle here.
+   */
   sidebarToggle?: Element<typeof SidebarToggle>,
-  accessibilityTips?: {|
+
+  /**
+   * Which accessibility tips to show based on the conformance the current
+   * page/dialog has with the accessibility standard.
+   * @see {@link module:AccessibilityTips} for more info.
+   */
+  accessibilityTips: {|
     supportsReducedMotion?: boolean,
     supportsHighContrastMode?: boolean,
     supports2xZoom?: boolean,
