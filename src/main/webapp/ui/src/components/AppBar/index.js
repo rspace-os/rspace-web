@@ -439,6 +439,7 @@ function GalleryAppBar({
                           color: "#fce8f0",
                           backgroundColor: "#ed1064",
                         }}
+                        src={userDetails.profileImgSrc}
                       >
                         {userDetails.fullName[0]}
                       </Avatar>

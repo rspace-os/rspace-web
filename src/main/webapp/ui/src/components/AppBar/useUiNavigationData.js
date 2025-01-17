@@ -13,6 +13,7 @@ type UiNavigationData = {|
     orcidId: null | string,
     fullName: string,
     username: string,
+    profileImgSrc: null | string,
   |},
 |};
 
@@ -64,8 +65,22 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
             )
               .flatMap(Parsers.isString)
               .elseThrow();
+            const profileImgSrc = Parsers.objectPath(
+              ["userDetails", "profileImgSrc"],
+              obj
+            )
+              .flatMap((o) =>
+                Parsers.isString(o).orElseTry(() => Parsers.isNull(o))
+              )
+              .elseThrow();
             return Result.Ok({
-              userDetails: { email, orcidId, fullName, username },
+              userDetails: {
+                email,
+                orcidId,
+                fullName,
+                username,
+                profileImgSrc,
+              },
             });
           } catch (e) {
             return Result.Error<UiNavigationData>([
