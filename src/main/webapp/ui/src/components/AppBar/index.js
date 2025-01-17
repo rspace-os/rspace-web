@@ -440,13 +440,13 @@ function GalleryAppBar({
                           backgroundColor: "#ed1064",
                         }}
                       >
-                        J
+                        {userDetails.fullName[0]}
                       </Avatar>
                     </ListItemIcon>
                     <Stack>
                       <ListItemText
                         sx={{ mt: 0.5 }}
-                        primary="Joe Bloggs (jbloggs)"
+                        primary={`${userDetails.fullName} (${userDetails.username})`}
                         secondary={userDetails.email}
                       />
                       <ListItemText

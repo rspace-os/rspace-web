@@ -11,6 +11,8 @@ type UiNavigationData = {|
   userDetails: {|
     email: string,
     orcidId: null | string,
+    fullName: string,
+    username: string,
   |},
 |};
 
@@ -50,7 +52,21 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
                 Parsers.isString(o).orElseTry(() => Parsers.isNull(o))
               )
               .elseThrow();
-            return Result.Ok({ userDetails: { email, orcidId } });
+            const fullName = Parsers.objectPath(
+              ["userDetails", "fullName"],
+              obj
+            )
+              .flatMap(Parsers.isString)
+              .elseThrow();
+            const username = Parsers.objectPath(
+              ["userDetails", "username"],
+              obj
+            )
+              .flatMap(Parsers.isString)
+              .elseThrow();
+            return Result.Ok({
+              userDetails: { email, orcidId, fullName, username },
+            });
           } catch (e) {
             return Result.Error<UiNavigationData>([
               new Error("Could not parse response from /uiNavigationData", {
