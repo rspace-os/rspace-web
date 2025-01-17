@@ -33,6 +33,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { Optional } from "../../../util/optional";
 import { useFolderOpen } from "./OpenFolderProvider";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 /**
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -881,6 +882,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
   const selection = useGallerySelection();
   const mobileInfoPanelId = React.useId();
   const { openFolder } = useFolderOpen();
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   return (
     <CustomSwipeableDrawer
@@ -901,6 +903,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
       }}
       onOpen={() => {
         setMobileInfoPanelOpen(true);
+        trackEvent("user:opens:mobileInfoPanel:gallery");
       }}
       swipeAreaWidth={CLOSED_MOBILE_INFO_PANEL_HEIGHT}
       disableSwipeToOpen={false}
