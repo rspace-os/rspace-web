@@ -34,6 +34,7 @@ import ProfileIcon from "@mui/icons-material/ManageAccounts";
 import PublicIcon from "@mui/icons-material/Public";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SystemIcon from "@mui/icons-material/SettingsInputComposite";
+import GroupsIcon from "@mui/icons-material/Groups2";
 import JwtService from "../../common/JwtService";
 import SidebarToggle from "./SidebarToggle";
 import Link from "@mui/material/Link";
@@ -161,14 +162,18 @@ function GalleryAppBar({
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
     React.useState<null | EventTarget>(null);
 
-  const { showInventory, showSystem } = FetchingData.getSuccessValue(
-    uiNavigationData
-  )
-    .map(({ visibleTabs: { inventory, system } }) => ({
-      showInventory: Boolean(inventory),
-      showSystem: Boolean(system),
-    }))
-    .orElse({ showInventory: false, showSystem: false });
+  const { showInventory, showSystem, showMyLabGroups } =
+    FetchingData.getSuccessValue(uiNavigationData)
+      .map(({ visibleTabs: { inventory, system, myLabGroups } }) => ({
+        showInventory: Boolean(inventory),
+        showSystem: Boolean(system),
+        showMyLabGroups: Boolean(myLabGroups),
+      }))
+      .orElse({
+        showInventory: false,
+        showSystem: false,
+        showMyLabGroups: false,
+      });
   const currentPageIsNotOneOfAlwaysShownLinks =
     currentPage !== "Workspace" &&
     currentPage !== "Gallery" &&
@@ -225,6 +230,15 @@ function GalleryAppBar({
                 href="/inventory"
               >
                 Inventory
+              </Link>
+            )}
+            {showMyLabGroups && (
+              <Link
+                target="_self"
+                aria-current={currentPage === "MyLabGroups" ? "page" : false}
+                href="/groups/viewPIGroup"
+              >
+                My LabGroups
               </Link>
             )}
             {showSystem && (
@@ -339,6 +353,27 @@ function GalleryAppBar({
                   backgroundColor={INVENTORY_COLOR.main}
                   onClick={() => {
                     window.location = "/inventory";
+                    handleAppMenuClose();
+                  }}
+                />
+              )}
+              {showMyLabGroups && (
+                <AccentMenuItem
+                  title="My LabGroups"
+                  avatar={<GroupsIcon />}
+                  subheader="Administer your groups"
+                  foregroundColor={{
+                    hue: 200,
+                    saturation: 10,
+                    lightness: 20,
+                  }}
+                  backgroundColor={{
+                    hue: 200,
+                    saturation: 10,
+                    lightness: 70,
+                  }}
+                  onClick={() => {
+                    window.location = "/groups/viewPIGroup";
                     handleAppMenuClose();
                   }}
                 />
