@@ -46,6 +46,7 @@ import useOneDimensionalRovingTabIndex from "../useOneDimensionalRovingTabIndex"
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import useUiNavigationData from "./useUiNavigationData";
 import * as FetchingData from "../../util/fetchingData";
+import * as Parsers from "../../util/parsers";
 
 const StyledAvatar = styled(Avatar)(() => ({
   /*
@@ -532,15 +533,23 @@ function GalleryAppBar({
                   window.location = "/apps";
                 }}
               />
-              <AccentMenuItem
-                title="Published"
-                avatar={<PublicIcon />}
-                compact
-                onClick={() => {
-                  setAccountMenuAnchorEl(null);
-                  window.location = "/public/publishedView/publishedDocuments";
-                }}
-              />
+              {FetchingData.getSuccessValue(uiNavigationData)
+                .map(({ visibleTabs: { published } }) => published)
+                .flatMap(Parsers.isTrue)
+                .map(() => (
+                  <AccentMenuItem
+                    key={null}
+                    title="Published"
+                    avatar={<PublicIcon />}
+                    compact
+                    onClick={() => {
+                      setAccountMenuAnchorEl(null);
+                      window.location =
+                        "/public/publishedView/publishedDocuments";
+                    }}
+                  />
+                ))
+                .orElse(null)}
               <Divider />
               <AccessibilityTipsMenuItem
                 {...(accessibilityTips ?? {})}

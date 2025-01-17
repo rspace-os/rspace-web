@@ -15,6 +15,9 @@ type UiNavigationData = {|
     username: string,
     profileImgSrc: null | string,
   |},
+  visibleTabs: {|
+    published: boolean,
+  |},
 |};
 
 /**
@@ -73,6 +76,12 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
                 Parsers.isString(o).orElseTry(() => Parsers.isNull(o))
               )
               .elseThrow();
+            const published = Parsers.objectPath(
+              ["visibleTabs", "published"],
+              obj
+            )
+              .flatMap(Parsers.isBoolean)
+              .elseThrow();
             return Result.Ok({
               userDetails: {
                 email,
@@ -80,6 +89,9 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
                 fullName,
                 username,
                 profileImgSrc,
+              },
+              visibleTabs: {
+                published,
               },
             });
           } catch (e) {
