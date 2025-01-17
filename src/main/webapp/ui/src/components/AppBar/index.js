@@ -29,7 +29,6 @@ import FlaskIcon from "@mui/icons-material/Science";
 import AppsIcon from "@mui/icons-material/AppRegistration";
 import { COLOR as GALLERY_COLOR } from "../../eln/gallery/common";
 import { COLOR as INVENTORY_COLOR } from "../../Inventory/components/Layout/Sidebar";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import MessageIcon from "@mui/icons-material/Message";
 import SettingsIcon from "@mui/icons-material/Settings";
 import PublicIcon from "@mui/icons-material/Public";
@@ -47,6 +46,18 @@ import useOneDimensionalRovingTabIndex from "../useOneDimensionalRovingTabIndex"
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import useUiNavigationData from "./useUiNavigationData";
 import * as FetchingData from "../../util/fetchingData";
+
+const StyledAvatar = styled(Avatar)(() => ({
+  /*
+   * This pink colour is taken from the RSpace logo, a
+   * colour that we don't otherwise use in the product. The
+   * pair of colours do not quite have sufficient contrast
+   * to meet the WCAG standard, but this is only for
+   * aesthetic purposes.
+   */
+  color: "#fce8f0",
+  backgroundColor: "#ed1064",
+}));
 
 const OrcidIcon = styled(({ className }) => (
   <svg
@@ -371,7 +382,18 @@ function GalleryAppBar({
               onClick={(event) => {
                 setAccountMenuAnchorEl(event.currentTarget);
               }}
-              icon={<AccountCircleIcon />}
+              icon={
+                <StyledAvatar
+                  sx={{ height: "24px", width: "24px", fontSize: "0.8em" }}
+                  src={FetchingData.getSuccessValue(uiNavigationData)
+                    .map(({ userDetails: { profileImgSrc } }) => profileImgSrc)
+                    .orElse(null)}
+                >
+                  {FetchingData.getSuccessValue(uiNavigationData)
+                    .map(({ userDetails: { fullName } }) => fullName[0])
+                    .orElse(" ")}
+                </StyledAvatar>
+              }
               title="Account Menu"
               id="account-menu-button"
               aria-haspopup="menu"
@@ -427,22 +449,9 @@ function GalleryAppBar({
                 success: ({ userDetails }) => (
                   <ListItem key={null} sx={{ py: 0 }}>
                     <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
-                      <Avatar
-                        sx={{
-                          /*
-                           * This pink colour is taken from the RSpace logo, a
-                           * colour that we don't otherwise use in the product. The
-                           * pair of colours do not quite have sufficient contrast
-                           * to meet the WCAG standard, but this is only for
-                           * aesthetic purposes.
-                           */
-                          color: "#fce8f0",
-                          backgroundColor: "#ed1064",
-                        }}
-                        src={userDetails.profileImgSrc}
-                      >
+                      <StyledAvatar src={userDetails.profileImgSrc}>
                         {userDetails.fullName[0]}
-                      </Avatar>
+                      </StyledAvatar>
                     </ListItemIcon>
                     <Stack>
                       <ListItemText
