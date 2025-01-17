@@ -1413,6 +1413,9 @@ function GalleryMainPanel({
                 filesBeingMoved
               ).then(() => {
                 void refreshListing();
+                trackEvent("user:drags:file:gallery", {
+                  count: filesBeingMoved.size,
+                });
               });
             }}
           >
