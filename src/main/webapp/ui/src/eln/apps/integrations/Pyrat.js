@@ -69,10 +69,6 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
               </li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
-              <div>
-                TODO: list already configured servers, with a text field for
-                changing the API key
-              </div>
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
