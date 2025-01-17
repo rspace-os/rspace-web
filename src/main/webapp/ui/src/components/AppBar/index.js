@@ -161,6 +161,9 @@ function GalleryAppBar({
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
     React.useState<null | EventTarget>(null);
 
+  const showInventory = FetchingData.getSuccessValue(uiNavigationData)
+    .map(({ visibleTabs: { inventory } }) => Boolean(inventory))
+    .orElse(false);
   const currentPageIsNotOneOfAlwaysShownLinks =
     currentPage !== "Workspace" &&
     currentPage !== "Gallery" &&
@@ -170,7 +173,10 @@ function GalleryAppBar({
     getTabIndex,
     getRef,
   } = useOneDimensionalRovingTabIndex<typeof Link>({
-    max: 2 + (currentPageIsNotOneOfAlwaysShownLinks ? 1 : 0),
+    max:
+      1 +
+      (showInventory ? 1 : 0) +
+      (currentPageIsNotOneOfAlwaysShownLinks ? 1 : 0),
     direction: "row",
   });
 
@@ -224,22 +230,24 @@ function GalleryAppBar({
             >
               Gallery
             </Link>
-            <Link
-              target="_self"
-              aria-current={currentPage === "Inventory" ? "page" : false}
-              href="/inventory"
-              ref={getRef(2)}
-              tabIndex={getTabIndex(2)}
-            >
-              Inventory
-            </Link>
+            {showInventory && (
+              <Link
+                target="_self"
+                aria-current={currentPage === "Inventory" ? "page" : false}
+                href="/inventory"
+                ref={getRef(2)}
+                tabIndex={getTabIndex(2)}
+              >
+                Inventory
+              </Link>
+            )}
             {currentPageIsNotOneOfAlwaysShownLinks && (
               <Link
                 target="_self"
                 aria-current="page"
                 href="#"
-                ref={getRef(3)}
-                tabIndex={getTabIndex(3)}
+                ref={getRef(showInventory ? 3 : 2)}
+                tabIndex={getTabIndex(showInventory ? 3 : 2)}
               >
                 {currentPage}
               </Link>
@@ -333,17 +341,19 @@ function GalleryAppBar({
                   handleAppMenuClose();
                 }}
               />
-              <AccentMenuItem
-                title="Inventory"
-                avatar={<FlaskIcon />}
-                subheader="Samples and laboratory resources"
-                foregroundColor={INVENTORY_COLOR.contrastText}
-                backgroundColor={INVENTORY_COLOR.main}
-                onClick={() => {
-                  window.location = "/inventory";
-                  handleAppMenuClose();
-                }}
-              />
+              {showInventory && (
+                <AccentMenuItem
+                  title="Inventory"
+                  avatar={<FlaskIcon />}
+                  subheader="Samples and laboratory resources"
+                  foregroundColor={INVENTORY_COLOR.contrastText}
+                  backgroundColor={INVENTORY_COLOR.main}
+                  onClick={() => {
+                    window.location = "/inventory";
+                    handleAppMenuClose();
+                  }}
+                />
+              )}
             </Menu>
           </>
         )}
