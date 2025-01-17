@@ -101,76 +101,6 @@ const OrcidIcon = styled(({ className }) => (
   },
 }));
 
-function NavButtons({
-  currentPage,
-}: {|
-  currentPage: "Gallery" | "Inventory" | "Workspace" | string,
-|}) {
-  const currentPageIsNotOneOfAlwaysShownLinks =
-    currentPage !== "Workspace" &&
-    currentPage !== "Gallery" &&
-    currentPage !== "Inventory";
-  const {
-    eventHandlers: { onFocus, onBlur, onKeyDown },
-    getTabIndex,
-    getRef,
-  } = useOneDimensionalRovingTabIndex<typeof Link>({
-    max: 2 + (currentPageIsNotOneOfAlwaysShownLinks ? 1 : 0),
-    direction: "row",
-  });
-  return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{ mx: 1 }}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      onKeyDown={onKeyDown}
-      component="nav"
-      aria-label="main links"
-    >
-      <Link
-        target="_self"
-        aria-current={currentPage === "Workspace" ? "page" : false}
-        href="/workspace"
-        ref={getRef(0)}
-        tabIndex={getTabIndex(0)}
-      >
-        Workspace
-      </Link>
-      <Link
-        target="_self"
-        aria-current={currentPage === "Gallery" ? "page" : false}
-        href="/gallery"
-        ref={getRef(1)}
-        tabIndex={getTabIndex(1)}
-      >
-        Gallery
-      </Link>
-      <Link
-        target="_self"
-        aria-current={currentPage === "Inventory" ? "page" : false}
-        href="/inventory"
-        ref={getRef(2)}
-        tabIndex={getTabIndex(2)}
-      >
-        Inventory
-      </Link>
-      {currentPageIsNotOneOfAlwaysShownLinks && (
-        <Link
-          target="_self"
-          aria-current="page"
-          href="#"
-          ref={getRef(3)}
-          tabIndex={getTabIndex(3)}
-        >
-          {currentPage}
-        </Link>
-      )}
-    </Stack>
-  );
-}
-
 type GalleryAppBarArgs = {|
   /**
    * The app bar is used across the top of the pages that consistitute most of
@@ -214,6 +144,7 @@ type GalleryAppBarArgs = {|
   helpPage?: {| docLink: $Values<typeof docLinks>, title: string |},
 |};
 
+// eslint-disable-next-line complexity -- yep, there's quite a lot of conditional logic here
 function GalleryAppBar({
   variant,
   currentPage,
@@ -229,6 +160,19 @@ function GalleryAppBar({
   }
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
     React.useState<null | EventTarget>(null);
+
+  const currentPageIsNotOneOfAlwaysShownLinks =
+    currentPage !== "Workspace" &&
+    currentPage !== "Gallery" &&
+    currentPage !== "Inventory";
+  const {
+    eventHandlers: { onFocus, onBlur, onKeyDown },
+    getTabIndex,
+    getRef,
+  } = useOneDimensionalRovingTabIndex<typeof Link>({
+    max: 2 + (currentPageIsNotOneOfAlwaysShownLinks ? 1 : 0),
+    direction: "row",
+  });
 
   return (
     <AppBar position="relative" open={true} aria-label="page header">
@@ -252,7 +196,55 @@ function GalleryAppBar({
           </Box>
         )}
         {!isViewportSmall && variant === "page" && (
-          <NavButtons currentPage={currentPage} />
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{ mx: 1 }}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            onKeyDown={onKeyDown}
+            component="nav"
+            aria-label="main links"
+          >
+            <Link
+              target="_self"
+              aria-current={currentPage === "Workspace" ? "page" : false}
+              href="/workspace"
+              ref={getRef(0)}
+              tabIndex={getTabIndex(0)}
+            >
+              Workspace
+            </Link>
+            <Link
+              target="_self"
+              aria-current={currentPage === "Gallery" ? "page" : false}
+              href="/gallery"
+              ref={getRef(1)}
+              tabIndex={getTabIndex(1)}
+            >
+              Gallery
+            </Link>
+            <Link
+              target="_self"
+              aria-current={currentPage === "Inventory" ? "page" : false}
+              href="/inventory"
+              ref={getRef(2)}
+              tabIndex={getTabIndex(2)}
+            >
+              Inventory
+            </Link>
+            {currentPageIsNotOneOfAlwaysShownLinks && (
+              <Link
+                target="_self"
+                aria-current="page"
+                href="#"
+                ref={getRef(3)}
+                tabIndex={getTabIndex(3)}
+              >
+                {currentPage}
+              </Link>
+            )}
+          </Stack>
         )}
         {isViewportSmall && variant === "page" && (
           <>
