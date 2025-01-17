@@ -5,8 +5,13 @@ import * as FetchingData from "../../util/fetchingData";
 import axios from "axios";
 import useOauthToken from "../../common/useOauthToken";
 import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
 
-type UiNavigationData = {||};
+type UiNavigationData = {|
+  userDetails: {|
+    email: string,
+  |},
+|};
 
 /**
  * This hook fetches the state required to display the conditional parts of
@@ -34,7 +39,18 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
       );
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
-        .map(() => ({}))
+        .flatMap((obj) => {
+          try {
+            const email = Parsers.objectPath(["userDetails", "email"], obj)
+              .flatMap(Parsers.isString)
+              .elseThrow();
+            return Result.Ok({ userDetails: { email } });
+          } catch {
+            return Result.Error<UiNavigationData>([
+              new Error("Could not parse response from uiNavigationData"),
+            ]);
+          }
+        })
         .do((newUiData) => {
           setUiData(newUiData);
         });

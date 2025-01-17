@@ -382,151 +382,161 @@ function GalleryAppBar({
                   }
                 : {})}
             />
-            <Menu
-              id="account-menu"
-              anchorEl={accountMenuAnchorEl}
-              open={Boolean(accountMenuAnchorEl)}
-              onClose={() => {
-                setAccountMenuAnchorEl(null);
-              }}
-              MenuListProps={{
-                "aria-labelledby": "account-menu-button",
-                disablePadding: true,
-                sx: { pt: 0.5 },
-              }}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              sx={{
-                [`.${menuClasses.paper}`]: {
-                  /*
-                   * Generally we don't add box shadows to menus, but we do add
-                   * box shadows to popups opened from the app bar to make them
-                   * hover over the page's content.
-                   */
-                  boxShadow:
-                    "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
-                },
-              }}
-            >
-              <ListItem sx={{ py: 0 }}>
-                <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
-                  <Avatar
-                    sx={{
+            {FetchingData.getSuccessValue(uiNavigationData)
+              .map(({ userDetails }) => (
+                <Menu
+                  id="account-menu"
+                  key={null}
+                  anchorEl={accountMenuAnchorEl}
+                  open={Boolean(accountMenuAnchorEl)}
+                  onClose={() => {
+                    setAccountMenuAnchorEl(null);
+                  }}
+                  MenuListProps={{
+                    "aria-labelledby": "account-menu-button",
+                    disablePadding: true,
+                    sx: { pt: 0.5 },
+                  }}
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "right",
+                  }}
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                  sx={{
+                    [`.${menuClasses.paper}`]: {
                       /*
-                       * This pink colour is taken from the RSpace logo, a
-                       * colour that we don't otherwise use in the product. The
-                       * pair of colours do not quite have sufficient contrast
-                       * to meet the WCAG standard, but this is only for
-                       * aesthetic purposes.
+                       * Generally we don't add box shadows to menus, but we do add
+                       * box shadows to popups opened from the app bar to make them
+                       * hover over the page's content.
                        */
-                      color: "#fce8f0",
-                      backgroundColor: "#ed1064",
+                      boxShadow:
+                        "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
+                    },
+                  }}
+                >
+                  <ListItem sx={{ py: 0 }}>
+                    <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
+                      <Avatar
+                        sx={{
+                          /*
+                           * This pink colour is taken from the RSpace logo, a
+                           * colour that we don't otherwise use in the product. The
+                           * pair of colours do not quite have sufficient contrast
+                           * to meet the WCAG standard, but this is only for
+                           * aesthetic purposes.
+                           */
+                          color: "#fce8f0",
+                          backgroundColor: "#ed1064",
+                        }}
+                      >
+                        J
+                      </Avatar>
+                    </ListItemIcon>
+                    <Stack>
+                      <ListItemText
+                        sx={{ mt: 0.5 }}
+                        primary="Joe Bloggs (jbloggs)"
+                        secondary={userDetails.email}
+                      />
+                      <ListItemText
+                        /*
+                         * The styling of this component is dictated by the ORCID display guidelines
+                         * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
+                         */
+                        sx={{ mt: -0.5 }}
+                        primaryTypographyProps={{
+                          sx: {
+                            fontFamily: "monospace",
+                            lineHeight: "1em",
+                            fontSize: "0.8em",
+                            alignItems: "center",
+                            textDecoration: "underline",
+                          },
+                        }}
+                        primary={
+                          <Stack
+                            direction="row"
+                            spacing={0.5}
+                            alignItems="center"
+                          >
+                            <SvgIcon>
+                              <OrcidIcon />
+                            </SvgIcon>
+                            <span>0000-0000-0000-0000</span>
+                          </Stack>
+                        }
+                      />
+                    </Stack>
+                  </ListItem>
+                  <Divider sx={{ my: 0.5 }} />
+                  <AccentMenuItem
+                    title="Messaging"
+                    avatar={<MessageIcon />}
+                    compact
+                    onClick={() => {
+                      setAccountMenuAnchorEl(null);
+                      window.location = "/dashboard";
                     }}
-                  >
-                    J
-                  </Avatar>
-                </ListItemIcon>
-                <Stack>
-                  <ListItemText
-                    sx={{ mt: 0.5 }}
-                    primary="Joe Bloggs (jbloggs)"
-                    secondary={<>bloggs@example.com</>}
                   />
-                  <ListItemText
-                    /*
-                     * The styling of this component is dictated by the ORCID display guidelines
-                     * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
-                     */
-                    sx={{ mt: -0.5 }}
-                    primaryTypographyProps={{
-                      sx: {
-                        fontFamily: "monospace",
-                        lineHeight: "1em",
-                        fontSize: "0.8em",
-                        alignItems: "center",
-                        textDecoration: "underline",
-                      },
+                  <AccentMenuItem
+                    title="My RSpace"
+                    avatar={<SettingsIcon />}
+                    compact
+                    onClick={() => {
+                      setAccountMenuAnchorEl(null);
+                      window.location = "/userform";
                     }}
-                    primary={
-                      <Stack direction="row" spacing={0.5} alignItems="center">
-                        <SvgIcon>
-                          <OrcidIcon />
-                        </SvgIcon>
-                        <span>0000-0000-0000-0000</span>
-                      </Stack>
-                    }
                   />
-                </Stack>
-              </ListItem>
-              <Divider sx={{ my: 0.5 }} />
-              <AccentMenuItem
-                title="Messaging"
-                avatar={<MessageIcon />}
-                compact
-                onClick={() => {
-                  setAccountMenuAnchorEl(null);
-                  window.location = "/dashboard";
-                }}
-              />
-              <AccentMenuItem
-                title="My RSpace"
-                avatar={<SettingsIcon />}
-                compact
-                onClick={() => {
-                  setAccountMenuAnchorEl(null);
-                  window.location = "/userform";
-                }}
-              />
-              <AccentMenuItem
-                title="Apps"
-                avatar={<AppsIcon />}
-                compact
-                onClick={() => {
-                  setAccountMenuAnchorEl(null);
-                  window.location = "/apps";
-                }}
-              />
-              <AccentMenuItem
-                title="Published"
-                avatar={<PublicIcon />}
-                compact
-                onClick={() => {
-                  setAccountMenuAnchorEl(null);
-                  window.location = "/public/publishedView/publishedDocuments";
-                }}
-              />
-              <Divider />
-              <AccessibilityTipsMenuItem
-                {...(accessibilityTips ?? {})}
-                onClose={() => {
-                  setAccountMenuAnchorEl(null);
-                }}
-              />
-              <AccentMenuItem
-                title="Log Out"
-                avatar={<LogoutIcon />}
-                compact
-                onClick={() => {
-                  JwtService.destroyToken();
-                  setAccountMenuAnchorEl(null);
-                  window.location = "/logout";
-                }}
-              />
-              <Divider />
-              <ListItem sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}>
-                <img
-                  src="/images/icons/rspaceLogoLarge.svg"
-                  alt="rspace logo"
-                  style={{ width: "min(100%, 120px)" }}
-                />
-              </ListItem>
-            </Menu>
+                  <AccentMenuItem
+                    title="Apps"
+                    avatar={<AppsIcon />}
+                    compact
+                    onClick={() => {
+                      setAccountMenuAnchorEl(null);
+                      window.location = "/apps";
+                    }}
+                  />
+                  <AccentMenuItem
+                    title="Published"
+                    avatar={<PublicIcon />}
+                    compact
+                    onClick={() => {
+                      setAccountMenuAnchorEl(null);
+                      window.location =
+                        "/public/publishedView/publishedDocuments";
+                    }}
+                  />
+                  <Divider />
+                  <AccessibilityTipsMenuItem
+                    {...(accessibilityTips ?? {})}
+                    onClose={() => {
+                      setAccountMenuAnchorEl(null);
+                    }}
+                  />
+                  <AccentMenuItem
+                    title="Log Out"
+                    avatar={<LogoutIcon />}
+                    compact
+                    onClick={() => {
+                      JwtService.destroyToken();
+                      setAccountMenuAnchorEl(null);
+                      window.location = "/logout";
+                    }}
+                  />
+                  <Divider />
+                  <ListItem sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}>
+                    <img
+                      src="/images/icons/rspaceLogoLarge.svg"
+                      alt="rspace logo"
+                      style={{ width: "min(100%, 120px)" }}
+                    />
+                  </ListItem>
+                </Menu>
+              ))
+              .orElse(null)}
           </Box>
         )}
         {variant === "dialog" && (
