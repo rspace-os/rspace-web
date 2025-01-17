@@ -45,6 +45,8 @@ import HelpLinkIcon from "../HelpLinkIcon";
 import docLinks from "../../assets/DocLinks";
 import useOneDimensionalRovingTabIndex from "../useOneDimensionalRovingTabIndex";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
+import useUiNavigationData from "./useUiNavigationData";
+import * as FetchingData from "../../util/fetchingData";
 
 const OrcidIcon = styled(({ className }) => (
   <svg
@@ -208,6 +210,7 @@ function GalleryAppBar({
   helpPage,
 }: GalleryAppBarArgs): Node {
   const { isViewportSmall } = useViewportDimensions();
+  const uiNavigationData = useUiNavigationData();
   const [appMenuAnchorEl, setAppMenuAnchorEl] = React.useState(null);
   function handleAppMenuClose() {
     setAppMenuAnchorEl(null);
@@ -364,6 +367,7 @@ function GalleryAppBar({
           <Box ml={1}>
             <IconButtonWithTooltip
               size="small"
+              disabled={FetchingData.isLoading(uiNavigationData)}
               onClick={(event) => {
                 setAccountMenuAnchorEl(event.currentTarget);
               }}

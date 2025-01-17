@@ -38,3 +38,8 @@ export function getSuccessValue<A>(fetched: Fetched<A>): Result<A> {
     return Result.Error([new Error("error", { cause: fetched.error })]);
   return Result.Ok(fetched.value);
 }
+
+export function isLoading<A>(fetched: Fetched<A>): boolean {
+  if (fetched.tag === "loading") return true;
+  return false;
+}
