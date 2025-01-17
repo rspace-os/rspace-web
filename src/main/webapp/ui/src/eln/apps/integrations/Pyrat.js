@@ -23,8 +23,11 @@ type PyratArgs = {|
  */
 function Pyrat({ integrationState, update }: PyratArgs): Node {
   const [apiKey, setApiKey] = useState(
-    integrationState.credentials.PYRAT_USER_TOKEN.orElse("")
+    // TODO
+    "hi"
   );
+
+  console.debug(integrationState);
 
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
@@ -60,12 +63,7 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
-                  void update({
-                    mode: integrationState.mode,
-                    credentials: {
-                      PYRAT_USER_TOKEN: Optional.present(apiKey),
-                    },
-                  });
+                  // TODO
                 }}
               >
                 <CardContent>

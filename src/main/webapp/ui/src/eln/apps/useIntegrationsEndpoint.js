@@ -7,6 +7,7 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
+import * as Parsers from "../../util/parsers";
 
 /*
  * This module provide the functionality for interacting with the
@@ -139,7 +140,15 @@ export type IntegrationStates = {|
     ACCESS_TOKEN: Optional<string>,
   |}>,
   PYRAT: IntegrationState<{|
-    PYRAT_USER_TOKEN: Optional<string>,
+    configuredServers: $ReadOnlyArray<{|
+      url: string,
+      alias: string,
+    |}>,
+    authenticatedServers: $ReadOnlyArray<{|
+      url: string,
+      alias: string,
+      apiKey: string,
+    |}>,
   |}>,
   SLACK: IntegrationState<
     Array<
@@ -480,7 +489,74 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
   return {
     mode: parseState(data),
     credentials: {
-      PYRAT_USER_TOKEN: parseCredentialString(data.options, "PYRAT_USER_TOKEN"),
+      configuredServers: Parsers.objectPath(
+        ["options", "PYRAT_CONFIGURED_SERVERS"],
+        data
+      )
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .flatMap((configuredServers) =>
+          Result.all(
+            ...Object.values(configuredServers).map((config) => {
+              try {
+                const server = Parsers.isObject(config)
+                  .flatMap(Parsers.isNotNull)
+                  .elseThrow();
+                const alias = Parsers.getValueWithKey("alias")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const url = Parsers.getValueWithKey("url")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                return Result.Ok({ alias, url });
+              } catch {
+                return Result.Error<{|
+                  url: string,
+                  alias: string,
+                |}>([new Error("Could not parse out pyrat configured server")]);
+              }
+            })
+          )
+        )
+        .orElse([]),
+      authenticatedServers: Parsers.objectPath(["options"], data)
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .map((servers) =>
+          Object.entries(servers).filter(
+            ([k]) => k !== "PYRAT_CONFIGURED_SERVERS"
+          )
+        )
+        .flatMap((servers) =>
+          Result.all(
+            ...servers.map(([_key, config]) => {
+              try {
+                const server = Parsers.isObject(config)
+                  .flatMap(Parsers.isNotNull)
+                  .elseThrow();
+                const alias = Parsers.getValueWithKey("PYRAT_ALIAS")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const url = Parsers.getValueWithKey("PYRAT_URL")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const apiKey = Parsers.getValueWithKey("PYRAT_APIKEY")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                return Result.Ok({ alias, url, apiKey });
+              } catch {
+                return Result.Error<{|
+                  url: string,
+                  alias: string,
+                  apiKey: string,
+                |}>([
+                  new Error("Could not parse out pyrat authenticated server"),
+                ]);
+              }
+            })
+          )
+        )
+        .orElse([]),
     },
   };
 }
@@ -900,6 +976,7 @@ const encodeIntegrationState = <I: Integration>(
       options: {},
     };
   }
+  // TODO
   if (integration === "PYRAT") {
     return {
       name: "PYRAT",
