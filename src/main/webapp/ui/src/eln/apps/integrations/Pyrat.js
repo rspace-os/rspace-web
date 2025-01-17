@@ -12,6 +12,9 @@ import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
 import PyratIcon from "../icons/pyrat.svg";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemText from "@mui/material/ListItemText";
 
 type PyratArgs = {|
   integrationState: IntegrationStates["PYRAT"],
@@ -25,6 +28,9 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
   const [apiKey, setApiKey] = useState(
     // TODO
     "hi"
+  );
+  const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | EventTarget>(
+    null
   );
 
   console.debug(integrationState);
@@ -60,6 +66,10 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
               </li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
+              <div>
+                TODO: list already configured servers, with a text field for
+                changing the API key
+              </div>
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -81,6 +91,25 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                 </CardContent>
                 <CardActions>
                   <Button type="submit">Save</Button>
+                  <Button
+                    onClick={(e) => {
+                      setAddMenuAnchorEl(e.currentTarget);
+                    }}
+                  >
+                    Add
+                  </Button>
+                  <Menu
+                    open={Boolean(addMenuAnchorEl)}
+                    anchorEl={addMenuAnchorEl}
+                  >
+                    {integrationState.credentials.configuredServers.map(
+                      ({ alias, url }) => (
+                        <MenuItem>
+                          <ListItemText primary={alias} secondary={url} />
+                        </MenuItem>
+                      )
+                    )}
+                  </Menu>
                 </CardActions>
               </form>
             </Card>
