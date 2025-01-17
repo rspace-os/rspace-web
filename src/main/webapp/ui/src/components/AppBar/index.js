@@ -42,7 +42,6 @@ import { styled } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import HelpLinkIcon from "../HelpLinkIcon";
 import docLinks from "../../assets/DocLinks";
-import useOneDimensionalRovingTabIndex from "../useOneDimensionalRovingTabIndex";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import useUiNavigationData from "./useUiNavigationData";
 import * as FetchingData from "../../util/fetchingData";
@@ -168,17 +167,6 @@ function GalleryAppBar({
     currentPage !== "Workspace" &&
     currentPage !== "Gallery" &&
     currentPage !== "Inventory";
-  const {
-    eventHandlers: { onFocus, onBlur, onKeyDown },
-    getTabIndex,
-    getRef,
-  } = useOneDimensionalRovingTabIndex<typeof Link>({
-    max:
-      1 +
-      (showInventory ? 1 : 0) +
-      (currentPageIsNotOneOfAlwaysShownLinks ? 1 : 0),
-    direction: "row",
-  });
 
   return (
     <AppBar position="relative" open={true} aria-label="page header">
@@ -206,9 +194,6 @@ function GalleryAppBar({
             direction="row"
             spacing={2}
             sx={{ mx: 1 }}
-            onFocus={onFocus}
-            onBlur={onBlur}
-            onKeyDown={onKeyDown}
             component="nav"
             aria-label="main links"
           >
@@ -216,8 +201,6 @@ function GalleryAppBar({
               target="_self"
               aria-current={currentPage === "Workspace" ? "page" : false}
               href="/workspace"
-              ref={getRef(0)}
-              tabIndex={getTabIndex(0)}
             >
               Workspace
             </Link>
@@ -225,8 +208,6 @@ function GalleryAppBar({
               target="_self"
               aria-current={currentPage === "Gallery" ? "page" : false}
               href="/gallery"
-              ref={getRef(1)}
-              tabIndex={getTabIndex(1)}
             >
               Gallery
             </Link>
@@ -235,20 +216,12 @@ function GalleryAppBar({
                 target="_self"
                 aria-current={currentPage === "Inventory" ? "page" : false}
                 href="/inventory"
-                ref={getRef(2)}
-                tabIndex={getTabIndex(2)}
               >
                 Inventory
               </Link>
             )}
             {currentPageIsNotOneOfAlwaysShownLinks && (
-              <Link
-                target="_self"
-                aria-current="page"
-                href="#"
-                ref={getRef(showInventory ? 3 : 2)}
-                tabIndex={getTabIndex(showInventory ? 3 : 2)}
-              >
+              <Link target="_self" aria-current="page" href="#">
                 {currentPage}
               </Link>
             )}
