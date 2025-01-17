@@ -10,6 +10,7 @@ import Result from "../../util/result";
 type UiNavigationData = {|
   userDetails: {|
     email: string,
+    orcidId: null | string,
   |},
 |};
 
@@ -44,7 +45,12 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
             const email = Parsers.objectPath(["userDetails", "email"], obj)
               .flatMap(Parsers.isString)
               .elseThrow();
-            return Result.Ok({ userDetails: { email } });
+            const orcidId = Parsers.objectPath(["userDetails", "orcidId"], obj)
+              .flatMap((o) =>
+                Parsers.isString(o).orElseTry(() => Parsers.isNull(o))
+              )
+              .elseThrow();
+            return Result.Ok({ userDetails: { email, orcidId } });
           } catch (e) {
             return Result.Error<UiNavigationData>([
               new Error("Could not parse response from /uiNavigationData", {

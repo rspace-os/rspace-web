@@ -457,24 +457,37 @@ function GalleryAppBar({
                         sx={{ mt: -0.5 }}
                         primaryTypographyProps={{
                           sx: {
-                            fontFamily: "monospace",
-                            lineHeight: "1em",
+                            fontFamily:
+                              userDetails.orcidId === null
+                                ? "none"
+                                : "monospace",
+                            lineHeight:
+                              userDetails.orcidId === null ? "unset" : "1em",
                             fontSize: "0.8em",
                             alignItems: "center",
-                            textDecoration: "underline",
+                            textDecoration:
+                              userDetails.orcidId === null
+                                ? "none"
+                                : "underline",
                           },
                         }}
                         primary={
-                          <Stack
-                            direction="row"
-                            spacing={0.5}
-                            alignItems="center"
-                          >
-                            <SvgIcon>
-                              <OrcidIcon />
-                            </SvgIcon>
-                            <span>0000-0000-0000-0000</span>
-                          </Stack>
+                          userDetails.orcidId === null ? (
+                            <Link href={docLinks.orcid}>
+                              Add an ORCID iD to your profile.
+                            </Link>
+                          ) : (
+                            <Stack
+                              direction="row"
+                              spacing={0.5}
+                              alignItems="center"
+                            >
+                              <SvgIcon>
+                                <OrcidIcon />
+                              </SvgIcon>
+                              <span>{userDetails.orcidId}</span>
+                            </Stack>
+                          )
                         }
                       />
                     </Stack>
