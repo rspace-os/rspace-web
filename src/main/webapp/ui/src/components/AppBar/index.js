@@ -30,7 +30,7 @@ import AppsIcon from "@mui/icons-material/AppRegistration";
 import { COLOR as GALLERY_COLOR } from "../../eln/gallery/common";
 import { COLOR as INVENTORY_COLOR } from "../../Inventory/components/Layout/Sidebar";
 import MessageIcon from "@mui/icons-material/Message";
-import SettingsIcon from "@mui/icons-material/Settings";
+import ProfileIcon from "@mui/icons-material/ManageAccounts";
 import PublicIcon from "@mui/icons-material/Public";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SystemIcon from "@mui/icons-material/SettingsInputComposite";
@@ -528,8 +528,8 @@ function GalleryAppBar({
                 }}
               />
               <AccentMenuItem
-                title="My RSpace"
-                avatar={<SettingsIcon />}
+                title="My Profile"
+                avatar={<ProfileIcon />}
                 compact
                 onClick={() => {
                   setAccountMenuAnchorEl(null);
