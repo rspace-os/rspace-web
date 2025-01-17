@@ -30,7 +30,7 @@ type PyratArgs = {|
  * Pyrat uses API-key based authentication, as implemeted by the form below.
  */
 function Pyrat({ integrationState, update }: PyratArgs): Node {
-  const { saveAppOptions } = useIntegrationsEndpoint();
+  const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const authenticatedServers = useLocalObservable(
     () => integrationState.credentials.authenticatedServers
   );
@@ -69,66 +69,83 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
               </li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  // TODO
-                }}
-              >
-                <CardContent>
-                  <Stack spacing={1}>
-                    {authenticatedServers.map((server) => (
-                      <TextField
-                        key={server.alias}
-                        fullWidth
-                        variant="outlined"
-                        label={`API Key for ${server.alias}`}
-                        type="password"
-                        size="small"
-                        value={server.apiKey}
-                        onChange={({ target: { value } }) => {
-                          runInAction(() => {
-                            server.apiKey = value;
-                          });
-                        }}
-                      />
-                    ))}
-                  </Stack>
-                </CardContent>
-                <CardActions>
-                  <Button type="submit">Save</Button>
-                  <Button
-                    onClick={(e) => {
-                      setAddMenuAnchorEl(e.currentTarget);
-                    }}
-                  >
-                    Add
-                  </Button>
-                  <Menu
-                    open={Boolean(addMenuAnchorEl)}
-                    anchorEl={addMenuAnchorEl}
-                  >
-                    {integrationState.credentials.configuredServers.map(
-                      ({ alias, url }) => (
-                        <MenuItem
-                          key={alias}
-                          onClick={() => {
-                            void saveAppOptions("PYRAT", Optional.empty(), {
-                              PYRAT_ALIAS: alias,
-                              PYRAT_URL: url,
-                              PYRAT_APIKEY: "",
-                            }).then(() => {
-                              setAddMenuAnchorEl(null);
+              <CardContent>
+                <Stack spacing={1}>
+                  {authenticatedServers.map((server) => (
+                    <form
+                      key={server.alias}
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void saveAppOptions(
+                          "PYRAT",
+                          Optional.present(server.optionsId),
+                          {
+                            PYRAT_ALIAS: server.alias,
+                            PYRAT_URL: server.url,
+                            PYRAT_APIKEY: server.apiKey,
+                          }
+                        );
+                      }}
+                    >
+                      <Stack direction="row" spacing={1}>
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          label={`API Key for ${server.alias}`}
+                          type="password"
+                          size="small"
+                          value={server.apiKey}
+                          onChange={({ target: { value } }) => {
+                            runInAction(() => {
+                              server.apiKey = value;
                             });
                           }}
+                        />
+                        <Button type="submit">Save</Button>
+                        <Button
+                          onClick={() => {
+                            void deleteAppOptions("PYRAT", server.optionsId);
+                          }}
                         >
-                          <ListItemText primary={alias} secondary={url} />
-                        </MenuItem>
-                      )
-                    )}
-                  </Menu>
-                </CardActions>
-              </form>
+                          Delete
+                        </Button>
+                      </Stack>
+                    </form>
+                  ))}
+                </Stack>
+              </CardContent>
+              <CardActions>
+                <Button
+                  onClick={(e) => {
+                    setAddMenuAnchorEl(e.currentTarget);
+                  }}
+                >
+                  Add
+                </Button>
+                <Menu
+                  open={Boolean(addMenuAnchorEl)}
+                  anchorEl={addMenuAnchorEl}
+                >
+                  {integrationState.credentials.configuredServers.map(
+                    ({ alias, url }) => (
+                      <MenuItem
+                        key={alias}
+                        onClick={() => {
+                          void saveAppOptions("PYRAT", Optional.empty(), {
+                            PYRAT_ALIAS: alias,
+                            PYRAT_URL: url,
+                            PYRAT_APIKEY: "",
+                          }).then(() => {
+                            setAddMenuAnchorEl(null);
+                          });
+                        }}
+                      >
+                        <ListItemText primary={alias} secondary={url} />
+                      </MenuItem>
+                    )
+                  )}
+                </Menu>
+              </CardActions>
             </Card>
           </>
         }
