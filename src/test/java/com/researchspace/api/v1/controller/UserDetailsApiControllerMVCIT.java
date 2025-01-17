@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.Constants;
+import com.researchspace.api.v1.model.ApiUiNavigationData;
+import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationUserDetails;
+import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationVisibleTabs;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.User;
 import java.util.List;
@@ -183,5 +186,39 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
     assertNotNull(foundUser.getWorkbenchId());
     assertFalse(foundUser.getHasPiRole());
     assertFalse(foundUser.getHasSysAdminRole());
+  }
+
+  @Test
+  public void getCurrentUserUiNavigationData() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders.get(
+                        createUrl(API_VERSION.ONE, "/userDetails/uiNavigationData"))
+                    .header("apiKey", apiKey))
+            .andReturn();
+
+    ApiUiNavigationData retrievedData = getFromJsonResponseBody(result, ApiUiNavigationData.class);
+
+    assertEquals("/public/banner", retrievedData.getBannerImgSrc());
+    assertFalse(retrievedData.isIncomingMaintenance());
+    assertFalse(retrievedData.isOperatedAs());
+
+    ApiUiNavigationVisibleTabs visibleTabs = retrievedData.getVisibleTabs();
+    assertTrue(visibleTabs.isInventory());
+    assertFalse(visibleTabs.isMyLabGroups());
+    assertFalse(visibleTabs.isPublished());
+    assertFalse(visibleTabs.isSystem());
+
+    ApiUiNavigationUserDetails retrievedUser = retrievedData.getUserDetails();
+    assertEquals(anyUser.getUsername(), retrievedUser.getUsername());
+    assertEquals(anyUser.getFullName(), retrievedUser.getFullName());
+    assertEquals(anyUser.getEmail(), retrievedUser.getEmail());
+    assertNull(retrievedUser.getOrcidId());
+    assertNotNull(retrievedUser.getProfileImgSrc());
+    assertNull(retrievedUser.getLastSession());
   }
 }
