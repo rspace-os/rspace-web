@@ -33,6 +33,7 @@ import MessageIcon from "@mui/icons-material/Message";
 import SettingsIcon from "@mui/icons-material/Settings";
 import PublicIcon from "@mui/icons-material/Public";
 import LogoutIcon from "@mui/icons-material/Logout";
+import SystemIcon from "@mui/icons-material/SettingsInputComposite";
 import JwtService from "../../common/JwtService";
 import SidebarToggle from "./SidebarToggle";
 import Link from "@mui/material/Link";
@@ -160,13 +161,19 @@ function GalleryAppBar({
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
     React.useState<null | EventTarget>(null);
 
-  const showInventory = FetchingData.getSuccessValue(uiNavigationData)
-    .map(({ visibleTabs: { inventory } }) => Boolean(inventory))
-    .orElse(false);
+  const { showInventory, showSystem } = FetchingData.getSuccessValue(
+    uiNavigationData
+  )
+    .map(({ visibleTabs: { inventory, system } }) => ({
+      showInventory: Boolean(inventory),
+      showSystem: Boolean(system),
+    }))
+    .orElse({ showInventory: false, showSystem: false });
   const currentPageIsNotOneOfAlwaysShownLinks =
     currentPage !== "Workspace" &&
     currentPage !== "Gallery" &&
-    currentPage !== "Inventory";
+    currentPage !== "Inventory" &&
+    currentPage !== "System";
 
   return (
     <AppBar position="relative" open={true} aria-label="page header">
@@ -218,6 +225,15 @@ function GalleryAppBar({
                 href="/inventory"
               >
                 Inventory
+              </Link>
+            )}
+            {showSystem && (
+              <Link
+                target="_self"
+                aria-current={currentPage === "System" ? "page" : false}
+                href="/system"
+              >
+                System
               </Link>
             )}
             {currentPageIsNotOneOfAlwaysShownLinks && (
@@ -323,6 +339,27 @@ function GalleryAppBar({
                   backgroundColor={INVENTORY_COLOR.main}
                   onClick={() => {
                     window.location = "/inventory";
+                    handleAppMenuClose();
+                  }}
+                />
+              )}
+              {showSystem && (
+                <AccentMenuItem
+                  title="System"
+                  avatar={<SystemIcon />}
+                  subheader="System administration"
+                  foregroundColor={{
+                    hue: 200,
+                    saturation: 10,
+                    lightness: 20,
+                  }}
+                  backgroundColor={{
+                    hue: 200,
+                    saturation: 10,
+                    lightness: 70,
+                  }}
+                  onClick={() => {
+                    window.location = "/system";
                     handleAppMenuClose();
                   }}
                 />

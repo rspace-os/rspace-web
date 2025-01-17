@@ -18,6 +18,7 @@ type UiNavigationData = {|
   visibleTabs: {|
     published: boolean,
     inventory: boolean,
+    system: boolean,
   |},
 |};
 
@@ -89,6 +90,9 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
             )
               .flatMap(Parsers.isBoolean)
               .elseThrow();
+            const system = Parsers.objectPath(["visibleTabs", "system"], obj)
+              .flatMap(Parsers.isBoolean)
+              .elseThrow();
             return Result.Ok({
               userDetails: {
                 email,
@@ -100,6 +104,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
               visibleTabs: {
                 published,
                 inventory,
+                system,
               },
             });
           } catch (e) {
