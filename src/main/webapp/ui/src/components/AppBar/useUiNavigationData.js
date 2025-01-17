@@ -45,11 +45,16 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
               .flatMap(Parsers.isString)
               .elseThrow();
             return Result.Ok({ userDetails: { email } });
-          } catch {
+          } catch (e) {
             return Result.Error<UiNavigationData>([
-              new Error("Could not parse response from uiNavigationData"),
+              new Error("Could not parse response from /uiNavigationData", {
+                cause: e,
+              }),
             ]);
           }
+        })
+        .mapError(([e]) => {
+          throw e;
         })
         .do((newUiData) => {
           setUiData(newUiData);

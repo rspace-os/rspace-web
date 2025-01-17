@@ -382,42 +382,50 @@ function GalleryAppBar({
                   }
                 : {})}
             />
-            {FetchingData.getSuccessValue(uiNavigationData)
-              .map(({ userDetails }) => (
-                <Menu
-                  id="account-menu"
-                  key={null}
-                  anchorEl={accountMenuAnchorEl}
-                  open={Boolean(accountMenuAnchorEl)}
-                  onClose={() => {
-                    setAccountMenuAnchorEl(null);
-                  }}
-                  MenuListProps={{
-                    "aria-labelledby": "account-menu-button",
-                    disablePadding: true,
-                    sx: { pt: 0.5 },
-                  }}
-                  anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "right",
-                  }}
-                  transformOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                  }}
-                  sx={{
-                    [`.${menuClasses.paper}`]: {
-                      /*
-                       * Generally we don't add box shadows to menus, but we do add
-                       * box shadows to popups opened from the app bar to make them
-                       * hover over the page's content.
-                       */
-                      boxShadow:
-                        "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
-                    },
-                  }}
-                >
-                  <ListItem sx={{ py: 0 }}>
+            <Menu
+              id="account-menu"
+              anchorEl={accountMenuAnchorEl}
+              open={Boolean(accountMenuAnchorEl)}
+              onClose={() => {
+                setAccountMenuAnchorEl(null);
+              }}
+              MenuListProps={{
+                "aria-labelledby": "account-menu-button",
+                disablePadding: true,
+                sx: { pt: 0.5 },
+              }}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right",
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+              sx={{
+                [`.${menuClasses.paper}`]: {
+                  /*
+                   * Generally we don't add box shadows to menus, but we do add
+                   * box shadows to popups opened from the app bar to make them
+                   * hover over the page's content.
+                   */
+                  boxShadow:
+                    "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
+                },
+              }}
+            >
+              {FetchingData.match(uiNavigationData, {
+                loading: () => null,
+                error: (errorMsg) => (
+                  <ListItem>
+                    <ListItemText
+                      primary="Error loading your details"
+                      secondary={errorMsg}
+                    />
+                  </ListItem>
+                ),
+                success: ({ userDetails }) => (
+                  <ListItem key={null} sx={{ py: 0 }}>
                     <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
                       <Avatar
                         sx={{
@@ -471,72 +479,71 @@ function GalleryAppBar({
                       />
                     </Stack>
                   </ListItem>
-                  <Divider sx={{ my: 0.5 }} />
-                  <AccentMenuItem
-                    title="Messaging"
-                    avatar={<MessageIcon />}
-                    compact
-                    onClick={() => {
-                      setAccountMenuAnchorEl(null);
-                      window.location = "/dashboard";
-                    }}
-                  />
-                  <AccentMenuItem
-                    title="My RSpace"
-                    avatar={<SettingsIcon />}
-                    compact
-                    onClick={() => {
-                      setAccountMenuAnchorEl(null);
-                      window.location = "/userform";
-                    }}
-                  />
-                  <AccentMenuItem
-                    title="Apps"
-                    avatar={<AppsIcon />}
-                    compact
-                    onClick={() => {
-                      setAccountMenuAnchorEl(null);
-                      window.location = "/apps";
-                    }}
-                  />
-                  <AccentMenuItem
-                    title="Published"
-                    avatar={<PublicIcon />}
-                    compact
-                    onClick={() => {
-                      setAccountMenuAnchorEl(null);
-                      window.location =
-                        "/public/publishedView/publishedDocuments";
-                    }}
-                  />
-                  <Divider />
-                  <AccessibilityTipsMenuItem
-                    {...(accessibilityTips ?? {})}
-                    onClose={() => {
-                      setAccountMenuAnchorEl(null);
-                    }}
-                  />
-                  <AccentMenuItem
-                    title="Log Out"
-                    avatar={<LogoutIcon />}
-                    compact
-                    onClick={() => {
-                      JwtService.destroyToken();
-                      setAccountMenuAnchorEl(null);
-                      window.location = "/logout";
-                    }}
-                  />
-                  <Divider />
-                  <ListItem sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}>
-                    <img
-                      src="/images/icons/rspaceLogoLarge.svg"
-                      alt="rspace logo"
-                      style={{ width: "min(100%, 120px)" }}
-                    />
-                  </ListItem>
-                </Menu>
-              ))
-              .orElse(null)}
+                ),
+              })}
+              <Divider sx={{ my: 0.5 }} />
+              <AccentMenuItem
+                title="Messaging"
+                avatar={<MessageIcon />}
+                compact
+                onClick={() => {
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/dashboard";
+                }}
+              />
+              <AccentMenuItem
+                title="My RSpace"
+                avatar={<SettingsIcon />}
+                compact
+                onClick={() => {
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/userform";
+                }}
+              />
+              <AccentMenuItem
+                title="Apps"
+                avatar={<AppsIcon />}
+                compact
+                onClick={() => {
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/apps";
+                }}
+              />
+              <AccentMenuItem
+                title="Published"
+                avatar={<PublicIcon />}
+                compact
+                onClick={() => {
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/public/publishedView/publishedDocuments";
+                }}
+              />
+              <Divider />
+              <AccessibilityTipsMenuItem
+                {...(accessibilityTips ?? {})}
+                onClose={() => {
+                  setAccountMenuAnchorEl(null);
+                }}
+              />
+              <AccentMenuItem
+                title="Log Out"
+                avatar={<LogoutIcon />}
+                compact
+                onClick={() => {
+                  JwtService.destroyToken();
+                  setAccountMenuAnchorEl(null);
+                  window.location = "/logout";
+                }}
+              />
+              <Divider />
+              <ListItem sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}>
+                <img
+                  src="/images/icons/rspaceLogoLarge.svg"
+                  alt="rspace logo"
+                  style={{ width: "min(100%, 120px)" }}
+                />
+              </ListItem>
+            </Menu>
           </Box>
         )}
         {variant === "dialog" && (
