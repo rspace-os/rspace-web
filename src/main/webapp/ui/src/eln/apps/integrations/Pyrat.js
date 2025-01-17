@@ -9,7 +9,6 @@ import {
 } from "../useIntegrationsEndpoint";
 import TextField from "@mui/material/TextField";
 import { Optional } from "../../../util/optional";
-import { observer } from "mobx-react-lite";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
@@ -18,6 +17,9 @@ import PyratIcon from "../icons/pyrat.svg";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
+import Stack from "@mui/material/Stack";
+import { useLocalObservable, observer } from "mobx-react-lite";
+import { runInAction } from "mobx";
 
 type PyratArgs = {|
   integrationState: IntegrationStates["PYRAT"],
@@ -28,16 +30,13 @@ type PyratArgs = {|
  * Pyrat uses API-key based authentication, as implemeted by the form below.
  */
 function Pyrat({ integrationState, update }: PyratArgs): Node {
-  const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
-  const [apiKey, setApiKey] = useState(
-    // TODO
-    "hi"
+  const { saveAppOptions } = useIntegrationsEndpoint();
+  const authenticatedServers = useLocalObservable(
+    () => integrationState.credentials.authenticatedServers
   );
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | EventTarget>(
     null
   );
-
-  console.debug(integrationState);
 
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
@@ -81,17 +80,24 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                 }}
               >
                 <CardContent>
-                  <TextField
-                    fullWidth
-                    variant="outlined"
-                    label="API Key"
-                    type="password"
-                    size="small"
-                    value={apiKey}
-                    onChange={({ target: { value } }) => {
-                      setApiKey(value);
-                    }}
-                  />
+                  <Stack spacing={1}>
+                    {authenticatedServers.map((server) => (
+                      <TextField
+                        key={server.alias}
+                        fullWidth
+                        variant="outlined"
+                        label={`API Key for ${server.alias}`}
+                        type="password"
+                        size="small"
+                        value={server.apiKey}
+                        onChange={({ target: { value } }) => {
+                          runInAction(() => {
+                            server.apiKey = value;
+                          });
+                        }}
+                      />
+                    ))}
+                  </Stack>
                 </CardContent>
                 <CardActions>
                   <Button type="submit">Save</Button>
@@ -109,6 +115,7 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                     {integrationState.credentials.configuredServers.map(
                       ({ alias, url }) => (
                         <MenuItem
+                          key={alias}
                           onClick={() => {
                             void saveAppOptions("PYRAT", Optional.empty(), {
                               PYRAT_ALIAS: alias,
