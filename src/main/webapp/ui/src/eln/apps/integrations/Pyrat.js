@@ -131,6 +131,7 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                 <Menu
                   open={Boolean(addMenuAnchorEl)}
                   anchorEl={addMenuAnchorEl}
+                  onClose={() => setAddMenuAnchorEl(null)}
                 >
                   {unauthenticatedServers.map(({ alias, url }) => (
                     <MenuItem
