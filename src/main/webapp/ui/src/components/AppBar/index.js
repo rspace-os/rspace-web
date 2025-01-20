@@ -331,6 +331,9 @@ function GalleryAppBar({
                 Inventory
               </Link>
             )}
+            <Link target="_self" aria-current={false} href="/userform">
+              My Profile
+            </Link>
             {showMyLabGroups && (
               <Link
                 target="_self"
@@ -463,6 +466,25 @@ function GalleryAppBar({
                   }}
                 />
               )}
+              <AccentMenuItem
+                title="My Profile"
+                avatar={<ProfileIcon />}
+                subheader="Your profile details and preferences"
+                foregroundColor={{
+                  hue: 200,
+                  saturation: 10,
+                  lightness: 20,
+                }}
+                backgroundColor={{
+                  hue: 200,
+                  saturation: 10,
+                  lightness: 70,
+                }}
+                onClick={() => {
+                  window.location = "/userform";
+                  setAccountMenuAnchorEl(null);
+                }}
+              />
               {showMyLabGroups && (
                 <AccentMenuItem
                   title="My LabGroups"
@@ -677,15 +699,6 @@ function GalleryAppBar({
                 onClick={() => {
                   setAccountMenuAnchorEl(null);
                   window.location = "/dashboard";
-                }}
-              />
-              <AccentMenuItem
-                title="My Profile"
-                avatar={<ProfileIcon />}
-                compact
-                onClick={() => {
-                  setAccountMenuAnchorEl(null);
-                  window.location = "/userform";
                 }}
               />
               <AccentMenuItem
