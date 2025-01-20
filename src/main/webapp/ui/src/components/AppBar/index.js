@@ -690,7 +690,7 @@ function GalleryAppBar({
                           sx: {
                             fontFamily:
                               userDetails.orcidId === null
-                                ? "none"
+                                ? "inherit"
                                 : "monospace",
                             lineHeight:
                               userDetails.orcidId === null ? "unset" : "1em",
