@@ -253,6 +253,7 @@ function GalleryAppBar({
   }
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
     React.useState<null | EventTarget>(null);
+  const clipId = React.useId();
 
   const { showInventory, showSystem, showMyLabGroups } =
     FetchingData.getSuccessValue(uiNavigationData)
@@ -304,13 +305,13 @@ function GalleryAppBar({
                 height: "40px",
                 backgroundColor: "white",
                 width: "20px",
-                clipPath: "url(#myClip)",
+                clipPath: `url(#${clipId})`,
                 borderLeft: "1px solid white",
               }}
             ></div>
             <svg width="0" height="0">
               <defs>
-                <clipPath id="myClip">
+                <clipPath id={clipId}>
                   <path
                     d="M 0 0 L 0 0 L 0 40 L 15 40 C 16 40 19 40 18 35 L 5 4 C 3.5 0 2 0 0 0 z"
                     fill="#000000"
