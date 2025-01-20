@@ -66,12 +66,12 @@ public class GitHubControllerMVCIT extends MVCTestBase {
   }
 
   private void addExampleRepositories(User user) {
-    Map<String, String> propertySetTest1 = new HashMap<String, String>();
+    Map<String, String> propertySetTest1 = new HashMap<>();
     propertySetTest1.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test1");
     propertySetTest1.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
     integrationsHandler.saveAppOptions(null, propertySetTest1, "GITHUB", true, user);
 
-    Map<String, String> propertySetTest2 = new HashMap<String, String>();
+    Map<String, String> propertySetTest2 = new HashMap<>();
     propertySetTest2.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test2");
     propertySetTest2.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
     integrationsHandler.saveAppOptions(null, propertySetTest2, "GITHUB", true, user);
@@ -191,7 +191,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
         .andExpect(header("Authorization", "token " + GITHUB_ACCESS_TOKEN))
         .andRespond(withSuccess(content, MediaType.APPLICATION_JSON));
 
-    // URL-encoded dir string 'repository#sha hash of the folder#path to folder"
+    // URL-encoded dir string 'repository#sha hash of the folder#path to folder
     String dir =
         "rspace-integration-test-user/test1%23227cf132af95d6bb43ad9119b879e19e3f209901%23/folder/subfolder/";
     MvcResult result =
