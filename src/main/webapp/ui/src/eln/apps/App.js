@@ -14,7 +14,6 @@ import {
   useIntegrationsEndpoint,
   type IntegrationStates,
 } from "./useIntegrationsEndpoint";
-import VisuallyHiddenHeading from "../../components/VisuallyHiddenHeading";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import CardListing from "./CardListing";
@@ -166,9 +165,7 @@ function App(): Node {
             <Grid item xs={10} md={8}>
               <main>
                 <Box sx={{ mt: 4 }}>
-                  <VisuallyHiddenHeading variant="h1">
-                    Apps
-                  </VisuallyHiddenHeading>
+                  <Typography variant="h1">Apps</Typography>
                   <Grid container spacing={2} direction="column">
                     <Grid item sx={{ mb: 1 }}>
                       <Typography variant="body1">

@@ -741,6 +741,16 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 color: "inherit",
               },
             },
+            h1: {
+              color: contrastTextColor,
+              marginBottom: baseTheme.spacing(3),
+              textAlign: "left",
+              borderBottom: accentedBorder,
+              textTransform: "uppercase",
+              fontWeight: 700,
+              opacity: 0.8,
+              fontSize: "1.9rem",
+            },
             h3: {
               fontWeight: 700,
               fontSize: "1.2rem",

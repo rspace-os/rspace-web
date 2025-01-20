@@ -226,11 +226,6 @@ function GalleryAppBar({
         showSystem: false,
         showMyLabGroups: false,
       });
-  const currentPageIsNotOneOfAlwaysShownLinks =
-    currentPage !== "Workspace" &&
-    currentPage !== "Gallery" &&
-    currentPage !== "Inventory" &&
-    currentPage !== "System";
 
   return (
     <AppBar position="relative" open={true} aria-label="page header">
@@ -300,11 +295,6 @@ function GalleryAppBar({
                 href="/system"
               >
                 System
-              </Link>
-            )}
-            {currentPageIsNotOneOfAlwaysShownLinks && (
-              <Link target="_self" aria-current="page" href="#">
-                {currentPage}
               </Link>
             )}
           </Stack>
