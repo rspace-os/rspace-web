@@ -303,7 +303,7 @@ function GalleryAppBar({
               style={{
                 height: "40px",
                 backgroundColor: "white",
-                width: "16px",
+                width: "20px",
                 clipPath: "url(#myClip)",
                 borderLeft: "1px solid white",
               }}
@@ -312,7 +312,7 @@ function GalleryAppBar({
               <defs>
                 <clipPath id="myClip">
                   <path
-                    d="M 0 0 L 0 0 L 0 40 L 10 40 C 11 40 14 40 13 35 L 5 4 C 3.5 0 2 0 0 0 z"
+                    d="M 0 0 L 0 0 L 0 40 L 15 40 C 16 40 19 40 18 35 L 5 4 C 3.5 0 2 0 0 0 z"
                     fill="#000000"
                   />
                 </clipPath>
