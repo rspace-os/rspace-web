@@ -22,6 +22,7 @@ import { useLocalObservable, observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Typography from "@mui/material/Typography";
+import RsSet from "../../../util/set";
 
 type PyratArgs = {|
   integrationState: IntegrationStates["PYRAT"],
@@ -196,9 +197,47 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                           PYRAT_ALIAS: alias,
                           PYRAT_URL: url,
                           PYRAT_APIKEY: "",
-                        }).then(() => {
-                          setAddMenuAnchorEl(null);
-                        });
+                        })
+                          .then((newConfigs) => {
+                            setAddMenuAnchorEl(null);
+                            const optionIdsOfExistingServers = new RsSet(
+                              authenticatedServers.map(
+                                ({ optionsId }) => optionsId
+                              )
+                            );
+                            const optionIdsOfNewServers = new RsSet(
+                              newConfigs.credentials.authenticatedServers.map(
+                                ({ optionsId }) => optionsId
+                              )
+                            );
+                            const newOptionId = optionIdsOfNewServers.subtract(
+                              optionIdsOfExistingServers
+                            ).first;
+                            runInAction(() => {
+                              authenticatedServers.push({
+                                alias,
+                                url,
+                                apiKey: "",
+                                optionsId: newOptionId,
+                              });
+                              addAlert(
+                                mkAlert({
+                                  variant: "success",
+                                  message:
+                                    "Successfully added new PyRAT server.",
+                                })
+                              );
+                            });
+                          })
+                          .catch((e) => {
+                            addAlert(
+                              mkAlert({
+                                variant: "error",
+                                title: "Error added new PyRAT server.",
+                                message: e.message,
+                              })
+                            );
+                          });
                       }}
                     >
                       <ListItemText primary={alias} secondary={url} />
