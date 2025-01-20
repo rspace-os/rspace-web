@@ -218,7 +218,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(anyUser.getFullName(), retrievedUser.getFullName());
     assertEquals(anyUser.getEmail(), retrievedUser.getEmail());
     assertNull(retrievedUser.getOrcidId());
-    assertNotNull(retrievedUser.getProfileImgSrc());
+    assertNull(retrievedUser.getProfileImgSrc());
     assertNull(retrievedUser.getLastSession());
   }
 }
