@@ -39,7 +39,7 @@ import SidebarToggle from "./SidebarToggle";
 import Link from "@mui/material/Link";
 import Avatar from "@mui/material/Avatar";
 import SvgIcon from "@mui/material/SvgIcon";
-import { styled } from "@mui/material/styles";
+import { styled, useTheme, darken, lighten } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import HelpLinkIcon from "../HelpLinkIcon";
 import docLinks from "../../assets/DocLinks";
@@ -244,6 +244,7 @@ function GalleryAppBar({
   accessibilityTips,
   helpPage,
 }: GalleryAppBarArgs): Node {
+  const theme = useTheme();
   const { isViewportSmall } = useViewportDimensions();
   const uiNavigationData = useUiNavigationData();
   const [appMenuAnchorEl, setAppMenuAnchorEl] = React.useState(null);
@@ -741,6 +742,8 @@ function GalleryAppBar({
                     key={null}
                     title="Release"
                     avatar={<LogoutIcon />}
+                    backgroundColor={lighten(theme.palette.error.light, 0.5)}
+                    foregroundColor={darken(theme.palette.error.dark, 0.3)}
                     compact
                     onClick={() => {
                       JwtService.destroyToken();
@@ -753,6 +756,8 @@ function GalleryAppBar({
                   <AccentMenuItem
                     title="Log Out"
                     avatar={<LogoutIcon />}
+                    backgroundColor={lighten(theme.palette.error.light, 0.5)}
+                    foregroundColor={darken(theme.palette.error.dark, 0.3)}
                     compact
                     onClick={() => {
                       JwtService.destroyToken();
