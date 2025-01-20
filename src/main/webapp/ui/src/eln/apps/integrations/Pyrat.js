@@ -68,7 +68,10 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                 Request a user access token by going to Administration → API →
                 Request access in PyRAT.
               </li>
-              <li>Enter the access token into the field below, and save.</li>
+              <li>Chose the corresponding server from the add menu below.</li>
+              <li>
+                Enter the access token into the field that appears, and save.
+              </li>
               <li>Enable the integration.</li>
               <li>
                 When editing a document, click on the PyRAT icon in the text
