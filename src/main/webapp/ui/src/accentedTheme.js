@@ -197,7 +197,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               boxShadow: "unset",
               [`& > .${toolbarClasses.root}`]: {
                 paddingBottom: baseTheme.spacing(0.25),
-                paddingLeft: `${baseTheme.spacing(1.5)} !important`,
+                paddingLeft: 0,
                 paddingRight: `${baseTheme.spacing(1)} !important`,
                 color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
                 background: prefersMoreContrast
