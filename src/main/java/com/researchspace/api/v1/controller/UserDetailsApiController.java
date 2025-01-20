@@ -125,9 +125,11 @@ public class UserDetailsApiController extends BaseApiController implements UserD
     }
     UserProfile userProfile = userProfileManager.getUserProfile(user);
     Long profileImageId =
-        Optional.ofNullable(userProfile.getProfilePicture()).map(ImageBlob::getId).orElse(-1L);
-    userDetails.setProfileImgSrc(
-        "/userform/profileImage/" + userProfile.getId() + "/" + profileImageId);
+        Optional.ofNullable(userProfile.getProfilePicture()).map(ImageBlob::getId).orElse(null);
+    if (profileImageId != null) {
+      userDetails.setProfileImgSrc(
+          "/userform/profileImage/" + userProfile.getId() + "/" + profileImageId);
+    }
     Date lastLogin = user.getLastLogin();
     userDetails.setLastSession(lastLogin == null ? null : lastLogin.getTime());
     navigationData.setUserDetails(userDetails);
