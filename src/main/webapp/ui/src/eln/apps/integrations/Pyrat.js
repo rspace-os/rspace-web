@@ -165,4 +165,7 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
   );
 }
 
+/**
+ * The card and dialog for configuring the PyRAT integration
+ */
 export default (React.memo(observer(Pyrat)): AbstractComponent<PyratArgs>);
