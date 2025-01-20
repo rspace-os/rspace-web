@@ -38,6 +38,11 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
     null
   );
 
+  const unauthenticatedServers =
+    integrationState.credentials.configuredServers.filter(
+      ({ alias }) => !authenticatedServers.find((s) => s.alias === alias)
+    );
+
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
@@ -119,6 +124,7 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                   onClick={(e) => {
                     setAddMenuAnchorEl(e.currentTarget);
                   }}
+                  disabled={unauthenticatedServers.length === 0}
                 >
                   Add
                 </Button>
@@ -126,24 +132,22 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                   open={Boolean(addMenuAnchorEl)}
                   anchorEl={addMenuAnchorEl}
                 >
-                  {integrationState.credentials.configuredServers.map(
-                    ({ alias, url }) => (
-                      <MenuItem
-                        key={alias}
-                        onClick={() => {
-                          void saveAppOptions("PYRAT", Optional.empty(), {
-                            PYRAT_ALIAS: alias,
-                            PYRAT_URL: url,
-                            PYRAT_APIKEY: "",
-                          }).then(() => {
-                            setAddMenuAnchorEl(null);
-                          });
-                        }}
-                      >
-                        <ListItemText primary={alias} secondary={url} />
-                      </MenuItem>
-                    )
-                  )}
+                  {unauthenticatedServers.map(({ alias, url }) => (
+                    <MenuItem
+                      key={alias}
+                      onClick={() => {
+                        void saveAppOptions("PYRAT", Optional.empty(), {
+                          PYRAT_ALIAS: alias,
+                          PYRAT_URL: url,
+                          PYRAT_APIKEY: "",
+                        }).then(() => {
+                          setAddMenuAnchorEl(null);
+                        });
+                      }}
+                    >
+                      <ListItemText primary={alias} secondary={url} />
+                    </MenuItem>
+                  ))}
                 </Menu>
               </CardActions>
             </Card>
