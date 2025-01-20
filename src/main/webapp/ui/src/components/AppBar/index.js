@@ -320,7 +320,19 @@ function GalleryAppBar({
                   setAppMenuAnchorEl(event.currentTarget);
                 }}
               >
-                <ListItemText primary={currentPage} />
+                <ListItemText
+                  primary={
+                    [
+                      "Workspace",
+                      "Gallery",
+                      "Inventory",
+                      "System",
+                      "MyLabGroups",
+                    ].includes(currentPage)
+                      ? currentPage
+                      : "Go to..."
+                  }
+                />
                 <ListItemIcon>
                   <ArrowDropDownIcon />
                 </ListItemIcon>
