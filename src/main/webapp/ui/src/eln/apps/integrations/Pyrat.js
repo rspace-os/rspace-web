@@ -100,7 +100,24 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                             PYRAT_URL: server.url,
                             PYRAT_APIKEY: server.apiKey,
                           }
-                        );
+                        )
+                          .then(() => {
+                            addAlert(
+                              mkAlert({
+                                variant: "success",
+                                message: "Successfully saved API key.",
+                              })
+                            );
+                          })
+                          .catch((e) => {
+                            addAlert(
+                              mkAlert({
+                                variant: "error",
+                                title: "Error saving API key.",
+                                message: e.message,
+                              })
+                            );
+                          });
                       }}
                     >
                       <Stack direction="row" spacing={1}>
