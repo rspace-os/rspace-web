@@ -45,11 +45,15 @@ import Typography from "@mui/material/Typography";
 import HelpLinkIcon from "../HelpLinkIcon";
 import docLinks from "../../assets/DocLinks";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
-import useUiNavigationData from "./useUiNavigationData";
+import useUiNavigationData, {
+  type UiNavigationData,
+} from "./useUiNavigationData";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
+import OperateAsIcon from "@mui/icons-material/SupervisedUserCircleOutlined";
+import CircularProgress from "@mui/material/CircularProgress";
 
-const StyledAvatar = styled(Avatar)(() => ({
+const StyledAvatar = styled(Avatar)(({ size }) => ({
   /*
    * This pink colour is taken from the RSpace logo, a
    * colour that we don't otherwise use in the product. The
@@ -59,7 +63,55 @@ const StyledAvatar = styled(Avatar)(() => ({
    */
   color: "#fce8f0",
   backgroundColor: "#ed1064",
+
+  ...(size === "small"
+    ? {
+        height: "24px",
+        width: "24px",
+        fontSize: "0.8em",
+      }
+    : {}),
 }));
+
+/**
+ * This image is used to indicate the current user
+ * - If the user has uploaded a profile image then it is shown
+ * - Otherwise a magenta circle with their first initial is shown
+ * - If they're operating as another user then a red icon mark is
+ *   shown
+ */
+const DynamicAvatar = ({
+  uiNavigationData,
+  size,
+}: {|
+  uiNavigationData: FetchingData.Fetched<UiNavigationData>,
+  size?: "small",
+|}) => {
+  return FetchingData.match(uiNavigationData, {
+    loading: () => (
+      <StyledAvatar size={size}>
+        <CircularProgress size="16px" />
+      </StyledAvatar>
+    ),
+    error: () => <StyledAvatar size={size}>!</StyledAvatar>,
+    success: ({ operatedAs, userDetails: { profileImgSrc, fullName } }) => {
+      if (operatedAs) {
+        if (size === "small")
+          return <OperateAsIcon sx={{ color: "red !important" }} />;
+        return (
+          <Avatar sx={{ backgroundColor: "white", color: "red" }}>
+            <OperateAsIcon sx={{ width: "2em", height: "2em" }} />
+          </Avatar>
+        );
+      }
+      return (
+        <StyledAvatar size={size} src={profileImgSrc}>
+          {fullName[0]}
+        </StyledAvatar>
+      );
+    },
+  });
+};
 
 const OrcidIcon = styled(({ className }) => (
   <svg
@@ -431,16 +483,10 @@ function GalleryAppBar({
                 setAccountMenuAnchorEl(event.currentTarget);
               }}
               icon={
-                <StyledAvatar
-                  sx={{ height: "24px", width: "24px", fontSize: "0.8em" }}
-                  src={FetchingData.getSuccessValue(uiNavigationData)
-                    .map(({ userDetails: { profileImgSrc } }) => profileImgSrc)
-                    .orElse(null)}
-                >
-                  {FetchingData.getSuccessValue(uiNavigationData)
-                    .map(({ userDetails: { fullName } }) => fullName[0])
-                    .orElse(" ")}
-                </StyledAvatar>
+                <DynamicAvatar
+                  uiNavigationData={uiNavigationData}
+                  size="small"
+                />
               }
               title="Account Menu"
               id="account-menu-button"
@@ -497,14 +543,26 @@ function GalleryAppBar({
                 success: ({ userDetails }) => (
                   <ListItem key={null} sx={{ py: 0 }}>
                     <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
-                      <StyledAvatar src={userDetails.profileImgSrc}>
-                        {userDetails.fullName[0]}
-                      </StyledAvatar>
+                      <DynamicAvatar uiNavigationData={uiNavigationData} />
                     </ListItemIcon>
                     <Stack>
                       <ListItemText
                         sx={{ mt: 0.5 }}
-                        primary={`${userDetails.fullName} (${userDetails.username})`}
+                        primary={
+                          <>
+                            {FetchingData.getSuccessValue(uiNavigationData)
+                              .map(({ operatedAs }) => operatedAs)
+                              .flatMap(Parsers.isTrue)
+                              .map(() => (
+                                <>
+                                  <strong>Operating as:</strong>
+                                  <br />
+                                </>
+                              ))
+                              .orElse(null)}
+                            {userDetails.fullName} ({userDetails.username})
+                          </>
+                        }
                         secondary={userDetails.email}
                       />
                       <ListItemText
@@ -605,16 +663,34 @@ function GalleryAppBar({
                   setAccountMenuAnchorEl(null);
                 }}
               />
-              <AccentMenuItem
-                title="Log Out"
-                avatar={<LogoutIcon />}
-                compact
-                onClick={() => {
-                  JwtService.destroyToken();
-                  setAccountMenuAnchorEl(null);
-                  window.location = "/logout";
-                }}
-              />
+              {FetchingData.getSuccessValue(uiNavigationData)
+                .map(({ operatedAs }) => operatedAs)
+                .flatMap(Parsers.isTrue)
+                .map(() => (
+                  <AccentMenuItem
+                    key={null}
+                    title="Release"
+                    avatar={<LogoutIcon />}
+                    compact
+                    onClick={() => {
+                      JwtService.destroyToken();
+                      setAccountMenuAnchorEl(null);
+                      window.location = "/logout/runAsRelease";
+                    }}
+                  />
+                ))
+                .orElse(
+                  <AccentMenuItem
+                    title="Log Out"
+                    avatar={<LogoutIcon />}
+                    compact
+                    onClick={() => {
+                      JwtService.destroyToken();
+                      setAccountMenuAnchorEl(null);
+                      window.location = "/logout";
+                    }}
+                  />
+                )}
               <Divider />
               {FetchingData.getSuccessValue(uiNavigationData)
                 .map(({ bannerImgSrc }) => (

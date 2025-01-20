@@ -7,7 +7,10 @@ import useOauthToken from "../../common/useOauthToken";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 
-type UiNavigationData = {|
+/**
+ * The state requried to display the conditional parts of the AppBar.
+ */
+export type UiNavigationData = {|
   userDetails: {|
     email: string,
     orcidId: null | string,
@@ -22,6 +25,7 @@ type UiNavigationData = {|
     myLabGroups: boolean,
   |},
   bannerImgSrc: string,
+  operatedAs: boolean,
 |};
 
 /**
@@ -104,6 +108,9 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
             const bannerImgSrc = Parsers.objectPath(["bannerImgSrc"], obj)
               .flatMap(Parsers.isString)
               .elseThrow();
+            const operatedAs = Parsers.objectPath(["operatedAs"], obj)
+              .flatMap(Parsers.isBoolean)
+              .elseThrow();
             return Result.Ok({
               userDetails: {
                 email,
@@ -119,6 +126,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
                 myLabGroups,
               },
               bannerImgSrc,
+              operatedAs,
             });
           } catch (e) {
             return Result.Error<UiNavigationData>([
