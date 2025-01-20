@@ -18,7 +18,6 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import Divider from "@mui/material/Divider";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import Menu, { menuClasses } from "@mui/material/Menu";
 import AccentMenuItem from "../AccentMenuItem";
@@ -601,7 +600,6 @@ function GalleryAppBar({
                   </ListItem>
                 ),
               })}
-              <Divider sx={{ my: 0.5 }} />
               <AccentMenuItem
                 title="Messaging"
                 avatar={<MessageIcon />}
@@ -646,7 +644,6 @@ function GalleryAppBar({
                   />
                 ))
                 .orElse(null)}
-              <Divider />
               <AccessibilityTipsMenuItem
                 {...(accessibilityTips ?? {})}
                 onClose={() => {
@@ -681,7 +678,6 @@ function GalleryAppBar({
                     }}
                   />
                 )}
-              <Divider />
               {FetchingData.getSuccessValue(uiNavigationData)
                 .map(({ bannerImgSrc }) => (
                   <ListItem
