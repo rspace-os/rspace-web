@@ -49,9 +49,11 @@ public class GitHubController {
 
   protected static final String GITHUB_VIEW_NAME = "connect/github/gitHubTreeView";
 
-  private static final String GITHUB_ACCESS_TOKEN_URL = "https://github.com/login/oauth/access_token";
+  private static final String GITHUB_ACCESS_TOKEN_URL =
+      "https://github.com/login/oauth/access_token";
   private static final String GITHUB_API_URL = "https://api.github.com";
-  private static final String GITHUB_API_USER_REPOS = String.format("%s/user/repos", GITHUB_API_URL);
+  private static final String GITHUB_API_USER_REPOS =
+      String.format("%s/user/repos", GITHUB_API_URL);
 
   @Value("${github.client.id}")
   private String clientId;
@@ -358,5 +360,4 @@ public class GitHubController {
     }
     return treeApiResponse.getTree();
   }
-
 }
