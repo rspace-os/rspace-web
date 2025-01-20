@@ -51,6 +51,46 @@ import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import OperateAsIcon from "@mui/icons-material/SupervisedUserCircleOutlined";
 import CircularProgress from "@mui/material/CircularProgress";
+import MaintenanceIcon from "@mui/icons-material/Construction";
+import Popover from "@mui/material/Popover";
+import IconButton from "@mui/material/IconButton";
+
+const IncomingMaintenancePopup = () => {
+  const [anchorEl, setAnchorEl] = React.useState<null | EventTarget>(null);
+  const popoverId = React.useId();
+  return (
+    <>
+      <IconButton
+        onClick={(e) => {
+          setAnchorEl(e.currentTarget);
+        }}
+        aria-label="A scheduled maintenance window begins shortly."
+        aria-controls={popoverId}
+        aria-haspopup="dialog"
+        color="error"
+      >
+        <MaintenanceIcon sx={{ color: "inherit !important" }} />
+      </IconButton>
+      <Popover
+        id={popoverId}
+        open={Boolean(anchorEl)}
+        role="dialog"
+        anchorEl={anchorEl}
+        onClose={() => {
+          setAnchorEl(null);
+        }}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+      >
+        <Typography sx={{ p: 2 }}>
+          A scheduled maintenance window begins shortly.
+        </Typography>
+      </Popover>
+    </>
+  );
+};
 
 const StyledAvatar = styled(Avatar)(({ size }) => ({
   /*
@@ -456,6 +496,11 @@ function GalleryAppBar({
           </>
         )}
         <Box flexGrow={1}></Box>
+        {FetchingData.getSuccessValue(uiNavigationData)
+          .map(({ incomingMaintenance }) => incomingMaintenance)
+          .flatMap(Parsers.isTrue)
+          .map(() => <IncomingMaintenancePopup key={null} />)
+          .orElse(null)}
         <Box ml={1}>
           {helpPage ? (
             <Box ml={1} sx={{ transform: "translateY(2px)" }}>

@@ -26,6 +26,7 @@ export type UiNavigationData = {|
   |},
   bannerImgSrc: string,
   operatedAs: boolean,
+  incomingMaintenance: boolean,
 |};
 
 /**
@@ -111,6 +112,12 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
             const operatedAs = Parsers.objectPath(["operatedAs"], obj)
               .flatMap(Parsers.isBoolean)
               .elseThrow();
+            const incomingMaintenance = Parsers.objectPath(
+              ["incomingMaintenance"],
+              obj
+            )
+              .flatMap(Parsers.isBoolean)
+              .elseThrow();
             return Result.Ok({
               userDetails: {
                 email,
@@ -127,6 +134,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
               },
               bannerImgSrc,
               operatedAs,
+              incomingMaintenance,
             });
           } catch (e) {
             return Result.Error<UiNavigationData>([
