@@ -531,9 +531,10 @@ function GalleryAppBar({
                         }}
                         primary={
                           userDetails.orcidId === null ? (
-                            <Link href={docLinks.orcid}>
-                              Add an ORCID iD to your profile.
-                            </Link>
+                            <>
+                              Add an ORCID iD to your{" "}
+                              <Link href="/userform">profile</Link>.
+                            </>
                           ) : (
                             <Stack
                               direction="row"
