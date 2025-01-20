@@ -21,6 +21,7 @@ import Stack from "@mui/material/Stack";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import Typography from "@mui/material/Typography";
 
 type PyratArgs = {|
   integrationState: IntegrationStates["PYRAT"],
@@ -81,6 +82,11 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>
                 <Stack spacing={1}>
+                  {authenticatedServers.length === 0 && (
+                    <Typography variant="body2">
+                      No authenticated servers.
+                    </Typography>
+                  )}
                   {authenticatedServers.map((server) => (
                     <form
                       key={server.alias}
