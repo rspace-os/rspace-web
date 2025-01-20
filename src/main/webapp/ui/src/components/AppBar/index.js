@@ -615,13 +615,21 @@ function GalleryAppBar({
                 }}
               />
               <Divider />
-              <ListItem sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}>
-                <img
-                  src="/images/icons/rspaceLogoLarge.svg"
-                  alt="rspace logo"
-                  style={{ width: "min(100%, 120px)" }}
-                />
-              </ListItem>
+              {FetchingData.getSuccessValue(uiNavigationData)
+                .map(({ bannerImgSrc }) => (
+                  <ListItem
+                    key={null}
+                    sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}
+                  >
+                    <img
+                      src={bannerImgSrc}
+                      role="presentation"
+                      alt="branding"
+                      style={{ width: "min(100%, 120px)" }}
+                    />
+                  </ListItem>
+                ))
+                .orElse(null)}
             </Menu>
           </Box>
         )}

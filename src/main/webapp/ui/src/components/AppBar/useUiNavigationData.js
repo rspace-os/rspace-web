@@ -21,6 +21,7 @@ type UiNavigationData = {|
     system: boolean,
     myLabGroups: boolean,
   |},
+  bannerImgSrc: string,
 |};
 
 /**
@@ -100,6 +101,9 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
             )
               .flatMap(Parsers.isBoolean)
               .elseThrow();
+            const bannerImgSrc = Parsers.objectPath(["bannerImgSrc"], obj)
+              .flatMap(Parsers.isString)
+              .elseThrow();
             return Result.Ok({
               userDetails: {
                 email,
@@ -114,6 +118,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
                 system,
                 myLabGroups,
               },
+              bannerImgSrc,
             });
           } catch (e) {
             return Result.Error<UiNavigationData>([
