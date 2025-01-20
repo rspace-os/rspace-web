@@ -4,7 +4,7 @@
 </head>
 
 <div id="gitHubAuthorizationSuccess" class="bootstrap-custom-flat">
-   Success -  RSpace was authorized to access repositories on GitHub. You can close this tab now.
+   Success -  RSpace was authorized to access repositories on GitHub. This window will be closed shortly.
 </div>
 
 <!-- BEGIN GitHub repository chooser dialog -->
