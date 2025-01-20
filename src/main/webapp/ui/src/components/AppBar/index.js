@@ -274,7 +274,8 @@ function GalleryAppBar({
         <Box
           sx={{
             display: "flex",
-            backgroundColor: "white",
+            backgroundColor:
+              variant === "page" && !isViewportSmall ? "white" : "unset",
             height: "40px",
             pl: 1,
             pr: 0.5,
@@ -298,7 +299,7 @@ function GalleryAppBar({
             </Box>
           )}
         </Box>
-        {!isViewportSmall && (
+        {variant === "page" && !isViewportSmall && (
           <>
             <div
               style={{
