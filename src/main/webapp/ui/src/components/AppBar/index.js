@@ -270,9 +270,22 @@ function GalleryAppBar({
     <AppBar position="relative" open={true} aria-label="page header">
       <Toolbar variant="dense">
         {sidebarToggle}
-        {variant === "page" && (
-          <Box width="40px" height="40px" sx={{ ml: 0.5 }}>
-            <img src="/images/icons/rspaceLogo.svg" alt="rspace logo" />
+        {variant === "page" && !isViewportSmall && (
+          <Box
+            height="36px"
+            sx={{ ml: 0.5, py: 0.25, px: 1, background: "white" }}
+          >
+            {FetchingData.getSuccessValue(uiNavigationData)
+              .map(({ bannerImgSrc }) => (
+                <img
+                  key={null}
+                  src={bannerImgSrc}
+                  role="presentation"
+                  alt="branding"
+                  style={{ height: "100%" }}
+                />
+              ))
+              .orElse(null)}
           </Box>
         )}
         {variant === "page" && (
