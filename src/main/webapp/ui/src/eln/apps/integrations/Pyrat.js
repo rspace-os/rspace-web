@@ -20,6 +20,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 type PyratArgs = {|
   integrationState: IntegrationStates["PYRAT"],
@@ -31,9 +32,10 @@ type PyratArgs = {|
  */
 function Pyrat({ integrationState, update }: PyratArgs): Node {
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
-  const authenticatedServers = useLocalObservable(
-    () => integrationState.credentials.authenticatedServers
-  );
+  const { addAlert } = React.useContext(AlertContext);
+  const authenticatedServers = useLocalObservable(() => [
+    ...integrationState.credentials.authenticatedServers,
+  ]);
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | EventTarget>(
     null
   );
@@ -109,7 +111,34 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
                         <Button type="submit">Save</Button>
                         <Button
                           onClick={() => {
-                            void deleteAppOptions("PYRAT", server.optionsId);
+                            void deleteAppOptions("PYRAT", server.optionsId)
+                              .then(() => {
+                                runInAction(() => {
+                                  const indexOfRemovedServer =
+                                    authenticatedServers.findIndex(
+                                      (s) => s.alias === server.alias
+                                    );
+                                  authenticatedServers.splice(
+                                    indexOfRemovedServer,
+                                    1
+                                  );
+                                });
+                                addAlert(
+                                  mkAlert({
+                                    variant: "success",
+                                    message: "Successfully deleted API key.",
+                                  })
+                                );
+                              })
+                              .catch((e) => {
+                                addAlert(
+                                  mkAlert({
+                                    variant: "error",
+                                    title: "Could not delete API key.",
+                                    message: e.message,
+                                  })
+                                );
+                              });
                           }}
                         >
                           Delete
