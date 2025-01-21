@@ -56,6 +56,7 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import CardMedia from "@mui/material/CardMedia";
 import { useFolderOpen } from "./OpenFolderProvider";
 import { type URL } from "../../../util/types";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -282,6 +283,7 @@ function ActionsMenu({
   const selection = useGallerySelection();
   const theme = useTheme();
   const { addAlert } = React.useContext(AlertContext);
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
@@ -770,6 +772,7 @@ function ActionsMenu({
               .elseThrow();
             await uploadFiles(idOfFolderThatFileIsIn, [newFile]);
             void refreshListing();
+            trackEvent("user:edit:image:gallery");
           } catch (e) {
             addAlert(
               mkAlert({
