@@ -55,6 +55,8 @@ function Pyrat() {
     });
   }, [pyratUrl]);
 
+  const [serverAlias, setServerAlias] = React.useState("mice server");
+
   // Counter is increased when filtering is required.
   // Counter instead of boolean, as useEffect functions below that depend on
   // this hook should only execute once (boolean switch is two changes)
@@ -198,7 +200,7 @@ function Pyrat() {
 
   useEffect(function assertPyratVersion() {
     pyrat
-      .get("version")
+      .get("version?serverAlias=" + serverAlias)
       .then((response) => {
         if (response.data.api_version !== SUPPORTED_PYRAT_API_VERSION) {
           setErrorReason(ErrorReason.APIVersion);
@@ -212,7 +214,7 @@ function Pyrat() {
   useEffect(function makeBuildingEnum() {
     pyrat
       .get(
-        "locations?s=full_name:asc&k=building_id&k=full_name&type=building&=status=available"
+        `locations?serverAlias=${serverAlias}&s=full_name:asc&k=building_id&k=full_name&type=building&=status=available`
       )
       .then((response) => {
         if (response.data) {
@@ -323,7 +325,7 @@ function Pyrat() {
       }
     });
 
-    return `l=${rowsPerPage}&o=${page * rowsPerPage}&${params.join(
+    return `serverAlias=${serverAlias}&l=${rowsPerPage}&o=${page * rowsPerPage}&${params.join(
       ""
     )}&s=${orderBy}:${order}`;
   }, [filterCounter, order, orderBy, rowsPerPage, page]);
