@@ -252,7 +252,8 @@ function GalleryAppBar({
   }
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
     React.useState<null | EventTarget>(null);
-  const clipId = React.useId();
+  const leftClipId = React.useId();
+  const rightClipId = React.useId();
 
   const { showInventory, showSystem, showMyLabGroups } =
     FetchingData.getSuccessValue(uiNavigationData)
@@ -270,14 +271,37 @@ function GalleryAppBar({
   return (
     <AppBar position="relative" open={true} aria-label="page header">
       <Toolbar variant="dense">
+        {variant === "page" && !isViewportSmall && (
+          <>
+            <div
+              style={{
+                height: "40px",
+                backgroundColor: "white",
+                width: "4px",
+                clipPath: `url(#${leftClipId})`,
+                borderRight: "1px solid white",
+                marginLeft: "4px",
+              }}
+            ></div>
+            <svg width="0" height="0" viewBox="0 0 3.9 40">
+              <defs>
+                <clipPath id={leftClipId}>
+                  <path
+                    d="M3.9,40C1.7,40,0,38.3,0,36.1V3.9C0,1.7,1.7,0,3.9,0v40Z"
+                    fill="#000000"
+                  />
+                </clipPath>
+              </defs>
+            </svg>
+          </>
+        )}
         <Box
           sx={{
             display: "flex",
             backgroundColor:
               variant === "page" && !isViewportSmall ? "white" : "unset",
             height: "40px",
-            pl: 1,
-            pr: 0.5,
+            px: 0.5,
             gap: 0.5,
           }}
         >
@@ -304,16 +328,16 @@ function GalleryAppBar({
               style={{
                 height: "40px",
                 backgroundColor: "white",
-                width: "20px",
-                clipPath: `url(#${clipId})`,
+                width: "12px",
+                clipPath: `url(#${rightClipId})`,
                 borderLeft: "1px solid white",
               }}
             ></div>
             <svg width="0" height="0">
               <defs>
-                <clipPath id={clipId}>
+                <clipPath id={rightClipId}>
                   <path
-                    d="M 0 0 L 0 0 L 0 40 L 15 40 C 16 40 19 40 18 35 L 5 4 C 3.5 0 2 0 0 0 z"
+                    d="M0,0c2.1,0,4.2,1.7,4.6,3.9l5.7,32.2c.4,2.1-1.1,3.9-3.2,3.9H0V0Z"
                     fill="#000000"
                   />
                 </clipPath>
