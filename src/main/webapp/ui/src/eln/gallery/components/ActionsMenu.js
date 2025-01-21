@@ -315,26 +315,27 @@ function ActionsMenu({
       .only.toResult(() => new Error("Too many items selected."))
       .flatMap<
         | {| key: "image", downloadHref: () => Promise<URL> |}
-        | {| key: "document", url: string |}
+        | {| key: "collabora", url: string |}
+        | {| key: "officeonline", url: string |}
       >((file) => {
         if (file.isImage && typeof file.downloadHref !== "undefined")
           return Result.Ok({ key: "image", downloadHref: file.downloadHref });
         return canEditWithCollabora(file)
-          .orElseTry(() => canEditWithOfficeOnline(file))
-          .map<
-            Result<
+          .map((url) => ({
+            key: "collabora",
+            url,
+          }))
+          .orElseTry(() =>
+            canEditWithOfficeOnline(file).map<
               | {| key: "image", downloadHref: () => Promise<URL> |}
-              | {| key: "document", url: string |}
-            >
-          >((url) =>
-            Result.Ok({
-              key: "document",
+              | {| key: "collabora", url: string |}
+              | {| key: "officeonline", url: string |}
+            >((url) => ({
+              key: "officeonline",
               url,
-            })
+            }))
           )
-          .orElseGet(() =>
-            Result.Error<_>([new Error("Cannot edit this item.")])
-          );
+          .mapError(() => new Error("Cannot edit this item."));
       })
   );
 
@@ -529,7 +530,14 @@ function ActionsMenu({
           onClick={() => {
             editingAllowed.get().do(
               doNotAwait(async (action) => {
-                if (action.key === "document") window.open(action.url);
+                if (action.key === "officeonline") {
+                  window.open(action.url);
+                  trackEvent("user:opens:document:officeonline");
+                }
+                if (action.key === "collabora") {
+                  window.open(action.url);
+                  trackEvent("user:opens:document:collabora");
+                }
                 if (action.key === "image") {
                   try {
                     const downloadHref = await action.downloadHref();
