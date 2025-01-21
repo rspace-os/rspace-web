@@ -65,20 +65,8 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     super.tearDown();
   }
 
-  private void addExampleRepositories(User user) {
-    Map<String, String> propertySetTest1 = new HashMap<>();
-    propertySetTest1.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test1");
-    propertySetTest1.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
-    integrationsHandler.saveAppOptions(null, propertySetTest1, "GITHUB", true, user);
-
-    Map<String, String> propertySetTest2 = new HashMap<>();
-    propertySetTest2.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test2");
-    propertySetTest2.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
-    integrationsHandler.saveAppOptions(null, propertySetTest2, "GITHUB", true, user);
-  }
-
   @Test
-  public void testAuthorizationFlowHappyCase() throws Exception {
+  public void testMockedAuthorizationFlowHappyCase() throws Exception {
     User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
     initUsers(user);
     logoutAndLoginAs(user);
@@ -131,8 +119,25 @@ public class GitHubControllerMVCIT extends MVCTestBase {
                 "rspace-integration-test-user/test2", "Second Test Repository")));
   }
 
+  private void addExampleRepositories(User user) {
+    Map<String, String> propertySetTest1 = new HashMap<>();
+    propertySetTest1.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test1");
+    propertySetTest1.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
+    integrationsHandler.saveAppOptions(null, propertySetTest1, "GITHUB", true, user);
+
+    Map<String, String> propertySetTest2 = new HashMap<>();
+    propertySetTest2.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test2");
+    propertySetTest2.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
+    integrationsHandler.saveAppOptions(null, propertySetTest2, "GITHUB", true, user);
+
+    Map<String, String> propertySetTest3 = new HashMap<>();
+    propertySetTest3.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user-2/test3");
+    propertySetTest3.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
+    integrationsHandler.saveAppOptions(null, propertySetTest3, "GITHUB", true, user);
+  }
+
   @Test
-  public void testGetTreeRootFolder() throws Exception {
+  public void testGetTreeRootFolderRealConnection() throws Exception {
     User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
     initUsers(user);
     logoutAndLoginAs(user);
@@ -152,7 +157,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 
-    assertThat(nodes.size(), is(2));
+    assertThat(nodes.size(), is(3));
 
     // Initialize expected node 1
     TreeNode expectedNode1 = new TreeNode();
@@ -168,12 +173,19 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     expectedNode2.setFullPath(null);
     expectedNode2.setSha("master");
     expectedNode2.setType("tree");
+    // Initialize expected node 3
+    TreeNode expectedNode3 = new TreeNode();
+    expectedNode3.setPath("rspace-integration-test-user-2/test3");
+    expectedNode3.setRepository("rspace-integration-test-user-2/test3");
+    expectedNode3.setFullPath(null);
+    expectedNode3.setSha("master");
+    expectedNode3.setType("tree");
 
-    assertThat(nodes, hasItems(expectedNode1, expectedNode2));
+    assertThat(nodes, hasItems(expectedNode1, expectedNode2, expectedNode3));
   }
 
   @Test
-  public void testGetTreeSubfolder() throws Exception {
+  public void testMockedGetTreeSubfolder() throws Exception {
     User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
     initUsers(user);
     logoutAndLoginAs(user);
