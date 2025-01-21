@@ -88,8 +88,7 @@ function Pyrat() {
     licence_id: {
       label: "License",
       value: "",
-      query:
-        "licenses?k=license_id&k=license_number&s=license_id:asc&license_number=",
+      query: `licenses?serverAlias=${serverAlias}&k=license_id&k=license_number&s=license_id:asc&license_number=`,
       enumObj: {},
       renderFunc: ({ license_id, license_number }) => [
         license_id,
@@ -99,7 +98,7 @@ function Pyrat() {
     responsible_id: {
       label: "Responsible",
       value: "",
-      query: "users?k=userid&k=fullname&s=username:asc&fullname=",
+      query: `users?serverAlias=${serverAlias}&k=userid&k=fullname&s=username:asc&fullname=`,
       enumObj: {},
       renderFunc: ({ userid, fullname }) => [
         userid,
@@ -109,8 +108,7 @@ function Pyrat() {
     project_id: {
       label: "Project",
       value: "",
-      query:
-        "projects?k=id&k=name&s=id:asc&status=active&status=inactive&name=",
+      query: `projects?serverAlias=${serverAlias}&k=id&k=name&s=id:asc&status=active&status=inactive&name=`,
       enumObj: {},
       renderFunc: ({ id, name }) => [id, { label: name, value: id }],
     },
