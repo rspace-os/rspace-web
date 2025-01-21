@@ -18,6 +18,60 @@ import { getHeader } from "../../util/axios";
 import { parseInteger } from "../../util/parsers";
 import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
+
+function useAuthenticatedServers() {
+  const [servers, setServers] = React.useState([]);
+  useEffect(() => {
+    axios
+      .get("/integration/integrationInfo", {
+        params: new URLSearchParams({ name: "PYRAT" }),
+        responseType: "json",
+      })
+      .then(({ data }) => {
+        setServers(
+          Parsers.objectPath(["data", "options"], data)
+            .flatMap(Parsers.isObject)
+            .flatMap(Parsers.isNotNull)
+            .map((servers) =>
+              Object.entries(servers).filter(
+                ([k]) => k !== "PYRAT_CONFIGURED_SERVERS"
+              )
+            )
+            .flatMap((servers) =>
+              Result.all(
+                ...servers.map(([key, config]) => {
+                  try {
+                    const server = Parsers.isObject(config)
+                      .flatMap(Parsers.isNotNull)
+                      .elseThrow();
+                    const alias = Parsers.getValueWithKey("PYRAT_ALIAS")(server)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    const url = Parsers.getValueWithKey("PYRAT_URL")(server)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    return Result.Ok({ alias, url });
+                  } catch {
+                    return Result.Error([
+                      new Error(
+                        "Could not parse out pyrat authenticated server"
+                      ),
+                    ]);
+                  }
+                })
+              )
+            )
+            .elseThrow()
+        );
+      })
+      .catch((error) => {
+        console.error("Failed to fetch servers", error);
+      });
+  }, []);
+  return servers;
+}
 
 const SUPPORTED_PYRAT_API_VERSION = 3;
 
@@ -458,12 +512,26 @@ function PyratListing({ serverAlias }) {
 }
 
 function Pyrat() {
-  const [serverAlias, setServerAlias] = React.useState("mice server");
+  const [serverAlias, setServerAlias] = React.useState(null);
+  const servers = useAuthenticatedServers();
 
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
-        {serverAlias ? <PyratListing serverAlias={serverAlias} /> : null}
+        {serverAlias ? (
+          <PyratListing serverAlias={serverAlias} />
+        ) : (
+          <>
+            {servers.map((server) => (
+              <button
+                key={server.alias}
+                onClick={() => setServerAlias(server.alias)}
+              >
+                {server.alias}
+              </button>
+            ))}
+          </>
+        )}
       </ThemeProvider>
     </StyledEngineProvider>
   );
