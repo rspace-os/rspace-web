@@ -33,7 +33,6 @@ import ProfileIcon from "@mui/icons-material/ManageAccounts";
 import PublicIcon from "@mui/icons-material/Public";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SystemIcon from "@mui/icons-material/SettingsInputComposite";
-import GroupsIcon from "@mui/icons-material/Groups2";
 import JwtService from "../../common/JwtService";
 import SidebarToggle from "./SidebarToggle";
 import Link from "@mui/material/Link";
@@ -365,18 +364,13 @@ function GalleryAppBar({
                 Inventory
               </Link>
             )}
-            <Link target="_self" aria-current={false} href="/userform">
-              My Profile
+            <Link
+              target="_self"
+              aria-current={false}
+              href={showMyLabGroups ? "/groups/viewPIGroup" : "/userform"}
+            >
+              My RSpace
             </Link>
-            {showMyLabGroups && (
-              <Link
-                target="_self"
-                aria-current={currentPage === "MyLabGroups" ? "page" : false}
-                href="/groups/viewPIGroup"
-              >
-                My LabGroups
-              </Link>
-            )}
             {showSystem && (
               <Link
                 target="_self"
@@ -501,9 +495,9 @@ function GalleryAppBar({
                 />
               )}
               <AccentMenuItem
-                title="My Profile"
+                title="My RSpace"
                 avatar={<ProfileIcon />}
-                subheader="Your profile details and preferences"
+                subheader="Your profile details, labgroups, and preferences"
                 foregroundColor={{
                   hue: 200,
                   saturation: 10,
@@ -515,31 +509,12 @@ function GalleryAppBar({
                   lightness: 70,
                 }}
                 onClick={() => {
-                  window.location = "/userform";
+                  window.location = showMyLabGroups
+                    ? "/groups/viewPIGroup"
+                    : "/userform";
                   setAccountMenuAnchorEl(null);
                 }}
               />
-              {showMyLabGroups && (
-                <AccentMenuItem
-                  title="My LabGroups"
-                  avatar={<GroupsIcon />}
-                  subheader="Administer your groups"
-                  foregroundColor={{
-                    hue: 200,
-                    saturation: 10,
-                    lightness: 20,
-                  }}
-                  backgroundColor={{
-                    hue: 200,
-                    saturation: 10,
-                    lightness: 70,
-                  }}
-                  onClick={() => {
-                    window.location = "/groups/viewPIGroup";
-                    handleAppMenuClose();
-                  }}
-                />
-              )}
               {showSystem && (
                 <AccentMenuItem
                   title="System"
