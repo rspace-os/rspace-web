@@ -129,20 +129,24 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     propertySetTest2.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test2");
     propertySetTest2.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
     integrationsHandler.saveAppOptions(null, propertySetTest2, "GITHUB", true, user);
-
-    Map<String, String> propertySetTest3 = new HashMap<>();
-    propertySetTest3.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user-2/test3");
-    propertySetTest3.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
-    integrationsHandler.saveAppOptions(null, propertySetTest3, "GITHUB", true, user);
   }
 
   @Test
-  public void testGetTreeRootFolderRealConnection() throws Exception {
+  public void testMockedGetTreeRootFolder() throws Exception {
     User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
     initUsers(user);
     logoutAndLoginAs(user);
 
     addExampleRepositories(user);
+
+    server
+        .expect(requestTo("https://api.github.com/repos/rspace-integration-test-user/test2"))
+        .andRespond(withSuccess("{ \"default_branch\":\"main\"}",
+            MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo("https://api.github.com/repos/rspace-integration-test-user/test1"))
+        .andRespond(withSuccess("{ \"default_branch\":\"master\"}",
+                MediaType.APPLICATION_JSON));
 
     MvcResult result =
         this.mockMvc
@@ -157,7 +161,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 
-    assertThat(nodes.size(), is(3));
+    assertThat(nodes.size(), is(2));
 
     // Initialize expected node 1
     TreeNode expectedNode1 = new TreeNode();
@@ -171,17 +175,10 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     expectedNode2.setPath("rspace-integration-test-user/test2");
     expectedNode2.setRepository("rspace-integration-test-user/test2");
     expectedNode2.setFullPath(null);
-    expectedNode2.setSha("master");
+    expectedNode2.setSha("main");
     expectedNode2.setType("tree");
-    // Initialize expected node 3
-    TreeNode expectedNode3 = new TreeNode();
-    expectedNode3.setPath("rspace-integration-test-user-2/test3");
-    expectedNode3.setRepository("rspace-integration-test-user-2/test3");
-    expectedNode3.setFullPath(null);
-    expectedNode3.setSha("master");
-    expectedNode3.setType("tree");
 
-    assertThat(nodes, hasItems(expectedNode1, expectedNode2, expectedNode3));
+    assertThat(nodes, hasItems(expectedNode1, expectedNode2));
   }
 
   @Test
