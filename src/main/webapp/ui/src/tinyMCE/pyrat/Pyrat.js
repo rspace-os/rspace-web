@@ -116,13 +116,6 @@ function PyratListing({ serverAlias }) {
     timeout: 15000,
   });
 
-  const pyratUrl = useDeploymentProperty("pyrat.url");
-  useEffect(() => {
-    FetchingData.getSuccessValue(pyratUrl).do((p) => {
-      PYRAT_URL = p;
-    });
-  }, [pyratUrl]);
-
   // Counter is increased when filtering is required.
   // Counter instead of boolean, as useEffect functions below that depend on
   // this hook should only execute once (boolean switch is two changes)
@@ -529,6 +522,12 @@ function Pyrat() {
   const [serverAlias, setServerAlias] = React.useState(null);
   const servers = useAuthenticatedServers();
 
+  FetchingData.getSuccessValue(servers).do((servers) => {
+    if (servers.length === 1) {
+      PYRAT_URL = servers[0].url;
+    }
+  });
+
   return FetchingData.match(servers, {
     loading: () => <CircularProgress />,
     error: (error) => <Typography color="error">{error.message}</Typography>,
@@ -546,7 +545,12 @@ function Pyrat() {
             {servers.map((server) => (
               <>
                 <ListItem disablePadding key={server.alias}>
-                  <ListItemButton onClick={() => setServerAlias(server.alias)}>
+                  <ListItemButton
+                    onClick={() => {
+                      setServerAlias(server.alias);
+                      PYRAT_URL = server.url;
+                    }}
+                  >
                     <ListItemText
                       primary={server.alias}
                       secondary={server.url}
