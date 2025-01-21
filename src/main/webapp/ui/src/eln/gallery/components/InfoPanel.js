@@ -680,6 +680,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const { openPdfPreview } = usePdfPreview();
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   return (
     <>
@@ -773,6 +774,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       <ActionButton
                         onClick={() => {
                           window.open(action.url);
+                          trackEvent("user:opens:document:collabora");
                         }}
                         label="Edit"
                         sx={{
@@ -789,6 +791,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       <ActionButton
                         onClick={() => {
                           window.open(action.url);
+                          trackEvent("user:opens:document:officeonline");
                         }}
                         label="Edit"
                         sx={{
