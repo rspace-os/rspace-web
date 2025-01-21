@@ -29,6 +29,9 @@ import Divider from "@mui/material/Divider";
 
 function useAuthenticatedServers() {
   const [servers, setServers] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+
   useEffect(() => {
     axios
       .get("/integration/integrationInfo", {
@@ -73,10 +76,15 @@ function useAuthenticatedServers() {
         );
       })
       .catch((error) => {
+        setError(error);
         console.error("Failed to fetch servers", error);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
-  return servers;
+
+  if (loading) return { tag: "loading" };
+  if (error) return { tag: "error", error };
+  return { tag: "success", value: servers };
 }
 
 const SUPPORTED_PYRAT_API_VERSION = 3;
@@ -521,45 +529,50 @@ function Pyrat() {
   const [serverAlias, setServerAlias] = React.useState(null);
   const servers = useAuthenticatedServers();
 
-  return (
+  return FetchingData.match(servers, {
+    loading: () => <CircularProgress />,
+    error: (error) => <Typography color="error">{error.message}</Typography>,
+    success: (servers) => {
+      if (servers.length === 1)
+        return <PyratListing serverAlias={servers[0].alias} />;
+      if (serverAlias) return <PyratListing serverAlias={serverAlias} />;
+      return (
+        <>
+          <Typography variant="body1" gutterBottom>
+            Pick one of your authenticated servers
+          </Typography>
+          <List>
+            <Divider />
+            {servers.map((server) => (
+              <>
+                <ListItem disablePadding key={server.alias}>
+                  <ListItemButton onClick={() => setServerAlias(server.alias)}>
+                    <ListItemText
+                      primary={server.alias}
+                      secondary={server.url}
+                    />
+                  </ListItemButton>
+                </ListItem>
+                <Divider />
+              </>
+            ))}
+          </List>
+        </>
+      );
+    },
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const domContainer = document.getElementById("tinymce-pyrat");
+  const root = createRoot(domContainer);
+  root.render(
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
-        {serverAlias ? (
-          <PyratListing serverAlias={serverAlias} />
-        ) : (
-          <>
-            <Typography variant="body1" gutterBottom>
-              Pick one of your authenticated servers
-            </Typography>
-            <List>
-              <Divider />
-              {servers.map((server) => (
-                <>
-                  <ListItem disablePadding key={server.alias}>
-                    <ListItemButton
-                      onClick={() => setServerAlias(server.alias)}
-                    >
-                      <ListItemText
-                        primary={server.alias}
-                        secondary={server.url}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                  <Divider />
-                </>
-              ))}
-            </List>
-          </>
-        )}
+        <Pyrat />
       </ThemeProvider>
     </StyledEngineProvider>
   );
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  const domContainer = document.getElementById("tinymce-pyrat");
-  const root = createRoot(domContainer);
-  root.render(<Pyrat />);
 });
 
 parent.tinymce.activeEditor.on("pyrat-insert", function () {
