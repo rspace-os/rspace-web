@@ -201,7 +201,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 paddingRight: `${baseTheme.spacing(1)} !important`,
                 color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
                 background: prefersMoreContrast
-                  ? "rgb(0,0,0)"
+                  ? "white"
                   : accentedBackground,
                 borderBottom: prefersMoreContrast ? accentedBorder : "none",
                 [`& .${svgIconClasses.root}`]: {
