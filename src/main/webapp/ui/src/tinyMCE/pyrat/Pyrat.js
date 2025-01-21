@@ -20,6 +20,12 @@ import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
 
 function useAuthenticatedServers() {
   const [servers, setServers] = React.useState([]);
@@ -522,14 +528,27 @@ function Pyrat() {
           <PyratListing serverAlias={serverAlias} />
         ) : (
           <>
-            {servers.map((server) => (
-              <button
-                key={server.alias}
-                onClick={() => setServerAlias(server.alias)}
-              >
-                {server.alias}
-              </button>
-            ))}
+            <Typography variant="body1" gutterBottom>
+              Pick one of your authenticated servers
+            </Typography>
+            <List>
+              <Divider />
+              {servers.map((server) => (
+                <>
+                  <ListItem disablePadding key={server.alias}>
+                    <ListItemButton
+                      onClick={() => setServerAlias(server.alias)}
+                    >
+                      <ListItemText
+                        primary={server.alias}
+                        secondary={server.url}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                  <Divider />
+                </>
+              ))}
+            </List>
           </>
         )}
       </ThemeProvider>
