@@ -42,7 +42,7 @@ let VISIBLE_HEADER_CELLS = [];
 let SELECTED_ANIMALS = [];
 let PYRAT_URL = null;
 
-function Pyrat() {
+function PyratListing({ serverAlias }) {
   const pyrat = axios.create({
     baseURL: "/apps/pyrat",
     timeout: 15000,
@@ -54,8 +54,6 @@ function Pyrat() {
       PYRAT_URL = p;
     });
   }, [pyratUrl]);
-
-  const [serverAlias, setServerAlias] = React.useState("mice server");
 
   // Counter is increased when filtering is required.
   // Counter instead of boolean, as useEffect functions below that depend on
@@ -395,72 +393,77 @@ function Pyrat() {
     return <ErrorView errorReason={errorReason} />;
   }
   return (
+    <Grid container spacing={1}>
+      <Grid
+        container
+        item
+        xs={12}
+        justifyContent="flex-start"
+        alignItems="center"
+      >
+        <FilterButton showFilter={showFilter} setShowFilter={setShowFilter} />
+        <ColumnVisibilitySettingsButton
+          showSettings={showSettings}
+          setShowSettings={setShowSettings}
+        />
+      </Grid>
+      {showFilter && (
+        <>
+          <Grid item xs={12}>
+            <Filter
+              filter={filter}
+              setFilter={setFilter}
+              filterMultiReq={filterMultiReq}
+              setFilterMultiReq={setFilterMultiReq}
+              filterSpecial={filterSpecial}
+              setFilterSpecial={setFilterSpecial}
+              filterCounter={filterCounter}
+              setFilterCounter={setFilterCounter}
+              onOptionsFilterChange={handleOptionsFilterChange}
+            />
+          </Grid>
+        </>
+      )}
+      {showSettings && (
+        <Grid item xs={12}>
+          <ColumnVisibilitySettings
+            visibleColumnIds={visibleColumnIds}
+            setVisibleColumnIds={setVisibleColumnIds}
+            allTableHeaderCells={TABLE_HEADER_CELLS}
+          />
+        </Grid>
+      )}
+      <Grid item xs={12}>
+        <ResultsTable
+          page={page}
+          onPageChange={handleChangePage}
+          visibleHeaderCells={VISIBLE_HEADER_CELLS}
+          animals={animals}
+          selectedAnimalIds={selectedAnimalIds}
+          setSelectedAnimalIds={setSelectedAnimalIds}
+          order={order}
+          orderBy={orderBy}
+          setOrder={setOrder}
+          setOrderBy={setOrderBy}
+          onRowsPerPageChange={handleRowsPerPageChange}
+          rowsPerPage={rowsPerPage}
+          count={count}
+        />
+      </Grid>
+      <Grid item xs={12} align="center">
+        {!fetchDone && <CircularProgress />}
+      </Grid>
+    </Grid>
+  );
+}
+
+function Pyrat() {
+  const [serverAlias, setServerAlias] = React.useState("mice server");
+
+  return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
-        <Grid container spacing={1}>
-          <Grid
-            container
-            item
-            xs={12}
-            justifyContent="flex-start"
-            alignItems="center"
-          >
-            <FilterButton
-              showFilter={showFilter}
-              setShowFilter={setShowFilter}
-            />
-            <ColumnVisibilitySettingsButton
-              showSettings={showSettings}
-              setShowSettings={setShowSettings}
-            />
-          </Grid>
-          {showFilter && (
-            <>
-              <Grid item xs={12}>
-                <Filter
-                  filter={filter}
-                  setFilter={setFilter}
-                  filterMultiReq={filterMultiReq}
-                  setFilterMultiReq={setFilterMultiReq}
-                  filterSpecial={filterSpecial}
-                  setFilterSpecial={setFilterSpecial}
-                  filterCounter={filterCounter}
-                  setFilterCounter={setFilterCounter}
-                  onOptionsFilterChange={handleOptionsFilterChange}
-                />
-              </Grid>
-            </>
-          )}
-          {showSettings && (
-            <Grid item xs={12}>
-              <ColumnVisibilitySettings
-                visibleColumnIds={visibleColumnIds}
-                setVisibleColumnIds={setVisibleColumnIds}
-                allTableHeaderCells={TABLE_HEADER_CELLS}
-              />
-            </Grid>
-          )}
-          <Grid item xs={12}>
-            <ResultsTable
-              page={page}
-              onPageChange={handleChangePage}
-              visibleHeaderCells={VISIBLE_HEADER_CELLS}
-              animals={animals}
-              selectedAnimalIds={selectedAnimalIds}
-              setSelectedAnimalIds={setSelectedAnimalIds}
-              order={order}
-              orderBy={orderBy}
-              setOrder={setOrder}
-              setOrderBy={setOrderBy}
-              onRowsPerPageChange={handleRowsPerPageChange}
-              rowsPerPage={rowsPerPage}
-              count={count}
-            />
-          </Grid>
-          <Grid item xs={12} align="center">
-            {!fetchDone && <CircularProgress />}
-          </Grid>
-        </Grid>
+        {serverAlias ? <PyratListing serverAlias={serverAlias} /> : null}
       </ThemeProvider>
     </StyledEngineProvider>
   );
