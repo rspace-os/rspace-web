@@ -62,7 +62,20 @@ const WholePage = styled(({ initialLocation, setSelectedSection }) => {
     sortOrder,
   });
   const { isViewportSmall } = useViewportDimensions();
-  const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
+
+  const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
+    useUiPreference<boolean>(PREFERENCES.GALLERY_SIDEBAR_OPEN, {
+      defaultValue: true,
+    });
+  const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] =
+    React.useState(false);
+  const drawerOpen = isViewportSmall
+    ? smallViewportSidebarOpenState
+    : largerViewportSidebarOpenState;
+  const setDrawerOpen = isViewportSmall
+    ? setSmallViewportSidebarOpenState
+    : setLargerViewportSidebarOpenState;
+
   const sidebarId = React.useId();
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
