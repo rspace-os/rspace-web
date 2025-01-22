@@ -150,6 +150,8 @@ const Picker = observer(
                     selectedSection={selectedSection}
                     setSelectedSection={(mediaType) => {
                       setSelectedSection(mediaType);
+                      setPath([]);
+                      setAppliedSearchTerm("");
                     }}
                     drawerOpen={drawerOpen}
                     setDrawerOpen={setDrawerOpen}
