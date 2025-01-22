@@ -1320,7 +1320,7 @@ export function useGalleryListing({
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - getGalleryFiles will not meaningfully change
      */
-  }, [searchTerm, path, sortOrder, orderBy]);
+  }, [searchTerm, path, sortOrder, orderBy, initialLocation]);
 
   /*
    * Whenever section changes, we want to clear the path so that navigating to

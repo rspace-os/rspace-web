@@ -10,7 +10,7 @@ import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
 import Box from "@mui/material/Box";
-import { useGalleryListing } from "./useGalleryListing";
+import { useGalleryListing, idToString } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
@@ -64,12 +64,24 @@ const WholePage = styled(({ initialLocation, setSelectedSection }) => {
   const { isViewportSmall } = useViewportDimensions();
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
   const sidebarId = React.useId();
+  const { useNavigate } = React.useContext(NavigateContext);
+  const navigate = useNavigate();
 
   return (
     <CallableImagePreview>
       <CallablePdfPreview>
         <CallableAsposePreview>
-          <OpenFolderProvider setPath={setPath}>
+          <OpenFolderProvider
+            setPath={(newPath) => {
+              if (newPath.length > 0) {
+                navigate(
+                  `/newGallery/${idToString(newPath[newPath.length - 1].id)}`
+                );
+              } else {
+                navigate(`/newGallery/?mediaType=${selectedSection}`);
+              }
+            }}
+          >
             <AppBar
               setDrawerOpen={setDrawerOpen}
               drawerOpen={drawerOpen}

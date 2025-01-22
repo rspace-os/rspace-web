@@ -104,9 +104,13 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     foldersOnly,
     refeshing,
   }: TreeItemContentArgs): Node => {
+    const initialLocation = React.useMemo(
+      () => ({ tag: "section", section }),
+      [section]
+    );
     const { galleryListing, refreshListing: refreshingThisListing } =
       useGalleryListing({
-        initialLocation: { tag: "section", section },
+        initialLocation,
         searchTerm: "",
         path: [...path, file],
         orderBy,

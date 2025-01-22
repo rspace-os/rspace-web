@@ -39,8 +39,12 @@ mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
 describe("Carousel", () => {
   test("Should show an indicator of progress through listing.", async () => {
     function Wrapper() {
+      const initialLocation = React.useMemo(
+        () => ({ tag: "section", section: "Images" }),
+        []
+      );
       const { galleryListing } = useGalleryListing({
-        initialLocation: { tag: "section", section: "Images" },
+        initialLocation,
         searchTerm: "",
         sortOrder: "DESC",
         orderBy: "modificationDate",
@@ -73,8 +77,12 @@ describe("Carousel", () => {
 
   test("Moving to a different file resets the zoom level", async () => {
     function Wrapper() {
+      const initialLocation = React.useMemo(
+        () => ({ tag: "section", section: "Images" }),
+        []
+      );
       const { galleryListing } = useGalleryListing({
-        initialLocation: { tag: "section", section: "Images" },
+        initialLocation,
         searchTerm: "",
         sortOrder: "DESC",
         orderBy: "modificationDate",
