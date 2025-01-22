@@ -28,7 +28,7 @@ mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
 
 function WrapperComponent() {
   const { galleryListing, refreshListing } = useGalleryListing({
-    section: "Images",
+    initialLocation: { tag: "section", section: "Images" },
     searchTerm: "",
     sortOrder: "DESC",
     orderBy: "modificationDate",

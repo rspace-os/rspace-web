@@ -758,7 +758,7 @@ class RemoteFile implements GalleryFile {
  * Hook that gets a listing of Gallery files, for displaying in the UI.
  */
 export function useGalleryListing({
-  section,
+  initialLocation,
   searchTerm,
   path: defaultPath,
   sortOrder,
@@ -766,6 +766,7 @@ export function useGalleryListing({
   foldersOnly,
 }: {|
   /**
+   * TODO
    * The Gallery is divided up into a several sections based on the type of the
    * files contained within. All of them behave the same with the exception of
    * NetworkFiles, which is the section that allows for viewing files stored on
@@ -775,7 +776,9 @@ export function useGalleryListing({
    * calls will be made to the several endpoints under `/filestores`. This
    * means that some of the other parameters below will at times be ignored.
    */
-  section: GallerySection,
+  initialLocation:
+    | {| tag: "section", section: GallerySection |}
+    | {| tag: "folder", folderId: Id |},
 
   /**
    * This is the series of folders that defines the initial point at which the
@@ -822,6 +825,7 @@ export function useGalleryListing({
   path: $ReadOnlyArray<GalleryFile>,
   setPath: ($ReadOnlyArray<GalleryFile>) => void,
   folderId: FetchingData.Fetched<Id>,
+  selectedSection: GallerySection,
 |} {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -830,6 +834,18 @@ export function useGalleryListing({
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
   >([]);
+
+  const [section, setSection] = React.useState<GallerySection>(
+    initialLocation.tag === "section" ? initialLocation.section : "Images"
+  );
+  React.useEffect(() => {
+    if (initialLocation.tag === "section") {
+      setSection(initialLocation.section);
+    }
+    // TODO: get from network call if not provided in initialLocation
+  }, [initialLocation]);
+  // TODO: get from network call if not provided in initialLocation
+
   const [page, setPage] = React.useState<number>(0);
   const [totalPages, setTotalPages] = React.useState<number>(0);
   const [totalHits, setTotalHits] = React.useState<number>(0);
@@ -1327,6 +1343,7 @@ export function useGalleryListing({
       setPath: () => {},
       folderId: { tag: "loading" },
       refreshListing: () => Promise.resolve(),
+      selectedSection: section,
     };
 
   return {
@@ -1456,5 +1473,6 @@ export function useGalleryListing({
         setRefreshing(false);
       }
     },
+    selectedSection: section,
   };
 }

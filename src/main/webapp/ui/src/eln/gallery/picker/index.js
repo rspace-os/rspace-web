@@ -110,7 +110,7 @@ const Picker = observer(
     );
     const { galleryListing, path, setPath, folderId, refreshListing } =
       useGalleryListing({
-        section: selectedSection,
+        initialLocation: { tag: "section", section: selectedSection },
         searchTerm: appliedSearchTerm,
         path: [],
         orderBy,

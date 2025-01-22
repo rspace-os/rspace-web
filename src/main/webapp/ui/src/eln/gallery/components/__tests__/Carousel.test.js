@@ -40,7 +40,7 @@ describe("Carousel", () => {
   test("Should show an indicator of progress through listing.", async () => {
     function Wrapper() {
       const { galleryListing } = useGalleryListing({
-        section: "Images",
+        initialLocation: { tag: "section", section: "Images" },
         searchTerm: "",
         sortOrder: "DESC",
         orderBy: "modificationDate",
@@ -74,7 +74,7 @@ describe("Carousel", () => {
   test("Moving to a different file resets the zoom level", async () => {
     function Wrapper() {
       const { galleryListing } = useGalleryListing({
-        section: "Images",
+        initialLocation: { tag: "section", section: "Images" },
         searchTerm: "",
         sortOrder: "DESC",
         orderBy: "modificationDate",

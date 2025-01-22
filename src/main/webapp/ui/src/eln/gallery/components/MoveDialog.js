@@ -54,7 +54,7 @@ const MoveDialog = observer(
 
     const { galleryListing, refreshListing: refreshListingInsideDialog } =
       useGalleryListing({
-        section,
+        initialLocation: { tag: "section", section },
         searchTerm: "",
         path: [],
         orderBy: "name",

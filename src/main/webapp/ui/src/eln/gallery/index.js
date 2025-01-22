@@ -19,12 +19,13 @@ import { DisableDragAndDropByDefault } from "../../components/useFileImportDragA
 import Analytics from "../../components/Analytics";
 import { GallerySelection } from "./useGallerySelection";
 import { BrowserRouter, Navigate } from "react-router-dom";
-import { Routes, Route } from "react-router";
+import { Routes, Route, useParams } from "react-router";
 import useUiPreference, {
   PREFERENCES,
   UiPreferences,
 } from "../../util/useUiPreference";
 import RouterNavigationProvider from "./components/RouterNavigationProvider";
+import NavigateContext from "../../stores/contexts/Navigate";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
@@ -32,12 +33,7 @@ import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
 
-const WholePage = styled(() => {
-  const [searchParams, setSelectedSection] = useSearchParamState({
-    mediaType: GALLERY_SECTION.IMAGES,
-  });
-  const selectedSection = searchParams.mediaType;
-
+const WholePage = styled(({ initialLocation, setSelectedSection }) => {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
     PREFERENCES.GALLERY_SORT_BY,
@@ -51,14 +47,20 @@ const WholePage = styled(() => {
       defaultValue: "DESC",
     }
   );
-  const { galleryListing, path, setPath, folderId, refreshListing } =
-    useGalleryListing({
-      section: selectedSection,
-      searchTerm: appliedSearchTerm,
-      path: [],
-      orderBy,
-      sortOrder,
-    });
+  const {
+    galleryListing,
+    path,
+    setPath,
+    folderId,
+    refreshListing,
+    selectedSection,
+  } = useGalleryListing({
+    initialLocation,
+    searchTerm: appliedSearchTerm,
+    path: [],
+    orderBy,
+    sortOrder,
+  });
   const { isViewportSmall } = useViewportDimensions();
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
   const sidebarId = React.useId();
@@ -135,6 +137,44 @@ const WholePage = styled(() => {
   },
 }));
 
+/**
+ * This component is responsible for rendering the gallery when no folder is
+ * specified in the URL. When a `mediaType` (i.e. gallery section) is specified
+ * then the gallery will show that section. If no section is specified, then the
+ * gallery will show the images section.
+ */
+function LandingPage() {
+  const [searchParams, setSelectedSection] = useSearchParamState({
+    mediaType: GALLERY_SECTION.IMAGES,
+  });
+  const selectedSection = searchParams.mediaType;
+  return (
+    <WholePage
+      initialLocation={{ tag: "section", section: selectedSection }}
+      setSelectedSection={setSelectedSection}
+    />
+  );
+}
+
+/**
+ * This component is responsible for rendering the gallery when a folder is
+ * specified by id in the URL.
+ */
+function GalleryFolder() {
+  const { folderId } = useParams();
+  const { useNavigate } = React.useContext(NavigateContext);
+  const navigate = useNavigate();
+
+  return (
+    <WholePage
+      initialLocation={{ tag: "folder", folderId }}
+      setSelectedSection={({ mediaType }) => {
+        navigate(`/newGallery/?mediaType=${mediaType}`);
+      }}
+    />
+  );
+}
+
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
   if (domContainer) {
@@ -159,7 +199,21 @@ window.addEventListener("load", () => {
                               <RouterNavigationProvider>
                                 <GallerySelection>
                                   <FilestoreLoginProvider>
-                                    <WholePage />
+                                    <LandingPage />
+                                  </FilestoreLoginProvider>
+                                </GallerySelection>
+                              </RouterNavigationProvider>
+                            </Alerts>
+                          }
+                        />
+                        <Route
+                          path="newGallery/:folderId"
+                          element={
+                            <Alerts>
+                              <RouterNavigationProvider>
+                                <GallerySelection>
+                                  <FilestoreLoginProvider>
+                                    <GalleryFolder />
                                   </FilestoreLoginProvider>
                                 </GallerySelection>
                               </RouterNavigationProvider>

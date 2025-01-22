@@ -106,7 +106,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
   }: TreeItemContentArgs): Node => {
     const { galleryListing, refreshListing: refreshingThisListing } =
       useGalleryListing({
-        section,
+        initialLocation: { tag: "section", section },
         searchTerm: "",
         path: [...path, file],
         orderBy,
