@@ -108,9 +108,13 @@ const Picker = observer(
        */
       viewport.isViewportLarge
     );
+    const initialLocation = React.useMemo(
+      () => ({ tag: "section", section: selectedSection }),
+      [selectedSection]
+    );
     const { galleryListing, path, setPath, folderId, refreshListing } =
       useGalleryListing({
-        initialLocation: { tag: "section", section: selectedSection },
+        initialLocation,
         searchTerm: appliedSearchTerm,
         path: [],
         orderBy,
