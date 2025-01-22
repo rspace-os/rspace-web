@@ -1237,11 +1237,18 @@ export function useGalleryListing({
     setLoading(true);
     try {
       const token = await getToken();
+
+      let currentFolderId = "0";
+      if (path.length > 0) {
+        currentFolderId = `${path[path.length - 1].id}`;
+      } else if (initialLocation.tag === "folder") {
+        currentFolderId = `${initialLocation.folderId}`;
+      }
+
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: section,
-          currentFolderId:
-            path.length > 0 ? `${path[path.length - 1].id}` : "0",
+          currentFolderId,
           name: searchTerm,
           pageNumber: "0",
           sortOrder,
