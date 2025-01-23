@@ -68,6 +68,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertTrue(createdNb.isNotebook());
     assertEquals(folderMgr.getRootFolderForUser(anyUser).getId(), createdNb.getParentFolderId());
     assertNotNull(createdNb.getId());
+    assertNull(createdNb.getMediaType());
 
     // now get the notebook using a getter:
     result =
@@ -125,6 +126,19 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result = this.mockMvc.perform(folderCreate(anyUser, apiKey, folderPost)).andReturn();
     ApiFolder created = getFromJsonResponseBody(result, ApiFolder.class);
     assertFalse(created.isNotebook());
+    assertEquals("Documents", created.getMediaType());
+    assertNull(created.getPathToRootFolder());
+
+    // retrieve created folder, with parents up to media gallery root folder
+    MockHttpServletRequestBuilder getFolderWithParentRequest =
+        createBuilderForGet(API_VERSION.ONE, apiKey, "/folders/{id}", anyUser, created.getId())
+            .param("includePathToRootFolder", "true");
+    result = this.mockMvc.perform(getFolderWithParentRequest).andReturn();
+    ApiFolder retrieved = getFromJsonResponseBody(result, ApiFolder.class);
+    assertFalse(retrieved.isNotebook());
+    assertEquals("Documents", retrieved.getMediaType());
+    assertNotNull(retrieved.getPathToRootFolder());
+    assertEquals(2, retrieved.getPathToRootFolder().size());
 
     // can't create notebook in Gallery
     folderPost.setNotebook(true);
