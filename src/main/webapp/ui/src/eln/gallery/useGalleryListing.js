@@ -832,6 +832,7 @@ export function useGalleryListing({
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(true);
+  const [errorState, setErrorState] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [galleryListing, setGalleryListing] = React.useState<
     $ReadOnlyArray<GalleryFile>
@@ -861,6 +862,7 @@ export function useGalleryListing({
   const { login } = useFilestoreLogin();
 
   function emptyReason(): string {
+    if (errorState) return "Error loading files.";
     if (path.length > 0) {
       const folderName = path[path.length - 1].name;
       if (searchTerm !== "")
@@ -1094,6 +1096,14 @@ export function useGalleryListing({
 
       setTotalPages(1);
     } catch (e) {
+      setErrorState(true);
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error retrieving filestores.",
+          message: "Please try refreshing.",
+        })
+      );
       console.error(e);
     } finally {
       setLoading(false);
@@ -1215,11 +1225,17 @@ export function useGalleryListing({
         ) {
           await getRemoteFiles();
         } else {
-          ArrayUtils.dropLast(path).do((newPath) => {
-            setPath(newPath);
-          });
+          setErrorState(true);
         }
       } else {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error retrieving remote files.",
+            message: e.message,
+          })
+        );
+        setErrorState(true);
         throw e;
       }
     } finally {
@@ -1228,6 +1244,7 @@ export function useGalleryListing({
   }
 
   async function getGalleryFiles(): Promise<void> {
+    setErrorState(false);
     if (section === "NetworkFiles" && path.length === 0) {
       return getFilestores();
     }
@@ -1286,6 +1303,14 @@ export function useGalleryListing({
       clearAndSetGalleryListing(parseGalleryFiles(data, token));
     } catch (e) {
       console.error(e);
+      setErrorState(true);
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error retrieving gallery files.",
+          message: e.message,
+        })
+      );
     } finally {
       setLoading(false);
     }
