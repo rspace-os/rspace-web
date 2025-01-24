@@ -485,7 +485,7 @@ const DrawerTab = styled(
 }));
 
 type SidebarArgs = {|
-  selectedSection: GallerySection,
+  selectedSection: GallerySection | null,
   setSelectedSection: (GallerySection) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,

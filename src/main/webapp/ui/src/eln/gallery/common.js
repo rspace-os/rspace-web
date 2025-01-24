@@ -52,7 +52,17 @@ export const GALLERY_SECTION = {
  * is NetworkFiles, which is the section that allows for viewing files stored
  * on external filesystems.
  */
-export type GallerySection = $Values<typeof GALLERY_SECTION>;
+export type GallerySection =
+  | "Images"
+  | "Audios"
+  | "Videos"
+  | "Documents"
+  | "Chemistry"
+  | "DMPs"
+  | "NetworkFiles"
+  | "Snippets"
+  | "Miscellaneous"
+  | "PdfDocuments";
 
 /**
  * Given a URLSearchParams, get the gallery section as referred to by the

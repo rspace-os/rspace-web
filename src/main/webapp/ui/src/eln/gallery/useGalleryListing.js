@@ -813,7 +813,7 @@ export function useGalleryListing({
   refreshListing: () => Promise<void>,
   path: $ReadOnlyArray<GalleryFile>,
   folderId: FetchingData.Fetched<Id>,
-  selectedSection: GallerySection,
+  selectedSection: FetchingData.Fetched<GallerySection>,
 |} {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -1330,7 +1330,7 @@ export function useGalleryListing({
       path,
       folderId: { tag: "loading" },
       refreshListing: () => Promise.resolve(),
-      selectedSection: section,
+      selectedSection: { tag: "loading" },
     };
 
   return {
@@ -1459,6 +1459,6 @@ export function useGalleryListing({
         setRefreshing(false);
       }
     },
-    selectedSection: section,
+    selectedSection: { tag: "success", value: section },
   };
 }

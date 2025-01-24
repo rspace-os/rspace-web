@@ -5,7 +5,12 @@ import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { ThemeProvider, styled, lighten } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
-import { COLOR, SELECTED_OR_FOCUS_BLUE, GALLERY_SECTION } from "./common";
+import {
+  COLOR,
+  SELECTED_OR_FOCUS_BLUE,
+  GALLERY_SECTION,
+  type GallerySection,
+} from "./common";
 import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
@@ -14,6 +19,7 @@ import {
   useGalleryListing,
   idToString,
   type GalleryFile,
+  type Id,
 } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -36,116 +42,145 @@ import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
+import * as FetchingData from "../../util/fetchingData";
+import { useDeploymentProperty } from "../useDeploymentProperty";
+import PlaceholderLabel from "./components/PlaceholderLabel";
 
-const WholePage = styled(({ listingOf, setSelectedSection, setPath }) => {
-  const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
-  const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
-    PREFERENCES.GALLERY_SORT_BY,
-    {
-      defaultValue: "modificationDate",
-    }
-  );
-  const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(
-    PREFERENCES.GALLERY_SORT_ORDER,
-    {
-      defaultValue: "DESC",
-    }
-  );
-  const { galleryListing, folderId, path, refreshListing, selectedSection } =
-    useGalleryListing({
-      listingOf,
-      searchTerm: appliedSearchTerm,
-      orderBy,
-      sortOrder,
-    });
-  const { isViewportSmall } = useViewportDimensions();
+const WholePage = styled(
+  ({
+    listingOf,
+    setSelectedSection,
+    setPath,
+  }: {|
+    listingOf:
+      | {|
+          tag: "section",
+          section: GallerySection,
+          path: $ReadOnlyArray<GalleryFile>,
+        |}
+      | {| tag: "folder", folderId: Id |},
+    setSelectedSection: ({| mediaType: GallerySection |}) => void,
+    setPath: ($ReadOnlyArray<GalleryFile>) => void,
+  |}) => {
+    const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
+    const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
+      PREFERENCES.GALLERY_SORT_BY,
+      {
+        defaultValue: "modificationDate",
+      }
+    );
+    const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(
+      PREFERENCES.GALLERY_SORT_ORDER,
+      {
+        defaultValue: "DESC",
+      }
+    );
+    const { galleryListing, folderId, path, refreshListing, selectedSection } =
+      useGalleryListing({
+        listingOf,
+        searchTerm: appliedSearchTerm,
+        orderBy,
+        sortOrder,
+      });
+    const { isViewportSmall } = useViewportDimensions();
 
-  const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
-    useUiPreference<boolean>(PREFERENCES.GALLERY_SIDEBAR_OPEN, {
-      defaultValue: true,
-    });
-  const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] =
-    React.useState(false);
-  const drawerOpen = isViewportSmall
-    ? smallViewportSidebarOpenState
-    : largerViewportSidebarOpenState;
-  const setDrawerOpen = isViewportSmall
-    ? setSmallViewportSidebarOpenState
-    : setLargerViewportSidebarOpenState;
+    const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
+      useUiPreference<boolean>(PREFERENCES.GALLERY_SIDEBAR_OPEN, {
+        defaultValue: true,
+      });
+    const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] =
+      React.useState(false);
+    const drawerOpen = isViewportSmall
+      ? smallViewportSidebarOpenState
+      : largerViewportSidebarOpenState;
+    const setDrawerOpen = isViewportSmall
+      ? setSmallViewportSidebarOpenState
+      : setLargerViewportSidebarOpenState;
 
-  const sidebarId = React.useId();
-  const { useNavigate } = React.useContext(NavigateContext);
-  const navigate = useNavigate();
+    const sidebarId = React.useId();
+    const { useNavigate } = React.useContext(NavigateContext);
+    const navigate = useNavigate();
 
-  return (
-    <CallableImagePreview>
-      <CallablePdfPreview>
-        <CallableAsposePreview>
-          <OpenFolderProvider
-            setPath={(newPath) => {
-              if (newPath.length > 0) {
-                navigate(
-                  `/newGallery/${idToString(newPath[newPath.length - 1].id)}`
-                );
-              } else {
-                navigate(`/newGallery/?mediaType=${selectedSection}`);
-              }
-            }}
-          >
-            <AppBar
-              setDrawerOpen={setDrawerOpen}
-              drawerOpen={drawerOpen}
-              sidebarId={sidebarId}
-            />
-            <Box
-              sx={{ display: "flex", height: "calc(100% - 48px)" }}
-              component="main"
+    return (
+      <CallableImagePreview>
+        <CallablePdfPreview>
+          <CallableAsposePreview>
+            <OpenFolderProvider
+              setPath={(newPath) => {
+                if (newPath.length > 0) {
+                  navigate(
+                    `/newGallery/${idToString(newPath[newPath.length - 1].id)}`
+                  );
+                } else {
+                  try {
+                    const section =
+                      FetchingData.getSuccessValue(selectedSection).elseThrow();
+                    navigate(`/newGallery/?mediaType=${section}`);
+                  } catch {
+                    // do nothing
+                  }
+                }
+              }}
             >
-              <Sidebar
-                selectedSection={selectedSection}
-                setSelectedSection={(mediaType) => {
-                  setSelectedSection({ mediaType });
-                  setPath([]);
-                  setAppliedSearchTerm("");
-                }}
-                drawerOpen={drawerOpen}
+              <AppBar
                 setDrawerOpen={setDrawerOpen}
-                folderId={folderId}
-                refreshListing={refreshListing}
-                id={sidebarId}
+                drawerOpen={drawerOpen}
+                sidebarId={sidebarId}
               />
               <Box
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  flexGrow: 1,
-                  minWidth: 0,
-                }}
+                sx={{ display: "flex", height: "calc(100% - 48px)" }}
+                component="main"
               >
-                <MainPanel
-                  selectedSection={selectedSection}
-                  path={path}
-                  clearPath={() => setPath([])}
-                  galleryListing={galleryListing}
+                <Sidebar
+                  selectedSection={FetchingData.getSuccessValue(
+                    selectedSection
+                  ).orElse(null)}
+                  setSelectedSection={(mediaType) => {
+                    setSelectedSection({ mediaType });
+                    setPath([]);
+                    setAppliedSearchTerm("");
+                  }}
+                  drawerOpen={drawerOpen}
+                  setDrawerOpen={setDrawerOpen}
                   folderId={folderId}
                   refreshListing={refreshListing}
-                  key={null}
-                  sortOrder={sortOrder}
-                  orderBy={orderBy}
-                  setSortOrder={setSortOrder}
-                  setOrderBy={setOrderBy}
-                  appliedSearchTerm={appliedSearchTerm}
-                  setAppliedSearchTerm={setAppliedSearchTerm}
+                  id={sidebarId}
                 />
+                <Box
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    flexGrow: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <MainPanel
+                    selectedSection={FetchingData.getSuccessValue(
+                      selectedSection
+                    ).orElse(null)}
+                    path={path}
+                    clearPath={() => setPath([])}
+                    galleryListing={galleryListing}
+                    folderId={folderId}
+                    refreshListing={refreshListing}
+                    key={null}
+                    sortOrder={sortOrder}
+                    orderBy={orderBy}
+                    setSortOrder={setSortOrder}
+                    setOrderBy={setOrderBy}
+                    appliedSearchTerm={appliedSearchTerm}
+                    setAppliedSearchTerm={setAppliedSearchTerm}
+                  />
+                </Box>
               </Box>
-            </Box>
-          </OpenFolderProvider>
-        </CallableAsposePreview>
-      </CallablePdfPreview>
-    </CallableImagePreview>
-  );
-})(() => ({
+            </OpenFolderProvider>
+          </CallableAsposePreview>
+        </CallablePdfPreview>
+      </CallableImagePreview>
+    );
+  }
+)(() => ({
   "@keyframes drop": {
     "0%": {
       borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
@@ -171,13 +206,40 @@ function LandingPage() {
   });
   const selectedSection = searchParams.mediaType;
   const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
-  return (
-    <WholePage
-      listingOf={{ tag: "section", section: selectedSection, path }}
-      setSelectedSection={setSelectedSection}
-      setPath={setPath}
-    />
-  );
+  const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
+  return FetchingData.match(filestoresEnabled, {
+    loading: () => null,
+    error: () => (
+      <PlaceholderLabel>
+        Erorr checking if filestores are enabled.
+      </PlaceholderLabel>
+    ),
+    success: (fsEnabled) => {
+      const validGallerySections = new Set([
+        "Images",
+        "Audios",
+        "Videos",
+        "Documents",
+        "Chemistry",
+        "DMPs",
+        "Snippets",
+        "Miscellaneous",
+        ...(fsEnabled === true ? ["NetworkFiles"] : []),
+        "PdfDocuments",
+      ]);
+      if (!validGallerySections.has(selectedSection))
+        return (
+          <PlaceholderLabel>Not a valid Gallery section.</PlaceholderLabel>
+        );
+      return (
+        <WholePage
+          listingOf={{ tag: "section", section: selectedSection, path }}
+          setSelectedSection={setSelectedSection}
+          setPath={setPath}
+        />
+      );
+    },
+  });
 }
 
 /**
