@@ -943,7 +943,11 @@ export function useGalleryListing({
     setGalleryListing(list);
   }
 
-  function parseGalleryFiles(data: mixed, token: string) {
+  function parseGalleryFiles(
+    data: mixed,
+    token: string,
+    p: $ReadOnlyArray<GalleryFile>
+  ) {
     return Parsers.objectPath(["data", "items", "results"], data)
       .flatMap(Parsers.isArray)
       .map((array) => {
@@ -1040,7 +1044,7 @@ export function useGalleryListing({
                       description,
                       type,
                       ownerName,
-                      path: FetchingData.getSuccessValue(path).elseThrow(),
+                      path: p,
                       gallerySection:
                         FetchingData.getSuccessValue(section).elseThrow(),
                       size,
@@ -1164,18 +1168,18 @@ export function useGalleryListing({
     }
   }
 
-  async function getRemoteFiles(): Promise<void> {
+  async function getRemoteFiles(
+    pa: $ReadOnlyArray<GalleryFile>
+  ): Promise<void> {
     selection.clear();
     clearAndSetGalleryListing([]);
     setLoading(true);
-    const filestore = FetchingData.getSuccessValue(path)
-      .flatMap((p) =>
-        ArrayUtils.getAt(0, p).toResult(
-          () =>
-            new Error(
-              "Remote files path should never be empty. Where is the filestore?"
-            )
-        )
+    const filestore = ArrayUtils.getAt(0, pa)
+      .toResult(
+        () =>
+          new Error(
+            "Remote files path should never be empty. Where is the filestore?"
+          )
       )
       .flatMap((p) =>
         p instanceof Filestore
@@ -1189,10 +1193,9 @@ export function useGalleryListing({
       const { data } = await (
         await api
       ).get<mixed>(
-        `gallery/filestores/${
-          filestore.id
-        }/browse?remotePath=${FetchingData.getSuccessValue(path)
-          .flatMap((p) => ArrayUtils.last(p))
+        `gallery/filestores/${filestore.id}/browse?remotePath=${ArrayUtils.last(
+          pa
+        )
           .map((file) => file.pathAsString())
           .orElse("/")}`
       );
@@ -1241,7 +1244,7 @@ export function useGalleryListing({
                         folder,
                         fileSize,
                         modificationDate,
-                        path: FetchingData.getSuccessValue(path).elseThrow(),
+                        path: pa,
                         remotePath,
                         token,
                       })
@@ -1278,7 +1281,7 @@ export function useGalleryListing({
             filesystemId: filestore.filesystemId,
           })
         ) {
-          await getRemoteFiles();
+          await getRemoteFiles(pa);
         } else {
           setErrorState(true);
         }
@@ -1298,15 +1301,16 @@ export function useGalleryListing({
     }
   }
 
-  async function getGalleryFiles(): Promise<void> {
+  async function getGalleryFiles(
+    p: $ReadOnlyArray<GalleryFile>,
+    s: GallerySection
+  ): Promise<void> {
     setErrorState(false);
-    const p = FetchingData.getSuccessValue(path).elseThrow();
-    const s = FetchingData.getSuccessValue(section).elseThrow();
     if (s === "NetworkFiles" && p.length === 0) {
       return getFilestores();
     }
     if (s === "NetworkFiles") {
-      return getRemoteFiles();
+      return getRemoteFiles(p);
     }
     selection.clear();
     clearAndSetGalleryListing([]);
@@ -1357,7 +1361,7 @@ export function useGalleryListing({
           .orElse(1)
       );
 
-      clearAndSetGalleryListing(parseGalleryFiles(data, token));
+      clearAndSetGalleryListing(parseGalleryFiles(data, token, p));
     } catch (e) {
       console.error(e);
       setErrorState(true);
@@ -1392,23 +1396,24 @@ export function useGalleryListing({
         }),
       });
 
-      setGalleryListing([...galleryListing, ...parseGalleryFiles(data, token)]);
+      setGalleryListing([
+        ...galleryListing,
+        ...parseGalleryFiles(data, token, p),
+      ]);
     } catch (e) {
       console.error(e);
     }
   }
 
   React.useEffect(() => {
-    /*
-     * wait for the path to be known before fetching files, which need to know
-     * the path
-     */
-    if (listingOf.tag === "folder" && directFolderPath.tag === "loading")
-      return;
-
-    setPage(0);
-    setTotalPages(0);
-    void getGalleryFiles();
+    Result.lift2<$ReadOnlyArray<GalleryFile>, GallerySection, void>((p, s) => {
+      setPage(0);
+      setTotalPages(0);
+      void getGalleryFiles(p, s);
+    })(
+      FetchingData.getSuccessValue(path),
+      FetchingData.getSuccessValue(section)
+    );
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - getGalleryFiles will not meaningfully change
      */
@@ -1503,7 +1508,7 @@ export function useGalleryListing({
                    */
                   setPage(Math.min(page, newTotalPages - 1));
 
-                  return parseGalleryFiles(data, token);
+                  return parseGalleryFiles(data, token, pa);
                 })
             )
           )
