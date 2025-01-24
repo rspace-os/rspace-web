@@ -234,7 +234,7 @@ const BreadcrumbLink = React.forwardRef<
     {
       folder,
       section,
-      clearPath,
+      setSelectedSection,
       tabIndex,
       sx,
     }: {|
@@ -242,8 +242,8 @@ const BreadcrumbLink = React.forwardRef<
        * Undefined means that it is a link to the root of the section
        */
       folder?: GalleryFile,
-      section: string,
-      clearPath: () => void,
+      section: GallerySection,
+      setSelectedSection: (GallerySection) => void,
       tabIndex: number,
       sx: mixed,
     |},
@@ -278,7 +278,7 @@ const BreadcrumbLink = React.forwardRef<
           if (folder) {
             openFolder(folder);
           } else {
-            clearPath();
+            setSelectedSection(section);
           }
         }}
         ref={(node) => {
@@ -314,11 +314,11 @@ BreadcrumbLink.displayName = "BreadcrumbLink";
 const Path = ({
   section,
   path,
-  clearPath,
+  setSelectedSection,
 }: {|
-  section: string,
+  section: GallerySection,
   path: $ReadOnlyArray<GalleryFile>,
-  clearPath: () => void,
+  setSelectedSection: (GallerySection) => void,
 |}) => {
   const {
     eventHandlers: { onFocus, onBlur, onKeyDown },
@@ -334,7 +334,7 @@ const Path = ({
     <StyledBreadcrumbs onFocus={onFocus} onBlur={onBlur} onKeyDown={onKeyDown}>
       <BreadcrumbLink
         section={section}
-        clearPath={clearPath}
+        setSelectedSection={setSelectedSection}
         sx={{
           pl: 1,
         }}
@@ -350,7 +350,7 @@ const Path = ({
             key={idToString(f.id)}
             folder={f}
             section={section}
-            clearPath={clearPath}
+            setSelectedSection={setSelectedSection}
             ref={getRef(i + 1)}
             tabIndex={getTabIndex(i + 1)}
           />
@@ -1136,13 +1136,13 @@ const PathAndSearch = observer(
     setAppliedSearchTerm,
     selectedSection,
     path,
-    clearPath,
+    setSelectedSection,
   }: {|
     appliedSearchTerm: string,
     setAppliedSearchTerm: (string) => void,
     selectedSection: GallerySection | null,
     path: $ReadOnlyArray<GalleryFile> | null,
-    clearPath: () => void,
+    setSelectedSection: (GallerySection) => void,
   |}) => {
     const { isViewportVerySmall } = useViewportDimensions();
 
@@ -1175,7 +1175,11 @@ const PathAndSearch = observer(
       >
         <Grid item sx={{ flexGrow: 1, minWidth: 0 }}>
           {path !== null && (
-            <Path section={selectedSection} path={path} clearPath={clearPath} />
+            <Path
+              section={selectedSection}
+              path={path}
+              setSelectedSection={setSelectedSection}
+            />
           )}
         </Grid>
         {isViewportVerySmall && !searchOpen && (
@@ -1246,7 +1250,7 @@ const PathAndSearch = observer(
 type GalleryMainPanelArgs = {|
   selectedSection: GallerySection | null,
   path: $ReadOnlyArray<GalleryFile> | null,
-  clearPath: () => void,
+  setSelectedSection: (GallerySection) => void,
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string, refreshing: boolean |}
     | {|
@@ -1270,7 +1274,7 @@ type GalleryMainPanelArgs = {|
 function GalleryMainPanel({
   selectedSection,
   path,
-  clearPath,
+  setSelectedSection,
   galleryListing,
   folderId,
   refreshListing,
@@ -1383,7 +1387,7 @@ function GalleryMainPanel({
               setAppliedSearchTerm={setAppliedSearchTerm}
               selectedSection={selectedSection}
               path={path}
-              clearPath={clearPath}
+              setSelectedSection={setSelectedSection}
             />
           </Grid>
           <Grid item sx={{ maxWidth: "100% !important" }}>

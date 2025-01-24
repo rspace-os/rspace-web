@@ -160,7 +160,11 @@ const WholePage = styled(
                       selectedSection
                     ).orElse(null)}
                     path={FetchingData.getSuccessValue(path).orElse(null)}
-                    clearPath={() => setPath([])}
+                    setSelectedSection={(mediaType) => {
+                      setSelectedSection({ mediaType });
+                      setPath([]);
+                      setAppliedSearchTerm("");
+                    }}
                     galleryListing={galleryListing}
                     folderId={folderId}
                     refreshListing={refreshListing}

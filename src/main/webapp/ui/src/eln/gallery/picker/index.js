@@ -185,7 +185,11 @@ const Picker = observer(
                     <MainPanel
                       selectedSection={selectedSection}
                       path={path}
-                      clearPath={() => setPath([])}
+                      setSelectedSection={(mediaType) => {
+                        setSelectedSection(mediaType);
+                        setPath([]);
+                        setAppliedSearchTerm("");
+                      }}
                       galleryListing={galleryListing}
                       folderId={folderId}
                       refreshListing={refreshListing}
