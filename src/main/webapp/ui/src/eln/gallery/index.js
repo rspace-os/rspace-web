@@ -159,7 +159,7 @@ const WholePage = styled(
                     selectedSection={FetchingData.getSuccessValue(
                       selectedSection
                     ).orElse(null)}
-                    path={path}
+                    path={FetchingData.getSuccessValue(path).orElse(null)}
                     clearPath={() => setPath([])}
                     galleryListing={galleryListing}
                     folderId={folderId}

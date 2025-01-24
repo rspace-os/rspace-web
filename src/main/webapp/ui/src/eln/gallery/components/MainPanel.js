@@ -1141,7 +1141,7 @@ const PathAndSearch = observer(
     appliedSearchTerm: string,
     setAppliedSearchTerm: (string) => void,
     selectedSection: GallerySection | null,
-    path: $ReadOnlyArray<GalleryFile>,
+    path: $ReadOnlyArray<GalleryFile> | null,
     clearPath: () => void,
   |}) => {
     const { isViewportVerySmall } = useViewportDimensions();
@@ -1174,7 +1174,9 @@ const PathAndSearch = observer(
         direction={searchOpen ? "column" : "row"}
       >
         <Grid item sx={{ flexGrow: 1, minWidth: 0 }}>
-          <Path section={selectedSection} path={path} clearPath={clearPath} />
+          {path !== null && (
+            <Path section={selectedSection} path={path} clearPath={clearPath} />
+          )}
         </Grid>
         {isViewportVerySmall && !searchOpen && (
           <IconButtonWithTooltip
@@ -1243,7 +1245,7 @@ const PathAndSearch = observer(
 
 type GalleryMainPanelArgs = {|
   selectedSection: GallerySection | null,
-  path: $ReadOnlyArray<GalleryFile>,
+  path: $ReadOnlyArray<GalleryFile> | null,
   clearPath: () => void,
   galleryListing: FetchingData.Fetched<
     | {| tag: "empty", reason: string, refreshing: boolean |}
@@ -1622,7 +1624,7 @@ function GalleryMainPanel({
                     loading: () => <></>,
                     error: (error) => <>{error}</>,
                     success: (listing) =>
-                      selectedSection === null ? (
+                      selectedSection === null || path === null ? (
                         <></>
                       ) : (
                         <TreeView
