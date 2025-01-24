@@ -832,6 +832,11 @@ export function useGalleryListing({
     )
   );
 
+  /*
+   * If the listing is of a section, then the path to the folder and the
+   * gallery section are known directly. If the listing is of a particular
+   * folder, then the path to the folder and the section need to be fetched.
+   */
   const [directFolderPath, setDirectFolderPath] = React.useState<
     FetchingData.Fetched<$ReadOnlyArray<GalleryFile>>
   >({ tag: "loading" });
