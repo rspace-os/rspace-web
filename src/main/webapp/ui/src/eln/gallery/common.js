@@ -30,21 +30,6 @@ library.add(faCircleDown);
 library.add(faVolumeLow);
 
 /**
- * A string identifying a particular gallery section.
- */
-export type GallerySection =
-  | "Images"
-  | "Audios"
-  | "Videos"
-  | "Documents"
-  | "Chemistry"
-  | "DMPs"
-  | "NetworkFiles"
-  | "Snippets"
-  | "Miscellaneous"
-  | "PdfDocuments";
-
-/**
  * Constants for the strings that identify gallery sections.
  */
 export const GALLERY_SECTION = {
@@ -59,6 +44,15 @@ export const GALLERY_SECTION = {
   MISCELLANEOUS: "Miscellaneous",
   PDFDOCUMENTS: "PdfDocuments",
 };
+
+/**
+ * The Gallery is divided up into a several sections based on the type of the
+ * files contained within. Most of these sections provide a file-type specific
+ * view onto files stored locally by the RSpace instance. The exception to this
+ * is NetworkFiles, which is the section that allows for viewing files stored
+ * on external filesystems.
+ */
+export type GallerySection = $Values<typeof GALLERY_SECTION>;
 
 /**
  * Given a URLSearchParams, get the gallery section as referred to by the
