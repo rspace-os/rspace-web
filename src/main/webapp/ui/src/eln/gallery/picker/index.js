@@ -119,15 +119,14 @@ const Picker = observer(
       ? setLargerViewportSidebarOpenState
       : setSmallViewportSidebarOpenState;
 
-    const initialLocation = React.useMemo(
-      () => ({ tag: "section", section: selectedSection }),
-      [selectedSection]
-    );
     const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+    const listingOf = React.useMemo(
+      () => ({ tag: "section", section: selectedSection, path }),
+      [selectedSection, path]
+    );
     const { galleryListing, folderId, refreshListing } = useGalleryListing({
-      initialLocation,
+      listingOf,
       searchTerm: appliedSearchTerm,
-      path,
       orderBy,
       sortOrder,
     });

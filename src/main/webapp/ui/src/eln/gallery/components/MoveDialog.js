@@ -52,16 +52,18 @@ const MoveDialog = observer(
   }: MoveDialogArgs): Node => {
     const { isViewportVerySmall } = useViewportDimensions();
 
-    const initialLocation = React.useMemo(
-      () => ({ tag: "section", section }),
+    const listingOf = React.useMemo(
+      () => ({
+        tag: "section",
+        section,
+        path: ([]: $ReadOnlyArray<GalleryFile>),
+      }),
       [section]
     );
-    const path = React.useMemo(() => ([]: $ReadOnlyArray<GalleryFile>), []);
     const { galleryListing, refreshListing: refreshListingInsideDialog } =
       useGalleryListing({
-        initialLocation,
+        listingOf,
         searchTerm: "",
-        path,
         orderBy: "name",
         sortOrder: "ASC",
         foldersOnly: true,

@@ -37,7 +37,7 @@ import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
 
-const WholePage = styled(({ initialLocation, setSelectedSection }) => {
+const WholePage = styled(({ listingOf, setSelectedSection, setPath }) => {
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
     PREFERENCES.GALLERY_SORT_BY,
@@ -51,12 +51,10 @@ const WholePage = styled(({ initialLocation, setSelectedSection }) => {
       defaultValue: "DESC",
     }
   );
-  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
-  const { galleryListing, folderId, refreshListing, selectedSection } =
+  const { galleryListing, folderId, path, refreshListing, selectedSection } =
     useGalleryListing({
-      initialLocation,
+      listingOf,
       searchTerm: appliedSearchTerm,
-      path,
       orderBy,
       sortOrder,
     });
@@ -172,10 +170,12 @@ function LandingPage() {
     mediaType: GALLERY_SECTION.IMAGES,
   });
   const selectedSection = searchParams.mediaType;
+  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
   return (
     <WholePage
-      initialLocation={{ tag: "section", section: selectedSection }}
+      listingOf={{ tag: "section", section: selectedSection, path }}
       setSelectedSection={setSelectedSection}
+      setPath={setPath}
     />
   );
 }
@@ -191,10 +191,11 @@ function GalleryFolder() {
 
   return (
     <WholePage
-      initialLocation={{ tag: "folder", folderId }}
+      listingOf={{ tag: "folder", folderId }}
       setSelectedSection={({ mediaType }) => {
         navigate(`/newGallery/?mediaType=${mediaType}`);
       }}
+      setPath={() => {}}
     />
   );
 }

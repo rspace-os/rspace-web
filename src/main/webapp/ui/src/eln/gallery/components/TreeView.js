@@ -104,21 +104,19 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
     foldersOnly,
     refeshing,
   }: TreeItemContentArgs): Node => {
-    const initialLocation = React.useMemo(
-      () => ({ tag: "section", section }),
+    const listingOf = React.useMemo(
+      () => ({ tag: "section", section, path: [...path, file] }),
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - path will not meaningfully change
+       * - file will not meaningfully change
+       */
       [section]
     );
 
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - path will not meaningfully change
-     * - file will not meaningfully change
-     */
-    const thisPath = React.useMemo(() => [...path, file], []);
     const { galleryListing, refreshListing: refreshingThisListing } =
       useGalleryListing({
-        initialLocation,
+        listingOf,
         searchTerm: "",
-        path: thisPath,
         orderBy,
         sortOrder,
         foldersOnly,

@@ -758,37 +758,25 @@ class RemoteFile implements GalleryFile {
  * Hook that gets a listing of Gallery files, for displaying in the UI.
  */
 export function useGalleryListing({
-  initialLocation,
+  listingOf,
   searchTerm,
-  path = [],
   sortOrder,
   orderBy,
   foldersOnly,
 }: {|
   /**
-   * The location within the Gallery that this listing should initially show.
-   * The user can navigate down the folder hierarchy from this point by passing
-   * `path`. To move to a complete different place in the Gallery, simply
-   * change the value passed in here.
-   *
-   * This listing can start in one of two ways:
-   *   * Either at the root of a section of the Gallery, in which case the
-   *     `section` property should be set to the section of the Gallery that
-   *     this listing should show.
-   *   * Or at a specific folder, in which case the `folderId` property should
-   *     be set to the Id of the folder.
+   * The location within the Gallery that this listing should show. A location
+   * in the Gallery can be defined in one of two ways:
+   *   - Either as a path down from the root of a section of the Gallery
+   *   - Or as a specific folder
    */
-  initialLocation:
-    | {| tag: "section", section: GallerySection |}
+  listingOf:
+    | {|
+        tag: "section",
+        section: GallerySection,
+        path: $ReadOnlyArray<GalleryFile>,
+      |}
     | {| tag: "folder", folderId: Id |},
-
-  /**
-   * This is the series of folders that defines where the listing currently is,
-   * relative the current section. If it is not specified, then the empty list
-   * and thus the root of the section is assumed. The caller should probably
-   * tie these two to a React.useState, but is not required to.
-   */
-  path?: $ReadOnlyArray<GalleryFile>,
 
   /**
    * The contents of folders within the local sections of the Gallery can be
@@ -836,8 +824,8 @@ export function useGalleryListing({
     $ReadOnlyArray<GalleryFile>
   >([]);
 
-  const section =
-    initialLocation.tag === "section" ? initialLocation.section : "Images";
+  const section = listingOf.tag === "section" ? listingOf.section : "Images";
+  const path = listingOf.tag === "section" ? listingOf.path : [];
 
   const [page, setPage] = React.useState<number>(0);
   const [totalPages, setTotalPages] = React.useState<number>(0);
@@ -1247,8 +1235,8 @@ export function useGalleryListing({
       let currentFolderId = "0";
       if (path.length > 0) {
         currentFolderId = `${path[path.length - 1].id}`;
-      } else if (initialLocation.tag === "folder") {
-        currentFolderId = `${initialLocation.folderId}`;
+      } else if (listingOf.tag === "folder") {
+        currentFolderId = `${listingOf.folderId}`;
       }
 
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
@@ -1334,7 +1322,7 @@ export function useGalleryListing({
     /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * - getGalleryFiles will not meaningfully change
      */
-  }, [searchTerm, path, sortOrder, orderBy, initialLocation]);
+  }, [searchTerm, sortOrder, orderBy, listingOf]);
 
   if (loading)
     return {

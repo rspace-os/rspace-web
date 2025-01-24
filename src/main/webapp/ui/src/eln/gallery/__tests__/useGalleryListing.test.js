@@ -27,14 +27,16 @@ mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
 });
 
 function WrapperComponent() {
-  const initialLocation = React.useMemo(
-    () => ({ tag: "section", section: "Images" }),
+  const listingOf = React.useMemo(
+    () => ({
+      tag: "section",
+      section: "Images",
+      path: ([]: $ReadOnlyArray<GalleryFile>),
+    }),
     []
   );
-  const path = React.useMemo(() => ([]: $ReadOnlyArray<GalleryFile>), []);
   const { galleryListing, refreshListing } = useGalleryListing({
-    initialLocation,
-    path,
+    listingOf,
     searchTerm: "",
     sortOrder: "DESC",
     orderBy: "modificationDate",
