@@ -123,14 +123,14 @@ const Picker = observer(
       () => ({ tag: "section", section: selectedSection }),
       [selectedSection]
     );
-    const { galleryListing, path, setPath, folderId, refreshListing } =
-      useGalleryListing({
-        initialLocation,
-        searchTerm: appliedSearchTerm,
-        path: [],
-        orderBy,
-        sortOrder,
-      });
+    const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+    const { galleryListing, folderId, refreshListing } = useGalleryListing({
+      initialLocation,
+      searchTerm: appliedSearchTerm,
+      path,
+      orderBy,
+      sortOrder,
+    });
 
     return (
       <CallableImagePreview>

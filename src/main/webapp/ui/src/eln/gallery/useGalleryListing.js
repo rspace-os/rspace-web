@@ -760,16 +760,16 @@ class RemoteFile implements GalleryFile {
 export function useGalleryListing({
   initialLocation,
   searchTerm,
-  path: defaultPath,
+  path = [],
   sortOrder,
   orderBy,
   foldersOnly,
 }: {|
   /**
    * The location within the Gallery that this listing should initially show.
-   * The user can navigate down the folder hierarchy from this point by calling
-   * `setPath` and appending folders to it. To move to a complete different
-   * place in the Gallery, simply change the value passed in here.
+   * The user can navigate down the folder hierarchy from this point by passing
+   * `path`. To move to a complete different place in the Gallery, simply
+   * change the value passed in here.
    *
    * This listing can start in one of two ways:
    *   * Either at the root of a section of the Gallery, in which case the
@@ -784,10 +784,9 @@ export function useGalleryListing({
 
   /**
    * This is the series of folders that defines where the listing currently is,
-   * relative the current section.  A copy of this value is stored by this
-   * custom hook and is manipulated as the user descends and ascends the folder
-   * hierarchy. If it is not specified, then the empty list and thus the root
-   * of the section is assumed.
+   * relative the current section. If it is not specified, then the empty list
+   * and thus the root of the section is assumed. The caller should probably
+   * tie these two to a React.useState, but is not required to.
    */
   path?: $ReadOnlyArray<GalleryFile>,
 
@@ -825,7 +824,6 @@ export function useGalleryListing({
   >,
   refreshListing: () => Promise<void>,
   path: $ReadOnlyArray<GalleryFile>,
-  setPath: ($ReadOnlyArray<GalleryFile>) => void,
   folderId: FetchingData.Fetched<Id>,
   selectedSection: GallerySection,
 |} {
@@ -838,23 +836,12 @@ export function useGalleryListing({
     $ReadOnlyArray<GalleryFile>
   >([]);
 
-  const [section, setSection] = React.useState<GallerySection>(
-    initialLocation.tag === "section" ? initialLocation.section : "Images"
-  );
-  React.useEffect(() => {
-    if (initialLocation.tag === "section") {
-      setSection(initialLocation.section);
-    }
-    // TODO: get from network call if not provided in initialLocation
-  }, [initialLocation]);
-  // TODO: get from network call if not provided in initialLocation
+  const section =
+    initialLocation.tag === "section" ? initialLocation.section : "Images";
 
   const [page, setPage] = React.useState<number>(0);
   const [totalPages, setTotalPages] = React.useState<number>(0);
   const [totalHits, setTotalHits] = React.useState<number>(0);
-  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>(
-    defaultPath ?? []
-  );
   const [parentId, setParentId] = React.useState<Result<Id>>(
     Result.Error([new Error("Parent Id is not yet known")])
   );
@@ -1349,32 +1336,10 @@ export function useGalleryListing({
      */
   }, [searchTerm, path, sortOrder, orderBy, initialLocation]);
 
-  /*
-   * Whenever section changes, we want to clear the path so that navigating to
-   * a different section returns you to the root of the folder hierarchy.
-   * However, we don't want to set the path when this custom hook is mounted as
-   * setting the path will invoke the above useEffect again -- in addition to
-   * the time when it is invoked on mount -- resulting in a second GET request
-   * to getUploadedFiles. As such, we use this single flag to ensure that we
-   * only change the path when the section is changed on subsequent re-renders.
-   */
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => {
-    if (mounted) {
-      setPath(defaultPath ?? []);
-    }
-    setMounted(true);
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - defaultPath SHOULD NOT change
-     * - mounted is designed to prevent duplicate calls; no need to watch for changes
-     */
-  }, [section]);
-
   if (loading)
     return {
       galleryListing: { tag: "loading" },
       path,
-      setPath: () => {},
       folderId: { tag: "loading" },
       refreshListing: () => Promise.resolve(),
       selectedSection: section,
@@ -1398,7 +1363,6 @@ export function useGalleryListing({
           : { tag: "empty", reason: emptyReason(), refreshing },
     },
     path,
-    setPath,
     folderId: parentId
       .map((value: number) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),

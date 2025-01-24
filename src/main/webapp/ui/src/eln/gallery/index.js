@@ -10,7 +10,11 @@ import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
 import Box from "@mui/material/Box";
-import { useGalleryListing, idToString } from "./useGalleryListing";
+import {
+  useGalleryListing,
+  idToString,
+  type GalleryFile,
+} from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
@@ -47,20 +51,15 @@ const WholePage = styled(({ initialLocation, setSelectedSection }) => {
       defaultValue: "DESC",
     }
   );
-  const {
-    galleryListing,
-    path,
-    setPath,
-    folderId,
-    refreshListing,
-    selectedSection,
-  } = useGalleryListing({
-    initialLocation,
-    searchTerm: appliedSearchTerm,
-    path: [],
-    orderBy,
-    sortOrder,
-  });
+  const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+  const { galleryListing, folderId, refreshListing, selectedSection } =
+    useGalleryListing({
+      initialLocation,
+      searchTerm: appliedSearchTerm,
+      path,
+      orderBy,
+      sortOrder,
+    });
   const { isViewportSmall } = useViewportDimensions();
 
   const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =

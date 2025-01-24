@@ -9,7 +9,7 @@ import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import Carousel from "../Carousel";
 import * as FetchingData from "../../../../util/fetchingData";
-import { useGalleryListing } from "../../useGalleryListing";
+import { useGalleryListing, type GalleryFile } from "../../useGalleryListing";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import page1 from "../../__tests__/getUploadedFiles_1.json";
@@ -43,8 +43,10 @@ describe("Carousel", () => {
         () => ({ tag: "section", section: "Images" }),
         []
       );
+      const path = React.useMemo(() => ([]: $ReadOnlyArray<GalleryFile>), []);
       const { galleryListing } = useGalleryListing({
         initialLocation,
+        path,
         searchTerm: "",
         sortOrder: "DESC",
         orderBy: "modificationDate",
@@ -81,8 +83,10 @@ describe("Carousel", () => {
         () => ({ tag: "section", section: "Images" }),
         []
       );
+      const path = React.useMemo(() => ([]: $ReadOnlyArray<GalleryFile>), []);
       const { galleryListing } = useGalleryListing({
         initialLocation,
+        path,
         searchTerm: "",
         sortOrder: "DESC",
         orderBy: "modificationDate",

@@ -56,11 +56,12 @@ const MoveDialog = observer(
       () => ({ tag: "section", section }),
       [section]
     );
+    const path = React.useMemo(() => ([]: $ReadOnlyArray<GalleryFile>), []);
     const { galleryListing, refreshListing: refreshListingInsideDialog } =
       useGalleryListing({
         initialLocation,
         searchTerm: "",
-        path: [],
+        path,
         orderBy: "name",
         sortOrder: "ASC",
         foldersOnly: true,
