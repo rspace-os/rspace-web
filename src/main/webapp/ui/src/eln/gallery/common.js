@@ -65,6 +65,24 @@ export type GallerySection =
   | "PdfDocuments";
 
 /**
+ * Given a string, parse it into a gallery section. If the string does not
+ * correspond to any of the valid gallery sections, return an error.
+ */
+export const parseGallerySection = (section: string): Result<GallerySection> =>
+  Result.first(
+    Parsers.parseString(GALLERY_SECTION.IMAGES, section),
+    Parsers.parseString(GALLERY_SECTION.AUDIOS, section),
+    Parsers.parseString(GALLERY_SECTION.VIDEOS, section),
+    Parsers.parseString(GALLERY_SECTION.DOCUMENTS, section),
+    Parsers.parseString(GALLERY_SECTION.CHEMISTRY, section),
+    Parsers.parseString(GALLERY_SECTION.DMPS, section),
+    Parsers.parseString(GALLERY_SECTION.NETWORKFILES, section),
+    Parsers.parseString(GALLERY_SECTION.SNIPPETS, section),
+    Parsers.parseString(GALLERY_SECTION.MISCELLANEOUS, section),
+    Parsers.parseString(GALLERY_SECTION.PDFDOCUMENTS, section)
+  );
+
+/**
  * Given a URLSearchParams, get the gallery section as referred to by the
  * 'mediaType' search parameter. Most of this logic is to satify flow that the
  * string is indeed one of the valid strings that identify a gallery section.
@@ -75,20 +93,7 @@ export const parseGallerySectionFromUrlSearchParams = (
   Result.fromNullable(
     searchParams.get("mediaType"),
     new Error("No search parameter with name 'mediaType'")
-  ).flatMap((mediaType) =>
-    Result.first(
-      Parsers.parseString(GALLERY_SECTION.IMAGES, mediaType),
-      Parsers.parseString(GALLERY_SECTION.AUDIOS, mediaType),
-      Parsers.parseString(GALLERY_SECTION.VIDEOS, mediaType),
-      Parsers.parseString(GALLERY_SECTION.DOCUMENTS, mediaType),
-      Parsers.parseString(GALLERY_SECTION.CHEMISTRY, mediaType),
-      Parsers.parseString(GALLERY_SECTION.DMPS, mediaType),
-      Parsers.parseString(GALLERY_SECTION.NETWORKFILES, mediaType),
-      Parsers.parseString(GALLERY_SECTION.SNIPPETS, mediaType),
-      Parsers.parseString(GALLERY_SECTION.MISCELLANEOUS, mediaType),
-      Parsers.parseString(GALLERY_SECTION.PDFDOCUMENTS, mediaType)
-    )
-  );
+  ).flatMap(parseGallerySection);
 
 /**
  * Mapping of gallery sections to a label that can be shown in the UI.

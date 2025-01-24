@@ -11,6 +11,7 @@ import {
   gallerySectionCollectiveNoun,
   type GallerySection,
   GALLERY_SECTION,
+  parseGallerySection,
 } from "./common";
 import {
   filenameExceptExtension,
@@ -752,6 +753,55 @@ class RemoteFile implements GalleryFile {
   }
 }
 
+function parseGalleryFileFromFolderApiResponse(
+  obj: { ... },
+  path: $ReadOnlyArray<GalleryFile>
+): Result<LocalGalleryFile> {
+  try {
+    const id = Parsers.getValueWithKey("id")(obj)
+      .flatMap(Parsers.isNumber)
+      .elseThrow();
+    const globalId = Parsers.getValueWithKey("globalId")(obj)
+      .flatMap(Parsers.isString)
+      .elseThrow();
+    const name = Parsers.getValueWithKey("name")(obj)
+      .flatMap(Parsers.isString)
+      .elseThrow();
+    const creationDate = Parsers.getValueWithKey("created")(obj)
+      .flatMap(Parsers.isString)
+      .flatMap(Parsers.parseDate)
+      .elseThrow();
+    const modificationDate = Parsers.getValueWithKey("lastModified")(obj)
+      .flatMap(Parsers.isString)
+      .flatMap(Parsers.parseDate)
+      .elseThrow();
+    const mediaType = Parsers.getValueWithKey("mediaType")(obj)
+      .flatMap(Parsers.isString)
+      .elseThrow();
+    return Result.Ok(
+      new LocalGalleryFile({
+        id,
+        globalId,
+        name,
+        extension: null,
+        creationDate,
+        modificationDate,
+        description: Description.Missing(),
+        type: "Folder",
+        ownerName: "Unknown owner",
+        path,
+        gallerySection: mediaType,
+        size: 0,
+        version: 1,
+        thumbnailId: null,
+        token: "",
+      })
+    );
+  } catch (e) {
+    return Result.Error([e]);
+  }
+}
+
 /**
  * Hook that gets a listing of Gallery files, for displaying in the UI.
  */
@@ -846,59 +896,57 @@ export function useGalleryListing({
   React.useEffect(() => {
     if (listingOf.tag === "folder") {
       void (async () => {
-        const { data } = await (
+        const response = await (
           await api
-        ).get<any>(
+        ).get<mixed>(
           `folders/${listingOf.folderId}?includePathToRootFolder=true`
         );
-        setDirectSection({ tag: "success", value: data.mediaType });
-        const [, , ...pathToRootFolder] = data.pathToRootFolder.toReversed();
-        const parents = pathToRootFolder.reduce(
-          (p, { id, name, globalId, created, lastModified, mediaType }) => [
-            ...p,
-            new LocalGalleryFile({
-              id,
-              globalId,
-              name,
-              extension: null,
-              creationDate: new Date(created),
-              modificationDate: new Date(lastModified),
-              description: Description.Missing(),
-              type: "Folder",
-              ownerName: "Unknown owner",
-              path: p,
-              gallerySection: mediaType,
-              size: 0,
-              version: 1,
-              thumbnailId: null,
-              token: "",
-            }),
-          ],
-          []
+        const data = Parsers.isObject(response.data).flatMap(Parsers.isNotNull);
+        setDirectSection(
+          data
+            .flatMap(Parsers.getValueWithKey("mediaType"))
+            .flatMap(Parsers.isString)
+            .flatMap(parseGallerySection)
+            .map((value) => ({ tag: "success", value }))
+            .orElseGet<FetchingData.Fetched<GallerySection>>(([e]) => ({
+              tag: "error",
+              error: e.message,
+            }))
         );
-        setDirectFolderPath({
-          tag: "success",
-          value: [
-            ...parents,
-            new LocalGalleryFile({
-              id: data.id,
-              globalId: data.globalId,
-              name: data.name,
-              extension: null,
-              creationDate: new Date(data.created),
-              modificationDate: new Date(data.lastModified),
-              description: Description.Missing(),
-              type: "Folder",
-              ownerName: "Unknown owner",
-              path: parents,
-              gallerySection: data.mediaType,
-              size: 0,
-              version: 1,
-              thumbnailId: null,
-              token: "",
-            }),
-          ],
-        });
+        try {
+          const [, , ...pathToRootFolder] = data
+            .flatMap(Parsers.getValueWithKey("pathToRootFolder"))
+            .flatMap(Parsers.isArray)
+            .map((array) => array.toReversed())
+            .elseThrow();
+          const parents = pathToRootFolder.reduce(
+            (p: $ReadOnlyArray<GalleryFile>, obj: mixed) => [
+              ...p,
+              Parsers.isObject(obj)
+                .flatMap(Parsers.isNotNull)
+                .flatMap((folderObj) =>
+                  parseGalleryFileFromFolderApiResponse(folderObj, p)
+                )
+                .elseThrow(),
+            ],
+            []
+          );
+          setDirectFolderPath({
+            tag: "success",
+            value: [
+              ...parents,
+              data
+                .flatMap(Parsers.isObject)
+                .flatMap(Parsers.isNotNull)
+                .flatMap((folderObj) =>
+                  parseGalleryFileFromFolderApiResponse(folderObj, parents)
+                )
+                .elseThrow(),
+            ],
+          });
+        } catch (e) {
+          setDirectFolderPath({ tag: "error", error: e.message });
+        }
       })();
     }
   }, [listingOf, api]);
