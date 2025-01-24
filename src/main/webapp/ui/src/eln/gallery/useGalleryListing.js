@@ -255,7 +255,6 @@ export class LocalGalleryFile implements GalleryFile {
   +size: number;
   +version: number;
   +thumbnailId: number | null;
-  #open: () => void | void;
   downloadHref: void | (() => Promise<UrlType>);
   #cachedDownloadHref: UrlType | void;
 
@@ -277,7 +276,6 @@ export class LocalGalleryFile implements GalleryFile {
     type,
     ownerName,
     path,
-    setPath,
     gallerySection,
     size,
     version,
@@ -294,7 +292,6 @@ export class LocalGalleryFile implements GalleryFile {
     type: string,
     ownerName: string,
     path: $ReadOnlyArray<GalleryFile>,
-    setPath: ($ReadOnlyArray<GalleryFile>) => void,
     gallerySection: string,
     size: number,
     version: number,
@@ -319,7 +316,6 @@ export class LocalGalleryFile implements GalleryFile {
     this.size = size;
     this.version = version;
     this.thumbnailId = thumbnailId;
-    this.#open = () => setPath([...path, this]);
     this.setName = action((newName) => {
       this.name = newName;
     });
@@ -469,7 +465,6 @@ export class Filestore implements GalleryFile {
   description: Description;
   +isFolder: boolean;
   +size: number;
-  #open: () => void;
   +path: $ReadOnlyArray<GalleryFile>;
 
   constructor({
@@ -477,7 +472,6 @@ export class Filestore implements GalleryFile {
     name,
     filesystemId,
     filesystemName,
-    setPath,
     path,
   }: {|
     id: Id,
@@ -485,14 +479,12 @@ export class Filestore implements GalleryFile {
     filesystemId: number,
     filesystemName: string,
     path: $ReadOnlyArray<GalleryFile>,
-    setPath: ($ReadOnlyArray<GalleryFile>) => void,
   |}) {
     this.id = id;
     this.name = name;
     this.description = Description.Missing();
     this.isFolder = true;
     this.size = 0;
-    this.#open = () => setPath([...path, this]);
     this.filesystemId = filesystemId;
     this.filesystemName = filesystemName;
     this.path = path;
@@ -582,7 +574,6 @@ class RemoteFile implements GalleryFile {
   +isFolder: boolean;
   +size: number;
   +modificationDate: Date;
-  #open: () => void;
   +path: $ReadOnlyArray<GalleryFile>;
   downloadHref: void | (() => Promise<UrlType>);
   #cachedDownloadHref: UrlType | void;
@@ -594,7 +585,6 @@ class RemoteFile implements GalleryFile {
     fileSize,
     modificationDate,
     path,
-    setPath,
     remotePath,
     token,
   }: {|
@@ -604,7 +594,6 @@ class RemoteFile implements GalleryFile {
     fileSize: number,
     modificationDate: Date,
     path: $ReadOnlyArray<GalleryFile>,
-    setPath: ($ReadOnlyArray<GalleryFile>) => void,
     remotePath: string,
     token: string,
   |}) {
@@ -615,7 +604,6 @@ class RemoteFile implements GalleryFile {
     this.size = fileSize;
     this.modificationDate = modificationDate;
     this.path = path;
-    this.#open = () => setPath([...path, this]);
     if (!this.isFolder) {
       const filestoreId = path[0].id;
       this.downloadHref = async () => {
@@ -977,7 +965,6 @@ export function useGalleryListing({
                       size,
                       version,
                       thumbnailId,
-                      setPath,
                       token,
                     })
                   );
@@ -1072,7 +1059,6 @@ export function useGalleryListing({
                         filesystemId,
                         filesystemName,
                         path,
-                        setPath,
                       })
                     );
                   } catch (e) {
@@ -1173,7 +1159,6 @@ export function useGalleryListing({
                         fileSize,
                         modificationDate,
                         path,
-                        setPath,
                         remotePath,
                         token,
                       })
