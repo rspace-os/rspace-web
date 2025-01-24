@@ -472,13 +472,11 @@ export class Filestore implements GalleryFile {
     name,
     filesystemId,
     filesystemName,
-    path,
   }: {|
     id: Id,
     name: string,
     filesystemId: number,
     filesystemName: string,
-    path: $ReadOnlyArray<GalleryFile>,
   |}) {
     this.id = id;
     this.name = name;
@@ -487,7 +485,7 @@ export class Filestore implements GalleryFile {
     this.size = 0;
     this.filesystemId = filesystemId;
     this.filesystemName = filesystemName;
-    this.path = path;
+    this.path = [];
   }
 
   deconstructor() {}
@@ -1135,7 +1133,6 @@ export function useGalleryListing({
                         name,
                         filesystemId,
                         filesystemName,
-                        path: FetchingData.getSuccessValue(path).elseThrow(),
                       })
                     );
                   } catch (e) {
