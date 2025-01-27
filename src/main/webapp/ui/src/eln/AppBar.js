@@ -11,7 +11,35 @@ import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
 
-const COLOR = {
+const WORKSPACE_COLOR = {
+  main: {
+    hue: 120,
+    saturation: 18,
+    lightness: 71,
+  },
+  darker: {
+    hue: 120,
+    saturation: 18,
+    lightness: 50,
+  },
+  contrastText: {
+    hue: 120,
+    saturation: 18,
+    lightness: 20,
+  },
+  background: {
+    hue: 120,
+    saturation: 18,
+    lightness: 81,
+  },
+  backgroundContrastText: {
+    hue: 120,
+    saturation: 4,
+    lightness: 29,
+  },
+};
+
+const OTHER_COLOR = {
   main: {
     hue: 200,
     saturation: 10,
@@ -56,13 +84,12 @@ function currentPage() {
   return "Unknown";
 }
 
-function color(_page: string) {
-  return COLOR;
+function color(page: string) {
+  if (page === "Workspace") return WORKSPACE_COLOR;
+  return OTHER_COLOR;
 }
 
 window.addEventListener("load", () => {
-  window.scrollTo(0, 1);
-
   /*
    * We append the app bar to the body to be outside of the wide margins on
    * many pages
@@ -76,6 +103,8 @@ window.addEventListener("load", () => {
   const shadow = domContainer.attachShadow({ mode: "open" });
   const wrapper = document.createElement("div");
   shadow.appendChild(wrapper);
+
+  window.scrollTo(0, 1);
 
   const cache = createCache({
     key: "css",
