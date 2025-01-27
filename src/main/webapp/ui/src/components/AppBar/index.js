@@ -311,7 +311,7 @@ function GalleryAppBar({
               {FetchingData.getSuccessValue(uiNavigationData)
                 .map(({ bannerImgSrc }) => (
                   <img
-                    key={null}
+                    key="branding small"
                     src={bannerImgSrc}
                     role="presentation"
                     alt="branding"
@@ -567,7 +567,7 @@ function GalleryAppBar({
         {FetchingData.getSuccessValue(uiNavigationData)
           .map(({ incomingMaintenance }) => incomingMaintenance)
           .flatMap(Parsers.isTrue)
-          .map(() => <IncomingMaintenancePopup key={null} />)
+          .map(() => <IncomingMaintenancePopup key="maintenance" />)
           .orElse(null)}
         <Box ml={1}>
           {helpPage ? (
@@ -655,7 +655,7 @@ function GalleryAppBar({
                   </ListItem>
                 ),
                 success: ({ userDetails }) => (
-                  <ListItem key={null} sx={{ py: 0 }}>
+                  <ListItem key="user details" sx={{ py: 0 }}>
                     <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
                       <DynamicAvatar uiNavigationData={uiNavigationData} />
                     </ListItemIcon>
@@ -748,7 +748,7 @@ function GalleryAppBar({
                 .flatMap(Parsers.isTrue)
                 .map(() => (
                   <AccentMenuItem
-                    key={null}
+                    key="published"
                     title="Published"
                     avatar={<PublicIcon />}
                     compact
@@ -771,7 +771,7 @@ function GalleryAppBar({
                 .flatMap(Parsers.isTrue)
                 .map(() => (
                   <AccentMenuItem
-                    key={null}
+                    key="release"
                     title="Release"
                     avatar={<LogoutIcon />}
                     backgroundColor={lighten(theme.palette.error.light, 0.5)}
@@ -801,7 +801,7 @@ function GalleryAppBar({
               {FetchingData.getSuccessValue(uiNavigationData)
                 .map(({ bannerImgSrc }) => (
                   <ListItem
-                    key={null}
+                    key="branding large"
                     sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}
                   >
                     <img
