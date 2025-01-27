@@ -119,7 +119,7 @@ window.addEventListener("load", () => {
         <ErrorBoundary>
           <CssBaseline />
           <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
-            <div>
+            <div style={{ fontSize: "1rem", lineHeight: "1.5" }}>
               {/*
                * We use a DialogBoundary to keep the menu inside the shadow DOM
                */}
