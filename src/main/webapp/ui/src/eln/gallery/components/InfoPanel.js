@@ -184,9 +184,10 @@ const NameFieldForLargeViewports = styled(
       const textField = React.useRef(null);
 
       function handleSubmit() {
-        void rename(file, name);
-        textField.current?.blur();
-        setName(file.transformFilename(() => name));
+        void rename(file, name).then(() => {
+          textField.current?.blur();
+          setName(file.transformFilename(() => name));
+        });
       }
 
       return (
