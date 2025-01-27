@@ -89,6 +89,7 @@ const UploadNewVersionMenuItem = ({
   folderId: FetchingData.Fetched<Id>,
 |}) => {
   const { uploadNewVersion } = useGalleryActions();
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const selection = useGallerySelection();
   const newVersionInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -176,7 +177,12 @@ const UploadNewVersionMenuItem = ({
                 .elseThrow();
 
               void uploadNewVersion(idOfFolderThatFileIsIn, file, newFile)
-                .then(onSuccess)
+                .then(() => {
+                  onSuccess();
+                  trackEvent("user:uploads_new_version:file:gallery", {
+                    version: file.version + 1,
+                  });
+                })
                 .catch(onError);
             }}
             type="file"
