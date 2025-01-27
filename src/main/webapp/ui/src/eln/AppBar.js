@@ -60,39 +60,43 @@ function color(_page: string) {
 }
 
 window.addEventListener("load", () => {
-  const domContainer = document.getElementById("app-bar");
-  if (domContainer) {
-    window.scrollTo(0, 1);
+  window.scrollTo(0, 1);
 
-    const shadow = domContainer.attachShadow({ mode: "open" });
-    const wrapper = document.createElement("div");
-    shadow.appendChild(wrapper);
+  /*
+   * We append the app bar to the body to be outside of the wide margins on
+   * many pages
+   */
+  const domContainer = document.createElement("div");
+  document.body?.insertBefore(domContainer, document.body.firstChild);
 
-    const cache = createCache({
-      key: "css",
-      prepend: true,
-      container: shadow,
-    });
+  const shadow = domContainer.attachShadow({ mode: "open" });
+  const wrapper = document.createElement("div");
+  shadow.appendChild(wrapper);
 
-    const root = createRoot(wrapper);
-    root.render(
-      <React.StrictMode>
-        <CacheProvider value={cache}>
-          <ErrorBoundary>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
-              <div style={{ position: "fixed", left: 0, right: 0 }}>
-                <AppBar
-                  variant="page"
-                  currentPage={currentPage()}
-                  accessibilityTips={{}}
-                />
-              </div>
-              <div style={{ height: "30px" }}></div>
-            </ThemeProvider>
-          </ErrorBoundary>
-        </CacheProvider>
-      </React.StrictMode>
-    );
-  }
+  const cache = createCache({
+    key: "css",
+    prepend: true,
+    container: shadow,
+  });
+
+  const root = createRoot(wrapper);
+  root.render(
+    <React.StrictMode>
+      <CacheProvider value={cache}>
+        <ErrorBoundary>
+          <CssBaseline />
+          <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
+            <div>
+              <AppBar
+                variant="page"
+                currentPage={currentPage()}
+                accessibilityTips={{}}
+              />
+            </div>
+            <div style={{ height: "30px" }}></div>
+          </ThemeProvider>
+        </ErrorBoundary>
+      </CacheProvider>
+    </React.StrictMode>
+  );
 });
