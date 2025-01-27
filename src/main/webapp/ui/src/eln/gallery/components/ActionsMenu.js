@@ -197,6 +197,7 @@ const RenameDialog = ({
   file: GalleryFile,
 |}) => {
   const [newName, setNewName] = React.useState("");
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const { rename } = useGalleryActions();
   return (
     <Dialog
@@ -239,6 +240,7 @@ const RenameDialog = ({
             onClick={() => {
               void rename(file, newName).then(() => {
                 onClose();
+                trackEvent("user:renames:file:gallery");
               });
             }}
             validationResult={

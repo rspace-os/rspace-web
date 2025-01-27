@@ -180,6 +180,7 @@ const Puller: ComponentType<{|
 const NameFieldForLargeViewports = styled(
   observer(
     ({ file, className }: {| file: GalleryFile, className: string |}) => {
+      const { trackEvent } = React.useContext(AnalyticsContext);
       const { rename } = useGalleryActions();
       const [name, setName] = React.useState(file.name);
       const textField = React.useRef(null);
@@ -188,6 +189,7 @@ const NameFieldForLargeViewports = styled(
         void rename(file, name).then(() => {
           textField.current?.blur();
           setName(file.transformFilename(() => name));
+          trackEvent("user:renames:file:gallery");
         });
       }
 
