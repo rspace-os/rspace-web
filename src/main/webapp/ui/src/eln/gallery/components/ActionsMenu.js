@@ -684,6 +684,9 @@ function ActionsMenu({
           avatar={<FileDownloadIcon />}
           onClick={() => {
             setExportOpen(true);
+            trackEvent("user:opens:export_dialog:gallery", {
+              count: selection.size,
+            });
           }}
           compact
           disabled={exportAllowed.get().isError}
