@@ -667,6 +667,7 @@ function ActionsMenu({
           onClick={() => {
             void download(selection.asSet()).then(() => {
               setActionsMenuAnchorEl(null);
+              trackEvent("user:downloads:file:gallery");
             });
           }}
           compact
