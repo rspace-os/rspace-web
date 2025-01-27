@@ -69,6 +69,9 @@ window.addEventListener("load", () => {
   const domContainer = document.createElement("div");
   document.body?.insertBefore(domContainer, document.body.firstChild);
 
+  /*
+   * We use a shadow DOM so that the MUI styles to not leak
+   */
   const shadow = domContainer.attachShadow({ mode: "open" });
   const wrapper = document.createElement("div");
   shadow.appendChild(wrapper);
