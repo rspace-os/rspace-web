@@ -104,8 +104,6 @@ window.addEventListener("load", () => {
   const wrapper = document.createElement("div");
   shadow.appendChild(wrapper);
 
-  window.scrollTo(0, 1);
-
   const cache = createCache({
     key: "css",
     prepend: true,
