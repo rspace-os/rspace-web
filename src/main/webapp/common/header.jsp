@@ -136,7 +136,10 @@
       </rs:isRunAs>
     </div>
 
-    <nav class="rs-navbar bootstrap-custom-flat">
+    <div id="app-bar"></div>
+    <script type="module" src="/../ui/dist/appBar.js"></script>
+
+    <nav class="rs-navbar bootstrap-custom-flat" style="display: none;">
       <ul class="rs-navbar__list rs-navbar__list--pull-right">
         <li class="rs-navbar__item rs-navbar__item--pull-left" id="branding">
           <a href="${applicationScope['RS_DEPLOY_PROPS']['bannerImageLink']}">

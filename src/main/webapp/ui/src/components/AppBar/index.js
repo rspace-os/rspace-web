@@ -397,7 +397,7 @@ function GalleryAppBar({
             )}
             <Link
               target="_self"
-              aria-current={false}
+              aria-current={currentPage === "My RSpace" ? "page" : false}
               href={showMyLabGroups ? "/groups/viewPIGroup" : "/userform"}
             >
               My RSpace
