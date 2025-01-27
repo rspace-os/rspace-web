@@ -208,6 +208,9 @@ export function AccessibilityTipsIconButton({
 }: AccessibilityTipsComponentArgs): Node {
   const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
 
+  if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom)
+    return null;
+
   return (
     <>
       <IconButtonWithTooltip
@@ -255,6 +258,9 @@ export function AccessibilityTipsMenuItem({
   onClose: () => void,
 |}): Node {
   const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
+
+  if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom)
+    return null;
 
   return (
     <>
