@@ -575,6 +575,7 @@ function ActionsMenu({
             void duplicateFiles(selection.asSet()).then(() => {
               void refreshListing();
               setActionsMenuAnchorEl(null);
+              trackEvent("user:duplicates:file:gallery");
             });
           }}
           compact
