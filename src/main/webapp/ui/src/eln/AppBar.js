@@ -10,6 +10,7 @@ import createAccentedTheme from "../accentedTheme";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
+import { COLOR as GALLERY_COLOR } from "./gallery/common";
 
 const WORKSPACE_COLOR = {
   main: {
@@ -78,6 +79,7 @@ function currentPage() {
     directory: "My RSpace",
     audit: "My RSpace",
     import: "My RSpace",
+    gallery: "Gallery",
   };
   const firstPathFragment = window.location.pathname.split("/")[1];
   if (firstPathFragment in pages) return pages[firstPathFragment];
@@ -86,6 +88,7 @@ function currentPage() {
 
 function color(page: string) {
   if (page === "Workspace") return WORKSPACE_COLOR;
+  if (page === "Gallery") return GALLERY_COLOR;
   return OTHER_COLOR;
 }
 
