@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.UserDetailsApi;
 import com.researchspace.api.v1.model.ApiUiNavigationData;
+import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationScheduledMaintenance;
 import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationUserDetails;
 import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationVisibleTabs;
 import com.researchspace.api.v1.model.ApiUser;
@@ -119,9 +120,12 @@ public class UserDetailsApiController extends BaseApiController implements UserD
     userDetails.setUsername(user.getUsername());
     userDetails.setFullName(user.getFullName());
     userDetails.setEmail(user.getEmail());
-    Optional<ExternalId> extId = extIdResolver.getExternalIdForUser(user, IdentifierScheme.ORCID);
-    if (extId.isPresent()) {
-      userDetails.setOrcidId(extId.get().getIdentifier());
+    if (extIdResolver.isIdentifierSchemeAvailable(user, IdentifierScheme.ORCID)) {
+      userDetails.setOrcidAvailable(true);
+      Optional<ExternalId> extId = extIdResolver.getExternalIdForUser(user, IdentifierScheme.ORCID);
+      if (extId.isPresent()) {
+        userDetails.setOrcidId(extId.get().getIdentifier());
+      }
     }
     UserProfile userProfile = userProfileManager.getUserProfile(user);
     Long profileImageId =
@@ -134,10 +138,10 @@ public class UserDetailsApiController extends BaseApiController implements UserD
     userDetails.setLastSession(lastLogin == null ? null : lastLogin.getTime());
     navigationData.setUserDetails(userDetails);
 
-    navigationData.setIncomingMaintenance(
-        !ScheduledMaintenance.NULL.equals(maintenanceManager.getNextScheduledMaintenance()));
-    navigationData.setOperatedAs(SecurityUtils.getSubject().isRunAs());
-
+    ScheduledMaintenance nextMaintenance = maintenanceManager.getNextScheduledMaintenance();
+    if (!ScheduledMaintenance.NULL.equals(nextMaintenance)) {
+      navigationData.setNextMaintenance(new ApiUiNavigationScheduledMaintenance(nextMaintenance));
+    }
     return navigationData;
   }
 }

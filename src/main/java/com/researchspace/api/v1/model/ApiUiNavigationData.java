@@ -1,11 +1,9 @@
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
+import com.researchspace.maintenance.model.ScheduledMaintenance;
 import lombok.Data;
 
 @Data
@@ -24,38 +22,56 @@ public class ApiUiNavigationData {
 
   private ApiUiNavigationUserDetails userDetails;
 
-  private boolean incomingMaintenance;
+  private ApiUiNavigationScheduledMaintenance nextMaintenance;
 
   private boolean operatedAs;
 
   @Data
   public static class ApiUiNavigationVisibleTabs {
-    @JsonProperty("inventory")
+
     private boolean inventory;
-
-    @JsonProperty("myLabGroups")
     private boolean myLabGroups;
-
-    @JsonProperty("published")
     private boolean published;
-
-    @JsonProperty("system")
     private boolean system;
   }
 
   @Data
   public static class ApiUiNavigationUserDetails {
 
-    @JsonProperty("username")
     private String username;
-
     private String fullName;
     private String email;
     private String orcidId;
+    private boolean orcidAvailable;
     private String profileImgSrc;
 
     @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
-    @JsonDeserialize(using = ISO8601DateTimeDeserialiser.class)
     private Long lastSession;
+  }
+
+  @Data
+  public static class ApiUiNavigationScheduledMaintenance {
+
+    @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
+    private Long startDate;
+
+    @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
+    private Long endDate;
+
+    @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
+    private Long stopUserLoginDate;
+
+    private String message;
+    private boolean canUserLoginNow;
+    private boolean activeNow;
+
+    public ApiUiNavigationScheduledMaintenance(ScheduledMaintenance maintenance) {
+      setStartDate(maintenance.getStartDate().getTime());
+      setEndDate(maintenance.getEndDate().getTime());
+      setStopUserLoginDate(maintenance.getStopUserLoginDate().getTime());
+      setMessage(maintenance.getMessage());
+      setCanUserLoginNow(maintenance.getCanUserLoginNow());
+      setActiveNow(maintenance.isActiveNow());
+    }
   }
 }

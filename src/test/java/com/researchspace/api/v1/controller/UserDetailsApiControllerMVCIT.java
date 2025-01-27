@@ -204,7 +204,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
     ApiUiNavigationData retrievedData = getFromJsonResponseBody(result, ApiUiNavigationData.class);
 
     assertEquals("/public/banner", retrievedData.getBannerImgSrc());
-    assertFalse(retrievedData.isIncomingMaintenance());
+    assertNull(retrievedData.getNextMaintenance());
     assertFalse(retrievedData.isOperatedAs());
 
     ApiUiNavigationVisibleTabs visibleTabs = retrievedData.getVisibleTabs();
@@ -218,6 +218,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(anyUser.getFullName(), retrievedUser.getFullName());
     assertEquals(anyUser.getEmail(), retrievedUser.getEmail());
     assertNull(retrievedUser.getOrcidId());
+    assertFalse(retrievedUser.isOrcidAvailable());
     assertNull(retrievedUser.getProfileImgSrc());
     assertNull(retrievedUser.getLastSession());
   }
