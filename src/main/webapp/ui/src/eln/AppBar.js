@@ -9,6 +9,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import createAccentedTheme from "../accentedTheme";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
+import { DialogBoundary } from "../components/DialogBoundary";
 
 const COLOR = {
   main: {
@@ -90,11 +91,16 @@ window.addEventListener("load", () => {
           <CssBaseline />
           <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
             <div>
-              <AppBar
-                variant="page"
-                currentPage={currentPage()}
-                accessibilityTips={{}}
-              />
+              {/*
+               * We use a DialogBoundary to keep the menu inside the shadow DOM
+               */}
+              <DialogBoundary>
+                <AppBar
+                  variant="page"
+                  currentPage={currentPage()}
+                  accessibilityTips={{}}
+                />
+              </DialogBoundary>
             </div>
             <div style={{ height: "30px" }}></div>
           </ThemeProvider>
