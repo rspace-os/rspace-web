@@ -565,8 +565,8 @@ function GalleryAppBar({
         )}
         <Box flexGrow={1}></Box>
         {FetchingData.getSuccessValue(uiNavigationData)
-          .map(({ incomingMaintenance }) => incomingMaintenance)
-          .flatMap(Parsers.isTrue)
+          .map(({ nextMaintenance }) => nextMaintenance)
+          .flatMap(Parsers.isNotNull)
           .map(() => <IncomingMaintenancePopup key="maintenance" />)
           .orElse(null)}
         <Box ml={1}>
