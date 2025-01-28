@@ -14,6 +14,7 @@ export type UiNavigationData = {|
   userDetails: {|
     email: string,
     orcidId: null | string,
+    orcidAvailable: boolean,
     fullName: string,
     username: string,
     profileImgSrc: null | string,
@@ -64,6 +65,12 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
               .flatMap((o) =>
                 Parsers.isString(o).orElseTry(() => Parsers.isNull(o))
               )
+              .elseThrow();
+            const orcidAvailable = Parsers.objectPath(
+              ["userDetails", "orcidAvailable"],
+              obj
+            )
+              .flatMap(Parsers.isBoolean)
               .elseThrow();
             const fullName = Parsers.objectPath(
               ["userDetails", "fullName"],
@@ -121,6 +128,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
               userDetails: {
                 email,
                 orcidId,
+                orcidAvailable,
                 fullName,
                 username,
                 profileImgSrc,

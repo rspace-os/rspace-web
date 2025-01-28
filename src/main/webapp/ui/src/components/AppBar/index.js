@@ -679,48 +679,50 @@ function GalleryAppBar({
                         }
                         secondary={userDetails.email}
                       />
-                      <ListItemText
-                        /*
-                         * The styling of this component is dictated by the ORCID display guidelines
-                         * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
-                         */
-                        sx={{ mt: -0.5 }}
-                        primaryTypographyProps={{
-                          sx: {
-                            fontFamily:
-                              userDetails.orcidId === null
-                                ? "inherit"
-                                : "monospace",
-                            lineHeight:
-                              userDetails.orcidId === null ? "unset" : "1em",
-                            fontSize: "0.8em",
-                            alignItems: "center",
-                            textDecoration:
-                              userDetails.orcidId === null
-                                ? "none"
-                                : "underline",
-                          },
-                        }}
-                        primary={
-                          userDetails.orcidId === null ? (
-                            <>
-                              Add an ORCID iD to your{" "}
-                              <Link href="/userform">profile</Link>.
-                            </>
-                          ) : (
-                            <Stack
-                              direction="row"
-                              spacing={0.5}
-                              alignItems="center"
-                            >
-                              <SvgIcon>
-                                <OrcidIcon />
-                              </SvgIcon>
-                              <span>{userDetails.orcidId}</span>
-                            </Stack>
-                          )
-                        }
-                      />
+                      {userDetails.orcidAvailable && (
+                        <ListItemText
+                          /*
+                           * The styling of this component is dictated by the ORCID display guidelines
+                           * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
+                           */
+                          sx={{ mt: -0.5 }}
+                          primaryTypographyProps={{
+                            sx: {
+                              fontFamily:
+                                userDetails.orcidId === null
+                                  ? "inherit"
+                                  : "monospace",
+                              lineHeight:
+                                userDetails.orcidId === null ? "unset" : "1em",
+                              fontSize: "0.8em",
+                              alignItems: "center",
+                              textDecoration:
+                                userDetails.orcidId === null
+                                  ? "none"
+                                  : "underline",
+                            },
+                          }}
+                          primary={
+                            userDetails.orcidId === null ? (
+                              <>
+                                Add an ORCID iD to your{" "}
+                                <Link href="/userform">profile</Link>.
+                              </>
+                            ) : (
+                              <Stack
+                                direction="row"
+                                spacing={0.5}
+                                alignItems="center"
+                              >
+                                <SvgIcon>
+                                  <OrcidIcon />
+                                </SvgIcon>
+                                <span>{userDetails.orcidId}</span>
+                              </Stack>
+                            )
+                          }
+                        />
+                      )}
                     </Stack>
                   </ListItem>
                 ),
