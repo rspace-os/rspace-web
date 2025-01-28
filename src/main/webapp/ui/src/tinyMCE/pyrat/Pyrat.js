@@ -109,6 +109,7 @@ const TABLE_HEADER_CELLS = [
 let VISIBLE_HEADER_CELLS = [];
 let SELECTED_ANIMALS = [];
 let PYRAT_URL = null;
+let PYRAT_ALIAS = null;
 
 function PyratListing({ serverAlias }) {
   const pyrat = axios.create({
@@ -525,6 +526,7 @@ function Pyrat() {
   FetchingData.getSuccessValue(servers).do((servers) => {
     if (servers.length === 1) {
       PYRAT_URL = servers[0].url;
+      PYRAT_ALIAS = servers[0].alias
     }
   });
 
@@ -549,6 +551,7 @@ function Pyrat() {
                     onClick={() => {
                       setServerAlias(server.alias);
                       PYRAT_URL = server.url;
+                      PYRAT_ALIAS = server.alias;
                     }}
                   >
                     <ListItemText
@@ -597,6 +600,7 @@ function createTinyMceTable() {
   pyratTable.style = "font-size: 0.7em";
 
   if (!PYRAT_URL) throw new Error("PYRAT_URL is not known");
+  if (!PYRAT_ALIAS) throw new Error("PYRAT_ALIAS is not known");
 
   const link = PYRAT_URL.slice(0, PYRAT_URL.lastIndexOf("/api/"));
 
@@ -605,7 +609,7 @@ function createTinyMceTable() {
   linkCell.appendChild(document.createTextNode("Imported from "));
   const anchor = document.createElement("a");
   anchor.href = link;
-  anchor.appendChild(document.createTextNode(link));
+  anchor.appendChild(document.createTextNode(`${PYRAT_ALIAS} (${link})`));
   anchor.setAttribute("rel", "noreferrer");
   linkCell.appendChild(anchor);
   linkCell.appendChild(document.createTextNode(" on "));
