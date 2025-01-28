@@ -50,18 +50,17 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testSaveNewCfg() {
+  public void testSaveAndRetrieveNewCfg() {
     Map<String, String> props = createValidPropertyMap();
-    UserAppConfig cfg = userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1);
-    assertEquals("slack.app", cfg.getApp().getName());
-    assertEquals(1, cfg.getAppConfigElementSets().size());
+    UserAppConfig savedCfg = userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1);
+    AppConfigElementSet retrievedElementSet =
+        userAppCfgMgr.getAppConfigElementSetById(
+            savedCfg.getAppConfigElementSets().iterator().next().getId());
+    assertEquals("slack.app", savedCfg.getApp().getName());
+    assertEquals(1, savedCfg.getAppConfigElementSets().size());
     assertEquals(
         SLACK_CHANNEL1,
-        cfg.getAppConfigElementSets()
-            .iterator()
-            .next()
-            .findElementByPropertyName(SLACK_CHANNEL_NAME)
-            .getValue());
+        retrievedElementSet.findElementByPropertyName(SLACK_CHANNEL_NAME).getValue());
   }
 
   @Test

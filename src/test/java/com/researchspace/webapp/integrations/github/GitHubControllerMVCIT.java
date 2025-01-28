@@ -141,12 +141,10 @@ public class GitHubControllerMVCIT extends MVCTestBase {
 
     server
         .expect(requestTo("https://api.github.com/repos/rspace-integration-test-user/test2"))
-        .andRespond(withSuccess("{ \"default_branch\":\"main\"}",
-            MediaType.APPLICATION_JSON));
+        .andRespond(withSuccess("{ \"default_branch\":\"main\"}", MediaType.APPLICATION_JSON));
     server
         .expect(requestTo("https://api.github.com/repos/rspace-integration-test-user/test1"))
-        .andRespond(withSuccess("{ \"default_branch\":\"master\"}",
-                MediaType.APPLICATION_JSON));
+        .andRespond(withSuccess("{ \"default_branch\":\"master\"}", MediaType.APPLICATION_JSON));
 
     MvcResult result =
         this.mockMvc
