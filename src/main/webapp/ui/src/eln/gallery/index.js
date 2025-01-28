@@ -3,7 +3,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
-import { ThemeProvider, styled, lighten } from "@mui/material/styles";
+import { ThemeProvider, styled, lighten, useTheme } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import { COLOR, SELECTED_OR_FOCUS_BLUE, GALLERY_SECTION } from "./common";
 import AppBar from "./components/AppBar";
@@ -31,8 +31,12 @@ import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
+import BroadcastIcon from "@mui/icons-material/Campaign";
+import Alert from "@mui/material/Alert";
+import Link from "@mui/material/Link";
 
 const WholePage = styled(() => {
+  const theme = useTheme();
   const [searchParams, setSelectedSection] = useSearchParamState({
     mediaType: GALLERY_SECTION.IMAGES,
   });
@@ -62,6 +66,7 @@ const WholePage = styled(() => {
   const { isViewportSmall } = useViewportDimensions();
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
   const sidebarId = React.useId();
+  const [showAlert, setShowAlert] = React.useState(true);
 
   return (
     <CallableImagePreview>
@@ -73,6 +78,23 @@ const WholePage = styled(() => {
               drawerOpen={drawerOpen}
               sidebarId={sidebarId}
             />
+            {showAlert && (
+              <Box sx={{ borderBottom: theme.borders.card }}>
+                <Alert
+                  icon={<BroadcastIcon fontSize="inherit" />}
+                  severity="info"
+                  onClose={() => setShowAlert(false)}
+                >
+                  Welcome to the new Gallery! Whilst we hope everything is
+                  working as expected, please be aware that this is a beta
+                  version and there may be some bugs. If you encounter any
+                  issues, please let us know by emailing{" "}
+                  <Link href="mailto:support@researchspace.com">support</Link>{" "}
+                  and using the <Link href="/oldGallery">old Gallery</Link> in
+                  the meantime.
+                </Alert>
+              </Box>
+            )}
             <Box
               sx={{ display: "flex", height: "calc(100% - 48px)" }}
               component="main"
