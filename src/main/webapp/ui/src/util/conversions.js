@@ -176,6 +176,43 @@ export function todaysDate(): Date {
   );
 }
 
+/**
+ * Get the relative time from now to a target date, in terms of the largest
+ * unit of time that is smaller than the interval.
+ *
+ * @param targetDate The date in the future.
+ */
+export function getRelativeTime(targetDate: Date): string {
+  const now = new Date();
+  const futureDate = targetDate;
+  //const diffInSeconds = Math.floor((futureDate - now) / 1000);
+  const diffInSeconds = Math.floor(
+    (futureDate.getTime() - now.getTime()) / 1000
+  );
+
+  const units = [
+    { name: "year", seconds: 60 * 60 * 24 * 365 },
+    { name: "month", seconds: 60 * 60 * 24 * 30 },
+    { name: "day", seconds: 60 * 60 * 24 },
+    { name: "hour", seconds: 60 * 60 },
+    { name: "minute", seconds: 60 },
+    { name: "second", seconds: 1 },
+  ];
+
+  for (const unit of units) {
+    if (Math.abs(diffInSeconds) >= unit.seconds) {
+      const value = Math.floor(diffInSeconds / unit.seconds);
+      //$FlowExpectedError[prop-missing] -- Flow doesn't know about Intl.RelativeTimeFormat
+      return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
+        value,
+        unit.name
+      );
+    }
+  }
+
+  return "now";
+}
+
 /* temperature conversions */
 
 export function temperatureFromTo(

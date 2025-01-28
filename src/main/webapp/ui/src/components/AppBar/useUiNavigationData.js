@@ -27,7 +27,7 @@ export type UiNavigationData = {|
   |},
   bannerImgSrc: string,
   operatedAs: boolean,
-  nextMaintenance: null | { ... },
+  nextMaintenance: null | {| startDate: Date |},
 |};
 
 /**
@@ -121,7 +121,15 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
               .elseThrow();
             const nextMaintenance = Parsers.objectPath(["nextMaintenance"], obj)
               .flatMap((o) =>
-                Parsers.isObject(o).orElseTry(() => Parsers.isNull(o))
+                Parsers.isObject(o)
+                  .flatMap(Parsers.isNotNull)
+                  .flatMap((nextMaintenanceObj) =>
+                    Parsers.objectPath(["startDate"], nextMaintenanceObj)
+                      .flatMap(Parsers.isString)
+                      .flatMap(Parsers.parseDate)
+                      .map((startDate) => ({ startDate }))
+                  )
+                  .orElseTry(() => Parsers.isNull(o))
               )
               .elseThrow();
             return Result.Ok({

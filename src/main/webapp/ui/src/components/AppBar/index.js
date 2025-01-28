@@ -53,8 +53,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import MaintenanceIcon from "@mui/icons-material/Construction";
 import Popover from "@mui/material/Popover";
 import IconButton from "@mui/material/IconButton";
+import { getRelativeTime } from "../../util/conversions";
 
-const IncomingMaintenancePopup = () => {
+const IncomingMaintenancePopup = ({ startDate }: {| startDate: Date |}) => {
   const [anchorEl, setAnchorEl] = React.useState<null | EventTarget>(null);
   const popoverId = React.useId();
   return (
@@ -63,7 +64,9 @@ const IncomingMaintenancePopup = () => {
         onClick={(e) => {
           setAnchorEl(e.currentTarget);
         }}
-        aria-label="A scheduled maintenance window begins shortly."
+        aria-label={`A scheduled maintenance window begins ${getRelativeTime(
+          startDate
+        )}.`}
         aria-controls={popoverId}
         aria-haspopup="dialog"
         color="error"
@@ -84,7 +87,11 @@ const IncomingMaintenancePopup = () => {
         }}
       >
         <Typography sx={{ p: 2 }}>
-          A scheduled maintenance window begins shortly.
+          {/*
+           * We show a relative time here rather than an absolute time to avoid
+           * the need to take into account the user's timezone.
+           */}
+          A scheduled maintenance window begins {getRelativeTime(startDate)}.
         </Typography>
       </Popover>
     </>
@@ -567,7 +574,9 @@ function GalleryAppBar({
         {FetchingData.getSuccessValue(uiNavigationData)
           .map(({ nextMaintenance }) => nextMaintenance)
           .flatMap(Parsers.isNotNull)
-          .map(() => <IncomingMaintenancePopup key="maintenance" />)
+          .map(({ startDate }) => (
+            <IncomingMaintenancePopup key="maintenance" startDate={startDate} />
+          ))
           .orElse(null)}
         <Box ml={1}>
           {helpPage ? (
