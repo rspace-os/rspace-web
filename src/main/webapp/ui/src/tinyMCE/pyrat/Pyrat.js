@@ -614,6 +614,8 @@ function createTinyMceTable() {
   linkCell.appendChild(anchor);
   linkCell.appendChild(document.createTextNode(" on "));
   linkCell.appendChild(document.createTextNode(new Date().toDateString()));
+  linkCell.appendChild(document.createTextNode(" "));
+  linkCell.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
   linkCell.setAttribute("colspan", VISIBLE_HEADER_CELLS.length);
   linkCell.style = "font-weight: 400";
   linkRow.appendChild(linkCell);
