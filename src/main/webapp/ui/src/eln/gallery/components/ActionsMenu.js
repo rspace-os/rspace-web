@@ -57,7 +57,7 @@ import CardMedia from "@mui/material/CardMedia";
 import { useFolderOpen } from "./OpenFolderProvider";
 import { type URL } from "../../../util/types";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-import { Optional } from "../../../util/Optional";
+import { Optional } from "../../../util/optional";
 
 /**
  * When tapped, the user is presented with their operating system's file
