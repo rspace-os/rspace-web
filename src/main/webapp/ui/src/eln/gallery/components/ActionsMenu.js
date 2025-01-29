@@ -57,6 +57,7 @@ import CardMedia from "@mui/material/CardMedia";
 import { useFolderOpen } from "./OpenFolderProvider";
 import { type URL } from "../../../util/types";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import { Optional } from "../../../util/Optional";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -179,9 +180,7 @@ const UploadNewVersionMenuItem = ({
               void uploadNewVersion(idOfFolderThatFileIsIn, file, newFile)
                 .then(() => {
                   onSuccess();
-                  trackEvent("user:uploads_new_version:file:gallery", {
-                    version: file.version + 1,
-                  });
+                  trackEvent("user:uploads_new_version:file:gallery", Optional.fromNullable(file.version).map(v => ({ version: v + 1 })).orElse({}));
                 })
                 .catch(onError);
             }}
