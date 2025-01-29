@@ -86,8 +86,8 @@ const WholePage = styled(() => {
                   onClose={() => setShowAlert(false)}
                 >
                   Welcome to the new Gallery! Whilst we hope everything is
-                  working as expected, please be aware that this is a beta
-                  version and there may be some bugs. If you encounter any
+                  working as expected, please be aware that this is newly
+                  released and there may be some bugs. If you encounter any
                   issues, please let us know by emailing{" "}
                   <Link href="mailto:support@researchspace.com">support</Link>{" "}
                   and using the <Link href="/oldGallery">old Gallery</Link> in
