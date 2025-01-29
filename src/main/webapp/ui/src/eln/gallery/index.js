@@ -90,7 +90,7 @@ const WholePage = styled(() => {
                   released and there may be some bugs. If you encounter any
                   issues, please let us know by emailing{" "}
                   <Link href="mailto:support@researchspace.com">support</Link>{" "}
-                  and using the <Link href="/oldGallery">old Gallery</Link> in
+                  and using the <Link target="_self" href="/oldGallery">old Gallery</Link> in
                   the meantime.
                 </Alert>
               </Box>
