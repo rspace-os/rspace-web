@@ -7,7 +7,12 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.Min;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,8 +29,9 @@ import lombok.NoArgsConstructor;
       "created",
       "lastModified",
       "parentFolderId",
-      "isNotebook",
-      "owner",
+      "notebook",
+      "mediaType",
+      "pathToRootFolder",
       "_links"
     })
 public class ApiFolder extends IdentifiableNameableApiObject {
@@ -50,6 +56,12 @@ public class ApiFolder extends IdentifiableNameableApiObject {
    */
   private boolean notebook;
 
+  @JsonProperty("mediaType")
+  private String mediaType;
+
+  @JsonProperty("pathToRootFolder")
+  private List<ApiFolder> pathToRootFolder;
+
   /**
    * Constructor for converting {@link Folder} entity to an {@link ApiFolder}
    *
@@ -69,6 +81,48 @@ public class ApiFolder extends IdentifiableNameableApiObject {
         setParentFolderId(folderOrNotebook.getOwnerParent().get().getId());
       } else if (folderOrNotebook.isSharedFolder() && folderOrNotebook.hasParents()) {
         setParentFolderId(folderOrNotebook.getParentFolders().iterator().next().getId());
+      }
+    }
+
+    if (GlobalIdPrefix.GF.equals(folderOrNotebook.getOid().getPrefix())) {
+      setMediaType(findGalleryFolderMediaType(folderOrNotebook));
+    }
+  }
+
+  private String findGalleryFolderMediaType(Folder galleryFolder) {
+    Folder prevFolder = galleryFolder;
+    while (prevFolder.getOwnerParent().isPresent()) {
+      Folder currFolder = prevFolder.getOwnerParent().get();
+      if (currFolder.hasType(RecordType.ROOT_MEDIA)) {
+        return prevFolder.getName();
+      }
+      prevFolder = currFolder;
+    }
+    return null;
+  }
+
+  /**
+   * Constructor that looks into parent folders to set 'mediaType' property (in case of Gallery
+   * Folders), and also populates the 'parents' list if 'includeParents' param is 'true'
+   *
+   * @param folderOrNotebook
+   * @param authorisedSubject
+   */
+  public ApiFolder(
+      Folder folderOrNotebook, Boolean includePathToRootFolder, User authorisedSubject) {
+    this(folderOrNotebook, authorisedSubject);
+
+    if (Boolean.TRUE.equals(includePathToRootFolder)
+        && authorisedSubject.equals(folderOrNotebook.getOwner())) {
+      pathToRootFolder = new ArrayList<>();
+      Optional<Folder> currParentOpt = folderOrNotebook.getOwnerParent();
+      while (currParentOpt.isPresent()) {
+        Folder currParent = currParentOpt.get();
+        pathToRootFolder.add(new ApiFolder(currParent, authorisedSubject));
+        if (currParent.hasType(RecordType.ROOT_MEDIA)) {
+          break; // for gallery subfolders, stop at Gallery level
+        }
+        currParentOpt = currParent.getOwnerParent();
       }
     }
   }

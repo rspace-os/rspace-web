@@ -60,7 +60,7 @@ describe("MainPanel", () => {
           <MainPanel
             selectedSection="Images"
             path={[]}
-            clearPath={() => {}}
+            setSelectedSection={() => {}}
             galleryListing={{ tag: "loading" }}
             folderId={{ tag: "loading" }}
             refreshListing={() => Promise.resolve()}

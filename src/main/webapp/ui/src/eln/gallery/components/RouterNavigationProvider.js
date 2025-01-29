@@ -19,7 +19,7 @@ export default function RouterNavigationProvider({
   const navigate = ReactRouter.useNavigate();
 
   const useNavigate = () => (url: string) => {
-    if (/\/gallery/.test(url)) {
+    if (/\/gallery/.test(url) || /\/newGallery/.test(url)) {
       navigate(url);
     } else {
       window.open(location.origin + url);
