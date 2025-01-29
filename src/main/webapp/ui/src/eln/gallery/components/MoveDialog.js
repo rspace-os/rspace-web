@@ -54,11 +54,18 @@ const MoveDialog = observer(
     const { isViewportVerySmall } = useViewportDimensions();
     const { trackEvent } = React.useContext(AnalyticsContext);
 
+    const listingOf = React.useMemo(
+      () => ({
+        tag: "section",
+        section,
+        path: ([]: $ReadOnlyArray<GalleryFile>),
+      }),
+      [section]
+    );
     const { galleryListing, refreshListing: refreshListingInsideDialog } =
       useGalleryListing({
-        section,
+        listingOf,
         searchTerm: "",
-        path: [],
         orderBy: "name",
         sortOrder: "ASC",
         foldersOnly: true,

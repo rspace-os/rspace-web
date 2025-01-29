@@ -280,7 +280,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 
 type ActionsMenuArgs = {|
   refreshListing: () => Promise<void>,
-  section: GallerySection,
+  section: GallerySection | null,
   folderId: FetchingData.Fetched<Id>,
 |};
 
@@ -455,7 +455,7 @@ function ActionsMenu({
         variant="contained"
         color="callToAction"
         size="small"
-        disabled={selection.isEmpty}
+        disabled={selection.isEmpty || !section}
         aria-haspopup="menu"
         aria-expanded={actionsMenuAnchorEl ? "true" : "false"}
         startIcon={<ChecklistIcon />}
@@ -465,311 +465,316 @@ function ActionsMenu({
       >
         Actions
       </Button>
-      <StyledMenu
-        open={Boolean(actionsMenuAnchorEl)}
-        anchorEl={actionsMenuAnchorEl}
-        onClose={() => setActionsMenuAnchorEl(null)}
-        MenuListProps={{
-          disablePadding: true,
-          "aria-label": "actions",
-        }}
-        /*
-         * We don't use `keepMounted` here as otherwise every time the user
-         * changes the selection the menu would have to re-render. The response
-         * time for the UI to update after a selection change is already pretty
-         * long (>250ms) as the listing and info panel have to be completely
-         * re-rendered and so keeping the menu out of the DOM whenever possible
-         * helps in keeping the user interface as responsive as possible.
-         */
-      >
-        {openAllowed
-          .get()
-          .map((file) => (
+      {Boolean(section) && (
+        <StyledMenu
+          open={Boolean(actionsMenuAnchorEl)}
+          anchorEl={actionsMenuAnchorEl}
+          onClose={() => setActionsMenuAnchorEl(null)}
+          MenuListProps={{
+            disablePadding: true,
+            "aria-label": "actions",
+          }}
+          /*
+           * We don't use `keepMounted` here as otherwise every time the user
+           * changes the selection the menu would have to re-render. The response
+           * time for the UI to update after a selection change is already pretty
+           * long (>250ms) as the listing and info panel have to be completely
+           * re-rendered and so keeping the menu out of the DOM whenever possible
+           * helps in keeping the user interface as responsive as possible.
+           */
+        >
+          {openAllowed
+            .get()
+            .map((file) => (
+              <AccentMenuItem
+                title="Open"
+                backgroundColor={COLOR.background}
+                foregroundColor={COLOR.contrastText}
+                avatar={<FolderOpenIcon />}
+                onClick={() => {
+                  openFolder(file);
+                  setActionsMenuAnchorEl(null);
+                }}
+                compact
+                key="open"
+              />
+            ))
+            .orElse(null)}
+          {!viewHidden.get() && (
             <AccentMenuItem
-              title="Open"
+              title="View"
+              subheader={viewAllowed
+                .get()
+                .map(() => "")
+                .orElseGet(([e]) => e.message)}
               backgroundColor={COLOR.background}
               foregroundColor={COLOR.contrastText}
-              avatar={<FolderOpenIcon />}
+              avatar={<VisibilityIcon />}
               onClick={() => {
-                openFolder(file);
+                viewAllowed.get().do((viewAction) => {
+                  if (viewAction.key === "image")
+                    void viewAction.downloadHref().then((downloadHref) => {
+                      openImagePreview(downloadHref, {
+                        caption: viewAction.caption,
+                      });
+                    });
+                  if (viewAction.key === "pdf")
+                    void viewAction.downloadHref().then((downloadHref) => {
+                      openPdfPreview(downloadHref);
+                    });
+                  if (viewAction.key === "aspose")
+                    void openAsposePreview(viewAction.file);
+                });
                 setActionsMenuAnchorEl(null);
               }}
               compact
-              key="open"
+              disabled={viewAllowed.get().isError}
             />
-          ))
-          .orElse(null)}
-        {!viewHidden.get() && (
+          )}
           <AccentMenuItem
-            title="View"
-            subheader={viewAllowed
+            title="Edit"
+            subheader={editingAllowed
               .get()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             backgroundColor={COLOR.background}
             foregroundColor={COLOR.contrastText}
-            avatar={<VisibilityIcon />}
+            avatar={<EditIcon />}
             onClick={() => {
-              viewAllowed.get().do((viewAction) => {
-                if (viewAction.key === "image")
-                  void viewAction.downloadHref().then((downloadHref) => {
-                    openImagePreview(downloadHref, {
-                      caption: viewAction.caption,
-                    });
-                  });
-                if (viewAction.key === "pdf")
-                  void viewAction.downloadHref().then((downloadHref) => {
-                    openPdfPreview(downloadHref);
-                  });
-                if (viewAction.key === "aspose")
-                  void openAsposePreview(viewAction.file);
-              });
+              editingAllowed.get().do(
+                doNotAwait(async (action) => {
+                  if (action.key === "officeonline") {
+                    window.open(action.url);
+                    trackEvent("user:opens:document:officeonline");
+                  }
+                  if (action.key === "collabora") {
+                    window.open(action.url);
+                    trackEvent("user:opens:document:collabora");
+                  }
+                  if (action.key === "image") {
+                    try {
+                      const downloadHref = await action.downloadHref();
+                      const { data } = await axios.get<Blob>(downloadHref, {
+                        responseType: "blob",
+                      });
+                      setImageEditorBlob(data);
+                    } catch (e) {
+                      addAlert(
+                        mkAlert({
+                          variant: "error",
+                          title: "Failed to download image for editing",
+                          message: e.message,
+                        })
+                      );
+                    }
+                  }
+                })
+              );
               setActionsMenuAnchorEl(null);
             }}
             compact
-            disabled={viewAllowed.get().isError}
+            disabled={editingAllowed.get().isError}
           />
-        )}
-        <AccentMenuItem
-          title="Edit"
-          subheader={editingAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<EditIcon />}
-          onClick={() => {
-            editingAllowed.get().do(
-              doNotAwait(async (action) => {
-                if (action.key === "officeonline") {
-                  window.open(action.url);
-                  trackEvent("user:opens:document:officeonline");
-                }
-                if (action.key === "collabora") {
-                  window.open(action.url);
-                  trackEvent("user:opens:document:collabora");
-                }
-                if (action.key === "image") {
-                  try {
-                    const downloadHref = await action.downloadHref();
-                    const { data } = await axios.get<Blob>(downloadHref, {
-                      responseType: "blob",
-                    });
-                    setImageEditorBlob(data);
-                  } catch (e) {
-                    addAlert(
-                      mkAlert({
-                        variant: "error",
-                        title: "Failed to download image for editing",
-                        message: e.message,
-                      })
-                    );
-                  }
-                }
-              })
-            );
-            setActionsMenuAnchorEl(null);
-          }}
-          compact
-          disabled={editingAllowed.get().isError}
-        />
-        <AccentMenuItem
-          title="Duplicate"
-          subheader={duplicateAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<AddToPhotosIcon />}
-          onClick={() => {
-            void duplicateFiles(selection.asSet()).then(() => {
-              void refreshListing();
-              setActionsMenuAnchorEl(null);
-              trackEvent("user:duplicates:file:gallery");
-            });
-          }}
-          compact
-          disabled={duplicateAllowed.get().isError}
-        />
-        <AccentMenuItem
-          title="Move"
-          subheader={moveAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<OpenWithIcon />}
-          onClick={() => {
-            setMoveOpen(true);
-          }}
-          compact
-          disabled={moveAllowed.get().isError}
-          aria-haspopup="dialog"
-        />
-        <MoveDialog
-          open={moveOpen}
-          onClose={() => {
-            setMoveOpen(false);
-            setActionsMenuAnchorEl(null);
-          }}
-          section={section}
-          refreshListing={refreshListing}
-        />
-        <AccentMenuItem
-          title="Rename"
-          subheader={renameAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<DriveFileRenameOutlineIcon />}
-          onClick={() => {
-            setRenameOpen(true);
-          }}
-          compact
-          disabled={renameAllowed.get().isError}
-          aria-haspopup="dialog"
-        />
-        {selection
-          .asSet()
-          .only.map((file) => (
-            <RenameDialog
-              key={null}
-              open={renameOpen}
+          <AccentMenuItem
+            title="Duplicate"
+            subheader={duplicateAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            avatar={<AddToPhotosIcon />}
+            onClick={() => {
+              void duplicateFiles(selection.asSet()).then(() => {
+                void refreshListing();
+                setActionsMenuAnchorEl(null);
+                trackEvent("user:duplicates:file:gallery");
+              });
+            }}
+            compact
+            disabled={duplicateAllowed.get().isError}
+          />
+          <AccentMenuItem
+            title="Move"
+            subheader={moveAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            avatar={<OpenWithIcon />}
+            onClick={() => {
+              setMoveOpen(true);
+            }}
+            compact
+            disabled={moveAllowed.get().isError}
+            aria-haspopup="dialog"
+          />
+          {Optional.fromNullable(section).map((s) => (
+            <MoveDialog
+              key="move dialog"
+              open={moveOpen}
               onClose={() => {
-                setRenameOpen(false);
+                setMoveOpen(false);
+                setActionsMenuAnchorEl(null);
+              }}
+              section={s}
+              refreshListing={refreshListing}
+            />
+          ))}
+          <AccentMenuItem
+            title="Rename"
+            subheader={renameAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            avatar={<DriveFileRenameOutlineIcon />}
+            onClick={() => {
+              setRenameOpen(true);
+            }}
+            compact
+            disabled={renameAllowed.get().isError}
+            aria-haspopup="dialog"
+          />
+          {selection
+            .asSet()
+            .only.map((file) => (
+              <RenameDialog
+                key={null}
+                open={renameOpen}
+                onClose={() => {
+                  setRenameOpen(false);
+                  setActionsMenuAnchorEl(null);
+                  void refreshListing();
+                }}
+                file={file}
+              />
+            ))
+            .orElse(null)}
+          <UploadNewVersionMenuItem
+            folderId={folderId}
+            onSuccess={() => {
+              setActionsMenuAnchorEl(null);
+              void refreshListing();
+            }}
+            onError={() => {
+              setActionsMenuAnchorEl(null);
+            }}
+          />
+          <AccentMenuItem
+            title="Download"
+            subheader={downloadAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            avatar={<FileDownloadIcon />}
+            onClick={() => {
+              void download(selection.asSet()).then(() => {
+                setActionsMenuAnchorEl(null);
+                trackEvent("user:downloads:file:gallery");
+              });
+            }}
+            compact
+            disabled={downloadAllowed.get().isError}
+          />
+          <AccentMenuItem
+            title="Export"
+            subheader={exportAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            backgroundColor={COLOR.background}
+            foregroundColor={COLOR.contrastText}
+            avatar={<FileDownloadIcon />}
+            onClick={() => {
+              setExportOpen(true);
+              trackEvent("user:opens:export_dialog:gallery", {
+                count: selection.size,
+              });
+            }}
+            compact
+            disabled={exportAllowed.get().isError}
+          />
+          <EventBoundary>
+            <ExportDialog
+              open={exportOpen}
+              onClose={() => {
+                setExportOpen(false);
+                setActionsMenuAnchorEl(null);
+              }}
+              exportSelection={{
+                type: "selection",
+                exportTypes: selection
+                  .asSet()
+                  .toArray()
+                  .map((f) => (f.isFolder ? "FOLDER" : "MEDIA_FILE")),
+                exportNames: selection
+                  .asSet()
+                  .toArray()
+                  .map(({ name }) => name),
+                exportIds: selection
+                  .asSet()
+                  .toArray()
+                  .map(({ id }) => idToString(id)),
+              }}
+              allowFileStores={false}
+            />
+          </EventBoundary>
+          <AccentMenuItem
+            title="Move to iRODS"
+            subheader={moveToIrodsAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            backgroundColor={IRODS_COLOR.background}
+            foregroundColor={IRODS_COLOR.contrastText}
+            avatar={<CardMedia image={IrodsLogo} />}
+            onClick={() => {
+              setIrodsOpen(true);
+            }}
+            compact
+            disabled={moveToIrodsAllowed.get().isError}
+            aria-haspopup="dialog"
+          />
+          <MoveToIrods
+            selectedIds={selection
+              .asSet()
+              .map(({ id }) => idToString(id))
+              .toArray()}
+            dialogOpen={irodsOpen}
+            setDialogOpen={(newState) => {
+              setIrodsOpen(newState);
+              if (!newState) {
                 setActionsMenuAnchorEl(null);
                 void refreshListing();
-              }}
-              file={file}
-            />
-          ))
-          .orElse(null)}
-        <UploadNewVersionMenuItem
-          folderId={folderId}
-          onSuccess={() => {
-            setActionsMenuAnchorEl(null);
-            void refreshListing();
-          }}
-          onError={() => {
-            setActionsMenuAnchorEl(null);
-          }}
-        />
-        <AccentMenuItem
-          title="Download"
-          subheader={downloadAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<FileDownloadIcon />}
-          onClick={() => {
-            void download(selection.asSet()).then(() => {
-              setActionsMenuAnchorEl(null);
-              trackEvent("user:downloads:file:gallery");
-            });
-          }}
-          compact
-          disabled={downloadAllowed.get().isError}
-        />
-        <AccentMenuItem
-          title="Export"
-          subheader={exportAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={COLOR.background}
-          foregroundColor={COLOR.contrastText}
-          avatar={<FileDownloadIcon />}
-          onClick={() => {
-            setExportOpen(true);
-            trackEvent("user:opens:export_dialog:gallery", {
-              count: selection.size,
-            });
-          }}
-          compact
-          disabled={exportAllowed.get().isError}
-        />
-        <EventBoundary>
-          <ExportDialog
-            open={exportOpen}
-            onClose={() => {
-              setExportOpen(false);
-              setActionsMenuAnchorEl(null);
+              }
             }}
-            exportSelection={{
-              type: "selection",
-              exportTypes: selection
-                .asSet()
-                .toArray()
-                .map((f) => (f.isFolder ? "FOLDER" : "MEDIA_FILE")),
-              exportNames: selection
-                .asSet()
-                .toArray()
-                .map(({ name }) => name),
-              exportIds: selection
-                .asSet()
-                .toArray()
-                .map(({ id }) => idToString(id)),
-            }}
-            allowFileStores={false}
           />
-        </EventBoundary>
-        <AccentMenuItem
-          title="Move to iRODS"
-          subheader={moveToIrodsAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={IRODS_COLOR.background}
-          foregroundColor={IRODS_COLOR.contrastText}
-          avatar={<CardMedia image={IrodsLogo} />}
-          onClick={() => {
-            setIrodsOpen(true);
-          }}
-          compact
-          disabled={moveToIrodsAllowed.get().isError}
-          aria-haspopup="dialog"
-        />
-        <MoveToIrods
-          selectedIds={selection
-            .asSet()
-            .map(({ id }) => idToString(id))
-            .toArray()}
-          dialogOpen={irodsOpen}
-          setDialogOpen={(newState) => {
-            setIrodsOpen(newState);
-            if (!newState) {
-              setActionsMenuAnchorEl(null);
-              void refreshListing();
-            }
-          }}
-        />
-        <Divider aria-orientation="horizontal" />
-        <AccentMenuItem
-          title="Delete"
-          subheader={deleteAllowed
-            .get()
-            .map(() => "")
-            .orElseGet(([e]) => e.message)}
-          backgroundColor={lighten(theme.palette.error.light, 0.5)}
-          foregroundColor={darken(theme.palette.error.dark, 0.3)}
-          avatar={<DeleteOutlineOutlinedIcon />}
-          onClick={() => {
-            void deleteFiles(selection.asSet()).then(() => {
-              void refreshListing();
-              setActionsMenuAnchorEl(null);
-            });
-          }}
-          compact
-          disabled={deleteAllowed.get().isError}
-        />
-      </StyledMenu>
+          <Divider aria-orientation="horizontal" />
+          <AccentMenuItem
+            title="Delete"
+            subheader={deleteAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            backgroundColor={lighten(theme.palette.error.light, 0.5)}
+            foregroundColor={darken(theme.palette.error.dark, 0.3)}
+            avatar={<DeleteOutlineOutlinedIcon />}
+            onClick={() => {
+              void deleteFiles(selection.asSet()).then(() => {
+                void refreshListing();
+                setActionsMenuAnchorEl(null);
+              });
+            }}
+            compact
+            disabled={deleteAllowed.get().isError}
+          />
+        </StyledMenu>
+      )}
       <ImageEditingDialog
         imageFile={imageEditorBlob}
         open={imageEditorBlob !== null}

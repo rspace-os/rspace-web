@@ -95,27 +95,41 @@ const Picker = observer(
         PREFERENCES.GALLERY_PICKER_INITIAL_SECTION,
         { defaultValue: "Chemistry" }
       );
-    const [drawerOpen, setDrawerOpen] = React.useState(
-      /*
-       * On the Gallery page, the sidebar is open on any viewport size that
-       * isn't small -- on the smaller viewport sizes the sidebar is floating
-       * instead of being persistent. However, in the picker dialog there is
-       * less space than on the main page as the dialog isn't fullscreen and on
-       * the medium size we run into there not being enough horizontal space to
-       * properly display the info panel. As such, initially the sidebar is
-       * closed. The user can open it if they wish but at least we initially
-       * present everything with enough space.
-       */
-      viewport.isViewportLarge
-    );
-    const { galleryListing, path, setPath, folderId, refreshListing } =
-      useGalleryListing({
-        section: selectedSection,
-        searchTerm: appliedSearchTerm,
-        path: [],
-        orderBy,
-        sortOrder,
+
+    const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
+      useUiPreference<boolean>(PREFERENCES.GALLERY_SIDEBAR_OPEN, {
+        defaultValue: true,
       });
+    const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] =
+      React.useState(false);
+    /*
+     * On the Gallery page, the sidebar is open on any viewport size that
+     * isn't small -- on the smaller viewport sizes the sidebar is floating
+     * instead of being persistent. However, in the picker dialog there is
+     * less space than on the main page as the dialog isn't fullscreen and on
+     * the medium size we run into there not being enough horizontal space to
+     * properly display the info panel. As such, initially the sidebar is
+     * closed. The user can open it if they wish but at least we initially
+     * present everything with enough space.
+     */
+    const drawerOpen = viewport.isViewportLarge
+      ? largerViewportSidebarOpenState
+      : smallViewportSidebarOpenState;
+    const setDrawerOpen = viewport.isViewportLarge
+      ? setLargerViewportSidebarOpenState
+      : setSmallViewportSidebarOpenState;
+
+    const [path, setPath] = React.useState<$ReadOnlyArray<GalleryFile>>([]);
+    const listingOf = React.useMemo(
+      () => ({ tag: "section", section: selectedSection, path }),
+      [selectedSection, path]
+    );
+    const { galleryListing, folderId, refreshListing } = useGalleryListing({
+      listingOf,
+      searchTerm: appliedSearchTerm,
+      orderBy,
+      sortOrder,
+    });
 
     return (
       <CallableImagePreview>
@@ -171,7 +185,11 @@ const Picker = observer(
                     <MainPanel
                       selectedSection={selectedSection}
                       path={path}
-                      clearPath={() => setPath([])}
+                      setSelectedSection={(mediaType) => {
+                        setSelectedSection(mediaType);
+                        setPath([]);
+                        setAppliedSearchTerm("");
+                      }}
                       galleryListing={galleryListing}
                       folderId={folderId}
                       refreshListing={refreshListing}
