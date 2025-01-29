@@ -36,6 +36,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { useFolderOpen } from "./OpenFolderProvider";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
   [`.${treeItemClasses.content}`]: {
@@ -221,11 +222,13 @@ const CustomTreeItem = observer(
     refeshing: boolean,
   |}) => {
     const { uploadFiles } = useGalleryActions();
+    const { trackEvent } = React.useContext(AnalyticsContext);
     const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
       useFileImportDropZone({
         onDrop: doNotAwait(async (files) => {
           await uploadFiles(file.id, files);
           void refreshListing();
+          trackEvent("user:drag_uploads:file:into_folder");
         }),
         disabled: !file.isFolder,
       });

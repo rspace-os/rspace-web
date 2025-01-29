@@ -40,11 +40,8 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${egnyte.client.id}")
   private String egnyteClientId;
 
-  @Value("${pyrat.url}")
-  private String pyratUrl;
-
-  @Value("${pyrat.client.token}")
-  private String pyratClientToken;
+  @Value("${pyrat.server.config}")
+  private String pyratServerConfig;
 
   @Value("${labtools.server.location}")
   private String labToolsServerUrl;
@@ -141,10 +138,8 @@ public class DeploymentPropertiesController extends BaseController {
         return oneDriveClientId;
       case "egnyte.client.id":
         return egnyteClientId;
-      case "pyrat.url":
-        return pyratUrl;
-      case "pyrat.client.token":
-        return pyratClientToken;
+      case "pyrat.server.config":
+        return pyratServerConfig;
       case "owncloud.url":
         return ownCloudURL;
       case "owncloud.server.name":
@@ -233,8 +228,7 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("nextcloud.auth.type", nextCloudAuthType);
     properties.put("nextcloud.client.id", nextCloudClientId);
 
-    properties.put("pyrat.url", pyratUrl);
-    properties.put("pyrat.client.token", pyratClientToken);
+    properties.put("pyrat.server.config", pyratServerConfig);
 
     properties.put("googledrive.developer.key", googleDriveDevKey);
     properties.put("googledrive.client.id", googleDriveClientId);

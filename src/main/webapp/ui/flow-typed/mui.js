@@ -106,6 +106,8 @@ declare module "@mui/x-data-grid" {
     density?: "compact" | "standard" | "comfortable",
     getRowId?: (Row) => Id,
     getRowHeight?: () => "auto" | number | null,
+    columnVisibilityModel?: { [ColumnNames]: boolean },
+    onColumnVisibilityModelChange?: ({ [ColumnNames]: boolean }) => void,
     rowSelectionModel?: $ReadOnlyArray<Id>,
     onRowSelectionModelChange?: ($ReadOnlyArray<Id>) => void,
     hideFooterSelectedRowCount?: boolean,
