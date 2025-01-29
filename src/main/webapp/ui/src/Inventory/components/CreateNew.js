@@ -6,7 +6,7 @@ import NavigateContext from "../../stores/contexts/Navigate";
 import { UserCancelledAction } from "../../util/error";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
-import AccentMenuItem from "../../eln/gallery/components/AccentMenuItem";
+import AccentMenuItem from "../../components/AccentMenuItem";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";

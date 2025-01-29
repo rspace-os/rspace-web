@@ -11,7 +11,7 @@ import {
   GALLERY_SECTION,
   type GallerySection,
 } from "./common";
-import AppBar from "./components/AppBar";
+import AppBar from "../../components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
 import Box from "@mui/material/Box";
@@ -46,6 +46,7 @@ import * as FetchingData from "../../util/fetchingData";
 import { useDeploymentProperty } from "../useDeploymentProperty";
 import PlaceholderLabel from "./components/PlaceholderLabel";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import SidebarToggle from "../../components/AppBar/SidebarToggle";
 
 const WholePage = styled(
   ({
@@ -132,9 +133,20 @@ const WholePage = styled(
               }}
             >
               <AppBar
-                setDrawerOpen={setDrawerOpen}
-                drawerOpen={drawerOpen}
-                sidebarId={sidebarId}
+                variant="page"
+                currentPage="Gallery"
+                sidebarToggle={
+                  <SidebarToggle
+                    setSidebarOpen={setDrawerOpen}
+                    sidebarOpen={drawerOpen}
+                    sidebarId={sidebarId}
+                  />
+                }
+                accessibilityTips={{
+                  supportsHighContrastMode: true,
+                  supportsReducedMotion: true,
+                  supports2xZoom: true,
+                }}
               />
               <Box
                 sx={{ display: "flex", height: "calc(100% - 48px)" }}

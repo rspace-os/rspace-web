@@ -3,7 +3,7 @@
 import Dialog from "@mui/material/Dialog";
 import React, { type Node, type ElementConfig, type Ref } from "react";
 import { ThemeProvider, styled } from "@mui/material/styles";
-import AppBar from "../components/AppBar";
+import AppBar from "../../../components/AppBar";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";
@@ -26,6 +26,7 @@ import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
 import RsSet from "../../../util/set";
 import { DisableDragAndDropByDefault } from "../../../components/useFileImportDragAndDrop";
 import OpenFolderProvider from "../components/OpenFolderProvider";
+import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 
 const CustomDialog = styled(Dialog)(({ theme }) => ({
   zIndex: 1100, // less than the SwipeableDrawer so that mobile info panel is shown
@@ -155,9 +156,20 @@ const Picker = observer(
                 aria-label="Gallery Picker"
               >
                 <AppBar
-                  setDrawerOpen={setDrawerOpen}
-                  drawerOpen={drawerOpen}
-                  sidebarId={sidebarId}
+                  variant="dialog"
+                  currentPage="Gallery"
+                  sidebarToggle={
+                    <SidebarToggle
+                      setSidebarOpen={setDrawerOpen}
+                      sidebarOpen={drawerOpen}
+                      sidebarId={sidebarId}
+                    />
+                  }
+                  accessibilityTips={{
+                    supportsHighContrastMode: true,
+                    supportsReducedMotion: true,
+                    supports2xZoom: true,
+                  }}
                 />
                 <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
                   <Sidebar

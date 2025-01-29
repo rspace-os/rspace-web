@@ -21,7 +21,6 @@ import { useTheme } from "@mui/material/styles";
 const useStyles = makeStyles()((theme) => ({
   container: {
     flexWrap: "nowrap",
-    height: "100%",
     backgroundColor: theme.palette.background.alt,
     overflowX: "hidden",
   },

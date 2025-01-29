@@ -49,7 +49,7 @@ import Button from "@mui/material/Button";
 import GridIcon from "@mui/icons-material/ViewCompact";
 import TreeIcon from "@mui/icons-material/AccountTree";
 import Menu from "@mui/material/Menu";
-import AccentMenuItem from "./AccentMenuItem";
+import AccentMenuItem from "../../../components/AccentMenuItem";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import { useFileImportDropZone } from "../../../components/useFileImportDragAndDrop";

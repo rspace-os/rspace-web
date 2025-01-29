@@ -3,11 +3,11 @@
 import React, { type Node, type ComponentType } from "react";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import Button from "@mui/material/Button";
-import { COLOR, type GallerySection } from "../common";
+import { type GallerySection } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import { styled, useTheme, darken, lighten } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
-import AccentMenuItem from "./AccentMenuItem";
+import AccentMenuItem from "../../../components/AccentMenuItem";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -124,8 +124,6 @@ const UploadNewVersionMenuItem = ({
           .map(() => "")
           .orElseGet(([e]) => e.message)}
         avatar={<FileUploadIcon />}
-        backgroundColor={COLOR.background}
-        foregroundColor={COLOR.contrastText}
         onKeyDown={(e: KeyboardEvent) => {
           if (e.key === " ") newVersionInputRef.current?.click();
         }}
@@ -488,8 +486,6 @@ function ActionsMenu({
             .map((file) => (
               <AccentMenuItem
                 title="Open"
-                backgroundColor={COLOR.background}
-                foregroundColor={COLOR.contrastText}
                 avatar={<FolderOpenIcon />}
                 onClick={() => {
                   openFolder(file);
@@ -507,8 +503,6 @@ function ActionsMenu({
                 .get()
                 .map(() => "")
                 .orElseGet(([e]) => e.message)}
-              backgroundColor={COLOR.background}
-              foregroundColor={COLOR.contrastText}
               avatar={<VisibilityIcon />}
               onClick={() => {
                 viewAllowed.get().do((viewAction) => {
@@ -537,8 +531,6 @@ function ActionsMenu({
               .get()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
             avatar={<EditIcon />}
             onClick={() => {
               editingAllowed.get().do(
@@ -581,8 +573,6 @@ function ActionsMenu({
               .get()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
             avatar={<AddToPhotosIcon />}
             onClick={() => {
               void duplicateFiles(selection.asSet()).then(() => {
@@ -600,8 +590,6 @@ function ActionsMenu({
               .get()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
             avatar={<OpenWithIcon />}
             onClick={() => {
               setMoveOpen(true);
@@ -630,8 +618,6 @@ function ActionsMenu({
               .get()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
             avatar={<DriveFileRenameOutlineIcon />}
             onClick={() => {
               setRenameOpen(true);
@@ -671,8 +657,6 @@ function ActionsMenu({
               .get()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
             avatar={<FileDownloadIcon />}
             onClick={() => {
               void download(selection.asSet()).then(() => {
@@ -689,8 +673,6 @@ function ActionsMenu({
               .get()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
             avatar={<FileDownloadIcon />}
             onClick={() => {
               setExportOpen(true);

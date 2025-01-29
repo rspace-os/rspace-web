@@ -184,9 +184,12 @@ describe("DMPDialog", () => {
           })
         );
 
-        expect(mockAxios.history.get.length).toBe(3);
+        const plansRequests = mockAxios.history.get.filter(({ url }) =>
+          /\/apps\/argos\/plans/.test(url)
+        );
+        expect(plansRequests.length).toBe(3);
         expect(
-          mockAxios.history.get.map(({ url }) =>
+          plansRequests.map(({ url }) =>
             new URLSearchParams(url.match(/\/apps\/argos\/plans?(.*)$/)[1]).get(
               "page"
             )
@@ -261,9 +264,12 @@ describe("DMPDialog", () => {
           within(screen.getByRole("listbox")).getByRole("option", { name: "5" })
         );
 
-        expect(mockAxios.history.get.length).toBe(2);
+        const plansRequests = mockAxios.history.get.filter(({ url }) =>
+          /\/apps\/argos\/plans/.test(url)
+        );
+        expect(plansRequests.length).toBe(2);
         expect(
-          mockAxios.history.get.map(({ url }) =>
+          plansRequests.map(({ url }) =>
             new URLSearchParams(url.match(/\/apps\/argos\/plans?(.*)$/)[1]).get(
               "pageSize"
             )
@@ -337,9 +343,12 @@ describe("DMPDialog", () => {
           expect(screen.getByText("Foo")).toBeVisible();
         });
 
-        expect(mockAxios.history.get.length).toBe(2);
+        const plansRequests = mockAxios.history.get.filter(({ url }) =>
+          /\/apps\/argos\/plans/.test(url)
+        );
+        expect(plansRequests.length).toBe(2);
         expect(
-          mockAxios.history.get.map(({ url }) =>
+          plansRequests.map(({ url }) =>
             new URLSearchParams(url.match(/\/apps\/argos\/plans?(.*)$/)[1]).get(
               "like"
             )

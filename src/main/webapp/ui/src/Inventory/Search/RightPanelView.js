@@ -45,9 +45,9 @@ const BorderContainer = withStyles<
   root: {
     backgroundColor: theme.palette.background.alt,
     position: "relative",
-    minHeight: "100vh",
   },
   notMobile: {
+    height: "100%",
     borderLeft: border(theme, false, recordType),
     background: recordType
       ? `linear-gradient(${theme.palette.record[recordType].lighter} 30%, #fff 31%)`

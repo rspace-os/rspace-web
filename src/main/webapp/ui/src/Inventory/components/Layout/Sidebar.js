@@ -8,19 +8,15 @@ import React, {
 } from "react";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CreateNew from "../CreateNew";
 import Drawer from "@mui/material/Drawer";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import GetAppIcon from "@mui/icons-material/GetApp";
 import SettingsIcon from "@mui/icons-material/Settings";
-import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import SidebarActivator from "./SidebarActivator";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
@@ -34,17 +30,19 @@ import { mapNullable } from "../../../util/Util";
 import { InvalidState } from "../../../util/error";
 import Box from "@mui/material/Box";
 import { type Theme } from "../../../theme";
-import HelpDocs from "../../../components/Help/HelpDocs";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import { useTheme, ThemeProvider } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import createAccentedTheme from "../../../accentedTheme";
 
-const COLOR = {
+/**
+ * Theme colour for the Inventory part of the product
+ */
+export const COLOR = {
   main: {
     hue: 197,
-    saturation: 50,
-    lightness: 80,
+    saturation: 33,
+    lightness: 75,
   },
   darker: {
     hue: 197,
@@ -54,12 +52,12 @@ const COLOR = {
   contrastText: {
     hue: 200,
     saturation: 30,
-    lightness: 36,
+    lightness: 25,
   },
   background: {
     hue: 200,
-    saturation: 20,
-    lightness: 82,
+    saturation: 33,
+    lightness: 83,
   },
   backgroundContrastText: {
     hue: 203,
@@ -71,10 +69,11 @@ const COLOR = {
 const drawerWidth = 200;
 
 const CustomDrawer = withStyles<
-  {| children: Node, drawerWidth?: number |},
+  {| children: Node, drawerWidth?: number, id: string |},
   {
     drawer: string,
     drawerPaper: string,
+    floatingDrawerPaper: string,
     drawerOpen: string,
     drawerClose: string,
     drawerCloseParent: string,
@@ -87,6 +86,12 @@ const CustomDrawer = withStyles<
     zIndex: 1100, // less than the Gallery picker, which is a dialog
   },
   drawerPaper: {
+    /*
+     * We set this position so that the drawer does not float above the AppBar.
+     */
+    position: "relative",
+  },
+  floatingDrawerPaper: {
     width: drawerWidth,
   },
   drawerOpen: {
@@ -119,7 +124,7 @@ const CustomDrawer = withStyles<
     },
   },
 }))(
-  observer(({ classes, children }) => {
+  observer(({ classes, children, id }) => {
     const { uiStore } = useStores();
 
     return (
@@ -127,6 +132,7 @@ const CustomDrawer = withStyles<
         open={uiStore.alwaysVisibleSidebar || uiStore.sidebarOpen}
         variant={uiStore.alwaysVisibleSidebar ? "persistent" : "temporary"}
         onClose={() => uiStore.toggleSidebar(false)}
+        id={id}
         className={
           !uiStore.alwaysVisibleSidebar
             ? classes.drawer
@@ -136,16 +142,16 @@ const CustomDrawer = withStyles<
                 [classes.drawerCloseParent]: !uiStore.sidebarOpen,
               })
         }
-        classes={
-          !uiStore.alwaysVisibleSidebar
-            ? { paper: classes.drawerPaper }
-            : {
-                paper: clsx({
-                  [classes.drawerOpen]: uiStore.sidebarOpen,
-                  [classes.drawerClose]: !uiStore.sidebarOpen,
-                }),
-              }
-        }
+        classes={{
+          paper: clsx(
+            classes.drawerPaper,
+            !uiStore.alwaysVisibleSidebar && classes.floatingDrawerPaper,
+            uiStore.alwaysVisibleSidebar && {
+              [classes.drawerOpen]: uiStore.sidebarOpen,
+              [classes.drawerClose]: !uiStore.sidebarOpen,
+            }
+          ),
+        }}
       >
         {children}
       </Drawer>
@@ -439,27 +445,6 @@ const ExportNavItem = observer(() => {
   );
 });
 
-const ELNNavItem = observer(() => {
-  const { uiStore } = useStores();
-
-  return (
-    <NavItem
-      label="RSpace ELN"
-      datatestid="ELNNavFilter"
-      onClick={() => {
-        void uiStore.confirmDiscardAnyChanges().then((canNav) => {
-          if (canNav) {
-            window.location.href = "/workspace";
-          }
-        });
-      }}
-      selected={false}
-      icon={<ArrowBackIcon />}
-      badge={0}
-    />
-  );
-});
-
 const SettingsNavItem = observer(() => {
   const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
   return (
@@ -481,50 +466,6 @@ const SettingsNavItem = observer(() => {
         />
       )}
     </>
-  );
-});
-
-const NeedHelpNavItem = observer(() => {
-  return (
-    <HelpDocs
-      Action={({ onClick, disabled }) => (
-        <NavItem
-          onClick={onClick}
-          disabled={disabled}
-          label="Need Help?"
-          datatestid="HelpNavFilter"
-          selected={false}
-          icon={<HelpOutlineOutlinedIcon />}
-          badge={0}
-        />
-      )}
-    />
-  );
-});
-
-const SignOutNavItem = observer(() => {
-  const { authStore, uiStore } = useStores();
-
-  return (
-    <NavItem
-      label="Sign Out"
-      datatestid="SignOutNavFilter"
-      onClick={() => {
-        void uiStore
-          .confirmDiscardAnyChanges()
-          .then((canSignOut) => {
-            if (canSignOut) {
-              authStore.signOut();
-            }
-          })
-          .then(() => {
-            window.location.href = "/logout";
-          });
-      }}
-      selected={false}
-      icon={<ExitToAppIcon />}
-      badge={0}
-    />
   );
 });
 
@@ -567,7 +508,11 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-function Sidebar(): Node {
+type SidebarArgs = {|
+  id: string,
+|};
+
+function Sidebar({ id }: SidebarArgs): Node {
   const { classes } = useStyles();
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
@@ -578,8 +523,7 @@ function Sidebar(): Node {
   };
 
   return (
-    <CustomDrawer>
-      <SidebarActivator />
+    <CustomDrawer id={id}>
       <div className={classes.drawerContainer}>
         <List component="nav" aria-label="Create new Inventory items">
           <ThemeProvider theme={createAccentedTheme(COLOR)}>
@@ -599,10 +543,7 @@ function Sidebar(): Node {
         </List>
         <List component="nav" aria-label="Other places and action">
           <ExportNavItem />
-          <ELNNavItem />
           {isSysAdmin && <SettingsNavItem />}
-          <NeedHelpNavItem />
-          <SignOutNavItem />
         </List>
         <LoggedInLabel />
       </div>
@@ -610,4 +551,4 @@ function Sidebar(): Node {
   );
 }
 
-export default (observer(Sidebar): ComponentType<{||}>);
+export default (observer(Sidebar): ComponentType<SidebarArgs>);

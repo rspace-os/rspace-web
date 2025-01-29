@@ -4,6 +4,7 @@
  */
 package com.researchspace.api.v1;
 
+import com.researchspace.api.v1.model.ApiUiNavigationData;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.User;
 import java.util.List;
@@ -54,4 +55,7 @@ public interface UserDetailsApi {
    */
   @GetMapping("/search")
   List<ApiUser> searchUserDetails(String query, User user);
+
+  @GetMapping("/uiNavigationData")
+  ApiUiNavigationData getDataForNavigationUI(User user);
 }
