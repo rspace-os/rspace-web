@@ -36,7 +36,7 @@ function InventoryRouter(): Node {
     <Analytics>
       <ErrorBoundary>
         <Alerts>
-          <Box display="flex">
+          <Box height="100%">
             <Routes>
               <Route
                 exact

@@ -18,6 +18,7 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useOauthToken from "../../common/useOauthToken";
 import { partitionAllSettled } from "../../util/Util";
 import { type GallerySection } from "./common";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -143,6 +144,7 @@ export function useGalleryActions(): {|
 |} {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   /*
    * We create these axios objects because the global axios object is polluted
@@ -724,6 +726,8 @@ export function useGalleryActions(): {|
           variant: "success",
         })
       );
+
+      trackEvent("user:edit:description:gallery");
 
       setDescription(newDescription);
     } catch (e) {

@@ -16,6 +16,10 @@ type RemainingIconButtonProps = {|
   sx?: Sx,
   classes?: { [string]: string },
   ariaLabel?: string,
+  "aria-haspopup"?: "menu",
+  "aria-controls"?: string,
+  "aria-expanded"?: "true",
+  id?: string,
   tabIndex?: number,
 |};
 

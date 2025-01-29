@@ -85,6 +85,10 @@ import UserAliasIcon from "@mui/icons-material/ContactEmergency";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
 import useCheckVerificationPasswordNeeded from "../../../common/useCheckVerificationPasswordNeeded";
+import useUiPreference, {
+  PREFERENCES,
+  UiPreferences,
+} from "../../../util/useUiPreference";
 
 const Panel = ({
   anchorEl,
@@ -1466,7 +1470,8 @@ export const UsersPage = (): Node => {
   >([]);
   const [sortModel, setSortModel] = React.useState<
     $ReadOnlyArray<{|
-      field: | "username"
+      field:
+        | "username"
         | "fileUsage"
         | "recordCount"
         | "lastLogin"
@@ -1484,6 +1489,21 @@ export const UsersPage = (): Node => {
   const [tagsList, setTagsList] = React.useState<Array<string>>([]);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<?HTMLElement>(null);
+  const [columnVisibility, setColumnVisibility] = useUiPreference(
+    PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
+    {
+      defaultValue: {
+        email: false,
+        recordCount: false,
+        created: false,
+        firstName: false,
+        lastName: false,
+        locked: false,
+        tags: false,
+        usernameAlias: false,
+      },
+    }
+  );
 
   const columns = [
     DataGridColumn.newColumnWithValueMapper(
@@ -1815,20 +1835,8 @@ export const UsersPage = (): Node => {
                         error: () => ([]: Array<User>),
                         success: (listing) => listing.users,
                       })}
-                      initialState={{
-                        columns: {
-                          columnVisibilityModel: {
-                            email: false,
-                            recordCount: false,
-                            created: false,
-                            firstName: false,
-                            lastName: false,
-                            locked: false,
-                            tags: false,
-                            usernameAlias: false,
-                          },
-                        },
-                      }}
+                      columnVisibilityModel={columnVisibility}
+                      onColumnVisibilityModelChange={setColumnVisibility}
                       density="standard"
                       getRowId={(row: User) => row.id}
                       hideFooterSelectedRowCount
@@ -2028,7 +2036,9 @@ if (wrapperDiv) {
   root.render(
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={createAccentedTheme(COLOR)}>
-        <UsersPage />
+        <UiPreferences>
+          <UsersPage />
+        </UiPreferences>
       </ThemeProvider>
     </StyledEngineProvider>
   );

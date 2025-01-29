@@ -12,6 +12,7 @@ import { inputBaseClasses } from "@mui/material/InputBase";
 import { dividerClasses } from "@mui/material/Divider";
 import { listItemButtonClasses } from "@mui/material/ListItemButton";
 import { listItemIconClasses } from "@mui/material/ListItemIcon";
+import { listItemTextClasses } from "@mui/material/ListItemText";
 import { paperClasses } from "@mui/material/Paper";
 import { cardActionAreaClasses } from "@mui/material/CardActionArea";
 import { buttonClasses } from "@mui/material/Button";
@@ -23,6 +24,7 @@ import { chipClasses } from "@mui/material/Chip";
 import { formLabelClasses } from "@mui/material/FormLabel";
 import { inputLabelClasses } from "@mui/material/InputLabel";
 import { inputAdornmentClasses } from "@mui/material/InputAdornment";
+import { linkClasses } from "@mui/material/Link";
 
 /**
  * This theme is used for pages that use the new styling, wherein the page (or
@@ -185,20 +187,23 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
       components: {
         MuiAppBar: {
           styleOverrides: {
+            /*
+             * Generally, we convert the accent colour to black when the user
+             * has requested more contrast, but in the app bar we convert to
+             * white as otherwise there would be a big block of black at the
+             * top of the viewport, which is excessively distracting.
+             */
             root: {
               boxShadow: "unset",
               [`& > .${toolbarClasses.root}`]: {
                 paddingBottom: baseTheme.spacing(0.25),
-                paddingLeft: `${baseTheme.spacing(1.5)} !important`,
+                paddingLeft: 0,
                 paddingRight: `${baseTheme.spacing(1)} !important`,
                 color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
-                background: prefersMoreContrast ? "white" : accentedBackground,
+                background: prefersMoreContrast
+                  ? "white"
+                  : accentedBackground,
                 borderBottom: prefersMoreContrast ? accentedBorder : "none",
-                [`& .${typographyClasses.root}`]: {
-                  marginLeft: baseTheme.spacing(0.5),
-                  letterSpacing: "0.02em",
-                  color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
-                },
                 [`& .${svgIconClasses.root}`]: {
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
                   transition: "all .3s ease",
@@ -245,6 +250,84 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 borderColor: prefersMoreContrast
                   ? "rgb(0,0,0)"
                   : alpha(contrastTextColor, 0.2),
+              },
+              [`& .${linkClasses.root}`]: {
+                textTransform: "capitalize",
+                color: contrastTextColor,
+                "&[href]": {
+                  cursor: "pointer",
+                  fontWeight: "400",
+                  letterSpacing: "0.02em",
+                  paddingTop: baseTheme.spacing(0.625),
+                  paddingBottom: baseTheme.spacing(0.25),
+                  paddingLeft: baseTheme.spacing(0.5),
+                  paddingRight: baseTheme.spacing(0.5),
+                  textDecoration: "unset !important",
+                  color: `${
+                    prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor
+                  } !important`,
+                  [`&::after`]: {
+                    content: "''",
+                    width: "100%",
+                    height: "2px",
+                    backgroundColor: contrastTextColor,
+                    position: "relative",
+                    left: 0,
+                    bottom: "2px",
+                    display: "block",
+                    transform: "translateY(2px)",
+                    opacity: "0",
+                    transition: "all .1s ease-in-out",
+                  },
+                  [`&:hover`]: {
+                    [`&::after`]: {
+                      opacity: "0.75",
+                      transform: "translateY(0px)",
+                    },
+                  },
+                  [`&[aria-current="page"]`]: {
+                    [`&::after`]: {
+                      opacity: "0.9",
+                      transform: "translateY(0px)",
+                      left: baseTheme.spacing(-1),
+                      width: `calc(100% + ${baseTheme.spacing(2)})`,
+                      bottom: "-2px",
+                    },
+                    lineHeight: "25px",
+                    marginTop: baseTheme.spacing(0.25),
+                    paddingTop: baseTheme.spacing(0.25),
+                    paddingLeft: baseTheme.spacing(1),
+                    paddingRight: baseTheme.spacing(1),
+                    backgroundColor: lighterInteractiveColor,
+                    borderTopLeftRadius: "4px",
+                    borderTopRightRadius: "4px",
+                  },
+                },
+              },
+              [`& .${listItemButtonClasses.root}`]: {
+                boxShadow: "unset",
+                backgroundColor: prefersMoreContrast
+                  ? "rgb(255,255,255)"
+                  : accentedBackground,
+                border: accentedBorder,
+                borderColor: darken(accentedBackground, hoverDarkenCoefficient),
+                padding: "0 12px",
+                borderRadius: "3px",
+                [`& .${listItemTextClasses.root}`]: {
+                  margin: "3px 0",
+                },
+                [`& .${listItemTextClasses.primary}`]: {
+                  fontWeight: "500",
+                  letterSpacing: "0.02em",
+                  fontSize: "0.95rem",
+                },
+                [`& .${listItemIconClasses.root}`]: {
+                  minWidth: "unset",
+                  [`& .${svgIconClasses.root}`]: {
+                    fontSize: "1.3em",
+                    marginLeft: "4px",
+                  },
+                },
               },
             },
           },
@@ -657,6 +740,16 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               [`&.${alertTitleClasses.root}`]: {
                 color: "inherit",
               },
+            },
+            h1: {
+              color: contrastTextColor,
+              marginBottom: baseTheme.spacing(3),
+              textAlign: "left",
+              borderBottom: accentedBorder,
+              textTransform: "uppercase",
+              fontWeight: 700,
+              opacity: 0.8,
+              fontSize: "1.9rem",
             },
             h3: {
               fontWeight: 700,

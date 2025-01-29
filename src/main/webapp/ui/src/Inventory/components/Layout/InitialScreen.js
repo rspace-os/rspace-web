@@ -85,10 +85,12 @@ function InitialScreen(): Node {
     ));
   };
 
+  const sidebarId = React.useId();
+
   return (
     <>
-      <Header />
-      <Sidebar />
+      <Header sidebarId={sidebarId} />
+      <Sidebar id={sidebarId} />
       <Main>
         <Layout
           colLeft={

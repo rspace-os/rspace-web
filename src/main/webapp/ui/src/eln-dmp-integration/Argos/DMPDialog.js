@@ -37,10 +37,7 @@ import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "../../components/ValidatingSubmitButton";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
-import AccessibilityTips from "../../components/AccessibilityTips";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
+import { AccessibilityTipsIconButton } from "../../components/AccessibilityTips";
 import Box from "@mui/material/Box";
 import docLinks from "../../assets/DocLinks";
 import Link from "@mui/material/Link";
@@ -50,6 +47,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
 import DialogTitle from "@mui/material/DialogTitle";
+import AppBar from "../../components/AppBar";
 
 const COLOR = {
   main: {
@@ -505,20 +503,17 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   return (
     <>
-      <AppBar position="relative" open={true}>
-        <Toolbar variant="dense">
-          <Typography variant="h6" noWrap component="h2">
-            Argos
-          </Typography>
-          <Box flexGrow={1}></Box>
-          <Box ml={1}>
-            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
-          </Box>
-          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-            <HelpLinkIcon title="Argos help" link={docLinks.argos} />
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <AppBar
+        variant="dialog"
+        currentPage="Argos"
+        accessibilityTips={{
+          supportsHighContrastMode: true,
+        }}
+        helpPage={{
+          docLink: docLinks.argos,
+          title: "Argos help",
+        }}
+      />
       <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
         <Grid

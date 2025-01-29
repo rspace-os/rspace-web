@@ -5,10 +5,7 @@ import { ThemeProvider, styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import { Dialog } from "../../components/DialogBoundary";
 import createAccentedTheme from "../../accentedTheme";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
-import AccessibilityTips from "../../components/AccessibilityTips";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
+import AppBar from "../../components/AppBar";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
@@ -274,23 +271,17 @@ export default function FieldmarkImportDialog({
         fullWidth
         fullScreen={isViewportSmall}
       >
-        <AppBar position="relative" open={true}>
-          <Toolbar variant="dense">
-            <Typography variant="h6" noWrap component="h2">
-              Fieldmark
-            </Typography>
-            <Box flexGrow={1}></Box>
-            <Box ml={1}>
-              <AccessibilityTips
-                supportsHighContrastMode
-                elementType="dialog"
-              />
-            </Box>
-            <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-              <HelpLinkIcon title="Fieldmark help" link={docLinks.fieldmark} />
-            </Box>
-          </Toolbar>
-        </AppBar>
+        <AppBar
+          variant="dialog"
+          currentPage="Fieldmark"
+          accessibilityTips={{
+            supportsHighContrastMode: true,
+          }}
+          helpPage={{
+            docLink: docLinks.fieldmark,
+            title: "Fieldmark help",
+          }}
+        />
         <DialogTitle variant="h3">Import from Fieldmark</DialogTitle>
         <DialogContent>
           <Grid

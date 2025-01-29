@@ -1,4 +1,4 @@
-//@flow strict
+//@flow
 
 import { observer } from "mobx-react-lite";
 import { observable } from "mobx";
@@ -14,24 +14,53 @@ import {
   useIntegrationsEndpoint,
   type IntegrationStates,
 } from "./useIntegrationsEndpoint";
-import VisuallyHiddenHeading from "../../components/VisuallyHiddenHeading";
 import Grid from "@mui/material/Grid";
-import Tabs from "@mui/material/Tabs";
 import Box from "@mui/material/Box";
 import CardListing from "./CardListing";
 import docLinks from "../../assets/DocLinks";
-import LinkTab from "./LinkTab";
 import * as FetchingData from "../../util/fetchingData";
 import { doNotAwait, mapObject } from "../../util/Util";
 import Alert from "@mui/material/Alert";
 import Skeleton from "@mui/material/Skeleton";
-import HelpFab from "../../components/Help/Fab";
 import { DialogBoundary } from "../../components/DialogBoundary";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { getByKey } from "../../util/optional";
-import { useDeploymentProperty } from "../useDeploymentProperty";
+import AppBar from "../../components/AppBar";
+import { ThemeProvider } from "@mui/material/styles";
+import createAccentedTheme from "../../accentedTheme";
+
+/**
+ * The theme colour of the apps page.
+ */
+export const COLOR = {
+  main: {
+    hue: 200,
+    saturation: 10,
+    lightness: 70,
+  },
+  darker: {
+    hue: 200,
+    saturation: 10,
+    lightness: 50,
+  },
+  contrastText: {
+    hue: 200,
+    saturation: 10,
+    lightness: 20,
+  },
+  background: {
+    hue: 200,
+    saturation: 10,
+    lightness: 81,
+  },
+  backgroundContrastText: {
+    hue: 200,
+    saturation: 4,
+    lightness: 29,
+  },
+};
 
 function LoadingSkeleton() {
   return (
@@ -70,8 +99,6 @@ function ErrorMessage() {
 }
 
 function App(): Node {
-  const inventoryAvailable = useDeploymentProperty("inventory.available");
-
   const { allIntegrations } = useIntegrationsEndpoint();
   const { trackEvent, isAvailable: analyticsIsAvailable } =
     useContext(AnalyticsContext);
@@ -102,8 +129,7 @@ function App(): Node {
   );
 
   return (
-    <>
-      <HelpFab />
+    <ThemeProvider theme={createAccentedTheme(COLOR)}>
       <DialogBoundary>
         <AnalyticsContext.Provider
           value={{
@@ -125,65 +151,21 @@ function App(): Node {
             },
           }}
         >
+          <AppBar
+            variant="page"
+            currentPage="Apps"
+            accessibilityTips={{
+              supportsHighContrastMode: true,
+              supportsReducedMotion: true,
+              supports2xZoom: true,
+            }}
+          />
           <Grid container direction="row" spacing={1}>
             <Grid item xs={1} md={2}></Grid>
             <Grid item xs={10} md={8}>
-              <Grid
-                container
-                direction="row"
-                justifyContent="space-between"
-                component="header"
-              >
-                <Grid item>
-                  <a href="/workspace">
-                    {/* These dimensions are hard coded from the existing UI */}
-                    <img
-                      src="/public/banner"
-                      alt="RSpace"
-                      width={180}
-                      height={55}
-                    />
-                  </a>
-                </Grid>
-                <Grid item alignSelf="flex-end">
-                  <nav>
-                    <Tabs value={3} sx={{ minHeight: 5 }}>
-                      <LinkTab
-                        label="Workspace"
-                        href="/workspace"
-                        tabIndex={0}
-                      />
-                      <LinkTab label="Gallery" href="/gallery" tabIndex={0} />
-                      <LinkTab
-                        label="Messaging"
-                        href="/dashboard"
-                        tabIndex={0}
-                      />
-                      <LinkTab label="Apps" href="#" tabIndex={0} />
-                      <LinkTab
-                        label="Inventory"
-                        href="/inventory"
-                        tabIndex={0}
-                        disabled={FetchingData.match(inventoryAvailable, {
-                          success: (v) => v !== "ALLOWED",
-                          loading: () => true,
-                          error: () => true,
-                        })}
-                      />
-                      <LinkTab
-                        label="My RSpace"
-                        href="/userform"
-                        tabIndex={0}
-                      />
-                    </Tabs>
-                  </nav>
-                </Grid>
-              </Grid>
               <main>
                 <Box sx={{ mt: 4 }}>
-                  <VisuallyHiddenHeading variant="h1">
-                    Apps
-                  </VisuallyHiddenHeading>
+                  <Typography variant="h1">Apps</Typography>
                   <Grid container spacing={2} direction="column">
                     <Grid item sx={{ mb: 1 }}>
                       <Typography variant="body1">
@@ -313,7 +295,7 @@ function App(): Node {
                               <Typography
                                 variant="h5"
                                 component="h2"
-                                sx={{ p: 1, mb: 1 }}
+                                sx={{ p: 1, mb: 1, whiteSpace: "break-spaces" }}
                                 id="third-party-rspace-integrations"
                               >
                                 Third-party RSpace Integrations
@@ -349,7 +331,7 @@ function App(): Node {
           </Grid>
         </AnalyticsContext.Provider>
       </DialogBoundary>
-    </>
+    </ThemeProvider>
   );
 }
 

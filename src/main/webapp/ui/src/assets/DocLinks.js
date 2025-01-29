@@ -69,6 +69,7 @@ const docLinks: { [string]: URL } = {
   dcd: mkDocLink("jj6grnzbdl"),
   ascenscia: mkDocLink("8ftzyor8mi"),
   fieldmark: mkDocLink("idbaaggghu"),
+  orcid: mkDocLink("yhkbtnj61a"),
 };
 
 /**
