@@ -610,15 +610,18 @@ function ActionsMenu({
             disabled={moveAllowed.get().isError}
             aria-haspopup="dialog"
           />
-          <MoveDialog
-            open={moveOpen}
-            onClose={() => {
-              setMoveOpen(false);
-              setActionsMenuAnchorEl(null);
-            }}
-            section={section}
-            refreshListing={refreshListing}
-          />
+          {Optional.fromNullable(section).map((s) => (
+            <MoveDialog
+              key="move dialog"
+              open={moveOpen}
+              onClose={() => {
+                setMoveOpen(false);
+                setActionsMenuAnchorEl(null);
+              }}
+              section={s}
+              refreshListing={refreshListing}
+            />
+          ))}
           <AccentMenuItem
             title="Rename"
             subheader={renameAllowed
