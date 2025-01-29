@@ -31,6 +31,9 @@
         <pattern>/newGallery</pattern>
         <pattern>/newGallery*</pattern>
         <pattern>/newGallery/**</pattern>
+        <pattern>/Gallery</pattern>
+        <pattern>/Gallery*</pattern>
+        <pattern>/Gallery/**</pattern>
     </excludes>
     <decorator name="public" page="externalPages.jsp">
         <pattern>*/signup*</pattern>

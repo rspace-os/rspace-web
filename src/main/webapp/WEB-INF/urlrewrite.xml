@@ -144,6 +144,14 @@
       <from>/newGallery/**</from>
       <to>/eln/gallery.html</to>
     </rule>
+    <rule>
+      <from>/gallery</from>
+      <to>/eln/gallery.html</to>
+    </rule>
+    <rule>
+      <from>/gallery/([0-9]+)</from>
+      <to>/eln/gallery.html</to>
+    </rule>
 
     <!-- Backward compatibility: nextcloud/owncloud were not using /apps prefix until RSDEV-105 -->
     <rule>

@@ -175,7 +175,7 @@ window.addEventListener("load", () => {
                     <DisableDragAndDropByDefault>
                       <Routes>
                         <Route
-                          path="/newGallery"
+                          path="/gallery"
                           element={
                             <Alerts>
                               <RouterNavigationProvider>
@@ -190,7 +190,7 @@ window.addEventListener("load", () => {
                         />
                         <Route
                           path="*"
-                          element={<Navigate to="/newGallery" replace />}
+                          element={<Navigate to="/gallery" replace />}
                         />
                       </Routes>
                     </DisableDragAndDropByDefault>
