@@ -180,7 +180,12 @@ const UploadNewVersionMenuItem = ({
               void uploadNewVersion(idOfFolderThatFileIsIn, file, newFile)
                 .then(() => {
                   onSuccess();
-                  trackEvent("user:uploads_new_version:file:gallery", Optional.fromNullable(file.version).map(v => ({ version: v + 1 })).orElse({}));
+                  trackEvent(
+                    "user:uploads_new_version:file:gallery",
+                    Optional.fromNullable(file.version)
+                      .map((v) => ({ version: v + 1 }))
+                      .orElse({})
+                  );
                 })
                 .catch(onError);
             }}
