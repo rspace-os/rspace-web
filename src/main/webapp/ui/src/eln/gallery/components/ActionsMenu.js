@@ -56,6 +56,7 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import CardMedia from "@mui/material/CardMedia";
 import { useFolderOpen } from "./OpenFolderProvider";
 import { type URL } from "../../../util/types";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -88,6 +89,7 @@ const UploadNewVersionMenuItem = ({
   folderId: FetchingData.Fetched<Id>,
 |}) => {
   const { uploadNewVersion } = useGalleryActions();
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const selection = useGallerySelection();
   const newVersionInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -175,7 +177,12 @@ const UploadNewVersionMenuItem = ({
                 .elseThrow();
 
               void uploadNewVersion(idOfFolderThatFileIsIn, file, newFile)
-                .then(onSuccess)
+                .then(() => {
+                  onSuccess();
+                  trackEvent("user:uploads_new_version:file:gallery", {
+                    version: file.version + 1,
+                  });
+                })
                 .catch(onError);
             }}
             type="file"
@@ -196,6 +203,7 @@ const RenameDialog = ({
   file: GalleryFile,
 |}) => {
   const [newName, setNewName] = React.useState("");
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const { rename } = useGalleryActions();
   return (
     <Dialog
@@ -238,6 +246,7 @@ const RenameDialog = ({
             onClick={() => {
               void rename(file, newName).then(() => {
                 onClose();
+                trackEvent("user:renames:file:gallery");
               });
             }}
             validationResult={
@@ -282,6 +291,7 @@ function ActionsMenu({
   const selection = useGallerySelection();
   const theme = useTheme();
   const { addAlert } = React.useContext(AlertContext);
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
@@ -313,26 +323,27 @@ function ActionsMenu({
       .only.toResult(() => new Error("Too many items selected."))
       .flatMap<
         | {| key: "image", downloadHref: () => Promise<URL> |}
-        | {| key: "document", url: string |}
+        | {| key: "collabora", url: string |}
+        | {| key: "officeonline", url: string |}
       >((file) => {
         if (file.isImage && typeof file.downloadHref !== "undefined")
           return Result.Ok({ key: "image", downloadHref: file.downloadHref });
         return canEditWithCollabora(file)
-          .orElseTry(() => canEditWithOfficeOnline(file))
-          .map<
-            Result<
+          .map((url) => ({
+            key: "collabora",
+            url,
+          }))
+          .orElseTry(() =>
+            canEditWithOfficeOnline(file).map<
               | {| key: "image", downloadHref: () => Promise<URL> |}
-              | {| key: "document", url: string |}
-            >
-          >((url) =>
-            Result.Ok({
-              key: "document",
+              | {| key: "collabora", url: string |}
+              | {| key: "officeonline", url: string |}
+            >((url) => ({
+              key: "officeonline",
               url,
-            })
+            }))
           )
-          .orElseGet(() =>
-            Result.Error<_>([new Error("Cannot edit this item.")])
-          );
+          .mapError(() => new Error("Cannot edit this item."));
       })
   );
 
@@ -527,7 +538,14 @@ function ActionsMenu({
           onClick={() => {
             editingAllowed.get().do(
               doNotAwait(async (action) => {
-                if (action.key === "document") window.open(action.url);
+                if (action.key === "officeonline") {
+                  window.open(action.url);
+                  trackEvent("user:opens:document:officeonline");
+                }
+                if (action.key === "collabora") {
+                  window.open(action.url);
+                  trackEvent("user:opens:document:collabora");
+                }
                 if (action.key === "image") {
                   try {
                     const downloadHref = await action.downloadHref();
@@ -565,6 +583,7 @@ function ActionsMenu({
             void duplicateFiles(selection.asSet()).then(() => {
               void refreshListing();
               setActionsMenuAnchorEl(null);
+              trackEvent("user:duplicates:file:gallery");
             });
           }}
           compact
@@ -648,6 +667,7 @@ function ActionsMenu({
           onClick={() => {
             void download(selection.asSet()).then(() => {
               setActionsMenuAnchorEl(null);
+              trackEvent("user:downloads:file:gallery");
             });
           }}
           compact
@@ -664,6 +684,9 @@ function ActionsMenu({
           avatar={<FileDownloadIcon />}
           onClick={() => {
             setExportOpen(true);
+            trackEvent("user:opens:export_dialog:gallery", {
+              count: selection.size,
+            });
           }}
           compact
           disabled={exportAllowed.get().isError}
@@ -770,6 +793,7 @@ function ActionsMenu({
               .elseThrow();
             await uploadFiles(idOfFolderThatFileIsIn, [newFile]);
             void refreshListing();
+            trackEvent("user:edit:image:gallery");
           } catch (e) {
             addAlert(
               mkAlert({

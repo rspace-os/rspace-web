@@ -31,6 +31,7 @@ import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { useSearchParamState } from "../../util/useSearchParamState";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import OpenFolderProvider from "./components/OpenFolderProvider";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 const WholePage = styled(() => {
   const [searchParams, setSelectedSection] = useSearchParamState({
@@ -63,6 +64,14 @@ const WholePage = styled(() => {
   const [drawerOpen, setDrawerOpen] = React.useState(!isViewportSmall);
   const sidebarId = React.useId();
 
+  const { trackEvent } = React.useContext(AnalyticsContext);
+  React.useEffect(() => {
+    trackEvent("user:load:page:gallery", { section: selectedSection });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - selectedSection may change but we only care about on-mount
+     */
+  }, []);
+
   return (
     <CallableImagePreview>
       <CallablePdfPreview>
@@ -83,6 +92,9 @@ const WholePage = styled(() => {
                   setSelectedSection({ mediaType });
                   setPath([]);
                   setAppliedSearchTerm("");
+                  trackEvent("user:change:section:gallery", {
+                    section: mediaType,
+                  });
                 }}
                 drawerOpen={drawerOpen}
                 setDrawerOpen={setDrawerOpen}
@@ -112,7 +124,14 @@ const WholePage = styled(() => {
                   setSortOrder={setSortOrder}
                   setOrderBy={setOrderBy}
                   appliedSearchTerm={appliedSearchTerm}
-                  setAppliedSearchTerm={setAppliedSearchTerm}
+                  setAppliedSearchTerm={(newTerm) => {
+                    if (path.length > 0) {
+                      trackEvent("user:search:folder:gallery");
+                    } else {
+                      trackEvent("user:search:section:gallery");
+                    }
+                    setAppliedSearchTerm(newTerm);
+                  }}
                 />
               </Box>
             </Box>

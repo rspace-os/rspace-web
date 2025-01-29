@@ -8,6 +8,7 @@ import useLinkedDocuments, { type Document } from "../useLinkedDocuments";
 import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../../util/table";
 import GlobalId from "../../../components/GlobalId";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 /**
  * This table lists all of the ELN documents that reference the passed
@@ -25,6 +26,7 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
 }): Node => {
   const apiRef = useGridApiRef();
   const linkedDocuments = useLinkedDocuments(file);
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   React.useEffect(() => {
     setTimeout(() => {
@@ -60,7 +62,14 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
             flex: 0,
             resizable: true,
             sortable: false,
-            renderCell: ({ row }) => <GlobalId record={row.linkableRecord} />,
+            renderCell: ({ row }) => (
+              <GlobalId
+                record={row.linkableRecord}
+                onClick={() => {
+                  trackEvent("user:click:globalId:galleryLinkedDocuments");
+                }}
+              />
+            ),
           }),
         ]}
         rows={linkedDocuments.documents}

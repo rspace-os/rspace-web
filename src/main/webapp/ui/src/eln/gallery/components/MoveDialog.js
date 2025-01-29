@@ -27,6 +27,7 @@ import { type GallerySection } from "../common";
 import { observer } from "mobx-react-lite";
 import PlaceholderLabel from "./PlaceholderLabel";
 import { doNotAwait } from "../../../util/Util";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 type MoveDialogArgs = {|
   open: boolean,
@@ -51,6 +52,7 @@ const MoveDialog = observer(
     refreshListing,
   }: MoveDialogArgs): Node => {
     const { isViewportVerySmall } = useViewportDimensions();
+    const { trackEvent } = React.useContext(AnalyticsContext);
 
     const { galleryListing, refreshListing: refreshListingInsideDialog } =
       useGalleryListing({
@@ -140,6 +142,9 @@ const MoveDialog = observer(
                   await moveFiles(section, rootDestination(), selectedFiles);
                   void refreshListing();
                   onClose();
+                  trackEvent("user:moved:files:gallery", {
+                    count: selectedFiles.size,
+                  });
                 } finally {
                   setTopLevelLoading(false);
                 }
@@ -177,6 +182,9 @@ const MoveDialog = observer(
                   );
                   void refreshListing();
                   onClose();
+                  trackEvent("user:moved:files:gallery", {
+                    count: selectedFiles.size,
+                  });
                 } finally {
                   setSubmitLoading(false);
                 }
