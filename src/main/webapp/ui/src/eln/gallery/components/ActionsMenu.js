@@ -598,18 +598,20 @@ function ActionsMenu({
             disabled={moveAllowed.get().isError}
             aria-haspopup="dialog"
           />
-          {Optional.fromNullable(section).map((s) => (
-            <MoveDialog
-              key="move dialog"
-              open={moveOpen}
-              onClose={() => {
-                setMoveOpen(false);
-                setActionsMenuAnchorEl(null);
-              }}
-              section={s}
-              refreshListing={refreshListing}
-            />
-          ))}
+          {Optional.fromNullable(section)
+            .map((s) => (
+              <MoveDialog
+                key="move dialog"
+                open={moveOpen}
+                onClose={() => {
+                  setMoveOpen(false);
+                  setActionsMenuAnchorEl(null);
+                }}
+                section={s}
+                refreshListing={refreshListing}
+              />
+            ))
+            .orElse(null)}
           <AccentMenuItem
             title="Rename"
             subheader={renameAllowed
