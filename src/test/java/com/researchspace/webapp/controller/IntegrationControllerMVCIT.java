@@ -24,6 +24,10 @@ import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAM
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
+import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
+import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
+import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
+import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_URL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -38,6 +42,7 @@ import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.preference.BoxLinkType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import java.security.Principal;
 import java.util.HashMap;
@@ -45,18 +50,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 
 @RunWith(ConditionalTestRunner.class)
+@TestPropertySource(
+    properties =
+        "pyrat.server.config={\"mice server\": {\"url\": \"https://pyrat1.server.com\", \"token\":"
+            + " \"server1-secret-token\"}, \"frogs server\": {\"url\":"
+            + " \"https://pyrat2.server.com\", \"token\": \"server2-secret-token\"}}")
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
   final int TOTAL_INTEGRATIONS = 26;
   Principal mockPrincipal = null;
+
+  @Autowired private UserConnectionManager userConnectionManager;
 
   @Before
   public void setUp() throws Exception {
@@ -100,7 +115,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(EGNYTE_APP_NAME, new String[] {});
     expectedOptions.put(MSTEAMS_APP_NAME, new String[] {});
     expectedOptions.put(PROTOCOLS_IO_APP_NAME, new String[] {}); // no token if not authenticated
-    expectedOptions.put(PYRAT_APP_NAME, new String[] {});
+    expectedOptions.put(PYRAT_APP_NAME, new String[] {PYRAT_CONFIGURED_SERVERS});
     expectedOptions.put(CLUSTERMARKET_APP_NAME, new String[] {});
     expectedOptions.put(DRYAD_APP_NAME, new String[] {});
     expectedOptions.put(JOVE_APP_NAME, new String[] {});
@@ -340,6 +355,117 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     IntegrationInfo deletedChannelInfo = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> deletedOptions = deletedChannelInfo.getOptions();
     assertEquals(0, deletedOptions.size());
+  }
+
+  @Test
+  public void addEditDeletePyratOptions() throws Exception {
+    String integrationName = PYRAT_APP_NAME;
+    logoutAndLoginAs(piUser);
+
+    // add a server url to the configuration
+    Map<String, String> channelOptions = new HashMap<>();
+    channelOptions.put(PYRAT_ALIAS, "mice server");
+    channelOptions.put(PYRAT_APIKEY, "");
+    channelOptions.put(PYRAT_URL, "http://pyrat1.server.com");
+
+    String optionsJson = mvcUtils.getAsJsonString(channelOptions);
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/integration/saveAppOptions")
+                    .param("appName", integrationName)
+                    .content(optionsJson)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .principal(mockPrincipal))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    // verify options are returned correctly
+    IntegrationInfo info = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
+    Map<String, Object> savedOptions = info.getOptions();
+    assertEquals(2, savedOptions.size());
+    List configuredServers = (List) savedOptions.get(PYRAT_CONFIGURED_SERVERS);
+    assertEquals(2, configuredServers.size());
+    assertEquals("mice server", ((Map<String, String>) configuredServers.get(0)).get("alias"));
+    assertEquals(
+        "https://pyrat1.server.com", ((Map<String, String>) configuredServers.get(0)).get("url"));
+    assertEquals("frogs server", ((Map<String, String>) configuredServers.get(1)).get("alias"));
+    assertEquals(
+        "https://pyrat2.server.com", ((Map<String, String>) configuredServers.get(1)).get("url"));
+
+    String optionsSetId = "";
+    for (String key : savedOptions.keySet()) {
+      if (!key.equals(PYRAT_CONFIGURED_SERVERS)) {
+        optionsSetId = key;
+      }
+    }
+    assertTrue(StringUtils.isNotEmpty(optionsSetId));
+
+    Map<String, String> uiOptions = (Map<String, String>) savedOptions.get(optionsSetId);
+    assertEquals("mice server", uiOptions.get(PYRAT_ALIAS));
+    // verify the apikey is returned as empty in the ui options since it is not saved in clear
+    assertEquals(Strings.EMPTY, uiOptions.get(PYRAT_APIKEY));
+    // verify the api-key is instead saved into the UserConnection table
+    assertTrue(
+        userConnectionManager
+            .findByUserNameProviderName(piUser.getUsername(), PYRAT_APP_NAME, "mice server")
+            .isEmpty());
+    assertEquals("http://pyrat1.server.com", uiOptions.get(PYRAT_URL));
+
+    // add a server api-key to the configuration
+    channelOptions = new HashMap<>();
+    channelOptions.put(PYRAT_ALIAS, "mice server");
+    channelOptions.put(PYRAT_APIKEY, "api-key-1-mice-server");
+    channelOptions.put(PYRAT_URL, "http://pyrat1.server.com");
+
+    optionsJson = mvcUtils.getAsJsonString(channelOptions);
+    result =
+        mockMvc
+            .perform(
+                post("/integration/saveAppOptions")
+                    .param("appName", integrationName)
+                    .param("optionsId", optionsSetId)
+                    .content(optionsJson)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .principal(mockPrincipal))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    uiOptions = (Map<String, String>) savedOptions.get(optionsSetId);
+    assertEquals("mice server", uiOptions.get(PYRAT_ALIAS));
+    // make sure the apikey is returned as empty since it is not saved in clear
+    assertEquals(Strings.EMPTY, uiOptions.get(PYRAT_APIKEY));
+    assertEquals(
+        "api-key-1-mice-server",
+        userConnectionManager
+            .findByUserNameProviderName(piUser.getUsername(), PYRAT_APP_NAME, "mice server")
+            .get()
+            .getAccessToken());
+    assertEquals("http://pyrat1.server.com", uiOptions.get(PYRAT_URL));
+
+    // delete the user configuration
+    result =
+        mockMvc
+            .perform(
+                post("/integration/deleteAppOptions")
+                    .param("optionsId", optionsSetId)
+                    .param("appName", integrationName)
+                    .principal(mockPrincipal))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    // verify the ui options and the api-key are not anymore there
+    IntegrationInfo deletedChannelInfo = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
+    Map<String, Object> deletedOptions = deletedChannelInfo.getOptions();
+    assertEquals(1, deletedOptions.size());
+    assertTrue(deletedOptions.containsKey(PYRAT_CONFIGURED_SERVERS));
+    assertTrue(
+        userConnectionManager
+            .findByUserNameProviderName(piUser.getUsername(), PYRAT_APP_NAME, "mice server")
+            .isEmpty());
   }
 
   @Test

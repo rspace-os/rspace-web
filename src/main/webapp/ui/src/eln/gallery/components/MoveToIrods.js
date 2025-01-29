@@ -31,6 +31,7 @@ import * as FetchingData from "../../../util/fetchingData";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import docLinks from "../../../assets/DocLinks";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 /**
  * The color scheme to match the iRODS branding.
@@ -136,6 +137,7 @@ function MoveCopyDialog({
   dialogOpen,
   setDialogOpen,
 }: MoveCopyDialogArgs) {
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const irods = useIrods(selectedIds);
   const [locationsAnchorEl, setLocationsAnchorEl] = React.useState(null);
   const [selectedDestination, setSelectedDestination] =
@@ -201,6 +203,7 @@ function MoveCopyDialog({
           .then(() => {
             setDialogOpen(false);
             setShowUsernamePasswordForm(false);
+            trackEvent("user:copy:file:irods");
           })
           .finally(() => {
             setOperationInProgress(false);
@@ -213,6 +216,7 @@ function MoveCopyDialog({
           .then(() => {
             setDialogOpen(false);
             setShowUsernamePasswordForm(false);
+            trackEvent("user:move:file:irods");
           })
           .finally(() => {
             setOperationInProgress(false);

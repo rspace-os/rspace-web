@@ -401,7 +401,7 @@ function CompareDialog(): Node {
               information.
             </Typography>
           </Grid>
-          <Grid item>
+          <Grid item sx={{ width: "100%" }}>
             <DataGrid
               aria-label="documents"
               autoHeight

@@ -65,20 +65,8 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     super.tearDown();
   }
 
-  private void addExampleRepositories(User user) {
-    Map<String, String> propertySetTest1 = new HashMap<String, String>();
-    propertySetTest1.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test1");
-    propertySetTest1.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
-    integrationsHandler.saveAppOptions(null, propertySetTest1, "GITHUB", true, user);
-
-    Map<String, String> propertySetTest2 = new HashMap<String, String>();
-    propertySetTest2.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test2");
-    propertySetTest2.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
-    integrationsHandler.saveAppOptions(null, propertySetTest2, "GITHUB", true, user);
-  }
-
   @Test
-  public void testAuthorizationFlowHappyCase() throws Exception {
+  public void testMockedAuthorizationFlowHappyCase() throws Exception {
     User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
     initUsers(user);
     logoutAndLoginAs(user);
@@ -131,13 +119,32 @@ public class GitHubControllerMVCIT extends MVCTestBase {
                 "rspace-integration-test-user/test2", "Second Test Repository")));
   }
 
+  private void addExampleRepositories(User user) {
+    Map<String, String> propertySetTest1 = new HashMap<>();
+    propertySetTest1.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test1");
+    propertySetTest1.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
+    integrationsHandler.saveAppOptions(null, propertySetTest1, "GITHUB", true, user);
+
+    Map<String, String> propertySetTest2 = new HashMap<>();
+    propertySetTest2.put("GITHUB_REPOSITORY_FULL_NAME", "rspace-integration-test-user/test2");
+    propertySetTest2.put("GITHUB_ACCESS_TOKEN", GITHUB_ACCESS_TOKEN);
+    integrationsHandler.saveAppOptions(null, propertySetTest2, "GITHUB", true, user);
+  }
+
   @Test
-  public void testGetTreeRootFolder() throws Exception {
+  public void testMockedGetTreeRootFolder() throws Exception {
     User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
     initUsers(user);
     logoutAndLoginAs(user);
 
     addExampleRepositories(user);
+
+    server
+        .expect(requestTo("https://api.github.com/repos/rspace-integration-test-user/test2"))
+        .andRespond(withSuccess("{ \"default_branch\":\"main\"}", MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo("https://api.github.com/repos/rspace-integration-test-user/test1"))
+        .andRespond(withSuccess("{ \"default_branch\":\"master\"}", MediaType.APPLICATION_JSON));
 
     MvcResult result =
         this.mockMvc
@@ -166,14 +173,14 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     expectedNode2.setPath("rspace-integration-test-user/test2");
     expectedNode2.setRepository("rspace-integration-test-user/test2");
     expectedNode2.setFullPath(null);
-    expectedNode2.setSha("master");
+    expectedNode2.setSha("main");
     expectedNode2.setType("tree");
 
     assertThat(nodes, hasItems(expectedNode1, expectedNode2));
   }
 
   @Test
-  public void testGetTreeSubfolder() throws Exception {
+  public void testMockedGetTreeSubfolder() throws Exception {
     User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
     initUsers(user);
     logoutAndLoginAs(user);
@@ -191,7 +198,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
         .andExpect(header("Authorization", "token " + GITHUB_ACCESS_TOKEN))
         .andRespond(withSuccess(content, MediaType.APPLICATION_JSON));
 
-    // URL-encoded dir string 'repository#sha hash of the folder#path to folder"
+    // URL-encoded dir string 'repository#sha hash of the folder#path to folder
     String dir =
         "rspace-integration-test-user/test1%23227cf132af95d6bb43ad9119b879e19e3f209901%23/folder/subfolder/";
     MvcResult result =

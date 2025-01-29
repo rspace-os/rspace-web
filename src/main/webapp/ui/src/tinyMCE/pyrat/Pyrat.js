@@ -18,6 +18,74 @@ import { getHeader } from "../../util/axios";
 import { parseInteger } from "../../util/parsers";
 import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
+
+function useAuthenticatedServers() {
+  const [servers, setServers] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+
+  useEffect(() => {
+    axios
+      .get("/integration/integrationInfo", {
+        params: new URLSearchParams({ name: "PYRAT" }),
+        responseType: "json",
+      })
+      .then(({ data }) => {
+        setServers(
+          Parsers.objectPath(["data", "options"], data)
+            .flatMap(Parsers.isObject)
+            .flatMap(Parsers.isNotNull)
+            .map((servers) =>
+              Object.entries(servers).filter(
+                ([k]) => k !== "PYRAT_CONFIGURED_SERVERS"
+              )
+            )
+            .flatMap((servers) =>
+              Result.all(
+                ...servers.map(([key, config]) => {
+                  try {
+                    const server = Parsers.isObject(config)
+                      .flatMap(Parsers.isNotNull)
+                      .elseThrow();
+                    const alias = Parsers.getValueWithKey("PYRAT_ALIAS")(server)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    const url = Parsers.getValueWithKey("PYRAT_URL")(server)
+                      .flatMap(Parsers.isString)
+                      .elseThrow();
+                    return Result.Ok({ alias, url });
+                  } catch {
+                    return Result.Error([
+                      new Error(
+                        "Could not parse out pyrat authenticated server"
+                      ),
+                    ]);
+                  }
+                })
+              )
+            )
+            .elseThrow()
+        );
+      })
+      .catch((error) => {
+        setError(error);
+        console.error("Failed to fetch servers", error);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return { tag: "loading" };
+  if (error) return { tag: "error", error };
+  return { tag: "success", value: servers };
+}
 
 const SUPPORTED_PYRAT_API_VERSION = 3;
 
@@ -41,19 +109,13 @@ const TABLE_HEADER_CELLS = [
 let VISIBLE_HEADER_CELLS = [];
 let SELECTED_ANIMALS = [];
 let PYRAT_URL = null;
+let PYRAT_ALIAS = null;
 
-function Pyrat() {
+function PyratListing({ serverAlias }) {
   const pyrat = axios.create({
     baseURL: "/apps/pyrat",
     timeout: 15000,
   });
-
-  const pyratUrl = useDeploymentProperty("pyrat.url");
-  useEffect(() => {
-    FetchingData.getSuccessValue(pyratUrl).do((p) => {
-      PYRAT_URL = p;
-    });
-  }, [pyratUrl]);
 
   // Counter is increased when filtering is required.
   // Counter instead of boolean, as useEffect functions below that depend on
@@ -86,8 +148,7 @@ function Pyrat() {
     licence_id: {
       label: "License",
       value: "",
-      query:
-        "licenses?k=license_id&k=license_number&s=license_id:asc&license_number=",
+      query: `licenses?serverAlias=${serverAlias}&k=license_id&k=license_number&s=license_id:asc&license_number=`,
       enumObj: {},
       renderFunc: ({ license_id, license_number }) => [
         license_id,
@@ -97,7 +158,7 @@ function Pyrat() {
     responsible_id: {
       label: "Responsible",
       value: "",
-      query: "users?k=userid&k=fullname&s=username:asc&fullname=",
+      query: `users?serverAlias=${serverAlias}&k=userid&k=fullname&s=username:asc&fullname=`,
       enumObj: {},
       renderFunc: ({ userid, fullname }) => [
         userid,
@@ -107,8 +168,7 @@ function Pyrat() {
     project_id: {
       label: "Project",
       value: "",
-      query:
-        "projects?k=id&k=name&s=id:asc&status=active&status=inactive&name=",
+      query: `projects?serverAlias=${serverAlias}&k=id&k=name&s=id:asc&status=active&status=inactive&name=`,
       enumObj: {},
       renderFunc: ({ id, name }) => [id, { label: name, value: id }],
     },
@@ -198,7 +258,7 @@ function Pyrat() {
 
   useEffect(function assertPyratVersion() {
     pyrat
-      .get("version")
+      .get("version?serverAlias=" + serverAlias)
       .then((response) => {
         if (response.data.api_version !== SUPPORTED_PYRAT_API_VERSION) {
           setErrorReason(ErrorReason.APIVersion);
@@ -212,7 +272,7 @@ function Pyrat() {
   useEffect(function makeBuildingEnum() {
     pyrat
       .get(
-        "locations?s=full_name:asc&k=building_id&k=full_name&type=building&=status=available"
+        `locations?serverAlias=${serverAlias}&s=full_name:asc&k=building_id&k=full_name&type=building&=status=available`
       )
       .then((response) => {
         if (response.data) {
@@ -323,7 +383,7 @@ function Pyrat() {
       }
     });
 
-    return `l=${rowsPerPage}&o=${page * rowsPerPage}&${params.join(
+    return `serverAlias=${serverAlias}&l=${rowsPerPage}&o=${page * rowsPerPage}&${params.join(
       ""
     )}&s=${orderBy}:${order}`;
   }, [filterCounter, order, orderBy, rowsPerPage, page]);
@@ -395,81 +455,131 @@ function Pyrat() {
     return <ErrorView errorReason={errorReason} />;
   }
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={materialTheme}>
-        <Grid container spacing={1}>
-          <Grid
-            container
-            item
-            xs={12}
-            justifyContent="flex-start"
-            alignItems="center"
-          >
-            <FilterButton
-              showFilter={showFilter}
-              setShowFilter={setShowFilter}
-            />
-            <ColumnVisibilitySettingsButton
-              showSettings={showSettings}
-              setShowSettings={setShowSettings}
-            />
-          </Grid>
-          {showFilter && (
-            <>
-              <Grid item xs={12}>
-                <Filter
-                  filter={filter}
-                  setFilter={setFilter}
-                  filterMultiReq={filterMultiReq}
-                  setFilterMultiReq={setFilterMultiReq}
-                  filterSpecial={filterSpecial}
-                  setFilterSpecial={setFilterSpecial}
-                  filterCounter={filterCounter}
-                  setFilterCounter={setFilterCounter}
-                  onOptionsFilterChange={handleOptionsFilterChange}
-                />
-              </Grid>
-            </>
-          )}
-          {showSettings && (
-            <Grid item xs={12}>
-              <ColumnVisibilitySettings
-                visibleColumnIds={visibleColumnIds}
-                setVisibleColumnIds={setVisibleColumnIds}
-                allTableHeaderCells={TABLE_HEADER_CELLS}
-              />
-            </Grid>
-          )}
+    <Grid container spacing={1}>
+      <Grid
+        container
+        item
+        xs={12}
+        justifyContent="flex-start"
+        alignItems="center"
+      >
+        <FilterButton showFilter={showFilter} setShowFilter={setShowFilter} />
+        <ColumnVisibilitySettingsButton
+          showSettings={showSettings}
+          setShowSettings={setShowSettings}
+        />
+      </Grid>
+      {showFilter && (
+        <>
           <Grid item xs={12}>
-            <ResultsTable
-              page={page}
-              onPageChange={handleChangePage}
-              visibleHeaderCells={VISIBLE_HEADER_CELLS}
-              animals={animals}
-              selectedAnimalIds={selectedAnimalIds}
-              setSelectedAnimalIds={setSelectedAnimalIds}
-              order={order}
-              orderBy={orderBy}
-              setOrder={setOrder}
-              setOrderBy={setOrderBy}
-              onRowsPerPageChange={handleRowsPerPageChange}
-              rowsPerPage={rowsPerPage}
-              count={count}
+            <Filter
+              filter={filter}
+              setFilter={setFilter}
+              filterMultiReq={filterMultiReq}
+              setFilterMultiReq={setFilterMultiReq}
+              filterSpecial={filterSpecial}
+              setFilterSpecial={setFilterSpecial}
+              filterCounter={filterCounter}
+              setFilterCounter={setFilterCounter}
+              onOptionsFilterChange={handleOptionsFilterChange}
             />
           </Grid>
-          <Grid item xs={12} align="center">
-            {!fetchDone && <CircularProgress />}
-          </Grid>
+        </>
+      )}
+      {showSettings && (
+        <Grid item xs={12}>
+          <ColumnVisibilitySettings
+            visibleColumnIds={visibleColumnIds}
+            setVisibleColumnIds={setVisibleColumnIds}
+            allTableHeaderCells={TABLE_HEADER_CELLS}
+          />
         </Grid>
-      </ThemeProvider>
-    </StyledEngineProvider>
+      )}
+      <Grid item xs={12}>
+        <ResultsTable
+          page={page}
+          onPageChange={handleChangePage}
+          visibleHeaderCells={VISIBLE_HEADER_CELLS}
+          animals={animals}
+          selectedAnimalIds={selectedAnimalIds}
+          setSelectedAnimalIds={setSelectedAnimalIds}
+          order={order}
+          orderBy={orderBy}
+          setOrder={setOrder}
+          setOrderBy={setOrderBy}
+          onRowsPerPageChange={handleRowsPerPageChange}
+          rowsPerPage={rowsPerPage}
+          count={count}
+        />
+      </Grid>
+      <Grid item xs={12} align="center">
+        {!fetchDone && <CircularProgress />}
+      </Grid>
+    </Grid>
   );
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+function Pyrat() {
+  const [serverAlias, setServerAlias] = React.useState(null);
+  const servers = useAuthenticatedServers();
+
+  FetchingData.getSuccessValue(servers).do((servers) => {
+    if (servers.length === 1) {
+      PYRAT_URL = servers[0].url;
+      PYRAT_ALIAS = servers[0].alias
+    }
+  });
+
+  return FetchingData.match(servers, {
+    loading: () => <CircularProgress />,
+    error: (error) => <Typography color="error">{error.message}</Typography>,
+    success: (servers) => {
+      if (servers.length === 1)
+        return <PyratListing serverAlias={servers[0].alias} />;
+      if (serverAlias) return <PyratListing serverAlias={serverAlias} />;
+      return (
+        <>
+          <Typography variant="body1" gutterBottom>
+            Pick one of your authenticated servers
+          </Typography>
+          <List>
+            <Divider />
+            {servers.map((server) => (
+              <>
+                <ListItem disablePadding key={server.alias}>
+                  <ListItemButton
+                    onClick={() => {
+                      setServerAlias(server.alias);
+                      PYRAT_URL = server.url;
+                      PYRAT_ALIAS = server.alias;
+                    }}
+                  >
+                    <ListItemText
+                      primary={server.alias}
+                      secondary={server.url}
+                    />
+                  </ListItemButton>
+                </ListItem>
+                <Divider />
+              </>
+            ))}
+          </List>
+        </>
+      );
+    },
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-pyrat");
   const root = createRoot(domContainer);
-  root.render(<Pyrat />);
+  root.render(
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={materialTheme}>
+        <Pyrat />
+      </ThemeProvider>
+    </StyledEngineProvider>
+  );
 });
 
 parent.tinymce.activeEditor.on("pyrat-insert", function () {
@@ -490,6 +600,7 @@ function createTinyMceTable() {
   pyratTable.style = "font-size: 0.7em";
 
   if (!PYRAT_URL) throw new Error("PYRAT_URL is not known");
+  if (!PYRAT_ALIAS) throw new Error("PYRAT_ALIAS is not known");
 
   const link = PYRAT_URL.slice(0, PYRAT_URL.lastIndexOf("/api/"));
 
@@ -498,11 +609,13 @@ function createTinyMceTable() {
   linkCell.appendChild(document.createTextNode("Imported from "));
   const anchor = document.createElement("a");
   anchor.href = link;
-  anchor.appendChild(document.createTextNode(link));
+  anchor.appendChild(document.createTextNode(`${PYRAT_ALIAS} (${link})`));
   anchor.setAttribute("rel", "noreferrer");
   linkCell.appendChild(anchor);
   linkCell.appendChild(document.createTextNode(" on "));
   linkCell.appendChild(document.createTextNode(new Date().toDateString()));
+  linkCell.appendChild(document.createTextNode(" "));
+  linkCell.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
   linkCell.setAttribute("colspan", VISIBLE_HEADER_CELLS.length);
   linkCell.style = "font-weight: 400";
   linkRow.appendChild(linkCell);

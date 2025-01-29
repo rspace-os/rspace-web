@@ -72,4 +72,10 @@ const docLinks: { [string]: URL } = {
   orcid: mkDocLink("yhkbtnj61a"),
 };
 
+/**
+ * This object is a mapping of logical names for pages of user documentation to
+ * URLs for those pages. This is so that if the documentation changes then the
+ * link only needs to be updated here and to make the code generally more
+ * readable.
+ */
 export default docLinks;

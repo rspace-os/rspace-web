@@ -90,6 +90,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
@@ -268,6 +269,7 @@ const BreadcrumbLink = React.forwardRef<
     const dndContext = useDndContext();
     const dndInProgress = Boolean(dndContext.active);
     const { openFolder } = useFolderOpen();
+    const { trackEvent } = React.useContext(AnalyticsContext);
 
     return (
       <StyledBreadcrumb
@@ -276,6 +278,7 @@ const BreadcrumbLink = React.forwardRef<
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          trackEvent("user:tap:breadcrumb:gallery");
           if (folder) {
             openFolder(folder);
           } else {
@@ -407,10 +410,13 @@ const FileCard = styled(
         const dndContext = useDndContext();
         const dndInProgress = Boolean(dndContext.active);
 
+        const { trackEvent } = React.useContext(AnalyticsContext);
         const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
           useFileImportDropZone({
             onDrop: (files) => {
-              void uploadFiles(file.id, files);
+              void uploadFiles(file.id, files).then(() => {
+                trackEvent("user:drag_uploads:file:into_folder");
+              });
               /*
                * No need to refresh the listing as the uploaded file has been
                * placed inside a folder into which the user cannot currently see
@@ -1281,6 +1287,7 @@ function GalleryMainPanel({
   const viewportDimensions = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const { uploadFiles } = useGalleryActions();
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
       onDrop: doNotAwait(async (files) => {
@@ -1289,10 +1296,17 @@ function GalleryMainPanel({
         });
         await uploadFiles(fId, files);
         void refreshListing();
+        if (path.length > 0) {
+          trackEvent("user:drag_uploads:file:into_current_folder");
+        } else {
+          trackEvent("user:drag_uploads:file:section_root", {
+            section: selectedSection,
+          });
+        }
       }),
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState(null);
-  const [viewMode, setViewMode] = useUiPreference(
+  const [viewMode, _setViewMode] = useUiPreference(
     PREFERENCES.GALLERY_VIEW_MODE,
     {
       defaultValue: "grid",
@@ -1321,6 +1335,14 @@ function GalleryMainPanel({
     },
   });
   const keyboardSensor = useSensor(KeyboardSensor, {});
+
+  const setViewMode = (newViewMode: "grid" | "tree" | "carousel") => {
+    _setViewMode(newViewMode);
+    setViewMenuAnchorEl(null);
+    trackEvent("user:change:view:gallery", {
+      view: newViewMode,
+    });
+  };
 
   return FetchingData.match(filestoresEnabled, {
     loading: () => null,
@@ -1391,6 +1413,9 @@ function GalleryMainPanel({
                 filesBeingMoved
               ).then(() => {
                 void refreshListing();
+                trackEvent("user:drags:file:gallery", {
+                  count: filesBeingMoved.size,
+                });
               });
             }}
           >
@@ -1452,7 +1477,6 @@ function GalleryMainPanel({
                       avatar={<GridIcon />}
                       onClick={() => {
                         setViewMode("grid");
-                        setViewMenuAnchorEl(null);
                         selection.clear();
                       }}
                     />
@@ -1464,7 +1488,6 @@ function GalleryMainPanel({
                       avatar={<TreeIcon />}
                       onClick={() => {
                         setViewMode("tree");
-                        setViewMenuAnchorEl(null);
                         selection.clear();
                       }}
                     />
@@ -1476,7 +1499,6 @@ function GalleryMainPanel({
                       avatar={<ViewCarouselIcon />}
                       onClick={() => {
                         setViewMode("carousel");
-                        setViewMenuAnchorEl(null);
                         /*
                          * We don't clear the selection because we want
                          * carousel view to default to the selected file,
@@ -1536,16 +1558,15 @@ function GalleryMainPanel({
                       ])()}
                       onClick={() => {
                         setSortMenuAnchorEl(null);
-                        if (orderBy === "name") {
-                          if (sortOrder === "ASC") {
-                            setSortOrder("DESC");
-                          } else {
-                            setSortOrder("ASC");
-                          }
-                        } else {
-                          setOrderBy("name");
-                          setSortOrder("ASC");
-                        }
+                        let newSortOrder = "ASC";
+                        if (orderBy === "name" && sortOrder === "ASC")
+                          newSortOrder = "DESC";
+                        setSortOrder(newSortOrder);
+                        setOrderBy("name");
+                        trackEvent("user:change:sorting:gallery", {
+                          sortOrder: newSortOrder,
+                          orderBy: "name",
+                        });
                       }}
                     />
                     <AccentMenuItem
@@ -1583,16 +1604,18 @@ function GalleryMainPanel({
                       ])()}
                       onClick={() => {
                         setSortMenuAnchorEl(null);
-                        if (orderBy === "modificationDate") {
-                          if (sortOrder === "ASC") {
-                            setSortOrder("DESC");
-                          } else {
-                            setSortOrder("ASC");
-                          }
-                        } else {
-                          setOrderBy("modificationDate");
-                          setSortOrder("ASC");
-                        }
+                        let newSortOrder = "ASC";
+                        if (
+                          orderBy === "modificationDate" &&
+                          sortOrder === "ASC"
+                        )
+                          newSortOrder = "DESC";
+                        setSortOrder(newSortOrder);
+                        setOrderBy("modificationDate");
+                        trackEvent("user:change:sorting:gallery", {
+                          sortOrder: newSortOrder,
+                          orderBy: "modificationDate",
+                        });
                       }}
                     />
                   </StyledMenu>

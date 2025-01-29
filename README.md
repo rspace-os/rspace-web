@@ -20,7 +20,7 @@ Thank you for your interest in the RSpace open-source project! We're excited to 
 ## Getting started
 - Please make sure you've read and understood our [code of conduct](https://github.com/rspace-os/.github/blob/1be658989ec362844d1f8b2ef590f28bbc989a1e/CODE_OF_CONDUCT.md) for maintaining an inclusive and productive community.
 - A good starting point to learn about RSpace, its features, and integrations with third party services is the [documentation](https://documentation.researchspace.com/).
-- Please read our [contributor information](https://github.com/rspace-os/.github/blob/1be658989ec362844d1f8b2ef590f28bbc989a1e/CONTRIBUTING.md) for a general overview on how to contribute to this project.
+- Please read our [contributor information](https://github.com/rspace-os/.github/blob/main/CONTRIBUTING.md) for a general overview on how to contribute to this project.
 - Developer documentation can be found [here](DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md).
 
 ## Running RSpace via docker
