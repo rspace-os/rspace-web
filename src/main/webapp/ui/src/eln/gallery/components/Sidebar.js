@@ -51,6 +51,7 @@ import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import AddFilestoreDialog from "./AddFilestoreDialog";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -118,6 +119,7 @@ const UploadMenuItem = ({
 |}) => {
   const { uploadFiles } = useGalleryActions();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   /*
    * This is necessary because React does not yet support the new cancel event
@@ -160,6 +162,7 @@ const UploadMenuItem = ({
             onChange={({ target: { files } }) => {
               void uploadFiles(fId, [...files]).then(() => {
                 onUploadComplete();
+                trackEvent("user:uploaded:file:gallery");
               });
             }}
             type="file"
@@ -189,6 +192,7 @@ const NewFolderMenuItem = ({
   const [name, setName] = React.useState("");
   const { createFolder } = useGalleryActions();
   const [submitting, setSubmitting] = React.useState(false);
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   return (
     <>
@@ -232,6 +236,7 @@ const NewFolderMenuItem = ({
                   void createFolder(fId, name)
                     .then(() => {
                       onDialogClose(true);
+                      trackEvent("user:create:folder:gallery");
                     })
                     .finally(() => {
                       setSubmitting(false);
@@ -485,7 +490,7 @@ const DrawerTab = styled(
 }));
 
 type SidebarArgs = {|
-  selectedSection: GallerySection,
+  selectedSection: GallerySection | null,
   setSelectedSection: (GallerySection) => void,
   drawerOpen: boolean,
   setDrawerOpen: (boolean) => void,

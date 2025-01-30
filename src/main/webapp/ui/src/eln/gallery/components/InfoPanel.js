@@ -33,6 +33,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { Optional } from "../../../util/optional";
 import { useFolderOpen } from "./OpenFolderProvider";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 /**
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -179,14 +180,17 @@ const Puller: ComponentType<{|
 const NameFieldForLargeViewports = styled(
   observer(
     ({ file, className }: {| file: GalleryFile, className: string |}) => {
+      const { trackEvent } = React.useContext(AnalyticsContext);
       const { rename } = useGalleryActions();
       const [name, setName] = React.useState(file.name);
       const textField = React.useRef(null);
 
       function handleSubmit() {
-        void rename(file, name);
-        textField.current?.blur();
-        setName(file.transformFilename(() => name));
+        void rename(file, name).then(() => {
+          textField.current?.blur();
+          setName(file.transformFilename(() => name));
+          trackEvent("user:renames:file:gallery");
+        });
       }
 
       return (
@@ -678,6 +682,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const { openPdfPreview } = usePdfPreview();
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   return (
     <>
@@ -771,6 +776,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       <ActionButton
                         onClick={() => {
                           window.open(action.url);
+                          trackEvent("user:opens:document:collabora");
                         }}
                         label="Edit"
                         sx={{
@@ -787,6 +793,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                       <ActionButton
                         onClick={() => {
                           window.open(action.url);
+                          trackEvent("user:opens:document:officeonline");
                         }}
                         label="Edit"
                         sx={{
@@ -880,6 +887,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
   const selection = useGallerySelection();
   const mobileInfoPanelId = React.useId();
   const { openFolder } = useFolderOpen();
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   return (
     <CustomSwipeableDrawer
@@ -900,6 +908,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
       }}
       onOpen={() => {
         setMobileInfoPanelOpen(true);
+        trackEvent("user:opens:mobileInfoPanel:gallery");
       }}
       swipeAreaWidth={CLOSED_MOBILE_INFO_PANEL_HEIGHT}
       disableSwipeToOpen={false}

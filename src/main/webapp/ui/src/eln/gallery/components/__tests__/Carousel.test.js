@@ -9,7 +9,7 @@ import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import Carousel from "../Carousel";
 import * as FetchingData from "../../../../util/fetchingData";
-import { useGalleryListing } from "../../useGalleryListing";
+import { useGalleryListing, type GalleryFile } from "../../useGalleryListing";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import page1 from "../../__tests__/getUploadedFiles_1.json";
@@ -39,8 +39,16 @@ mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
 describe("Carousel", () => {
   test("Should show an indicator of progress through listing.", async () => {
     function Wrapper() {
+      const listingOf = React.useMemo(
+        () => ({
+          tag: "section",
+          section: "Images",
+          path: ([]: $ReadOnlyArray<GalleryFile>),
+        }),
+        []
+      );
       const { galleryListing } = useGalleryListing({
-        section: "Images",
+        listingOf,
         searchTerm: "",
         sortOrder: "DESC",
         orderBy: "modificationDate",
@@ -73,8 +81,16 @@ describe("Carousel", () => {
 
   test("Moving to a different file resets the zoom level", async () => {
     function Wrapper() {
+      const listingOf = React.useMemo(
+        () => ({
+          tag: "section",
+          section: "Images",
+          path: ([]: $ReadOnlyArray<GalleryFile>),
+        }),
+        []
+      );
       const { galleryListing } = useGalleryListing({
-        section: "Images",
+        listingOf,
         searchTerm: "",
         sortOrder: "DESC",
         orderBy: "modificationDate",

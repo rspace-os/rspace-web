@@ -23,7 +23,7 @@ public interface FolderApi {
   /**
    * Creates a new folder
    *
-   * @param document
+   * @param folder
    * @param errors
    * @param user
    * @return
@@ -31,19 +31,20 @@ public interface FolderApi {
    */
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  ApiFolder createNewFolder(@RequestBody @Valid ApiFolder document, BindingResult errors, User user)
+  ApiFolder createNewFolder(@RequestBody @Valid ApiFolder folder, BindingResult errors, User user)
       throws BindException;
 
   /**
    * Gets a folder by given Id
    *
    * @param id
+   * @param includePathToRootFolder
    * @param user
    * @return
    * @throws NotFoundException if folder does not exist
    */
   @GetMapping(value = "/{id}")
-  ApiFolder getFolder(@PathVariable Long id, User user);
+  ApiFolder getFolder(@PathVariable Long id, Boolean includePathToRootFolder, User user);
 
   /**
    * Deletes a folder or notebook by ID

@@ -332,11 +332,16 @@ The following optional properties enable RSpace to connect to Slack (if this int
 * **slack.secret** Client secret of Slack App registered for given RSpace instance
 * **slack.verification.token** Verification token.
 
-The following optional properties enable RSpace to connect to your PyRAT database instance (if this integration is enabled):
-* **pyrat.url** URL of the exposed PyRAT API. For example 
-  `https://pyrat.your-organisation.edu/api/v3/`.
-* **pyrat.client.token** API-Client-Token provided by Scionics (developers of PyRAT).
-
+The following optional property enables RSpace to connect to your PyRAT database instance (if this integration is enabled):
+* **pyrat.server.config** configures the pyrat server alias associated to *server url* and server *access token* (API-Client-Token provided by Scionics - developers of PyRAT).
+  For example:
+  ```
+  pyrat.server.config={ \
+      "mice server": {"url": "https://mice.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"}, \
+      "frogs server": {"url": "https://frogs.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"} \
+  }
+  ```
+4
 The following optional properties enable RSpace to connect to Clustermarket :
 * **clustermarket.api.url** URL of the exposed Clustermarket API. For example
   `https://api.staging.clustermarket.com/v1/`.

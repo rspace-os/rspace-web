@@ -13,7 +13,7 @@ For development you should be able to run all the code and tests fine with Linux
 
 ### Install required software
 -   Install Java JDK17, use OpenJDK rather than Oracle.
--   Install MariaDB 10.3.39, or later (MariaDB 11.3 is used fine on dockerized RSpace version)
+-   Install MariaDB 10.3.39, or later. MariaDB 11.3 is used fine on dockerized RSpace version. Later versions of MariaDB 11 are untested and we have seen some compatability issues with those.
 
 Historically we were running RSpace on MySQL 5.7 version, so some docs still mention it, but you should go with MariaDB.
 Database installation can be skipped if your only goal is to compile/build the project.

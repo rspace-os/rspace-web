@@ -5,7 +5,7 @@ import React, { type Node, type Context } from "react";
 import axios from "axios";
 import { mapObject } from "./Util";
 
-/*
+/**
  * This constant ensures that we don't end up with clashing keys
  */
 export const PREFERENCES: { [string]: symbol } = {
@@ -13,24 +13,29 @@ export const PREFERENCES: { [string]: symbol } = {
   GALLERY_SORT_BY: Symbol.for("GALLERY_SORT_BY"),
   GALLERY_SORT_ORDER: Symbol.for("GALLERY_SORT_ORDER"),
   GALLERY_PICKER_INITIAL_SECTION: Symbol.for("GALLERY_PICKER_INITIAL_SECTION"),
+  GALLERY_SIDEBAR_OPEN: Symbol.for("GALLERY_SIDEBAR_OPEN"),
   INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for("INVENTORY_FORM_SECTIONS_EXPANDED"),
   INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
+  SYSADMIN_USERS_TABLE_COLUMNS: Symbol.for("SYSADMIN_USERS_TABLE_COLUMNS"),
 };
 
-type UiPreferencesContextType = {[key in keyof (typeof PREFERENCES)]: mixed};
+type UiPreferencesContextType = {|
+  uiPreferences: {[key in keyof (typeof PREFERENCES)]: mixed},
+  setUiPreferences: (({[key in keyof (typeof PREFERENCES)]: mixed} | null) => {[key in keyof (typeof PREFERENCES)]: mixed} | null) => void,
+|};
 
-const DEFAULT_UI_PREFERENCES_CONTEXT: UiPreferencesContextType = mapObject(
-  () => null,
-  PREFERENCES
-);
+const DEFAULT_UI_PREFERENCES_CONTEXT: UiPreferencesContextType = {
+  uiPreferences: mapObject(() => null, PREFERENCES),
+  setUiPreferences: () => {}
+};
 
 const UiPreferencesContext: Context<UiPreferencesContextType> = React.createContext(
   DEFAULT_UI_PREFERENCES_CONTEXT
 );
 
-function fetchPreferences(): Promise<UiPreferencesContextType | ""> {
+function fetchPreferences(): Promise<UiPreferencesContextType["uiPreferences"] | ""> {
   return axios
-    .get<UiPreferencesContextType | "">("/userform/ajax/preference?preference=UI_JSON_SETTINGS")
+    .get<UiPreferencesContextType["uiPreferences"] | "">("/userform/ajax/preference?preference=UI_JSON_SETTINGS")
     .then(({ data }) => data);
 }
 
@@ -44,12 +49,12 @@ function fetchPreferences(): Promise<UiPreferencesContextType | ""> {
  * and all calls to useUiPreference will use the passed default value.
  */
 export function UiPreferences({ children }: {| children: Node |}): Node {
-  const [uiPreferences, setUiPreferences] = React.useState<UiPreferencesContextType | null>(null);
+  const [uiPreferences, setUiPreferences] = React.useState<UiPreferencesContextType["uiPreferences"] | null>(null);
 
   React.useEffect(() => {
     void fetchPreferences().then((data) => {
       if (data === "") {
-        setUiPreferences(mapObject(() => null, PREFERENCES));
+        setUiPreferences(mapObject<_, _, mixed>(() => null, PREFERENCES));
         return;
       }
       setUiPreferences(data);
@@ -64,7 +69,7 @@ export function UiPreferences({ children }: {| children: Node |}): Node {
    */
   if (!uiPreferences) return null;
   return (
-    <UiPreferencesContext.Provider value={uiPreferences}>
+    <UiPreferencesContext.Provider value={{ uiPreferences, setUiPreferences }}>
       {children}
     </UiPreferencesContext.Provider>
   );
@@ -89,7 +94,7 @@ export default function useUiPreference<T>(
     defaultValue: T,
   |}
 ): UseState<T> {
-  const uiPreferences = React.useContext(UiPreferencesContext);
+  const { uiPreferences, setUiPreferences } = React.useContext(UiPreferencesContext);
   const key = Symbol.keyFor(preference);
   let v = opts.defaultValue;
   if (key && typeof uiPreferences[key] !== "undefined") {
@@ -102,6 +107,17 @@ export default function useUiPreference<T>(
     value,
     (newValue) => {
       setValue(newValue);
+      setUiPreferences((old: {[key in keyof (typeof PREFERENCES)]: mixed} | null) => {
+        if (old === null) return old;
+        if (!key) return old;
+        return {
+          ...old,
+          [key]: {
+            value: newValue,
+            time: new Date().getTime()
+          },
+        };
+      });
 
       if (!key) return;
       void (async () => {
