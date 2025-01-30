@@ -2,6 +2,7 @@ scripts/externalTinymcePlugins/box/plugin.min.js
 scripts/externalTinymcePlugins/clustermarket/plugin.min.js
 scripts/externalTinymcePlugins/comments/plugin.js
 scripts/externalTinymcePlugins/crudops/plugin.min.js
+scripts/externalTinymcePlugins/contexttoolbars/plugin.min.js
 scripts/externalTinymcePlugins/dropbox/plugin.min.js
 scripts/externalTinymcePlugins/ecat/plugin.min.js
 scripts/externalTinymcePlugins/egnyte/egnyte.js
