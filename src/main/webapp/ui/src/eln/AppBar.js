@@ -79,6 +79,7 @@ function currentPage() {
     directory: "My RSpace",
     audit: "My RSpace",
     import: "My RSpace",
+    groups: "My RSpace",
     gallery: "Gallery",
   };
   const firstPathFragment = window.location.pathname.split("/")[1];
