@@ -10,6 +10,7 @@ import { mkAlert } from "../../../contexts/Alert";
 import { AddScopedToastCommand } from "./addScopedToast";
 import { ClearAllScopedToastsCommand } from "./clearAllScopedToasts";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
+import { type Model } from "./common";
 
 jest.mock("../../../../common/InvApiService", () => {});
 jest.mock("../../../stores/RootStore", () => () => ({
@@ -18,10 +19,6 @@ jest.mock("../../../stores/RootStore", () => () => ({
     removeAlert: jest.fn(() => {}),
   },
 }));
-
-export type Model = {|
-  count: number,
-|};
 
 describe("Scoped Toasts Model Tests", () => {
   test("add and clear", async () => {
