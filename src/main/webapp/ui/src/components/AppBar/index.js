@@ -805,6 +805,30 @@ function GalleryAppBar({
                     compact
                     onClick={() => {
                       JwtService.destroyToken();
+
+                      /*
+                       * On some servers the user can login with the Google
+                       * Login workflow. On those servers, `gapi` will be
+                       * defined globally by header.jsp
+                       */
+                      // $FlowExpectedError[cannot-resolve-name]
+                      if (typeof gapi !== "undefined" && gapi.auth2) {
+                        // $FlowExpectedError[cannot-resolve-name]
+                        const auth2 = gapi.auth2.getAuthInstance();
+                        if (auth2) {
+                          auth2.signOut().then(() => {
+                            // eslint-disable-next-line no-console
+                            console.log("User signed out.");
+                          });
+                        } else {
+                          // eslint-disable-next-line no-console
+                          console.log("No GAPI authinstance defined");
+                        }
+                      } else {
+                        // eslint-disable-next-line no-console
+                        console.log("No GAPI defined");
+                      }
+
                       setAccountMenuAnchorEl(null);
                       window.location = "/logout";
                     }}
