@@ -978,11 +978,6 @@ $(function () {
     RS._resetInactivityTimer();
   });
 
-  RS.emulateKeyboardClick('#accountTopBarDiv');
-  $('#lastLoginButton').click(function () {
-    $('#previousIn').toggle();
-  });
-
   RS._checkIncomingMaintenace();
 
   $(document).on('keyup', '.dynamicWidthInputField', function (e) {
