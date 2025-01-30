@@ -40,6 +40,25 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
   const [uiData, setUiData] = React.useState<null | UiNavigationData>(null);
   const [errorMessage, setErrrorMessage] = React.useState<null | string>(null);
 
+  React.useEffect(() => {
+    const handleUserRename = (
+      event: Event & { detail: { fullName: string, ... }, ... }
+    ): void => {
+      if (!uiData) return;
+      setUiData({
+        ...uiData,
+        userDetails: {
+          ...uiData.userDetails,
+          fullName: event.detail.fullName,
+        },
+      });
+    };
+    window.addEventListener("USER_RENAME", handleUserRename);
+    return () => {
+      window.removeEventListener("USER_RENAME", handleUserRename);
+    };
+  }, [uiData]);
+
   async function getUiNavigationData(): Promise<void> {
     setUiData(null);
     setLoading(true);

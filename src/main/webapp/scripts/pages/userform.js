@@ -171,7 +171,11 @@ function initProfileDialog(){
               }
               $("#additionalInfo").text(result.data.profile.profileText);
               $('#affiliation').text(result.data.affiliation);
-              $('#currentInName').text(result.data.firstName + ' ' + result.data.lastName );
+              window.dispatchEvent(new CustomEvent("USER_RENAME", {
+                detail: {
+                  fullName: result.data.firstName + ' ' + result.data.lastName
+                }
+              }));
               $("#editProfileDialog").dialog('close');
             } else {
               $('#msgAreaProfile').text(getValidationErrorString (result.errorMsg));
