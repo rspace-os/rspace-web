@@ -460,6 +460,11 @@ function initChangeEmailDialog(){
                     msg = 'Verification link has been sent to the new email address';
                 }
               RS.confirm(msg, "success", 3000);
+              window.dispatchEvent(new CustomEvent("USER_SET_EMAIL", {
+                detail: {
+                  email: newEmailInput
+                }
+              }));
               $("#changeEmailDialog").dialog('close');
             } else{
               $('#msgAreaEmail').text(getValidationErrorString(result.errorMsg));

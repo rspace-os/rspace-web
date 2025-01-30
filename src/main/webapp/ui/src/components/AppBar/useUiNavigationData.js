@@ -78,6 +78,25 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
     };
   }, [uiData]);
 
+  React.useEffect(() => {
+    const handleUserSetEmail = (
+      event: Event & { detail: { email: string, ... }, ... }
+    ): void => {
+      if (!uiData) return;
+      setUiData({
+        ...uiData,
+        userDetails: {
+          ...uiData.userDetails,
+          email: event.detail.email,
+        },
+      });
+    }
+    window.addEventListener("USER_SET_EMAIL", handleUserSetEmail);
+    return () => {
+      window.removeEventListener("USER_SET_EMAIL", handleUserSetEmail);
+    };
+  }, [uiData]);
+
   async function getUiNavigationData(): Promise<void> {
     setUiData(null);
     setLoading(true);
