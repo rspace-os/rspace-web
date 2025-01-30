@@ -59,6 +59,25 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
     };
   }, [uiData]);
 
+  React.useEffect(() => {
+    const handleUserSetOrcid = (
+      event: Event & { detail: { orcidId: string | null, ... }, ... }
+    ): void => {
+      if (!uiData) return;
+      setUiData({
+        ...uiData,
+        userDetails: {
+          ...uiData.userDetails,
+          orcidId: event.detail.orcidId,
+        },
+      });
+    }
+    window.addEventListener("USER_SET_ORCID", handleUserSetOrcid);
+    return () => {
+      window.removeEventListener("USER_SET_ORCID", handleUserSetOrcid);
+    };
+  }, [uiData]);
+
   async function getUiNavigationData(): Promise<void> {
     setUiData(null);
     setLoading(true);

@@ -681,6 +681,11 @@ $(document).ready(function (){
             var orcidOptionsId = $(authWindow.document.body).find('#orcidOptionsId').text();
             $('#orcidIdSpan').data('orcidid', orcidId);
             $('#deleteOrcidIdButton').data('orcidoptionsid', orcidOptionsId);
+            window.dispatchEvent(new CustomEvent("USER_SET_ORCID", {
+              detail: {
+                orcidId,
+              }
+            }));
             displayOrcidIdSpan();
         });
   });
@@ -692,6 +697,11 @@ $(document).ready(function (){
         console.log('... deleted');
         $('#orcidIdSpan').data('orcidid', '');
         $('#deleteOrcidIdButton').data('orcidoptionsid', '');
+        window.dispatchEvent(new CustomEvent("USER_SET_ORCID", {
+          detail: {
+            orcidId: null,
+          }
+        }));
         displayOrcidIdSpan();
     });
   });
