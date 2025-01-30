@@ -15,6 +15,7 @@ import useStores from "./stores/use-stores";
 import materialTheme from "./theme";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import Analytics from "./components/Analytics";
+import { COLOR as INVENTORY_COLOR } from "./Inventory/components/Layout/Sidebar";
 
 function App(): Node {
   const { authStore, peopleStore, unitStore } = useStores();
@@ -61,6 +62,13 @@ window.addEventListener("load", function () {
   if (domContainer) {
     const root = createRoot(domContainer);
     root.render(<App />);
+  }
+
+  if (window.location.pathname.startsWith("/inventory")) {
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = `hsl(${INVENTORY_COLOR.background.hue}, ${INVENTORY_COLOR.background.saturation}%, ${INVENTORY_COLOR.background.lightness}%)`;
+    document.head?.appendChild(meta);
   }
 });
 

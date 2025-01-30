@@ -138,4 +138,11 @@ window.addEventListener("load", () => {
       </CacheProvider>
     </React.StrictMode>
   );
+
+  const meta = document.createElement("meta");
+  meta.name = "theme-color";
+  meta.content = `hsl(${color(currentPage()).background.hue}, ${
+    color(currentPage()).background.saturation
+  }%, ${color(currentPage()).background.lightness}%)`;
+  document.head?.appendChild(meta);
 });

@@ -358,5 +358,10 @@ window.addEventListener("load", () => {
         </ErrorBoundary>
       </React.StrictMode>
     );
+
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = `hsl(${COLOR.background.hue}, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`;
+    document.head?.appendChild(meta);
   }
 });
