@@ -827,7 +827,7 @@ public class GalleryController extends BaseController {
    */
   @ResponseBody
   @GetMapping("/getMediaFileSummaryInfo")
-  public AjaxReturnObject<Map<Long, RecordInformation>> getMediaFileSummaryInfo(
+  public AjaxReturnObject<Map<String, RecordInformation>> getMediaFileSummaryInfo(
       @RequestParam(value = "id[]") Long[] ids,
       @RequestParam(value = "revision[]") Long[] revisions) {
 
@@ -843,11 +843,11 @@ public class GalleryController extends BaseController {
       }
     }
 
-    Map<Long, RecordInformation> info = infoProvider.getRecordInformation(ids, revisions, user);
+    Map<String, RecordInformation> info = infoProvider.getRecordInformation(ids, revisions, user);
     ErrorList el = new ErrorList();
     info.entrySet().stream()
         .filter(e -> e.getValue() == null)
-        .map(e -> String.format("Could not retrieve information for id [%d]", +e.getKey()))
+        .map(e -> String.format("Could not retrieve information for id-revision [%s]", e.getKey()))
         .forEach(msg -> el.addErrorMsg(msg));
     return new AjaxReturnObject<>(info, el);
   }
