@@ -24,7 +24,7 @@ import useViewportDimensions from "../../../util/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import Avatar from "@mui/material/Avatar";
-import FileIcon from "@mui/icons-material/InsertDriveFile";
+import BrokenImageIcon from "@mui/icons-material/BrokenImage";
 import * as FetchingData from "../../../util/fetchingData";
 import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
 import {
@@ -663,7 +663,7 @@ const FileCard = styled(
                           pointerEvents: "none",
                         }}
                       >
-                        <FileIcon fontSize="inherit" />
+                        <BrokenImageIcon fontSize="inherit" />
                       </Avatar>
                     </Grid>
                     <Grid
