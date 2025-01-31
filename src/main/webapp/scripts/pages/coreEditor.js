@@ -818,6 +818,8 @@ function _updateAttachedDocumentPanelsWithLatestInfo(info) {
     var $nameDiv = $viewModeAttachmentDiv.find('.attachmentName');
     _setViewModeAttachmentNameAndVersionLabel($nameDiv, info.name, info.version);
 
+    $viewModeAttachmentDiv.find('.historicalVersionImg').toggle(info.revision != null);
+
     if ($viewModeAttachmentDiv.hasClass('previewableAttachmentPanel')) {
       // refresh thumbnail
       _loadAttachmentThumbnail($viewModeAttachmentDiv, info.id, info.revision, info.thumbnailId);
