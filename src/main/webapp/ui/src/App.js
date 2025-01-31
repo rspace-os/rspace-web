@@ -16,6 +16,7 @@ import materialTheme from "./theme";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import Analytics from "./components/Analytics";
 import { COLOR as INVENTORY_COLOR } from "./Inventory/components/Layout/Sidebar";
+import GoogleLoginProvider from "./components/GoogleLoginProvider";
 
 function App(): Node {
   const { authStore, peopleStore, unitStore } = useStores();
@@ -41,13 +42,16 @@ function App(): Node {
     <>
       {(authStore.isAuthenticated || authStore.isSigningOut) &&
       peopleStore.currentUser ? (
-        <StyledEngineProvider injectFirst>
-          <ThemeProvider theme={materialTheme}>
-            <Analytics>
-              <Router />
-            </Analytics>
-          </ThemeProvider>
-        </StyledEngineProvider>
+        <>
+          <GoogleLoginProvider />
+          <StyledEngineProvider injectFirst>
+            <ThemeProvider theme={materialTheme}>
+              <Analytics>
+                <Router />
+              </Analytics>
+            </ThemeProvider>
+          </StyledEngineProvider>
+        </>
       ) : (
         ERROR_MSG
       )}
@@ -55,7 +59,7 @@ function App(): Node {
   ) : null;
 }
 
-window.addEventListener("load", function () {
+window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
   window.scrollTo(0, 1);
 
