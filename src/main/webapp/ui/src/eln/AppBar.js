@@ -12,7 +12,7 @@ import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
 import { COLOR as GALLERY_COLOR } from "./gallery/common";
 
-const WORKSPACE_COLOR = {
+const MYRSPACE_COLOR = {
   main: {
     hue: 120,
     saturation: 18,
@@ -88,7 +88,7 @@ function currentPage() {
 }
 
 function color(page: string) {
-  if (page === "Workspace") return WORKSPACE_COLOR;
+  if (page === "My RSpace") return MYRSPACE_COLOR;
   if (page === "Gallery") return GALLERY_COLOR;
   return OTHER_COLOR;
 }

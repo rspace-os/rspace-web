@@ -488,14 +488,14 @@ function GalleryAppBar({
                 avatar={<NotebookIcon />}
                 subheader="Notebooks and documents"
                 foregroundColor={{
-                  hue: 120,
-                  saturation: 18,
+                  hue: 200,
+                  saturation: 10,
                   lightness: 20,
                 }}
                 backgroundColor={{
-                  hue: 120,
-                  saturation: 18,
-                  lightness: 71,
+                  hue: 200,
+                  saturation: 10,
+                  lightness: 70,
                 }}
                 onClick={() => {
                   window.location = "/workspace";
@@ -531,14 +531,14 @@ function GalleryAppBar({
                 avatar={<ProfileIcon />}
                 subheader="Your profile details, labgroups, and preferences"
                 foregroundColor={{
-                  hue: 200,
-                  saturation: 10,
+                  hue: 120,
+                  saturation: 18,
                   lightness: 20,
                 }}
                 backgroundColor={{
-                  hue: 200,
-                  saturation: 10,
-                  lightness: 70,
+                  hue: 120,
+                  saturation: 18,
+                  lightness: 71,
                 }}
                 onClick={() => {
                   window.location = showMyLabGroups
