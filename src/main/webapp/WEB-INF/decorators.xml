@@ -28,9 +28,6 @@
         <pattern>/listOfMaterials/**</pattern>
         <pattern>*/public/inventory/**</pattern>
         <pattern>/apps</pattern>
-        <pattern>/newGallery</pattern>
-        <pattern>/newGallery*</pattern>
-        <pattern>/newGallery/**</pattern>
         <pattern>/Gallery</pattern>
         <pattern>/Gallery*</pattern>
         <pattern>/Gallery/**</pattern>
