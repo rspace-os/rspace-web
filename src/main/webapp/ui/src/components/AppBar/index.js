@@ -766,8 +766,10 @@ function GalleryAppBar({
                     compact
                     onClick={() => {
                       setAccountMenuAnchorEl(null);
-                      window.location =
-                        "/public/publishedView/publishedDocuments";
+                      window.open(
+                        "/public/publishedView/publishedDocuments",
+                        "_target"
+                      );
                     }}
                   />
                 ))
