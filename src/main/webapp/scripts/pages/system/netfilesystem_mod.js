@@ -157,12 +157,12 @@ define(function() {
             $('#fileSystemSambaDomain').val(clientOptions.SAMBA_DOMAIN);
             $('#fileSystemSambaShare').val(clientOptions.SAMBA_SHARE_NAME);
         } else if (isSftpClient) {
-            // $('#fileSystemDetailsSftpDirChoiceRow').show();
             $('#fileSystemSftpServerPublicKey').val(clientOptions.SFTP_SERVER_PUBLIC_KEY);
         } else if(isIrodsClient) {
             $('#fileSystemIrodsZone').val(clientOptions.IRODS_ZONE);
             $('#fileSystemIrodsHomeDir').val(clientOptions.IRODS_HOME_DIR);
             $('#fileSystemIrodsPort').val(clientOptions.IRODS_PORT);
+	    $('#fileSystemIrodsCsneg').val(clientOptions.IRODS_CSNEG);
         }
         
         var isPasswordAuth = isExistingFileSystem && fileSystem.authType === 'PASSWORD';
@@ -174,6 +174,19 @@ define(function() {
 
         $('#fileSystemPubKeyRegistrationUrl').val("");
 
+
+	if (fileSystem.clientType === 'IRODS'){
+	    var rows =  fileSystem.clientOptions.split('\n');
+            for (var i = 0; i < rows.length; i++) {
+                var currRow = rows[i];
+                var currRowValue = currRow.substring(currRow.indexOf('=') + 1);
+                if (currRow.indexOf('IRODS_AUTH') === 0) {
+		    $('#iRODSfileSystemAuthTypeNative').prop('checked', currRowValue === 'NATIVE');
+		    $('#iRODSfileSystemAuthTypePAM').prop('checked', currRowValue === 'PAM');
+                 }
+            }
+	}
+	
         if (fileSystem.authOptions) {
             if (isPubKeyAuth) {
                 var rows =  fileSystem.authOptions.split('\n');
@@ -236,9 +249,7 @@ define(function() {
                 clientOptions +="\nUSER_DIRS_REQUIRED=" + dirsRequired;
             }
         } else if (clientType === 'IRODS') {
-            clientOptions = "IRODS_ZONE=" + $('#fileSystemIrodsZone').val()
-            + "\nIRODS_HOME_DIR=" + $('#fileSystemIrodsHomeDir').val()
-            + "\nIRODS_PORT=" + $('#fileSystemIrodsPort').val();
+            clientOptions = "IRODS_ZONE=" + $('#fileSystemIrodsZone').val() + "\nIRODS_HOME_DIR=" + $('#fileSystemIrodsHomeDir').val() + "\nIRODS_PORT=" + $('#fileSystemIrodsPort').val()+"\nIRODS_CSNEG=" + $('#fileSystemIrodsCsneg').val()+"\nIRODS_AUTH=" + $('input[name="iRODSfileSystemAuthType"]:checked').val()+"\n";
         }
 
         var fileSystem = {
@@ -251,7 +262,7 @@ define(function() {
                 clientOptions: clientOptions,
                 authOptions: authOptions
             };
-        console.log("File System:", fileSystem);
+        //console.log("File System:", fileSystem);
         RS.blockPage("Saving...");
         var jqxhr = RS.sendJsonPostRequestToUrl('/system/netfilesystem/save', fileSystem);
         jqxhr.done(function() {
@@ -304,7 +315,9 @@ define(function() {
         $('.fileSystemDetailsIrodsZoneRow').toggle(isIrodsClient);
         $('.fileSystemDetailsIrodsHomeDirRow').toggle(isIrodsClient);
         $('.fileSystemDetailsIrodsPortRow').toggle(isIrodsClient);
-
+        $('.fileSystemDetailsIrodsCsnegRow').toggle(isIrodsClient);
+	$('.fileSystemDetailsIrodsAuthRow').toggle(isIrodsClient);
+	
         $('#fileSystemAuthTypePubKey').prop('disabled', isSambaClient);
         if (isSambaClient) {
             $('#fileSystemAuthTypePassword').click();
@@ -323,8 +336,9 @@ define(function() {
 		            .removeAttr('pattern')
 		            .attr('title', 'iRODS hostname or IP without protocol');
 	          $("label[for='fileSystemUrl']").text('iRODS Host');
-	          $("label[for='fileSystemAuthTypePubKey']").hide();
-	          $('#fileSystemAuthTypePasswordSpan').text('Native');
+	    $("label[for='fileSystemAuthTypePubKey']").hide();
+	    //$('#fileSystemAuthTypePasswordSpan').text('Native');
+	          $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
         } else {
             $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
 	          $("label[for='fileSystemAuthTypePubKey']").show();
