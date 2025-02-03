@@ -381,6 +381,11 @@ img.attachmentIcon {
   display: block;
   margin: 0 auto; }
 
+img.historicalVersionImg {
+  margin-bottom: -5px;
+  width: 17px;
+}
+
 img.externalLinkBadge {
   vertical-align: bottom;
   padding-top: 5px; }
@@ -541,8 +546,7 @@ p.chem-attachment-css-wrapper div.MuiCard-root {
   justify-content: center;
 }
 
-.attachmentName {
-  display: block;
+.attachmentNameDiv {
   margin-top: 5px;
   text-align: center; 
 }

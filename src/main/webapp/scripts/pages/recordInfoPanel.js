@@ -67,7 +67,7 @@ function generate$RecordInfoPanel(info) {
   _setInfoPanelGlobalIdRow($newInfoPanel.find('.infoPanelObjectIdRow'), !isSnippet, info.oid);
   _setInfoPanelGlobalIdRow($newInfoPanel.find('.infoPanelOriginalImageIdRow'), isGalleryFile && (!!info.originalImageOid), info.originalImageOid);
 
-  $newInfoPanel.find('tr.infoPanelFileVersionRow').toggle(isGalleryFile && (info.version > 1));
+  $newInfoPanel.find('tr.infoPanelFileVersionRow').toggle(isGalleryFile && (info.version > 1 || isRevisionView));
   $newInfoPanel.find('tr.infoPanelFileSizeRow').toggle(isGalleryFile);
   $newInfoPanel.find('.infoPanelButtons').toggle(isGalleryFile);
   $newInfoPanel.find('.recordReplaceBtn').toggle(isGalleryFile); // more detailed conditions inside 'isGalleryFile' block
@@ -180,6 +180,7 @@ function generate$RecordInfoPanel(info) {
   if (isGalleryFile) {
     $newInfoPanel.find('.infoPanel-fileVersion').text(info.version);
     $newInfoPanel.find('.infoPanel-fileSize').text(RS.humanFileSize(info.size));
+    $newInfoPanel.find('.infoPanelHistoricalVersionNotice').toggle(isRevisionView);
 
     var pdfPreviewSupported = RS.isPdfPreviewSupported(info.extension);
     $newInfoPanel.find('.recordViewBtn').toggle(pdfPreviewSupported);

@@ -76,7 +76,11 @@
 
     <div class="attachmentThumbnailPanel">
       <img class="attachmentIcon" width="76" height="76" />
-      <label class="attachmentName">-</label>
+      <div class="attachmentNameDiv">
+        <label class="attachmentName">-</label>
+        <img class="historicalVersionImg" src="/images/icons/versionSymbol.png"
+             title="Historical version" style="display:none"/>
+      </div>
     </div>
     <div class="inlineActionsPanel">
       <a href="#" class="inlineActionLink viewInMsOnlineLink" style="display:none">Open in Office</a>
@@ -99,7 +103,11 @@
   <div class="attachmentPanel">
     <div class="attachmentThumbnailPanel">
       <img class="attachmentIcon" width="76" height="76" />
-      <label class="attachmentName">-</label>
+      <div class="attachmentNameDiv">
+        <label class="attachmentName">-</label>
+        <img class="historicalVersionImg" src="/images/icons/versionSymbol.png"
+             title="Historical version" style="display:none"/>
+      </div>
     </div>
     <div class="inlineActionsPanel">
       <a href="#" class="inlineActionLink viewInMsOnlineLink" style="display:none">Open in Office</a>
@@ -121,7 +129,11 @@
   <div class="attachmentPanel">
     <div class="attachmentThumbnailPanel">
       <img class="attachmentIcon" width="32" height="32" />
-      <label class="attachmentName">-</label>
+      <div class="attachmentNameDiv">
+        <label class="attachmentName">-</label>
+        <img class="historicalVersionImg" src="/images/icons/versionSymbol.png"
+             title="Historical version" style="display:none"/>
+      </div>
     </div>
     <div class="inlineActionsPanel" style="margin-top: 3px;">
       <a href="#" class="inlineActionLink downloadActionLink">Download</a>

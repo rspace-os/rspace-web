@@ -71,7 +71,16 @@ There are no references to this file.
     border: 2px solid lightgrey;
     cursor: default;
   }
-  
+
+  .infoPanelHistoricalVersionNotice {
+    margin: 0px auto;
+    width: 280px;
+  }
+  .infoPanel-historicalVersionNoticeIcon {
+    height: 18px;
+    margin-bottom: -4px;
+  }
+
   .infoPanel-objectIdDownloadIcon {
     height: 18px;
     margin-bottom: 2px;
@@ -203,6 +212,12 @@ There are no references to this file.
         </tr>
       </table>
 
+      <div class="infoPanelHistoricalVersionNotice" style="display:none">
+        <img class="infoPanel-historicalVersionNoticeIcon" src='/images/warning.png' />
+        This attachment is a historical version and can't be edited directly.
+        To modify or reuse this attachment, please download it and re-attach it to
+        this or a new document
+      </div>
       <div class="infoPanelInternalLinksDiv" style="display:none"></div>
       <div class="infoPanelSharingDiv" style="display:none"></div>
       <div class="publicLinksDiv" style="display:none"></div>

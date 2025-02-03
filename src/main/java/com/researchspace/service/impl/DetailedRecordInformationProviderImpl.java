@@ -219,12 +219,12 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
   }
 
   @Override
-  public Map<Long, RecordInformation> getRecordInformation(
+  public Map<String, RecordInformation> getRecordInformation(
       Long[] ids, Long[] revisions, User subject) {
-    Map<Long, EcatMediaFile> res =
+    Map<String, EcatMediaFile> res =
         baseRecordManager.retrieveMediaFiles(subject, ids, revisions, null);
-    Map<Long, RecordInformation> mediaInfos = new HashMap<>();
-    for (Map.Entry<Long, EcatMediaFile> entry : res.entrySet()) {
+    Map<String, RecordInformation> mediaInfos = new HashMap<>();
+    for (Map.Entry<String, EcatMediaFile> entry : res.entrySet()) {
       // RA can't use streams as values may be null, which valuemapper will choke on
       mediaInfos.put(
           entry.getKey(), entry.getValue() != null ? entry.getValue().toRecordInfo() : null);

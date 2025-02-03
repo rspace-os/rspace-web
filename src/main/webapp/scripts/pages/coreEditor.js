@@ -383,6 +383,7 @@ function updateAttachmentDivs($attachmentDivs) {
       let $avPanel = $thisDiv.children('.attachmentPanel');
       $avPanel.data('id', id);
       $avPanel.data('rsrevision', revision);
+      $avPanel.data('revision', revision);
 
       _updateAttachedMediaFileWithLastestVersionDetails(id, revision);
       return;
@@ -594,8 +595,10 @@ function _retrieveQueriedMediaFileBasicInfos() {
   jqxhr.done(function (result) {
     var infos = result.data;
     $.each(currentRequestsQueue, function () {
-      var data = infos[this.id];
+      var revisionOrNull = this.revision ? this.revision : null;
+      var data = infos[this.id + '-' + revisionOrNull];
       if (data) {
+        data.revision = revisionOrNull;
         this.deferred.resolve(data);
       } else {
         this.deferred.reject(this.id);
@@ -774,9 +777,11 @@ function _updateActiveEditorContentWithLatestMediaFileInfo(info) {
       /* update document name */
       $html.find('#attachOnText_' + info.id).each(function () {
         var $attachmentLink = $(this);
-        if ($attachmentLink.text() !== info.name) {
-          $attachmentLink.text(info.name);
-          contentUpdated = true;
+        if ($attachmentLink.data('rsrevision') == info.revision) {
+          if ($attachmentLink.text() !== info.name) {
+            $attachmentLink.text(info.name);
+            contentUpdated = true;
+          }
         }
       });
     }
@@ -805,12 +810,15 @@ function _updateAttachedDocumentPanelsWithLatestInfo(info) {
   $('.attachmentPanel').each(function () {
     var $viewModeAttachmentDiv = $(this);
     var currentDivId = $viewModeAttachmentDiv.data('id');
-    if (currentDivId != info.id) {
+    var currentDivRevision = $viewModeAttachmentDiv.data('revision');
+    if (currentDivId != info.id ||currentDivRevision != info.revision) {
       return;
     }
 
     var $nameDiv = $viewModeAttachmentDiv.find('.attachmentName');
     _setViewModeAttachmentNameAndVersionLabel($nameDiv, info.name, info.version);
+
+    $viewModeAttachmentDiv.find('.historicalVersionImg').toggle(info.revision != null);
 
     if ($viewModeAttachmentDiv.hasClass('previewableAttachmentPanel')) {
       // refresh thumbnail

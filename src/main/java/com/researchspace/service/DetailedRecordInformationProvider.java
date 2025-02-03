@@ -44,5 +44,5 @@ public interface DetailedRecordInformationProvider {
    * @param user The subject
    * @return
    */
-  Map<Long, RecordInformation> getRecordInformation(Long[] ids, Long[] revisions, User user);
+  Map<String, RecordInformation> getRecordInformation(Long[] ids, Long[] revisions, User user);
 }
