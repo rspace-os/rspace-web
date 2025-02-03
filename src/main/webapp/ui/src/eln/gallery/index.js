@@ -3,7 +3,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
-import { ThemeProvider, styled, lighten } from "@mui/material/styles";
+import { ThemeProvider, styled, lighten, useTheme } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import {
   COLOR,
@@ -48,6 +48,9 @@ import PlaceholderLabel from "./components/PlaceholderLabel";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import SidebarToggle from "../../components/AppBar/SidebarToggle";
 import GoogleLoginProvider from "../../components/GoogleLoginProvider";
+import BroadcastIcon from "@mui/icons-material/Campaign";
+import Alert from "@mui/material/Alert";
+import Link from "@mui/material/Link";
 
 const WholePage = styled(
   ({
@@ -65,6 +68,7 @@ const WholePage = styled(
     setSelectedSection: ({| mediaType: GallerySection |}) => void,
     setPath: ($ReadOnlyArray<GalleryFile>) => void,
   |}) => {
+    const theme = useTheme();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
     const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
       PREFERENCES.GALLERY_SORT_BY,
@@ -104,6 +108,8 @@ const WholePage = styled(
     const { useNavigate } = React.useContext(NavigateContext);
     const navigate = useNavigate();
 
+    const [showAlert, setShowAlert] = React.useState(true);
+
     const { trackEvent } = React.useContext(AnalyticsContext);
     React.useEffect(() => {
       trackEvent("user:load:page:gallery", { section: selectedSection });
@@ -120,13 +126,13 @@ const WholePage = styled(
               setPath={(newPath) => {
                 if (newPath.length > 0) {
                   navigate(
-                    `/newGallery/${idToString(newPath[newPath.length - 1].id)}`
+                    `/gallery/${idToString(newPath[newPath.length - 1].id)}`
                   );
                 } else {
                   try {
                     const section =
                       FetchingData.getSuccessValue(selectedSection).elseThrow();
-                    navigate(`/newGallery/?mediaType=${section}`);
+                    navigate(`/gallery/?mediaType=${section}`);
                   } catch {
                     // do nothing
                   }
@@ -149,6 +155,26 @@ const WholePage = styled(
                   supports2xZoom: true,
                 }}
               />
+              {showAlert && (
+                <Box sx={{ borderBottom: theme.borders.card }}>
+                  <Alert
+                    icon={<BroadcastIcon fontSize="inherit" />}
+                    severity="info"
+                    onClose={() => setShowAlert(false)}
+                  >
+                    Welcome to the new Gallery! Whilst we hope everything is
+                    working as expected, please be aware that this is newly
+                    released and there may be some bugs. If you encounter any
+                    issues, please let us know by emailing{" "}
+                    <Link href="mailto:support@researchspace.com">support</Link>{" "}
+                    and using the{" "}
+                    <Link target="_self" href="/oldGallery">
+                      old Gallery
+                    </Link>{" "}
+                    in the meantime.
+                  </Alert>
+                </Box>
+              )}
               <Box
                 sx={{ display: "flex", height: "calc(100% - 48px)" }}
                 component="main"
@@ -293,7 +319,7 @@ function GalleryFolder() {
     <WholePage
       listingOf={{ tag: "folder", folderId }}
       setSelectedSection={({ mediaType }) => {
-        navigate(`/newGallery/?mediaType=${mediaType}`);
+        navigate(`/gallery/?mediaType=${mediaType}`);
       }}
       setPath={() => {}}
     />
@@ -319,7 +345,7 @@ window.addEventListener("load", () => {
                     <DisableDragAndDropByDefault>
                       <Routes>
                         <Route
-                          path="/newGallery"
+                          path="/gallery"
                           element={
                             <Alerts>
                               <RouterNavigationProvider>
@@ -333,7 +359,7 @@ window.addEventListener("load", () => {
                           }
                         />
                         <Route
-                          path="newGallery/:folderId"
+                          path="gallery/:folderId"
                           element={
                             <Alerts>
                               <RouterNavigationProvider>
@@ -348,7 +374,7 @@ window.addEventListener("load", () => {
                         />
                         <Route
                           path="*"
-                          element={<Navigate to="/newGallery" replace />}
+                          element={<Navigate to="/gallery" replace />}
                         />
                       </Routes>
                     </DisableDragAndDropByDefault>
