@@ -175,14 +175,20 @@ export interface GalleryFile {
   +ownerName?: string;
   description: Description;
 
+  // In bytes. Folders are always 0 bytes
+  +size: number;
+
   /*
    * A positive natural number, that is incremented whenever the user uploads a
    * new version or otherwise edits the file
    */
   +version?: number;
 
-  // In bytes. Folders are always 0 bytes
-  +size: number;
+  /*
+   * A versioned global Id that refers to an original image file from which
+   * this image file was created.
+   */
+  +originalImageId?: string | null;
 
   /*
    * A list of folders from the top gallery section to the parent of this
@@ -258,6 +264,7 @@ export class LocalGalleryFile implements GalleryFile {
   +thumbnailId: number | null;
   downloadHref: void | (() => Promise<UrlType>);
   #cachedDownloadHref: UrlType | void;
+  +originalImageId: string | null;
 
   // this will only ever actually be an array of LocalGalleryFile,
   // but getting the types correct here is tricky
@@ -281,6 +288,7 @@ export class LocalGalleryFile implements GalleryFile {
     size,
     version,
     thumbnailId,
+    originalImageId,
     token,
   }: {|
     id: Id,
@@ -297,6 +305,7 @@ export class LocalGalleryFile implements GalleryFile {
     size: number,
     version: number,
     thumbnailId: number | null,
+    originalImageId: string | null,
     token: string,
   |}) {
     makeObservable(this, {
@@ -340,6 +349,7 @@ export class LocalGalleryFile implements GalleryFile {
         return url;
       };
     }
+    this.originalImageId = originalImageId;
   }
 
   deconstructor() {
@@ -794,6 +804,7 @@ function parseGalleryFileFromFolderApiResponse(
         size: 0,
         version: 1,
         thumbnailId: null,
+        originalImageId: null,
         token: "",
       })
     );
@@ -1111,6 +1122,13 @@ export function useGalleryListing({
                     .flatMap(Parsers.isNumber)
                     .elseThrow();
 
+                  const originalImageId = Parsers.objectPath(
+                    ["originalImageOid", "idString"],
+                    obj
+                  )
+                    .flatMap(Parsers.isString)
+                    .orElse(null);
+
                   return Result.Ok<GalleryFile>(
                     new LocalGalleryFile({
                       id,
@@ -1128,6 +1146,7 @@ export function useGalleryListing({
                       size,
                       version,
                       thumbnailId,
+                      originalImageId,
                       token,
                     })
                   );

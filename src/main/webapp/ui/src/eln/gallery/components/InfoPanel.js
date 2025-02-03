@@ -571,6 +571,14 @@ const InfoPanelContent = observer(
                     },
                   ]
                 : []),
+              ...(typeof file.originalImageId === "string"
+                ? [
+                    {
+                      label: "Original Image ID",
+                      value: file.originalImageId,
+                    },
+                  ]
+                : []),
             ]}
             sx={{
               pl: 2,
