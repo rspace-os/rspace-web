@@ -47,6 +47,7 @@ import { useDeploymentProperty } from "../useDeploymentProperty";
 import PlaceholderLabel from "./components/PlaceholderLabel";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import SidebarToggle from "../../components/AppBar/SidebarToggle";
+import GoogleLoginProvider from "../../components/GoogleLoginProvider";
 
 const WholePage = styled(
   ({
@@ -309,6 +310,7 @@ window.addEventListener("load", () => {
       <React.StrictMode>
         <ErrorBoundary>
           <BrowserRouter>
+            <GoogleLoginProvider />
             <StyledEngineProvider injectFirst>
               <CssBaseline />
               <ThemeProvider theme={createAccentedTheme(COLOR)}>
@@ -358,5 +360,10 @@ window.addEventListener("load", () => {
         </ErrorBoundary>
       </React.StrictMode>
     );
+
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = `hsl(${COLOR.background.hue}, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`;
+    document.head?.appendChild(meta);
   }
 });

@@ -40,6 +40,63 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
   const [uiData, setUiData] = React.useState<null | UiNavigationData>(null);
   const [errorMessage, setErrrorMessage] = React.useState<null | string>(null);
 
+  React.useEffect(() => {
+    const handleUserRename = (
+      event: Event & { detail: { fullName: string, ... }, ... }
+    ): void => {
+      if (!uiData) return;
+      setUiData({
+        ...uiData,
+        userDetails: {
+          ...uiData.userDetails,
+          fullName: event.detail.fullName,
+        },
+      });
+    };
+    window.addEventListener("USER_RENAME", handleUserRename);
+    return () => {
+      window.removeEventListener("USER_RENAME", handleUserRename);
+    };
+  }, [uiData]);
+
+  React.useEffect(() => {
+    const handleUserSetOrcid = (
+      event: Event & { detail: { orcidId: string | null, ... }, ... }
+    ): void => {
+      if (!uiData) return;
+      setUiData({
+        ...uiData,
+        userDetails: {
+          ...uiData.userDetails,
+          orcidId: event.detail.orcidId,
+        },
+      });
+    }
+    window.addEventListener("USER_SET_ORCID", handleUserSetOrcid);
+    return () => {
+      window.removeEventListener("USER_SET_ORCID", handleUserSetOrcid);
+    };
+  }, [uiData]);
+
+  React.useEffect(() => {
+    const handleUserSetEmail = (
+      event: Event & { detail: { email: string, ... }, ... }
+    ): void => {
+      if (!uiData) return;
+      setUiData({
+        ...uiData,
+        userDetails: {
+          ...uiData.userDetails,
+          email: event.detail.email,
+        },
+      });
+    }
+    window.addEventListener("USER_SET_EMAIL", handleUserSetEmail);
+    return () => {
+      window.removeEventListener("USER_SET_EMAIL", handleUserSetEmail);
+    };
+  }, [uiData]);
+
   async function getUiNavigationData(): Promise<void> {
     setUiData(null);
     setLoading(true);

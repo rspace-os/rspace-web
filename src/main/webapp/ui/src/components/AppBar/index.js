@@ -19,7 +19,8 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import Menu, { menuClasses } from "@mui/material/Menu";
+import { Menu } from "../DialogBoundary";
+import { menuClasses } from "@mui/material/Menu";
 import AccentMenuItem from "../AccentMenuItem";
 import ListItem from "@mui/material/ListItem";
 import NotebookIcon from "@mui/icons-material/AutoStories";
@@ -397,7 +398,7 @@ function GalleryAppBar({
             )}
             <Link
               target="_self"
-              aria-current={false}
+              aria-current={currentPage === "My RSpace" ? "page" : false}
               href={showMyLabGroups ? "/groups/viewPIGroup" : "/userform"}
             >
               My RSpace
@@ -487,14 +488,14 @@ function GalleryAppBar({
                 avatar={<NotebookIcon />}
                 subheader="Notebooks and documents"
                 foregroundColor={{
-                  hue: 120,
-                  saturation: 18,
+                  hue: 200,
+                  saturation: 10,
                   lightness: 20,
                 }}
                 backgroundColor={{
-                  hue: 120,
-                  saturation: 18,
-                  lightness: 71,
+                  hue: 200,
+                  saturation: 10,
+                  lightness: 70,
                 }}
                 onClick={() => {
                   window.location = "/workspace";
@@ -530,14 +531,14 @@ function GalleryAppBar({
                 avatar={<ProfileIcon />}
                 subheader="Your profile details, labgroups, and preferences"
                 foregroundColor={{
-                  hue: 200,
-                  saturation: 10,
+                  hue: 120,
+                  saturation: 18,
                   lightness: 20,
                 }}
                 backgroundColor={{
-                  hue: 200,
-                  saturation: 10,
-                  lightness: 70,
+                  hue: 120,
+                  saturation: 18,
+                  lightness: 71,
                 }}
                 onClick={() => {
                   window.location = showMyLabGroups
@@ -765,8 +766,10 @@ function GalleryAppBar({
                     compact
                     onClick={() => {
                       setAccountMenuAnchorEl(null);
-                      window.location =
-                        "/public/publishedView/publishedDocuments";
+                      window.open(
+                        "/public/publishedView/publishedDocuments",
+                        "_target"
+                      );
                     }}
                   />
                 ))
@@ -804,6 +807,30 @@ function GalleryAppBar({
                     compact
                     onClick={() => {
                       JwtService.destroyToken();
+
+                      /*
+                       * On some servers the user can login with the Google
+                       * Login workflow. On those servers, `gapi` will be
+                       * defined globally by header.jsp
+                       */
+                      // $FlowExpectedError[cannot-resolve-name]
+                      if (typeof gapi !== "undefined" && gapi.auth2) {
+                        // $FlowExpectedError[cannot-resolve-name]
+                        const auth2 = gapi.auth2.getAuthInstance();
+                        if (auth2) {
+                          auth2.signOut().then(() => {
+                            // eslint-disable-next-line no-console
+                            console.log("User signed out.");
+                          });
+                        } else {
+                          // eslint-disable-next-line no-console
+                          console.log("No GAPI authinstance defined");
+                        }
+                      } else {
+                        // eslint-disable-next-line no-console
+                        console.log("No GAPI defined");
+                      }
+
                       setAccountMenuAnchorEl(null);
                       window.location = "/logout";
                     }}

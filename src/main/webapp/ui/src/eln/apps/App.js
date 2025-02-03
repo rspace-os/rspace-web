@@ -30,6 +30,7 @@ import { getByKey } from "../../util/optional";
 import AppBar from "../../components/AppBar";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
+import GoogleLoginProvider from "../../components/GoogleLoginProvider";
 
 /**
  * The theme colour of the apps page.
@@ -129,209 +130,216 @@ function App(): Node {
   );
 
   return (
-    <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <DialogBoundary>
-        <AnalyticsContext.Provider
-          value={{
-            isAvailable: analyticsIsAvailable,
-            trackEvent: (event, properties) => {
-              if (event === "Apps page dialog opened") {
-                if (typeof properties !== "undefined") {
-                  getByKey("integrationName", properties).do(
-                    (integrationName: mixed) => {
-                      if (typeof integrationName === "string") {
-                        setLastDialogOpened(integrationName);
+    <>
+      <GoogleLoginProvider />
+      <ThemeProvider theme={createAccentedTheme(COLOR)}>
+        <DialogBoundary>
+          <AnalyticsContext.Provider
+            value={{
+              isAvailable: analyticsIsAvailable,
+              trackEvent: (event, properties) => {
+                if (event === "Apps page dialog opened") {
+                  if (typeof properties !== "undefined") {
+                    getByKey("integrationName", properties).do(
+                      (integrationName: mixed) => {
+                        if (typeof integrationName === "string") {
+                          setLastDialogOpened(integrationName);
+                        }
                       }
-                    }
-                  );
+                    );
+                  }
+                } else {
+                  trackEvent(event, properties);
                 }
-              } else {
-                trackEvent(event, properties);
-              }
-            },
-          }}
-        >
-          <AppBar
-            variant="page"
-            currentPage="Apps"
-            accessibilityTips={{
-              supportsHighContrastMode: true,
-              supportsReducedMotion: true,
-              supports2xZoom: true,
+              },
             }}
-          />
-          <Grid container direction="row" spacing={1}>
-            <Grid item xs={1} md={2}></Grid>
-            <Grid item xs={10} md={8}>
-              <main>
-                <Box sx={{ mt: 4 }}>
-                  <Typography variant="h1">Apps</Typography>
-                  <Grid container spacing={2} direction="column">
-                    <Grid item sx={{ mb: 1 }}>
-                      <Typography variant="body1">
-                        RSpace provides integrations with various third-party
-                        apps that enable extra features. Apps need to be enabled
-                        to work, and some require authentication.{" "}
-                        <Link
-                          href={docLinks.appsIntroduction}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          See Apps Introduction to learn more.
-                        </Link>
-                      </Typography>
-                    </Grid>
-                    <Grid item sx={{ mb: 6 }}>
-                      <section aria-labelledby="enabled">
-                        <Grid container>
-                          <Grid item width={"100%"} sx={{ mb: 2 }}>
-                            <Divider>
-                              <Typography
-                                variant="h5"
-                                component="h2"
-                                sx={{ p: 1, mb: 1 }}
-                                id="enabled"
-                              >
-                                Enabled
+          >
+            <AppBar
+              variant="page"
+              currentPage="Apps"
+              accessibilityTips={{
+                supportsHighContrastMode: true,
+                supportsReducedMotion: true,
+                supports2xZoom: true,
+              }}
+            />
+            <Grid container direction="row" spacing={1}>
+              <Grid item xs={1} md={2}></Grid>
+              <Grid item xs={10} md={8}>
+                <main>
+                  <Box sx={{ mt: 4 }}>
+                    <Typography variant="h1">Apps</Typography>
+                    <Grid container spacing={2} direction="column">
+                      <Grid item sx={{ mb: 1 }}>
+                        <Typography variant="body1">
+                          RSpace provides integrations with various third-party
+                          apps that enable extra features. Apps need to be
+                          enabled to work, and some require authentication.{" "}
+                          <Link
+                            href={docLinks.appsIntroduction}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            See Apps Introduction to learn more.
+                          </Link>
+                        </Typography>
+                      </Grid>
+                      <Grid item sx={{ mb: 6 }}>
+                        <section aria-labelledby="enabled">
+                          <Grid container>
+                            <Grid item width={"100%"} sx={{ mb: 2 }}>
+                              <Divider>
+                                <Typography
+                                  variant="h5"
+                                  component="h2"
+                                  sx={{ p: 1, mb: 1 }}
+                                  id="enabled"
+                                >
+                                  Enabled
+                                </Typography>
+                              </Divider>
+                              <Typography variant="body1" sx={{ mb: 2 }}>
+                                The following Apps are enabled on this account.
+                                Click on an App card to modify or disable the
+                                integration.
                               </Typography>
-                            </Divider>
-                            <Typography variant="body1" sx={{ mb: 2 }}>
-                              The following Apps are enabled on this account.
-                              Click on an App card to modify or disable the
-                              integration.
-                            </Typography>
+                            </Grid>
+                            <Grid item mt={0.5} xs={12}>
+                              {FetchingData.match(allStates, {
+                                success: (integrationStates) => (
+                                  <CardListing
+                                    mode="ENABLED"
+                                    integrationStates={integrationStates}
+                                  />
+                                ),
+                                loading: () => <LoadingSkeleton />,
+                                error: () => <ErrorMessage />,
+                              })}
+                            </Grid>
                           </Grid>
-                          <Grid item mt={0.5} xs={12}>
-                            {FetchingData.match(allStates, {
-                              success: (integrationStates) => (
-                                <CardListing
-                                  mode="ENABLED"
-                                  integrationStates={integrationStates}
-                                />
-                              ),
-                              loading: () => <LoadingSkeleton />,
-                              error: () => <ErrorMessage />,
-                            })}
-                          </Grid>
-                        </Grid>
-                      </section>
-                    </Grid>
-                    <Grid item sx={{ mb: 6 }}>
-                      <section aria-labelledby="disabled">
-                        <Grid container>
-                          <Grid item width={"100%"} sx={{ mb: 2 }}>
-                            <Divider>
-                              <Typography
-                                variant="h5"
-                                component="h2"
-                                sx={{ p: 1, mb: 1 }}
-                                id="disabled"
-                              >
-                                Disabled
+                        </section>
+                      </Grid>
+                      <Grid item sx={{ mb: 6 }}>
+                        <section aria-labelledby="disabled">
+                          <Grid container>
+                            <Grid item width={"100%"} sx={{ mb: 2 }}>
+                              <Divider>
+                                <Typography
+                                  variant="h5"
+                                  component="h2"
+                                  sx={{ p: 1, mb: 1 }}
+                                  id="disabled"
+                                >
+                                  Disabled
+                                </Typography>
+                              </Divider>
+                              <Typography variant="body1" sx={{ mb: 2 }}>
+                                The following Apps are not currently enabled on
+                                this account. Click on an App card for setup
+                                instructions on how to enable the integration.
                               </Typography>
-                            </Divider>
-                            <Typography variant="body1" sx={{ mb: 2 }}>
-                              The following Apps are not currently enabled on
-                              this account. Click on an App card for setup
-                              instructions on how to enable the integration.
-                            </Typography>
+                            </Grid>
+                            <Grid item mt={0.5} xs={12}>
+                              {FetchingData.match(allStates, {
+                                success: (integrationStates) => (
+                                  <CardListing
+                                    mode="DISABLED"
+                                    integrationStates={integrationStates}
+                                  />
+                                ),
+                                loading: () => <LoadingSkeleton />,
+                                error: () => <ErrorMessage />,
+                              })}
+                            </Grid>
                           </Grid>
-                          <Grid item mt={0.5} xs={12}>
-                            {FetchingData.match(allStates, {
-                              success: (integrationStates) => (
-                                <CardListing
-                                  mode="DISABLED"
-                                  integrationStates={integrationStates}
-                                />
-                              ),
-                              loading: () => <LoadingSkeleton />,
-                              error: () => <ErrorMessage />,
-                            })}
-                          </Grid>
-                        </Grid>
-                      </section>
-                    </Grid>
-                    <Grid item sx={{ mb: 6 }}>
-                      <section aria-labelledby="unavailable">
-                        <Grid container>
-                          <Grid item width={"100%"} sx={{ mb: 2 }}>
-                            <Divider>
-                              <Typography
-                                variant="h5"
-                                component="h2"
-                                sx={{ p: 1, mb: 1 }}
-                                id="unavailable"
-                              >
-                                Unavailable
+                        </section>
+                      </Grid>
+                      <Grid item sx={{ mb: 6 }}>
+                        <section aria-labelledby="unavailable">
+                          <Grid container>
+                            <Grid item width={"100%"} sx={{ mb: 2 }}>
+                              <Divider>
+                                <Typography
+                                  variant="h5"
+                                  component="h2"
+                                  sx={{ p: 1, mb: 1 }}
+                                  id="unavailable"
+                                >
+                                  Unavailable
+                                </Typography>
+                              </Divider>
+                              <Typography variant="body1" sx={{ mb: 2 }}>
+                                The following Apps need to be enabled by your
+                                System Administrator before they can be used;
+                                please get in touch with them directly to set
+                                this up.
                               </Typography>
-                            </Divider>
-                            <Typography variant="body1" sx={{ mb: 2 }}>
-                              The following Apps need to be enabled by your
-                              System Administrator before they can be used;
-                              please get in touch with them directly to set this
-                              up.
-                            </Typography>
+                            </Grid>
+                            <Grid item mt={0.5} xs={12}>
+                              {FetchingData.match(allStates, {
+                                success: (integrationStates) => (
+                                  <CardListing
+                                    mode="UNAVAILABLE"
+                                    integrationStates={integrationStates}
+                                  />
+                                ),
+                                loading: () => <LoadingSkeleton />,
+                                error: () => <ErrorMessage />,
+                              })}
+                            </Grid>
                           </Grid>
-                          <Grid item mt={0.5} xs={12}>
-                            {FetchingData.match(allStates, {
-                              success: (integrationStates) => (
-                                <CardListing
-                                  mode="UNAVAILABLE"
-                                  integrationStates={integrationStates}
-                                />
-                              ),
-                              loading: () => <LoadingSkeleton />,
-                              error: () => <ErrorMessage />,
-                            })}
-                          </Grid>
-                        </Grid>
-                      </section>
-                    </Grid>
-                    <Grid item sx={{ mb: 6 }}>
-                      <section aria-labelledby="third-party-rspace-integrations">
-                        <Grid container>
-                          <Grid item width={"100%"} sx={{ mb: 2 }}>
-                            <Divider>
-                              <Typography
-                                variant="h5"
-                                component="h2"
-                                sx={{ p: 1, mb: 1, whiteSpace: "break-spaces" }}
-                                id="third-party-rspace-integrations"
-                              >
-                                Third-party RSpace Integrations
+                        </section>
+                      </Grid>
+                      <Grid item sx={{ mb: 6 }}>
+                        <section aria-labelledby="third-party-rspace-integrations">
+                          <Grid container>
+                            <Grid item width={"100%"} sx={{ mb: 2 }}>
+                              <Divider>
+                                <Typography
+                                  variant="h5"
+                                  component="h2"
+                                  sx={{
+                                    p: 1,
+                                    mb: 1,
+                                    whiteSpace: "break-spaces",
+                                  }}
+                                  id="third-party-rspace-integrations"
+                                >
+                                  Third-party RSpace Integrations
+                                </Typography>
+                              </Divider>
+                              <Typography variant="body1" sx={{ mb: 2 }}>
+                                These RSpace applications have been built by
+                                partners or other external software developers.
+                                Note, ResearchSpace does not provide direct
+                                support for these integrations.
                               </Typography>
-                            </Divider>
-                            <Typography variant="body1" sx={{ mb: 2 }}>
-                              These RSpace applications have been built by
-                              partners or other external software developers.
-                              Note, ResearchSpace does not provide direct
-                              support for these integrations.
-                            </Typography>
+                            </Grid>
+                            <Grid item mt={0.5} xs={12}>
+                              {FetchingData.match(allStates, {
+                                success: (integrationStates) => (
+                                  <CardListing
+                                    mode="EXTERNAL"
+                                    integrationStates={integrationStates}
+                                  />
+                                ),
+                                loading: () => <LoadingSkeleton />,
+                                error: () => <ErrorMessage />,
+                              })}
+                            </Grid>
                           </Grid>
-                          <Grid item mt={0.5} xs={12}>
-                            {FetchingData.match(allStates, {
-                              success: (integrationStates) => (
-                                <CardListing
-                                  mode="EXTERNAL"
-                                  integrationStates={integrationStates}
-                                />
-                              ),
-                              loading: () => <LoadingSkeleton />,
-                              error: () => <ErrorMessage />,
-                            })}
-                          </Grid>
-                        </Grid>
-                      </section>
+                        </section>
+                      </Grid>
                     </Grid>
-                  </Grid>
-                </Box>
-              </main>
+                  </Box>
+                </main>
+              </Grid>
+              <Grid item xs={1} md={2}></Grid>
             </Grid>
-            <Grid item xs={1} md={2}></Grid>
-          </Grid>
-        </AnalyticsContext.Provider>
-      </DialogBoundary>
-    </ThemeProvider>
+          </AnalyticsContext.Provider>
+        </DialogBoundary>
+      </ThemeProvider>
+    </>
   );
 }
 

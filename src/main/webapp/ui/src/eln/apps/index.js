@@ -84,5 +84,10 @@ window.addEventListener("load", () => {
         </StyledEngineProvider>
       </React.StrictMode>
     );
+
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = `hsl(200, 10%, 81%)`;
+    document.head?.appendChild(meta);
   }
 });

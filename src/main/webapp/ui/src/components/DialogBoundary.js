@@ -153,7 +153,19 @@ export function Dialog<T>(props: DialogArgs<T>): Node {
 type MenuArgs = {|
   onClose: () => void,
   open: boolean,
+  anchorEl: EventTarget | null,
   children: Node,
+  MenuListProps?: { ... },
+  anchorOrigin?: {|
+    vertical: "top" | "center" | "bottom",
+    horizontal: "left" | "center" | "right",
+  |},
+  transformOrigin?: {|
+    vertical: "top" | "center" | "bottom",
+    horizontal: "left" | "center" | "right",
+  |},
+  id?: string,
+  sx?: { ... },
 |};
 
 /**
