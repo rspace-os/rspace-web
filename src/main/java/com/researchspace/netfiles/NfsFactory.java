@@ -12,7 +12,13 @@ import com.researchspace.netfiles.samba.JcifsSmbjClient;
 import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
 import org.apache.commons.lang.StringUtils;
+import org.irods.jargon.core.connection.AuthScheme;
+import org.irods.jargon.core.connection.ClientServerNegotiationPolicy;
+import org.irods.jargon.core.connection.ClientServerNegotiationPolicy.SslNegotiationPolicy;
 import org.irods.jargon.core.connection.IRODSAccount;
+import org.irods.jargon.core.connection.IRODSSession;
+import org.irods.jargon.core.connection.SettableJargonProperties;
+import org.irods.jargon.core.pub.IRODSFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +28,12 @@ import org.springframework.stereotype.Component;
 /** Class providing various Net File Store implementations depending on deployment.properties */
 @Component
 public class NfsFactory {
+
+  private static final int IRODS_DEFAULT_PORT = 1247;
+
+  private static final String IRODS_DEFAULT_CSNEG = "CS_NEG_REFUSE";
+
+  private static final String IRODS_DEFAULT_AUTH = "NATIVE";
 
   private static final Logger log = LoggerFactory.getLogger(NfsFactory.class);
 
@@ -89,16 +101,53 @@ public class NfsFactory {
           fileSystem.getClientOption(NfsFileSystemOption.SFTP_SERVER_PUBLIC_KEY));
     }
     if (NfsClientType.IRODS.equals(clientType)) {
-      return new IRODSClient(
+
+      int irodsPort;
+      String irodsCSNeg;
+      String irodsAuth;
+
+      irodsPort =
+          (StringUtils.isBlank(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT)))
+              ? IRODS_DEFAULT_PORT
+              : Integer.parseInt(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT));
+      irodsCSNeg =
+          (StringUtils.isBlank(fileSystem.getClientOption(NfsFileSystemOption.IRODS_CSNEG)))
+              ? IRODS_DEFAULT_CSNEG
+              : fileSystem.getClientOption(NfsFileSystemOption.IRODS_CSNEG);
+
+      IRODSAccount ia =
           new IRODSAccount(
               fileSystem.getUrl(),
-              Integer.parseInt(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT)),
+              irodsPort,
               nfsusername,
               nfspassword,
               fileSystem.getClientOption(NfsFileSystemOption.IRODS_HOME_DIR),
               fileSystem.getClientOption(NfsFileSystemOption.IRODS_ZONE),
-              ""),
-          new JargonFacade());
+              "");
+      JargonFacade jf = new JargonFacade();
+
+      // set up iRODS CS NEG
+      // here you could set all jargon/irods props
+      // see
+      // jargon-core/src/main/java/org/irods/jargon/core/connection/SettableJargonProperties.java
+      IRODSFileSystem iRODSFs = jf.iRODSFs;
+      IRODSSession session = iRODSFs.getIrodsSession();
+      SettableJargonProperties props = new SettableJargonProperties(session.getJargonProperties());
+      SslNegotiationPolicy sslNegPolicy =
+          ClientServerNegotiationPolicy.findSslNegotiationPolicyFromString(irodsCSNeg);
+      props.setNegotiationPolicy(sslNegPolicy);
+      session.setJargonProperties(props);
+
+      // set iRODS auth scheme
+      irodsAuth =
+          (StringUtils.isBlank(fileSystem.getClientOption(NfsFileSystemOption.IRODS_AUTH)))
+              ? IRODS_DEFAULT_AUTH
+              : fileSystem.getClientOption(NfsFileSystemOption.IRODS_AUTH);
+
+      AuthScheme ias = (irodsAuth.equals("NATIVE")) ? AuthScheme.STANDARD : AuthScheme.PAM;
+      ia.setAuthenticationScheme(ias);
+
+      return new IRODSClient(ia, jf);
     }
 
     return null;
