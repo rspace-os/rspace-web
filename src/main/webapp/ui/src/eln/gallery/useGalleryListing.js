@@ -896,24 +896,23 @@ export function useGalleryListing({
   React.useEffect(() => {
     if (listingOf.tag === "folder") {
       void (async () => {
-        const response = await (
-          await api
-        ).get<mixed>(
-          `folders/${listingOf.folderId}?includePathToRootFolder=true`
-        );
-        const data = Parsers.isObject(response.data).flatMap(Parsers.isNotNull);
-        setDirectSection(
-          data
-            .flatMap(Parsers.getValueWithKey("mediaType"))
-            .flatMap(Parsers.isString)
-            .flatMap(parseGallerySection)
-            .map((value) => ({ tag: "success", value }))
-            .orElseGet<FetchingData.Fetched<GallerySection>>(([e]) => ({
-              tag: "error",
-              error: e.message,
-            }))
-        );
         try {
+          const response = await (
+            await api
+          ).get<mixed>(
+            `folders/${listingOf.folderId}?includePathToRootFolder=true`
+          );
+          const data = Parsers.isObject(response.data).flatMap(
+            Parsers.isNotNull
+          );
+          setDirectSection(
+            data
+              .flatMap(Parsers.getValueWithKey("mediaType"))
+              .flatMap(Parsers.isString)
+              .flatMap(parseGallerySection)
+              .map((value) => ({ tag: "success", value }))
+              .elseThrow()
+          );
           const path = data
             .flatMap(Parsers.getValueWithKey("pathToRootFolder"))
             .flatMap(Parsers.isArray)
@@ -967,8 +966,11 @@ export function useGalleryListing({
             ],
           });
         } catch (e) {
+          setLoading(false);
+          setErrorState(true);
           console.error(e);
           setDirectFolderPath({ tag: "error", error: e.message });
+          setDirectSection({ tag: "error", error: e.message });
         }
       })();
     }
