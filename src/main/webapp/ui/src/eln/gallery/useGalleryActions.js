@@ -167,13 +167,20 @@ export function useGalleryActions(): {|
     });
     addAlert(uploadingAlert);
 
+    const api = axios.create({
+      baseURL: "/api/v1/files",
+      headers: {
+        Authorization: "Bearer " + (await getToken()),
+      },
+    });
+
     try {
       const data = await Promise.all(
         files.map((file) => {
           const formData = new FormData();
-          formData.append("xfile", file);
-          formData.append("targetFolderId", idToString(parentId));
-          return galleryApi.post<FormData, mixed>("uploadFile", formData, {
+          formData.append("file", file);
+          formData.append("folderId", idToString(parentId));
+          return api.post<FormData, mixed>("/", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
