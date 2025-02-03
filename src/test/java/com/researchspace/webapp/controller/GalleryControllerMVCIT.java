@@ -633,7 +633,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
                     .param("revision[]", ""))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
             .andExpect(jsonPath("$.data").exists())
-            .andExpect(jsonPath("$.data." + attachment.getId()).exists())
+            .andExpect(jsonPath("$.data." + attachment.getId() + "-null").exists())
             .andReturn();
     // check two infos request
     res =
@@ -643,8 +643,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
                     .param("id[]", attachment.getId() + "," + attachment2.getId())
                     .param("revision[]", ","))
             .andExpect(jsonPath("$.data").exists())
-            .andExpect(jsonPath("$.data." + attachment.getId()).exists())
-            .andExpect(jsonPath("$.data." + attachment2.getId()).exists())
+            .andExpect(jsonPath("$.data." + attachment.getId() + "-null").exists())
+            .andExpect(jsonPath("$.data." + attachment2.getId() + "-null").exists())
             .andReturn();
 
     // handle empty arrays
