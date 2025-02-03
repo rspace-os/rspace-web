@@ -62,7 +62,11 @@ export function useGalleryActions(): {|
    *               instead.
    * @arg files    The File objects being uploaded.
    */
-  uploadFiles: (parentId: Id, files: $ReadOnlyArray<File>) => Promise<void>,
+  uploadFiles: (
+    parentId: Id,
+    files: $ReadOnlyArray<File>,
+    options?: { originalImageId: Id, ... }
+  ) => Promise<void>,
 
   /**
    * For creating new folders.
@@ -159,7 +163,11 @@ export function useGalleryActions(): {|
     timeout: ONE_MINUTE_IN_MS,
   });
 
-  async function uploadFiles(parentId: Id, files: $ReadOnlyArray<File>) {
+  async function uploadFiles(
+    parentId: Id,
+    files: $ReadOnlyArray<File>,
+    options?: { originalImageId: Id, ... }
+  ) {
     const uploadingAlert = mkAlert({
       message: "Uploading...",
       variant: "notice",
@@ -180,6 +188,11 @@ export function useGalleryActions(): {|
           const formData = new FormData();
           formData.append("file", file);
           formData.append("folderId", idToString(parentId));
+          if (options?.originalImageId)
+            formData.append(
+              "originalImageId",
+              idToString(options.originalImageId)
+            );
           return api.post<FormData, mixed>("/", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
