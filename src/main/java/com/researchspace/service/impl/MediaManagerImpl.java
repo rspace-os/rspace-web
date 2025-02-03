@@ -177,6 +177,20 @@ public class MediaManagerImpl implements MediaManager {
   }
 
   @Override
+  public EcatImage saveOriginalImageLink(EcatImage image, Long originalImageId, User user) {
+    if (originalImageId == null) {
+      return image;
+    }
+
+    EcatImage originalImage = recordManager.getEcatImage(originalImageId, false);
+    assertMediaFilePermission(user, originalImage, PermissionType.READ);
+
+    image.setOriginalImage(originalImage);
+    image.setOriginalImageVersion(originalImage.getVersion());
+    return (EcatImage) recordDao.save(image);
+  }
+
+  @Override
   public EcatVideo saveNewVideo(
       String originalFileName,
       InputStream inputStream,

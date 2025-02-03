@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiFileSearchResult;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.files.service.FileStore;
+import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
@@ -131,6 +132,7 @@ public class FilesApiController extends BaseApiController implements FilesApi {
   public ApiFile uploadFiles(
       @RequestParam(value = "folderId", required = false) Long folderId,
       @RequestParam(value = "caption", required = false, defaultValue = "") String caption,
+      @RequestParam(value = "originalImageId", required = false) Long originalImageId,
       @RequestParam("file") MultipartFile file,
       @RequestAttribute(name = "user") User user)
       throws BindException, IOException {
@@ -155,9 +157,13 @@ public class FilesApiController extends BaseApiController implements FilesApi {
             targetFolder,
             caption,
             user);
-    ApiFile apifile = new ApiFile(emf);
-    addFileLink(apifile);
-    return apifile;
+
+    if (emf.isImage() && originalImageId != null) {
+      mediaMgr.saveOriginalImageLink((EcatImage) emf, originalImageId, user);
+    }
+    ApiFile apiFile = new ApiFile(emf);
+    addFileLink(apiFile);
+    return apiFile;
   }
 
   private void ensureUserInitialised(User user) {

@@ -1230,6 +1230,12 @@ paths:
           required: false
           description: Optional metadata describing the file
           maxLength: 250
+        - name: originalImageId
+          in: formData
+          type: integer
+          format: int64
+          required: false
+          description: Id of the original image that this image is based on image
       consumes:
         - multipart/form-data
       responses:

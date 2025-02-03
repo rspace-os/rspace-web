@@ -19,7 +19,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
@@ -182,6 +181,7 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
                 multipart(createUrl(API_VERSION.ONE, "/files"))
                     .file(mf)
                     .param("caption", EXPECTED_CAPTION)
+                    .param("originalImageId", apiFile.getId() + "")
                     .header("apiKey", apiKey))
             .andReturn();
     ApiFile apiFile2 = getFromJsonResponseBody(result2, ApiFile.class);
@@ -193,12 +193,12 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(EXPECTED_CAPTION, apiFile3.getCaption());
   }
 
-  private MockMultipartFile picture1() throws IOException, FileNotFoundException {
+  private MockMultipartFile picture1() throws IOException {
     return new MockMultipartFile(
         "file", "Picture1.png", "image/png", getTestResourceFileStream("Picture1.png"));
   }
 
-  private MockMultipartFile picture2() throws IOException, FileNotFoundException {
+  private MockMultipartFile picture2() throws IOException {
     return new MockMultipartFile(
         "file", "Picture2.png", "image/png", getTestResourceFileStream("Picture2.png"));
   }
