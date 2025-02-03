@@ -1531,7 +1531,7 @@ export function useGalleryListing({
       const pa = FetchingData.getSuccessValue(path).elseThrow();
       const s = FetchingData.getSuccessValue(section).elseThrow();
       let newTotalHits: null | number = null;
-      if (section === GALLERY_SECTION.NETWORKFILES) {
+      if (s === GALLERY_SECTION.NETWORKFILES) {
         if (pa.length === 0) {
           return getFilestores();
         }
