@@ -26,7 +26,7 @@ import useViewportDimensions from "../../util/useViewportDimensions";
 import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
-import { GallerySelection } from "./useGallerySelection";
+import { GallerySelection, useGallerySelection } from "./useGallerySelection";
 import { BrowserRouter, Navigate } from "react-router-dom";
 import { Routes, Route, useParams } from "react-router";
 import useUiPreference, {
@@ -53,12 +53,14 @@ import Link from "@mui/material/Link";
 import * as Parsers from "../../util/parsers";
 import axios from "axios";
 import useOauthToken from "../../common/useOauthToken";
+import RsSet from "../../util/set";
 
 const WholePage = styled(
   ({
     listingOf,
     setSelectedSection,
     setPath,
+    autoSelect,
   }: {|
     listingOf:
       | {|
@@ -69,6 +71,7 @@ const WholePage = styled(
       | {| tag: "folder", folderId: number |},
     setSelectedSection: ({| mediaType: GallerySection |}) => void,
     setPath: ($ReadOnlyArray<GalleryFile>) => void,
+    autoSelect?: $ReadOnlyArray<number>,
   |}) => {
     const theme = useTheme();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -92,6 +95,22 @@ const WholePage = styled(
         sortOrder,
       });
     const { isViewportSmall } = useViewportDimensions();
+
+    const selection = useGallerySelection();
+    React.useEffect(() => {
+      FetchingData.getSuccessValue(galleryListing).do((listing) => {
+        if (listing.tag === "empty") return;
+        for (const f of new RsSet(listing.list).intersectionMap(
+          ({ id }) => idToString(id),
+          new RsSet(autoSelect ?? []).map((id) => `${id}`)
+        )) {
+          selection.append(f);
+        }
+      });
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - selection should be allowed to change with re-triggering this
+       */
+    }, [autoSelect, galleryListing]);
 
     const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
       useUiPreference<boolean>(PREFERENCES.GALLERY_SIDEBAR_OPEN, {
@@ -364,8 +383,6 @@ function GalleryFileInFolder() {
      */
   }, []);
 
-  // TODO: select the GalleryFile in the listing with id `fileId`
-
   return FetchingData.match(folderId, {
     loading: () => "Loading...",
     error: (error) => `Error: ${error}`,
@@ -376,6 +393,7 @@ function GalleryFileInFolder() {
           navigate(`/gallery/?mediaType=${mediaType}`);
         }}
         setPath={() => {}}
+        autoSelect={[fileId]}
       />
     ),
   });
