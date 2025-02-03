@@ -19,7 +19,6 @@ import {
   useGalleryListing,
   idToString,
   type GalleryFile,
-  type Id,
 } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -51,6 +50,9 @@ import GoogleLoginProvider from "../../components/GoogleLoginProvider";
 import BroadcastIcon from "@mui/icons-material/Campaign";
 import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
+import * as Parsers from "../../util/parsers";
+import axios from "axios";
+import useOauthToken from "../../common/useOauthToken";
 
 const WholePage = styled(
   ({
@@ -64,7 +66,7 @@ const WholePage = styled(
           section: GallerySection,
           path: $ReadOnlyArray<GalleryFile>,
         |}
-      | {| tag: "folder", folderId: Id |},
+      | {| tag: "folder", folderId: number |},
     setSelectedSection: ({| mediaType: GallerySection |}) => void,
     setPath: ($ReadOnlyArray<GalleryFile>) => void,
   |}) => {
@@ -330,23 +332,53 @@ function GalleryFileInFolder() {
   const { fileId } = useParams();
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
+  const [folderId, setFolderId] = React.useState<FetchingData.Fetched<number>>({
+    tag: "loading",
+  });
+  const { getToken } = useOauthToken();
 
-  // TODO: fetch this
-  const folderId = React.useMemo(() => {
-    return 132;
+  async function fetchFileDetails() {
+    try {
+      const token = await getToken();
+      const { data } = await axios.get<mixed>(`/api/v1/files/${fileId}`, {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      });
+      setFolderId(
+        Parsers.objectPath(["parentFolderId"], data)
+          .flatMap(Parsers.isNumber)
+          .map((id) => ({ tag: "success", value: id }))
+          .orElseGet(([e]) => ({ tag: "error", error: e.message }))
+      );
+    } catch (error) {
+      console.error("Error fetching file details", error);
+      setFolderId({ tag: "error", error });
+    }
+  }
+
+  React.useEffect(() => {
+    void fetchFileDetails();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - fetchFileDetails will not meaningfully change
+     */
   }, []);
 
   // TODO: select the GalleryFile in the listing with id `fileId`
 
-  return (
-    <WholePage
-      listingOf={{ tag: "folder", folderId }}
-      setSelectedSection={({ mediaType }) => {
-        navigate(`/gallery/?mediaType=${mediaType}`);
-      }}
-      setPath={() => {}}
-    />
-  );
+  return FetchingData.match(folderId, {
+    loading: () => "Loading...",
+    error: (error) => `Error: ${error}`,
+    success: (fId) => (
+      <WholePage
+        listingOf={{ tag: "folder", folderId: fId }}
+        setSelectedSection={({ mediaType }) => {
+          navigate(`/gallery/?mediaType=${mediaType}`);
+        }}
+        setPath={() => {}}
+      />
+    ),
+  });
 }
 
 window.addEventListener("load", () => {
@@ -396,7 +428,7 @@ window.addEventListener("load", () => {
                           }
                         />
                         <Route
-                          path="gallery/item/:folderId"
+                          path="gallery/item/:fileId"
                           element={
                             <Alerts>
                               <RouterNavigationProvider>
