@@ -93,6 +93,15 @@ export default function ValidatingSubmitButton({
         label={children}
         disabled={loading}
         loading={loading}
+        /*
+         * By using type="submit", any <form> element that wraps this button
+         * will delegate to this button's onClick whenever the user submits the
+         * form, including when they press enter inside of a textfield. As
+         * such, there is no need to implement the submit handler twice, the
+         * <form>'s one can be left undefined. All of this results in the form
+         * submission being more keyboard friendly and thus more accessible to
+         * users who struggle with precise pointer interactions.
+         */
         type="submit"
         progress={progress}
         onClick={(e: Event & { currentTarget: EventTarget, ... }) => {

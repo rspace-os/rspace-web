@@ -1541,7 +1541,7 @@ $(document).ready(function () {
       $(document).on("click tap", "#fromOneDrive", function () {
         appriseNoConnection("OneDrive");
       });
-      $.getScript("//js.live.net/v7.0/OneDrive.js", function () {
+      $.getScript("//js.live.net/v7.2/OneDrive.js", function () {
         $(document).off("click", "#fromOneDrive");
         $(document).on("click tap", "#fromOneDrive", function (e) {
           e.preventDefault();

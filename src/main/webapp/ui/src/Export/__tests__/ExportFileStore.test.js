@@ -18,6 +18,7 @@ import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan";
 import { mkValidator } from "../../util/Validator";
+import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -67,6 +68,7 @@ describe("ExportFileStore", () => {
     ).toBeVisible();
   });
   test("Found filestore links dialog should show linked file.", async () => {
+    const user = userEvent.setup();
     mockAxios
       .onPost("/nfsExport/ajax/createQuickExportPlan")
       .reply(200, CREATE_QUICK_EXPORT_PLAN);
@@ -107,11 +109,9 @@ describe("ExportFileStore", () => {
       ).toBeVisible();
     }));
 
-    act(() => {
-      screen
-        .getByRole("button", { name: "Show found filestore links" })
-        .click();
-    });
+    await user.click(
+      screen.getByRole("button", { name: "Show found filestore links" })
+    );
 
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole(
@@ -120,13 +120,12 @@ describe("ExportFileStore", () => {
       )
     ).toBeVisible();
 
-    act(() => {
-      within(screen.getByRole("dialog"))
-        .getByRole("button", { name: /OK/i })
-        .click();
-    });
+    await user.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i })
+    );
   });
   test("Filesystem login details dialog should show such info.", async () => {
+    const user = userEvent.setup();
     mockAxios.onPost("/nfsExport/ajax/createQuickExportPlan").reply(200, {
       ...CREATE_QUICK_EXPORT_PLAN,
       foundFileSystems: [
@@ -173,11 +172,9 @@ describe("ExportFileStore", () => {
       ).toBeVisible();
     }));
 
-    act(() => {
-      screen
-        .getByRole("button", { name: /Check file systems login details/i })
-        .click();
-    });
+    await user.click(
+      screen.getByRole("button", { name: /Check file systems login details/i })
+    );
 
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole(
@@ -192,10 +189,8 @@ describe("ExportFileStore", () => {
       )
     ).toBeVisible();
 
-    act(() => {
-      within(screen.getByRole("dialog"))
-        .getByRole("button", { name: /OK/i })
-        .click();
-    });
+    await user.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i })
+    );
   });
 });

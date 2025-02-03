@@ -26,12 +26,12 @@ import clsx from "clsx";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/CoreFetcher";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
-
-const FOOTER_WHITESPACE = 10;
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 const useStyles = makeStyles()((theme) => ({
   relativeBox: {
-    paddingBottom: theme.spacing(FOOTER_WHITESPACE),
+    height: "calc(100% - 106px)",
+    overflowY: "auto",
   },
   rightSpacing: {
     marginRight: theme.spacing(0.75),
@@ -87,9 +87,9 @@ function _Stepper({
   factory,
 }: StepperArgs): Node {
   const {
-    uiStore: { isSingleColumnLayout },
     searchStore: { activeResult },
   } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
 
   const { useNavigate } = useContext(NavigateContext);
@@ -98,6 +98,20 @@ function _Stepper({
   const { state } = activeResult ?? {};
 
   const { classes } = useStyles();
+
+  /*
+   * We pin the header that includes the Title, a Global Id link, and the
+   * record type label at the top of the viewport so that they are always able
+   * to quickly check what it is that they're viewing/editing. However, long
+   * record names would end up covering half the screen on smaller viewports so
+   * as the user begins to scroll we truncate the Title.
+   *
+   * This logic is designed in a way that allows the react-code to re-render
+   * only once the thrsehold for truncating has been met, whilst having a
+   * minimal impact on the scroll performance. For more information, see the
+   * MDN article on the scroll event:
+   * https://developer.mozilla.org/en-US/docs/Web/API/Document/scroll_event
+   */
 
   const [needsTruncating, setNeedsTruncating] = useState<boolean>(false);
 
@@ -110,7 +124,7 @@ function _Stepper({
     }
   };
 
-  document.addEventListener("scroll", () => {
+  const onScroll = () => {
     lastKnownScrollPosition = window.scrollY;
     if (!ticking) {
       window.requestAnimationFrame(() => {
@@ -119,7 +133,13 @@ function _Stepper({
       });
       ticking = true;
     }
-  });
+  };
+  React.useEffect(() => {
+    window.addEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   const Title = (
     <>

@@ -14,7 +14,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 public interface InventoryApiManager {
 
-  void setPreviewImageForInvRecord(InventoryRecord invRecord, String base64Image, User user)
+  void createImagesForRecord(InventoryRecord invRecord, String base64Image, User user)
       throws IOException;
 
   InventoryFile saveAttachment(

@@ -35,7 +35,7 @@ public class StatusControllerAndEXceptionHandlingV1MVCIT extends API_MVC_TestBas
   public void setUp() throws Exception {
     super.setUp();
     apiUser = createAndSaveUser(getRandomAlphabeticString("user"));
-    apiKey = createApiKeyForuser(apiUser);
+    apiKey = createNewApiKeyForUser(apiUser);
   }
 
   @After
@@ -65,7 +65,7 @@ public class StatusControllerAndEXceptionHandlingV1MVCIT extends API_MVC_TestBas
   @Test
   public void disabledUserGenerates401() throws Exception {
     User apiUser = createAndSaveUser(getRandomAlphabeticString("user"));
-    String apiKey = createApiKeyForuser(apiUser);
+    String apiKey = createNewApiKeyForUser(apiUser);
     apiUser.setEnabled(false);
     apiUser = userMgr.save(apiUser);
     MvcResult result =

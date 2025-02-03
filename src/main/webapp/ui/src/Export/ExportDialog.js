@@ -109,6 +109,10 @@ const DEFAULT_STATE = {
 export type ExportSelection =
   | {|
       type: "selection",
+      /*
+       * Note that if these arrays are larger than 100, the network call to
+       * trigger the export will fail.
+       */
       exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">,
       exportNames: Array<string>,
       exportIds: Array<string>,
@@ -265,7 +269,8 @@ function ExportDialog({
         addAlert(
           mkAlert({
             variant:
-              response.data.indexOf("Please contact") > -1
+              response.data.indexOf("Please contact") > -1 ||
+              response.data.indexOf("failed for the following reason") > -1
                 ? "error"
                 : "success",
             message: response.data,
@@ -299,6 +304,9 @@ function ExportDialog({
         Parsers.isObject(response)
           .flatMap(Parsers.isNotNull)
           .flatMap(Parsers.getValueWithKey("data"))
+          .flatMap(Parsers.isObject)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("data"))
           .flatMap(Parsers.isArray)
           .flatMap((data) => Result.all(...data.map(Parsers.isString)))
           .map((data) =>
@@ -319,9 +327,14 @@ function ExportDialog({
               parseEncodedTags(data.flatMap((str) => str.split(",")))
             )
           )
+          .mapError(([e]) => {
+            console.error(e);
+            return e;
+          })
           .orElse<Array<Tag>>([])
       )
-      .catch(() => {
+      .catch((e) => {
+        console.error(e);
         return ([]: Array<Tag>);
       })
       .finally(() => {
@@ -533,7 +546,7 @@ const pdfConfig = {
   pageSize: "A4",
   defaultPageSize: "A4",
   dateType: "EXP",
-  includeFooter: true,
+  includeFooterAtEndOnly: true,
   setPageSizeAsDefault: false,
   includeFieldLastModifiedDate: true,
 };

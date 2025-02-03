@@ -116,7 +116,8 @@ describe("Dataverse", () => {
         target: { value: "new url" },
       });
 
-      fireEvent.input(screen.getByRole("textbox", { name: /api key/i }), {
+      // see https://github.com/testing-library/dom-testing-library/issues/567
+      fireEvent.input(screen.getByLabelText("API key"), {
         target: { value: "new api key" },
       });
 
@@ -205,7 +206,8 @@ describe("Dataverse", () => {
         target: { value: "new url" },
       });
 
-      fireEvent.input(screen.getByRole("textbox", { name: /API key/i }), {
+      // see https://github.com/testing-library/dom-testing-library/issues/567
+      fireEvent.input(screen.getByLabelText("API key"), {
         target: { value: "new api key" },
       });
 
@@ -429,7 +431,8 @@ describe("Dataverse", () => {
         }
       );
 
-      fireEvent.input(screen.getAllByRole("textbox", { name: /API key/i })[1], {
+      // see https://github.com/testing-library/dom-testing-library/issues/567
+      fireEvent.input(screen.getAllByLabelText("API key")[1], {
         target: { value: "new api key" },
       });
 

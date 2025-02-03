@@ -80,17 +80,17 @@ public class BaseRecordManagerImpl implements BaseRecordManager {
   }
 
   @Override
-  public Map<Long, EcatMediaFile> retrieveMediaFiles(
+  public Map<String, EcatMediaFile> retrieveMediaFiles(
       User subject, Long[] mediaFileId, Long[] revisionId, DocumentInitializationPolicy policy) {
-    Map<Long, EcatMediaFile> mediaFiles = new HashMap<>();
+    Map<String, EcatMediaFile> mediaFiles = new HashMap<>();
     for (int i = 0; i < mediaFileId.length; i++) {
       Long id = mediaFileId[i];
       Long revision = revisionId[i];
       try {
         EcatMediaFile emf = retrieveMediaFile(subject, id, revision, null, null);
-        mediaFiles.put(id, emf);
+        mediaFiles.put(id + "-" + revision, emf);
       } catch (AuthorizationException | IllegalStateException | DataAccessException e) {
-        mediaFiles.put(id, null);
+        mediaFiles.put(id + "-" + revision, null);
       }
     }
     return mediaFiles;

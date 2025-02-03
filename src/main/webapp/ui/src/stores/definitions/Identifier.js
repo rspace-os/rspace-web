@@ -4,19 +4,21 @@ import { type GeoLocation, type GeoLocationAttrs } from "./GeoLocation";
 import { type URL } from "../../util/types";
 import { type _LINK } from "../../common/ApiServiceBase";
 import { type RadioOption } from "../../components/Inputs/RadioField";
+import { type Node } from "react";
+import { type Alert } from "../contexts/Alert";
 
 export type IGSNDateType =
-  | "Accepted"
-  | "Available"
-  | "Copyrighted"
-  | "Collected"
-  | "Created"
-  | "Issued"
-  | "Submitted"
-  | "Updated"
-  | "Valid"
-  | "Withdrawn"
-  | "Other";
+  | "ACCEPTED"
+  | "AVAILABLE"
+  | "COPYRIGHTED"
+  | "COLLECTED"
+  | "CREATED"
+  | "ISSUED"
+  | "SUBMITTED"
+  | "UPDATED"
+  | "VALID"
+  | "WITHDRAWN"
+  | "OTHER";
 export type IGSNDescriptionType = "ABSTRACT" | "METHODS";
 
 type IGSNTypeOption = IGSNDescriptionType | IGSNDateType;
@@ -85,7 +87,7 @@ export type IdentifierAttrs = {|
   subjects: ?Array<IdentifierSubject>,
   descriptions: ?Array<IdentifierDescription>,
   alternateIdentifiers: ?Array<AlternateIdentifier>,
-  dates: ?Array<IdentifierDate>,
+  dates: ?Array<{| value: string, type: IGSNDateType |}>,
   geoLocations: ?Array<GeoLocationAttrs>,
   _links: Array<_LINK>,
   customFieldsOnPublicPage: boolean,
@@ -113,7 +115,7 @@ export interface Identifier {
   descriptions: ?Array<IdentifierDescription>;
   alternateIdentifiers: ?Array<AlternateIdentifier>;
   dates: ?Array<IdentifierDate>;
-  geoLocations: ?Array<GeoLocation>;
+  geoLocations: ?$ReadOnlyArray<GeoLocation>;
   customFieldsOnPublicPage: boolean;
   _links: Array<_LINK>;
 
@@ -123,15 +125,17 @@ export interface Identifier {
   +recommendedFields: Array<IdentifierField>;
   +anyRecommendedGiven: boolean;
 
-  publish(): Promise<void>;
-  retract(): Promise<void>;
-  republish(): Promise<void>;
+  publish({|
+    confirm: (Node, Node, string, string) => Promise<boolean>,
+    addAlert: (Alert) => void,
+  |}): Promise<void>;
+  retract({|
+    confirm: (Node, Node, string, string) => Promise<boolean>,
+    addAlert: (Alert) => void,
+  |}): Promise<void>;
+  republish({|
+    addAlert: (Alert) => void,
+  |}): Promise<void>;
 
-  /*
-   * This computed property is for showing the Identifier in the public page
-   * preview dialog. The public page itself renders IdentifierAttrs so to be
-   * compatible any implementations of this interface must expose an object
-   * with the same type.
-   */
-  +publicData: IdentifierAttrs;
+  toJson(): { ... };
 }

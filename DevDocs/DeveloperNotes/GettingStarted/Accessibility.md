@@ -125,6 +125,15 @@ For more information on WCAG, see [this MDN doc][mdn-understanding-wcag] and
 [WCAG 2.1 document][wcag-2.1]
 
 
+### WCAG 2.2
+
+Do note that WCAG 2.2 has [some additional success criteria][wcag2.2-new] that apply to RSpace including that
+
+* [Help should be consistently located across the user interface][consistent-help].
+
+* [That the user should not be required to enter the same information multiple times][redundant-entry].
+
+
 ## EN 301 549
 
 
@@ -580,7 +589,7 @@ To accompany this high contrast mode, we have an
 [Accessibility Tips][accessibilityTips] component that is designed to sit in
 the top right corner of an app bar. It informs the user of the configuration
 options that the page/dialog supports as without it it is not apparent that
-this capability is provided.
+this capability is provided. The app bar also provides a consistent place to access the help functionality, a key part of basic compliance with WCAG 2.2.
 
 
 ### DialogBoundary
@@ -589,6 +598,15 @@ We sometimes wish to display elements floating above open dialogs, such as alert
 toasts and floating action buttons. To ensure that these elements are reachable
 by accessibility technologies, use [DialogBoundary][] to prevent MUI from making
 these floating elements inert.
+
+
+### Make sure every Dialog has a DialogTitle
+
+
+If I Dialog has a DialogTitle then Material UI will automatically wire up the
+latter to the former with an `aria-labelledby` attribute. Every DOM node with
+role "dialog" must have a label and this is the simplest way to achieve that
+given that sighted user will need a title too.
 
 
 ### Automatically adjusted heading levels
@@ -685,3 +703,6 @@ Here are just an assortment of more helpful links
 [dynamicHeadingLevel]: /src/main/webapp/ui/src/components/DynamicHeadingLevel.js
 [deque-en301549]: https://www.deque.com/blog/301549-improve-accessibility/
 [hidde-authoring-tools]: https://hidde.blog/authoring-tools-in-en-301-549/
+[consistent-help]: https://www.w3.org/TR/WCAG22/#consistent-help
+[wcag2.2-new]: https://www.w3.org/TR/WCAG22/#new-features-in-wcag-2-2
+[redundant-entry]: https://www.w3.org/TR/WCAG22/#redundant-entry

@@ -31,7 +31,7 @@ describe("all", () => {
     );
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
-      expect(errors.map((e) => e.message)).toEqual(["foo", "bar"]);
+      expect(errors.map((e) => e.message)).toEqual(["bar", "foo"]);
     });
   });
   test("Mix of OK and Error, should return Error value.", () => {
@@ -52,7 +52,7 @@ describe("all", () => {
     );
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
-      expect(errors.map((e) => e.message)).toEqual(["error1", "error2"]);
+      expect(errors.map((e) => e.message)).toEqual(["error2", "error1"]);
     });
   });
   test("Mix of Error and OK, should return Error value.", () => {
@@ -73,7 +73,15 @@ describe("all", () => {
     );
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
-      expect(errors.map((e) => e.message)).toEqual(["error1", "error2"]);
+      expect(errors.map((e) => e.message)).toEqual(["error2", "error1"]);
+    });
+  });
+  test("Empty array in, empty array out", () => {
+    const input: $ReadOnlyArray<Result<mixed>> = [];
+    const actual = Result.all(...input);
+    expect(actual.isOk).toBe(true);
+    actual.do((output) => {
+      expect(output.length).toBe(0);
     });
   });
 });

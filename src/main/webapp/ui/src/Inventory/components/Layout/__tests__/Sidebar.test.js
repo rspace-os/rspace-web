@@ -3,6 +3,7 @@
  */
 //@flow
 /* eslint-env jest */
+import "../../../../../__mocks__/matchMedia";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
@@ -12,8 +13,12 @@ import materialTheme from "../../../../theme";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import { axe, toHaveNoViolations } from "jest-axe";
+import MockAdapter from "axios-mock-adapter";
+import * as axios from "axios";
 
 expect.extend(toHaveNoViolations);
+
+const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -23,6 +28,9 @@ afterEach(cleanup);
 
 describe("Sidebar", () => {
   test("Should have no axe violations.", async () => {
+    mockAxios.onGet("livechatProperties").reply(200, {
+      livechatEnabled: false,
+    });
     const rootStore = makeMockRootStore({
       uiStore: {
         alwaysVisibleSidebar: true,
@@ -37,7 +45,7 @@ describe("Sidebar", () => {
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>
-          <Sidebar />
+          <Sidebar id="foo" />
         </storesContext.Provider>
       </ThemeProvider>
     );

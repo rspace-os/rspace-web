@@ -38,6 +38,7 @@ library.add(
   faStream
 );
 import TagDialog from "./TagDialog";
+import CompareDialog from "./CompareDialog";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import TreeSort from "../../components/TreeSort";
@@ -533,6 +534,7 @@ class WorkspaceToolbar extends React.Component {
             <AdvancedSearch ref={this.advancedSearch} />
           )}
           <TagDialog />
+          <CompareDialog />
         </ThemeProvider>
       </StyledEngineProvider>
     );

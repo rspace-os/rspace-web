@@ -154,9 +154,9 @@ window.hdlh = {
  * to contact support@researchsapce.com through a contact form with their details pre-set.
  */
 document.addEventListener(
-  "analyticsEnabled",
+  "livechatEnabled",
   function (event) {
-    const analyticsEnabled = event.detail.value;
+    const livechatEnabled = event.detail.value;
 
     const _loadLighthouse = function () {
       // Load Lighthouse
@@ -185,7 +185,7 @@ document.addEventListener(
       });
     };
 
-    if (analyticsEnabled) {
+    if (livechatEnabled) {
       RS.waitForCondition(
         () => typeof Intercom !== "undefined",
         10,

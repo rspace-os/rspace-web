@@ -62,7 +62,7 @@ public class InterceptorOrderingV1MVCIT extends API_MVC_TestBase {
   public void setUp() throws Exception {
     super.setUp();
     apiUser = createAndSaveUser(getRandomAlphabeticString("user"));
-    apiKey = createApiKeyForuser(apiUser);
+    apiKey = createNewApiKeyForUser(apiUser);
   }
 
   @After

@@ -46,6 +46,7 @@ import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "../../components/ValidatingSubmitButton";
+import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
 
 const EmptyListText = ({ currentList }: { currentList: ?ListOfMaterials }) =>
   currentList && currentList.materials.length === 0 ? (
@@ -64,13 +65,13 @@ type CardWrapperInternalsArgs = {| children: Node, classes: { root: string } |};
 const CardWrapperInternals = forwardRef<CardWrapperInternalsArgs, mixed>(
   // eslint-disable-next-line react/prop-types
   ({ children, classes }: CardWrapperInternalsArgs, ref) => {
-    const { uiStore } = useStores();
+    const isSingleColumnLayout = useIsSingleColumnLayout();
     return (
       <Observer>
         {() => (
           <Grid
             item
-            xs={uiStore.isSingleColumnLayout ? 12 : 9}
+            xs={isSingleColumnLayout ? 12 : 9}
             classes={classes}
             ref={ref}
             onClick={preventEventBubbling()}
@@ -370,8 +371,9 @@ function MaterialsDialog({
   setOpen,
   standalonePage = false,
 }: DialogArgs): Node {
-  const { uiStore, materialsStore } = useStores();
-  const isSingleColumn = uiStore.isSingleColumnLayout;
+  const { materialsStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
+  const isSingleColumn = isSingleColumnLayout;
 
   const [openPicker, setOpenPicker] = useState<boolean>(false);
   const [openExporter, setOpenExporter] = useState<boolean>(false);

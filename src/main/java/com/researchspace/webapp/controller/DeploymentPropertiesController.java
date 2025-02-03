@@ -31,9 +31,6 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${onedrive.client.id}")
   private String oneDriveClientId;
 
-  @Value("${mendeley.id}")
-  private String mendeleyId;
-
   @Value("${server.urls.prefix}")
   private String baseURL;
 
@@ -43,11 +40,8 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${egnyte.client.id}")
   private String egnyteClientId;
 
-  @Value("${pyrat.url}")
-  private String pyratUrl;
-
-  @Value("${pyrat.client.token}")
-  private String pyratClientToken;
+  @Value("${pyrat.server.config}")
+  private String pyratServerConfig;
 
   @Value("${labtools.server.location}")
   private String labToolsServerUrl;
@@ -97,6 +91,18 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${sysadmin.delete.user}")
   private String sysadminDeleteUser;
 
+  @Value("${collabora.wopi.enabled}")
+  private String collaboraEnabled;
+
+  @Value("${msoffice.wopi.enabled}")
+  private String officeOnlineEnabled;
+
+  @Value("${netfilestores.enabled}")
+  private String netfilestoresEnabled;
+
+  @Value("${deployment.cloud}")
+  private String cloudDeployment;
+
   /**
    * Service to return the value of property stored in the deployment.properties file. Uses a
    * whitelist strategy to only return properties that should be exposed.
@@ -129,18 +135,14 @@ public class DeploymentPropertiesController extends BaseController {
         return joveApiUrl;
       case "onedrive.redirect":
         return oneDriveRedirect;
-      case "mendeley.id":
-        return mendeleyId;
       case "server.urls.prefix":
         return baseURL;
       case "onedrive.client.id":
         return oneDriveClientId;
       case "egnyte.client.id":
         return egnyteClientId;
-      case "pyrat.url":
-        return pyratUrl;
-      case "pyrat.client.token":
-        return pyratClientToken;
+      case "pyrat.server.config":
+        return pyratServerConfig;
       case "owncloud.url":
         return ownCloudURL;
       case "owncloud.server.name":
@@ -165,6 +167,14 @@ public class DeploymentPropertiesController extends BaseController {
         return String.valueOf(isAsposeEnabled());
       case "sysadmin.delete.user":
         return sysadminDeleteUser;
+      case "collabora.wopi.enabled":
+        return collaboraEnabled;
+      case "msoffice.wopi.enabled":
+        return officeOnlineEnabled;
+      case "netfilestores.enabled":
+        return netfilestoresEnabled;
+      case "deployment.cloud":
+        return cloudDeployment;
       default:
         throw new IllegalArgumentException("No property available for name: " + propertyName);
     }
@@ -209,8 +219,6 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("chemistry.available", rc.get("chemistry.available").getValue());
     properties.put(SNAPGENE_AVAILABLE, rc.get(SNAPGENE_AVAILABLE).getValue());
 
-    properties.put("mendeley.available", rc.get("mendeley.available").getValue());
-    properties.put("mendeley.id", mendeleyId);
     properties.put("baseURL", baseURL);
 
     properties.put("labtools.server.location", labToolsServerUrl);
@@ -225,8 +233,7 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("nextcloud.auth.type", nextCloudAuthType);
     properties.put("nextcloud.client.id", nextCloudClientId);
 
-    properties.put("pyrat.url", pyratUrl);
-    properties.put("pyrat.client.token", pyratClientToken);
+    properties.put("pyrat.server.config", pyratServerConfig);
 
     properties.put("googledrive.developer.key", googleDriveDevKey);
     properties.put("googledrive.client.id", googleDriveClientId);

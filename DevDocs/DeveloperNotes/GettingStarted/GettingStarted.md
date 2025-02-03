@@ -1,6 +1,6 @@
 # Getting started with RSpace source code
 
-These instructions are for anyone wanting to run RSpace from source code, on their local machine.
+These instructions are for anyone wanting to run RSpace from source code, on their local machine. **Do NOT use these instructions if you want to run RSpace on a production server or even a pilot / trial server, use rspace-docker for this.**
 
 ## Initial Setup
 
@@ -13,7 +13,7 @@ For development you should be able to run all the code and tests fine with Linux
 
 ### Install required software
 -   Install Java JDK17, use OpenJDK rather than Oracle.
--   Install MariaDB 10.3.39, or later (MariaDB 11.3 is used fine on dockerized RSpace version)
+-   Install MariaDB 10.3.39, or later. MariaDB 11.3 is used fine on dockerized RSpace version. Later versions of MariaDB 11 are untested and we have seen some compatability issues with those.
 
 Historically we were running RSpace on MySQL 5.7 version, so some docs still mention it, but you should go with MariaDB.
 Database installation can be skipped if your only goal is to compile/build the project.
@@ -197,13 +197,10 @@ When starting RSpace for the first time use the following command:
 
 ```bash
 mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
--Dspring.profiles.active=run -Dliquibase.context=dev-test \
--DgenerateReactDist -Dlog4j2.configurationFile=log4j2-dev.xml
+-Dspring.profiles.active=run -DgenerateReactDist \
+-Dlog4j2.configurationFile=log4j2-dev.xml
 ```
-This command clears and sets up the database, so it takes a few minutes
-to run. This command also applies liquibase changes that are configured to
-run with the 'dev-test' profile (liquibase changes that are only configured
-to run with the 'run' profile will only run with a 'prod' launch config)
+This command clears and sets up the database, so it takes a bit longer to run. 
 
 **NOTE:** dont skip the tests compilation when cleaning the DB this way else existing data will not be deleted.
 - you can skip test compilation phase by adding -Dmaven.test.skip=true
@@ -312,7 +309,7 @@ separate standalone app.
 
 ```
 mvn clean jetty:run -Denvironment=keepdbintact \
--Dliquibase.context=dev-test -Dspring.profiles.active=prod \
+-Dspring.profiles.active=prod \
 -DgenerateReactDist -Dlog4j2.configurationFile=log4j2-dev.xml \
 -Daspose.license=/full/path/to/aspose-documentconversion/Aspose-Total-Java.lic \
 -Daspose.logfile=/full/path/to/any/file/logfile.txt -DRS.logLevel=INFO

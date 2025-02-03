@@ -15,8 +15,7 @@ may require other properties to be set in order for the feature to work properly
 The availability of these integrations is now configurable within RSpace itself ( see Changelog-1.33-to-1.34.md)
 
 1. If OneDrive is available, then `onedrive.client.id` and `onedrive.redirect` must be set.
-2. If Mendeley is available, then `mendeley.id` must be set.
-3. If Enterprise Box  is available, then `box.client.id` and `box.client.secret` must be set. (Note this specific for commercial users of Box, and  is not necessary for users to access Box on the cloud). 
+2. If Enterprise Box  is available, then `box.client.id` and `box.client.secret` must be set. (Note this specific for commercial users of Box, and  is not necessary for users to access Box on the cloud). 
   
 #### Document previews
 If 'aspose.app' is set, then:
@@ -26,7 +25,8 @@ If 'aspose.app' is set, then:
   
 #### Analytics
 
-1. If `analytics.enabled` is 'true' then `analytics.server.host` and `analytics.server.key` must be set
+1. If `analytics.enabled` is 'true' then `analytics.server.key` must be set.
+2. If `livechat.enabled` is 'true' then `livechat.server.key` must be set.
 
 ####  File system properties
 

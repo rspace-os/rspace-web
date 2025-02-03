@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -60,6 +61,7 @@ public class InventoryFilesApiController extends BaseApiInventoryController
 
   @Data
   @NoArgsConstructor
+  @AllArgsConstructor
   public static class ApiInventoryFilePost {
 
     @JsonProperty("parentGlobalId")
@@ -260,5 +262,13 @@ public class InventoryFilesApiController extends BaseApiInventoryController
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
     InventoryFile file = invFileManager.markInventoryFileAsDeleted(id, user);
     return getPopulatedApiFile(file);
+  }
+
+  @Override
+  public ResponseEntity<byte[]> getImageByContentsHash(
+      @PathVariable String contentsHash, @RequestAttribute(name = "user") User user)
+      throws IOException {
+    return doImageResponse(
+        user, () -> invFileManager.getFilePropertyByContentsHash(contentsHash, user));
   }
 }

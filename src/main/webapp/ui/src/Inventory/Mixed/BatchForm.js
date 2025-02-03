@@ -48,7 +48,7 @@ function OverviewSection({
       sectionName="overview"
       recordType="mixed"
     >
-      <Image fieldOwner={collection} />
+      <Image fieldOwner={collection} alt="What all of the items look like" />
       {collection.isFieldEditable("image") && (
         <Box mt={1}>
           <Alert severity="info">

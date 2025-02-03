@@ -1,0 +1,229 @@
+{
+  "data" : {
+    "SLACK" : {
+      "name" : "SLACK",
+      "displayName" : "Slack",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "DATAVERSE" : {
+      "name" : "DATAVERSE",
+      "displayName" : "Dataverse",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "OWNCLOUD" : {
+      "name" : "OWNCLOUD",
+      "displayName" : "OwnCloud",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "DRYAD" : {
+      "name" : "DRYAD",
+      "displayName" : "Dryad",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "PYRAT" : {
+      "name" : "PYRAT",
+      "displayName" : "PyRAT",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "DROPBOX" : {
+      "name" : "DROPBOX",
+      "displayName" : "DROPBOX",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : {
+        "dropbox.linking.enabled" : false
+      }
+    },
+    "FIGSHARE" : {
+      "name" : "FIGSHARE",
+      "displayName" : "Figshare",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "DIGITALCOMMONSDATA" : {
+      "name" : "DIGITALCOMMONSDATA",
+      "displayName" : "Digital Commons Data",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "MSTEAMS" : {
+      "name" : "MSTEAMS",
+      "displayName" : "Microsoft Teams",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "EGNYTE" : {
+      "name" : "EGNYTE",
+      "displayName" : "Egnyte",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "JOVE" : {
+      "name" : "JOVE",
+      "displayName" : "Jove",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "CHEMISTRY" : {
+      "name" : "CHEMISTRY",
+      "displayName" : "CHEMISTRY",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "NEXTCLOUD" : {
+      "name" : "NEXTCLOUD",
+      "displayName" : "nextcloud",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "OMERO" : {
+      "name" : "OMERO",
+      "displayName" : "Omero",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "CLUSTERMARKET" : {
+      "name" : "CLUSTERMARKET",
+      "displayName" : "Clustermarket",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "ARGOS" : {
+      "name" : "ARGOS",
+      "displayName" : "Argos",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "ONEDRIVE" : {
+      "name" : "ONEDRIVE",
+      "displayName" : "ONEDRIVE",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : {
+        "onedrive.linking.enabled" : false
+      }
+    },
+    "DMPONLINE" : {
+      "name" : "DMPONLINE",
+      "displayName" : "DMPonline",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "DMPTOOL" : {
+      "name" : "DMPTOOL",
+      "displayName" : "DMPtool",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "BOX" : {
+      "name" : "BOX",
+      "displayName" : "BOX",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : {
+        "BOX_LINK_TYPE" : "LIVE",
+        "box.api.enabled" : false,
+        "box.linking.enabled" : false
+      }
+    },
+    "FIELDMARK" : {
+      "name" : "FIELDMARK",
+      "displayName" : "Fieldmark",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : {
+        "FIELDMARK_USER_TOKEN" : ""
+      }
+    },
+    "PROTOCOLS_IO" : {
+      "name" : "PROTOCOLS_IO",
+      "displayName" : "Protocols.io",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "ZENODO" : {
+      "name" : "ZENODO",
+      "displayName" : "Zenodo",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : {
+        "ZENODO_USER_TOKEN" : ""
+      }
+    },
+    "GOOGLEDRIVE" : {
+      "name" : "GOOGLEDRIVE",
+      "displayName" : "GOOGLEDRIVE",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : {
+        "googledrive.linking.enabled" : false
+      }
+    },
+    "GITHUB" : {
+      "name" : "GITHUB",
+      "displayName" : "Github",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "EVERNOTE" : {
+      "name" : "EVERNOTE",
+      "displayName" : "Evernote",
+      "available" : true,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    }
+  },
+  "error" : null,
+  "success" : true,
+  "errorMsg" : null
+}

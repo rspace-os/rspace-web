@@ -34,7 +34,6 @@ import {
   DataGrid,
   GridToolbarContainer,
   GridToolbarColumnsButton,
-  GridToolbarDensitySelector,
   GridToolbarExportContainer,
   useGridApiContext,
 } from "@mui/x-data-grid";
@@ -85,6 +84,11 @@ import createAccentedTheme from "../../../accentedTheme";
 import UserAliasIcon from "@mui/icons-material/ContactEmergency";
 import { useDeploymentProperty } from "../../useDeploymentProperty";
 import * as Parsers from "../../../util/parsers";
+import useCheckVerificationPasswordNeeded from "../../../common/useCheckVerificationPasswordNeeded";
+import useUiPreference, {
+  PREFERENCES,
+  UiPreferences,
+} from "../../../util/useUiPreference";
 
 const Panel = ({
   anchorEl,
@@ -220,7 +224,7 @@ const TagDialog = ({
                     color="primary"
                     skipFocusWhenDisabled
                     onClick={(e) => {
-                      setAnchorEl(e.target);
+                      setAnchorEl(e.currentTarget);
                     }}
                   />
                   <TagsCombobox
@@ -365,6 +369,7 @@ const PiAction = ({
   const [open, setOpen] = React.useState(false);
   const [password, setPassword] = React.useState("");
   const { addAlert } = React.useContext(AlertContext);
+  const verificationPasswordNeeded = useCheckVerificationPasswordNeeded();
 
   const allowedPiAction: Result<{| user: User, action: "revoke" | "grant" |}> =
     selectedUser
@@ -470,27 +475,49 @@ const PiAction = ({
                     : "Revoke PI role from user"}
                 </DialogTitle>
                 <DialogContent>
-                  <DialogContentText variant="body2" sx={{ mb: 2 }}>
-                    To{" "}
-                    {action === "grant"
-                      ? "grant the PI role to"
-                      : "revoke the PI role from"}{" "}
-                    <strong>
-                      {selectedUser.map((u) => u.fullName).orElse("")}
-                    </strong>{" "}
-                    please re-enter your password.
-                  </DialogContentText>
-                  <TextField
-                    type="password"
-                    autoComplete="current-password"
-                    size="small"
-                    label="Password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                    }}
-                    fullWidth
-                  />
+                  {FetchingData.match(verificationPasswordNeeded, {
+                    loading: () => (
+                      <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                        Loading
+                      </DialogContentText>
+                    ),
+                    error: (errorMsg) => (
+                      <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                        ERROR: {errorMsg}
+                      </DialogContentText>
+                    ),
+                    success: (veriPwdNeeded) =>
+                      veriPwdNeeded ? (
+                        <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                          Please set your verification password in My RSpace
+                          before performing this action.
+                        </DialogContentText>
+                      ) : (
+                        <>
+                          <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                            To{" "}
+                            {action === "grant"
+                              ? "grant the PI role to"
+                              : "revoke the PI role from"}{" "}
+                            <strong>
+                              {selectedUser.map((u) => u.fullName).orElse("")}
+                            </strong>{" "}
+                            please re-enter your password.
+                          </DialogContentText>
+                          <TextField
+                            type="password"
+                            autoComplete="current-password"
+                            size="small"
+                            label="Password"
+                            value={password}
+                            onChange={(e) => {
+                              setPassword(e.target.value);
+                            }}
+                            fullWidth
+                          />
+                        </>
+                      ),
+                  })}
                 </DialogContent>
                 <DialogActions>
                   <Button
@@ -727,16 +754,27 @@ const DeleteAction = ({
               <DialogTitle>Deletion Confirmation</DialogTitle>
               <DialogContent>
                 <DialogContentText variant="body2" sx={{ mb: 2 }}>
-                  <Typography variant="body2">
-                    This is irreversible, and all documents will be deleted.
-                    Deletion may be impossible if this user has created shared
-                    forms.
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    User deletion is irreversible, and all documents will be
+                    deleted.
                   </Typography>
-                  <Typography variant="body2">
+                  {user.hasFormsUsedByOtherUsers && (
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      The user you are trying to delete is{" "}
+                      <strong>
+                        the owner of Forms that are used by other users.
+                      </strong>
+                      To ensure continued access to these Forms, the system
+                      <strong> will transfer ownership</strong> of the Forms to
+                      <strong> this System Administrator</strong> account. Forms
+                      that are not used by others will be deleted.
+                    </Typography>
+                  )}
+                  <Typography variant="body2" sx={{ mb: 1 }}>
                     An XML archive will be made of the user&apos;s work which
                     will be available for a short time on the server.
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography variant="body2" sx={{ mb: 1 }}>
                     To delete{" "}
                     <strong>
                       {selectedUser.map((u) => u.fullName).orElse("")}
@@ -768,7 +806,11 @@ const DeleteAction = ({
                   type="submit"
                   loading={false}
                   disabled={false}
-                  label="Delete"
+                  label={
+                    user.hasFormsUsedByOtherUsers
+                      ? "Transfer Forms And Delete"
+                      : "Delete"
+                  }
                 />
               </DialogActions>
             </form>
@@ -864,7 +906,7 @@ const SelectionActions = ({
                 }}
                 startIcon={<ChecklistIcon />}
                 onClick={(e) => {
-                  setActionsAnchorEl(e.target);
+                  setActionsAnchorEl(e.currentTarget);
                 }}
                 aria-label="Actions menu for selected rows"
                 aria-haspopup="menu"
@@ -1219,7 +1261,7 @@ const Toolbar = ({
   };
 
   return (
-    <GridToolbarContainer>
+    <GridToolbarContainer sx={{ width: "100%" }}>
       <SearchBox userListing={userListing} />
       <Badge badgeContent={tagsChecked ? tags.length : null} color="primary">
         <Button
@@ -1227,7 +1269,7 @@ const Toolbar = ({
           color={tagsChecked && tags.length > 0 ? "primary" : "standardIcon"}
           startIcon={<FilterListIcon />}
           onClick={(e) => {
-            setFilterAnchorEl(e.target);
+            setFilterAnchorEl(e.currentTarget);
           }}
           aria-label="Filter users"
           aria-haspopup="dialog"
@@ -1302,7 +1344,7 @@ const Toolbar = ({
                         color="primary"
                         skipFocusWhenDisabled
                         onClick={(e) => {
-                          setTagsComboboxAnchorEl(e.target);
+                          setTagsComboboxAnchorEl(e.currentTarget);
                         }}
                         disabled={!tagsChecked}
                       />
@@ -1339,7 +1381,6 @@ const Toolbar = ({
           if (node) columnMenuRef.current = node;
         }}
       />
-      <GridToolbarDensitySelector variant="outlined" />
       <GridToolbarExportContainer variant="outlined">
         <ExportMenuItem onClick={() => exportAllRows()}>
           Export all rows to CSV
@@ -1428,16 +1469,19 @@ export const UsersPage = (): Node => {
     $ReadOnlyArray<UserId>
   >([]);
   const [sortModel, setSortModel] = React.useState<
-    $ReadOnlyArray<{| field: | "username"
-      | "usage"
-      | "documents"
-      | "lastLogin"
-      | "created"
-      | "name"
-      | "firstName"
-      | "lastName"
-      | "email"
-    , sort: "asc" | "desc" |}>
+    $ReadOnlyArray<{|
+      field:
+        | "username"
+        | "fileUsage"
+        | "recordCount"
+        | "lastLogin"
+        | "created"
+        | "name"
+        | "firstName"
+        | "lastName"
+        | "email",
+      sort: "asc" | "desc",
+    |}>
   >([]);
   const [groupsAnchorEl, setGroupsAnchorEl] = React.useState(null);
   const [groupsList, setGroupsList] = React.useState<Array<string>>([]);
@@ -1445,11 +1489,26 @@ export const UsersPage = (): Node => {
   const [tagsList, setTagsList] = React.useState<Array<string>>([]);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<?HTMLElement>(null);
+  const [columnVisibility, setColumnVisibility] = useUiPreference(
+    PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
+    {
+      defaultValue: {
+        email: false,
+        recordCount: false,
+        created: false,
+        firstName: false,
+        lastName: false,
+        locked: false,
+        tags: false,
+        usernameAlias: false,
+      },
+    }
+  );
 
   const columns = [
-    DataGridColumn.newColumnWithValueGetter(
+    DataGridColumn.newColumnWithValueMapper(
       "fullName",
-      (params: { row: User, ... }) => params.row.fullName,
+      (fullName) => fullName,
       {
         headerName: "Full Name",
         flex: 1,
@@ -1484,10 +1543,10 @@ export const UsersPage = (): Node => {
       headerName: "Email",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueGetter(
+    DataGridColumn.newColumnWithValueMapper<User, _>(
       "role",
-      (params: { row: User, ... }) => {
-        const roles = params.row.role.split(",");
+      (role) => {
+        const roles = role.split(",");
         const labels = [];
         if (roles.includes("ROLE_ADMIN")) labels.push("Admin");
         if (roles.includes("ROLE_PI")) labels.push("PI");
@@ -1505,17 +1564,17 @@ export const UsersPage = (): Node => {
       headerName: "Username",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueGetter(
-      "documents",
-      (params: { row: User, ... }) => `${params.row.recordCount}`,
+    DataGridColumn.newColumnWithValueMapper<User, _>(
+      "recordCount",
+      (recordCount) => `${recordCount}`,
       {
         headerName: "Documents",
         flex: 1,
       }
     ),
-    DataGridColumn.newColumnWithValueGetter(
-      "usage",
-      (params: { row: User, ... }) => formatFileSize(params.row.fileUsage),
+    DataGridColumn.newColumnWithValueMapper<User, _>(
+      "fileUsage",
+      (fileUsage) => formatFileSize(fileUsage),
       {
         headerName: "Usage",
         flex: 1,
@@ -1524,21 +1583,20 @@ export const UsersPage = (): Node => {
     DataGridColumn.newColumnWithFieldName<User, _>("lastLogin", {
       headerName: "Last Login",
       flex: 1,
-      valueFormatter: (params: { value: Optional<Date>, ... }) =>
-        params.value.map((l) => l.toLocaleString()).orElse("—"),
+      valueFormatter: (value: Optional<Date>) =>
+        value.map((l) => l.toLocaleString()).orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<User, _>("created", {
       headerName: "Creation Date",
       flex: 1,
-      valueFormatter: (params: { value: Optional<Date>, ... }) =>
-        params.value.map((l) => l.toLocaleString()).orElse("—"),
+      valueFormatter: (value: Optional<Date>) =>
+        value.map((l) => l.toLocaleString()).orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<User, _>("enabled", {
       headerName: "Enabled",
       flex: 1,
       sortable: false,
-      valueFormatter: (params: { value: boolean, ... }) =>
-        params.value ? "true" : "false",
+      valueFormatter: (value: boolean) => (value ? "true" : "false"),
       renderCell: (params: { value: boolean, ... }) =>
         params.value ? (
           <TickIcon color="success" aria-label="Enabled" aria-hidden="false" />
@@ -1550,8 +1608,7 @@ export const UsersPage = (): Node => {
       headerName: "Locked",
       flex: 1,
       sortable: false,
-      valueFormatter: (params: { value: boolean, ... }) =>
-        params.value ? "true" : "false",
+      valueFormatter: (value: boolean) => (value ? "true" : "false"),
       renderCell: (params: { value: boolean, ... }) =>
         params.value ? (
           <LockIcon color="error" aria-label="Locked" aria-hidden="false" />
@@ -1563,8 +1620,7 @@ export const UsersPage = (): Node => {
       headerName: "Group Membership",
       flex: 1,
       sortable: false,
-      valueFormatter: (params: { value: Array<string>, ... }) =>
-        params.value.join(", "),
+      valueFormatter: (value: Array<string>) => value.join(", "),
       renderCell: (params: { value: Array<string>, tabIndex: number, ... }) => {
         if (params.value.length === 0) return <>&mdash;</>;
         return (
@@ -1576,7 +1632,7 @@ export const UsersPage = (): Node => {
               params.value.length === 1 ? "" : "s"
             }`}
             onDelete={(e) => {
-              setGroupsAnchorEl(e.target);
+              setGroupsAnchorEl(e.currentTarget);
               setGroupsList(params.value);
             }}
             deleteIcon={
@@ -1599,8 +1655,7 @@ export const UsersPage = (): Node => {
       headerName: "Tags",
       flex: 1,
       sortable: false,
-      valueFormatter: (params: { value: Array<string>, ... }) =>
-        params.value.join(", "),
+      valueFormatter: (value: Array<string>) => value.join(", "),
       renderCell: (params: { value: Array<string>, tabIndex: number, ... }) => {
         if (params.value.length === 0) return <>&mdash;</>;
         return (
@@ -1612,7 +1667,7 @@ export const UsersPage = (): Node => {
               params.value.length === 1 ? "" : "s"
             }`}
             onDelete={(e) => {
-              setTagsAnchorEl(e.target);
+              setTagsAnchorEl(e.currentTarget);
               setTagsList(params.value);
             }}
             deleteIcon={
@@ -1748,7 +1803,7 @@ export const UsersPage = (): Node => {
                 <Grid item>
                   <Box height={4}></Box>
                 </Grid>
-                <Grid item>
+                <Grid item sx={{ width: "100%" }}>
                   {FetchingData.match(userListing, {
                     loading: () => (
                       <Typography variant="body2" sx={{ height: "36px" }}>
@@ -1770,7 +1825,7 @@ export const UsersPage = (): Node => {
                     selectedIds={rowSelectionModel}
                     fetchedListing={userListing}
                   />
-                  <div>
+                  <div style={{ width: "100%" }}>
                     <DataGrid
                       aria-label="users"
                       autoHeight
@@ -1780,20 +1835,8 @@ export const UsersPage = (): Node => {
                         error: () => ([]: Array<User>),
                         success: (listing) => listing.users,
                       })}
-                      initialState={{
-                        columns: {
-                          columnVisibilityModel: {
-                            email: false,
-                            documents: false,
-                            created: false,
-                            firstName: false,
-                            lastName: false,
-                            locked: false,
-                            tags: false,
-                            usernameAlias: false,
-                          },
-                        },
-                      }}
+                      columnVisibilityModel={columnVisibility}
+                      onColumnVisibilityModelChange={setColumnVisibility}
                       density="standard"
                       getRowId={(row: User) => row.id}
                       hideFooterSelectedRowCount
@@ -1832,8 +1875,8 @@ export const UsersPage = (): Node => {
                         }),
                       })}
                       pageSizeOptions={FetchingData.match(userListing, {
-                        loading: () => [],
-                        error: () => [],
+                        loading: () => [0],
+                        error: () => [0],
                         success: (listing) =>
                           paginationOptions(listing.totalListingCount),
                       })}
@@ -1874,8 +1917,8 @@ export const UsersPage = (): Node => {
                             void listing.setOrdering(
                               {
                                 username: "username",
-                                usage: "fileUsage()",
-                                documents: "recordCount()",
+                                fileUsage: "fileUsage()",
+                                recordCount: "recordCount()",
                                 lastLogin: "lastLogin",
                                 created: "creationDate",
                                 name: "lastName",
@@ -1891,7 +1934,7 @@ export const UsersPage = (): Node => {
                       slots={{
                         toolbar: Toolbar,
                       }}
-                      componentsProps={{
+                      slotProps={{
                         toolbar: {
                           userListing,
                           setColumnsMenuAnchorEl,
@@ -1993,7 +2036,9 @@ if (wrapperDiv) {
   root.render(
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={createAccentedTheme(COLOR)}>
-        <UsersPage />
+        <UiPreferences>
+          <UsersPage />
+        </UiPreferences>
       </ThemeProvider>
     </StyledEngineProvider>
   );

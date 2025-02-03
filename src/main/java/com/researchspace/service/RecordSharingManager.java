@@ -13,7 +13,6 @@ import com.researchspace.model.record.RSPath;
 import com.researchspace.model.views.ServiceOperationResult;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /** Services for sharing records with other users/ groups. */
 public interface RecordSharingManager {
@@ -74,7 +73,7 @@ public interface RecordSharingManager {
   List<RecordGroupSharing> getRecordSharingInfo(Long recordId);
 
   /**
-   * Shares a record under the control of <code>sharing</code> with 1 or more groups.<br>
+   * Shares a record under the control of <code>sharing</code> with 1 or more users or groups.<br>
    * This user should have permission to share the record. This method will:
    *
    * <ul>
@@ -86,11 +85,11 @@ public interface RecordSharingManager {
    *     subject, but might be someone who is accepting an invitation to share.
    * @param recordToShareId
    * @param sharingConfigs An array of ShareConfigElement
-   * @return The shared record and operation result
+   * @return result of the share operation with created RecordGroupSharing entities
    * @throws IllegalAddChildOperation, AuthorizationException if an attempt is made by non-owner to
    *     share, or if the recordToShareId is not a notebook or document.
    */
-  ServiceOperationResult<Set<RecordGroupSharing>> shareRecord(
+  ServiceOperationResult<List<RecordGroupSharing>> shareRecord(
       User sharing, Long recordToShareId, ShareConfigElement[] sharingConfigs)
       throws IllegalAddChildOperation;
 

@@ -5,7 +5,9 @@ import com.researchspace.files.service.FileStore;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemInfo;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.webapp.controller.IgnoreInServiceLoggerAspct;
 import java.io.IOException;
@@ -26,9 +28,12 @@ public interface NfsManager {
 
   void saveNfsFileStore(NfsFileStore fileStore);
 
+  NfsFileStore createAndSaveNewFileStore(
+      Long fileSystemId, String fileStoreName, String fileStorePath, User user);
+
   void markFileStoreAsDeleted(NfsFileStore fileStore);
 
-  List<NfsFileStore> getFileStoresForUser(Long userId);
+  List<NfsFileStoreInfo> getFileStoreInfosForUser(User user);
 
   /*
    * Methods for managing network file systems created by sysadmin
@@ -39,6 +44,10 @@ public interface NfsManager {
   List<NfsFileSystem> getFileSystems();
 
   List<NfsFileSystem> getActiveFileSystems();
+
+  boolean verifyFileStoreNameUniqueForUser(String fileStoreName, User user);
+
+  List<NfsFileSystemInfo> getActiveFileSystemInfos();
 
   void saveNfsFileSystem(NfsFileSystem fileSystem);
 

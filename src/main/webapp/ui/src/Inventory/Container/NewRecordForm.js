@@ -47,7 +47,10 @@ const OverviewSection = observer(
           }
         />
         <Organization container={activeResult} />
-        <ContainerImage fieldOwner={activeResult} />
+        <ContainerImage
+          fieldOwner={activeResult}
+          alt="What the new container looks like"
+        />
       </StepperPanel>
     );
   }
@@ -152,7 +155,7 @@ export default function NewRecordForm(): Node {
           sectionName="attachments"
           recordType="container"
         >
-          <AttachmentsField />
+          <AttachmentsField fieldOwner={activeResult} />
         </StepperPanel>
         <StepperPanel
           title="Access Permissions"

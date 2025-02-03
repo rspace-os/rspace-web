@@ -9,13 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
  * Use this in dev/ test environments to set in a remote username/password using a default property
  * name
  */
-public class MockRemoteUserPolicy implements RemoteUserRetrievalPolicy {
+public class MockRemoteUserPolicy extends AbstractSsoRemoteUserPolicy {
 
   @Value("${mock.remote.username:}")
   private String username = "user1a";
-
-  @Value("${default.user.password}")
-  private String password;
 
   @Value("${mock.remote.email:somebody@somwhere.com}")
   private String email = "somebody@somwhere.com";
@@ -35,17 +32,12 @@ public class MockRemoteUserPolicy implements RemoteUserRetrievalPolicy {
   }
 
   @Override
-  public String getPassword() {
-    return password;
-  }
-
-  @Override
-  public Map<String, String> getOtherRemoteAttributes(HttpServletRequest httpRequest) {
-    Map<String, String> rc = new TreeMap<>();
-    rc.put("mail", email);
-    rc.put("Shib-surName", lastName);
-    rc.put("Shib-givenName", firstName);
-    rc.put("isAllowedPiRole", isAllowedPiRole);
+  public Map<RemoteUserAttribute, String> getOtherRemoteAttributes(HttpServletRequest httpRequest) {
+    Map<RemoteUserAttribute, String> rc = new TreeMap<>();
+    rc.put(RemoteUserAttribute.EMAIL, email);
+    rc.put(RemoteUserAttribute.FIRST_NAME, firstName);
+    rc.put(RemoteUserAttribute.LAST_NAME, lastName);
+    rc.put(RemoteUserAttribute.IS_ALLOWED_PI_ROLE, isAllowedPiRole);
 
     return rc;
   }
@@ -56,10 +48,6 @@ public class MockRemoteUserPolicy implements RemoteUserRetrievalPolicy {
 
   public void setUsername(String username) {
     this.username = username;
-  }
-
-  void setPassword(String pword) {
-    this.password = pword;
   }
 
   void setIsAllowedPiRole(String isAllowedPiRole) {

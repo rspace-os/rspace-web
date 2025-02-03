@@ -1,0 +1,19 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2024-11-07a" context="run" author="matthias">
+        <comment>Apply a few changes from hibernate-generated schema into liquibase production schema (RSDEV-351)</comment>
+
+        <modifyDataType columnName="data" newDataType="clob" tableName="Field"/>
+        <modifyDataType columnName="data" newDataType="clob" tableName="Field_AUD"/>
+
+        <dropNotNullConstraint columnDataType="boolean" columnName="showAsPickList"
+          tableName="FieldForm_AUD"/>
+        <dropNotNullConstraint columnDataType="boolean" columnName="sortAlphabetic"
+          tableName="FieldForm_AUD"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,4 +1,4 @@
-//@flow
+//@flow strict
 
 import React, { type Node } from "react";
 import SvgIcon from "@mui/material/SvgIcon";
@@ -19,6 +19,9 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
+/**
+ * A simple chemical bond for use as a generic icon for chemistry files.
+ */
 export default function ChemistryIcon(): Node {
   const { classes } = useStyles();
   return (

@@ -18,7 +18,7 @@
     "plugin:prettier/recommended",
     "prettier"
   ],
-  "plugins": ["react", "ft-flow", "testing-library", "jest-dom", "jsx-a11y"],
+  "plugins": ["react", "jsdoc", "ft-flow", "testing-library", "jest-dom", "jsx-a11y"],
   "settings": {
     "react": {
       "version": "detect",
@@ -42,7 +42,21 @@
     "default-param-last": "warn",
     "dot-notation": "warn",
     "eqeqeq": "error",
+
+    // prettier adds in whitespace around code elements to break up long lines
+    "ft-flow/generic-spacing": ["off"],
+    "ft-flow/space-after-type-colon": ["off"],
+
     "guard-for-in": "error",
+
+    // this raises a warning if an export doesn't have a comment
+    "jsdoc/require-jsdoc": ["warn", {
+      "publicOnly": true, // this doesn't seem to do anything
+      "contexts": ["ExportDefaultDeclaration", "ExportNamedDeclaration"],
+      "require": { "FunctionDeclaration": false }, // all other values default to false
+      "enableFixer": false // don't automatically add empty comments
+    }],
+
     "max-statements-per-line": ["warn", { "max": 2 }],
     "no-alert": "error",
     "no-console": ["warn", { "allow": ["warn", "error"] }],

@@ -60,12 +60,14 @@ import {
 import { type Sample } from "../definitions/Sample";
 import { InvalidState, UserCancelledAction } from "../../util/error";
 import { type Basket } from "../definitions/Basket";
+import { type SubSample } from "../definitions/SubSample";
 import { noProgress } from "../../util/progress";
 import {
   IsInvalid,
   IsValid,
   allAreValid,
 } from "../../components/ValidatingSubmitButton";
+import { type Quantity } from "./RecordWithQuantity";
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
@@ -79,11 +81,15 @@ export const getViewGroup = (
     [() => true, "static"],
   ])(view);
 
-const prepareRecordsForBulkApi = (records: Array<InventoryRecord>) =>
+const prepareRecordsForBulkApi = (
+  records: Array<InventoryRecord>,
+  opts?: {| forceDelete?: boolean |}
+) =>
   records.map((record) => ({
     id: record.id,
     type: record.type,
     owner: { username: record.owner?.username },
+    ...(opts ?? {}),
   }));
 
 type SearchArgs = {|
@@ -124,6 +130,8 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   selectionMode: "MULTIPLE",
   highlightActiveResult: true,
   hideContentsOfChip: false,
+  selectionLimit: Infinity,
+  onlyAllowSelectingEmptyLocations: false,
 };
 
 export default class Search implements SearchInterface {
@@ -421,7 +429,10 @@ export default class Search implements SearchInterface {
    * Deletes the passed records, displays toasts accordingly, and invokes the
    * refreshing of the UI's state.
    */
-  async deleteRecords(records: Array<InventoryRecord>): Promise<void> {
+  async deleteRecords(
+    records: Array<InventoryRecord>,
+    opts?: {| forceDelete?: boolean |}
+  ): Promise<void> {
     this.setProcessingContextActions(true);
     const { uiStore } = getRootStore();
 
@@ -433,7 +444,7 @@ export default class Search implements SearchInterface {
           {
             results: Array<{
               error: { errors: Array<string> },
-              record: {
+              record: null | {
                 type: string,
                 canBeDeleted?: boolean,
                 subSamples: $ReadOnlyArray<{
@@ -446,7 +457,7 @@ export default class Search implements SearchInterface {
             }>,
             errorCount: number,
           }
-        >(prepareRecordsForBulkApi(records), "DELETE", false)
+        >(prepareRecordsForBulkApi(records, opts), "DELETE", false)
       );
 
       /*
@@ -455,19 +466,32 @@ export default class Search implements SearchInterface {
        * subsamples are currently inside containers then the user is presented
        * with an error detailing these subsamples and where to find them.
        */
-      const samplesThatCouldNotBeDeleted = data.results
-        .map(({ record }) => record)
-        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
-      const samplesThatCouldBeDeleted = data.results
-        .map(({ record }) => record)
-        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && canBeDeleted);
+      const samplesThatCouldNotBeDeleted = ArrayUtils.filterNull(
+        data.results.map(({ record }) => record)
+      ).filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
+      const samplesThatCouldBeDeleted = ArrayUtils.filterNull(
+        data.results.map(({ record }) => record)
+      ).filter((r) => r.type === "SAMPLE" && r.canBeDeleted);
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
         ...data.results
-          .filter(({ record: { type } }) => type !== "SAMPLE")
           .filter(({ error }) => !error)
-          .map(({ record }) => record),
+          .filter(({ record }) => record !== null && record.type !== "SAMPLE")
+          .map(({ record }) => record)
+          /*
+           * The list is reversed because the server processes each record in
+           * turn and the processing of one record will at times impact how
+           * subsequent ones are processed and we always want the last piece of
+           * this cascaded state. For example, when deleting both of the
+           * subsamples of a sample, the first record to be returned will have
+           * a sample whose subSampleCount will be 1 and the second will have a
+           * sample whose subSampleCount will be 0. We want the second sample
+           * to be initialised by the factory and to be the sample used for
+           * both subsamples so we reverse the list so that the factory sees
+           * the second one first.
+           */
+          .toReversed(),
         ...samplesThatCouldBeDeleted,
       ].map((record) => {
         const newRecord = factory.newRecord(record);
@@ -487,13 +511,23 @@ export default class Search implements SearchInterface {
               "Some of the samples could not be trashed because the subsamples are in containers.",
             message: "Please move them to the trash first.",
             details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
-              title: `Could not trash "${ss.name ?? "UNKNOWN"}"`,
+              title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${
+                ss.parentContainers.length > 0
+                  ? `(in ${ss.parentContainers[0].name} ${
+                      ss.parentContainers[0].globalId ?? ""
+                    })`
+                  : ""
+              }`,
               variant: "error",
               record: factory.newRecord({
                 ...ss,
                 sample: s,
               }),
             })),
+            actionLabel: "Move all to trash",
+            onActionClick: () => {
+              void this.deleteRecords(records, { forceDelete: true });
+            },
           })
         );
       }
@@ -575,13 +609,13 @@ export default class Search implements SearchInterface {
       ArrayUtils.filterClass(SubSampleModel, deletedRecords);
     const samplesOfDeletedSubSamples: Array<SampleModel> =
       justSubsamplesThatAreBeingDeleted.map((r) => r.sample);
-    const nowEmptySamples = samplesOfDeletedSubSamples.filter(
-      (s) => s.subSamplesCount === 0
-    );
     /*
-     * nowEmptySamples will be a unique list of samples because for each
-     * sample, only the last subsample deleted will have a subSamplesCount of 0
+     * Creating a set works because each sample is only instantiated once due
+     * to MemoisedFactory
      */
+    const nowEmptySamples = new Set(
+      samplesOfDeletedSubSamples.filter((s) => s.subSamplesCount === 0)
+    );
 
     for (const sample: SampleModel of nowEmptySamples) {
       uiStore.addAlert(
@@ -766,7 +800,7 @@ export default class Search implements SearchInterface {
     }
   }
 
-  async splitRecord(copies: number, subsample: InventoryRecord): Promise<void> {
+  async splitRecord(copies: number, subsample: SubSample): Promise<void> {
     if (!(subsample instanceof SubSampleModel))
       throw new Error("Can only split SubSamples");
     this.setProcessingContextActions(true);
@@ -1012,6 +1046,68 @@ export default class Search implements SearchInterface {
         })
       );
       console.error("Could not create template from sample.", error);
+      throw error;
+    }
+  }
+
+  async createNewSubsamples(opts: {|
+    sample: Sample,
+    numberOfNewSubsamples: number,
+    quantityPerSubsample: Quantity,
+  |}): Promise<void> {
+    const { uiStore, searchStore } = getRootStore();
+    try {
+      const { data } = await ApiService.post<
+        {|
+          sampleId: number,
+          numSubSamples: string,
+          singleSubSampleQuantity: Quantity,
+        |},
+        $ReadOnlyArray<SubSampleAttrs>
+      >("subSamples", {
+        sampleId: opts.sample.id,
+        numSubSamples: `${opts.numberOfNewSubsamples}`,
+        singleSubSampleQuantity: opts.quantityPerSubsample,
+      });
+      await Promise.all([
+        opts.sample.fetchAdditionalInfo(),
+        opts.sample.refreshAssociatedSearch(),
+        searchStore.search.fetcher.parentGlobalId === opts.sample.globalId
+          ? searchStore.search.fetcher.performInitialSearch()
+          : Promise.resolve(),
+      ]);
+
+      const factory = this.factory.newFactory();
+      const successfullyCreated = data.map((record) => {
+        const newRecord = factory.newRecord(record);
+        newRecord.populateFromJson(factory, record);
+        return newRecord;
+      });
+
+      uiStore.addAlert(
+        mkAlert({
+          message: "Successfully created new subsamples.",
+          variant: "success",
+          details: successfullyCreated.map((r) => ({
+            title: r.name,
+            variant: "success",
+            record: r,
+          })),
+        })
+      );
+    } catch (error) {
+      uiStore.addAlert(
+        mkAlert({
+          title: "Subsample creation failed.",
+          message:
+            error.response?.data.message ?? error.message ?? "Unknown reason.",
+          variant: "error",
+          details: error.response?.data.errors.map((e) => ({
+            title: e,
+            variant: "error",
+          })),
+        })
+      );
       throw error;
     }
   }

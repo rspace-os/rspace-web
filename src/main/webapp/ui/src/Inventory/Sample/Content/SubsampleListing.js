@@ -55,7 +55,7 @@ function SubsampleListing({ sample }: SubsampleListingArgs): Node {
           <ExpandCollapseIcon open={searchOpen} />
         </IconButton>
       </Grid>
-      <Grid item>
+      <Grid item flexGrow={1}>
         <Collapse
           in={searchOpen}
           collapsedSize={44}

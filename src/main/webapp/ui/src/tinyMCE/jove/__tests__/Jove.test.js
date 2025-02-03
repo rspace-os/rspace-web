@@ -35,18 +35,12 @@ beforeEach(() => {
 describe("Renders page with jove data ", () => {
   it("displays jove table headers", async () => {
     render(<Jove />);
-    // eslint-disable-next-line testing-library/no-unnecessary-act
-    await act(() => {
-      return screen.findByText("Title");
-    });
+    await screen.findByText("Title");
   });
 
   it("displays jove search bar ", async () => {
     render(<Jove />);
-    // eslint-disable-next-line testing-library/no-unnecessary-act
-    await act(() => {
-      return screen.findByLabelText("Search");
-    });
+    await screen.findByLabelText("Search");
   });
 
   it('displays table headers for jove search results"', async () => {
@@ -58,10 +52,7 @@ describe("Renders page with jove data ", () => {
 
   it("displays jove search results", async () => {
     render(<Jove />);
-    // eslint-disable-next-line testing-library/no-unnecessary-act
-    await act(() => {
-      return screen.findByText("Title");
-    });
+    await screen.findByText("Title");
     await screen.findByText(
       "Induction and Validation of Cellular Senescence in Primary Human Cells"
     );

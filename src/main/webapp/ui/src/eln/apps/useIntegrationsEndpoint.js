@@ -7,6 +7,7 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
+import * as Parsers from "../../util/parsers";
 
 /*
  * This module provide the functionality for interacting with the
@@ -28,7 +29,13 @@ export type OptionsId = string;
  * accurately model the particular credentials it requires.
  */
 export type IntegrationState<Credentials> = {|
-  mode: "UNAVAILABLE" | "DISABLED" | "ENABLED",
+  /**
+   * UNAVAILABLE : When the sysadmin has not allowed the integration.
+   * DISABLED    : Sysadmin has allowed it but the user has not enabled it.
+   * ENABLED     : Sysadmin has allowed it and the user has enabled it.
+   * EXTERNAL    : The app is a third-party integrating with RSpace.
+   */
+  mode: "UNAVAILABLE" | "DISABLED" | "ENABLED" | "EXTERNAL",
   credentials: Credentials,
 |};
 
@@ -52,6 +59,7 @@ export type IntegrationState<Credentials> = {|
  */
 export type IntegrationStates = {|
   ARGOS: IntegrationState<{||}>,
+  ASCENSCIA: IntegrationState<null>,
   BOX: IntegrationState<{|
     BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">,
     "box.api.enabled": Optional<boolean>,
@@ -71,7 +79,12 @@ export type IntegrationStates = {|
       |}>
     >
   >,
-  DMPONLINE: IntegrationState<{||}>,
+  DIGITALCOMMONSDATA: IntegrationState<{|
+    ACCESS_TOKEN: Optional<string>,
+  |}>,
+  DMPONLINE: IntegrationState<{|
+    ACCESS_TOKEN: Optional<string>,
+  |}>,
   DMPTOOL: IntegrationState<{|
     ACCESS_TOKEN: Optional<string>,
   |}>,
@@ -83,6 +96,9 @@ export type IntegrationStates = {|
     EGNYTE_DOMAIN: Optional<string>,
   |}>,
   EVERNOTE: IntegrationState<{||}>,
+  FIELDMARK: IntegrationState<{|
+    FIELDMARK_USER_TOKEN: Optional<string>,
+  |}>,
   FIGSHARE: IntegrationState<{|
     ACCESS_TOKEN: Optional<string>,
   |}>,
@@ -103,7 +119,6 @@ export type IntegrationStates = {|
     ["googledrive.linking.enabled"]: Optional<boolean>,
   |}>,
   JOVE: IntegrationState<{||}>,
-  MENDELEY: IntegrationState<{||}>,
   MSTEAMS: IntegrationState<
     Array<
       Optional<{|
@@ -125,7 +140,16 @@ export type IntegrationStates = {|
     ACCESS_TOKEN: Optional<string>,
   |}>,
   PYRAT: IntegrationState<{|
-    PYRAT_USER_TOKEN: Optional<string>,
+    configuredServers: $ReadOnlyArray<{|
+      url: string,
+      alias: string,
+    |}>,
+    authenticatedServers: $ReadOnlyArray<{|
+      url: string,
+      alias: string,
+      apiKey: string,
+      optionsId: OptionsId,
+    |}>,
   |}>,
   SLACK: IntegrationState<
     Array<
@@ -274,6 +298,20 @@ function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
   };
 }
 
+function decodeDigitalCommonsData(
+  data: FetchedState
+): IntegrationStates["DIGITALCOMMONSDATA"] {
+  return {
+    mode: parseState(data),
+    credentials: {
+      ACCESS_TOKEN: parseCredentialString(
+        data.options,
+        "DIGITAL_COMMONS_DATA_USER_TOKEN"
+      ),
+    },
+  };
+}
+
 function decodeDmpTool(data: FetchedState): IntegrationStates["DMPTOOL"] {
   return {
     mode: parseState(data),
@@ -284,7 +322,12 @@ function decodeDmpTool(data: FetchedState): IntegrationStates["DMPTOOL"] {
 }
 
 function decodeDmponline(data: FetchedState): IntegrationStates["DMPONLINE"] {
-  return { mode: parseState(data), credentials: {} };
+  return {
+    mode: parseState(data),
+    credentials: {
+      ACCESS_TOKEN: parseCredentialString(data.options, "DMPONLINE_USER_TOKEN"),
+    },
+  };
 }
 
 function decodeDropbox(data: FetchedState): IntegrationStates["DROPBOX"] {
@@ -316,6 +359,18 @@ function decodeEgnyte(data: FetchedState): IntegrationStates["EGNYTE"] {
 
 function decodeEvernote(data: FetchedState): IntegrationStates["EVERNOTE"] {
   return { mode: parseState(data), credentials: {} };
+}
+
+function decodeFieldmark(data: FetchedState): IntegrationStates["FIELDMARK"] {
+  return {
+    mode: parseState(data),
+    credentials: {
+      FIELDMARK_USER_TOKEN: parseCredentialString(
+        data.options,
+        "FIELDMARK_USER_TOKEN"
+      ),
+    },
+  };
 }
 
 function decodeFigshare(data: FetchedState): IntegrationStates["FIGSHARE"] {
@@ -372,10 +427,6 @@ function decodeGoogleDrive(
 }
 
 function decodeJove(data: FetchedState): IntegrationStates["JOVE"] {
-  return { mode: parseState(data), credentials: {} };
-}
-
-function decodeMendeley(data: FetchedState): IntegrationStates["MENDELEY"] {
   return { mode: parseState(data), credentials: {} };
 }
 
@@ -439,7 +490,76 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
   return {
     mode: parseState(data),
     credentials: {
-      PYRAT_USER_TOKEN: parseCredentialString(data.options, "PYRAT_USER_TOKEN"),
+      configuredServers: Parsers.objectPath(
+        ["options", "PYRAT_CONFIGURED_SERVERS"],
+        data
+      )
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .flatMap((configuredServers) =>
+          Result.all(
+            ...Object.values(configuredServers).map((config) => {
+              try {
+                const server = Parsers.isObject(config)
+                  .flatMap(Parsers.isNotNull)
+                  .elseThrow();
+                const alias = Parsers.getValueWithKey("alias")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const url = Parsers.getValueWithKey("url")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                return Result.Ok({ alias, url });
+              } catch {
+                return Result.Error<{|
+                  url: string,
+                  alias: string,
+                |}>([new Error("Could not parse out pyrat configured server")]);
+              }
+            })
+          )
+        )
+        .orElse([]),
+      authenticatedServers: Parsers.objectPath(["options"], data)
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .map((servers) =>
+          Object.entries(servers).filter(
+            ([k]) => k !== "PYRAT_CONFIGURED_SERVERS"
+          )
+        )
+        .flatMap((servers) =>
+          Result.all(
+            ...servers.map(([key, config]) => {
+              try {
+                const server = Parsers.isObject(config)
+                  .flatMap(Parsers.isNotNull)
+                  .elseThrow();
+                const alias = Parsers.getValueWithKey("PYRAT_ALIAS")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const url = Parsers.getValueWithKey("PYRAT_URL")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const apiKey = Parsers.getValueWithKey("PYRAT_APIKEY")(server)
+                  .flatMap(Parsers.isString)
+                  .elseThrow();
+                const optionsId = Parsers.isString(key).elseThrow();
+                return Result.Ok({ alias, url, apiKey, optionsId });
+              } catch {
+                return Result.Error<{|
+                  url: string,
+                  alias: string,
+                  apiKey: string,
+                  optionsId: OptionsId,
+                |}>([
+                  new Error("Could not parse out pyrat authenticated server"),
+                ]);
+              }
+            })
+          )
+        )
+        .orElse([]),
     },
   };
 }
@@ -493,21 +613,26 @@ function decodeIntegrationStates(data: {
 }): IntegrationStates {
   return {
     ARGOS: decodeArgos(data.ARGOS),
+    ASCENSCIA: {
+      mode: "EXTERNAL",
+      credentials: null,
+    },
     BOX: decodeBox(data.BOX),
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),
     DATAVERSE: decodeDataverse(data.DATAVERSE),
+    DIGITALCOMMONSDATA: decodeDigitalCommonsData(data.DIGITALCOMMONSDATA),
     DMPONLINE: decodeDmponline(data.DMPONLINE),
     DMPTOOL: decodeDmpTool(data.DMPTOOL),
     DROPBOX: decodeDropbox(data.DROPBOX),
     DRYAD: decodeDryad(data.DRYAD),
     EGNYTE: decodeEgnyte(data.EGNYTE),
     EVERNOTE: decodeEvernote(data.EVERNOTE),
+    FIELDMARK: decodeFieldmark(data.FIELDMARK),
     FIGSHARE: decodeFigshare(data.FIGSHARE),
     GITHUB: decodeGitHub(data.GITHUB),
     GOOGLEDRIVE: decodeGoogleDrive(data.GOOGLEDRIVE),
     JOVE: decodeJove(data.JOVE),
-    MENDELEY: decodeMendeley(data.MENDELEY),
     MSTEAMS: decodeMsTeams(data.MSTEAMS),
     NEXTCLOUD: decodeNextCloud(data.NEXTCLOUD),
     OMERO: decodeOmero(data.OMERO),
@@ -618,12 +743,30 @@ const encodeIntegrationState = <I: Integration>(
       ),
     };
   }
+  if (integration === "DIGITALCOMMONSDATA") {
+    return {
+      name: "DIGITALCOMMONSDATA",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      // $FlowExpectedError[prop-missing]
+      // $FlowExpectedError[incompatible-type]
+      // $FlowExpectedError[incompatible-use]
+      options: data.credentials.ACCESS_TOKEN.map((token) => ({
+        ACCESS_TOKEN: token,
+      })).orElse({}),
+    };
+  }
   if (integration === "DMPONLINE") {
     return {
       name: "DMPONLINE",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      options: {},
+      // $FlowExpectedError[prop-missing]
+      // $FlowExpectedError[incompatible-type]
+      // $FlowExpectedError[incompatible-use]
+      options: data.credentials.ACCESS_TOKEN.map((token) => ({
+        ACCESS_TOKEN: token,
+      })).orElse({}),
     };
   }
   if (integration === "DMPTOOL") {
@@ -683,6 +826,21 @@ const encodeIntegrationState = <I: Integration>(
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {},
+    };
+  }
+  if (integration === "FIELDMARK") {
+    return {
+      name: "FIELDMARK",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      // $FlowExpectedError[prop-missing]
+      // $FlowExpectedError[incompatible-type]
+      // $FlowExpectedError[incompatible-use]
+      options: data.credentials.FIELDMARK_USER_TOKEN.map((token) => ({
+        FIELDMARK_USER_TOKEN: token,
+      })).orElse({
+        FIELDMARK_USER_TOKEN: "",
+      }),
     };
   }
   if (integration === "FIGSHARE") {
@@ -759,14 +917,6 @@ const encodeIntegrationState = <I: Integration>(
       options: {},
     };
   }
-  if (integration === "MENDELEY") {
-    return {
-      name: "MENDELEY",
-      available: data.mode !== "UNAVAILABLE",
-      enabled: data.mode === "ENABLED",
-      options: {},
-    };
-  }
   if (integration === "MSTEAMS") {
     return {
       name: "MSTEAMS",
@@ -834,16 +984,22 @@ const encodeIntegrationState = <I: Integration>(
       name: "PYRAT",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      options: {
+      options: Object.fromEntries(
+        // $FlowExpectedError[incompatible-use]
         // $FlowExpectedError[prop-missing]
         // $FlowExpectedError[incompatible-type]
-        // $FlowExpectedError[incompatible-use]
-        ...data.credentials.PYRAT_USER_TOKEN.map((token) => ({
-          PYRAT_USER_TOKEN: token,
-        })).orElse({
-          PYRAT_USER_TOKEN: "",
-        }),
-      },
+        data.credentials.authenticatedServers.map(
+          // $FlowExpectedError[prop-missing]
+          ({ alias, url, apiKey, optionsId }) => [
+            optionsId,
+            {
+              PYRAT_ALIAS: alias,
+              PYRAT_URL: url,
+              PYRAT_APIKEY: apiKey,
+            },
+          ]
+        )
+      ),
     };
   }
   if (integration === "SLACK") {
@@ -1040,6 +1196,8 @@ export function useIntegrationsEndpoint(): {|
               return decodeClustermarket(responseData.data);
             case "DATAVERSE":
               return decodeDataverse(responseData.data);
+            case "DIGITALCOMMONSDATA":
+              return decodeDigitalCommonsData(responseData.data);
             case "DMPONLINE":
               return decodeDmponline(responseData.data);
             case "DMPTOOL":
@@ -1052,6 +1210,8 @@ export function useIntegrationsEndpoint(): {|
               return decodeEgnyte(responseData.data);
             case "EVERNOTE":
               return decodeEvernote(responseData.data);
+            case "FIELDMARK":
+              return decodeFieldmark(responseData.data);
             case "FIGSHARE":
               return decodeFigshare(responseData.data);
             case "GITHUB":
@@ -1060,8 +1220,6 @@ export function useIntegrationsEndpoint(): {|
               return decodeGoogleDrive(responseData.data);
             case "JOVE":
               return decodeJove(responseData.data);
-            case "MENDELEY":
-              return decodeMendeley(responseData.data);
             case "MSTEAMS":
               return decodeMsTeams(responseData.data);
             case "NEXTCLOUD":
@@ -1140,6 +1298,8 @@ export function useIntegrationsEndpoint(): {|
           return decodeClustermarket(response.data.data);
         case "DATAVERSE":
           return decodeDataverse(response.data.data);
+        case "DIGITALCOMMONSDATA":
+          return decodeDigitalCommonsData(response.data.data);
         case "DMPONLINE":
           return decodeDmponline(response.data.data);
         case "DMPTOOL":
@@ -1152,6 +1312,8 @@ export function useIntegrationsEndpoint(): {|
           return decodeEgnyte(response.data.data);
         case "EVERNOTE":
           return decodeEvernote(response.data.data);
+        case "FIELDMARK":
+          return decodeFieldmark(response.data.data);
         case "FIGSHARE":
           return decodeFigshare(response.data.data);
         case "GITHUB":
@@ -1160,8 +1322,6 @@ export function useIntegrationsEndpoint(): {|
           return decodeGoogleDrive(response.data.data);
         case "JOVE":
           return decodeJove(response.data.data);
-        case "MENDELEY":
-          return decodeMendeley(response.data.data);
         case "MSTEAMS":
           return decodeMsTeams(response.data.data);
         case "NEXTCLOUD":

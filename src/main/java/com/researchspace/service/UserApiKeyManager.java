@@ -11,10 +11,10 @@ public interface UserApiKeyManager extends GenericManager<UserApiKey, Long> {
   /**
    * Creates or updates a UserApiKey for the given user
    *
-   * @param username
+   * @param user
    * @return
    */
-  UserApiKey createKeyForUser(User username);
+  UserApiKey createKeyForUser(User user);
 
   /**
    * Deletes key for user, if it exists
@@ -24,10 +24,28 @@ public interface UserApiKeyManager extends GenericManager<UserApiKey, Long> {
   int revokeKeyForUser(User user);
 
   /**
-   * Looks up a key for a given user
+   * Check if a key is already existing for a given user
    *
    * @param user
    * @return
    */
-  Optional<UserApiKey> getKeyForUser(User user);
+  boolean isKeyExistingForUser(User user);
+
+  /**
+   * Calculate the age of an UserApiKey
+   *
+   * @param user
+   * @return if existing, returns a number of days since key creation, otherwise 0
+   */
+  long calculateApiKeyAgeForUser(User user);
+
+  /**
+   * Perform the SHA256 hashing of the apiKey for a given user before saving the object on the
+   * database
+   *
+   * @param user
+   * @param apiKey
+   * @return the apiKey object with the clear apiKey secret
+   */
+  UserApiKey hashAndSaveApiKeyForUser(User user, UserApiKey apiKey);
 }

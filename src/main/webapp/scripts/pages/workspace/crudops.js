@@ -71,6 +71,7 @@ function setUpCrudOps(args) {
   createMoveDialog(onmove, args.moveparams);
   createRenameDialog();
   createTagDialog();
+  createCompareDialog();
 
   registerCopyRecordsHandler(oncopy);
   registerDeleteRecordsHandler(onDelete);
@@ -226,6 +227,7 @@ function calculateOptionDisplay(chbox$) {
   var cantDelete = chboxTDs$.find("input[name='isDeletable'][value='false']").size() > 0;
   var cantRename = chboxTDs$.find("input[name='isRenamable'][value='false']").size() > 0;
   var cantExport = chboxTDs$.find("input[name='isExportable'][value='false']").size() > 0;
+  const isDocument = chboxTDs$.find("input[name='recordType'][value='NORMAL']").size() === chbox$.size();
 
   $('#viewRevisions').toggle(!isAtLeastOneFolder);
   $('#shareRecord').toggle(!cantShare);
@@ -236,6 +238,7 @@ function calculateOptionDisplay(chbox$) {
   $('#renameRecords').toggle(!cantRename);
   $('.crudopsAction.exportIcon').toggle(!cantExport);
   $('#tagRecords').toggle(!cantTag);
+  $('#compareRecords').toggle(isDocument);
 
   var isSingleTemplate = chboxSize === 1 && chboxTRs$.find("input[name='recordType']").val() === 'NORMAL:TEMPLATE';
   $('#createDocFromTemplate').toggle(isSingleTemplate);
@@ -456,6 +459,15 @@ function createTagDialog() {
 
     var selected = getSelectedIdsNamesAndTypes();
     window.dispatchEvent(new CustomEvent("OPEN_TAG_DIALOG", { detail: { ids: selected.ids }}));
+  });
+}
+
+function createCompareDialog() {
+  $('body').on('click', '#compareRecords', function (e) {
+    e.preventDefault();
+
+    var selected = getSelectedIdsNamesAndTypes();
+    window.dispatchEvent(new CustomEvent("OPEN_COMPARE_DIALOG", { detail: { ids: selected.ids }}));
   });
 }
 

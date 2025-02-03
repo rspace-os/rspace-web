@@ -8,15 +8,15 @@ import LoadingList from "../components/FetchOnScroll/LoadingList";
 import ScrollBox from "./ScrollBox";
 import { observer } from "mobx-react-lite";
 import React, { type Node, type ComponentType, useContext } from "react";
-import useStores from "../../stores/use-stores";
+import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 
 function ResultsCards(): Node {
   const { search } = useContext(SearchContext);
-  const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
     <ScrollBox
-      overflowY={uiStore.isSingleColumnLayout ? "unset" : "auto"}
+      overflowY={isSingleColumnLayout ? "unset" : "auto"}
       sx={{ pb: 0.5 }}
     >
       <CardList records={search.filteredResults} />

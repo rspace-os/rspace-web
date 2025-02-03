@@ -122,10 +122,13 @@ public class InventoryMoveHelper {
             targetLocation.getId(), targetLocation.getCoordX(), targetLocation.getCoordY());
     if (targetDbLocationOpt.isPresent()) {
       ContainerLocation targetDbLocation = targetDbLocationOpt.get();
-      Long currentLocationId =
-          dbRecord.getParentLocation() == null ? null : dbRecord.getParentLocation().getId();
-      if (targetDbLocation.getId().equals(currentLocationId)) {
-        return null; // moving to the same location
+      if (targetDbLocation.getId()
+          != null) { // could be null for grid location that is not saved to db yet
+        Long currentLocationId =
+            dbRecord.getParentLocation() == null ? null : dbRecord.getParentLocation().getId();
+        if (targetDbLocation.getId().equals(currentLocationId)) {
+          return null; // moving to the same location
+        }
       }
     } else if (targetContainer.isImageLayoutContainer()) {
       throw new ApiRuntimeException("move.failure.target.image.container.location.not.found");

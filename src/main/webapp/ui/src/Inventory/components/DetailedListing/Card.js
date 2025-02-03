@@ -28,7 +28,7 @@ import SearchContext from "../../../stores/contexts/Search";
 import useStores from "../../../stores/use-stores";
 import { globalStyles, type Theme } from "../../../theme";
 import clsx from "clsx";
-import ImagePreview from "../../components/ImagePreview";
+import ImagePreview from "../../../components/ImagePreview";
 import { StyledMenu } from "../../../components/StyledMenu";
 import Portal from "@mui/material/Portal";
 import NavigateContext from "../../../stores/contexts/Navigate";
@@ -78,7 +78,6 @@ const Details = withStyles<{| record: InventoryRecord |}, { location: string }>(
   })
 )(({ record, classes }) => (
   <DescriptionList
-    rightAlignDds
     content={[
       ...(record.readAccessLevel === "full" && record instanceof ContainerModel
         ? [

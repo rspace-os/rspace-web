@@ -45,9 +45,6 @@ define(function() {
                 'evernote.available'
         ]);
 
-        _printCategory('Publications');
-        _printSettings([ 'mendeley.available' ]);
-
         _printCategory('Protocols');
         _printSettings([ 'protocols_io.available' ]);
         _printSettings([ 'jove.available' ]);
@@ -60,6 +57,7 @@ define(function() {
 
         _printCategory('Inventory');
         _printSettings([ 'inventory.available' ]);
+        _printSettings([ 'fieldmark.available' ]);
 
         _printCategory('Communication');
         _printSettings([ 'msteams.available' ]);
@@ -73,6 +71,7 @@ define(function() {
 
         _printCategory('Repositories');
         _printSettings([ 'dataverse.available' ]);
+        _printSettings([ 'digitalCommonsData.available' ]);
         _printSettings([ 'github.available' ]);
         _printSettings([ 'figshare.available' ]);
         _printSettings([ 'pyrat.available' ]);
@@ -83,9 +82,6 @@ define(function() {
 
         _printCategory('API');
         _printSettings([ 'api.available' ]);
-
-        _printCategory('Onboarding');
-        _printSettings([ 'onboarding.available' ]);
 
         _printCategory('Lab Group Settings');
         _printSettings([ 'pi_can_edit_all_work_in_labgroup' ]);

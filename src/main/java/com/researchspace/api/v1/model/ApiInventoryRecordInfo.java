@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Barcode;
@@ -145,6 +146,10 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   /* to use when generating image/thumbnail links on controller level, but not sent to front-end */
   @JsonIgnore private boolean customImage;
 
+  @JsonIgnore private FileProperty imageFileProperty;
+
+  @JsonIgnore private FileProperty thumbnailFileProperty;
+
   @Size(max = 10_000_000, message = "Image cannot be larger than 10MB")
   @JsonProperty(value = "newBase64Image", access = Access.WRITE_ONLY)
   private String newBase64Image;
@@ -201,6 +206,8 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
     setType(ApiInventoryRecordType.valueOf(invRecord.getType().toString()));
     setSharingMode(ApiInventorySharingMode.valueOf(invRecord.getSharingMode().toString()));
     setCustomImage(invRecord.getImageFileProperty() != null);
+    setImageFileProperty(invRecord.getImageFileProperty());
+    setThumbnailFileProperty(invRecord.getThumbnailFileProperty());
 
     for (InventoryFile invFile : invRecord.getAttachedFiles()) {
       attachments.add(new ApiInventoryFile(invFile));
@@ -541,24 +548,34 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
    */
   public void buildAndAddInventoryRecordLinks(UriComponentsBuilder baseUrlBuilder) {
     if (isCustomImage()) {
-      buildAndAddInventoryImageLink(ApiLinkItem.IMAGE_REL, baseUrlBuilder);
-      buildAndAddInventoryImageLink(ApiLinkItem.THUMBNAIL_REL, baseUrlBuilder);
+      if (getImageFileProperty() != null) {
+        addMainImageLink(baseUrlBuilder);
+      }
+      if (getThumbnailFileProperty() != null) {
+        addThumbnailLink(baseUrlBuilder);
+      }
     }
     buildAndAddSelfLink(getSelfLinkEndpoint(), "" + getId(), baseUrlBuilder);
   }
 
   protected abstract String getSelfLinkEndpoint();
 
-  void buildAndAddInventoryImageLink(String imageType, UriComponentsBuilder baseUrlBuilder) {
-    addLink(buildInventoryImageLink(imageType, baseUrlBuilder, getId(), getSelfLinkEndpoint()));
+  void addMainImageLink(UriComponentsBuilder baseUrlBuilder) {
+    String imageType = ApiLinkItem.IMAGE_REL;
+    String contentsHash = getImageFileProperty().getContentsHash();
+    addImageLink(baseUrlBuilder, contentsHash, imageType);
   }
 
-  ApiLinkItem buildInventoryImageLink(
-      String imageType, UriComponentsBuilder baseUrlBuilder, Long invRecId, String endpointName) {
-    String imagePath =
-        endpointName + "/" + invRecId + "/" + imageType + "/" + getLastModifiedMillis();
+  void addThumbnailLink(UriComponentsBuilder baseUrlBuilder) {
+    String imageType = ApiLinkItem.THUMBNAIL_REL;
+    String contentsHash = getThumbnailFileProperty().getContentsHash();
+    addImageLink(baseUrlBuilder, contentsHash, imageType);
+  }
+
+  void addImageLink(UriComponentsBuilder baseUrlBuilder, String contentsHash, String imageType) {
+    String imagePath = "/files/image/" + contentsHash;
     String imageLink = buildLinkForForPath(baseUrlBuilder, imagePath);
-    return ApiLinkItem.builder().link(imageLink).rel(imageType).build();
+    addLink(ApiLinkItem.builder().link(imageLink).rel(imageType).build());
   }
 
   String buildLinkForForPath(UriComponentsBuilder baseUrlBuilder, String imagePath) {

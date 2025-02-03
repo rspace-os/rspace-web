@@ -1,6 +1,5 @@
 package com.researchspace.webapp.filter;
 
-import java.util.Collections;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
@@ -16,6 +15,13 @@ public interface RemoteUserRetrievalPolicy {
    */
   String SSO_DUMMY_PASSWORD = "user1234";
 
+  public enum RemoteUserAttribute {
+    FIRST_NAME,
+    LAST_NAME,
+    EMAIL,
+    IS_ALLOWED_PI_ROLE
+  }
+
   /**
    * Supplied with an {@link HttpServletRequest}, this method will attempt to extract the remote
    * user name.
@@ -28,7 +34,7 @@ public interface RemoteUserRetrievalPolicy {
   /**
    * Because the database requires a password for non SSO environments, in most SSO implementations
    * this will return a dummy placeholder value, since RSpace will never actually know the real SSO
-   * password (and nor should we).
+   * password (and nor should it).
    *
    * <p>For signing/verification password, see details of RSPAC-1206
    *
@@ -39,7 +45,5 @@ public interface RemoteUserRetrievalPolicy {
   /**
    * Get a map of additional remote attributes Default behaviour is to return an immutable empty map
    */
-  default Map<String, String> getOtherRemoteAttributes(HttpServletRequest httpRequest) {
-    return Collections.emptyMap();
-  }
+  Map<RemoteUserAttribute, String> getOtherRemoteAttributes(HttpServletRequest httpRequest);
 }

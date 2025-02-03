@@ -52,6 +52,15 @@ public interface UserAppConfigManager extends GenericManager<UserAppConfig, Long
   UserAppConfig getByAppName(String appName, User user);
 
   /**
+   * Retrieve an {@link AppConfigElementSet} for the given appConfigSetDataId
+   *
+   * @param appConfigSetDataId
+   * @return
+   * @throws IllegalStateException if appName is unknown
+   */
+  AppConfigElementSet getAppConfigElementSetById(Long appConfigSetDataId);
+
+  /**
    * Retrieves an {@link AppConfigElementSet} by its id
    *
    * @param appConfigElementSetId

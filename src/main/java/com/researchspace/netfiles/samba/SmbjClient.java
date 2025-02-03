@@ -184,10 +184,12 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
 
     Date dt = f.getLastWriteTime().toDate();
     node.setFileDate(sdf.format(dt));
+    node.setModificationDateMillis(dt.getTime());
 
     node.setIsFolder(isFolder);
     if (!isFolder) {
       node.setFileSize("" + f.getEndOfFile());
+      node.setFileSizeBytes(f.getEndOfFile());
     }
 
     return node;

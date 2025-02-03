@@ -5,18 +5,19 @@
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, type Element } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AttachmentField from "../AttachmentField";
 import TextField from "@mui/material/TextField";
 import FileField from "../FileField";
-import AttachmentModel from "../../../stores/models/AttachmentModel";
+import { ExistingAttachment } from "../../../stores/models/AttachmentModel";
 import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 import { containerAttrs } from "../../../stores/models/__tests__/ContainerModel/mocking";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
+import { type Attachment } from "../../../stores/definitions/Attachment";
 
 jest.mock("@mui/material/TextField", () => jest.fn(() => <div></div>));
 jest.mock("../FileField", () => jest.fn(() => <div></div>));
@@ -27,7 +28,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const expectLabel = (text: string) => (container: Node) =>
+const expectLabel = (text: string) => (container: Element) =>
   expect(container).toHaveTextContent(text);
 
 const expectTextField = (value: string) => () =>
@@ -42,7 +43,7 @@ const activeResult = new ContainerModel(new MemoisedFactory(), {
 });
 
 const makeAttachment = (attrs: ?{| name: string |}) =>
-  new AttachmentModel(
+  new ExistingAttachment(
     {
       id: 0,
       name: "",
@@ -83,7 +84,7 @@ describe("AttachmentField", () => {
         disabled: typeof undefined | boolean,
         value: string,
         noValueLabel: typeof undefined | string,
-        expectFn: (container: Node) => void,
+        expectFn: (container: Element) => void,
       |}) => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
@@ -158,7 +159,7 @@ describe("AttachmentField", () => {
         showNoAttachmentLabel,
       }: {|
         disableFileUpload: typeof undefined | boolean,
-        attachment: ?AttachmentModel,
+        attachment: ?Attachment,
         showFileField: boolean,
         showNoAttachmentLabel: boolean,
       |}) => {
@@ -202,7 +203,7 @@ describe("AttachmentField", () => {
     );
   });
   describe("File viewer", () => {
-    describe("attachment = AttachmentModel", () => {
+    describe("attachment = ExistingAttachment", () => {
       test("Attachment's filename should be shown.", () => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>

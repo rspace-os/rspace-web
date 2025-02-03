@@ -85,7 +85,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void searchForDocumentsInvalidPaginationIsHandled() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     createBasicDocumentInRootFolderWithText(anyUser, "test");
 
     MvcResult invalidQuery1 =
@@ -134,7 +134,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   public void searchForDocuments() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     StructuredDocument testDoc = createBasicDocumentInRootFolderWithText(anyUser, "first test");
     createBasicDocumentInRootFolderWithText(anyUser, "second test");
@@ -195,7 +195,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void searchForDocumentsByRecord() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     StructuredDocument otherDocument =
         createBasicDocumentInRootFolderWithText(anyUser, "targetText");
     Folder targetFolder =
@@ -222,7 +222,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void foldersNotReturned() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     Folder targetFolder =
         doInTransaction(() -> createFolder(getRootFolderForUser(anyUser), anyUser, "target"));
 
@@ -236,7 +236,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void searchForDocumentsByDate() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     StructuredDocument testDoc = createBasicDocumentInRootFolderWithText(anyUser, "target");
     String queryFormat =
@@ -287,7 +287,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void getDocumentCSVById() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "apiTest");
 
     MvcResult result =
@@ -307,7 +307,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   public void getDocumentById() throws Exception {
     TestGroup tg1 = createTestGroup(2);
     User anyUser = tg1.getUserByPrefix("u1");
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     logoutAndLoginAs(anyUser);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "apiTest");
 
@@ -347,7 +347,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
     // now login as u2. Can get document, but parentFolder is null, as they are not the owner.
     User user2 = tg1.getUserByPrefix("u2");
-    String apiKey2 = createApiKeyForuser(user2);
+    String apiKey2 = createNewApiKeyForUser(user2);
     MvcResult result2 = this.mockMvc.perform(getDocById(user2, apiKey2, doc.getId())).andReturn();
     apiDoc = getFromJsonResponseBody(result2, ApiDocument.class);
     assertNull(apiDoc.getParentFolderId());
@@ -357,7 +357,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   public void getDocumentWithListOfMaterials() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     logoutAndLoginAs(anyUser);
 
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "apiTest");
@@ -423,7 +423,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(otherUser, "apiTest");
     EcatDocumentFile galleryFile = addDocumentToGallery(otherUser);
     logout();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     // not-existent
     this.mockMvc
         .perform(createBuilderForGet(API_VERSION.ONE, apiKey, "/documents/12345", anyUser))
@@ -453,7 +453,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void createUpdateDeleteBasicDocument() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     RSpaceTestUtils.logout();
     String emptyDocJSON = "{}";
     MvcResult result =
@@ -546,7 +546,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void createAllFieldTypesDocument() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     RSForm apiForm =
         recordFactory.createFormForSeleniumTests("API all fields form", "for API tests", anyUser);
@@ -622,7 +622,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             sd.getId(), anyFolder.getId());
     ApiDocument post = createDefaultOKBasicDocumentPost();
     post.getFields().get(0).setContent(content);
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     MvcResult result =
         this.mockMvc
             .perform(createBuilderForPostWithJSONBody(apiKey, "/documents", anyUser, post))
@@ -636,7 +636,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   public void createNewDocumentErrorMessages() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // problem with validating ApiDocument model (name too long)
     String tooLongName = StringUtils.leftPad("test", 256, '*');
@@ -795,7 +795,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void createNewDocumentInApiFolder() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiDocument doc = createDefaultOKBasicDocumentPost();
 
     String json = JacksonUtil.toJson(doc);
@@ -817,7 +817,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void createNewDocumentInChosenTargetFolder() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     Folder newTarget = createSubFolder(getRootFolderForUser(anyUser), "subfolder", anyUser);
     assertEquals(0, getRecordCountInFolderForUser(newTarget.getId()));
     ApiDocument doc = createDefaultOKBasicDocumentPost();
@@ -878,7 +878,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   public void editDocumentErrorMessages() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "testDoc1");
 
     // problem with validating ApiDocument model (tags too long)
@@ -923,7 +923,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @RunIfSystemPropertyDefined("nightly")
   public void testInsertingChemistryFileViaAPI() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     EcatChemistryFile chemistryFile = addChemistryFileToGallery("Aminoglutethimide.mol", anyUser);
     // basic doc with field provided, but content pointing to unaccessible attachment

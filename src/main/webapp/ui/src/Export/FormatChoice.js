@@ -90,21 +90,31 @@ function FormatChoice({
         exportConfigUpdate(
           "repoData",
           repos.flatMap((repo) => {
-            if (repo.displayName === "Figshare")
-              return { repoCfg: -1, ...repo };
-            if (repo.displayName === "Dryad") return { repoCfg: -1, ...repo };
-            if (repo.displayName === "Zenodo") return { repoCfg: -1, ...repo };
-
-            const keys = Object.keys(repo.options);
-            if (keys.length) {
-              return keys.map((k) => ({
-                repoCfg: k,
-                // $FlowExpectedError[incompatible-use] It is not clear why this is here
-                label: repo.options[k]._label,
-                ...repo,
-              }));
+            if (repo.repoName === "app.dataverse") {
+              /*
+               * On the apps page, users can configure multiple dataverses, so
+               * here we process that so each dataverse config is treated as a
+               * separate repository. The `keys` for each option is the string
+               * of a integer, and so too is `repoCfg`, but that is not really
+               * an important detail.
+               */
+              const keys = Object.keys(repo.options);
+              if (keys.length) {
+                return keys.map((k) => ({
+                  repoCfg: k,
+                  // $FlowExpectedError[incompatible-use]
+                  label: repo.options[k]._label,
+                  ...repo,
+                }));
+              }
+              return [];
             }
-            return [];
+            /*
+             * On the apps page, users can only configure a just one
+             * destination for each of the other repository services so we
+             * just copy the object from the API
+             */
+            return { repoCfg: -1, ...repo };
           })
         );
       })

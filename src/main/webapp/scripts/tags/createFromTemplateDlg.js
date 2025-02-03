@@ -4,6 +4,30 @@
 
 var currentFolderId;
 
+function submit() {
+  var $selected = $('#createFromTemplateDlg .active:first');
+  if ($selected.length === 0) {
+    apprise('Please select a template by clicking on it');
+    return;
+  }
+
+  var templateId = $selected.data('id');
+  var docName = $("#createFromTemplateNameInput").val();
+
+  if (!docName || docName.trim().length === 0 || docName.match(/\//) ) {
+    apprise("Please enter a name - excluding '/' characters.");
+    return false;
+  }
+
+  var $form = $('#createFromTemplateForm');
+  $form.attr('action', "/workspace/editor/structuredDocument/createFromTemplate/" + currentFolderId);
+  $form.find('#createFromTemplateId').val(templateId);
+  $form.find('#createFromTemplateNewName').val(docName);
+  $form.submit();
+
+  RS.blockPage('Creating a document...');
+}
+
 function initCreateFromTemplateDlg() {
   $('#createFromTemplateDlg').dialog({
     modal : true,
@@ -17,27 +41,7 @@ function initCreateFromTemplateDlg() {
         text: 'Create',
         id: 'createFromTemplateDlgCreateBtn',
         click: function() { 
-          var $selected = $('#createFromTemplateDlg .active:first');
-          if ($selected.length === 0) {
-            apprise('Please select a template by clicking on it');
-            return;
-          }
-              
-          var templateId = $selected.data('id');
-          var docName = $("#createFromTemplateNameInput").val();
-              
-          if (!docName || docName.trim().length === 0 || docName.match(/\//) ) {
-            apprise("Please enter a name - excluding '/' characters.");
-            return false;
-          }
-              
-          var $form = $('#createFromTemplateForm');
-          $form.attr('action', "/workspace/editor/structuredDocument/createFromTemplate/" + currentFolderId);
-          $form.find('#createFromTemplateId').val(templateId);
-          $form.find('#createFromTemplateNewName').val(docName);                    
-          $form.submit();
-          
-          RS.blockPage('Creating a document...');
+          submit();
         }
       }
     },
@@ -47,6 +51,11 @@ function initCreateFromTemplateDlg() {
   });
     
   $('#templateDlgTabs').tabs();
+
+  $('#createFromTemplateNameForm').submit(function() {
+    submit();
+    return false;
+  });
   
   $('#templateFilterForm').submit(function() {
     var filterTerm = $('#templateFilterInput').val();

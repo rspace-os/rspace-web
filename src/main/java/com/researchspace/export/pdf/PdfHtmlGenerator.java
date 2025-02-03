@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;
@@ -36,30 +37,33 @@ public class PdfHtmlGenerator {
 
   private final VelocityEngine velocityEngine;
 
+  private HTMLUnicodeFontProcesser htmlUnicodeFontProcesser;
+
   public static final int MAX_TITLE_WIDTH = 50;
 
   public final SimpleDateFormat simpleDateFmt = new SimpleDateFormat("yyyy-MM-dd");
 
   @Autowired
-  public PdfHtmlGenerator(VelocityEngine velocityEngine) {
+  public PdfHtmlGenerator(VelocityEngine velocityEngine, HTMLUnicodeFontProcesser fontProcessor) {
     this.velocityEngine = velocityEngine;
+    this.htmlUnicodeFontProcesser = fontProcessor;
   }
 
   public String prepareHtml(
       ExportProcesserInput documentData, IRSpaceDoc doc, ExportToFileConfig config) {
-    String pageSize = config.getPageSize().equals("A4") ? "A4" : "LETTER";
-    String docOwner = String.format("Owner: %s", doc.getOwner().getFullName());
     String docTitle = StringUtils.abbreviate(doc.getName(), MAX_TITLE_WIDTH);
+    String pageSize = config.getPageSize().equals("A4") ? "A4" : "LETTER";
     String footerFormattedDate = formatFooterDate(doc, config);
-    String styles =
-        makeStyleElement(
-            docOwner,
-            docTitle,
-            pageSize,
-            !config.isIncludeFooterAtEndOnly(),
-            config.getExporter().getFullName(),
-            footerFormattedDate);
-    String html = addStyleElement(documentData.getDocumentAsHtml(), styles);
+
+    String html = documentData.getDocumentAsHtml();
+    html =
+        addStyleElement(
+            html,
+            makeHtmlStyleElement(
+                pageSize, !config.isIncludeFooterAtEndOnly(), footerFormattedDate));
+    html =
+        addEachPageElems(
+            html, doc.getOwner().getFullName(), docTitle, config.getExporter().getFullName());
     html = prepareTables(html);
     html = addDocExtras(documentData, config, html);
     if (config.isIncludeFooterAtEndOnly()) {
@@ -82,22 +86,27 @@ public class PdfHtmlGenerator {
     return footerFormattedDate;
   }
 
-  private String makeStyleElement(
-      String docOwner,
-      String docTitle,
-      String pageSize,
-      boolean footerEachPage,
-      String exporterFullName,
-      String footerDate) {
+  private String makeHtmlStyleElement(String pageSize, boolean footerEachPage, String footerDate) {
     Map<String, Object> context = new HashMap<>();
     context.put("pageSize", pageSize);
-    context.put("docOwner", docOwner);
-    context.put("docTitle", docTitle);
     context.put("footerEachPage", footerEachPage);
-    context.put("exporterFullName", exporterFullName);
     context.put("footerDate", footerDate);
     return VelocityEngineUtils.mergeTemplateIntoString(
         velocityEngine, "pdf/styles.vm", "UTF-8", context);
+  }
+
+  private String addEachPageElems(
+      String html, String docOwner, String docTitle, String exporterFullName) {
+
+    Map<String, Object> context = new HashMap<>();
+    context.put("docOwner", StringEscapeUtils.escapeHtml(docOwner));
+    context.put("docTitle", StringEscapeUtils.escapeHtml(docTitle));
+    context.put("exporterFullName", StringEscapeUtils.escapeHtml(exporterFullName));
+    String runningPageHtml =
+        VelocityEngineUtils.mergeTemplateIntoString(
+            velocityEngine, "pdf/runningPageElems.vm", "UTF-8", context);
+    runningPageHtml = htmlUnicodeFontProcesser.apply(runningPageHtml);
+    return appendToStartOfBody(html, runningPageHtml);
   }
 
   private Document stringToJsoupDoc(String html) {
@@ -245,6 +254,13 @@ public class PdfHtmlGenerator {
     Document document = stringToJsoupDoc(html);
     Element head = document.head();
     head.append(styles);
+    return document.toString();
+  }
+
+  private String appendToStartOfBody(String html, String toAppend) {
+    Document document = stringToJsoupDoc(html);
+    List<Node> bodyChildren = document.selectFirst("body").childNodes();
+    bodyChildren.get(0).before(toAppend);
     return document.toString();
   }
 

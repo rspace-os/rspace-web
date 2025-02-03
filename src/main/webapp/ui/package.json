@@ -30,9 +30,10 @@
     "@babel/runtime": "=7.24.6",
     "@testing-library/jest-dom": "=6.2.0",
     "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^14.4.3",
+    "@testing-library/user-event": "^14.5.2",
     "axios-mock-adapter": "^1.20.0",
     "babel-loader": "=9.1.2",
+    "babel-plugin-transform-import-meta": "^2.2.1",
     "canvas": "^2.11.2",
     "clean-webpack-plugin": "=4.0.0",
     "css-loader": "=6.7.1",
@@ -41,6 +42,7 @@
     "eslint-config-prettier": "=8.6.0",
     "eslint-plugin-ft-flow": "^3.0.10",
     "eslint-plugin-jest-dom": "^4.0.3",
+    "eslint-plugin-jsdoc": "^50.6.0",
     "eslint-plugin-prettier": "=4.2.1",
     "eslint-plugin-react": "=7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -53,6 +55,7 @@
     "jest-environment-jsdom": "=29.7.0",
     "prettier": "=2.8.3",
     "style-loader": "=3.3.3",
+    "url": "^0.11.4",
     "webpack": "=5.89.0",
     "webpack-cli": "=5.1.4"
   },
@@ -67,10 +70,11 @@
     "@fortawesome/free-regular-svg-icons": "=6.1.1",
     "@fortawesome/free-solid-svg-icons": "=6.1.1",
     "@fortawesome/react-fontawesome": "=0.2.0",
+    "@intercom/messenger-js-sdk": "^0.0.14",
     "@mui/icons-material": "=5.15.10",
     "@mui/lab": "^5.0.0-alpha.170",
     "@mui/material": "=5.15.14",
-    "@mui/x-data-grid": "=6.19.1",
+    "@mui/x-data-grid": "=7.12.1",
     "@mui/x-date-pickers": "=5.0.16",
     "@mui/x-tree-view": "^7.6.1",
     "@tinymce/tinymce-react": "=4.3.2",
@@ -86,7 +90,7 @@
     "history": "=5.3.0",
     "i": "^0.3.7",
     "immutability-helper": "=3.1.1",
-    "jest-axe": "^7.0.1",
+    "jest-axe": "9.0.0",
     "jest-junit": "=15.0.0",
     "jsdom": "^20.0.3",
     "jwt-decode": "=3.1.2",
@@ -101,7 +105,9 @@
     "react-autosuggest": "=10.1.0",
     "react-device-detect": "=2.2.3",
     "react-dom": "=18.2.0",
+    "react-image-crop": "^11.0.7",
     "react-leaflet": "^4.2.1",
+    "react-pdf": "^9.1.0",
     "react-photoswipe-gallery": "=2.2.7",
     "react-resize-observer": "^1.1.1",
     "react-router-dom": "=6.8.0",
@@ -130,11 +136,14 @@
     "testMatch": [
       "**/?*.test.js"
     ],
-    "testTimeout": 10000,
+    "testTimeout": 20000,
     "reporters": [
       "default",
       "jest-junit",
       "<rootDir>/__tests__/reporters/slowest"
-    ]
+    ],
+    "testEnvironmentOptions": {
+      "resources": "usable"
+    }
   }
 }

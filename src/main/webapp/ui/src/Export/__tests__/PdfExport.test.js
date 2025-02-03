@@ -30,7 +30,7 @@ describe("PdfExport", () => {
           pageSize: "A4",
           defaultPageSize: "A4",
           dateType: "EXP",
-          includeFooter: false,
+          includeFooterAtEndOnly: false,
           setPageSizeAsDefault: false,
           includeFieldLastModifiedDate: false,
         }}

@@ -9,14 +9,13 @@
 import {
   within,
   render,
-  // $FlowExpectedError[missing-export] We may have the wrong version of the flow-typed definitions
   queries,
-  // $FlowExpectedError[missing-export] We may have the wrong version of the flow-typed definitions
-  type GetsAndQueries,
+  type Queries,
+  type Element,
 } from "@testing-library/react";
 
 export function getIndexOfTableCell(
-  tablerow: HTMLElement,
+  tablerow: Element,
   name: string | RegExp
 ): number {
   const cell = within(tablerow).getByRole("columnheader", { name });
@@ -86,9 +85,9 @@ export function getIndexOfTableCell(
  * ).toHaveTextContent("Four");
  */
 async function findTableCell(
-  table: HTMLElement,
+  table: Element,
   { columnHeading, rowIndex }: {| columnHeading: string, rowIndex: number |}
-): Promise<HTMLElement> {
+): Promise<Element> {
   const headingRow = (await within(table).findAllByRole("row"))[0];
   if (!headingRow) throw new Error("Table doesn't have a header row.");
 
@@ -108,16 +107,21 @@ async function findTableCell(
   const indexOfColumnHeading = getIndexOfTableCell(headingRow, columnHeading);
 
   const chosenRow = within(table).getAllByRole("row")[rowIndex + 1];
-  return within(chosenRow).getAllByRole("cell")[indexOfColumnHeading];
+
+  let cells = within(chosenRow).queryAllByRole("cell");
+  if (cells.length === 0) cells = within(chosenRow).queryAllByRole("gridcell");
+  return cells[indexOfColumnHeading];
 }
 
 const allQueries = { ...queries, findTableCell, getIndexOfTableCell };
 const customRender: typeof render = (ui, options) =>
+  //$FlowExpectedError[extra-arg] Only here are we allowed to pass additional queries
   render(ui, { queries: { ...queries, findTableCell }, ...options });
+
 const customWithin = (
-  element: HTMLElement,
-  moreQueries: ?{ ... }
-): GetsAndQueries => within(element, { ...allQueries, ...moreQueries });
+  element: Element,
+  //$FlowExpectedError[incompatible-return] Jest partially applied the custom queries with the element passed to `within`
+): {| ...Queries, findTableCell: ({| columnHeading: string, rowIndex: number |}) => Promise<Element>, getIndexOfTableCell: (string | RegExp) => number |} => within(element, { ...allQueries });
 
 // re-export everything
 export * from "@testing-library/react";

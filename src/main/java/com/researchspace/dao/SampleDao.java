@@ -2,6 +2,7 @@ package com.researchspace.dao;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -98,4 +99,8 @@ public interface SampleDao extends GenericDao<Sample, Long> {
 
   /** Should be only called in unit tests (I think). Sets stored default template owner to null. */
   void resetDefaultTemplateOwner();
+
+  List<Sample> getAllUsingImage(FileProperty fileProperty);
+
+  List<Sample> getAllTemplatesUsingImage(FileProperty fileProperty);
 }

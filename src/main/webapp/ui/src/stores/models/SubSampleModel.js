@@ -15,11 +15,12 @@ import {
   type RecordType,
   type Action,
   type InventoryRecord,
+  type CreateOption,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
-import { type AttachmentAttrs } from "./AttachmentModel";
+import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import RecordWithQuantity, {
@@ -107,7 +108,7 @@ export type SubSampleAttrs = {|
   lastModified: ?string,
   modifiedByFullName: ?string,
   deleted: boolean,
-  attachments: Array<AttachmentAttrs>,
+  attachments: Array<AttachmentJson>,
   barcodes: Array<BarcodeAttrs>,
   identifiers: Array<IdentifierAttrs>,
   _links: Array<_LINK>,
@@ -139,6 +140,9 @@ export default class SubSampleModel
   immediateParentContainer: ?ContainerModel;
   lastNonWorkbenchParent: ?string;
   lastMoveDate: ?Date;
+  createOptionsParametersState: {|
+    split: {| key: "split",  copies: number |}
+  |};
 
   constructor(factory: Factory, params: SubSampleAttrs) {
     super(factory);
@@ -152,6 +156,7 @@ export default class SubSampleModel
       immediateParentContainer: observable,
       lastNonWorkbenchParent: observable,
       lastMoveDate: observable,
+      createOptionsParametersState: observable,
       createNote: action,
       paramsForBackend: override,
       updateFieldsState: override,
@@ -168,6 +173,8 @@ export default class SubSampleModel
 
     if (this.recordType === "subSample")
       this.populateFromJson(factory, params, {});
+
+    this.createOptionsParametersState = { split: { key: "split", copies: 2 }};
   }
 
   populateFromJson(
@@ -443,6 +450,31 @@ export default class SubSampleModel
 
   get usableInLoM(): boolean {
     return true;
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    return [
+      {
+        label: "Subsample, by splitting",
+        explanation: this.canEdit ? "New subsamples will be created by diving the quantity of this subsample equally amongst them." : "You do not have permission to edit this subsample.",
+        parameters: [{
+          label: "Number of new subsamples",
+          explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
+          state: this.createOptionsParametersState.split,
+          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
+        }],
+        disabled: !this.canEdit,
+        onReset: () => {
+          this.createOptionsParametersState.split.copies = 2;
+        },
+        onSubmit: () => {
+          return getRootStore().searchStore.search.splitRecord(
+            this.createOptionsParametersState.split.copies,
+            this
+          );
+        },
+      }
+    ];
   }
 }
 

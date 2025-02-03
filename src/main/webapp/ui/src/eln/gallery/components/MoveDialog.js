@@ -12,180 +12,215 @@ import Result from "../../../util/result";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import Grid from "@mui/material/Grid";
 import TreeView from "./TreeView";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import * as FetchingData from "../../../util/fetchingData";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
-import { useGalleryActions, rootDestination } from "../useGalleryActions";
+import {
+  useGalleryActions,
+  rootDestination,
+  folderDestination,
+} from "../useGalleryActions";
 import RsSet from "../../../util/set";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import { type GallerySection } from "../common";
+import { observer } from "mobx-react-lite";
+import PlaceholderLabel from "./PlaceholderLabel";
+import { doNotAwait } from "../../../util/Util";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 type MoveDialogArgs = {|
   open: boolean,
   onClose: () => void,
   section: GallerySection,
   selectedFiles: RsSet<GalleryFile>,
-  refreshListing: () => void,
+
+  /**
+   * A function to refresh the page's main listing after a move operation.
+   * Note that this is distinct from the refreshListing function for refreshing
+   * the tree view inside of the dialog.
+   */
+  refreshListing: () => Promise<void>,
 |};
 
-const MoveDialog = ({
-  open,
-  onClose,
-  section,
-  selectedFiles,
-  refreshListing,
-}: MoveDialogArgs): Node => {
-  const viewport = useViewportDimensions();
-  const { galleryListing } = useGalleryListing({
+const MoveDialog = observer(
+  ({
+    open,
+    onClose,
     section,
-    searchTerm: "",
-    path: [],
-    orderBy: "name",
-    sortOrder: "ASC",
-  });
-  const { moveFiles } = useGalleryActions();
-  const [pathString, setPathString] = React.useState("");
-  const selection = useGallerySelection({
-    onChange: (sel) => {
-      sel.asSet().only.do((file) => {
-        setPathString(file.pathAsString());
+    selectedFiles,
+    refreshListing,
+  }: MoveDialogArgs): Node => {
+    const { isViewportVerySmall } = useViewportDimensions();
+    const { trackEvent } = React.useContext(AnalyticsContext);
+
+    const listingOf = React.useMemo(
+      () => ({
+        tag: "section",
+        section,
+        path: ([]: $ReadOnlyArray<GalleryFile>),
+      }),
+      [section]
+    );
+    const { galleryListing, refreshListing: refreshListingInsideDialog } =
+      useGalleryListing({
+        listingOf,
+        searchTerm: "",
+        orderBy: "name",
+        sortOrder: "ASC",
+        foldersOnly: true,
       });
-    },
-  });
+    const { moveFiles } = useGalleryActions();
+    const selection = useGallerySelection();
 
-  React.useEffect(() => {
-    if (!open) setPathString("");
-  }, [open]);
+    React.useEffect(() => {
+      if (open) void refreshListingInsideDialog();
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - refreshListingInsideDialog will not meaningfully change between renders
+       */
+    }, [open]);
 
-  const [topLevelLoading, setTopLevelLoading] = React.useState(false);
-  const [submitLoading, setSubmitLoading] = React.useState(false);
+    const [topLevelLoading, setTopLevelLoading] = React.useState(false);
+    const [submitLoading, setSubmitLoading] = React.useState(false);
 
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-      }}
-      scroll="paper"
-      fullScreen={viewport.isViewportVerySmall}
-    >
-      <DialogTitle>Move</DialogTitle>
-      <DialogContent sx={{ overflow: "hidden", flexGrow: 0 }}>
-        <DialogContentText variant="body2">
-          Choose a folder, enter a path, or tap the &quot;top-level&quot;
-          button.
-        </DialogContentText>
-      </DialogContent>
-      <DialogContent sx={{ pt: 0 }}>
-        {FetchingData.match(galleryListing, {
-          loading: () => <></>,
-          error: (error) => <>{error}</>,
-          success: (listing) => (
-            <Box sx={{ overflowY: "auto" }}>
-              <TreeView
-                listing={listing}
-                path={[]}
-                selectedSection={section}
-                refreshListing={refreshListing}
-                filter={(file) => file.isFolder && !file.isSnippetFolder}
-                disableDragAndDrop
-                sortOrder="ASC"
-                orderBy="name"
-              />
-            </Box>
-          ),
-        })}
-      </DialogContent>
-      <DialogActions>
-        <Grid container spacing={1} direction="column">
-          <Grid item>
-            <TextField
-              value={pathString}
-              onChange={({ target: { value } }) => {
-                setPathString(value);
-              }}
-              fullWidth
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">Path</InputAdornment>
-                ),
-              }}
-              placeholder="Tap a folder or type a path here"
-            />
-          </Grid>
-          <Grid item>
-            <Stack direction="row" spacing={1}>
-              <SubmitSpinnerButton
-                onClick={() => {
-                  setTopLevelLoading(true);
-                  void moveFiles(selectedFiles)
-                    .to({
-                      destination: rootDestination(),
-                      section,
-                    })
-                    .then(() => {
-                      setTopLevelLoading(false);
-                      refreshListing();
-                      onClose();
-                    });
-                }}
-                disabled={topLevelLoading}
-                loading={topLevelLoading}
-                label="Make top-level"
-              />
-              <Box flexGrow={1}></Box>
-              <Button
-                onClick={() => {
+    function computeValidation() {
+      const files = selection.asSet();
+      if (files.isEmpty)
+        return Result.Error<null>([new Error("No folder is selected.")]);
+      if (files.size > 1)
+        return Result.Error<null>([
+          new Error("More than one folder is selected."),
+        ]);
+      return Result.Ok(null);
+    }
+
+    const selectedFileIds = selectedFiles.map(({ id }) => id);
+    function filterFile(file: GalleryFile) {
+      if (!file.isFolder) return "hide";
+      if (file.isSnippetFolder) return "hide";
+      if (selectedFileIds.has(file.id)) return "disabled";
+      return "enabled";
+    }
+
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+        }}
+        scroll="paper"
+        fullScreen={isViewportVerySmall}
+      >
+        <DialogTitle>Move</DialogTitle>
+        <DialogContent sx={{ overflow: "hidden", flexGrow: 0 }}>
+          <DialogContentText variant="body2">
+            Choose a folder, enter a path, or tap the &quot;top-level&quot;
+            button.
+          </DialogContentText>
+        </DialogContent>
+        <DialogContent sx={{ pt: 0 }}>
+          <Box sx={{ overflowY: "auto" }}>
+            {FetchingData.match(galleryListing, {
+              loading: () => <PlaceholderLabel>Loading...</PlaceholderLabel>,
+              error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
+              success: (listing) => (
+                <TreeView
+                  listing={listing}
+                  path={[]}
+                  selectedSection={section}
+                  refreshListing={refreshListing}
+                  filter={filterFile}
+                  disableDragAndDrop
+                  sortOrder="ASC"
+                  orderBy="name"
+                  foldersOnly
+                />
+              ),
+            })}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Stack direction="row" spacing={1}>
+            <SubmitSpinnerButton
+              onClick={doNotAwait(async () => {
+                setTopLevelLoading(true);
+                try {
+                  await moveFiles(section, rootDestination(), selectedFiles);
+                  void refreshListing();
                   onClose();
-                }}
-              >
-                Cancel
-              </Button>
-              <ValidatingSubmitButton
-                loading={submitLoading}
-                onClick={() => {
-                  setSubmitLoading(true);
-                  void moveFiles(selectedFiles)
-                    .toDestinationWithPath(section, pathString)
-                    .then(() => {
-                      setSubmitLoading(false);
-                      refreshListing();
-                      onClose();
-                    });
-                }}
-                validationResult={(() => {
-                  const files = selection.asSet();
-                  if (files.isEmpty && pathString === "")
-                    return Result.Error([new Error("No folder is selected.")]);
-                  if (files.size > 1)
-                    return Result.Error([
-                      new Error("More than one folder is selected."),
-                    ]);
-                  return Result.Ok(null);
-                })()}
-              >
-                Move
-              </ValidatingSubmitButton>
-            </Stack>
-          </Grid>
-        </Grid>
-      </DialogActions>
-    </Dialog>
-  );
-};
+                  trackEvent("user:moved:files:gallery", {
+                    count: selectedFiles.size,
+                  });
+                } finally {
+                  setTopLevelLoading(false);
+                }
+              })}
+              disabled={topLevelLoading}
+              loading={topLevelLoading}
+              label="Make top-level"
+            />
+            <Box flexGrow={1}></Box>
+            <Button
+              onClick={() => {
+                onClose();
+              }}
+            >
+              Cancel
+            </Button>
+            <ValidatingSubmitButton
+              loading={submitLoading}
+              onClick={doNotAwait(async () => {
+                setSubmitLoading(true);
+                try {
+                  const destinationFolder = selection
+                    .asSet()
+                    .only.toResult(
+                      () =>
+                        new Error(
+                          "Impossible; submit button requires a selection of one"
+                        )
+                    )
+                    .elseThrow();
+                  await moveFiles(
+                    section,
+                    folderDestination(destinationFolder),
+                    selectedFiles
+                  );
+                  void refreshListing();
+                  onClose();
+                  trackEvent("user:moved:files:gallery", {
+                    count: selectedFiles.size,
+                  });
+                } finally {
+                  setSubmitLoading(false);
+                }
+              })}
+              validationResult={computeValidation()}
+            >
+              Move
+            </ValidatingSubmitButton>
+          </Stack>
+        </DialogActions>
+      </Dialog>
+    );
+  }
+);
 
+/**
+ * A dialog for moving files between folders.
+ *
+ * Note that the dialog is added to the DOM as soon as the component is
+ * rendered, and will make network requests to fetch the folder structure
+ * immediately.
+ */
+// eslint-disable-next-line react/display-name -- This is a wrapper component
 export default (
   props: $Diff<MoveDialogArgs, {| selectedFiles: mixed |}>
 ): Node => {
   const selection = useGallerySelection();
   return (
-    <GallerySelection>
+    <GallerySelection onlyAllowSingleSelection>
       <MoveDialog {...props} selectedFiles={selection.asSet()} />
     </GallerySelection>
   );

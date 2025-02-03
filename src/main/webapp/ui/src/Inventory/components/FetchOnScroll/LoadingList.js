@@ -6,7 +6,7 @@ import Grid from "@mui/material/Grid";
 import BatchGridContainer from "./BatchGridContainer";
 import { sleep } from "../../../util/Util";
 import { take, incrementForever } from "../../../util/iterators";
-import useStores from "../../../stores/use-stores";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 type LoadingListArgs = {|
   onVisible: () => void,
@@ -24,7 +24,7 @@ function LoadingList({
   loading,
 }: LoadingListArgs): Node {
   const ref = React.useRef<any>(null);
-  const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   const [intObs] = React.useState(
     new IntersectionObserver(([{ isIntersecting }]) => {
       if (isIntersecting) onVisible();
@@ -45,8 +45,8 @@ function LoadingList({
         <Grid
           item
           xs={12}
-          md={uiStore.isSingleColumnLayout ? 6 : 12}
-          xl={uiStore.isSingleColumnLayout ? 4 : 12}
+          md={isSingleColumnLayout ? 6 : 12}
+          xl={isSingleColumnLayout ? 4 : 12}
           key={i}
         >
           {placeholder}

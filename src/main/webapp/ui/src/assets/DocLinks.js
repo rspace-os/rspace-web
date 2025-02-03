@@ -54,7 +54,6 @@ const docLinks: { [string]: URL } = {
   github: mkDocLink("y2080yw30x"),
   cloudstorage: mkDocLink("j2z5f5r90q"),
   jove: mkDocLink("mopbqzzdf5"),
-  mendeley: mkDocLink("xbca81rbxo"),
   nextcloud: mkDocLink("na3hn8ilee"),
   omero: mkDocLink("bwwbpkll90"),
   owncloud: mkDocLink("v8ss2uso0a"),
@@ -67,6 +66,16 @@ const docLinks: { [string]: URL } = {
   dmponline: mkDocLink("pd84qoylzy"),
   taggingUsers: mkDocLink("zw6o5uh4qv"),
   irods: mkDocLink("xt21074dln"),
+  dcd: mkDocLink("jj6grnzbdl"),
+  ascenscia: mkDocLink("8ftzyor8mi"),
+  fieldmark: mkDocLink("idbaaggghu"),
+  orcid: mkDocLink("yhkbtnj61a"),
 };
 
+/**
+ * This object is a mapping of logical names for pages of user documentation to
+ * URLs for those pages. This is so that if the documentation changes then the
+ * link only needs to be updated here and to make the code generally more
+ * readable.
+ */
 export default docLinks;

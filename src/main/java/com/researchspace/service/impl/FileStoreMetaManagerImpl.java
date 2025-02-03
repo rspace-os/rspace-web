@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.FileStoreRoot;
+import com.researchspace.model.User;
 import com.researchspace.service.FileStoreMetaManager;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class FileStoreMetaManagerImpl extends GenericManagerImpl<FileProperty, Long>
     implements FileStoreMetaManager {
 
-  private FileMetadataDao fileDao;
+  private final FileMetadataDao fileDao;
 
   public FileStoreMetaManagerImpl(@Autowired FileMetadataDao userDao) {
     this.dao = userDao;
@@ -33,11 +34,21 @@ public class FileStoreMetaManagerImpl extends GenericManagerImpl<FileProperty, L
   /**
    * Retrieve FileProperty
    *
-   * @param wheres, key=column. For using Constants of FileProperty,
-   * @return a set of FileProperty objects
+   * @param searchCriteria, key=column. For using Constants of FileProperty,
+   * @return a list of FileProperty objects
    */
   @Override
   public List<FileProperty> findProperties(Map<String, String> searchCriteria) {
     return fileDao.findProperties(searchCriteria);
+  }
+
+  @Override
+  public boolean doesUserOwnDocWithHash(User user, String contentsHash) {
+    return fileDao.doesUserOwnDocWithHash(user, contentsHash);
+  }
+
+  @Override
+  public FileProperty getByHash(String contentsHash) {
+    return fileDao.getImageFileByHash(contentsHash);
   }
 }

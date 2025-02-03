@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Map;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,6 +143,9 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${deployment.sso.logout.url}")
   private String ssoLogoutUrl;
 
+  @Value("${deployment.sso.idp.logout.url}")
+  private String ssoIdpLogoutUrl;
+
   @Value("${deployment.sso.adminLogin.enabled}")
   private Boolean ssoAdminLoginEnabled;
 
@@ -210,6 +214,16 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${zenodo.url}")
   private String zenodoApiUrl;
 
+  @Value("${dcd.base.url}")
+  @Getter
+  @Setter
+  private String digitalCommonsDataBaseUrl;
+
+  @Value("${fieldmark.api.url}")
+  @Getter
+  @Setter
+  private String fieldmarkBaseUrl;
+
   @Value("${aspose.enabled:true}")
   private String asposeEnabled;
 
@@ -266,8 +280,15 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${analytics.enabled}")
   private String analyticsEnabled;
 
+  @Value("${analytics.server.type}")
+  private String analyticsServerType;
+
   public String getAnalyticsEnabled() {
     return analyticsEnabled;
+  }
+
+  public String getAnalyticsServerType() {
+    return analyticsServerType;
   }
 
   public void setAnalyticsEnabled(String analyticsEnabled) {
@@ -380,6 +401,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   @Override
+  public String getSSOIdpLogoutUrl() {
+    return ssoIdpLogoutUrl;
+  }
+
+  @Override
   public Boolean getSSOAdminLoginEnabled() {
     return ssoAdminLoginEnabled;
   }
@@ -445,6 +471,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public String getNetFileStoresEnabled() {
     return netFileStoresEnabled;
+  }
+
+  @Override
+  public boolean isNetFileStoresEnabled() {
+    return "true".equals(getNetFileStoresEnabled());
   }
 
   @Override

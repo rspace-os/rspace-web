@@ -15,7 +15,7 @@ X-1 to X.
 1. Checkout version X-1 from Git
 2. Drop your `rspace` database, and recreate.
 3. cd into src/main/resources/sqlUpdates/liquibaseConfig and run the script
-   `mysql -urspacedbuser -p < ecat5dev-baseline2014-1-24.sql` which will populate the DB
+   `mysql -urspacedbuser -p < rs-dbbaseline-utf8.sql` which will populate the DB
    with the baseline tables.
 4. Launch with `mvn clean jetty:run -Denvironment=keepdbintact -Dlog4j2.configurationFile=log4j2-dev.xml -DRS.logLevel=INFO -Dspring.profiles.active=run -Dliquibase.context=run`.
    Note `-Dliquibase.context=run`, which will execute DB scripts from liquibase.

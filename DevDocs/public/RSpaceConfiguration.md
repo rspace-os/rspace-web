@@ -290,11 +290,6 @@ You can provide multiple files using a comma-separated list. Remember to use an 
 
 ### External application connections
 
-The following optional properties enable RSpace to connect to Mendeley (if Mendeley integration is enabled):
-
-* **mendeley.id** Numeric application id obtained from Mendeley developer site. Default is unset.
-* **mendeley.secret** Secret word obtained from Mendeley developer site. Default is unset.
-
 The following optional properties enable RSpace to connect to OneDrive (if OneDrive integration is enabled)::
 * **onedrive.client.id**  application id obtained from OneDrive developer site. Default is unset.
 * **onedrive.redirect** Callback URL that is configured on OneDrive developer site for this RSpace. Default is unset.
@@ -337,11 +332,16 @@ The following optional properties enable RSpace to connect to Slack (if this int
 * **slack.secret** Client secret of Slack App registered for given RSpace instance
 * **slack.verification.token** Verification token.
 
-The following optional properties enable RSpace to connect to your PyRAT database instance (if this integration is enabled):
-* **pyrat.url** URL of the exposed PyRAT API. For example 
-  `https://pyrat.your-organisation.edu/api/v3/`.
-* **pyrat.client.token** API-Client-Token provided by Scionics (developers of PyRAT).
-
+The following optional property enables RSpace to connect to your PyRAT database instance (if this integration is enabled):
+* **pyrat.server.config** configures the pyrat server alias associated to *server url* and server *access token* (API-Client-Token provided by Scionics - developers of PyRAT).
+  For example:
+  ```
+  pyrat.server.config={ \
+      "mice server": {"url": "https://mice.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"}, \
+      "frogs server": {"url": "https://frogs.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"} \
+  }
+  ```
+4
 The following optional properties enable RSpace to connect to Clustermarket :
 * **clustermarket.api.url** URL of the exposed Clustermarket API. For example
   `https://api.staging.clustermarket.com/v1/`.
@@ -410,8 +410,9 @@ These optional settings will enable you to import user data from LDAP, or enable
 ### SSO configuration
 Set these properties to configure RSpace to run in SSO mode e.g. for Shibboleth integration. There may be further integration work needed with Apache headers/redirects etc. to get this working.
 * **deployment.standalone** true /false. Set to false to enable SSO integration. Default is true.
-* **deployment.sso.type=SAML** if single sign-on is configured (if deployment.standalone=false) , this property switches authentication filter to SAML.
-* **deployment.sso.logout.url** the URL to redirect to after logout from RSpace. There is no default. If this is not set, users will get an error page after logging out.
+* **deployment.sso.type** if single sign-on is configured (if deployment.standalone=false), this property must switch authentication filter to 'SAML' (default) or 'openid'.
+* **deployment.sso.logout.url** the URL to redirect to after logout from RSpace. Default is 'You're logged out' page.
+* **deployment.sso.idp.logout.url** the URL presented to the user on 'You're logged out' page, which should point to a link that ends the global SSO session with IDP. No default. 
 * **user.signup.acceptedDomains**  restricts self sign-up for users in SSO environments.
 * **deployment.sso.ssoInfoVariant** Sets a custom "RSpace doesn't know you " page when self-signup is disabled. Default is unset. Requires custom page for RSpace.
 * **deployment.sso.adminEmail** Sets the support email address for matters relating to accounts managed by SSO.

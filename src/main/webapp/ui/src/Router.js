@@ -8,7 +8,7 @@ import { observer } from "mobx-react-lite";
 import React, { type Node, type ComponentType, useEffect } from "react";
 import { Routes, Route } from "react-router";
 import { BrowserRouter } from "react-router-dom";
-import RouterNavigationContext from "./components/RouterNavigationContext";
+import RouterNavigationContext from "./Inventory/components/RouterNavigationContext";
 import useStores from "./stores/use-stores";
 
 function Router(): Node {

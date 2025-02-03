@@ -12,6 +12,7 @@ import { inputBaseClasses } from "@mui/material/InputBase";
 import { dividerClasses } from "@mui/material/Divider";
 import { listItemButtonClasses } from "@mui/material/ListItemButton";
 import { listItemIconClasses } from "@mui/material/ListItemIcon";
+import { listItemTextClasses } from "@mui/material/ListItemText";
 import { paperClasses } from "@mui/material/Paper";
 import { cardActionAreaClasses } from "@mui/material/CardActionArea";
 import { buttonClasses } from "@mui/material/Button";
@@ -19,12 +20,11 @@ import { iconButtonClasses } from "@mui/material/IconButton";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { gridClasses } from "@mui/x-data-grid";
 import { alertTitleClasses } from "@mui/material/AlertTitle";
-import { checkboxClasses } from "@mui/material/Checkbox";
-import { radioClasses } from "@mui/material/Radio";
 import { chipClasses } from "@mui/material/Chip";
 import { formLabelClasses } from "@mui/material/FormLabel";
 import { inputLabelClasses } from "@mui/material/InputLabel";
 import { inputAdornmentClasses } from "@mui/material/InputAdornment";
+import { linkClasses } from "@mui/material/Link";
 
 /**
  * This theme is used for pages that use the new styling, wherein the page (or
@@ -174,6 +174,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           saturated: linkColor,
           dark: linkColor,
         },
+        callToAction: {
+          main: baseTheme.palette.callToAction.main,
+        },
         standardIcon: {
           main: interactiveColor,
         },
@@ -184,20 +187,23 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
       components: {
         MuiAppBar: {
           styleOverrides: {
+            /*
+             * Generally, we convert the accent colour to black when the user
+             * has requested more contrast, but in the app bar we convert to
+             * white as otherwise there would be a big block of black at the
+             * top of the viewport, which is excessively distracting.
+             */
             root: {
               boxShadow: "unset",
               [`& > .${toolbarClasses.root}`]: {
                 paddingBottom: baseTheme.spacing(0.25),
-                paddingLeft: `${baseTheme.spacing(1.5)} !important`,
+                paddingLeft: 0,
                 paddingRight: `${baseTheme.spacing(1)} !important`,
                 color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
-                background: prefersMoreContrast ? "white" : accentedBackground,
+                background: prefersMoreContrast
+                  ? "white"
+                  : accentedBackground,
                 borderBottom: prefersMoreContrast ? accentedBorder : "none",
-                [`& .${typographyClasses.root}`]: {
-                  marginLeft: baseTheme.spacing(0.5),
-                  letterSpacing: "0.02em",
-                  color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
-                },
                 [`& .${svgIconClasses.root}`]: {
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
                   transition: "all .3s ease",
@@ -244,6 +250,84 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 borderColor: prefersMoreContrast
                   ? "rgb(0,0,0)"
                   : alpha(contrastTextColor, 0.2),
+              },
+              [`& .${linkClasses.root}`]: {
+                textTransform: "capitalize",
+                color: contrastTextColor,
+                "&[href]": {
+                  cursor: "pointer",
+                  fontWeight: "400",
+                  letterSpacing: "0.02em",
+                  paddingTop: baseTheme.spacing(0.625),
+                  paddingBottom: baseTheme.spacing(0.25),
+                  paddingLeft: baseTheme.spacing(0.5),
+                  paddingRight: baseTheme.spacing(0.5),
+                  textDecoration: "unset !important",
+                  color: `${
+                    prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor
+                  } !important`,
+                  [`&::after`]: {
+                    content: "''",
+                    width: "100%",
+                    height: "2px",
+                    backgroundColor: contrastTextColor,
+                    position: "relative",
+                    left: 0,
+                    bottom: "2px",
+                    display: "block",
+                    transform: "translateY(2px)",
+                    opacity: "0",
+                    transition: "all .1s ease-in-out",
+                  },
+                  [`&:hover`]: {
+                    [`&::after`]: {
+                      opacity: "0.75",
+                      transform: "translateY(0px)",
+                    },
+                  },
+                  [`&[aria-current="page"]`]: {
+                    [`&::after`]: {
+                      opacity: "0.9",
+                      transform: "translateY(0px)",
+                      left: baseTheme.spacing(-1),
+                      width: `calc(100% + ${baseTheme.spacing(2)})`,
+                      bottom: "-2px",
+                    },
+                    lineHeight: "25px",
+                    marginTop: baseTheme.spacing(0.25),
+                    paddingTop: baseTheme.spacing(0.25),
+                    paddingLeft: baseTheme.spacing(1),
+                    paddingRight: baseTheme.spacing(1),
+                    backgroundColor: lighterInteractiveColor,
+                    borderTopLeftRadius: "4px",
+                    borderTopRightRadius: "4px",
+                  },
+                },
+              },
+              [`& .${listItemButtonClasses.root}`]: {
+                boxShadow: "unset",
+                backgroundColor: prefersMoreContrast
+                  ? "rgb(255,255,255)"
+                  : accentedBackground,
+                border: accentedBorder,
+                borderColor: darken(accentedBackground, hoverDarkenCoefficient),
+                padding: "0 12px",
+                borderRadius: "3px",
+                [`& .${listItemTextClasses.root}`]: {
+                  margin: "3px 0",
+                },
+                [`& .${listItemTextClasses.primary}`]: {
+                  fontWeight: "500",
+                  letterSpacing: "0.02em",
+                  fontSize: "0.95rem",
+                },
+                [`& .${listItemIconClasses.root}`]: {
+                  minWidth: "unset",
+                  [`& .${svgIconClasses.root}`]: {
+                    fontSize: "1.3em",
+                    marginLeft: "4px",
+                  },
+                },
               },
             },
           },
@@ -393,12 +477,32 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               "&:hover": {
                 borderColor: darken(accentedBackground, hoverDarkenCoefficient),
               },
+            },
+            colorPrimary: {
+              border: accentedBorder,
               [`&.${buttonClasses.disabled}`]: {
                 border: accentedBorder,
                 borderColor: disabledColor,
               },
             },
-            contained: {
+            containedCallToAction: {
+              border: `2px solid ${
+                prefersMoreContrast
+                  ? "black"
+                  : baseTheme.palette.callToAction.main
+              }`,
+              backgroundColor: prefersMoreContrast
+                ? "black"
+                : baseTheme.palette.callToAction.main,
+              color: baseTheme.palette.callToAction.contrastText,
+              "&:hover": {
+                borderColor: baseTheme.palette.callToAction.main,
+              },
+              [`&.${buttonClasses.disabled}`]: {
+                borderColor: darken(disabledColor, 0.1),
+              },
+            },
+            containedPrimary: {
               backgroundColor: mainAccentColor,
               color: contrastTextColor,
               borderColor: mainAccentColor,
@@ -420,6 +524,10 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               "&:hover": {
                 border: accentedBorder,
                 borderColor: darken(accentedBackground, hoverDarkenCoefficient),
+              },
+              [`&.${buttonClasses.disabled}`]: {
+                border: accentedBorder,
+                borderColor: disabledColor,
               },
             },
             outlinedPrimary: {
@@ -451,10 +559,23 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               // Mui applies its styles
               "&:hover": {
                 [`& .${outlinedInputClasses.notchedOutline}`]: {
-                  borderColor: darken(
+                  /*
+                   * These !importants are needed because when a className is
+                   * applied to a TextField, it is attached to the
+                   * .MuiFormControl-root that wraps .MuiOutlinedInput-root, so
+                   * that would have a higher specificity than this style. As
+                   * such, without the !important it would be impossible for a
+                   * styled component to disable the border when not hovering,
+                   * but keep it when hovering, as it would override all styles
+                   * on the notched outline. With the !important, if a style
+                   * components want to override the hover effect too, they too
+                   * can use !important
+                   */
+                  border: `${accentedBorder} !important`,
+                  borderColor: `${darken(
                     accentedBackground,
                     hoverDarkenCoefficient
-                  ),
+                  )} !important`,
                 },
               },
               [`&:has(.${inputAdornmentClasses.positionStart})`]: {
@@ -467,15 +588,38 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               },
               [`& .${inputAdornmentClasses.root}`]: {
                 height: "100%",
-                paddingLeft: baseTheme.spacing(1.5),
-                paddingRight: baseTheme.spacing(1.5),
-                borderRight: accentedBorder,
-                marginRight: 0,
+                [`&.${inputAdornmentClasses.positionStart}`]: {
+                  paddingLeft: baseTheme.spacing(1.5),
+                  paddingRight: baseTheme.spacing(1.5),
+                  borderRight: accentedBorder,
+                  marginRight: 0,
+                },
+                [`&.${inputAdornmentClasses.positionEnd}`]: {
+                  paddingRight: baseTheme.spacing(1.5),
+                  paddingLeft: baseTheme.spacing(1.5),
+                  borderLeft: accentedBorder,
+                  marginLeft: 0,
+                },
                 [`& .${typographyClasses.root}`]: {
                   textTransform: "uppercase",
                   fontWeight: 700,
                   fontSize: "0.8125rem",
                   lineHeight: "20px",
+                },
+              },
+              [`&.${outlinedInputClasses.disabled}`]: {
+                borderColor: disabledColor,
+                [`& .${outlinedInputClasses.notchedOutline}`]: {
+                  borderColor: disabledColor,
+                },
+                [`& .${inputAdornmentClasses.root}`]: {
+                  borderRightColor: disabledColor,
+                  color: disabledColor,
+                },
+                "&:hover": {
+                  [`& .${outlinedInputClasses.notchedOutline}`]: {
+                    borderColor: `${disabledColor} !important`,
+                  },
                 },
               },
             },
@@ -597,6 +741,16 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 color: "inherit",
               },
             },
+            h1: {
+              color: contrastTextColor,
+              marginBottom: baseTheme.spacing(3),
+              textAlign: "left",
+              borderBottom: accentedBorder,
+              textTransform: "uppercase",
+              fontWeight: 700,
+              opacity: 0.8,
+              fontSize: "1.9rem",
+            },
             h3: {
               fontWeight: 700,
               fontSize: "1.2rem",
@@ -604,6 +758,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               opacity: "0.9",
               textTransform: "uppercase",
               borderBottom: accentedBorder,
+            },
+            h4: {
+              fontWeight: 700,
+              textTransform: "uppercase",
+              fontSize: "0.9rem",
+              letterSpacing: "0.01em",
             },
           },
         },
@@ -631,6 +791,10 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             root: {
               borderBottom: accentedBorder,
             },
+            vertical: {
+              borderBottom: "none",
+              borderRight: accentedBorder,
+            },
             withChildren: {
               borderBottom: "none",
               marginTop: baseTheme.spacing(-0.5),
@@ -650,28 +814,6 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           styleOverrides: {
             separator: {
               color: backgroundContrastTextColor,
-            },
-          },
-        },
-        MuiCheckbox: {
-          styleOverrides: {
-            root: {
-              [`&.${checkboxClasses.checked}`]: {
-                [`& .${svgIconClasses.root}`]: {
-                  fill: interactiveColor,
-                },
-              },
-            },
-          },
-        },
-        MuiRadio: {
-          styleOverrides: {
-            root: {
-              [`&.${radioClasses.checked}`]: {
-                [`& .${svgIconClasses.root}`]: {
-                  fill: interactiveColor,
-                },
-              },
             },
           },
         },

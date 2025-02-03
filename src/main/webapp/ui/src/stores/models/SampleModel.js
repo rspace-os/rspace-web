@@ -33,7 +33,7 @@ import ResultCollection, {
 import RsSet from "../../util/set";
 import { blobToBase64 } from "../../util/files";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
-import { type AttachmentAttrs } from "./AttachmentModel";
+import { type AttachmentJson } from "./AttachmentModel";
 import { type CoreFetcherArgs } from "../definitions/Search";
 import {
   type Id,
@@ -46,6 +46,7 @@ import {
   type RecordType,
   type Action,
   type SharingMode,
+  type CreateOption,
   inventoryRecordTypeLabels,
 } from "../definitions/InventoryRecord";
 import { type _LINK } from "../../common/ApiServiceBase";
@@ -78,6 +79,7 @@ import {
 } from "../../components/ValidatingSubmitButton";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
+import * as ArrayUtils  from "../../util/ArrayUtils";
 
 type SampleEditableFields = {
   ...RecordWithQuantityEditableFields,
@@ -128,7 +130,7 @@ export type SampleAttrs = {|
   lastModified: ?string,
   modifiedByFullName: ?string,
   deleted: boolean,
-  attachments: Array<AttachmentAttrs>,
+  attachments: Array<AttachmentJson>,
   barcodes: Array<BarcodeAttrs>,
   identifiers: Array<IdentifierAttrs>,
   sharingMode: SharingMode,
@@ -216,6 +218,22 @@ export default class SampleModel
   subSampleAlias: Alias;
   templateId: Id;
   templateVersion: ?number;
+  createOptionsParametersState: {|
+    split: {| key: "split",  copies: number |},
+    newSubsamplesCount: {| key: "newSubsamplesCount", count: number |},
+    newSubsamplesQuantity: {| key: "newSubsamplesQuantity", quantity: number | "", quantityLabel: string |},
+    name: {| key: "name", value: string |},
+    fields: {|
+      key: "fields",
+      copyFieldContent: $ReadOnlyArray<{|
+        id: Id,
+        name: string,
+        content: string,
+        hasContent: boolean,
+        selected: boolean,
+      |}>,
+    |},
+  |};
 
   constructor(factory: Factory, params: SampleAttrs = { ...DEFAULT_SAMPLE }) {
     super(factory);
@@ -233,6 +251,7 @@ export default class SampleModel
       search: observable,
       subSampleAlias: observable,
       templateId: observable,
+      createOptionsParametersState: observable,
       overrideFields: action,
       saveFieldAttachments: action,
       overrideTemp: action,
@@ -260,8 +279,9 @@ export default class SampleModel
       enforceMandatoryFields: computed,
     });
 
-    if (this.recordType === "sample")
+    if (this.recordType === "sample") {
       this.populateFromJson(factory, params, DEFAULT_SAMPLE);
+    }
 
     // searching with parentGlobalId of an item you have no permission to (public view) will just return an empty array for results
     this.search = new Search({
@@ -296,6 +316,31 @@ export default class SampleModel
     this.subSampleAlias = params.subSampleAlias;
     this.templateId = params.templateId;
     this.templateVersion = params.templateVersion ?? 1;
+      this.createOptionsParametersState = {
+        split: { key: "split", copies: 2 },
+        name: { key: "name", value: "" },
+        fields: {
+          key: "fields",
+          copyFieldContent: [
+            ...this.fields.map(f => ({
+              id: f.id,
+              name: f.name,
+              content: f.renderContentAsString,
+              hasContent: f.hasContent,
+              selected: false
+            })),
+            ...this.extraFields.map(e => ({
+              id: e.id,
+              name: e.name,
+              content: e.content,
+              hasContent: e.hasContent,
+              selected: false
+            }))
+          ],
+        },
+      newSubsamplesCount: { key: "newSubsamplesCount", count: 1 },
+      newSubsamplesQuantity: { key: "newSubsamplesQuantity", quantity: 1, quantityLabel: this.quantityUnitLabel },
+      };
   }
 
   get recordType(): RecordType {
@@ -435,43 +480,18 @@ export default class SampleModel
       return newFields?.find((f) => f.name === field.name)?.globalId;
     };
 
-    const toFormData = async (attachment: ?Attachment) => {
-      const fd = new FormData();
-      if (!attachment?.file) throw new Error("File is not specified.");
-      const file = await attachment.getFile();
-      fd.append("file", file);
-      fd.append(
-        "fileSettings",
-        JSON.stringify({
-          fileName: attachment.name,
-          parentGlobalId: findGlobalIdOfField(attachment),
-        })
-      );
-      return fd;
-    };
-
-    const fieldAttachments = this.fields
+    const fieldAttachments: Array<Attachment> = ArrayUtils.filterNull(this.fields
       .filter((f) => Boolean(f.attachment))
       // handle removal of correct field attachment
       .map((f) =>
         f.attachment?.removed ? f.originalAttachment : f.attachment
-      );
+      ));
 
-    const newFiles = await Promise.all(
-      fieldAttachments
-        .filter((a) => !a?.id && !a?.removed)
-        .map((a) =>
-          toFormData(a).then((formData) => ApiService.post("files", formData))
-        )
-    );
-
-    await Promise.all([
-      ...newFiles,
-      ...fieldAttachments
-        .filter((a) => a?.removed && a.id)
-        // $FlowExpectedError[incompatible-call] all have non-null id
-        .map((a) => ApiService.delete("files", a?.id)),
-    ]);
+    await Promise.all(fieldAttachments.map(attachment => {
+      const g = findGlobalIdOfField(attachment);
+      if (!g) return Promise.reject(new Error("Could not find Global Id for a field"));
+      return attachment.save(g);
+    }));
   }
 
   updateFieldsState() {
@@ -861,6 +881,111 @@ export default class SampleModel
           ? Array(this.newSampleSubSamplesCount).fill(firstLocation)
           : this.newSampleSubSampleTargetLocations,
     };
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    let splitExplanation = "Subsamples will be created by dividing the existing subsample quantity amongst them."; 
+    if (this.subSamples.length > 1)
+      splitExplanation = "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead.";
+    if (!this.canEdit)
+      splitExplanation = "You do not have permission to edit this sample.";
+
+    return [
+      {
+        label: "Subsamples, by creating new ones",
+        explanation: this.canEdit ? "Additional subsamples will be created with the specified quantity." : "You do not have permission to edit this sample.",
+        parameters: [{
+          label: "Number of new subsamples",
+          explanation: "Between 1 and 100.",
+          state: this.createOptionsParametersState.newSubsamplesCount,
+          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
+        }, {
+          label: "Quantity per subsample",
+          explanation: "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
+          state: this.createOptionsParametersState.newSubsamplesQuantity,
+          validState: () => this.createOptionsParametersState.newSubsamplesQuantity.quantity !== "",
+        }],
+        disabled: !this.canEdit,
+        onReset: () => {
+          this.createOptionsParametersState.newSubsamplesCount.count = 1;
+          this.createOptionsParametersState.newSubsamplesQuantity.quantity = 1;
+        },
+        onSubmit: () => {
+          if (!this.quantity) throw new Error("Don't know what the sample's current quantity is");
+          const unitId = this.quantity.unitId;
+          return getRootStore().searchStore.search.createNewSubsamples({
+            sample: this,
+            numberOfNewSubsamples: this.createOptionsParametersState.newSubsamplesCount.count,
+            quantityPerSubsample: {
+              numericValue: this.createOptionsParametersState.newSubsamplesQuantity.quantity,
+              unitId,
+            },
+          });
+        },
+      },
+      {
+        label: "Subsamples, by splitting the existing subsample",
+        explanation: splitExplanation,
+        disabled: this.subSamples.length > 1 || !this.canEdit,
+        parameters: [{
+          label: "Number of new subsamples",
+          explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
+          state: this.createOptionsParametersState.split,
+          validState: () => this.createOptionsParametersState.split.copies >= 2 && this.createOptionsParametersState.split.copies <= 100,
+        }],
+        onReset: () => {
+          this.createOptionsParametersState.split.copies = 2;
+        },
+        onSubmit: () => {
+          if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
+          return getRootStore().searchStore.search.splitRecord(
+            this.createOptionsParametersState.split.copies,
+            this.subSamples[0],
+          );
+        },
+      },
+      {
+        label: "Template",
+        explanation: "Create a template from this sample, to easily create similar samples.",
+        parameters: [{
+          label: "Name",
+          explanation: "A name for the new template. At least two characters.",
+          state: this.createOptionsParametersState.name,
+          validState: () => this.createOptionsParametersState.name.value.length >= 2,
+        },{
+          label: "Field default values",
+          explanation: "All of the sample fields will be included in the template. Select which fields should also retain their current value as a default field value.",
+          state: this.createOptionsParametersState.fields,
+          validState: () => true,
+        }],
+        onReset: () => {
+          this.createOptionsParametersState.name.value = "";
+          this.createOptionsParametersState.fields.copyFieldContent = [
+              ...this.fields.map(f => ({
+                id: f.id,
+                name: f.name,
+                content: f.renderContentAsString,
+                hasContent: f.hasContent,
+                selected: false
+              })),
+              ...this.extraFields.map(e => ({
+                id: e.id,
+                name: e.name,
+                content: e.content,
+                hasContent: e.hasContent,
+                selected: false
+              }))
+            ];
+        },
+        onSubmit: () => {
+          return getRootStore().searchStore.search.createTemplateFromSample(
+            this.createOptionsParametersState.name.value,
+            this,
+            new RsSet(this.createOptionsParametersState.fields.copyFieldContent.filter(({ selected }) => selected).map(({ id }) => id)),
+          );
+        },
+      }
+    ];
   }
 }
 

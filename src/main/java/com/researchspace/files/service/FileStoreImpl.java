@@ -66,7 +66,7 @@ public class FileStoreImpl implements FileStore {
   public Optional<FileInputStream> retrieve(FileProperty fileProperty) {
     FileInputStream fis = null;
     if (!fileProperty.isExternal()) {
-      fis = localFileStore.retrieve(fileProperty).get();
+      fis = localFileStore.retrieve(fileProperty).orElse(null);
     } else {
       log.info("Retrieving external file:  {}", fileProperty.getRelPath());
       Optional<ExternalFileStoreWithCredentials> extFileStoreOpt = getExternalFS(fileProperty);

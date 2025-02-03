@@ -55,7 +55,10 @@ const OverviewSection = observer(
           }
         />
         <TemplateField />
-        <ImageField fieldOwner={activeResult} />
+        <ImageField
+          fieldOwner={activeResult}
+          alt="What the new sample looks like"
+        />
       </StepperPanel>
     );
   }
@@ -238,7 +241,7 @@ function NewRecordForm(): Node {
           sectionName="attachments"
           recordType="sample"
         >
-          <AttachmentsField />
+          <AttachmentsField fieldOwner={activeResult} />
         </StepperPanel>
         <StepperPanel
           icon="sample"

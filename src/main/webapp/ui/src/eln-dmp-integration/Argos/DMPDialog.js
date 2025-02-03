@@ -37,10 +37,7 @@ import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "../../components/ValidatingSubmitButton";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
-import AccessibilityTips from "../../components/AccessibilityTips";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
+import { AccessibilityTipsIconButton } from "../../components/AccessibilityTips";
 import Box from "@mui/material/Box";
 import docLinks from "../../assets/DocLinks";
 import Link from "@mui/material/Link";
@@ -49,6 +46,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import { DataGrid } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
+import DialogTitle from "@mui/material/DialogTitle";
+import AppBar from "../../components/AppBar";
 
 const COLOR = {
   main: {
@@ -174,7 +173,7 @@ const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
       <DropdownButton
         name={name}
         onClick={(e) => {
-          setAnchorEl(e.target);
+          setAnchorEl(e.currentTarget);
         }}
       >
         <Panel
@@ -504,20 +503,18 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   return (
     <>
-      <AppBar position="relative" open={true}>
-        <Toolbar variant="dense">
-          <Typography variant="h6" noWrap component="h2">
-            Argos
-          </Typography>
-          <Box flexGrow={1}></Box>
-          <Box ml={1}>
-            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
-          </Box>
-          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-            <HelpLinkIcon title="Argos help" link={docLinks.argos} />
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <AppBar
+        variant="dialog"
+        currentPage="Argos"
+        accessibilityTips={{
+          supportsHighContrastMode: true,
+        }}
+        helpPage={{
+          docLink: docLinks.argos,
+          title: "Argos help",
+        }}
+      />
+      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
         <Grid
           container
@@ -528,12 +525,9 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
           height="calc(100% + 16px)"
         >
           <Grid item>
-            <Typography variant="h3">Import a DMP into the Gallery</Typography>
-          </Grid>
-          <Grid item>
             <Typography variant="body2">
-              Importing a DMP will make it available to view and reference
-              within RSpace.
+              Importing a DMP from <strong>argos.openaire.eu</strong> will make
+              it available to view and reference within RSpace.
             </Typography>
             <Typography variant="body2">
               See{" "}
@@ -568,7 +562,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                     />
                   ),
                   hideable: false,
-                  width: 60,
+                  width: 70,
                   flex: 0,
                   disableColumnMenu: true,
                   sortable: false,
@@ -588,20 +582,18 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithValueGetter(
+                DataGridColumn.newColumnWithValueMapper<PlanSummary, _>(
                   "createdAt",
-                  (params: { row: PlanSummary, ... }) =>
-                    new Date(params.row.createdAt).toLocaleString(),
+                  (createdAt) => new Date(createdAt).toLocaleString(),
                   {
                     headerName: "Created At",
                     flex: 1,
                     sortable: false,
                   }
                 ),
-                DataGridColumn.newColumnWithValueGetter(
+                DataGridColumn.newColumnWithValueMapper<PlanSummary, _>(
                   "modifiedAt",
-                  (params: { row: PlanSummary, ... }) =>
-                    new Date(params.row.modifiedAt).toLocaleString(),
+                  (modifiedAt) => new Date(modifiedAt).toLocaleString(),
                   {
                     headerName: "Modified At",
                     flex: 1,

@@ -22,6 +22,8 @@ import LoadingCircular from "../../components/LoadingCircular";
 import { type RecordType } from "../../stores/definitions/InventoryRecord";
 import { type Theme } from "../../theme";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
+import { UserCancelledAction } from "../../util/error";
 
 const border = (
   theme: Theme,
@@ -43,9 +45,9 @@ const BorderContainer = withStyles<
   root: {
     backgroundColor: theme.palette.background.alt,
     position: "relative",
-    minHeight: "100vh",
   },
   notMobile: {
+    height: "100%",
     borderLeft: border(theme, false, recordType),
     background: recordType
       ? `linear-gradient(${theme.palette.record[recordType].lighter} 30%, #fff 31%)`
@@ -65,12 +67,12 @@ const BorderContainer = withStyles<
     classes: { root: string, notMobile: string, mobile: string },
     children: Node,
   }) => {
-    const { uiStore } = useStores();
+    const isSingleColumnLayout = useIsSingleColumnLayout();
     return (
       <div
         className={clsx(
           classes.root,
-          uiStore.isSingleColumnLayout ? classes.mobile : classes.notMobile
+          isSingleColumnLayout ? classes.mobile : classes.notMobile
         )}
         data-testid="MainActiveResult"
       >
@@ -81,7 +83,26 @@ const BorderContainer = withStyles<
 );
 
 function RightPanelView(): Node {
-  const { searchStore } = useStores();
+  const { searchStore, uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
+
+  React.useEffect(() => {
+    void (async () => {
+      if (
+        !searchStore.activeResult &&
+        Boolean(searchStore.search.filteredResults.length) &&
+        !isSingleColumnLayout
+      ) {
+        try {
+          await searchStore.search.setActiveResult();
+          uiStore.setVisiblePanel("right");
+        } catch (e) {
+          if (e instanceof UserCancelledAction) return;
+          throw e;
+        }
+      }
+    })();
+  }, [searchStore.search.filteredResults]);
 
   const noActiveResult = () => {
     const search = searchStore.search;

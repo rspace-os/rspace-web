@@ -2,7 +2,7 @@
 
 import React, { type Node, type Context } from "react";
 import { type GalleryFile } from "./useGalleryListing";
-import { makeObservable, action, observable, computed, autorun } from "mobx";
+import { makeObservable, action, observable, computed } from "mobx";
 import RsSet from "../../util/set";
 
 /*
@@ -21,7 +21,11 @@ class Selection {
    */
   _state: Map<GalleryFile["id"], GalleryFile>;
 
-  constructor() {
+  #onlyAllowSingleSelection: boolean;
+
+  constructor({
+    onlyAllowSingleSelection = false,
+  }: {| onlyAllowSingleSelection?: boolean |} = {}) {
     makeObservable(this, {
       _state: observable,
       isEmpty: computed,
@@ -32,6 +36,7 @@ class Selection {
       remove: action,
     });
     this._state = new Map<GalleryFile["id"], GalleryFile>();
+    this.#onlyAllowSingleSelection = onlyAllowSingleSelection;
   }
 
   get isEmpty(): boolean {
@@ -39,6 +44,7 @@ class Selection {
   }
 
   get size(): number {
+    if (this.#onlyAllowSingleSelection) return 1;
     return this._state.size;
   }
 
@@ -47,6 +53,7 @@ class Selection {
   }
 
   append(file: GalleryFile) {
+    if (this.#onlyAllowSingleSelection) this.clear();
     this._state.set(file.id, file);
   }
 
@@ -83,22 +90,25 @@ const SelectionContext: Context<Selection> = React.createContext(
   DEFAULT_SELECTION_CONTEXT
 );
 
-export const GallerySelection = ({ children }: {| children: Node |}): Node => (
-  <SelectionContext.Provider value={new Selection()}>
+/**
+ * A provider component for scoping the selection of the GalleryFiles to a
+ * section of the UI.
+ */
+export const GallerySelection = ({
+  children,
+  ...rest
+}: {|
+  children: Node,
+  onlyAllowSingleSelection?: boolean,
+|}): Node => (
+  <SelectionContext.Provider value={new Selection(rest)}>
     {children}
   </SelectionContext.Provider>
 );
 
-export function useGallerySelection({
-  onChange,
-}: {| onChange?: (Selection) => void |} = {}): Selection {
-  const selection = React.useContext(SelectionContext);
-
-  React.useEffect(() => {
-    autorun(() => {
-      onChange?.(selection);
-    });
-  }, [selection]);
-
-  return selection;
+/**
+ * Hook for getting the nearest Selection.
+ */
+export function useGallerySelection(): Selection {
+  return React.useContext(SelectionContext);
 }

@@ -6,7 +6,11 @@
 import { makeMockSample } from "./mocking";
 
 jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
+jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
+}));
 
 describe("method: validate", () => {
   describe("Asserts expiry date.", () => {

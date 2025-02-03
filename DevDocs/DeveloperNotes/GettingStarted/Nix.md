@@ -233,12 +233,12 @@ export_alias mysql-liq "mysql -urspacedbuser -prspacedbpwd testLiquibaseUpdate"
 
 export_alias jetty "
   mvn clean jetty:run -Denvironment=keepdbintact -DRS.devlogLevel=INFO \
-  -Dspring.profiles.active=run -Dliquibase.context=dev-test \
+  -Dspring.profiles.active=run \
   -Dlog4j2.configurationFile=log4j2-dev.xml
 "
 export_alias jetty-drop "
   mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
-  -Dspring.profiles.active=run -Dliquibase.context=dev-test \
+  -Dspring.profiles.active=run \
   -Dlog4j2.configurationFile=log4j2-dev.xml
 "
 ```

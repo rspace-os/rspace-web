@@ -6,6 +6,7 @@ import com.researchspace.model.User;
 import java.io.IOException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class MaintenanceLoginAuthorizer extends AbstractLoginAuthorizer implements LoginAuthorizer {
@@ -13,7 +14,8 @@ public class MaintenanceLoginAuthorizer extends AbstractLoginAuthorizer implemen
   public static final String REDIRECT_FOR_MAINTENANCE = "/public/maintenanceInProgress";
   public static final String MAINTENANCE_LOGIN_REQUEST_PARAM = "maintenanceLogin";
 
-  private @Autowired MaintenanceManager maintenanceMgr;
+  @Autowired @Setter // for testing
+  private MaintenanceManager maintenanceMgr;
 
   @Override
   public boolean isLoginPermitted(ServletRequest request, ServletResponse response, User subject)
@@ -34,13 +36,5 @@ public class MaintenanceLoginAuthorizer extends AbstractLoginAuthorizer implemen
 
   private boolean containsMaintenanceLoginParameter(ServletRequest request) {
     return request.getParameter(MAINTENANCE_LOGIN_REQUEST_PARAM) != null;
-  }
-
-  /* ======================
-   *     for tests
-   * ===================== */
-
-  public void setMaintenanceMgr(MaintenanceManager maintenanceMgr) {
-    this.maintenanceMgr = maintenanceMgr;
   }
 }

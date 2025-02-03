@@ -15,6 +15,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.TransferService;
 import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
 import java.io.File;
@@ -47,25 +48,31 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
 
   private @Autowired DeletedUserResourcesListHelper deletedUserResourcesHelper;
 
+  private @Autowired @Qualifier("formTransferService") TransferService formTransferService;
+
   @Override
   public ServiceOperationResult<User> removeUser(
       Long userId, UserDeletionPolicy policy, User subject) {
     Optional<String> errors = validate(userId, policy, subject);
     if (errors.isPresent()) {
-      return new ServiceOperationResult<User>(null, false, errors.get());
+      return new ServiceOperationResult<>(null, false, errors.get());
     }
     User toDelete = userDao.get(userId);
 
     Optional<String> saveResourcesListError = saveFilestoreResourcesTempList(toDelete);
     if (saveResourcesListError.isPresent()) {
-      return new ServiceOperationResult<User>(null, false, saveResourcesListError.get());
+      return new ServiceOperationResult<>(null, false, saveResourcesListError.get());
+    }
+
+    if (formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete)) {
+      formTransferService.transferOwnership(toDelete, subject);
     }
 
     if (policy.isForceDelete()) {
       for (Group group : toDelete.getGroups()) {
-        String msg = null;
+        String msg;
         if ((msg = validateGroupMembershipCriteria(toDelete, group, policy)) != null) {
-          return new ServiceOperationResult<User>(null, false, msg);
+          return new ServiceOperationResult<>(null, false, msg);
         }
       }
       // only remove from groups if all group-leaving-criteria are satisfied.
@@ -74,7 +81,8 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
       }
 
       if (toDelete.hasRole(Role.ADMIN_ROLE)) {
-        communityDao.listCommunitiesForAdmin(toDelete.getId()).stream()
+        communityDao
+            .listCommunitiesForAdmin(toDelete.getId())
             .forEach(comm -> communityDao.removeAdminFromCommunity(toDelete.getId(), comm.getId()));
       }
     }
@@ -121,23 +129,23 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     if (!subject.hasSysadminRole()) {
       String errorMsg = "Only user with sysadmin role can delete filestore resources";
       log.warn(errorMsg);
-      return new ServiceOperationResult<Integer>(-1, false, errorMsg);
+      return new ServiceOperationResult<>(-1, false, errorMsg);
     }
 
     Optional<List<File>> resourcesOpt =
         deletedUserResourcesHelper.retrieveUserResourcesList(deletedUserId);
-    if (!resourcesOpt.isPresent()) {
+    if (resourcesOpt.isEmpty()) {
       String errorMsg = "Resource list file not readable";
       log.warn(errorMsg);
-      return new ServiceOperationResult<Integer>(-1, false, errorMsg);
+      return new ServiceOperationResult<>(-1, false, errorMsg);
     }
 
     Optional<Integer> deletedResourcesCountOpt =
         fileStore.removeUserFilestoreFiles(resourcesOpt.get());
-    if (!deletedResourcesCountOpt.isPresent()) {
+    if (deletedResourcesCountOpt.isEmpty()) {
       String errorMsg = "Problem during filestore removal";
       log.warn(errorMsg);
-      return new ServiceOperationResult<Integer>(-1, false, errorMsg);
+      return new ServiceOperationResult<>(-1, false, errorMsg);
     }
     int deletedResourcesCount = deletedResourcesCountOpt.get();
     log.info(
@@ -152,7 +160,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
         deletedResourcesCount++;
       }
     }
-    return new ServiceOperationResult<Integer>(deletedResourcesCount, true);
+    return new ServiceOperationResult<>(deletedResourcesCount, true);
   }
 
   @Override
@@ -161,9 +169,9 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     Optional<String> optionalErrMsg = validate(userToDeleteId, policy, subject);
     User toDelete = userDao.get(userToDeleteId);
     if (optionalErrMsg.isPresent()) {
-      return new ServiceOperationResult<User>(toDelete, false, optionalErrMsg.get());
+      return new ServiceOperationResult<>(toDelete, false, optionalErrMsg.get());
     } else {
-      return new ServiceOperationResult<User>(toDelete, true, "");
+      return new ServiceOperationResult<>(toDelete, true, "");
     }
   }
 
@@ -186,8 +194,8 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     if (toDelete.hasRole(Role.ADMIN_ROLE)) {
       if (communityMgr.isUserUniqueAdminInAnyCommunity(toDelete)) {
         log.warn(
-            "This user  [userid={}] is the only adminstrator of a Community. Please replace"
-                + " the adminstrator so this user can be deleted",
+            "This user  [userid={}] is the only administrator of a Community. Please replace"
+                + " the administrator so this user can be deleted",
             userToDeleteId);
         return Optional.of(msgSource.getMessage("errors.deleteadminuser", null, null));
       }
@@ -198,12 +206,9 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
         return Optional.of(msgSource.getMessage("errors.deletesysadminuser", null, null));
       }
     }
-    if (formDao.hasUserPublishedFormsUsedinOtherRecords(toDelete)) {
-      return Optional.of(msgSource.getMessage("errors.deleteuser.nousedforms", null, null));
-    }
     if (policy.isForceDelete()) {
       for (Group group : toDelete.getGroups()) {
-        String msg = null;
+        String msg;
         if ((msg = validateGroupMembershipCriteria(toDelete, group, policy)) != null) {
           return Optional.of(msg);
         }
@@ -219,14 +224,13 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
       failureMsg = msgSource.getMessage("group.edit.mustbe1.admin.error.msg", null, null);
     } else if (group.getOwner().equals(toDelete)) {
       failureMsg = msgSource.getMessage("group.edit.nogroupownerdelete.error.msg", null, null);
-    } else if (!isAllGroupCapableOfDeletion(policy, toDelete, group)) {
+    } else if (!isAllGroupCapableOfDeletion(policy, group)) {
       failureMsg = msgSource.getMessage("group.edit.emptygrouprequired.error.msg", null, null);
     }
     return failureMsg;
   }
 
-  private boolean isAllGroupCapableOfDeletion(
-      UserDeletionPolicy policy, User toDelete, Group group) {
+  private boolean isAllGroupCapableOfDeletion(UserDeletionPolicy policy, Group group) {
     if (policy.isStrictPreserveDataForGroup()) {
       for (User user : group.getMembers()) {
         if (user.getLastLogin() != null
@@ -248,23 +252,15 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     // ensure that at least 1 valid sysadmin remains
     return sysadmins.getTotalHits() >= 2
         && sysadmins.getResults().stream()
-                .filter(u -> !u.equals(toDelete))
-                // .filter(u->!u.getUsername().equals(Constants.SYSADMIN_UNAME))
-                .filter(User::isEnabled)
-                .filter(User::isAccountNonLocked)
-                .count()
-            > 0;
+            .filter(u -> !u.equals(toDelete))
+            .filter(User::isEnabled)
+            .anyMatch(User::isAccountNonLocked);
   }
 
   /*
    *  for testing
    */
-
   void setMessageSource(MessageSource msgSource) {
     this.msgSource = msgSource;
-  }
-
-  void setDeletedUserResourcesHelper(DeletedUserResourcesListHelper deletedUserResourcesHelper) {
-    this.deletedUserResourcesHelper = deletedUserResourcesHelper;
   }
 }

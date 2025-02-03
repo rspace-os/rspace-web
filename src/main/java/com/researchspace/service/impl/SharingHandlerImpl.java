@@ -23,7 +23,6 @@ import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserManager;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,16 +44,16 @@ public class SharingHandlerImpl implements SharingHandler {
         new ServiceOperationResultCollection<>();
     for (Long id : shareConfig.getIdsToShare()) {
       try {
-        ServiceOperationResult<Set<RecordGroupSharing>> sharingResult =
+        ServiceOperationResult<List<RecordGroupSharing>> sharingResult =
             sharingManager.shareRecord(sharer, id, shareConfig.getValues());
         if (sharingResult.isSucceeded()) {
-          RecordGroupSharing rgs = sharingResult.getEntity().iterator().next();
+          RecordGroupSharing rgs = sharingResult.getEntity().get(0);
           auditService.notify(
               new ShareRecordAuditEvent(sharer, rgs.getShared(), shareConfig.getValues()));
           rc.addResult(rgs);
         } else {
           if (!sharingResult.getEntity().isEmpty()) {
-            rc.addFailure(sharingResult.getEntity().iterator().next());
+            rc.addFailure(sharingResult.getEntity().get(0));
           }
         }
       } catch (IllegalAddChildOperation | AuthorizationException | IllegalArgumentException e) {

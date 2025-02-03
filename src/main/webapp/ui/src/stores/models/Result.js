@@ -23,6 +23,7 @@ import {
   type State,
   type ApiRecordType,
   type SharingMode,
+  type CreateOption,
 } from "../definitions/InventoryRecord";
 import {
   type AdjustableTableRow,
@@ -31,7 +32,7 @@ import {
 import { type BlobUrl } from "../stores/ImageStore";
 import getRootStore from "../stores/RootStore";
 import { mkAlert, type Alert } from "../contexts/Alert";
-import AttachmentModel from "./AttachmentModel";
+import { newExistingAttachment } from "./AttachmentModel";
 import ExtraFieldModel from "./ExtraFieldModel";
 import {
   type ExtraFieldAttrs,
@@ -363,7 +364,7 @@ export default class Result
     this.permittedActions = new Set(params.permittedActions);
     this.attachments = (params.attachments ?? []).map(
       (a) =>
-        new AttachmentModel(a, this.permalinkURL, () =>
+        newExistingAttachment(a, this.permalinkURL, () =>
           this.setAttributesDirty({})
         )
     );
@@ -390,7 +391,7 @@ export default class Result
 
       this.identifiers = params.identifiers.map((idAttrs) => {
         if (!this.globalId) throw new Error("Global Id must be known.");
-        return factory.newIdentifier(idAttrs, this.globalId);
+        return factory.newIdentifier(idAttrs, this.globalId, ApiService);
       });
       void this.fetchImage("thumbnail");
     } else {
@@ -508,7 +509,7 @@ export default class Result
       |}>,
       newBase64Image?: ?string,
       barcodes?: Array<{ ... }>,
-      identifiers?: Array<Identifier>,
+      identifiers?: mixed,
       sharingMode?: SharingMode,
       sharedWith?: ?Array<SharedWithGroup>,
       ...
@@ -538,7 +539,7 @@ export default class Result
         this.barcodes
       ).map((b) => b.paramsForBackend);
     if (this.currentlyEditableFields.has("identifiers"))
-      params.identifiers = this.identifiers;
+      params.identifiers = this.identifiers.map(i => i.toJson());
     if (this.currentlyEditableFields.has("sharingMode"))
       params.sharingMode = this.sharingMode;
     if (this.currentlyEditableFields.has("sharedWith"))
@@ -1321,7 +1322,7 @@ export default class Result
         >(`/identifiers`, {
           parentGlobalId: globalId,
         });
-        const newIGSN = new IdentifierModel(response.data, globalId);
+        const newIGSN = new IdentifierModel(response.data, globalId, ApiService);
         this.identifiers = this.identifiers.concat(newIGSN);
         getRootStore().uiStore.addAlert(
           mkAlert({
@@ -1604,36 +1605,9 @@ export default class Result
   }
 
   async submitAttachmentChanges(): Promise<void> {
-    const toFormData = async (attachment: Attachment) => {
-      const fd = new FormData();
-      if (!attachment.file) throw new Error("File is not specified.");
-      const file = await attachment.getFile();
-      fd.append("file", file);
-      fd.append(
-        "fileSettings",
-        JSON.stringify({
-          fileName: attachment.name,
-          parentGlobalId: this.globalId,
-        })
-      );
-      return fd;
-    };
-
-    const newFiles = await Promise.all(
-      this.attachments
-        .filter((a) => !a.id && !a.removed)
-        .map((a) =>
-          toFormData(a).then((formData) => ApiService.post("files", formData))
-        )
-    );
-
-    await Promise.all([
-      ...newFiles,
-      ...this.attachments
-        .filter((a) => a.removed && a.id)
-        // $FlowExpectedError[incompatible-call] all have non-null id
-        .map((a) => ApiService.delete("files", a.id)),
-    ]);
+    if (!this.globalId) throw new Error("Global Id not known");
+    const g = this.globalId;
+    await Promise.all(this.attachments.map(a => a.save(g)));
   }
 
   get iconName(): string {
@@ -1727,5 +1701,9 @@ export default class Result
 
   get showBarcode(): boolean {
     return true;
+  }
+
+  get createOptions(): $ReadOnlyArray<CreateOption> {
+    return [];
   }
 }

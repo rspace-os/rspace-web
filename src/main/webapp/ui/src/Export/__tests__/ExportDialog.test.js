@@ -3,6 +3,7 @@
  */
 //@flow
 /* eslint-env jest */
+import "../../../__mocks__/matchMedia";
 import React, { useState } from "react";
 import {
   render,
@@ -22,6 +23,16 @@ import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan";
 import each from "jest-each";
 import { type UseState } from "../../util/types";
 import Alerts from "../../components/Alerts/Alerts";
+import { sleep } from "../../util/Util";
+import userEvent from "@testing-library/user-event";
+
+window.fetch = jest.fn(() =>
+  Promise.resolve({
+    status: 200,
+    ok: true,
+    json: () => Promise.resolve({}),
+  })
+);
 
 const mockAxios = new MockAdapter(axios);
 
@@ -136,6 +147,7 @@ describe("ExportDialog", () => {
   describe("Validations should be enforced.", () => {
     describe("Exporting with filestores links", () => {
       test("but without being logged in should show a warning.", async () => {
+        const user = userEvent.setup();
         mockAxios
           .onPost("/nfsExport/ajax/createQuickExportPlan")
           .reply(200, { ...CREATE_QUICK_EXPORT_PLAN });
@@ -153,21 +165,17 @@ describe("ExportDialog", () => {
           });
         });
 
-        act(() => {
-          screen
-            .getByRole("radio", { name: /^.ZIP bundle containing .HTML files/ })
-            .click();
-        });
+        await user.click(
+          screen.getByRole("radio", {
+            name: /^.ZIP bundle containing .HTML files/,
+          })
+        );
 
-        act(() => {
-          screen
-            .getByRole("checkbox", { name: "Include filestore links" })
-            .click();
-        });
+        await user.click(
+          screen.getByRole("checkbox", { name: "Include filestore links" })
+        );
 
-        act(() => {
-          screen.getByRole("button", { name: "Next" }).click();
-        });
+        await user.click(screen.getByRole("button", { name: "Next" }));
 
         await waitFor(() => {
           expect(
@@ -177,9 +185,7 @@ describe("ExportDialog", () => {
           ).toBeVisible();
         });
 
-        act(() => {
-          screen.getByRole("button", { name: "Next" }).click();
-        });
+        await user.click(screen.getByRole("button", { name: "Next" }));
 
         await waitFor(() => {
           expect(
@@ -189,9 +195,7 @@ describe("ExportDialog", () => {
           ).toBeVisible();
         });
 
-        act(() => {
-          screen.getByRole("button", { name: "Export" }).click();
-        });
+        await user.click(screen.getByRole("button", { name: "Export" }));
 
         await waitFor(() => {
           expect(
@@ -203,6 +207,7 @@ describe("ExportDialog", () => {
       });
 
       test("but without scanning should show a warning.", async () => {
+        const user = userEvent.setup();
         /*
          * Here, we're setting loggedAs on the mocked samba file system because
          * the scanning warning is only shown if the user is logged in,
@@ -231,21 +236,17 @@ describe("ExportDialog", () => {
           });
         });
 
-        act(() => {
-          screen
-            .getByRole("radio", { name: /^.ZIP bundle containing .HTML files/ })
-            .click();
-        });
+        await user.click(
+          screen.getByRole("radio", {
+            name: /^.ZIP bundle containing .HTML files/,
+          })
+        );
 
-        act(() => {
-          screen
-            .getByRole("checkbox", { name: "Include filestore links" })
-            .click();
-        });
+        await user.click(
+          screen.getByRole("checkbox", { name: "Include filestore links" })
+        );
 
-        act(() => {
-          screen.getByRole("button", { name: "Next" }).click();
-        });
+        await user.click(screen.getByRole("button", { name: "Next" }));
 
         await waitFor(() => {
           expect(
@@ -255,9 +256,7 @@ describe("ExportDialog", () => {
           ).toBeVisible();
         });
 
-        act(() => {
-          screen.getByRole("button", { name: "Next" }).click();
-        });
+        await user.click(screen.getByRole("button", { name: "Next" }));
 
         await waitFor(() => {
           expect(
@@ -275,9 +274,7 @@ describe("ExportDialog", () => {
           ).toBeVisible();
         });
 
-        await act(() => {
-          screen.getByRole("button", { name: "Export" }).click();
-        });
+        await user.click(screen.getByRole("button", { name: "Export" }));
 
         await waitFor(() => {
           expect(
@@ -287,6 +284,71 @@ describe("ExportDialog", () => {
           ).toBeVisible();
         });
       });
+    });
+  });
+
+  describe("Controlled vocabulary terms", () => {
+    // passes on its own, fails when run together
+    test("Tags should be pre-populated from the tags on the documents", async () => {
+      mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
+        {
+          repoName: "app.zenodo",
+          subjects: [],
+          license: {
+            licenseRequired: true,
+            otherLicensePermitted: false,
+            licenses: [
+              {
+                licenseDefinition: {
+                  url: "https://creativecommons.org/publicdomain/zero/1.0/",
+                  name: "CC-0",
+                },
+                defaultLicense: null,
+              },
+            ],
+          },
+          otherProperties: [],
+          linkedDMPs: null,
+          options: {
+            ZENODO_USER_TOKEN:
+              "************************************************************",
+          },
+          displayName: "Zenodo",
+        },
+      ]);
+      mockAxios.onPost("/export/ajax/exportRecordTagsPdfsAndDocs").reply(200, {
+        data: [
+          "BT-20 cell__RSP_EXTONT_URL_DELIM__http:__rspactags_forsl____rspactags_forsl__purl.obolibrary.org__rspactags_forsl__obo__rspactags_forsl__BTO_0001466__RSP_EXTONT_NAME_DELIM__test__RSP_EXTONT_VERSION_DELIM__1",
+        ],
+        error: null,
+        success: true,
+        errorMsg: null,
+      });
+      const { setProps } = renderExportDialog();
+      act(() => {
+        setProps({
+          open: true,
+          selection: {
+            type: "selection",
+            exportTypes: ["NORMAL"],
+            exportNames: ["foo"],
+            exportIds: ["1"],
+          },
+        });
+      });
+
+      fireEvent.click(await screen.findByRole("radio", { name: /PDF/ }));
+      fireEvent.click(
+        screen.getByRole("checkbox", { name: /Export to a repository/ })
+      );
+      fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+      expect(await screen.findByRole("textbox", { name: /File name/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+      expect(await screen.findByRole("radio", { name: /Zenodo/ }));
+
+      await sleep(1000);
+
+      expect(screen.getByRole("button", { name: /BT-20/ })).toBeVisible();
     });
   });
   describe("Completing the export, makes the right call to /export/ajax/exportArchive", () => {
@@ -301,6 +363,7 @@ describe("ExportDialog", () => {
         "Your export generation request has been submitted to the server. RSpace will notify you when the export is ready."
       );
     test("allVersions is set by the version switch.", async () => {
+      const user = userEvent.setup();
       await fc.assert(
         fc
           .asyncProperty(fc.boolean(), async (setAllVersionsSwitch) => {
@@ -318,27 +381,21 @@ describe("ExportDialog", () => {
               });
             });
 
-            act(() => {
-              screen
-                .getByRole("radio", {
-                  name: /^.ZIP bundle containing .XML files/,
-                })
-                .click();
-            });
+            await user.click(
+              screen.getByRole("radio", {
+                name: /^.ZIP bundle containing .XML files/,
+              })
+            );
 
             if (setAllVersionsSwitch) {
-              await act(async () => {
-                (
-                  await screen.findByRole("checkbox", {
-                    name: /^Check to include all previous versions of your documents/,
-                  })
-                ).click();
-              });
+              await user.click(
+                await screen.findByRole("checkbox", {
+                  name: /^Check to include all previous versions of your documents/,
+                })
+              );
             }
 
-            act(() => {
-              screen.getByRole("button", { name: "Next" }).click();
-            });
+            await user.click(screen.getByRole("button", { name: "Next" }));
 
             await waitFor(() => {
               expect(
@@ -423,6 +480,7 @@ describe("ExportDialog", () => {
         .reply(200, { data: { pageSize: "A4" } });
       describe("When the selected export type is PDF", () => {
         test("and the selection is a set of documents.", async () => {
+          const user = userEvent.setup();
           await fc.assert(
             fc
               .asyncProperty(
@@ -435,9 +493,9 @@ describe("ExportDialog", () => {
                     setProps({ open: true, selection });
                   });
                   fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
-                  act(() => {
-                    screen.getByRole("button", { name: "Next" }).click();
-                  });
+                  await user.click(
+                    screen.getByRole("button", { name: "Next" })
+                  );
 
                   await waitFor(() => {
                     expect(screen.getByRole("textbox")).toBeVisible();
@@ -453,6 +511,7 @@ describe("ExportDialog", () => {
           );
         });
         test("and the selection is a group.", async () => {
+          const user = userEvent.setup();
           await fc.assert(
             fc
               .asyncProperty(arbGroupSelection, async (selection) => {
@@ -460,10 +519,8 @@ describe("ExportDialog", () => {
                 act(() => {
                   setProps({ open: true, selection });
                 });
-                fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
-                act(() => {
-                  screen.getByRole("button", { name: "Next" }).click();
-                });
+                await user.click(screen.getByRole("radio", { name: /^PDF/ }));
+                await user.click(screen.getByRole("button", { name: "Next" }));
 
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
@@ -478,6 +535,7 @@ describe("ExportDialog", () => {
           );
         });
         test("and the selection is a user.", async () => {
+          const user = userEvent.setup();
           await fc.assert(
             fc
               .asyncProperty(arbUserSelection, async (selection) => {
@@ -486,9 +544,7 @@ describe("ExportDialog", () => {
                   setProps({ open: true, selection });
                 });
                 fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
-                act(() => {
-                  screen.getByRole("button", { name: "Next" }).click();
-                });
+                await user.click(screen.getByRole("button", { name: "Next" }));
 
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
@@ -505,6 +561,7 @@ describe("ExportDialog", () => {
       });
       describe("When the selected export type is DOC", () => {
         test("and the selection is a single document.", async () => {
+          const user = userEvent.setup();
           mockAxios
             .onGet("deploymentproperties/ajax/property")
             .reply(200, true);
@@ -524,9 +581,9 @@ describe("ExportDialog", () => {
                     await screen.findByRole("radio", { name: /^.DOC/ })
                   );
 
-                  act(() => {
-                    screen.getByRole("button", { name: "Next" }).click();
-                  });
+                  await user.click(
+                    screen.getByRole("button", { name: "Next" })
+                  );
 
                   await waitFor(() => {
                     expect(screen.getByRole("textbox")).toBeVisible();
@@ -545,6 +602,7 @@ describe("ExportDialog", () => {
     });
     describe("The page size displayed on the second page should be set by a call to /defaultPDFConfig", () => {
       each(["A4", "LETTER"]).test("PDF export: pageSize = %s", (pageSize) => {
+        const user = userEvent.setup();
         fc.assert(
           fc
             .asyncProperty(
@@ -563,9 +621,7 @@ describe("ExportDialog", () => {
                 fireEvent.click(
                   await screen.findByRole("radio", { name: /^.DOC/ })
                 );
-                act(() => {
-                  screen.getByRole("button", { name: "Next" }).click();
-                });
+                await user.click(screen.getByRole("button", { name: "Next" }));
                 await waitFor(() => {
                   expect(
                     screen.getByRole("button", { name: pageSize })
@@ -578,6 +634,7 @@ describe("ExportDialog", () => {
         );
       });
       each(["A4", "LETTER"]).test("DOC export: pageSize = %s", (pageSize) => {
+        const user = userEvent.setup();
         fc.assert(
           fc
             .asyncProperty(
@@ -596,9 +653,7 @@ describe("ExportDialog", () => {
                 fireEvent.click(
                   await screen.findByRole("radio", { name: /^.DOC/ })
                 );
-                act(() => {
-                  screen.getByRole("button", { name: "Next" }).click();
-                });
+                await user.click(screen.getByRole("button", { name: "Next" }));
                 await waitFor(() => {
                   expect(
                     screen.getByRole("button", { name: pageSize })

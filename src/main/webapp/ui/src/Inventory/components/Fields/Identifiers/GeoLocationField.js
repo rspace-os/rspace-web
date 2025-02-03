@@ -8,9 +8,7 @@ import React, {
   lazy,
 } from "react";
 import { observer } from "mobx-react-lite";
-import GeoLocationModel, {
-  polygonComplete,
-} from "../../../../stores/models/GeoLocationModel";
+import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import Alert from "@mui/material/Alert";
 import Grid from "@mui/material/Grid";
@@ -384,7 +382,7 @@ const GeoLocationField = ({
             </Grid>
             <PolygonStateAlert
               polygonEmpty={polygonEmpty}
-              polygonComplete={polygonComplete(geoLocation.geoLocationPolygon)}
+              polygonComplete={geoLocation.geoLocationPolygon.isValid}
               textMessages={POLYGON_FIELD_MESSAGES}
             />
           </CustomFieldset>
@@ -569,9 +567,7 @@ const GeoLocationField = ({
                   </Grid>
                   <PolygonStateAlert
                     polygonEmpty={polygonEmpty}
-                    polygonComplete={polygonComplete(
-                      geoLocation.geoLocationPolygon
-                    )}
+                    polygonComplete={geoLocation.geoLocationPolygon.isValid}
                     textMessages={POLYGON_FIELD_MESSAGES}
                   />
                 </CustomFieldset>

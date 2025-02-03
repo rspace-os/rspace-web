@@ -11,6 +11,7 @@ import { CELSIUS } from "../../../../../stores/definitions/Units";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import { type Temperature } from "../../../../../stores/definitions/Sample";
+import userEvent from "@testing-library/user-event";
 
 const mockFieldOwner = (mockedParts: {|
   fieldValues: {
@@ -45,7 +46,8 @@ afterEach(cleanup);
 
 describe("StorageTemperature", () => {
   describe("When enabled and unspecified, the component should", () => {
-    test("show a button that when tapped defaults to ambient temperature.", () => {
+    test("show a button that when tapped defaults to ambient temperature.", async () => {
+      const user = userEvent.setup();
       const fieldOwner = mockFieldOwner({
         fieldValues: {
           storageTempMin: null,
@@ -67,7 +69,7 @@ describe("StorageTemperature", () => {
           />
         </ThemeProvider>
       );
-      screen.getByText("Specify").click();
+      await user.click(screen.getByText("Specify"));
       expect(spy).toHaveBeenCalledWith({
         storageTempMin: { numericValue: 15, unitId: CELSIUS },
         storageTempMax: { numericValue: 30, unitId: CELSIUS },

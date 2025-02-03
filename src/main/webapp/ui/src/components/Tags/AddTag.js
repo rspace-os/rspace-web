@@ -71,7 +71,7 @@ export default function AddTag<
           disabled
             ? () => {}
             : (e) => {
-                setAnchorEl(e.target);
+                setAnchorEl(e.currentTarget);
               }
         }
         clickable={!disabled}

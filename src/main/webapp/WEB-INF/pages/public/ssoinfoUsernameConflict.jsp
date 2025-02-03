@@ -8,7 +8,7 @@
   	<div class="row">
       	<axt:biggerLogo/>
       	<div style="text-align:center; margin-top:46px;">
-      	 <h3 class="form-signup-heading">There is a pre-existing RSpace account for your username...</h3>
+      	 <h3 class="form-signup-heading">There is a pre-existing RSpace account for your username</h3>
           </div>
       </div>
   

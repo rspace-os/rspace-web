@@ -5,11 +5,15 @@ import React, {
   useEffect,
   useState,
   useContext,
+  useRef,
   type ComponentType,
 } from "react";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-import { when } from "mobx";
 import { observer } from "mobx-react-lite";
+import axios from "axios";
+import Intercom from "@intercom/messenger-js-sdk";
+
+const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
 type HelpDocsArgs = {|
   /**
@@ -40,17 +44,21 @@ function loadScript(url: string): void {
  * Displays the HelpDocs popup window.
  */
 function HelpDocs({ Action }: HelpDocsArgs): Node {
+  const [chatEnabled, setChatEnabled] = useState(false);
+  const api = useRef(
+    axios.create({
+      baseURL: "/session/ajax",
+      timeout: ONE_MINUTE_IN_MS,
+    })
+  );
   const analyticsContext = useContext(AnalyticsContext);
   const { trackEvent } = analyticsContext;
 
   // this is simply to trigger a re-render once lighthouse is loaded
   const [_lighthouseIsLoaded, setLighthouseIsLoaded] = useState(false);
 
-  async function loadLighthouse(): Promise<void> {
-    await when(() => analyticsContext.isAvailable !== null);
-    // $FlowFixMe[incompatible-type] analyticsContext.isAvailable cannot be null now
-    const isAvailable: boolean = analyticsContext.isAvailable;
-    if (!isAvailable) {
+  function loadLighthouse(livechatEnabled: boolean): void {
+    if (!livechatEnabled) {
       /*
        * Analytics is disabled on many deployments due to GDPR and other data
        * privacy concerns of many customers. When this is the case, we disable
@@ -68,7 +76,30 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
   }
 
   useEffect(() => {
-    void loadLighthouse();
+    void (async () => {
+      const {
+        data: {
+          livechatEnabled,
+          livechatServerHost,
+          livechatServerKey,
+          livechatUserId,
+        },
+      } = await api.current.get<{|
+        livechatEnabled: boolean,
+        livechatServerHost: string,
+        livechatServerKey: string,
+        livechatUserId: string,
+      |}>("/livechatProperties");
+      if (livechatEnabled) {
+        Intercom({
+          app_id: livechatServerKey,
+          user_id: livechatUserId,
+          hide_default_launcher: true,
+        });
+      }
+      setChatEnabled(livechatEnabled);
+      loadLighthouse(livechatEnabled);
+    })();
   }, []);
 
   useEffect(() => {

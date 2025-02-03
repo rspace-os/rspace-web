@@ -53,7 +53,6 @@
         <div id="owncloud.available.description"><spring:message code="system.property.description.owncloud.available" /></div>
         <div id="nextcloud.available.description"><spring:message code="system.property.description.nextcloud.available" /></div>
         <div id="evernote.available.description"><spring:message code="system.property.description.evernote.available" /></div>
-        <div id="mendeley.available.description"><spring:message code="system.property.description.mendeley.available" /></div>
         <div id="chemistry.available.description"><spring:message code="system.property.description.chemistry.available" /></div>
         <div id="slack.available.description"><spring:message code="system.property.description.slack.available" /></div>
         <div id="orcid.available.description"><spring:message code="system.property.description.orcid.available" /></div>
@@ -68,6 +67,8 @@
         <div id="dmptool.available.description"><spring:message code="system.property.description.dmptool.available" /></div>
         <div id="argos.available.description"><spring:message code="system.property.description.argos.available" /></div>
         <div id="zenodo.available.description"><spring:message code="system.property.description.zenodo.available" /></div>
+        <div id="digitalCommonsData.available.description"><spring:message code="system.property.description.digitalCommonsData.available" /></div>
+        <div id="fieldmark.available.description"><spring:message code="system.property.description.fieldmark.available" /></div>
         <div id="github.available.description"><spring:message code="system.property.description.github.available" /></div>
         <div id="api.available.description"><spring:message code="system.property.description.api.available" /></div>
         <div id="onboarding.available.description"><spring:message code="system.property.description.onboarding.available" /></div>

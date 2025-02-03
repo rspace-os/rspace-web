@@ -793,7 +793,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
           importResult.getSubSampleResult().getResults().get(resultCount);
       try {
         ApiSubSample importedSubSample =
-            subSampleManager.createNewApiSubSample(
+            subSampleManager.addNewApiSubSampleToSample(
                 subSample, parentSampleGlobalId.getDbId(), importResult.getCurrentUser());
         currentResult.setRecord(importedSubSample);
 

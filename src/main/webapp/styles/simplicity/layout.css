@@ -16,7 +16,6 @@
     /* HEADER */
         header#header {
             text-align: left;
-            height: 100px; /* needed by IE 7 */
             position: relative;
         }
         

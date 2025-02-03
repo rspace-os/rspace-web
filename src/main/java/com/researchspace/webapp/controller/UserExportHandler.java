@@ -42,7 +42,7 @@ public class UserExportHandler {
       exportManager.assertExporterCanExportUsersWork(userToExport, exporter);
     }
     archive =
-        exportManager.exportArchiveAsyncUserWork(
+        exportManager.asyncExportUserWorkToArchive(
             exportCfg, userToExport, baseUri, exporter, standardPostExport);
     return archive;
   }

@@ -10,48 +10,39 @@ import React, { type Node, type ComponentType } from "react";
 import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
+import { styled } from "@mui/material/styles";
+import Divider from "@mui/material/Divider";
 
-const useStyles = makeStyles()((theme, { dividers, rightAlignDds }) => ({
+const useStyles = makeStyles()((theme) => ({
   dl: {
-    display: "flex",
-    flexDirection: "column",
-    flexWrap: "unset",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    fontSize: "0.8rem",
+    rowGap: theme.spacing(1),
     margin: 0,
-    "& > span:nth-of-type(n+2)": {
-      borderTop: dividers ? theme.borders.descriptionList : "none",
-    },
+    marginBottom: theme.spacing(1),
   },
   dt: {
     color: theme.palette.text.secondary,
     fontWeight: "600",
     marginRight: theme.spacing(2),
+    alignSelf: "center",
   },
-  span: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: rightAlignDds ? "space-between" : "unset",
-    alignItems: "center",
-    padding: dividers
-      ? theme.spacing(0.75, 1, 0.675)
-      : theme.spacing(0, 0, 1, 0),
-    fontSize: "0.8rem",
-    minHeight: "unset",
-  },
-  spanBelow: {
-    flexDirection: "column",
-  },
-  dtBelow: {
-    alignSelf: "flex-start",
-  },
-  ddBelow: {
-    alignSelf: "flex-end",
+  dtReducedPadding: {
+    marginTop: `-${theme.spacing(1)}`,
+    marginBottom: `-${theme.spacing(1)}`,
   },
   dd: {
-    margin: 0,
+    marginInlineStart: 0,
+    justifySelf: "end",
   },
-  spanReducedPadding: {
-    paddingTop: "3px !important",
-    paddingBottom: "3px !important",
+  ddReducedPadding: {
+    marginTop: `-${theme.spacing(1)}`,
+    marginBottom: `-${theme.spacing(1)}`,
+  },
+  ddBelow: {
+    gridColumn: "1 / span 2",
+    marginTop: "-10px",
   },
 }));
 
@@ -63,38 +54,75 @@ type DescriptionListArgs = {|
     reducedPadding?: boolean,
   |}>,
   dividers?: boolean,
-  rightAlignDds?: boolean,
+  sx?: { ... },
 |};
 
+// This is used so that we can attach sx to the <dl>
+const Dl = styled("dl")``;
+
+/**
+ * This component provides some means for the contents to be styled using the
+ * MUI `sx` prop.
+ *
+ *  - When `below` is true, the <dt> and <dd> have the class .below. As such,
+ *    they can styled by passing an `sx` object that selects them:
+ *
+ *      <DescriptionList
+ *        sx={{
+ *          "& dd.below": {
+ *            width: "100%",
+ *          }
+ *        }}
+ *        ...
+ *      />
+ *
+ */
 function DescriptionList({
   content,
   dividers = false,
-  rightAlignDds = false,
+  sx,
 }: DescriptionListArgs): Node {
-  const { classes } = useStyles({ dividers, rightAlignDds });
+  const { classes } = useStyles();
 
   return (
-    <dl className={classes.dl}>
+    <Dl className={classes.dl} sx={sx}>
       {content.map(
-        ({ label, value, below = false, reducedPadding = false }) => (
-          <span
-            key={label}
-            className={clsx(
-              classes.span,
-              below && classes.spanBelow,
-              reducedPadding && classes.spanReducedPadding
+        ({ label, value, below = false, reducedPadding = false }, i) => (
+          <>
+            {i > 0 && dividers && (
+              <Divider
+                orientation="horizontal"
+                sx={{
+                  gridColumn: "1 / span 2",
+                }}
+                aria-hidden="true"
+                component="div"
+              />
             )}
-          >
-            <dt className={clsx(classes.dt, below && classes.dtBelow)}>
+            <dt
+              className={clsx(
+                classes.dt,
+                reducedPadding && classes.dtReducedPadding,
+                below && classes.dtBelow,
+                below && "below"
+              )}
+            >
               {label}
             </dt>
-            <dd className={clsx(classes.dd, below && classes.ddBelow)}>
+            <dd
+              className={clsx(
+                classes.dd,
+                reducedPadding && classes.ddReducedPadding,
+                below && classes.ddBelow,
+                below && "below"
+              )}
+            >
               {value}
             </dd>
-          </span>
+          </>
         )
       )}
-    </dl>
+    </Dl>
   );
 }
 

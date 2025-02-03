@@ -226,7 +226,7 @@ let rootNode;
  */
 let prevProps = { conditionalRender: {}, eventHandlers: {} };
 
-if (/^\/gallery/.test(window.location.pathname))
+if (/^\/oldGallery/.test(window.location.pathname))
   window.renderToolbar = (newProps) => {
     if (!rootNode && domContainer) {
       rootNode = createRoot(domContainer);

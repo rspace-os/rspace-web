@@ -1,11 +1,14 @@
 package com.researchspace.export.pdf;
 
 import static com.researchspace.export.pdf.PdfHtmlGenerator.MAX_TITLE_WIDTH;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.model.User;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.record.TestFactory;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -36,7 +39,7 @@ public class PdfHtmlGeneratorTest {
   public void setUp() throws Exception {
     VelocityEngine velocityEngine =
         RSpaceTestUtils.setupVelocity("src/main/resources/velocityTemplates");
-    pdfHtmlGenerator = new PdfHtmlGenerator(velocityEngine);
+    pdfHtmlGenerator = new PdfHtmlGenerator(velocityEngine, new HTMLUnicodeFontProcesser());
     basicHtmlDoc = RSpaceTestUtils.loadTextResourceFromPdfDir("basic.html");
     User user = new User();
     user.setFirstName("Some");
@@ -85,25 +88,9 @@ public class PdfHtmlGeneratorTest {
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
     // output contains the shortened title with ellipsis but not the original one
-    Assertions.assertTrue(htmlElementContains(processedHtml, "style", shortenedTitle));
-    Assertions.assertFalse(htmlElementContains(processedHtml, "style", sixtyCharacterTitle));
-  }
-
-  @Test
-  public void headerCreated() {
-    String title = "A Document Title";
-    doc.setName(title);
-    input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
-
-    String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
-
-    // doc owner name and title are set in style element using CSS page-margin boxes i.e. @page
-    // {@top-left ...
     Assertions.assertTrue(
-        htmlElementContains(processedHtml, "style", doc.getOwner().getFullName()));
-    Assertions.assertTrue(htmlElementContains(processedHtml, "style", doc.getName()));
+        htmlElementContains(processedHtml, "div.runningHeaderCenter", shortenedTitle));
+    Assertions.assertFalse(processedHtml.contains(sixtyCharacterTitle));
   }
 
   @Test
@@ -272,18 +259,12 @@ public class PdfHtmlGeneratorTest {
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
-    // the footer should be defined in CSS as a page-margin box to be applied at the bottom of each
-    // page
+    // the footer should be defined as a running-footer, to be applied at the bottom of each page
     Assertions.assertTrue(
         htmlElementContains(
             processedHtml, "style", String.format("Export date: %s", LocalDate.now())));
-    Assertions.assertTrue(htmlElementContains(processedHtml, "style", "Exported by: Some User"));
-
-    // the footer info shouldn't be present in the body
-    Assertions.assertFalse(
-        htmlElementContains(
-            processedHtml, "body", String.format("Export date: %s", LocalDate.now())));
-    Assertions.assertFalse(htmlElementContains(processedHtml, "body", "Exported by: Some User"));
+    Assertions.assertTrue(
+        htmlElementContains(processedHtml, "div.runningFooterRight", "Exported by: Some User"));
   }
 
   @Test
@@ -340,6 +321,36 @@ public class PdfHtmlGeneratorTest {
     Assertions.assertTrue(
         htmlElementContains(
             processedHtml, "#footer", String.format("Last updated: %s", modificationDate)));
+  }
+
+  @Test
+  public void htmlCharsEncodingOfDocNameAndOwner() {
+    input =
+        new ExportProcesserInput(
+            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+
+    doc = new StructuredDocument(TestFactory.createAnyForm());
+    doc.setName("name with non-ascii &∅∈∌ and html entities &#x3");
+
+    User owner = new User();
+    owner.setFirstName("Dev&Ops");
+    owner.setLastName("Team");
+    doc.setOwner(owner);
+
+    String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
+    // verify doc name chars converted
+    assertFalse(
+        "unexpected: " + processedHtml,
+        processedHtml.contains("&∅∈∌") || processedHtml.contains("&#x3"));
+    assertTrue(
+        "unexpected: " + processedHtml, processedHtml.contains("name with non-ascii &amp;</span>"));
+    assertTrue(
+        "unexpected: " + processedHtml,
+        processedHtml.contains("<span style=\"font-family: noto sans math;\">∅∈∌ </span>"));
+    assertTrue("unexpected: " + processedHtml, processedHtml.contains("&amp;#x3"));
+    // verify owner name chars converted
+    assertFalse("unexpected: " + processedHtml, processedHtml.contains("Dev&Ops"));
+    assertTrue("unexpected: " + processedHtml, processedHtml.contains("Dev&amp;Ops"));
   }
 
   private List<ArchivalNfsFile> makeArchiveFileList() {

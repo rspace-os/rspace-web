@@ -9,10 +9,10 @@ import "@testing-library/jest-dom";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import ImageIcon from "@mui/icons-material/Image";
 import { __setIsMobile } from "react-device-detect";
-import { act } from "react-dom/test-utils";
 
 import ImageField from "../ImageField";
 import DynamicallyLoadedImageEditor from "../DynamicallyLoadedImageEditor";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("@mui/icons-material/CameraAlt", () => jest.fn(() => <div></div>));
 jest.mock("@mui/icons-material/Image", () => jest.fn(() => <div></div>));
@@ -57,7 +57,12 @@ describe("ImageField", () => {
 
       test("be a camera icon shown.", () => {
         render(
-          <ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" />
+          <ImageField
+            storeImage={() => {}}
+            imageAsObjectURL={null}
+            id="foo"
+            alt="dummy alt text"
+          />
         );
         expect(CameraAltIcon).toHaveBeenCalled();
       });
@@ -70,7 +75,12 @@ describe("ImageField", () => {
 
       test("be an image icon shown.", () => {
         render(
-          <ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" />
+          <ImageField
+            storeImage={() => {}}
+            imageAsObjectURL={null}
+            id="foo"
+            alt="dummy alt text"
+          />
         );
         expect(ImageIcon).toHaveBeenCalled();
       });
@@ -81,15 +91,19 @@ describe("ImageField", () => {
    * Tapping 'Edit Image' should open the image editor
    */
   describe("When the 'Edit Image' button is tapped there should", () => {
-    test("be a DynamicallyLoadedImageEditor that opens.", () => {
+    test("be a DynamicallyLoadedImageEditor that opens.", async () => {
+      const user = userEvent.setup();
       render(
-        <ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" />
+        <ImageField
+          storeImage={() => {}}
+          imageAsObjectURL={null}
+          id="foo"
+          alt="dummy alt text"
+        />
       );
 
       const editImageButton = screen.getByText("Edit Image");
-      act(() => {
-        editImageButton.click();
-      });
+      await user.click(editImageButton);
       expect(DynamicallyLoadedImageEditor).toHaveBeenCalledWith(
         expect.objectContaining({
           editorOpen: true,

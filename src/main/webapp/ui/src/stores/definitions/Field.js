@@ -3,6 +3,7 @@
 import { type Attachment } from "./Attachment";
 import { type BaseRecord } from "./BaseRecord";
 import { type ValidationResult } from "../../components/ValidatingSubmitButton";
+import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
 
 export type FieldType =
   | "choice"
@@ -37,9 +38,10 @@ export interface Field extends BaseRecord {
 
   +paramsForBackend: { ... };
   +hasContent: boolean;
+  +renderContentAsString: string;
 
   validate(): ValidationResult;
   setAttributesDirty({ ... }): void;
-  setAttachment(File): void;
+  setAttachment(File | GalleryFile): void;
   setError(boolean): void;
 }

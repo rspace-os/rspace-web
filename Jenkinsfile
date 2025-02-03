@@ -45,6 +45,7 @@ pipeline {
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
         DOCKER_AMI = 'ami-069082aeb2787a3ba'
+        AWS_TOMCAT_AMI = 'ami-0d2c7a1d1463d921e'
         APP_VERSION = readMavenPom().getVersion()
         DOCKERHUB_PWD = credentials('DOCKER_HUB_RSPACEOPS')
         DOCKERHUB_REPO = 'rspaceops/rspace-services'
@@ -145,7 +146,7 @@ pipeline {
             steps {
                 echo 'Running Jest tests'
                 dir('src/main/webapp/ui') {
-                    sh 'npm run test -- --maxWorkers=2'
+                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2'
                 }
             }
             post {
@@ -249,7 +250,7 @@ pipeline {
                                 [
                                         $class: 'StringParameterValue',
                                         name: 'AMI',
-                                        value: 'ami-03643725c29083d16'
+                                        value: "$AWS_TOMCAT_AMI"
                                 ],
                                 [
                                         $class: 'StringParameterValue',
@@ -329,10 +330,11 @@ pipeline {
             }
             steps {
                 echo 'Running liquibase tests on main branch...'
-                sh "./mvnw -e clean test -PtestLiquibase -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                sh "./mvnw -e clean test -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Dlog4j2.configurationFile=log4j2-dev.xml \
                   -Djdbc.url=jdbc:mysql://localhost:3306/testLiquibaseUpdate \
+                  -Dliquibase.context=liquibase-update-test,run \
                   -Dmaven.test.failure.ignore=false   -Denvironment=keepdbintact  \
                   -DRS.devlogLevel=INFO -DRS_FILE_BASE=/var/lib/jenkins/userContent/RS_FileRepoLiquibase"
             }

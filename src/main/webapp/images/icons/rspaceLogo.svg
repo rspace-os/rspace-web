@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 150 150">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #00aeef;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2px;
+      }
+
+      .cls-5 {
+        fill: #00aeef;
+      }
+
+      .cls-2 {
+        stroke: #ed1165;
+      }
+
+      .cls-3 {
+        stroke: #575c70;
+      }
+
+      .cls-6 {
+        fill: #ed1165;
+      }
+
+      .cls-4 {
+        stroke: #5a5b6a;
+      }
+
+      .cls-7 {
+        fill: #575c70;
+      }
+    </style>
+  </defs>
+  <!-- Generator: Adobe Illustrator 28.6.0, SVG Export Plug-In . SVG Version: 1.2.0 Build 709)  -->
+  <g>
+    <g id="Layer_1">
+      <g>
+        <line class="cls-1" x1="93.7" y1="84.1" x2="82.3" y2="78.5"/>
+        <circle class="cls-7" cx="37.6" cy="56.3" r="5.7"/>
+        <circle class="cls-6" cx="37.6" cy="75" r="5.7"/>
+        <circle class="cls-5" cx="37.6" cy="93.7" r="5.7"/>
+        <circle class="cls-6" cx="75" cy="56.3" r="5.7"/>
+        <circle class="cls-7" cx="75" cy="75" r="5.7"/>
+        <circle class="cls-6" cx="75" cy="93.7" r="5.7"/>
+        <circle class="cls-5" cx="75" cy="112.4" r="5.7"/>
+        <circle class="cls-7" cx="75" cy="37.6" r="5.7"/>
+        <circle class="cls-6" cx="56.3" cy="65.4" r="5.7"/>
+        <circle class="cls-6" cx="56.3" cy="84.1" r="5.7"/>
+        <circle class="cls-5" cx="56.3" cy="102.8" r="5.7"/>
+        <circle class="cls-7" cx="56.3" cy="46.7" r="5.7"/>
+        <circle class="cls-6" cx="93.7" cy="65.4" r="5.7"/>
+        <circle class="cls-5" cx="93.7" cy="84.1" r="5.7"/>
+        <circle class="cls-5" cx="93.7" cy="102.8" r="5.7"/>
+        <circle class="cls-7" cx="93.7" cy="46.7" r="5.7"/>
+        <circle class="cls-7" cx="112.4" cy="56.3" r="5.7"/>
+        <circle class="cls-6" cx="112.4" cy="75" r="5.7"/>
+        <circle class="cls-5" cx="112.4" cy="93.7" r="5.7"/>
+        <line class="cls-4" x1="63" y1="69" x2="75" y2="75"/>
+        <polyline class="cls-3" points="112.4 56.3 75 37.6 37.6 56.3 49.5 62.2"/>
+        <polyline class="cls-2" points="112.4 75 75 56.3 37.6 75 75 93.7"/>
+        <polyline class="cls-1" points="93.7 84.1 112.4 93.7 75 112.4 37.6 93.7"/>
+      </g>
+    </g>
+  </g>
+</svg>

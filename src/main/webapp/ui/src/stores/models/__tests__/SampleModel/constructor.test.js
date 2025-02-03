@@ -15,6 +15,9 @@ import { type InventoryRecord } from "../../../definitions/InventoryRecord";
 
 jest.mock("../../../stores/RootStore", () => () => ({
   peopleStore: {},
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
+  },
 })); // break import cycle
 
 function mockSampleWithTwoSubsamples(factory: Factory) {

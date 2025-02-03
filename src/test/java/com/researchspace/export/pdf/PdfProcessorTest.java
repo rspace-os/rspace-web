@@ -35,6 +35,8 @@ public class PdfProcessorTest {
 
   @Mock private PdfHtmlGenerator pdfHtmlGenerator;
 
+  @Mock private HTMLUnicodeFontProcesser fontProcesser;
+
   @InjectMocks private PdfProcessor pdfProcessor;
 
   File outputFile;

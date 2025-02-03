@@ -105,6 +105,16 @@ export default class Result<T> {
   }
 
   /**
+   * Just like `flatMap`, but discard the result of the function and return the
+   * input instead.
+   */
+  flatMapDiscarding<U>(f: (T) => Result<U>): Result<T> {
+    if (this.#state.key === "error") return Result.Error(this.#state.errors);
+    const value = this.#state.value;
+    return f(value).map(() => value);
+  }
+
+  /**
    * Perform a side-effect on the value if the result is in an OK state.
    * Otherwise the error(s) are discarded.
    */
@@ -143,8 +153,9 @@ export default class Result<T> {
    * If the first computation did not succeed, then try another.
    *
    * This can be thought of as a disjunctive operator as if either computation
-   * results in an OK state the output is an OK state. Across functional
-   * programming, this is known as the Alternative typeclass.
+   * results in an OK state the output is an OK state. If both computation
+   * results in an Error state then the errors are accumulated. Across
+   * functional programming, this is known as the Alternative typeclass.
    */
   orElseTry<U>(func: (Array<Error>) => Result<U>): Result<T | U> {
     /*
@@ -152,12 +163,22 @@ export default class Result<T> {
      * that `Result<T> | Result<U>` is the same as `Result<T | U>`
      */
     if (this.#state.key === "error") {
-      const resultOfFunc = func(this.#state.errors);
+      const errors = this.#state.errors;
+      const resultOfFunc = func(errors);
       if (resultOfFunc.#state.key === "error")
-        return Result.Error(resultOfFunc.#state.errors);
+        return Result.Error([...errors, ...resultOfFunc.#state.errors]);
       return Result.Ok(resultOfFunc.#state.value);
     }
     return Result.Ok(this.#state.value);
+  }
+
+  /**
+   * Simply hand-off the error handling to try/catch logic.
+   * The first error will be thrown and all others discarded.
+   */
+  elseThrow(): T {
+    if (this.#state.key === "error") throw this.#state.errors[0];
+    return this.#state.value;
   }
 
   /**
@@ -246,14 +267,7 @@ export default class Result<T> {
               .orElseTry(() => Result.Ok(restOfT))
           )
           // if `rest` is Error, then return `r`
-          .orElseTry((restOfErrors) =>
-            r
-              .map((t) => ([t]: $ReadOnlyArray<T>))
-              // concatenating errors where both `r` and `rest` are Errors
-              .orElseTry((rErrors) =>
-                Result.Error([...rErrors, ...restOfErrors])
-              )
-          )
+          .orElseTry(() => r.map((t) => ([t]: $ReadOnlyArray<T>)))
       );
     }
     return r.map((t) => [t]);
@@ -284,12 +298,8 @@ export default class Result<T> {
     if (typeof r === "undefined") return Result.Ok([]);
     if (rest.length > 0) {
       return Result.all(...rest)
-        .orElseTry<$ReadOnlyArray<U>>((restOfErrors) =>
-          r
-            .orElseTry<$ReadOnlyArray<U>>((rErrors) =>
-              Result.Error([...rErrors, ...restOfErrors])
-            )
-            .flatMap<$ReadOnlyArray<U>>(() => Result.Error(restOfErrors))
+        .orElseTry<$ReadOnlyArray<U>>(() =>
+          r.flatMap<$ReadOnlyArray<U>>(() => Result.Error([]))
         )
         .flatMap<$ReadOnlyArray<U>>((restOfT) =>
           r.map<$ReadOnlyArray<U>>((t: U) => [t, ...restOfT])

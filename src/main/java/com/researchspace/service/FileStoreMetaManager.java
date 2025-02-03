@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.FileStoreRoot;
+import com.researchspace.model.User;
 import java.util.List;
 import java.util.Map;
 
@@ -13,8 +14,12 @@ public interface FileStoreMetaManager extends GenericManager<FileProperty, Long>
   FileStoreRoot saveFileStoreRoot(FileStoreRoot root);
 
   /**
-   * @param wheres: pair of Key: column name(same as variable name) and value for where clause
-   * @return List of FileProperty
+   * @param wheres: Map of column name to value for where clause
+   * @return List of FileProperty matching wheres
    */
-  public List<FileProperty> findProperties(Map<String, String> wheres);
+  List<FileProperty> findProperties(Map<String, String> wheres);
+
+  boolean doesUserOwnDocWithHash(User user, String contentsHash);
+
+  FileProperty getByHash(String contentsHash);
 }

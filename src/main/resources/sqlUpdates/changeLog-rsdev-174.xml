@@ -1,0 +1,22 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2024-09-18" context="run" author="matthias">
+        <comment>RSDEV-174: add relation between InventoryFile and EcatMediaFile tables</comment>
+
+        <addColumn tableName="InventoryFile">
+            <column name="mediaFile_id" type="BIGINT(19)"/>
+        </addColumn>
+        <addColumn tableName="InventoryFile_AUD">
+            <column name="mediaFile_id" type="BIGINT(19)"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="mediaFile_id" baseTableName="InventoryFile"
+          constraintName="FK_o7iqfibrftmcfpvwyxvygsn3g" deferrable="false" initiallyDeferred="false"
+          onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+          referencedTableName="EcatMediaFile"/>
+    </changeSet>
+
+</databaseChangeLog>

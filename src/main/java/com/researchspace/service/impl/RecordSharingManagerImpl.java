@@ -39,7 +39,6 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.RecordSharingACL;
-import com.researchspace.model.permissions.UserPermissionAdapter;
 import com.researchspace.model.record.ACLPropagationPolicy;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
@@ -235,7 +234,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   @Override
-  public ServiceOperationResult<Set<RecordGroupSharing>> shareRecord(
+  public ServiceOperationResult<List<RecordGroupSharing>> shareRecord(
       User subject, Long recordToShareId, ShareConfigElement[] sharingConfigs)
       throws IllegalAddChildOperation {
 
@@ -263,7 +262,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
           "Only document owner can share " + recordOrNotebook.getName());
     }
 
-    Set<RecordGroupSharing> shared =
+    List<RecordGroupSharing> shared =
         doRecordOrNotebookShare(subject, recordOrNotebook, sharingConfigs, true);
     // don't notify if autoshare is set
     // we dont mix sharing and publishing in the same 'share' action
@@ -301,7 +300,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       throws IllegalAddChildOperation {
 
     BaseRecord recordOrNotebook = getRecordOrNotebook(recordToUnshareId);
-    Set<RecordGroupSharing> unshared =
+    List<RecordGroupSharing> unshared =
         doRecordOrNotebookShare(unsharing, recordOrNotebook, groupIdsToUnshareWith, false);
     if (!unshared.isEmpty() && !isAutoshare(groupIdsToUnshareWith)) {
       NotificationConfig cfg =
@@ -326,18 +325,18 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   // gets those users affected by unshare who can no longer see the document
-  private Set<User> getSharedToNotify(Set<RecordGroupSharing> shared) {
+  private Set<User> getSharedToNotify(List<RecordGroupSharing> shared) {
     return doGetUsersToNotify(shared, g -> Collections.emptySet());
   }
 
   // gets those users affected by unshare who can no longer see the document
-  private Set<User> getUnsharedToNotify(Set<RecordGroupSharing> unshared) {
+  private Set<User> getUnsharedToNotify(List<RecordGroupSharing> unshared) {
     Function<Group, Set<User>> modulator = Group::getMembersWithDefaultViewAllPermissions;
     return doGetUsersToNotify(unshared, modulator);
   }
 
   private Set<User> doGetUsersToNotify(
-      Set<RecordGroupSharing> shareDelta, Function<Group, Set<User>> userModulator) {
+      List<RecordGroupSharing> shareDelta, Function<Group, Set<User>> userModulator) {
     Set<User> toNotify = new HashSet<>();
     Set<AbstractUserOrGroupImpl> inputToNotify =
         shareDelta.stream().map(RecordGroupSharing::getSharee).collect(toSet());
@@ -428,18 +427,17 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
    * Helper method with common code param share
    *
    * @param subject
-   * @param recordId
+   * @param recordOrNotebook
    * @param groupShareCfgs
    * @param share true= sharing, false = unsharing
-   * @return operation result, whether the record was shared/unshared with at least one from
-   *     selected sharees
+   * @return a list of created/removed recordGroupSharings
    * @throws IllegalAddChildOperation
    */
-  private Set<RecordGroupSharing> doRecordOrNotebookShare(
+  private List<RecordGroupSharing> doRecordOrNotebookShare(
       User subject, BaseRecord recordOrNotebook, ShareConfigElement[] groupShareCfgs, boolean share)
       throws IllegalAddChildOperation {
 
-    Set<RecordGroupSharing> sharees = new HashSet<>();
+    List<RecordGroupSharing> sharees = new ArrayList<>();
 
     // iterate over the groups/users we're going to share with:
     for (ShareConfigElement grpShareCfg : groupShareCfgs) {
@@ -459,33 +457,12 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         continue;
       }
 
-      // create a nonredundant set of users we're going to share with, either in lab groups or
-      // individuals
-      Set<Long> userIds = getUserIdsToShareWith(userOrGroup);
-      doSharing(
-              subject, grpShareCfg, share, userIds, recordOrNotebook, userOrGroup, isAlreadyShared)
+      doSharing(subject, grpShareCfg, share, recordOrNotebook, userOrGroup, isAlreadyShared)
           .stream()
           .forEach(sharees::add);
     }
 
     return sharees;
-  }
-
-  /**
-   * @param userOrGroup
-   * @return
-   */
-  private Set<Long> getUserIdsToShareWith(AbstractUserOrGroupImpl userOrGroup) {
-    Set<Long> userIdss = new HashSet<Long>();
-    if (userOrGroup.isGroup()) {
-      Set<User> users = userOrGroup.asGroup().getMembers();
-      for (User u : users) {
-        userIdss.add(u.getId());
-      }
-    } else if (userOrGroup.isUser()) {
-      userIdss.add(userOrGroup.getId());
-    }
-    return userIdss;
   }
 
   /**
@@ -506,19 +483,20 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
   /**
    * @param subject
-   * @param groupShareCfgs
+   * @param groupShareCfg
    * @param share
-   * @param userIds
    * @param docOrNotebook
    * @param toShareWith
    * @param isAlreadyShared
+   * @return list of created/removed RecordGroupSharing entries; when sharing, this will be just one
+   *     entry, when unsharing could be more than one e.g. if unsharing a notebook with entries that
+   *     were shared separately;
    * @throws IllegalAddChildOperation
    */
   private List<RecordGroupSharing> doSharing(
       User subject,
       ShareConfigElement groupShareCfg,
       boolean share,
-      Set<Long> userIds,
       BaseRecord docOrNotebook,
       AbstractUserOrGroupImpl toShareWith,
       boolean isAlreadyShared)
@@ -526,94 +504,40 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
     String usernameInSession = SecurityUtils.getSubject().getPrincipal().toString();
     User userInSession = userDao.getUserByUsername(usernameInSession);
+    boolean isGroupShare = toShareWith.isGroup();
 
-    if (toShareWith.isUser()) {
-      boolean sysAdminUnsharingAPublicLink = false;
-      boolean communityAdminUnsharingACommunityMemberPublication = false;
-      if (((User) toShareWith).hasRole(Role.ANONYMOUS_ROLE) && (userInSession.hasSysadminRole())) {
-        sysAdminUnsharingAPublicLink = true;
-      } else if (((User) toShareWith).hasRole(Role.ANONYMOUS_ROLE)
-          && userInSession.hasAdminRole()) {
-        List<Community> communitiesManagedByAdmin =
-            communityService.listCommunitiesForAdmin(userInSession.getId());
-        RecordGroupSharing publication =
-            groupshareRecordDao.getRecordGroupSharingsForRecord(docOrNotebook.getId()).stream()
-                .filter(f -> f.getPublicLink() != null)
-                .findFirst()
-                .get();
-        List<Community> publisherCommunities =
-            communityService.listCommunitiesForUser(publication.getSharedBy().getId());
-        Set<Community> inCommon =
-            communitiesManagedByAdmin.stream()
-                .distinct()
-                .filter(publisherCommunities::contains)
-                .collect(Collectors.toSet());
-        if (!inCommon.isEmpty()) {
-          communityAdminUnsharingACommunityMemberPublication = true;
-        }
-      }
-
-      // Checking if the user in session is the target, or if its admin unsharing
-      // in these cases we don't need to check permissions.
-      if (!usernameInSession.equals(toShareWith.asUser().getUsername())
-          && !sysAdminUnsharingAPublicLink
-          && !communityAdminUnsharingACommunityMemberPublication) {
-        assertHasSharePermission(subject, docOrNotebook, share);
-      }
-      // assume is Group
+    if (isGroupShare) {
+      assertCanDoSharingWithGroup(subject, share, docOrNotebook, toShareWith, userInSession);
     } else {
-      boolean isLabAdminWithViewAll =
-          toShareWith.asGroup().getLabAdminsWithViewAllPermission().contains(userInSession);
-
-      boolean isCommAdmin = false;
-      // community might be null for collaboration groups
-      if (!toShareWith.asGroup().isCollaborationGroup()
-          && toShareWith.asGroup().getCommunity() != null) {
-        isCommAdmin = toShareWith.asGroup().getCommunity().getAdmins().contains(userInSession);
-      }
-
-      if (!isLabAdminWithViewAll && !isCommAdmin && !userInSession.hasSysadminRole()) {
-        assertHasSharePermission(subject, docOrNotebook, share);
-      }
+      assertCanDoSharingWithUser(subject, share, docOrNotebook, toShareWith, userInSession);
     }
 
-    /* if unshare operation */
+    /* unshare operation handled by a separate method */
     if (!share) {
-      return doUnshare(subject, groupShareCfg, docOrNotebook, toShareWith, userIds);
+      log.info("Unsharing doc [{}] with [{}]", docOrNotebook.getId(), toShareWith.getDisplayName());
+      return doUnshare(subject, groupShareCfg, docOrNotebook, toShareWith);
     }
-    List<RecordGroupSharing> allShared = new ArrayList<>();
 
     log.info("Sharing doc [{}] with [{}]", docOrNotebook.getId(), toShareWith.getDisplayName());
 
-    /* checking target folder selected in share dialog, if any */
+    /* calculate target folder for this doSharing run; target folder may be specified by the user
+     * when sharing with group, otherwise defaults to top-level of individual/group share folder */
     Folder selectedTargetFolder = null;
-    if (groupShareCfg.getGroupid() != null) {
-
-      Long folderToShareIntoId = groupShareCfg.getGroupFolderId();
-      if (folderToShareIntoId != null) {
-        selectedTargetFolder = folderDao.get(folderToShareIntoId);
-        Folder shared = getTopLevelSharingFolder(subject, toShareWith, null, docOrNotebook);
-        if (selectedTargetFolder.getShortestPathToParent(shared).isEmpty()) {
-          log.warn(
-              "Folder to share into ({}, id {}), is not the correct folder for this file "
-                  + "folder {}, using group folder",
-              selectedTargetFolder.getName(),
-              selectedTargetFolder.getId(),
-              shared.getId());
-          selectedTargetFolder = shared;
-        }
-        // can only share to notebooks that were shared with "write" permission
-        if (selectedTargetFolder.isNotebook()) {
-          assertUserHasWritePermission(subject, selectedTargetFolder);
-          if (selectedTargetFolder.getOwner().equals(docOrNotebook.getOwner())) {
-            throw new IllegalAddChildOperation("can't share document into own notebook");
-          }
-        }
+    boolean isShareWithAnonyomusUser = false;
+    if (isGroupShare) {
+      checkUserCanShareWithGroup(subject, toShareWith.asGroup());
+      selectedTargetFolder =
+          getGroupShareTargetFolder(subject, groupShareCfg, docOrNotebook, toShareWith);
+    } else {
+      User user = initUserAndCheckUserCanShareWithOtherUser(subject, toShareWith.getId());
+      if (user.hasRole(Role.ANONYMOUS_ROLE)) {
+        isShareWithAnonyomusUser = true;
+      } else {
+        selectedTargetFolder = getTopLevelSharingFolder(subject, toShareWith, user, docOrNotebook);
       }
     }
 
-    /* share operation */
-    /* if this record isn't already shared with this group or user */
+    /* actual share operation - saving RecordGroupSharing entity */
     RecordGroupSharing rgs = null;
     if (!isAlreadyShared) {
       // sharing record and adding permissions for user or group
@@ -652,38 +576,122 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     if (docOrNotebook.isTemplate()) {
       setPermissionsOnAttachmentsInSharedTemplates(docOrNotebook, toShareWith, isAlreadyShared);
     }
-
-    // set of folders we'll share into, so we don't do this twice.
-    Set<Folder> foldersToShareInto = new HashSet<>();
-    for (Long id : userIds) {
-      User user = initUserAndCheckSubjectCanShareWith(id, subject);
-      Folder folderToShareInto = selectedTargetFolder;
-      if (folderToShareInto == null && !user.hasRole(Role.ANONYMOUS_ROLE)) {
-        folderToShareInto = getTopLevelSharingFolder(subject, toShareWith, user, docOrNotebook);
-        foldersToShareInto.add(folderToShareInto);
-      } else if (!user.hasRole(Role.ANONYMOUS_ROLE)) {
-        foldersToShareInto.add(folderToShareInto);
-      } else {
-        saveRecordOrFolder(docOrNotebook);
-      }
+    if (isShareWithAnonyomusUser) {
+      saveRecordOrFolder(docOrNotebook);
     }
 
-    for (Folder folderToShareInto : foldersToShareInto) {
+    /* adding shared item into shared folder */
+    if (selectedTargetFolder != null) {
       ACLPropagationPolicy aclPolicy = ACLPropagationPolicy.DEFAULT_POLICY;
-      if (folderToShareInto.isNotebook()) {
+      if (selectedTargetFolder.isNotebook()) {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
-      // either add to individual shared folder, or lab group shared folder.
-      folderToShareInto.addChild(docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy);
+      selectedTargetFolder.addChild(docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy);
       saveRecordOrFolder(docOrNotebook);
-      folderDao.save(folderToShareInto);
+      folderDao.save(selectedTargetFolder);
       log.info(
           "Added RTF for doc [{}] and folder [{}]",
           docOrNotebook.getId(),
-          folderToShareInto.getId());
+          selectedTargetFolder.getId());
     }
-    allShared.add(rgs);
-    return allShared;
+
+    return List.of(rgs);
+  }
+
+  private Folder getGroupShareTargetFolder(
+      User subject,
+      ShareConfigElement groupShareCfg,
+      BaseRecord docOrNotebook,
+      AbstractUserOrGroupImpl targetGroup) {
+
+    Long folderToShareIntoId = groupShareCfg.getGroupFolderId();
+    Folder topLevelSharingFolder =
+        getTopLevelSharingFolder(subject, targetGroup, null, docOrNotebook);
+
+    /* if no target folder provided, share into top level */
+    if (folderToShareIntoId == null) {
+      return topLevelSharingFolder;
+    }
+
+    Folder targetFolder = folderDao.get(folderToShareIntoId);
+    if (targetFolder.getShortestPathToParent(topLevelSharingFolder).isEmpty()) {
+      log.warn(
+          "Folder to share into ({}, id {}), is not the correct folder for this group "
+              + "folder {}, using group folder",
+          targetFolder.getName(),
+          targetFolder.getId(),
+          topLevelSharingFolder.getId());
+      targetFolder = topLevelSharingFolder;
+    }
+    // can only share to notebooks that were shared with "write" permission
+    if (targetFolder.isNotebook()) {
+      assertUserHasWritePermission(subject, targetFolder);
+      if (targetFolder.getOwner().equals(docOrNotebook.getOwner())) {
+        throw new IllegalAddChildOperation("can't share document into own notebook");
+      }
+    }
+    return targetFolder;
+  }
+
+  private void assertCanDoSharingWithUser(
+      User subject,
+      boolean share,
+      BaseRecord docOrNotebook,
+      AbstractUserOrGroupImpl toShareWith,
+      User userInSession) {
+
+    boolean sysAdminUnsharingAPublicLink = false;
+    boolean communityAdminUnsharingACommunityMemberPublication = false;
+    if (((User) toShareWith).hasRole(Role.ANONYMOUS_ROLE) && (userInSession.hasSysadminRole())) {
+      sysAdminUnsharingAPublicLink = true;
+    } else if (((User) toShareWith).hasRole(Role.ANONYMOUS_ROLE) && userInSession.hasAdminRole()) {
+      List<Community> communitiesManagedByAdmin =
+          communityService.listCommunitiesForAdmin(userInSession.getId());
+      RecordGroupSharing publication =
+          groupshareRecordDao.getRecordGroupSharingsForRecord(docOrNotebook.getId()).stream()
+              .filter(f -> f.getPublicLink() != null)
+              .findFirst()
+              .get();
+      List<Community> publisherCommunities =
+          communityService.listCommunitiesForUser(publication.getSharedBy().getId());
+      Set<Community> inCommon =
+          communitiesManagedByAdmin.stream()
+              .distinct()
+              .filter(publisherCommunities::contains)
+              .collect(Collectors.toSet());
+      if (!inCommon.isEmpty()) {
+        communityAdminUnsharingACommunityMemberPublication = true;
+      }
+    }
+
+    // Checking if the user in session is the target, or if its admin unsharing
+    // in these cases we don't need to check permissions.
+    if (!userInSession.getUsername().equals(toShareWith.asUser().getUsername())
+        && !sysAdminUnsharingAPublicLink
+        && !communityAdminUnsharingACommunityMemberPublication) {
+      assertHasSharePermission(subject, docOrNotebook, share);
+    }
+  }
+
+  private void assertCanDoSharingWithGroup(
+      User subject,
+      boolean share,
+      BaseRecord docOrNotebook,
+      AbstractUserOrGroupImpl toShareWith,
+      User userInSession) {
+
+    boolean isLabAdminWithViewAll =
+        toShareWith.asGroup().getLabAdminsWithViewAllPermission().contains(userInSession);
+    boolean isCommAdmin = false;
+    // community might be null for collaboration groups
+    if (!toShareWith.asGroup().isCollaborationGroup()
+        && toShareWith.asGroup().getCommunity() != null) {
+      isCommAdmin = toShareWith.asGroup().getCommunity().getAdmins().contains(userInSession);
+    }
+
+    if (!isLabAdminWithViewAll && !isCommAdmin && !userInSession.hasSysadminRole()) {
+      assertHasSharePermission(subject, docOrNotebook, share);
+    }
   }
 
   private void assertUserHasWritePermission(User subject, Folder toShareInto) {
@@ -722,34 +730,37 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
   /**
    * @param subject
-   * @param groupShareCfgs
-   * @param documentOrNotebook
+   * @param groupShareCfg
+   * @param docOrNotebook
    * @param toUnshareWith
-   * @param users
-   * @return
+   * @return list of the deleted RecordGroupSharing entries; may be more than 1 for a single unshare
+   *     action, e.g. when unsharing a notebook with separately shared entries;
    */
   private List<RecordGroupSharing> doUnshare(
       User subject,
       ShareConfigElement groupShareCfg,
-      BaseRecord documentOrNotebook,
-      AbstractUserOrGroupImpl toUnshareWith,
-      Set<Long> users) {
+      BaseRecord docOrNotebook,
+      AbstractUserOrGroupImpl toUnshareWith) {
+
     List<RecordGroupSharing> unshared = new ArrayList<>();
-    List<BaseRecord> originalItemsToUnshare = TransformerUtils.toList(documentOrNotebook);
-    // now add other items to be unshared (e.g., shared entries of an shared notebook)
+    List<BaseRecord> originalItemsToUnshare = TransformerUtils.toList(docOrNotebook);
+    // there may be more items to unshare, e.g. shared entries of a shared notebook
     List<BaseRecord> otherItemsToUnshare = new ArrayList<>();
     if (toUnshareWith.isGroup()
         || (toUnshareWith.isUser() && !toUnshareWith.asUser().hasRole(Role.ANONYMOUS_ROLE))) {
       // populate entries of a notebook for unshare but not for unpublish
-      otherItemsToUnshare = addOtherItemsToUnshare(documentOrNotebook, toUnshareWith);
+      otherItemsToUnshare = addOtherItemsToUnshare(docOrNotebook, toUnshareWith);
     }
+
     // probably best to put entries at front of list, so these are deleted first.
     otherItemsToUnshare.addAll(originalItemsToUnshare);
     for (BaseRecord toUnshare : otherItemsToUnshare) {
-      List<RecordGroupSharing> rgsToDelete =
+      Optional<RecordGroupSharing> rgsToDelete =
           groupshareRecordDao.findByRecordAndUserOrGroup(toUnshareWith.getId(), toUnshare.getId());
-      unshared.addAll(rgsToDelete);
-      groupshareRecordDao.removeRecordFromGroupShare(toUnshareWith.getId(), toUnshare.getId());
+      if (rgsToDelete.isPresent()) {
+        unshared.add(rgsToDelete.get());
+        groupshareRecordDao.removeRecordFromGroupShare(toUnshareWith.getId(), toUnshare.getId());
+      }
       PermissionType permType = permissnUtils.createFromString(groupShareCfg.getOperation());
       toUnshareWith.removePermission(
           permFac.createIdPermission(PermissionDomain.RECORD, permType, toUnshare.getId()));
@@ -777,22 +788,27 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         }
       }
 
-      Set<Folder> deletedFrom = new HashSet<>();
-      // now we remove this shared item from other users's shared folders
-      for (Long id : users) {
-        User user = userDao.get(id);
+      // now we remove this shared item from its location in user's/group shared folder
+      Folder sharedTopLevelFolder = null;
+      if (toUnshareWith.isUser()) {
+        User user = toUnshareWith.asUser();
         if (user.getSharedFolder() != null) {
-          Folder sharedGrpFolderRoot =
-              getTopLevelSharingFolder(subject, toUnshareWith, user, documentOrNotebook);
-          // we only need to delete once from group shared folder of a particular user
-          if (deletedFrom.contains(sharedGrpFolderRoot)) {
-            continue;
-          }
-          RSPath path = toUnshare.getShortestPathToParent(sharedGrpFolderRoot);
-          path.getImmediateParentOf(toUnshare)
-              .ifPresent(sharedParent -> removeUnsharedChild(sharedParent, toUnshare));
-          deletedFrom.add(sharedGrpFolderRoot);
+          sharedTopLevelFolder =
+              getTopLevelSharingFolder(subject, toUnshareWith, user, docOrNotebook);
         }
+      } else {
+        sharedTopLevelFolder =
+            getTopLevelSharingFolder(subject, toUnshareWith, null, docOrNotebook);
+      }
+
+      RSPath path = toUnshare.getShortestPathToParent(sharedTopLevelFolder);
+      Optional<Folder> sharedParent = path.getImmediateParentOf(toUnshare);
+      if (sharedParent.isPresent()) {
+        removeUnsharedChild(sharedParent.get(), toUnshare);
+        log.info(
+            "Removed RTF for doc [{}] and folder [{}]",
+            docOrNotebook.getId(),
+            sharedParent.get().getId());
       }
     }
     return unshared;
@@ -831,30 +847,77 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   /**
-   * @param userId
-   * @param subject
+   * @param user
+   * @param otherUserId
    * @return
    */
-  private User initUserAndCheckSubjectCanShareWith(Long userId, User subject) {
-    User user = userDao.get(userId);
-    if (user.hasRole(Role.ANONYMOUS_ROLE)) {
-      return user;
+  private User initUserAndCheckUserCanShareWithOtherUser(User user, Long otherUserId) {
+    User otherUser = userDao.get(otherUserId);
+    if (otherUser.hasRole(Role.ANONYMOUS_ROLE)) {
+      return otherUser;
     }
-    Folder userRoot = user.getRootFolder();
+    Folder userRoot = otherUser.getRootFolder();
     // Need to reload user after initializing, to set RF id and shared folder
     if (userRoot == null) {
-      userRoot = contentInitializer.init(user.getId()).getUserRoot();
-      userDao.save(user);
+      userRoot = contentInitializer.init(otherUser.getId()).getUserRoot();
+      userDao.save(otherUser);
     }
     userRoot.getName();
 
-    // In this point, The subject (user) could not belong to any
+    // In this point, The user may not belong to any
     // group in a cloud environment. So we do not check share
     // permission within a group.
     if (!properties.isCloud()) {
-      checkSubjectCanShareWithUser(subject, user);
+      checkUserCanShareWithOtherUser(user, otherUser);
     }
-    return user;
+    return otherUser;
+  }
+
+  /**
+   * This method checks if the user can share their records with given group. That boils down to
+   * group membership, i.e. users can share with groups they belong to.
+   *
+   * @param user
+   * @param group
+   * @throws AuthorizationException if user not a member of group they try to share with
+   */
+  private void checkUserCanShareWithGroup(User user, Group group) {
+    boolean canShareWithGroup = user.getGroups().contains(group);
+    if (!canShareWithGroup) {
+      throw new AuthorizationException(
+          "Unauthorized attempt by ["
+              + user.getUsername()
+              + "] to share with group ["
+              + group.getUniqueName()
+              + "]");
+    }
+  }
+
+  /**
+   * This method checks if the user can individually share their records with another. Outside of
+   * RSpace Community that boils down to group membership, i.e. users can share with anyone in the
+   * group they belong to.
+   *
+   * @param user
+   * @param otherUser
+   * @throws AuthorizationException if other user not a member of any group with user
+   */
+  private void checkUserCanShareWithOtherUser(User user, User otherUser)
+      throws AuthorizationException {
+    Set<Group> groups = user.getGroups();
+    List<String> validUsernames =
+        Group.getUniqueUsersInGroups(groups, null).stream()
+            .map(User::getUsername)
+            .collect(Collectors.toList());
+
+    if (!validUsernames.contains(otherUser.getUsername())) {
+      throw new AuthorizationException(
+          "Unauthorized attempt by ["
+              + user.getUsername()
+              + "] to share with user ["
+              + otherUser.getUsername()
+              + "]");
+    }
   }
 
   /**
@@ -1034,29 +1097,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       }
     }
     return null;
-  }
-
-  /**
-   * This method checks if the subject (user) has SHARE permission with in a group (user). We used
-   * this method in standard environment when the share functionality is strictly related to groups.
-   * Subject (user) could not belong to any group in a cloud environment.
-   *
-   * @param subject
-   * @param user
-   * @throws AuthorizationException if permissions not present
-   */
-  private void checkSubjectCanShareWithUser(User subject, User user) throws AuthorizationException {
-    UserPermissionAdapter userAdpter = new UserPermissionAdapter(user);
-    userAdpter.setDomain(PermissionDomain.GROUP);
-    userAdpter.setAction(PermissionType.SHARE);
-    if (subject != null && !subject.isPermitted(userAdpter, true)) {
-      throw new AuthorizationException(
-          "Unauthorized attempt by "
-              + subject.getUsername()
-              + " to share with other user ["
-              + user.getUsername()
-              + "]");
-    }
   }
 
   /**

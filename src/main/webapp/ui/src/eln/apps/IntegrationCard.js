@@ -99,7 +99,7 @@ type IntegrationCardArgs<Credentials> = {|
 
   // An explanation of what value connect the service to RSpace provides.
   // Describe the behaviour of RSpace when the integration is enabled.
-  usageText: string,
+  usageText: Node,
 
   // The name of a link in ../../assets/DocLinks to our user-facing
   // documentation. We cannot infer this from `name` because some very similar
@@ -507,17 +507,19 @@ function IntegrationCard<Credentials>({
           >
             Close
           </Button>
-          <Button
-            onClick={() => {
-              if (mode === "ENABLED") {
-                update("DISABLED");
-              } else {
-                update("ENABLED");
-              }
-            }}
-          >
-            {mode === "ENABLED" ? "DISABLE" : "ENABLE"}
-          </Button>
+          {integrationState.mode !== "EXTERNAL" && (
+            <Button
+              onClick={() => {
+                if (mode === "ENABLED") {
+                  update("DISABLED");
+                } else {
+                  update("ENABLED");
+                }
+              }}
+            >
+              {mode === "ENABLED" ? "DISABLE" : "ENABLE"}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </ThemeProvider>

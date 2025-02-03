@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
@@ -133,6 +134,8 @@ public class RepositoryConfigurationController extends BaseController {
       info = depositHandler.getDryadRepoUIConfigInfo(user);
     } else if (ZENODO_APP_NAME.equals(integrationInfoName)) {
       info = depositHandler.getZenodoRepoUIConfigInfo(user);
+    } else if (DIGITAL_COMMONS_DATA_APP_NAME.equals(integrationInfoName)) {
+      info = depositHandler.getDigitalCommonsDataRepoUIConfigInfo(user);
     }
     if (info == null) {
       throw new IllegalStateException("unknown or undefined integration");
@@ -146,6 +149,9 @@ public class RepositoryConfigurationController extends BaseController {
     rc.put(FIGSHARE_APP_NAME, integrationsHandler.getIntegration(user, FIGSHARE_APP_NAME));
     rc.put(DRYAD_APP_NAME, integrationsHandler.getIntegration(user, DRYAD_APP_NAME));
     rc.put(ZENODO_APP_NAME, integrationsHandler.getIntegration(user, ZENODO_APP_NAME));
+    rc.put(
+        DIGITAL_COMMONS_DATA_APP_NAME,
+        integrationsHandler.getIntegration(user, DIGITAL_COMMONS_DATA_APP_NAME));
     return rc;
   }
 
@@ -165,6 +171,8 @@ public class RepositoryConfigurationController extends BaseController {
     } else if (DRYAD_APP_NAME.equals(e.getKey())) {
       return e.getValue().isOauthConnected();
     } else if (ZENODO_APP_NAME.equals(e.getKey())) {
+      return e.getValue().hasOptions();
+    } else if (DIGITAL_COMMONS_DATA_APP_NAME.equals(e.getKey())) {
       return e.getValue().hasOptions();
     } else {
       return false;

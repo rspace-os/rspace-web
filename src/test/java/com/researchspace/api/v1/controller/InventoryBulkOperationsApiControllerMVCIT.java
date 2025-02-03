@@ -42,7 +42,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
   @Test
   public void duplicateInventoryItemsInBulk() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiSampleWithFullSubSamples sample = createComplexSampleForUser(anyUser);
     ApiSampleTemplate template = createBasicSampleTemplate(anyUser);
@@ -74,7 +74,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
   public void createEditDeleteInventoryItemsAsBulkOperations() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // batch CREATE - create sample and container
     String createSamplesJSON =
@@ -148,7 +148,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     Mockito.reset(auditer);
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer workbenchForUser = getWorkbenchForUser(anyUser);
     int initWorkbenchCount = workbenchForUser.getContentSummary().getTotalCount();
@@ -267,7 +267,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     Mockito.reset(auditer);
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // batch CREATE - create sample and container
     String createSamplesJSON =
@@ -464,7 +464,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     User testUser = createInitAndLoginAnyUser();
     ApiContainer testUserWorkbench = getWorkbenchForUser(testUser);
     ApiContainer testUserContainer = createBasicContainerForUser(testUser);
-    String apiKey = createApiKeyForuser(testUser);
+    String apiKey = createNewApiKeyForUser(testUser);
 
     User otherUser = createAndSaveUser(getRandomName(10));
     initUsers(otherUser);
@@ -519,7 +519,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
   @Test
   public void bulkTransferOfInventoryItems() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create a container and a sample
     ApiContainer createdContainer = createBasicContainerForUser(anyUser);
@@ -564,7 +564,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
   public void bulkPermissionChangeForInventoryItems() throws Exception {
     // create a user, and a group
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     User pi = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
     initUsers(pi);
     Group group = createGroupForUsersWithDefaultPi(pi, anyUser);

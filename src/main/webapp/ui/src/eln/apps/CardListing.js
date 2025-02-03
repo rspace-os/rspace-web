@@ -8,20 +8,22 @@ import {
 } from "./useIntegrationsEndpoint";
 import Grid from "@mui/material/Grid";
 import Argos from "./integrations/Argos";
+import Ascenscia from "./integrations/Ascenscia";
 import Box from "./integrations/Box";
 import Clustermarket from "./integrations/Clustermarket";
 import Dataverse from "./integrations/Dataverse";
+import DigitalCommonsData from "./integrations/DigitalCommonsData";
 import DMPonline from "./integrations/DMPonline";
 import DMPTool from "./integrations/DMPTool";
 import Dropbox from "./integrations/Dropbox";
 import Dryad from "./integrations/Dryad";
 import Egnyte from "./integrations/Egnyte";
 import Evernote from "./integrations/Evernote";
+import Fieldmark from "./integrations/Fieldmark";
 import Figshare from "./integrations/Figshare";
 import GitHub from "./integrations/GitHub";
 import GoogleDrive from "./integrations/GoogleDrive";
 import Jove from "./integrations/Jove";
-import Mendeley from "./integrations/Mendeley";
 import MSTeams from "./integrations/MSTeams";
 import NextCloud from "./integrations/NextCloud";
 import Omero from "./integrations/Omero";
@@ -102,6 +104,19 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
     [update]
   );
 
+  const digitalCommonsDataUpdate = React.useCallback(
+    (newState: IntegrationStates["DIGITALCOMMONSDATA"]) => {
+      void runInAction(async () => {
+        integrationStates.DIGITALCOMMONSDATA = await update(
+          "DIGITALCOMMONSDATA",
+          newState
+        );
+      });
+    },
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [update]
+  );
+
   const dmponlineUpdate = React.useCallback(
     (newState: IntegrationStates["DMPONLINE"]) => {
       void runInAction(async () => {
@@ -161,6 +176,16 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
     [update]
   );
 
+  const fieldmarkUpdate = React.useCallback(
+    (newState: IntegrationStates["FIELDMARK"]) => {
+      void runInAction(async () => {
+        integrationStates.FIELDMARK = await update("FIELDMARK", newState);
+      });
+    },
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [update]
+  );
+
   const figshareUpdate = React.useCallback(
     (newState: IntegrationStates["FIGSHARE"]) => {
       void runInAction(async () => {
@@ -195,16 +220,6 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
     (newState: IntegrationStates["JOVE"]) => {
       void runInAction(async () => {
         integrationStates.JOVE = await update("JOVE", newState);
-      });
-    },
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [update]
-  );
-
-  const mendeleyUpdate = React.useCallback(
-    (newState: IntegrationStates["MENDELEY"]) => {
-      void runInAction(async () => {
-        integrationStates.MENDELEY = await update("MENDELEY", newState);
       });
     },
     //eslint-disable-next-line react-hooks/exhaustive-deps
@@ -323,6 +338,7 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
           update={argosUpdate}
         />
       )}
+      {integrationStates.ASCENSCIA.mode === mode && <Ascenscia />}
       {integrationStates.BOX.mode === mode && (
         <Box integrationState={integrationStates.BOX} update={boxUpdate} />
       )}
@@ -336,6 +352,12 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
         <Dataverse
           integrationState={integrationStates.DATAVERSE}
           update={dataverseUpdate}
+        />
+      )}
+      {integrationStates.DIGITALCOMMONSDATA.mode === mode && (
+        <DigitalCommonsData
+          integrationState={integrationStates.DIGITALCOMMONSDATA}
+          update={digitalCommonsDataUpdate}
         />
       )}
       {integrationStates.DMPONLINE.mode === mode && (
@@ -374,6 +396,12 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
           update={evernoteUpdate}
         />
       )}
+      {integrationStates.FIELDMARK.mode === mode && (
+        <Fieldmark
+          integrationState={integrationStates.FIELDMARK}
+          update={fieldmarkUpdate}
+        />
+      )}
       {integrationStates.FIGSHARE.mode === mode && (
         <Figshare
           integrationState={integrationStates.FIGSHARE}
@@ -394,12 +422,6 @@ function CardListing({ mode, integrationStates }: CardListingArgs): Node {
       )}
       {integrationStates.JOVE.mode === mode && (
         <Jove integrationState={integrationStates.JOVE} update={joveUpdate} />
-      )}
-      {integrationStates.MENDELEY.mode === mode && (
-        <Mendeley
-          integrationState={integrationStates.MENDELEY}
-          update={mendeleyUpdate}
-        />
       )}
       {integrationStates.NEXTCLOUD.mode === mode && (
         <NextCloud

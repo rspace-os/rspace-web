@@ -25,6 +25,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
   private @Autowired IServerlogRetriever serverLogRetriever;
   private @Autowired CommunityDao commDao;
   private @Autowired RecordDao recordDao;
+  private @Autowired FormDao formDao;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
@@ -159,6 +160,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
         .userInfo(new UserPublicInfoForUsageInfo(user))
         .signupSource(user.getSignupSource().toString())
         .lastLogin(user.getLastLogin())
+        .hasFormsUsedByOtherUsers(formDao.hasUserPublishedFormsUsedInOtherRecords(user))
         .build();
   }
 

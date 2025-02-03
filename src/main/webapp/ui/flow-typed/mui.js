@@ -6,6 +6,10 @@
  * each and every component.
  */
 
+type styleSystem = {|
+  sx?: {[string]: string | number }
+|};
+
 declare module "@mui/styled-engine/StyledEngineProvider" {
   import type { ComponentType, Node } from "react";
 
@@ -47,13 +51,18 @@ declare module "@mui/x-data-grid" {
   declare export type Column<Row> = {|
     headerName: string,
     field: string,
-    valueGetter?: (params: { row: Row, ... }) => mixed,
+    valueGetter?: (mixed, Row) => mixed,
     renderCell?: (params: {
       row: Row,
       value: mixed,
       tabIndex: number,
       ...
     }) => Node,
+    /*
+     * if valueFormatter and renderCell are defined, then renderCell will be
+     * used for the UI and valueFormatter for the CSV output. If renderCell is
+     * not specified then valueFormatter will be used for both.
+     */
     valueFormatter?: ({ value: mixed, ... }) => Node,
     hideable?: boolean,
     width?: number,
@@ -63,7 +72,18 @@ declare module "@mui/x-data-grid" {
     headerClassName?: string,
     disableExport?: boolean,
     display?: "text" | "flex",
+    resizable?: boolean,
   |};
+
+  declare export type ApiRef = {|
+    current: null | {|
+      autosizeColumns: ({|
+        includeHeaders: boolean,
+        includeOutliers: boolean
+      |}) => void,
+    |}
+  |};
+  declare export function useGridApiRef(): ApiRef;
 
   declare export function DataGrid<
     Row,
@@ -72,6 +92,7 @@ declare module "@mui/x-data-grid" {
     ToolbarProps: { ... },
     Value: mixed,
     SortableColumnNames: ColumnNames,
+    LoadingOverlayProps: { ... },
   >({|
     rows: $ReadOnlyArray<Row>,
     columns: $ReadOnlyArray<Column<Row>>,
@@ -80,10 +101,13 @@ declare module "@mui/x-data-grid" {
         columnVisibilityModel?: { [ColumnNames]: boolean },
       |},
     |},
+    apiRef?: ApiRef,
     disableColumnFilter?: boolean,
     density?: "compact" | "standard" | "comfortable",
     getRowId?: (Row) => Id,
     getRowHeight?: () => "auto" | number | null,
+    columnVisibilityModel?: { [ColumnNames]: boolean },
+    onColumnVisibilityModelChange?: ({ [ColumnNames]: boolean }) => void,
     rowSelectionModel?: $ReadOnlyArray<Id>,
     onRowSelectionModelChange?: ($ReadOnlyArray<Id>) => void,
     hideFooterSelectedRowCount?: boolean,
@@ -102,6 +126,7 @@ declare module "@mui/x-data-grid" {
     slots?: {|
       toolbar?: (ToolbarProps) => Node,
       pagination?: null,
+      loadingOverlay?: (LoadingOverlayProps) => Node,
     |},
     className?: string,
     classes?: {||},
@@ -110,18 +135,21 @@ declare module "@mui/x-data-grid" {
     autoHeight?: boolean,
     loading?: boolean,
     checkboxSelection?: boolean,
-    componentsProps?: {|
+    slotProps?: {|
       toolbar?: ToolbarProps,
       panel?: { ... },
+      loadingOverlay?: LoadingOverlayProps,
     |},
     localeText?: {|
       // https://github.com/mui/mui-x/blob/v7.12.0/packages/x-data-grid/src/constants/localeTextConstants.ts
       noRowsLabel?: string,
     |},
     onCellKeyDown?: (Row, KeyboardEvent) => void,
+    sx?: { ... }
   |}): Node;
 
   declare export function GridToolbarContainer({|
+    ...styleSystem,
     children: Node,
   |}): Node;
 

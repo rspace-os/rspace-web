@@ -22,7 +22,7 @@ public class QuantitiesApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void addTwoQuantities() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     MvcResult result =
         mockMvc

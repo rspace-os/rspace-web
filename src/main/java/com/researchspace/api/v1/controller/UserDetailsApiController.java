@@ -1,11 +1,26 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.UserDetailsApi;
+import com.researchspace.api.v1.model.ApiUiNavigationData;
+import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationScheduledMaintenance;
+import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationUserDetails;
+import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationVisibleTabs;
 import com.researchspace.api.v1.model.ApiUser;
+import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.maintenance.service.MaintenanceManager;
+import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
+import com.researchspace.model.UserProfile;
+import com.researchspace.repository.spi.ExternalId;
+import com.researchspace.repository.spi.IdentifierScheme;
+import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.inventory.ContainerApiManager;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,5 +92,56 @@ public class UserDetailsApiController extends BaseApiController implements UserD
 
   private ApiUser getPublicDataApiUser(User user) {
     return new ApiUser(user, true);
+  }
+
+  private @Autowired UserExternalIdResolver extIdResolver;
+  private @Autowired UserProfileManager userProfileManager;
+  private @Autowired SystemPropertyPermissionManager systemPropertyManager;
+  private @Autowired SystemPropertyPermissionManager systemPropertyPermissionManager;
+  private @Autowired MaintenanceManager maintenanceManager;
+
+  @Override
+  public ApiUiNavigationData getDataForNavigationUI(@RequestAttribute(name = "user") User user) {
+
+    ApiUiNavigationData navigationData = new ApiUiNavigationData();
+
+    navigationData.setBannerImgSrc(
+        properties.isCloud() ? "/images/mainLogoCloudN2.png" : "/public/banner");
+
+    ApiUiNavigationVisibleTabs visibleTabs = new ApiUiNavigationVisibleTabs();
+    visibleTabs.setInventory(systemPropertyManager.isPropertyAllowed(user, "inventory.available"));
+    visibleTabs.setMyLabGroups(user.hasAnyPiOrLabGroupViewAllRole());
+    visibleTabs.setPublished(
+        systemPropertyPermissionManager.isPropertyAllowed(user, "public_sharing"));
+    visibleTabs.setSystem(user.hasAdminRole());
+    navigationData.setVisibleTabs(visibleTabs);
+
+    ApiUiNavigationUserDetails userDetails = new ApiUiNavigationUserDetails();
+    userDetails.setUsername(user.getUsername());
+    userDetails.setFullName(user.getFullName());
+    userDetails.setEmail(user.getEmail());
+    if (extIdResolver.isIdentifierSchemeAvailable(user, IdentifierScheme.ORCID)) {
+      userDetails.setOrcidAvailable(true);
+      Optional<ExternalId> extId = extIdResolver.getExternalIdForUser(user, IdentifierScheme.ORCID);
+      if (extId.isPresent()) {
+        userDetails.setOrcidId(extId.get().getIdentifier());
+      }
+    }
+    UserProfile userProfile = userProfileManager.getUserProfile(user);
+    Long profileImageId =
+        Optional.ofNullable(userProfile.getProfilePicture()).map(ImageBlob::getId).orElse(null);
+    if (profileImageId != null) {
+      userDetails.setProfileImgSrc(
+          "/userform/profileImage/" + userProfile.getId() + "/" + profileImageId);
+    }
+    Date lastLogin = user.getLastLogin();
+    userDetails.setLastSession(lastLogin == null ? null : lastLogin.getTime());
+    navigationData.setUserDetails(userDetails);
+
+    ScheduledMaintenance nextMaintenance = maintenanceManager.getNextScheduledMaintenance();
+    if (!ScheduledMaintenance.NULL.equals(nextMaintenance)) {
+      navigationData.setNextMaintenance(new ApiUiNavigationScheduledMaintenance(nextMaintenance));
+    }
+    return navigationData;
   }
 }

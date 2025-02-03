@@ -248,14 +248,14 @@ public class FolderApiControllerTest {
   @Test(expected = NotFoundException.class)
   public void getFolderThrowsNotFoundExIfNoExists() throws BindException {
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.empty());
-    controller.getFolder(1L, subject);
+    controller.getFolder(1L, false, subject);
   }
 
   @Test
   public void getFolder() throws BindException {
     mockBaseUrl();
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.of(createdFolder));
-    ApiFolder created = controller.getFolder(1L, subject);
+    ApiFolder created = controller.getFolder(1L, false, subject);
     assertNotNull(created);
   }
 

@@ -120,7 +120,7 @@ public class RecordAutoshareListener {
         .filter(BaseRecord::isNotebook)
         .map(br -> autoshareMgr.shareRecord(br, subject))
         .filter(ServiceOperationResult::isSucceeded)
-        .map(sor -> sor.getEntity().iterator().next().getShared())
+        .map(sor -> sor.getEntity().get(0).getShared())
         .collect(Collectors.toList());
   }
 }

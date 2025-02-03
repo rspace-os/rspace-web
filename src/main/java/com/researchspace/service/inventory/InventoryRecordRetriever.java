@@ -4,12 +4,14 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordT
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SubSampleDao;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
+import java.util.List;
 import javax.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -26,6 +28,7 @@ public class InventoryRecordRetriever {
   private @Autowired @Lazy ContainerDao containerDao;
   private @Autowired SampleDao sampleDao;
   private @Autowired SubSampleDao subSampleDao;
+  @Autowired private InventoryPermissionUtils permissionUtils;
 
   /**
    * Returns inventory record of given type.
@@ -155,5 +158,35 @@ public class InventoryRecordRetriever {
   /** Get workbench of given user. */
   public Container getWorkbenchForUser(User user) {
     return containerDao.getWorkbenchForUser(user);
+  }
+
+  public boolean userHasCanViewFileProperty(User user, FileProperty fileProperty) {
+    List<Sample> templatesUsingImageFile = sampleDao.getAllTemplatesUsingImage(fileProperty);
+    if (userHasReadPermissionsForRecord(user, templatesUsingImageFile)) {
+      return true;
+    }
+
+    List<Sample> samplesUsingImageFile = sampleDao.getAllUsingImage(fileProperty);
+    if (userHasReadPermissionsForRecord(user, samplesUsingImageFile)) {
+      return true;
+    }
+
+    List<SubSample> subSamplesUsingImageFile = subSampleDao.getAllUsingImage(fileProperty);
+    if (userHasReadPermissionsForRecord(user, subSamplesUsingImageFile)) {
+      return true;
+    }
+
+    List<Container> containersUsingImageFile = containerDao.getAllUsingImage(fileProperty);
+    if (userHasReadPermissionsForRecord(user, containersUsingImageFile)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private boolean userHasReadPermissionsForRecord(
+      User user, List<? extends InventoryRecord> records) {
+    return records.stream()
+        .anyMatch(r -> permissionUtils.canUserReadInventoryRecord(r.getOid(), user));
   }
 }

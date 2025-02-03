@@ -17,7 +17,7 @@ public class LdapSearchCmdLineExecutor {
 
   public LdapSearchCmdLineExecutor(String ldapBaseSuffix, String ldapUrl, String dnField) {
     searchBase = ldapBaseSuffix;
-    host = ldapUrl.split("//")[1];
+    host = ldapUrl;
     this.dnField = dnField;
   }
 
@@ -29,8 +29,7 @@ public class LdapSearchCmdLineExecutor {
    */
   public String findDnForUid(String ldapUsername) {
 
-    String command =
-        String.format("ldapsearch -x -h %s -b \"%s\" uid=%s", host, searchBase, ldapUsername);
+    String command = getLdapSearchCommandString(ldapUsername);
     log.debug("running: " + command);
 
     String foundDn = null;
@@ -49,6 +48,10 @@ public class LdapSearchCmdLineExecutor {
     }
 
     return foundDn;
+  }
+
+  protected String getLdapSearchCommandString(String ldapUsername) {
+    return String.format("ldapsearch -x -H %s -b \"%s\" uid=%s", host, searchBase, ldapUsername);
   }
 
   private String readDnFromProcessOutput(InputStream inputStream) throws IOException {

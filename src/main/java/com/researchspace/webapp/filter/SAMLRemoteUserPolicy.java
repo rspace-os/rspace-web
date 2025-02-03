@@ -1,24 +1,18 @@
 package com.researchspace.webapp.filter;
 
-import com.researchspace.model.permissions.SecurityLogger;
-import java.util.Enumeration;
 import java.util.Map;
 import java.util.TreeMap;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Gets the Shibboleth remote username based on HttpHeader information. */
-public class SAMLRemoteUserPolicy implements RemoteUserRetrievalPolicy {
+public class SAMLRemoteUserPolicy extends AbstractSsoRemoteUserPolicy {
 
   protected static final String SHIBBOLETH_ID_ATTRIBUTE = "eduPersonPrincipalName";
 
-  private static final Logger log = LoggerFactory.getLogger(SecurityLogger.class);
-
-  // don't alter, edit or remove these as they may be used in production deployments
-  // only add new values if needed.
-  static final String[] shib_attributes = {
+  /* don't alter, edit or remove these as they may be used in production deployments;
+  only add new values if needed. */
+  private static final String[] shib_attributes = {
     "persistent-id",
     "eppn",
     "mail",
@@ -40,71 +34,57 @@ public class SAMLRemoteUserPolicy implements RemoteUserRetrievalPolicy {
   @Override
   public String getRemoteUser(HttpServletRequest httpRequest) {
 
-    log.debug("Req headers: {}", logHeaders(httpRequest).toString());
-    log.debug("Environment variables: {}", logEnv().toString());
-    log.debug("Attributes: {}", logReqAttributes(httpRequest).toString());
-    log.debug("SAML attributes: {}", logSamlAttributes(httpRequest).toString());
-    log.debug("Remote user:  {}", httpRequest.getRemoteUser());
+    SECURITY_LOG.debug("Req headers: {}", logHeaders(httpRequest));
+    SECURITY_LOG.debug("Environment variables: {}", logEnv());
+    SECURITY_LOG.debug("Attributes: {}", logReqAttributes(httpRequest));
+    SECURITY_LOG.debug("SAML attributes: {}", logSamlAttributes(httpRequest));
+    SECURITY_LOG.debug("Remote user:  {}", httpRequest.getRemoteUser());
     Object username = httpRequest.getAttribute(SHIBBOLETH_ID_ATTRIBUTE);
-    log.info("SAML [{}] attribute from HttpRequest: ", SHIBBOLETH_ID_ATTRIBUTE, username);
+    SECURITY_LOG.info(
+        "SAML [{}] attribute from HttpRequest: {}", SHIBBOLETH_ID_ATTRIBUTE, username);
 
     if (username == null) {
       username = httpRequest.getAttribute("eppn");
-      log.info("SAML [eppn] attribute from HttpRequest: {}", username);
+      SECURITY_LOG.info("SAML [eppn] attribute from HttpRequest: {}", username);
     }
     return username == null ? null : username.toString();
   }
 
-  private Object logReqAttributes(HttpServletRequest httpRequest) {
-    Enumeration<String> attrNames = httpRequest.getAttributeNames();
-    StringBuilder sb = new StringBuilder();
-    while (attrNames.hasMoreElements()) {
-      String attr = attrNames.nextElement();
-      sb.append(attr + ":" + httpRequest.getAttribute(attr).toString() + ", ");
+  @Override
+  public Map<RemoteUserAttribute, String> getOtherRemoteAttributes(HttpServletRequest httpRequest) {
+    Map<RemoteUserAttribute, String> rc = new TreeMap<>();
+
+    String mail = (String) httpRequest.getAttribute("mail");
+    if (StringUtils.isBlank(mail)) {
+      mail = (String) httpRequest.getAttribute("Shib-email");
     }
-    return sb;
+    if (!StringUtils.isBlank(mail)) {
+      rc.put(RemoteUserAttribute.EMAIL, mail);
+    }
+
+    String givenName = (String) httpRequest.getAttribute("Shib-givenName");
+    if (!StringUtils.isBlank(givenName)) {
+      rc.put(RemoteUserAttribute.FIRST_NAME, givenName);
+    }
+
+    String surName = (String) httpRequest.getAttribute("Shib-surName");
+    if (!StringUtils.isBlank(surName)) {
+      rc.put(RemoteUserAttribute.LAST_NAME, surName);
+    }
+
+    String isAllowedPiRole = (String) httpRequest.getAttribute("isAllowedPiRole");
+    if (!StringUtils.isBlank(isAllowedPiRole)) {
+      rc.put(RemoteUserAttribute.IS_ALLOWED_PI_ROLE, isAllowedPiRole);
+    }
+
+    return rc;
   }
 
   private Object logSamlAttributes(HttpServletRequest httpRequest) {
     StringBuilder sb = new StringBuilder();
-    /* names of the SAML attributes to display */
-
-    for (int i = 0; i < shib_attributes.length; i++) {
-      sb.append(shib_attributes[i] + " : " + httpRequest.getAttribute(shib_attributes[i]) + ", ");
+    for (String shibAttribute : shib_attributes) {
+      sb.append(shibAttribute + " : " + httpRequest.getAttribute(shibAttribute) + ", ");
     }
     return sb;
-  }
-
-  private StringBuilder logEnv() {
-    StringBuilder sb = new StringBuilder();
-    System.getenv().entrySet().stream()
-        .forEach(e -> sb.append(e.getKey() + ":" + e.getValue() + ", "));
-    return sb;
-  }
-
-  private StringBuilder logHeaders(HttpServletRequest httpRequest) {
-    Enumeration<String> headrenames = httpRequest.getHeaderNames();
-    StringBuilder sb = new StringBuilder();
-    while (headrenames.hasMoreElements()) {
-      String header = headrenames.nextElement();
-      sb.append(header + ":" + httpRequest.getHeader(header) + ", ");
-    }
-    return sb;
-  }
-
-  @Override
-  public String getPassword() {
-    return SSO_DUMMY_PASSWORD;
-  }
-
-  public Map<String, String> getOtherRemoteAttributes(HttpServletRequest httpRequest) {
-    Map<String, String> rc = new TreeMap<>();
-    for (String attribute : shib_attributes) {
-      String value = (String) httpRequest.getAttribute(attribute);
-      if (!StringUtils.isBlank(value)) {
-        rc.put(attribute, value);
-      }
-    }
-    return rc;
   }
 }

@@ -59,6 +59,18 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): Node {
   const _hasOptions = hasOptions(field.fieldType);
   const isAttachment = field.type === "Attachment";
 
+  /*
+   * It is quite expensive to re-render TinyMCE, resulting in a slightly
+   * flicker every time, so we need to minimise the number of times we render
+   * it. Now, for fields that already exist on the server, the id acts as a
+   * perfectly fine key but for new fields they have no unique identifier.
+   * So for the purposes here, we just generate a string that is very unlikely
+   * to be the same for any two new fields and will only change when this
+   * component is re-mounted and thus the TinyMCE of the rich text field will
+   * have to be re-rendered anyway.
+   */
+  const key = React.useMemo(() => field.id ?? crypto.randomUUID(), []);
+
   const errorState = match<void, ?string>([
     [() => !_hasOptions, null],
     [() => field.options.length === 0, "One or more values are required."],
@@ -73,7 +85,7 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): Node {
   const custom = (
     // $FlowExpectedError[incompatible-type]
     <CustomField
-      key={field.name}
+      key={key}
       name={field.name}
       value={match<void, () => mixed>([
         [
@@ -115,7 +127,6 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): Node {
       }}
       onOptionChange={(index, changedOption) => {
         field.setAttributesDirty({
-          // $FlowExpectedError[incompatible-call] A literal true is indeed a boolean
           options: ArrayUtils.splice(field.options, index, 1, changedOption),
         });
       }}

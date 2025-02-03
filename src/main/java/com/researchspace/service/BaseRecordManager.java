@@ -60,7 +60,7 @@ public interface BaseRecordManager {
    *     LinkedFieldsToMediaRecordInitPolicy()
    * @return Map<Long, EcatMediaFile> where keys are mediaFile IDS
    */
-  Map<Long, EcatMediaFile> retrieveMediaFiles(
+  Map<String, EcatMediaFile> retrieveMediaFiles(
       User subject, Long[] mediaFileId, Long[] revisionId, DocumentInitializationPolicy policy);
 
   /**

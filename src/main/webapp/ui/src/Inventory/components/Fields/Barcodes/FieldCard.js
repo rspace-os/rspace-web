@@ -36,7 +36,7 @@ import NoValue from "../../../../components/NoValue";
 import useStores from "../../../../stores/use-stores";
 import { mkAlert } from "../../../../stores/contexts/Alert";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
-import ImagePreview from "../../ImagePreview";
+import ImagePreview from "../../../../components/ImagePreview";
 import PreviewIcon from "@mui/icons-material/Visibility";
 import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
 import PrintDialog from "../../Print/PrintDialog";
@@ -400,7 +400,7 @@ function FieldCard<
             <>
               <AddButton
                 disabled={!editable}
-                onClick={({ target }) => setAnchorEl(target)}
+                onClick={({ currentTarget }) => setAnchorEl(currentTarget)}
                 title={
                   editable
                     ? "Scan a barcode to associate."

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static com.researchspace.api.v1.model.ApiField.ApiFieldType.ATTACHMENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -12,8 +13,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
+import com.researchspace.api.v1.InventoryFilesApi;
+import com.researchspace.api.v1.SampleTemplatesApi;
 import com.researchspace.api.v1.SamplesApi;
 import com.researchspace.api.v1.SubSamplesApi;
+import com.researchspace.api.v1.controller.InventoryFilesApiController.ApiInventoryFilePost;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiExtraField;
@@ -21,19 +25,25 @@ import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.api.v1.model.ApiSubSampleSearchResult;
+import com.researchspace.fieldmark.model.FieldmarkMultipartFile;
 import com.researchspace.model.User;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.DocumentTagManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -44,6 +54,9 @@ import org.springframework.validation.BindingResult;
 
 public class SubSamplesApiControllerTest extends SpringTransactionalTest {
 
+  private static final int NUM_ATTACHEMENT_LINKS = 2;
+  private @Autowired InventoryFilesApi inventoryFilesApi;
+  private @Autowired SampleTemplatesApi sampleTemplatesApi;
   private @Autowired SamplesApi samplesApi;
   private @Autowired SubSamplesApi subSamplesApi;
   @Mock private DocumentTagManager documentTagManagerMock;
@@ -196,7 +209,29 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void createRetrieveSampleWithSubSamples() throws Exception {
+    // creating sample template request
+    ApiSampleTemplatePost sampleTemplatePost = new ApiSampleTemplatePost();
+    sampleTemplatePost.setName("Sample Template");
+    sampleTemplatePost.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
+    ApiSampleField templateField = new ApiSampleField();
+    templateField.setName("attachement-field");
+    templateField.setType(ATTACHMENT);
+    templateField.setColumnIndex(1);
+    sampleTemplatePost.setFields(List.of(templateField));
+    ApiSampleTemplate sampleTemplate =
+        sampleTemplatesApi.createNewSampleTemplate(sampleTemplatePost, mockBindingResult, testUser);
+
+    // creating sample request
     ApiSampleWithFullSubSamples newBasicSample = new ApiSampleWithFullSubSamples();
+    ApiSampleField attachementField = new ApiSampleField();
+    attachementField.setDeleteFieldRequest(false);
+    attachementField.setDeleteFieldOnSampleUpdate(false);
+    attachementField.setMandatory(false);
+    attachementField.setColumnIndex(1);
+    attachementField.setName("attachement-field");
+    attachementField.setType(ATTACHMENT);
+    newBasicSample.setFields(List.of(attachementField));
+    newBasicSample.setTemplateId(sampleTemplate.getId());
 
     ApiSubSample newSubSample = new ApiSubSample();
     newSubSample.setName("subSample WXY");
@@ -209,6 +244,14 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples createdSample =
         samplesApi.createNewSample(newBasicSample, mockBindingResult, testUser);
     assertNotNull(createdSample);
+
+    // upload attachement
+    byte[] imageFile = IOUtils.resourceToByteArray("/TestResources/IS1.jpg");
+    inventoryFilesApi.uploadFile(
+        new FieldmarkMultipartFile(imageFile, "IS1.jpg"),
+        new ApiInventoryFilePost(createdSample.getFields().get(0).getGlobalId(), "IS1.jpg"),
+        testUser);
+
     // subsamples
     assertEquals(2, createdSample.getSubSamples().size());
     ApiSubSample createdSubSample =
@@ -217,6 +260,10 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
     assertEquals(newSubSample.getName(), createdSubSample.getName());
     assertEquals(newSubSample.getQuantity(), createdSubSample.getQuantity());
     assertEquals(0, createdSubSample.getNotes().size());
+    assertEquals(
+        NUM_ATTACHEMENT_LINKS,
+        createdSubSample.getSampleInfo().getFields().get(0).getAttachment().getLinks().size(),
+        "The attachment links for have not been correctly created");
 
     assertEquals(EXPECTED_SS_LINK_COUNT, createdSubSample.getLinks().size());
     assertTrue(createdSubSample.getLinks().get(0).getLink().contains("/subSamples/"));
@@ -226,6 +273,10 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
     assertEquals(newSubSample2.getName(), createdSubSample2.getName());
     assertEquals(newSubSample2.getQuantity(), createdSubSample2.getQuantity());
     assertEquals(0, createdSubSample2.getNotes().size());
+    assertEquals(
+        NUM_ATTACHEMENT_LINKS,
+        createdSubSample2.getSampleInfo().getFields().get(0).getAttachment().getLinks().size(),
+        "The attachment links for have not been correctly created");
 
     ApiSubSample retrievedSubSample =
         subSamplesApi.getSubSampleById(createdSubSample.getId(), testUser);

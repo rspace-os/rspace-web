@@ -36,7 +36,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     User anyUser = createAndSaveUser(CoreTestUtils.getRandomName(10));
     setUpUserWithInitialisedContent(anyUser);
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // no pagination
     MvcResult result =
@@ -195,7 +195,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
   @Test
   public void searchSampleErrors() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create a sample
     createBasicSampleForUser(anyUser);
@@ -288,7 +288,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     User anyUser = createAndSaveUser(CoreTestUtils.getRandomName(10));
     setUpUserWithInitialisedContent(anyUser);
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiSampleSearchResult samplesForUser =
         sampleApiMgr.getSamplesForUser(null, null, null, anyUser);
@@ -359,7 +359,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
   public void searchDeletedSamples() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // create two samples and a container
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
@@ -423,10 +423,10 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
   public void searchSampleAfterTransferOutsideGroup() throws Exception {
 
     User firstUser = createInitAndLoginAnyUser();
-    String firstApiKey = createApiKeyForuser(firstUser);
+    String firstApiKey = createNewApiKeyForUser(firstUser);
 
     User secondUser = createInitAndLoginAnyUser();
-    String secondApiKey = createApiKeyForuser(secondUser);
+    String secondApiKey = createNewApiKeyForUser(secondUser);
 
     // create a sample, move subsample into container
     ApiSampleWithFullSubSamples sample =
@@ -494,10 +494,10 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
   public void searchForPublicViewItems() throws Exception {
 
     User firstUser = createInitAndLoginAnyUser();
-    String firstApiKey = createApiKeyForuser(firstUser);
+    String firstApiKey = createNewApiKeyForUser(firstUser);
 
     User secondUser = createInitAndLoginAnyUser();
-    String secondApiKey = createApiKeyForuser(secondUser);
+    String secondApiKey = createNewApiKeyForUser(secondUser);
 
     // create a sample
     ApiSampleWithFullSubSamples firstUserSample =

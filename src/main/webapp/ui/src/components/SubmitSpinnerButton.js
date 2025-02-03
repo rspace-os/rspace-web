@@ -71,7 +71,7 @@ function SubmitSpinnerButton({
   const { classes } = useStyles({ progress });
   return (
     <Button
-      color="primary"
+      color="callToAction"
       onClick={onClick}
       variant="contained"
       disabled={disabled}

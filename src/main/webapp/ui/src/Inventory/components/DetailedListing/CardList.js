@@ -7,7 +7,7 @@ import Grid from "@mui/material/Grid";
 import { withStyles } from "Styles";
 import Box from "@mui/material/Box";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import useStores from "../../../stores/use-stores";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 const GridContainer = withStyles<{| children: Node |}, { root: string }>(
   (theme) => ({
@@ -36,7 +36,7 @@ type CardListArgs = {|
 |};
 
 function CardList({ records }: CardListArgs): Node {
-  const { uiStore } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
     <Box mt={1}>
@@ -45,8 +45,8 @@ function CardList({ records }: CardListArgs): Node {
           <Grid
             item
             xs={12}
-            md={uiStore.isSingleColumnLayout ? 6 : 12}
-            xl={uiStore.isSingleColumnLayout ? 4 : 12}
+            md={isSingleColumnLayout ? 6 : 12}
+            xl={isSingleColumnLayout ? 4 : 12}
             key={i}
             role="listitem"
           >

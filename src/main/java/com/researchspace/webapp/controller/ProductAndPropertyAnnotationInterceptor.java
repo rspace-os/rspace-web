@@ -77,7 +77,7 @@ public class ProductAndPropertyAnnotationInterceptor extends HandlerInterceptorA
     for (DeploymentPropertyType type : propertyTypes) {
       switch (type) {
         case NET_FILE_STORES_ENABLED:
-          return "true".equals(properties.getNetFileStoresEnabled());
+          return properties.isNetFileStoresEnabled();
         case USER_SIGNUP_ENABLED:
           return properties.isUserSignup();
         case PROFILE_EMAIL_EDITABLE:

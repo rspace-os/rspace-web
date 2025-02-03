@@ -44,4 +44,18 @@ public class PropertyHolderTest {
     holder.setBannerImagePath("");
     assertEquals("unknown", holder.getBannerImageName());
   }
+
+  @Test
+  public void testGetDigitalCommonsDataProperties() {
+    holder.setDigitalCommonsDataBaseUrl("https://baseurl.com");
+
+    assertEquals("https://baseurl.com", holder.getDigitalCommonsDataBaseUrl());
+  }
+
+  @Test
+  public void testGetFieldmakrProperties() {
+    holder.setFieldmarkBaseUrl("https://base.fieldmark.com");
+
+    assertEquals("https://base.fieldmark.com", holder.getFieldmarkBaseUrl());
+  }
 }

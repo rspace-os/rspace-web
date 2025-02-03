@@ -90,10 +90,14 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   }
 
   @Override
-  public ApiFolder getFolder(@PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    Folder folder = loadFolder(id, user);
+  public ApiFolder getFolder(
+      @PathVariable Long id,
+      @RequestParam(name = "includePathToRootFolder", defaultValue = "false", required = false)
+          Boolean includePathToRootFolder,
+      @RequestAttribute(name = "user") User user) {
 
-    ApiFolder rc = new ApiFolder(folder, user);
+    Folder folder = loadFolder(id, user);
+    ApiFolder rc = new ApiFolder(folder, includePathToRootFolder, user);
     buildAndAddSelfLink(FOLDERS_ENDPOINT, rc);
     return rc;
   }

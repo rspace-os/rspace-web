@@ -9,6 +9,7 @@ import Sidebar from "../components/Layout/Sidebar";
 import useStores from "../../stores/use-stores";
 import NavigationContext from "./NavigationContext";
 import Main from "../Main";
+import Box from "@mui/material/Box";
 
 export default function ImportRouter(): Node {
   const { uiStore, importStore } = useStores();
@@ -26,6 +27,8 @@ export default function ImportRouter(): Node {
     );
   }, [location.search]);
 
+  const sidebarId = React.useId();
+
   const recordType = importStore.importData?.recordType;
   if (
     recordType === "SAMPLES" ||
@@ -34,14 +37,15 @@ export default function ImportRouter(): Node {
   ) {
     return (
       <NavigationContext>
-        {uiStore.isSingleColumnLayout && <Header />}
-        <Sidebar />
-        <Main>
-          <RecordsImport />
-        </Main>
+        <Header sidebarId={sidebarId} />
+        <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+          <Sidebar id={sidebarId} />
+          <Main>
+            <RecordsImport />
+          </Main>
+        </Box>
       </NavigationContext>
     );
-  } else {
-    return <Navigate to="/inventory/pageNotFound" replace={true} />;
   }
+  return <Navigate to="/inventory/pageNotFound" replace={true} />;
 }

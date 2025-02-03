@@ -156,7 +156,10 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
           <CardContent>
             <Stack spacing={2}>
               <LocationField fieldOwner={subsample} />
-              <ImageField fieldOwner={subsample} />
+              <ImageField
+                fieldOwner={subsample}
+                alt={`What the subsample, ${subsample.name}, looks like`}
+              />
               <QuantityField
                 fieldOwner={subsample}
                 quantityCategory={subsample.quantityCategory}

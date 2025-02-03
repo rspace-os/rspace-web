@@ -3,13 +3,13 @@
     size: $pageSize;
 
     @top-left {
-      content: '$docOwner';
+      content: element(headerLeft);
       border-bottom: solid black;
       font-family: 'Arial', 'Helvetica', 'sans-serif';
     }
 
     @top-center {
-      content: '$docTitle';
+      content: element(headerCenter);
       border-bottom: solid black;
       font-family: 'Arial', 'noto sans', 'Helvetica', 'sans-serif';
     }
@@ -22,19 +22,29 @@
 
     #if ($footerEachPage == true)
       @bottom-left {
-        content: $footerDate;
+        content: '$footerDate';
+        border-top: solid black;
+        font-family: 'Arial', 'Helvetica', 'sans-serif';
+      }
+
+      @bottom-center {
+        content: '';
         border-top: solid black;
         font-family: 'Arial', 'Helvetica', 'sans-serif';
       }
 
       @bottom-right {
-        content: 'Exported by: $exporterFullName';
-        border-bottom: solid black;
+        content: element(footerRight);
+        border-top: solid black;
         font-family: 'Arial', 'Helvetica', 'sans-serif';
       }
     #end
 
   }
+
+  .runningHeaderLeft {position: running(headerLeft);}
+  .runningHeaderCenter {position: running(headerCenter);}
+  .runningFooterRight {position: running(footerRight);}
 
   #footer {
     text-align: center;

@@ -220,7 +220,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     ArchiveResult result =
         exportImportMgr
-            .exportAsyncGroup(cfg, sysadmin, grp.getId(), anyURI(), standardPostExport)
+            .asyncExportGroupToArchive(cfg, sysadmin, grp.getId(), anyURI(), standardPostExport)
             .get();
     File zipFile = result.getExportFile();
     logoutAndLoginAs(importer);
@@ -263,7 +263,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfg.setUserOrGroupId(group.getOid());
 
     exportImportMgr
-        .exportAsyncGroup(cfg, labAdmin, group.getId(), anyURI(), standardPostExport)
+        .asyncExportGroupToArchive(cfg, labAdmin, group.getId(), anyURI(), standardPostExport)
         .get();
   }
 
@@ -303,7 +303,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     ArchiveResult archive =
         exportImportMgr
-            .exportAsyncGroup(cfg, labAdmin, group.getId(), anyURI(), standardPostExport)
+            .asyncExportGroupToArchive(cfg, labAdmin, group.getId(), anyURI(), standardPostExport)
             .get();
     assertThat(archive.getArchivedRecords(), hasItem(publicUserDocument));
     assertThat(archive.getArchivedRecords(), hasItem(publicLabAdminDocument));
@@ -353,7 +353,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     ArchiveExportConfig cfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
     cfg.setArchiveType(ArchiveExportConfig.HTML);
     Future<ArchiveResult> result =
-        exportImportMgr.exportRecordSelection(
+        exportImportMgr.asyncExportSelectionToArchive(
             getSingleRecordExportSelection(doc.getId(), "NORMAL"),
             cfg,
             user,
@@ -383,7 +383,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             new Long[] {doc.getId(), gallrySubFolder.getId()},
             new String[] {"MEDIA_FILE", "FOLDER"});
     Future<ArchiveResult> result =
-        exportImportMgr.exportRecordSelection(
+        exportImportMgr.asyncExportSelectionToArchive(
             exportSelection, cfg, user, new URI("http://www.google.com"), standardPostExport);
 
     File zipFile = result.get().getExportFile();
@@ -438,7 +438,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             new Long[] {f1.getId(), complexDoc.getId(), notebook.getId()},
             new String[] {"FOLDER", "NORMAL", "NOTEBOOK"});
     Future<ArchiveResult> result =
-        exportImportMgr.exportRecordSelection(
+        exportImportMgr.asyncExportSelectionToArchive(
             exportSelection, cfg, user, new URI("http://www.google.com"), standardPostExport);
     File zipFile = result.get().getExportFile();
 
@@ -542,7 +542,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     int notficationCount = getNewNotificationCount(userToExport);
     ArchiveResult result =
         exportImportMgr
-            .exportArchiveAsyncUserWork(
+            .asyncExportUserWorkToArchive(
                 cfg, userToExport, anyURI(), userToExport, standardPostExport)
             .get();
     File zipFolder = extractZipArchive(result);
@@ -584,7 +584,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     sendSimpleMessage(userToExport, "a message", msgRecipient);
     ArchiveResult result =
         exportImportMgr
-            .exportArchiveAsyncUserWork(
+            .asyncExportUserWorkToArchive(
                 cfg, userToExport, anyURI(), userToExport, standardPostExport)
             .get();
     File zipFile = result.getExportFile();
@@ -623,7 +623,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     int b4ImportCount = getFieldAttachmentCount() - b4ITest;
     ArchiveResult result =
         exportImportMgr
-            .exportArchiveAsyncUserWork(
+            .asyncExportUserWorkToArchive(
                 cfg, userToExport, anyURI(), userToExport, standardPostExport)
             .get();
     File zipFile = result.getExportFile();
@@ -743,7 +743,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(template.getId(), "NORMAL:TEMPLATE"),
                 cfg,
                 anyUser,
@@ -884,7 +884,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(selection, cfg, u1, anyURI(), standardPostExport)
+            .asyncExportSelectionToArchive(selection, cfg, u1, anyURI(), standardPostExport)
             .get();
     File zipFolder = extractZipArchive(result);
 
@@ -925,7 +925,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     // make sure to follow all links in test.
     cfg.setMaxLinkLevel(5);
     ArchiveResult result =
-        exportImportMgr.exportArchiveAsyncUserWork(cfg, u2, anyURI(), u2, standardPostExport).get();
+        exportImportMgr
+            .asyncExportUserWorkToArchive(cfg, u2, anyURI(), u2, standardPostExport)
+            .get();
     File zipFolder = extractZipArchive(result);
 
     // u2Doc and attachments should be added, but linked doc in u2Doc shouldn't be.
@@ -959,7 +961,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     sysadmin = logoutAndLoginAsSysAdmin();
 
     ArchiveResult result =
-        exportImportMgr.exportAsyncGroup(cfg, pi, grp.getId(), anyURI(), standardPostExport).get();
+        exportImportMgr
+            .asyncExportGroupToArchive(cfg, pi, grp.getId(), anyURI(), standardPostExport)
+            .get();
     File zipFolder = extractZipArchive(result);
     Collection<File> archiveContents = ArchiveTestUtils.getAllFilesInArchive(zipFolder);
 
@@ -1016,7 +1020,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfg.setArchiveType(ArchiveExportConfig.HTML);
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(u1DocToExport.getId(), RecordType.NORMAL.toString()),
                 cfg,
                 u1,
@@ -1051,7 +1055,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdoc.getId(), RecordType.NORMAL.toString()),
                 cfg,
                 u1,
@@ -1102,7 +1106,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     final ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdoc.getId(), RecordType.NORMAL.toString()),
                 cfg,
                 u1,
@@ -1166,7 +1170,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfg.setUserOrGroupId(user.getOid());
     ArchiveResult result =
         exportImportMgr
-            .exportArchiveAsyncUserWork(cfg, user, anyURI(), user, standardPostExport)
+            .asyncExportUserWorkToArchive(cfg, user, anyURI(), user, standardPostExport)
             .get();
     // check archive content - should contain updated attachments, not the original ones
     long mediaFileCountb4Import = getCountOfEntityTable("EcatMediaFile");
@@ -1210,7 +1214,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfg.setUserOrGroupId(userB.getOid());
     ArchiveResult result =
         exportImportMgr
-            .exportArchiveAsyncUserWork(cfg, userB, anyURI(), userB, standardPostExport)
+            .asyncExportUserWorkToArchive(cfg, userB, anyURI(), userB, standardPostExport)
             .get();
     File zipFile = result.getExportFile();
     ZipUtils.extractZip(zipFile, spareFolder.getRoot());
@@ -1254,7 +1258,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     final ArchiveExportConfig cfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
     ArchiveResult firstDocExport =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(doc.getId(), RecordType.NORMAL.toString()),
                 cfg,
                 user,
@@ -1324,7 +1328,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     final ArchiveExportConfig cfg2 = createDefaultArchiveConfig(user, tempExportFolder2.getRoot());
     ArchiveResult signedDocExport =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(signedDoc.getId(), RecordType.NORMAL.toString()),
                 cfg2,
                 user,
@@ -1399,7 +1403,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     final ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(
                     createdNotebook.getId(), RecordType.NOTEBOOK.toString()),
                 cfg,
@@ -1492,7 +1496,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             new String[] {NORMAL.toString(), NORMAL.toString()});
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(exportSelection, cfg, u1, anyURI(), standardPostExport)
+            .asyncExportSelectionToArchive(exportSelection, cfg, u1, anyURI(), standardPostExport)
             .get();
 
     ArchivalImportConfig importCfg =
@@ -1566,7 +1570,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     final ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdoc.getId(), RecordType.NORMAL.toString()),
                 cfg,
                 u1,
@@ -1609,7 +1613,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfg.setArchiveType(ArchiveExportConfig.HTML);
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdocA.getId(), RecordType.NORMAL.toString()),
                 cfg,
                 u1,
@@ -1636,7 +1640,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             new String[] {RecordType.NORMAL.toString(), RecordType.NORMAL.toString()});
     ArchiveResult result2 =
         exportImportMgr
-            .exportRecordSelection(exportSelection, cfg, u1, anyURI(), standardPostExport)
+            .asyncExportSelectionToArchive(exportSelection, cfg, u1, anyURI(), standardPostExport)
             .get();
 
     File zipFolder2 = extractZipArchive(result2, tempImportFolder2);
@@ -1673,7 +1677,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             new String[] {MEDIA_FILE.toString(), MEDIA_FILE.toString()});
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(exportSelection, cfg, u1, anyURI(), standardPostExport)
+            .asyncExportSelectionToArchive(exportSelection, cfg, u1, anyURI(), standardPostExport)
             .get();
     File zipFolder = extractZipArchive(result);
     Collection<File> xmlFiles = ArchiveTestUtils.getAllXMLFilesInArchive(zipFolder);
@@ -1752,7 +1756,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfg.setMaxLinkLevel(0);
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(firstDoc.getId(), RecordType.NORMAL.toString()),
                 cfg,
                 user,
@@ -1834,7 +1838,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             });
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(exportSelection, cfg, user, anyURI(), standardPostExport)
+            .asyncExportSelectionToArchive(exportSelection, cfg, user, anyURI(), standardPostExport)
             .get();
     assertEquals(1, result.getArchivedRecords().size()); // one record
     assertEquals(2, result.getArchivedFolders().size()); // folder and notebook
@@ -1915,7 +1919,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     try {
       exportImportMgr
-          .exportRecordSelection(exportSelection, cfg, user, anyURI(), standardPostExport)
+          .asyncExportSelectionToArchive(exportSelection, cfg, user, anyURI(), standardPostExport)
           .get();
       fail("expected to fail as archive size above the limit");
     } catch (Exception e) {
@@ -1951,7 +1955,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfg.setArchiveType(ArchiveExportConfig.HTML);
     ArchiveResult result =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdocA.getId(), RecordType.NORMAL.toString()),
                 cfg,
                 u1,
@@ -1995,7 +1999,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfgXml.setHasAllVersion(true);
     ArchiveResult resultXml =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdocA.getId(), RecordType.NORMAL.toString()),
                 cfgXml,
                 u1,
@@ -2072,7 +2076,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfgHtml.setAvailableNfsClients(nfsClientMap);
     ArchiveResult resultHtml =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdocA.getId(), RecordType.NORMAL.toString()),
                 cfgHtml,
                 user,
@@ -2130,7 +2134,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     ArchiveResult resultXml =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdocA.getId(), RecordType.NORMAL.toString()),
                 cfgXml,
                 user,
@@ -2187,7 +2191,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfgHtml.setArchiveType(ArchiveExportConfig.HTML);
     ArchiveResult resultHtml =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdocA.getId(), RecordType.NORMAL.toString()),
                 cfgHtml,
                 user,
@@ -2220,7 +2224,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfgHtml.setArchiveType(ArchiveExportConfig.HTML);
     ArchiveResult resultHtml =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdocA.getId(), RecordType.NORMAL.toString()),
                 cfgHtml,
                 user,
@@ -2305,7 +2309,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfgHtml.setAvailableNfsClients(nfsClientMap);
     ArchiveResult resultHtml =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(sdocA.getId(), RecordType.NORMAL.toString()),
                 cfgHtml,
                 user,
@@ -2367,7 +2371,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfg.setMaxLinkLevel(0);
     ArchiveResult resultXml =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(doc.getId(), RecordType.NORMAL.toString()),
                 cfg,
                 user,
@@ -2406,7 +2410,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     File file =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(doc.getId(), "NORMAL"),
                 cfg,
                 user,
@@ -2476,7 +2480,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     ArchiveExportConfig cfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
     ArchiveResult archiveResult =
         exportImportMgr
-            .exportRecordSelection(
+            .asyncExportSelectionToArchive(
                 getSingleRecordExportSelection(newFolder.getId(), "FOLDER"),
                 cfg,
                 user,

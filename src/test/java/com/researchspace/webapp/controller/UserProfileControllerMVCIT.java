@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.session.SessionAttributeUtils.USER_INFO;
+import static com.researchspace.webapp.controller.UserProfileController.API_KEY_IS_ACTIVE;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -656,7 +657,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     retrievedKeyDetails =
         mockMvc.perform(get("/userform/ajax/apiKeyValue").principal(mockPrincipal)).andReturn();
     String retrievedApiKey = getFromJsonAjaxReturnObject(retrievedKeyDetails, String.class);
-    assertEquals(created.getKey(), retrievedApiKey);
+    assertEquals(API_KEY_IS_ACTIVE, retrievedApiKey);
 
     // delete key
     MvcResult deletedKey =

@@ -13,6 +13,7 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
@@ -21,6 +22,8 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.units.RSUnitDef;
+import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -34,9 +37,89 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void createMoreSubSamplesInBasicSample() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // new basic sample with default subsample
+    ApiSampleInfo basicSample = createBasicSampleForUser(anyUser);
+    assertEquals(1, basicSample.getSubSamplesCount());
+    assertEquals("5 g", basicSample.getQuantity().toQuantityInfo().toPlainString());
+
+    // create 2 subsamples, with default quantity
+    String twoNewSubSamplesConfigJson =
+        "{ \"sampleId\" : " + basicSample.getId() + ", \"numSubSamples\": 2 }";
+    MvcResult addNewSubSamplesResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/subSamples", anyUser, twoNewSubSamplesConfigJson))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    List<Map> createdSubSamples = getFromJsonResponseBody(addNewSubSamplesResult, List.class);
+    assertEquals(2, createdSubSamples.size());
+    assertEquals("mySample.02", createdSubSamples.get(0).get("name"));
+    assertEquals("mySample.03", createdSubSamples.get(1).get("name"));
+
+    ApiSampleInfo updatedBasicSample = sampleApiMgr.getApiSampleById(basicSample.getId(), anyUser);
+    assertEquals(3, updatedBasicSample.getSubSamplesCount());
+    assertEquals("7 g", updatedBasicSample.getQuantity().toQuantityInfo().toPlainString());
+
+    // add one more subsample, with specified quantity
+    String oneNewSubSampleWithQuantityConfigJson =
+        "{ \"sampleId\" : "
+            + basicSample.getId()
+            + ", \"numSubSamples\": 1, "
+            + "\"singleSubSampleQuantity\": { \"numericValue\": 5, \"unitId\": 6 } }";
+    MvcResult addOneSubSampleWithQuantityResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/subSamples", anyUser, oneNewSubSampleWithQuantityConfigJson))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    createdSubSamples = getFromJsonResponseBody(addOneSubSampleWithQuantityResult, List.class);
+    assertEquals(1, createdSubSamples.size());
+    assertEquals("mySample.04", createdSubSamples.get(0).get("name"));
+
+    updatedBasicSample = sampleApiMgr.getApiSampleById(basicSample.getId(), anyUser);
+    assertEquals(4, updatedBasicSample.getSubSamplesCount());
+    assertEquals("7.005 g", updatedBasicSample.getQuantity().toQuantityInfo().toPlainString());
+  }
+
+  @Test
+  public void createMoreSubSamplesValidation() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // validate incoming json
+    String json = "{ }";
+    MvcResult errorResult =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/subSamples", anyUser, json))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(errorResult, ApiError.class);
+    assertEquals(2, error.getErrors().size());
+    assertApiErrorContainsMessage(error, "sampleId: must be greater than or equal to 1");
+    assertApiErrorContainsMessage(error, "numSubSamples: must be greater than or equal to 1");
+
+    json = "{ \"singleSubSampleQuantity\": { } }";
+    errorResult =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/subSamples", anyUser, json))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    error = getErrorFromJsonResponseBody(errorResult, ApiError.class);
+    assertEquals(3, error.getErrors().size());
+    assertApiErrorContainsMessage(
+        error, "singleSubSampleQuantity: Quantity unit id [null] is invalid");
+  }
+
+  @Test
   public void saveSubsampleImage() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     Long fpCount = getCountOfEntityTable("FileProperty");
 
     // new basic sample with default subsample
@@ -61,15 +144,26 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSubSample editedSubSample = getFromJsonResponseBody(updateimage, ApiSubSample.class);
     assertEquals(fpCount + 2, getCountOfEntityTable("FileProperty"));
     assertEquals(3, editedSubSample.getLinks().size());
-    assertTrue(
-        editedSubSample.getLinks().stream()
-            .allMatch(ali -> ali.getLink().contains("v1/subSamples")));
+    // 2 image links - 1 for main image, 1 for thumbnail
+    assertEquals(
+        2,
+        (int)
+            editedSubSample.getLinks().stream()
+                .filter(ali -> ali.getLink().contains("v1/files/image"))
+                .count());
+    // 1 self link
+    assertEquals(
+        1,
+        (int)
+            editedSubSample.getLinks().stream()
+                .filter(ali -> ali.getLink().contains("v1/subSamples"))
+                .count());
   }
 
   @Test
   public void subsampleHasLinkToSampleImageAsDefault() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // new basic sample with default subsample
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
@@ -98,14 +192,14 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(
         2,
         retrievedSubSample.getLinks().stream()
-            .filter(ali -> ali.getLink().contains("v1/samples"))
+            .filter(ali -> ali.getLink().contains("v1/files/image"))
             .count());
   }
 
   @Test
   public void addNote() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     Long b4Count = getCountOfEntityTable("SubSampleNote");
 
     // new basic sample with default subsample
@@ -152,7 +246,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     Mockito.reset(auditer);
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // new basic sample with default subsample
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
@@ -303,7 +397,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     Mockito.reset(auditer);
 
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     // new basic sample with default subsample
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
@@ -479,7 +573,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     // create user with a subsample in a container
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
 
     MvcResult getAllResult = getAllSubSamples(anyUser, apiKey, false);
     ApiSubSampleSearchResult allSubSamples =
@@ -610,7 +704,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void subSampleRevisionHistory() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createApiKeyForuser(anyUser);
+    String apiKey = createNewApiKeyForUser(anyUser);
     ApiSampleWithFullSubSamples sample = createComplexSampleForUser(anyUser);
     ApiSubSampleInfo subSample = sample.getSubSamples().get(0);
 

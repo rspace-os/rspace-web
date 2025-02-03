@@ -34,6 +34,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired ExportImport exportImportMgr;
   private @Autowired InternalFileStore fStore;
   private @Autowired RecordDeletionManager delMgr;
+  private @Autowired RecordManager recordMgr;
 
   @Before
   public void setUp() throws Exception {
@@ -50,13 +51,17 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     User exporter = createAndSaveUser(getRandomAlphabeticString("pdf"));
     initUser(exporter);
     logoutAndLoginAs(exporter);
+
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(exporter, "text");
+    sd.setName("special chars in doc name &∅∈∌ and &#x3");
+    recordMgr.save(sd, exporter);
+
     ExportToFileConfig config = new ExportToFileConfig();
     final String exportName = "xxxx";
     config.setExportName(exportName);
     EcatDocumentFile edf =
         exportImportMgr
-            .asynchExportFromSelection(
+            .asyncExportSelectionToPdf(
                 new Long[] {sd.getId()},
                 new String[] {sd.getName()},
                 new String[] {RecordType.NORMAL.toString()},
@@ -72,7 +77,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     User sysadmin = logoutAndLoginAsSysAdmin();
     initUser(sysadmin);
     EcatDocumentFile edf2 =
-        exportImportMgr.synchExportFromSelection(
+        exportImportMgr.syncExportSelectionToPdf(
             new Long[] {sd.getId()},
             new String[] {sd.getName()},
             new String[] {RecordType.NORMAL.toString()},
@@ -106,7 +111,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
 
     // Exporting file of another user
     EcatDocumentFile ecatDocumentFile =
-        exportImportMgr.synchExportFromSelection(
+        exportImportMgr.syncExportSelectionToPdf(
             new Long[] {sd.getId()},
             new String[] {sd.getName()},
             new String[] {RecordType.NORMAL.toString()},
@@ -119,7 +124,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     // Exporting folder of another user
     BaseRecord folder = searchByName(user.getUsername(), exporterPi).getFirstResult();
     ecatDocumentFile =
-        exportImportMgr.synchExportFromSelection(
+        exportImportMgr.syncExportSelectionToPdf(
             new Long[] {folder.getId()},
             new String[] {"user folder export"},
             new String[] {RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT.toString()},
@@ -163,7 +168,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
 
     // Exporting file of another user
     EcatDocumentFile ecatDocumentFile =
-        exportImportMgr.synchExportFromSelection(
+        exportImportMgr.syncExportSelectionToPdf(
             new Long[] {sd.getId()},
             new String[] {sd.getName()},
             new String[] {RecordType.NORMAL.toString()},
@@ -176,7 +181,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     // Exporting folder of another user
     BaseRecord folder = searchByName(user.getUsername(), labAdmin).getFirstResult();
     ecatDocumentFile =
-        exportImportMgr.synchExportFromSelection(
+        exportImportMgr.syncExportSelectionToPdf(
             new Long[] {folder.getId()},
             new String[] {"user folder export"},
             new String[] {RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT.toString()},
@@ -204,7 +209,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     ExportToFileConfig config = new ExportToFileConfig();
     config.setExportName("xxxx");
     logoutAndLoginAs(pi);
-    EcatDocumentFile export = exportImportMgr.exportGroupPdf(config, pi, grp.getId()).get();
+    EcatDocumentFile export = exportImportMgr.asyncExportGroupToPdf(config, pi, grp.getId()).get();
     assertNotNull(export);
 
     PdfReader reader = new PdfReader(export.getFileUri());
@@ -216,7 +221,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
             .getFirstResult();
     delMgr.deleteRecord(folderMgr.getRootFolderForUser(pi).getId(), toDelete.getId(), pi);
 
-    export = exportImportMgr.exportGroupPdf(config, pi, grp.getId()).get();
+    export = exportImportMgr.asyncExportGroupToPdf(config, pi, grp.getId()).get();
     reader = new PdfReader(export.getFileUri());
     int afterDeletedPageCount = reader.getNumberOfPages();
 

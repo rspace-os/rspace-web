@@ -50,7 +50,10 @@ const OverviewSection = observer(
         />
         <OwnerField fieldOwner={activeResult} />
         {activeResult.readAccessLevel !== "public" && (
-          <ImageField fieldOwner={activeResult} />
+          <ImageField
+            fieldOwner={activeResult}
+            alt="A visual representation of the samples that are to be created from this template"
+          />
         )}
       </StepperPanel>
     );

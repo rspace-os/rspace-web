@@ -12,6 +12,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import com.researchspace.service.inventory.impl.SubSampleApiPostConfig;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import java.io.IOException;
 import java.util.List;
@@ -31,6 +32,8 @@ public class SubSamplesApiController extends BaseApiInventoryController implemen
   @Autowired private InventoryAuditApiManager inventoryAuditMgr;
 
   @Autowired private SubSampleApiPutValidator subSampleApiPutValidator;
+
+  @Autowired private SubSampleApiPostConfigValidator subSampleApiPostConfigValidator;
 
   @Override
   public ApiSubSampleSearchResult getSubSamplesForUser(
@@ -65,11 +68,26 @@ public class SubSamplesApiController extends BaseApiInventoryController implemen
   }
 
   @Override
+  public List<ApiSubSample> createNewSubSamplesForSample(
+      @RequestBody @Valid SubSampleApiPostConfig config,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    subSampleApiPostConfigValidator.validate(config, errors);
+    throwBindExceptionIfErrors(errors);
+
+    return subSampleApiMgr.createNewSubSamplesForSample(
+        config.getSampleId(), config.getNumSubSamples(), config.getSingleSubSampleQuantity(), user);
+  }
+
+  @Override
   public ApiSubSample getSubSampleById(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
 
     ApiSubSample subSample = retrieveSubSampleIfExists(id, user);
     buildAndAddInventoryRecordLinks(subSample);
+    buildAndAddInventoryRecordLinks(subSample.getSampleInfo());
     return subSample;
   }
 

@@ -17,6 +17,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
 import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalExportType;
@@ -48,6 +49,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,7 +76,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 /** This controller handle all the operations in the gallery. */
 @Controller
-@RequestMapping({"/gallery", "/public/publicView/gallery"})
+@RequestMapping({"/gallery", "/public/publicView/gallery", "/oldGallery"})
 public class GalleryController extends BaseController {
 
   public static final String GALLERY_VIEW = "gallery";
@@ -210,8 +212,9 @@ public class GalleryController extends BaseController {
    *
    * @param mediatype the type of media to load, one of the tab names in the media gallery.
    * @param currentFolderId - the parent folder id, or 0 if we're looking up root media file
+   * @param foldersOnly when true returns only folders, otherwise gallery items and folders
    * @param pgCrit pagination number
-   * @param filterCriteria
+   * @param filterCriteria additional gallery filter criteria used to filter by name
    * @return AjaxReturnObject of {@link GalleryData} objects for populating media gallery.
    */
   @GetMapping("/getUploadedFiles")
@@ -219,13 +222,15 @@ public class GalleryController extends BaseController {
   public AjaxReturnObject<GalleryData> getUploadedFiles(
       @RequestParam("mediatype") String mediatype,
       @RequestParam("currentFolderId") long currentFolderId,
+      @RequestParam(value = "foldersOnly", required = false, defaultValue = "false")
+          boolean foldersOnly,
       PaginationCriteria<BaseRecord> pgCrit,
       GalleryFilterCriteria filterCriteria) {
     User user = userManager.getAuthenticatedUserInSession();
     // It's a trick to show parent folder on the
     Folder galleryItemParent = recordManager.getGallerySubFolderForUser(mediatype, user);
 
-    boolean isOnRoot = (galleryItemParent.getId() == currentFolderId) || (currentFolderId == 0);
+    boolean isOnRoot = isOnGalleryRoot(currentFolderId, galleryItemParent);
 
     GalleryData galleryData = new GalleryData(isOnRoot);
     if (isOnRoot) {
@@ -247,13 +252,26 @@ public class GalleryController extends BaseController {
 
     int numberOfRecords = getNumberOfRecordsOnGalleryPage(isOnRoot);
     pgCrit.setResultsPerPage(numberOfRecords);
+
+    RecordTypeFilter galleryMove =
+        new RecordTypeFilter(
+            EnumSet.of(
+                RecordType.FOLDER,
+                RecordType.ROOT_MEDIA,
+                RecordType.SHARED_GROUP_FOLDER_ROOT,
+                RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT,
+                RecordType.API_INBOX),
+            // excluded
+            EnumSet.of(
+                RecordType.NORMAL_EXAMPLE
+                // removed for APiInbox
+                // RecordType.SYSTEM
+                ));
+
+    RecordTypeFilter recordTypeFilter = foldersOnly ? galleryMove : RecordTypeFilter.GALLERY_FILTER;
     ISearchResults<BaseRecord> records =
         recordManager.getGalleryItems(
-            galleryItemParent.getId(),
-            pgCrit,
-            filterCriteria,
-            RecordTypeFilter.GALLERY_FILTER,
-            user);
+            galleryItemParent.getId(), pgCrit, filterCriteria, recordTypeFilter, user);
     if (records == null) {
       return new AjaxReturnObject<>(galleryData, null);
     }
@@ -605,7 +623,7 @@ public class GalleryController extends BaseController {
    *
    * @param filesId
    * @param mediatype
-   * @param path
+   * @param targetFolderId
    * @return <code>true</code> on success
    */
   @PostMapping("/ajax/moveGalleriesElements")
@@ -613,13 +631,19 @@ public class GalleryController extends BaseController {
   public AjaxReturnObject<Boolean> moveGalleriesElements(
       @RequestParam("filesId[]") Long[] filesId,
       @RequestParam("mediaType") String mediatype,
-      @RequestParam("target") String path) {
+      @RequestParam("target") Long targetFolderId) {
 
     if (filesId.length > MAX_IDS_TO_PROCESS) {
       return generateTooManyItemsFailureMsg();
     }
     User user = userManager.getAuthenticatedUserInSession();
-    Folder target = folderManager.getMediaFolderFromURLPath(path, user);
+
+    Folder galleryItemParent = recordManager.getGallerySubFolderForUser(mediatype, user);
+
+    if (isOnGalleryRoot(targetFolderId, galleryItemParent)) {
+      targetFolderId = galleryItemParent.getId();
+    }
+    Folder target = folderManager.getFolder(targetFolderId, user);
 
     for (Long id : filesId) {
       if (!target.getId().equals(id)) {
@@ -627,6 +651,11 @@ public class GalleryController extends BaseController {
       }
     }
     return new AjaxReturnObject<Boolean>(true, null);
+  }
+
+  private static boolean isOnGalleryRoot(long currentFolderId, Folder galleryItemParent) {
+    // As per convention UI/Backend if the currentFolder 0 then is root folder
+    return galleryItemParent.getId().equals(currentFolderId) || (currentFolderId == 0L);
   }
 
   private AjaxReturnObject<Boolean> generateTooManyItemsFailureMsg() {
@@ -789,16 +818,16 @@ public class GalleryController extends BaseController {
   }
 
   /**
-   * GEts record information for a list of IDs of EcatMediaFiles If info cannot be retrived, value
-   * of map will be null and there will be an error
+   * Gets record information for a list of IDs (and revision numbers) of EcatMediaFiles
+   * If info cannot be retrieved, value of map will be null and there will be an error
    *
    * @param ids
    * @param revisions
-   * @return
+   * @return a map with keys in "$id-$revision" format
    */
   @ResponseBody
   @GetMapping("/getMediaFileSummaryInfo")
-  public AjaxReturnObject<Map<Long, RecordInformation>> getMediaFileSummaryInfo(
+  public AjaxReturnObject<Map<String, RecordInformation>> getMediaFileSummaryInfo(
       @RequestParam(value = "id[]") Long[] ids,
       @RequestParam(value = "revision[]") Long[] revisions) {
 
@@ -814,11 +843,11 @@ public class GalleryController extends BaseController {
       }
     }
 
-    Map<Long, RecordInformation> info = infoProvider.getRecordInformation(ids, revisions, user);
+    Map<String, RecordInformation> info = infoProvider.getRecordInformation(ids, revisions, user);
     ErrorList el = new ErrorList();
     info.entrySet().stream()
         .filter(e -> e.getValue() == null)
-        .map(e -> String.format("Could not retrieve information for id [%d]", +e.getKey()))
+        .map(e -> String.format("Could not retrieve information for id-revision [%s]", e.getKey()))
         .forEach(msg -> el.addErrorMsg(msg));
     return new AjaxReturnObject<>(info, el);
   }

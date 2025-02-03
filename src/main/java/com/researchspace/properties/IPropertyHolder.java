@@ -52,6 +52,11 @@ public interface IPropertyHolder extends Versionable {
   String getSSOLogoutUrl();
 
   /**
+   * @return address which completely logs user out of their SSO IDP
+   */
+  String getSSOIdpLogoutUrl();
+
+  /**
    * Returns boolean value of <code>deployment.sso.adminLogin.enabled</code> property.
    *
    * @return
@@ -104,6 +109,8 @@ public interface IPropertyHolder extends Versionable {
   String getOfflineButtonVisible();
 
   String getNetFileStoresEnabled();
+
+  boolean isNetFileStoresEnabled();
 
   String getNetFileStoresExportEnabled();
 
@@ -268,6 +275,10 @@ public interface IPropertyHolder extends Versionable {
   String getDryadBaseUrl();
 
   String getZenodoApiUrl();
+
+  String getDigitalCommonsDataBaseUrl();
+
+  String getFieldmarkBaseUrl();
 
   boolean isAsposeEnabled();
 }

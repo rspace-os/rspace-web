@@ -74,7 +74,7 @@ public interface ExportImport {
    * @throws IOException
    */
   @Async(value = "archiveTaskExecutor")
-  Future<EcatDocumentFile> asynchExportFromSelection(
+  Future<EcatDocumentFile> asyncExportSelectionToPdf(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
@@ -82,11 +82,8 @@ public interface ExportImport {
       User user)
       throws IOException;
 
-  @Async(value = "archiveTaskExecutor")
-  void handlePossibleRollbackAsync(Future<EcatDocumentFile> doc) throws IOException;
-
-  /** EXports one or more records identified by exportIds to PDF, synchronously. */
-  EcatDocumentFile synchExportFromSelection(
+  /** Exports one or more records identified by exportIds to PDF, synchronously. */
+  EcatDocumentFile syncExportSelectionToPdf(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
@@ -105,7 +102,7 @@ public interface ExportImport {
    * @return an {@link Future<ArchiveResult>}
    */
   @Async(value = "archiveTaskExecutor")
-  Future<ArchiveResult> exportRecordSelection(
+  Future<ArchiveResult> asyncExportSelectionToArchive(
       ExportSelection exportSelection,
       ArchiveExportConfig config,
       User user,
@@ -131,7 +128,7 @@ public interface ExportImport {
    * @return an {@link ArchiveResult}
    * @throws Exception
    */
-  ArchiveResult exportSyncRecordSelection(
+  ArchiveResult syncExportSelectionToArchive(
       ArchiveExportConfig config,
       User user,
       URI baseURL,
@@ -186,7 +183,7 @@ public interface ExportImport {
    * @throws IOException
    */
   @Async(value = "archiveTaskExecutor")
-  Future<ArchiveResult> exportArchiveAsyncUserWork(
+  Future<ArchiveResult> asyncExportUserWorkToArchive(
       ArchiveExportConfig config,
       User toExport,
       URI baseURL,
@@ -194,7 +191,7 @@ public interface ExportImport {
       PostArchiveCompletion postArchiveCompletion)
       throws Exception;
 
-  ArchiveResult exportArchiveSyncUserWork(
+  ArchiveResult syncExportUserWorkToArchive(
       ArchiveExportConfig expCfg,
       User toExport,
       URI baseURL,
@@ -214,7 +211,7 @@ public interface ExportImport {
    * @throws Exception
    */
   @Async(value = "archiveTaskExecutor")
-  Future<ArchiveResult> exportAsyncGroup(
+  Future<ArchiveResult> asyncExportGroupToArchive(
       ArchiveExportConfig config,
       User exporter,
       Long groupId,
@@ -231,7 +228,7 @@ public interface ExportImport {
    * @return
    * @throws Exception
    */
-  ArchiveResult exportSyncGroup(
+  ArchiveResult syncExportGroupToArchive(
       ArchiveExportConfig config,
       User exporter,
       Long groupId,
@@ -259,7 +256,7 @@ public interface ExportImport {
    *     export <code>toExport's</code> data.
    */
   @Async(value = "archiveTaskExecutor")
-  public Future<EcatDocumentFile> exportPdfOfAllUserRecords(
+  public Future<EcatDocumentFile> asyncExportAllUserRecordsToPdf(
       User toExport, ExportToFileConfig config, User exporter) throws IOException;
 
   /**
@@ -273,11 +270,11 @@ public interface ExportImport {
    *     group.
    */
   @Async(value = "archiveTaskExecutor")
-  public Future<EcatDocumentFile> exportGroupPdf(
-      ExportToFileConfig expCfg, User exporter, Long groupId);
+  public Future<EcatDocumentFile> asyncExportGroupToPdf(
+      ExportToFileConfig expCfg, User exporter, Long groupId) throws IOException;
 
   @Async(value = "archiveTaskExecutor")
-  Future<File> asynchExportFromSelectionForSigning(
+  Future<File> asyncExportSelectionToPdfForSigning(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,

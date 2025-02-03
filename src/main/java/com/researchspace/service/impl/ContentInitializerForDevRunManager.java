@@ -190,9 +190,8 @@ public class ContentInitializerForDevRunManager extends AbstractContentInitializ
       addChild(projectFolder, lab2, u);
       contentInitialiserUtils.delayForUniqueCreationTime();
 
-      List<Long> fieldIds = new ArrayList<Long>();
       // Only one field include.
-      fieldIds.add(structuredDocument2.getFields().get(0).getId());
+      List<Long> fieldIds = List.of(structuredDocument2.getFields().get(0).getId());
       recordMgr.createTemplateFromDocument(
           structuredDocument2.getId(), fieldIds, u, "DemoTemplate");
 
@@ -225,7 +224,7 @@ public class ContentInitializerForDevRunManager extends AbstractContentInitializ
 
       initialiseInventoryWithExampleRecords(u);
 
-      log.info("Users's content initialized.");
+      log.info("User's content initialized.");
 
     } catch (RuntimeException e) {
       throw e;

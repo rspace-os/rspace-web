@@ -14,9 +14,12 @@ import getRootStore from "../../../stores/RootStore";
 import { personAttrs } from "../PersonModel/mocking";
 import PersonModel from "../../PersonModel";
 
-var mockRootStore = {
+const mockRootStore = {
   peopleStore: {
     currentUser: null,
+  },
+  unitStore: {
+    getUnit: () => ({ label: "ml" }),
   },
 };
 

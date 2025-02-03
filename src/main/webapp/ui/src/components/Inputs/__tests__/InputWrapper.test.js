@@ -5,7 +5,7 @@
 /* eslint-env jest */
 /* eslint-disable no-undefined */
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, type Element } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import each from "jest-each";
 import InputWrapper from "../InputWrapper";
@@ -18,7 +18,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const expectText = (text: string) => (container: Node) => {
+const expectText = (text: string) => (container: Element) => {
   expect(container).toHaveTextContent("Nothing here" + text);
 };
 
@@ -154,7 +154,7 @@ describe("InputWrapper", () => {
         error?: boolean,
         value?: string,
         helperText?: ?string,
-        expectFn: (container: Node) => void,
+        expectFn: (container: Element) => void,
       |}) => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>

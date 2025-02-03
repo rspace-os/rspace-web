@@ -44,7 +44,7 @@ export function parseInteger(value: string): Result<number> {
 /**
  * Parses a string into a date.
  */
-export function parseDate(s: string): Result<Date> {
+export function parseDate(s: string | number): Result<Date> {
   const d = new Date(s);
   if (d.toString() === "Invalid Date")
     return Result.Error([new Error(`"${s}" is not a valid date.`)]);
@@ -178,8 +178,8 @@ export function isTrue(b: boolean): Result<true> {
  * ```
  */
 export const getValueWithKey =
-  <Key: string>(key: Key): (({ [Key]: mixed }) => Result<mixed>) =>
-  (obj: { [Key]: mixed }): Result<mixed> =>
+  <Key: string>(key: Key): (({ +[Key]: mixed }) => Result<mixed>) =>
+  (obj: { +[Key]: mixed }): Result<mixed> =>
     getByKey(key, obj).toResult(() => new Error(`key '${key}' is missing`));
 
 /**

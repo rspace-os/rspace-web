@@ -2,6 +2,7 @@ scripts/externalTinymcePlugins/box/plugin.min.js
 scripts/externalTinymcePlugins/clustermarket/plugin.min.js
 scripts/externalTinymcePlugins/comments/plugin.js
 scripts/externalTinymcePlugins/crudops/plugin.min.js
+scripts/externalTinymcePlugins/contexttoolbars/plugin.min.js
 scripts/externalTinymcePlugins/dropbox/plugin.min.js
 scripts/externalTinymcePlugins/ecat/plugin.min.js
 scripts/externalTinymcePlugins/egnyte/egnyte.js
@@ -12,7 +13,6 @@ scripts/externalTinymcePlugins/googledrive/plugin.min.js
 scripts/externalTinymcePlugins/internallink/plugin.min.js
 scripts/externalTinymcePlugins/jove/plugin.min.js
 scripts/externalTinymcePlugins/mathjax/plugin.min.js
-scripts/externalTinymcePlugins/mendeley/plugin.min.js
 scripts/externalTinymcePlugins/nexcloud/plugin.min.js
 scripts/externalTinymcePlugins/onedrive/plugin.min.js
 scripts/externalTinymcePlugins/owncloud/plugin.min.js
@@ -110,12 +110,12 @@ styles/userform.css
 ui/dist/accountActivity.js
 ui/dist/associatedInventoryRecords.js
 ui/dist/baseSearch.js
-ui/dist/sysadminUsers.js
 ui/dist/confirmationDialog.js
 ui/dist/connectedApps.js
 ui/dist/createGroup.js
 ui/dist/exportModal.js
 ui/dist/fileTreeToolbar.js
+ui/dist/gallery.js
 ui/dist/galleryToolbar.js
 ui/dist/groupActivity.js
 ui/dist/groupEditBar.js
@@ -128,14 +128,15 @@ ui/dist/labgroupsTable.js
 ui/dist/materialsListing.js
 ui/dist/memberAutoshareStatusWrapper.js
 ui/dist/myLabGroups.js
-ui/dist/rorIntegration.js
 ui/dist/newLabGroup.js
 ui/dist/notebookToolbar.js
 ui/dist/oAuth.js
 ui/dist/previewInfo.js
+ui/dist/rorIntegration.js
 ui/dist/runtime.js
 ui/dist/snapGeneDialog.js
 ui/dist/structuredDocumentToolbar.js
+ui/dist/sysadminUsers.js
 ui/dist/tinymceClustermarket.js
 ui/dist/tinymceJove.js
 ui/dist/tinymceOmero.js

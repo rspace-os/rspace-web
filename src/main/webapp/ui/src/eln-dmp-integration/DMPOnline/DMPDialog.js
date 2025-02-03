@@ -7,6 +7,7 @@ import useViewportDimensions from "../../util/useViewportDimensions";
 import { withStyles } from "Styles";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
@@ -30,15 +31,12 @@ import docLinks from "../../assets/DocLinks";
 import NoValue from "../../components/NoValue";
 import { doNotAwait } from "../../util/Util";
 import createAccentedTheme from "../../accentedTheme";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
-import AccessibilityTips from "../../components/AccessibilityTips";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
-import Box from "@mui/material/Box";
+import AppBar from "../../components/AppBar";
 import ValidatingSubmitButton, {
   IsValid,
   IsInvalid,
 } from "../../components/ValidatingSubmitButton";
+import { DataGridColumn } from "../../util/table";
 
 const COLOR = {
   main: {
@@ -76,7 +74,7 @@ const useStyles = makeStyles()((theme, props) => ({
         : FetchingData.match(props.listing, {
             loading: () => "none",
             error: () => "none",
-            success: () => "unset",
+            success: () => "flex",
           }),
   },
 }));
@@ -86,8 +84,14 @@ const CustomDialog = withStyles<
   {| paper?: string |}
 >((theme, { fullScreen }) => ({
   paper: {
-    // this is to avoid intercom help button
-    maxHeight: fullScreen ? "unset" : "86vh",
+    overflow: "hidden",
+    margin: fullScreen ? 0 : theme.spacing(2.625),
+    maxHeight: "unset",
+    minHeight: "unset",
+
+    // this is so that the heights of the dialog's content are constrained and scrollbars appear
+    // 24px margin above and below, 3px border above and below
+    height: fullScreen ? "100%" : "calc(100% - 48px)",
   },
 }))(Dialog);
 
@@ -128,16 +132,15 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
         />
       ),
       hideable: false,
-      width: 60,
+      width: 70,
       flex: 0,
       disableColumnMenu: true,
     },
-    {
-      field: "title",
+    // $FlowExpectedError[class-object-subtyping]
+    DataGridColumn.newColumnWithFieldName<DmpSummary, _>("title", {
       headerName: "Title",
       hideable: false,
-      valueGetter: (params: { row: DmpSummary, ... }) => params.row.title,
-    },
+    }),
     {
       field: "contact name",
       headerName: "Contact Name",
@@ -152,16 +155,14 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
           <NoValue label="Not Specified" />
         ),
     },
-    {
-      field: "created",
+    // $FlowExpectedError[class-object-subtyping]
+    DataGridColumn.newColumnWithFieldName<DmpSummary, _>("created", {
       headerName: "Created",
-      valueGetter: (params: { row: DmpSummary, ... }) => params.row.created,
-    },
-    {
-      field: "modified",
+    }),
+    // $FlowExpectedError[class-object-subtyping]
+    DataGridColumn.newColumnWithFieldName<DmpSummary, _>("modified", {
       headerName: "Modified",
-      valueGetter: (params: { row: DmpSummary, ... }) => params.row.modified,
-    },
+    }),
   ].map((colDefinition) => ({
     sortable: false,
     flex: 1,
@@ -170,181 +171,169 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
 
   return (
     <>
-      <AppBar position="relative" open={true}>
-        <Toolbar variant="dense">
-          <Typography variant="h6" noWrap component="h2">
-            DMPonline
-          </Typography>
-          <Box flexGrow={1}></Box>
-          <Box ml={1}>
-            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
-          </Box>
-          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-            <HelpLinkIcon title="DMPonline help" link={docLinks.dmponline} />
-          </Box>
-        </Toolbar>
-      </AppBar>
-      <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
-        <Box
-          sx={{
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            flexGrow: 1,
-          }}
+      <AppBar
+        variant="dialog"
+        currentPage="DMPonline"
+        accessibilityTips={{
+          supportsHighContrastMode: true,
+        }}
+        helpPage={{
+          docLink: docLinks.dmponline,
+          title: "DMPonline help",
+        }}
+      />
+      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
+      <DialogContent>
+        <Grid
+          container
+          direction="column"
+          spacing={2}
+          flexWrap="nowrap"
+          /*
+           * The height of 100% ensures that the table is scrollable
+           * The extra 16px prevents excessive whitespace, more and we get double scrollbars
+           */
+          height="calc(100% + 16px)"
         >
-          <form onSubmit={onSubmit}>
-            <DialogContent>
-              <Grid container direction="column" spacing={2}>
-                <Grid item>
-                  <Typography variant="h3">
-                    Import a DMP into the Gallery
-                  </Typography>
-                </Grid>
-                <Grid item>
+          <Grid item>
+            <Typography variant="body2">
+              Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will
+              make it available to view and reference within RSpace.
+            </Typography>
+            <Typography variant="body2">
+              See{" "}
+              <Link href="https://dmponline.dcc.ac.uk">
+                dmponline.dcc.ac.uk
+              </Link>{" "}
+              and our{" "}
+              <Link href={docLinks.dmponline}>DMPonline integration docs</Link>{" "}
+              for more.
+            </Typography>
+          </Grid>
+          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
+            {FetchingData.match(listing, {
+              loading: () => (
+                <Typography variant="body2">
+                  Loading listing of DMPs.
+                </Typography>
+              ),
+              error: (error) => (
+                <>
                   <Typography variant="body2">
-                    Importing a DMP will make it available to view and reference
-                    within RSpace.
+                    Failed to load listing of DMPs. Please try refreshing.
                   </Typography>
-                  <Typography variant="body2">
-                    See{" "}
-                    <Link href="https://dmponline.dcc.ac.uk">
-                      dmponline.dcc.ac.uk
-                    </Link>{" "}
-                    and our{" "}
-                    <Link href={docLinks.dmponline}>
-                      DMPonline integration docs
-                    </Link>{" "}
-                    for more.
-                  </Typography>
-                </Grid>
-                <Grid item sx={{ pr: 2, mt: 1 }}>
-                  {FetchingData.match(listing, {
-                    loading: () => (
-                      <Typography variant="body2">
-                        Loading listing of DMPs.
-                      </Typography>
-                    ),
-                    error: (error) => (
-                      <>
-                        <Typography variant="body2">
-                          Failed to load listing of DMPs. Please try refreshing.
-                        </Typography>
-                        <samp>{error}</samp>
-                      </>
-                    ),
-                    success: () => <></>,
-                  })}
-                  <DataGrid
-                    rows={FetchingData.match(listing, {
-                      loading: () => ([]: Array<DmpSummary>),
-                      error: () => ([]: Array<DmpSummary>),
-                      success: (l) => l.dmps,
-                    })}
-                    columns={columns}
-                    initialState={{
-                      columns: {
-                        columnVisibilityModel: {
-                          created: false,
-                          modified: false,
-                        },
-                      },
-                    }}
-                    disableColumnFilter
-                    density="compact"
-                    getRowId={(row: DmpSummary) => row.id}
-                    onRowSelectionModelChange={(
-                      newSelection: $ReadOnlyArray<DmpSummary["id"]>
-                    ) => {
-                      FetchingData.match(listing, {
-                        loading: () => {},
-                        error: () => {},
-                        success: (l) => {
-                          if (newSelection[0]) {
-                            setSelection(l.getById(newSelection[0]));
-                          }
-                        },
-                      });
-                    }}
-                    hideFooterSelectedRowCount
-                    paginationMode="server"
-                    rowCount={FetchingData.match(listing, {
-                      loading: () => 0,
-                      error: () => 0,
-                      success: (l) => l.totalCount,
-                    })}
-                    paginationModel={FetchingData.match(listing, {
-                      loading: () => ({ page: 0, pageSize: 0 }),
-                      error: () => ({ page: 0, pageSize: 0 }),
-                      success: (l) => ({ page: l.page, pageSize: l.pageSize }),
-                    })}
-                    pageSizeOptions={[10, 25, 100]}
-                    onPaginationModelChange={({
-                      pageSize: newPageSize,
-                      page: newPage,
-                    }) => {
-                      FetchingData.match(listing, {
-                        loading: () => {},
-                        error: () => {},
-                        success: doNotAwait(async (l) => {
-                          try {
-                            if (newPage !== l.page) {
-                              setListing({ tag: "loading" });
-                              setListing({
-                                tag: "success",
-                                value: await l.setPage(newPage),
-                              });
-                            }
-                          } catch (error) {
-                            setListing({ tag: "error", error: error.message });
-                          }
-                          try {
-                            if (newPageSize !== l.pageSize) {
-                              setListing({ tag: "loading" });
-                              setListing({
-                                tag: "success",
-                                value: await l.setPageSize(newPageSize),
-                              });
-                            }
-                          } catch (error) {
-                            setListing({ tag: "error", error: error.message });
-                          }
-                        }),
-                      });
-                    }}
-                    slots={{
-                      toolbar: () => (
-                        <GridToolbarContainer>
-                          <GridToolbarColumnsButton variant="outlined" />
-                          <GridToolbarDensitySelector variant="outlined" />
-                        </GridToolbarContainer>
-                      ),
-                    }}
-                    className={classes.table}
-                    {...FetchingData.match(listing, {
-                      loading: () => ({ "aria-hidden": true }),
-                      error: () => ({ "aria-hidden": true }),
-                      success: () => ({}),
-                    })}
-                  />
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setOpen(false)}>Close</Button>
-              <ValidatingSubmitButton
-                validationResult={
-                  selection ? IsValid() : IsInvalid("No DMP is selected.")
-                }
-                loading={importing}
-                onClick={(e) => void onSubmit(e)}
-              >
-                Import
-              </ValidatingSubmitButton>
-            </DialogActions>
-          </form>
-        </Box>
-      </Box>
+                  <samp>{error}</samp>
+                </>
+              ),
+              success: () => <></>,
+            })}
+            <DataGrid
+              rows={FetchingData.match(listing, {
+                loading: () => ([]: Array<DmpSummary>),
+                error: () => ([]: Array<DmpSummary>),
+                success: (l) => l.dmps,
+              })}
+              columns={columns}
+              initialState={{
+                columns: {
+                  columnVisibilityModel: {
+                    created: false,
+                    modified: false,
+                  },
+                },
+              }}
+              disableColumnFilter
+              density="compact"
+              getRowId={(row: DmpSummary) => row.id}
+              onRowSelectionModelChange={(
+                newSelection: $ReadOnlyArray<DmpSummary["id"]>
+              ) => {
+                FetchingData.match(listing, {
+                  loading: () => {},
+                  error: () => {},
+                  success: (l) => {
+                    if (newSelection[0]) {
+                      setSelection(l.getById(newSelection[0]));
+                    }
+                  },
+                });
+              }}
+              hideFooterSelectedRowCount
+              paginationMode="server"
+              rowCount={FetchingData.match(listing, {
+                loading: () => 0,
+                error: () => 0,
+                success: (l) => l.totalCount,
+              })}
+              paginationModel={FetchingData.match(listing, {
+                loading: () => ({ page: 0, pageSize: 0 }),
+                error: () => ({ page: 0, pageSize: 0 }),
+                success: (l) => ({ page: l.page, pageSize: l.pageSize }),
+              })}
+              pageSizeOptions={[10, 25, 100]}
+              onPaginationModelChange={({
+                pageSize: newPageSize,
+                page: newPage,
+              }) => {
+                FetchingData.match(listing, {
+                  loading: () => {},
+                  error: () => {},
+                  success: doNotAwait(async (l) => {
+                    try {
+                      if (newPage !== l.page) {
+                        setListing({ tag: "loading" });
+                        setListing({
+                          tag: "success",
+                          value: await l.setPage(newPage),
+                        });
+                      }
+                    } catch (error) {
+                      setListing({ tag: "error", error: error.message });
+                    }
+                    try {
+                      if (newPageSize !== l.pageSize) {
+                        setListing({ tag: "loading" });
+                        setListing({
+                          tag: "success",
+                          value: await l.setPageSize(newPageSize),
+                        });
+                      }
+                    } catch (error) {
+                      setListing({ tag: "error", error: error.message });
+                    }
+                  }),
+                });
+              }}
+              slots={{
+                toolbar: () => (
+                  <GridToolbarContainer>
+                    <GridToolbarColumnsButton variant="outlined" />
+                  </GridToolbarContainer>
+                ),
+              }}
+              className={classes.table}
+              getRowHeight={() => "auto"}
+              {...FetchingData.match(listing, {
+                loading: () => ({ "aria-hidden": true }),
+                error: () => ({ "aria-hidden": true }),
+                success: () => ({}),
+              })}
+            />
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpen(false)}>Close</Button>
+        <ValidatingSubmitButton
+          validationResult={
+            selection ? IsValid() : IsInvalid("No DMP is selected.")
+          }
+          loading={importing}
+          onClick={(e) => void onSubmit(e)}
+        >
+          Import
+        </ValidatingSubmitButton>
+      </DialogActions>
     </>
   );
 };

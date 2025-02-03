@@ -103,8 +103,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Abstract base class with injected services and utility methods for tests which need need
- * transactions to be committed.<br>
+ * Abstract base class with injected services and utility methods for tests which need transactions
+ * to be committed.<br>
  * (E.g., tests that require cache refreshes, or post-commit listeners, such as auditing, or where
  * we want to test what fields are initialized from a service call).
  */

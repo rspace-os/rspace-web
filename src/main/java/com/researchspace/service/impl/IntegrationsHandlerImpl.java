@@ -2,6 +2,9 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.CacheNames.INTEGRATION_INFO;
 import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
+import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
+import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
+import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
 import static java.lang.String.format;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.isEmpty;
@@ -9,6 +12,7 @@ import static org.apache.commons.lang.StringUtils.join;
 
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.apps.AppConfigElement;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.dto.IntegrationInfo;
@@ -26,16 +30,22 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.integrations.pyrat.PyratClient;
+import com.researchspace.webapp.integrations.pyrat.PyratServerDTO;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TreeMap;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -47,7 +57,7 @@ import org.springframework.dao.DataAccessException;
  *
  * <h3>Caching notes</h3>
  *
- * IntegrationInfo objects are cached using Spring cache abstraction backed by ehcache. The cache
+ * <p>IntegrationInfo objects are cached using Spring cache abstraction backed by ehcache. The cache
  * key is a compound key of {username}{preferencename}, e.g. 'user5ECAT'. <br>
  * These keys are used in this class, in {@link SystemPropertyManagerImpl} and and {@link
  * UserManagerImpl} as the underlying system properties and preferences are also cached.
@@ -67,6 +77,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private @Autowired IRepositoryConfigFactory repositoryConfigFactory;
   private @Autowired UserConnectionManager userConnManager;
   private @Autowired IPropertyHolder propertyHolder;
+  private @Autowired PyratClient pyratClient;
 
   private final Map<SystemProperty, List<SystemProperty>> parent2ChildMap = new HashMap<>();
 
@@ -90,8 +101,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
           Preference.DROPBOX,
           Preference.GOOGLEDRIVE,
           Preference.CHEMISTRY,
-          Preference.ONEDRIVE,
-          Preference.MENDELEY);
+          Preference.ONEDRIVE);
 
   // for testing, shouldn't be exposed in interface
   public Map<SystemProperty, List<SystemProperty>> getParent2ChildMap() {
@@ -166,12 +176,43 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         setOAuthConnectionStatus(info, user, DRYAD_APP_NAME);
         return;
       case PYRAT_APP_NAME:
-        setSingleUserToken(info, user, PYRAT_APP_NAME, PYRAT_USER_TOKEN);
+        setMultipleUserTokens(
+            info, user, PYRAT_APP_NAME, PYRAT_CONFIGURED_SERVERS, PYRAT_ALIAS, PYRAT_APIKEY);
         return;
       case ZENODO_APP_NAME:
         setSingleUserToken(info, user, ZENODO_APP_NAME, ZENODO_USER_TOKEN);
         return;
+      case FIELDMARK_APP_NAME:
+        setSingleUserToken(info, user, FIELDMARK_APP_NAME, FIELDMARK_USER_TOKEN);
+        return;
+      case DIGITAL_COMMONS_DATA_APP_NAME:
+        setSingleUserToken(
+            info, user, DIGITAL_COMMONS_DATA_APP_NAME, DIGITAL_COMMONS_DATA_USER_TOKEN);
+        return;
+      case DMPONLINE_APP_NAME:
+        setSingleUserToken(info, user, DMPONLINE_APP_NAME, DMPONLINE_USER_TOKEN);
+        return;
       default:
+    }
+  }
+
+  private void setMultipleUserTokens(
+      IntegrationInfo info,
+      User user,
+      String appName,
+      String paramConfiguredServers,
+      String paramAlias,
+      String paramApiKey) {
+    Map<String, String> apikeyByAlias = getTokenMapForProvider(user, appName);
+
+    for (Entry<String, Object> infoElement : info.getOptions().entrySet()) {
+      if (!paramConfiguredServers.equals(infoElement.getKey())) {
+        Map<String, String> configElementMapSet = (Map<String, String>) infoElement.getValue();
+        String aliasToConfigure = configElementMapSet.get(paramAlias); // i.e.: "mice server"
+        String apiKey =
+            apikeyByAlias.get(aliasToConfigure) == null ? "" : apikeyByAlias.get(aliasToConfigure);
+        configElementMapSet.put(paramApiKey, apiKey);
+      }
     }
   }
 
@@ -192,6 +233,27 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         .map(UserConnection::getAccessToken);
   }
 
+  private Optional<String> getTokenForProvider(User user, String provider, String discriminant) {
+    return userConnManager
+        .findByUserNameProviderName(user.getUsername(), provider, discriminant)
+        .map(UserConnection::getAccessToken);
+  }
+
+  // Map<alias, api-key>
+  private Map<String, String> getTokenMapForProvider(User user, String provider) {
+    List<UserConnection> userConnectionList =
+        userConnManager.findListByUserNameProviderName(user.getUsername(), provider);
+    Map<String, String> apikeyByAlias = new HashMap<>();
+    if (userConnectionList != null && !userConnectionList.isEmpty()) {
+      for (UserConnection currentUserConnection : userConnectionList) {
+        apikeyByAlias.put(
+            currentUserConnection.getId().getProviderUserId(),
+            currentUserConnection.getAccessToken());
+      }
+    }
+    return apikeyByAlias;
+  }
+
   private void setSingleUserToken(
       IntegrationInfo info, User user, String appName, String tokenName) {
     Optional<String> userToken = getTokenForProvider(user, appName);
@@ -204,14 +266,23 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     if (appConfig != null) {
       info.setEnabled(appConfig.isEnabled());
       info.setDisplayName(appConfig.getApp().getLabel());
+      Map<String, Object> options = new HashMap<>();
 
-      // For PyRAT there are no AppConfig options, but the token is returned in options
-      // The remaining code clears all options in info and loads from app config
+      // For PyRAT we need to fetch the configured servers returned by the client
       if (info.getName().equals(PYRAT_APP_NAME)) {
-        return;
+        Map<String, PyratServerDTO> pyratServerByAliasMap = pyratClient.getServerByAlias();
+        if (!pyratServerByAliasMap.isEmpty()) {
+          List<PyratServerDTO> pyratConfiguredServers = new LinkedList<>();
+          options.put(PYRAT_CONFIGURED_SERVERS, pyratConfiguredServers);
+
+          // add the configured servers in the options
+          for (Entry<String, PyratServerDTO> pyratServerByAlias :
+              pyratServerByAliasMap.entrySet()) {
+            pyratConfiguredServers.add(createServerEntry(pyratServerByAlias));
+          }
+        }
       }
 
-      Map<String, Object> options = new HashMap<>();
       appConfig
           .getAppConfigElementSets()
           .forEach(
@@ -230,6 +301,12 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
               });
       info.setOptions(options);
     }
+  }
+
+  @NotNull
+  private static PyratServerDTO createServerEntry(
+      Entry<String, PyratServerDTO> pyratServerByAlias) {
+    return new PyratServerDTO(pyratServerByAlias.getKey(), pyratServerByAlias.getValue().getUrl());
   }
 
   private UserAppConfig getAppConfig(String infoName, User user) {
@@ -313,12 +390,12 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private void saveConfigOptionsForAppsWithSingleOptionSet(User user, IntegrationInfo newInfo) {
     if (EGNYTE_APP_NAME.equals(newInfo.getName())) {
       saveAppConfigWithSingleOptionSet(user, newInfo, EGNYTE_APP_NAME, EGNYTE_DOMAIN_SETTING);
-    } else if (PYRAT_APP_NAME.equals(newInfo.getName())) {
-      saveNewUserConnectionForSingleOptionApp(
-          newInfo.getOptions().get(PYRAT_USER_TOKEN).toString(), user, PYRAT_APP_NAME);
     } else if (ZENODO_APP_NAME.equals(newInfo.getName())) {
       saveNewUserConnectionForSingleOptionApp(
           newInfo.getOptions().get(ZENODO_USER_TOKEN).toString(), user, ZENODO_APP_NAME);
+    } else if (FIELDMARK_APP_NAME.equals(newInfo.getName())) {
+      saveNewUserConnectionForSingleOptionApp(
+          newInfo.getOptions().get(FIELDMARK_USER_TOKEN).toString(), user, FIELDMARK_APP_NAME);
     } else if (JOVE_APP_NAME.equals(newInfo.getName())) {
       /**
        * Jove doesnt currently fit well into our existing integration handler, so we just get the
@@ -328,19 +405,50 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     }
   }
 
+  public void saveConfigOptionsForAppsWithMultipleOptionSet(
+      User user, Long optionsId, String appName, Map<String, String> options) {
+    if (PYRAT_APP_NAME.equals(appName) && optionsId != null) {
+      saveNewUserConnectionForMultipleOptionApp(
+          options.get(PYRAT_APIKEY), user, PYRAT_APP_NAME, options.get(PYRAT_ALIAS));
+    }
+  }
+
   private void saveNewUserConnectionForSingleOptionApp(String token, User user, String appName) {
+    saveNewUserConnectionForMultipleOptionApp(token, user, appName, appName);
+  }
+
+  private void saveNewUserConnectionForMultipleOptionApp(
+      String token, User user, String appName, String discriminant) {
     Optional<UserConnection> existingConnection =
-        userConnManager.findByUserNameProviderName(user.getUsername(), appName);
+        userConnManager.findByUserNameProviderName(user.getUsername(), appName, discriminant);
     UserConnection conn = existingConnection.orElse(new UserConnection());
     if (existingConnection.isEmpty()) {
       conn.setDisplayName(appName + " User Token");
-      conn.setId(new UserConnectionId(user.getUsername(), appName, appName));
-      conn.setRank(1);
+      conn.setId(new UserConnectionId(user.getUsername(), appName, discriminant));
+      Optional<Integer> existingMaxRank =
+          userConnManager.findMaxRankByUserNameProviderName(user.getUsername(), appName);
+      if (existingMaxRank.isPresent()) {
+        conn.setRank(existingMaxRank.get() + 1);
+      } else {
+        conn.setRank(1);
+      }
     }
     conn.setAccessToken(token);
     // These user tokens do not expire, and the expiry time isn't checked, i.e api keys
     conn.setExpireTime(0L);
     userConnManager.save(conn);
+  }
+
+  private void deleteConfigOptionsForAppsWithMultipleOptionSet(
+      User user, String appName, String descriptorForDiscriminant, AppConfigElementSet configSet) {
+    String aliasDiscriminant = "";
+    for (AppConfigElement configElement : configSet.getConfigElements()) {
+      if (descriptorForDiscriminant.equals(
+          configElement.getAppConfigElementDescriptor().getDescriptor().getName())) {
+        aliasDiscriminant = configElement.getValue();
+      }
+    }
+    userConnManager.deleteByUserAndProvider(user.getUsername(), appName, aliasDiscriminant);
   }
 
   private void saveAppConfigWithSingleOptionSet(
@@ -379,13 +487,27 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       String appName,
       boolean trustedOrigin,
       User user) {
-    appConfigMgr.saveAppConfigElementSet(options, optionsId, trustedOrigin, user);
+    // remove the apiKey from the option otherwise it is saved in clear on the database
+    if (PYRAT_APP_NAME.equals(appName)) {
+      Map<String, String> safeMap = new LinkedHashMap<>();
+      safeMap.putAll(options);
+      safeMap.remove(PYRAT_APIKEY);
+      appConfigMgr.saveAppConfigElementSet(safeMap, optionsId, trustedOrigin, user);
+    } else {
+      appConfigMgr.saveAppConfigElementSet(options, optionsId, trustedOrigin, user);
+    }
+    saveConfigOptionsForAppsWithMultipleOptionSet(user, optionsId, appName, options);
   }
 
   @Override
   @CacheEvict(value = INTEGRATION_INFO, key = "#user.username + #appName")
   public void deleteAppOptions(Long optionsId, String appName, User user) {
+    AppConfigElementSet configSetBeforeRemoval = appConfigMgr.getAppConfigElementSetById(optionsId);
     appConfigMgr.deleteAppConfigSet(optionsId, user);
+    if (PYRAT_APP_NAME.equals(appName)) {
+      deleteConfigOptionsForAppsWithMultipleOptionSet(
+          user, appName, PYRAT_ALIAS, configSetBeforeRemoval);
+    }
   }
 
   private boolean isAppConfigIntegration(String integrationName) {
@@ -403,6 +525,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DRYAD_APP_NAME:
       case ARGOS_APP_NAME:
       case ZENODO_APP_NAME:
+      case DIGITAL_COMMONS_DATA_APP_NAME:
+      case DMPONLINE_APP_NAME:
+      case FIELDMARK_APP_NAME:
         return true;
     }
     return isSingleOptionSetAppConfigIntegration(integrationName);
@@ -417,7 +542,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DMPTOOL_APP_NAME:
       case PYRAT_APP_NAME:
       case JOVE_APP_NAME:
-      case DMPONLINE_APP_NAME:
         return true;
     }
     return false;
@@ -425,5 +549,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   private String getSysPropertyFromIntegrationName(String name) {
     return name.toLowerCase() + ".available"; // see SystemProperty table
+  }
+
+  /* For test purposes */
+  protected void setUserConnectionManager(UserConnectionManager userConnectionManager) {
+    this.userConnManager = userConnectionManager;
   }
 }

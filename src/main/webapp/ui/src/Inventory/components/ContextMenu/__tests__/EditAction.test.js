@@ -4,7 +4,13 @@
 //@flow
 /* eslint-env jest */
 import React from "react";
-import { render, cleanup, waitFor, screen } from "@testing-library/react";
+import {
+  render,
+  cleanup,
+  waitFor,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import EditAction from "../EditAction";
@@ -59,7 +65,11 @@ describe("EditAction", () => {
         "setVisiblePanel"
       );
 
-      screen.getByText("Edit").click();
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: "Edit" })).toBeEnabled();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "Edit" }));
 
       await waitFor(() => {
         expect(setVisiblePanelSpy).toHaveBeenCalledWith("right");

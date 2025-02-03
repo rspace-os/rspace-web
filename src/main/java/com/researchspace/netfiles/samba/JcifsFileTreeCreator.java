@@ -100,6 +100,7 @@ public class JcifsFileTreeCreator {
 
     Date dt = new Date(smbFile.getDate());
     node.setFileDate(sdf.format(dt));
+    node.setModificationDateMillis(dt.getTime());
 
     try {
       boolean isFolder = smbFile.isDirectory();
@@ -107,6 +108,7 @@ public class JcifsFileTreeCreator {
       if (!isFolder) {
         int fileLength = smbFile.getContentLength();
         node.setFileSize(Integer.toString(fileLength));
+        node.setFileSizeBytes(Integer.toUnsignedLong(fileLength));
       }
       node.setIsFolder(isFolder);
     } catch (SmbException smbe) {

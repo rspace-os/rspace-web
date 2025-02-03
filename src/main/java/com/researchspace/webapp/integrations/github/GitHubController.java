@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.github;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.field.ErrorList;
@@ -48,9 +49,11 @@ public class GitHubController {
 
   protected static final String GITHUB_VIEW_NAME = "connect/github/gitHubTreeView";
 
-  private static String GITHUB_ACCESS_TOKEN_URL = "https://github.com/login/oauth/access_token";
-  private static String GITHUB_API_URL = "https://api.github.com";
-  private static String GITHUB_API_USER_REPOS = String.format("%s/user/repos", GITHUB_API_URL);
+  private static final String GITHUB_ACCESS_TOKEN_URL =
+      "https://github.com/login/oauth/access_token";
+  private static final String GITHUB_API_URL = "https://api.github.com";
+  private static final String GITHUB_API_USER_REPOS =
+      String.format("%s/user/repos", GITHUB_API_URL);
 
   @Value("${github.client.id}")
   private String clientId;
@@ -132,7 +135,7 @@ public class GitHubController {
 
   private String getAccessToken(String authorizationCode)
       throws RestClientException, AccessDeniedException {
-    log.error("-" + authorizationCode + "-"); // this is correct
+
     // Set required post parameters
     Map<String, String> kv = new HashMap<>();
     kv.put("client_id", clientId);
@@ -204,7 +207,7 @@ public class GitHubController {
       return new AjaxReturnObject<>(getUserRepositories(params.get("authToken")), null);
     } catch (RestClientException e) {
       log.error("Getting GitHub repositories list failed", e);
-      return new AjaxReturnObject<List<Repository>>(null, ErrorList.of(e.getMessage()));
+      return new AjaxReturnObject<>(null, ErrorList.of(e.getMessage()));
     }
   }
 
@@ -212,7 +215,7 @@ public class GitHubController {
   public String onAuthorization(
       @RequestParam Map<String, String> params, Model model, Principal principal) {
     String authorizationCode = params.get("code");
-    String accessToken = null;
+    String accessToken;
     try {
       accessToken = getAccessToken(authorizationCode);
     } catch (AccessDeniedException e) {
@@ -235,7 +238,7 @@ public class GitHubController {
       return "connect/authorizationError";
     }
 
-    List<Repository> repositories = null;
+    List<Repository> repositories;
     try {
       repositories = getUserRepositories(accessToken);
     } catch (Exception e) {
@@ -262,42 +265,23 @@ public class GitHubController {
 
   // Map is from repository name to access code
   @SuppressWarnings("unchecked")
-  private Map<String, String> getConfiguredRepositories(Principal principal) {
+  private Map<String, String> getConfiguredRepositoriesWithTokens(Principal principal) {
     Map<String, String> hashMap = new HashMap<>();
     User user = userManager.getUserByUsername(principal.getName());
     IntegrationInfo integration = integrationsHandler.getIntegration(user, "GITHUB");
     for (Object propertySetObject : integration.getOptions().values()) {
       Map<String, String> propertySet = (Map<String, String>) propertySetObject;
       String repositoryName = propertySet.get("GITHUB_REPOSITORY_FULL_NAME");
-      String accessCode = propertySet.get("GITHUB_ACCESS_TOKEN");
-      hashMap.put(repositoryName, accessCode);
+      String accessToken = propertySet.get("GITHUB_ACCESS_TOKEN");
+      hashMap.put(repositoryName, accessToken);
     }
     return hashMap;
   }
 
-  private List<TreeNode> getNodesFromGitHubApi(
-      String fullRepoName, String fullPath, String sha, String accessToken)
-      throws RestClientException {
-    String url = String.format("%s/repos/%s/git/trees/%s", GITHUB_API_URL, fullRepoName, sha);
-    TreeApiResponse treeApiResponse =
-        restTemplate
-            .exchange(
-                url,
-                HttpMethod.GET,
-                new HttpEntity<>(getApiHeaders(accessToken)),
-                TreeApiResponse.class)
-            .getBody();
-    for (TreeNode node : treeApiResponse.tree) {
-      node.setRepository(fullRepoName);
-      node.setFullPath(Paths.get(fullPath, node.path).toString());
-    }
-    return treeApiResponse.getTree();
-  }
-
   @RequestMapping(value = "/ajax/get_repository_tree", method = RequestMethod.POST)
   public String getTree(@RequestParam("dir") String dir, Model model, Principal principal) {
-    List<TreeNode> nodes = new ArrayList<TreeNode>();
-    Map<String, String> repositories = getConfiguredRepositories(principal);
+    List<TreeNode> nodes = new ArrayList<>();
+    Map<String, String> repositories = getConfiguredRepositoriesWithTokens(principal);
 
     try {
       dir = java.net.URLDecoder.decode(dir, "UTF-8");
@@ -315,7 +299,8 @@ public class GitHubController {
         node.setPath(repositoryName);
         node.setRepository(repositoryName);
         node.setType("tree");
-        node.setSha("master");
+        node.setSha(
+            getDefaultBranchFromGitHubApi(repositoryName, repositories.get(repositoryName)));
         nodes.add(node);
       }
     } else {
@@ -335,5 +320,44 @@ public class GitHubController {
     }
     model.addAttribute("treeNodes", nodes);
     return GITHUB_VIEW_NAME;
+  }
+
+  private String getDefaultBranchFromGitHubApi(String repositoryName, String accessToken) {
+
+    String url = String.format("%s/repos/%s", GITHUB_API_URL, repositoryName);
+    String result = "unknown";
+    try {
+      JsonNode repoDetailsResponse =
+          restTemplate
+              .exchange(
+                  url, HttpMethod.GET, new HttpEntity<>(getApiHeaders(accessToken)), JsonNode.class)
+              .getBody();
+      JsonNode defaultBranch = repoDetailsResponse.get("default_branch");
+      if (defaultBranch != null) {
+        result = defaultBranch.textValue();
+      }
+    } catch (RestClientException rce) {
+      log.warn("couldn't retrieve default branch for repo: " + repositoryName);
+    }
+    return result;
+  }
+
+  private List<TreeNode> getNodesFromGitHubApi(
+      String fullRepoName, String fullPath, String sha, String accessToken)
+      throws RestClientException {
+    String url = String.format("%s/repos/%s/git/trees/%s", GITHUB_API_URL, fullRepoName, sha);
+    TreeApiResponse treeApiResponse =
+        restTemplate
+            .exchange(
+                url,
+                HttpMethod.GET,
+                new HttpEntity<>(getApiHeaders(accessToken)),
+                TreeApiResponse.class)
+            .getBody();
+    for (TreeNode node : treeApiResponse.tree) {
+      node.setRepository(fullRepoName);
+      node.setFullPath(Paths.get(fullPath, node.path).toString());
+    }
+    return treeApiResponse.getTree();
   }
 }

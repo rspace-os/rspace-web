@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #d67b63;
+        stroke: #d67b63;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </defs>
+  <!-- Generator: Adobe Illustrator 28.6.0, SVG Export Plug-In . SVG Version: 1.2.0 Build 709)  -->
+  <g>
+    <g id="Layer_1">
+      <path class="cls-1" d="M69.7,40.2h-13.1v3.3h13.1v-3.3ZM69.7,46.7h-13.1v3.3h13.1v-3.3ZM69.7,53.3h-13.1v3.3h13.1v-3.3ZM41.8,63.1c5.8,0,10.5-4.3,11.3-9.8h-13v-13c-5.6.8-9.8,5.5-9.8,11.3s5.1,11.5,11.5,11.5ZM43.4,40.3v9.7h9.7c-.7-5-4.7-9-9.7-9.7ZM69.7,59.8h-13.1v3.3h13.1v-3.3ZM86.1,30.3h-3.3v49.2H17.2V30.3h-3.3v-9.8h72.2v9.8ZM76.3,30.3H23.7v42.7h52.5V30.3Z"/>
+    </g>
+  </g>
+</svg>

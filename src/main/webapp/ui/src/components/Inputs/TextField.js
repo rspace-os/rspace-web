@@ -19,7 +19,7 @@ export type TextFieldArgs = {|
 
 export default function TextField(props: TextFieldArgs): Node {
   const handleEditorChange = (content: string) => {
-    let e = {
+    const e = {
       target: {
         name: props.name ?? "",
         value: content,
@@ -37,25 +37,22 @@ export default function TextField(props: TextFieldArgs): Node {
           }}
         ></span>
       );
-    } else {
-      return <NoValue label={props.noValueLabel ?? "None"} />;
     }
-  } else {
-    return (
-      <Editor
-        {...props}
-        onChange={null}
-        onEditorChange={handleEditorChange}
-        inline
-        init={{
-          menubar: false,
-          plugins: ["autolink", "lists", "link", "charmap"],
-          toolbar:
-            "undo redo | blocks | bold italic backcolor link | \
-             bullist numlist outdent indent | removeformat",
-          paste_block_drop: true,
-        }}
-      />
-    );
+    return <NoValue label={props.noValueLabel ?? "None"} />;
   }
+  return (
+    <Editor
+      {...props}
+      onChange={null}
+      onEditorChange={handleEditorChange}
+      init={{
+        menubar: false,
+        plugins: ["autolink", "lists", "link", "charmap", "autoresize"],
+        toolbar:
+          "undo redo blocks bold italic backcolor link \
+             bullist numlist removeformat",
+        paste_block_drop: true,
+      }}
+    />
+  );
 }

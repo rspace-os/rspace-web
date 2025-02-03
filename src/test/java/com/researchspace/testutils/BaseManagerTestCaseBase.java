@@ -2,7 +2,6 @@ package com.researchspace.testutils;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertFalse;
 
 import com.axiope.search.IFileIndexer;
@@ -64,7 +63,6 @@ import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
-import com.researchspace.model.UserApiKey;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
@@ -77,8 +75,8 @@ import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.InventoryFile;
+import com.researchspace.model.inventory.InventorySeriesNamingHelper;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSeriesHelper2;
 import com.researchspace.model.netfiles.NetFilesTestFactory;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -1131,11 +1129,17 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @param user - must be a group member, probably the doc owner
    * @param group - the group to share with, must be initialised with sharing folders etc
    * @param sd The document to share.
+   * @return RecordGroupSharing entity created as a result of sharing
    */
-  protected ServiceOperationResult<Set<RecordGroupSharing>> shareRecordWithGroup(
+  protected RecordGroupSharing shareRecordWithGroup(
       final User user, Group group, StructuredDocument sd) {
-    return sharingMgr.shareRecord(
-        user, sd.getId(), new ShareConfigElement[] {new ShareConfigElement(group.getId(), "read")});
+    return sharingMgr
+        .shareRecord(
+            user,
+            sd.getId(),
+            new ShareConfigElement[] {new ShareConfigElement(group.getId(), "read")})
+        .getEntity()
+        .get(0);
   }
 
   /**
@@ -1155,11 +1159,11 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     cfg.setGroupid(group.getId());
     cfg.setOperation("read"); // doesn't matter, notebook permission will decide
 
-    ServiceOperationResult<Set<RecordGroupSharing>> shared =
+    ServiceOperationResult<List<RecordGroupSharing>> shared =
         sharingMgr.shareRecord(docOwner, record.getId(), new ShareConfigElement[] {cfg});
     return shared.getEntity().isEmpty()
         ? Optional.empty()
-        : Optional.ofNullable(shared.getEntity().iterator().next());
+        : Optional.ofNullable(shared.getEntity().get(0));
   }
 
   /**
@@ -1168,9 +1172,9 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @param owner - must be a group member, probably the doc owner
    * @param sharee - the user to share with, must be initialised with sharing folders etc
    * @param toShare The document to share.
-   * @return
+   * @return entity created as a result of sharing action
    */
-  protected ServiceOperationResult<Set<RecordGroupSharing>> shareRecordWithUser(
+  protected RecordGroupSharing shareRecordWithUser(
       User owner, StructuredDocument toShare, User sharee) {
     return doShare(owner, sharee, toShare, false);
   }
@@ -1180,22 +1184,21 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    *
    * @param owner - must be a group member, probably the doc owner
    * @param sharee - the user to share with, must be initialised with sharing folders etc
-   * @param toShare The document to share.
-   * @return
+   * @param toShare The document to share. @@return entity created as a result of sharing action
    */
-  protected ServiceOperationResult<Set<RecordGroupSharing>> shareRecordWithUserForEdit(
+  protected RecordGroupSharing shareRecordWithUserForEdit(
       User owner, StructuredDocument toShare, User sharee) {
     return doShare(owner, sharee, toShare, true);
   }
 
-  private ServiceOperationResult<Set<RecordGroupSharing>> doShare(
+  private RecordGroupSharing doShare(
       User owner, User sharee, StructuredDocument toShare, boolean write) {
-    ShareConfigElement cfg = new ShareConfigElement(sharee.getId(), "read");
+    ShareConfigElement cfg = new ShareConfigElement(sharee.getId(), write ? "write" : "read");
     cfg.setUserId(sharee.getId());
-    if (write) {
-      cfg.setOperation("write");
-    }
-    return sharingMgr.shareRecord(owner, toShare.getId(), new ShareConfigElement[] {cfg});
+    return sharingMgr
+        .shareRecord(owner, toShare.getId(), new ShareConfigElement[] {cfg})
+        .getEntity()
+        .get(0);
   }
 
   /**
@@ -1349,10 +1352,10 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   }
 
   private Optional<BaseRecord> extractDoc(
-      ServiceOperationResult<Set<RecordGroupSharing>> shareRecord) {
+      ServiceOperationResult<List<RecordGroupSharing>> shareRecord) {
     return shareRecord.getEntity().isEmpty()
         ? Optional.empty()
-        : Optional.ofNullable(shareRecord.getEntity().iterator().next().getShared());
+        : Optional.ofNullable(shareRecord.getEntity().get(0).getShared());
   }
 
   /**
@@ -1602,35 +1605,13 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @param apiUser
    * @return
    */
-  protected String createApiKeyForuser(User apiUser) {
-    UserApiKey key = new UserApiKey(apiUser, randomAlphabetic(16));
-    return userApiKeyMgr.save(key).getApiKey();
+  protected String createNewApiKeyForUser(User apiUser) {
+    return userApiKeyMgr.createKeyForUser(apiUser).getApiKey();
   }
 
-  protected String getOrCreateNewSysAdminApiKey() {
+  protected String createNewSysAdminApiKey() {
     User sysadmin = userMgr.getUserByUsername(Constants.SYSADMIN_UNAME);
-    UserApiKey key =
-        userApiKeyMgr
-            .getKeyForUser(sysadmin)
-            .orElseGet(
-                () -> {
-                  UserApiKey newKey = new UserApiKey(sysadmin, randomAlphabetic(16));
-                  return userApiKeyMgr.save(newKey);
-                });
-    return key.getApiKey();
-  }
-
-  /**
-   * Gets existing API key if there is one, else creates new one and returns it
-   *
-   * @param apiUser
-   * @return
-   */
-  protected String getApiKeyForuser(User apiUser) {
-    return userApiKeyMgr
-        .getKeyForUser(apiUser)
-        .map(UserApiKey::getApiKey)
-        .orElseGet(() -> createApiKeyForuser(apiUser));
+    return createNewApiKeyForUser(sysadmin);
   }
 
   protected abstract Group reloadGroup(Group group);
@@ -1712,7 +1693,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
             BulkApiOperationType.CREATE, new ArrayList<>(), true, user);
     for (int i = 1; i <= numberOfSamples; i++) {
       String sampleName =
-          SampleSeriesHelper2.getSerialNameForSample(sampleBaseName, i, numberOfSamples);
+          InventorySeriesNamingHelper.getSerialNameForSample(sampleBaseName, i, numberOfSamples);
       bulkOpConfig.getRecords().add(new ApiSampleWithFullSubSamples(sampleName));
     }
     ApiInventoryBulkOperationResult sampleCreationResult =
@@ -1997,16 +1978,23 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     return basketApiMgr.createNewBasket("basic basket", globalIds, user);
   }
 
-  protected InventoryFile addFileAttachmentToInventoryItem(GlobalIdentifier globalId, User user)
-      throws IOException {
+  protected InventoryFile addFileAttachmentToInventoryItem(
+      GlobalIdentifier globalIdToAttachTo, User user) throws IOException {
     InventoryFile attachedFile;
     try (InputStream fileIS =
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png")) {
       attachedFile =
           inventoryFileApiMgr.attachNewInventoryFileToInventoryRecord(
-              globalId, "Picture1.png", fileIS, user);
+              globalIdToAttachTo, "Picture1.png", fileIS, user);
     }
     return attachedFile;
+  }
+
+  protected InventoryFile addGalleryFileToInventoryItem(
+      GlobalIdentifier globalIdToAttachTo, User user) throws IOException {
+    EcatImage ecatImage = addImageToGallery(user);
+    return inventoryFileApiMgr.attachGalleryFileToInventoryRecord(
+        globalIdToAttachTo, ecatImage.getOid(), user);
   }
 
   /**

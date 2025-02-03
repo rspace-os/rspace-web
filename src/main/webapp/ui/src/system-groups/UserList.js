@@ -9,6 +9,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import UserDetails from "../components/UserDetails";
+import { stripDiacritics } from "../util/StringUtils";
 
 export default function UserList(props): Node {
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -60,8 +61,10 @@ export default function UserList(props): Node {
   }
 
   function filterVisibleUsers(search) {
-    let visible = props.users.filter((u) =>
-      userLabel(u).toUpperCase().includes(search.toUpperCase())
+    const visible = props.users.filter((u) =>
+      stripDiacritics(userLabel(u))
+        .toUpperCase()
+        .includes(stripDiacritics(search.toUpperCase()))
     );
     setVisibleUsers(visible);
     unselectFilteredUsers(visible);

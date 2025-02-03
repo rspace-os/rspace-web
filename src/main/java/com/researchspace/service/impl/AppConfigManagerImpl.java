@@ -56,6 +56,10 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
     }
   }
 
+  public AppConfigElementSet getAppConfigElementSetById(Long appConfigSetDataId) {
+    return appCfgDao.getAppConfigElementSetById(appConfigSetDataId);
+  }
+
   @Override
   public UserAppConfig saveAppConfigElementSet(
       Map<String, String> appConfigSetData,

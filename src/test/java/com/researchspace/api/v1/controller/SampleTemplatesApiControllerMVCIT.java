@@ -43,7 +43,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
-    apiKey = createApiKeyForuser(anyUser);
+    apiKey = createNewApiKeyForUser(anyUser);
   }
 
   private ApiSampleTemplatePost createValidSampleTemplatePostNoFields() {
@@ -274,7 +274,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleField string =
         createBasicApiSampleField("string", ApiFieldType.STRING, "string value");
     ApiSampleField date = createBasicApiSampleField("date", ApiFieldType.DATE, "2020-10-31");
-    ApiSampleField time = createBasicApiSampleField("time", ApiFieldType.TIME, "23:45:12");
+    ApiSampleField time = createBasicApiSampleField("time", ApiFieldType.TIME, "23:45");
     ApiSampleField number = createBasicApiSampleField("number", ApiFieldType.NUMBER, "112.34");
 
     ApiSampleField choice =

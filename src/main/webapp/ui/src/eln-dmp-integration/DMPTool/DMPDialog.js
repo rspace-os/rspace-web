@@ -13,6 +13,7 @@ import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import { withStyles } from "Styles";
 import { observer } from "mobx-react-lite";
@@ -20,7 +21,6 @@ import Typography from "@mui/material/Typography";
 import axios from "axios";
 import { type UseState } from "../../util/types";
 import ScopeField, { type Scope } from "./ScopeField";
-import { Optional } from "../../util/optional";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import Portal from "@mui/material/Portal";
@@ -31,17 +31,14 @@ import ValidatingSubmitButton, {
   IsValid,
 } from "../../components/ValidatingSubmitButton";
 import Link from "@mui/material/Link";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
+import AppBar from "../../components/AppBar";
 import docLinks from "../../assets/DocLinks";
-import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
-import AccessibilityTips from "../../components/AccessibilityTips";
 import { DataGrid } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import Radio from "@mui/material/Radio";
 import DOMPurify from "dompurify";
+import { mapNullable } from "../../util/Util";
 
 const COLOR = {
   main: {
@@ -81,7 +78,7 @@ const CustomDialog = withStyles<
     maxHeight: "unset",
     minHeight: "unset",
 
-    // this is so that the hights of the dialog's content of constrained and scrollbars appear
+    // this is so that the heights of the dialog's content are constrained and scrollbars appear
     // 24px margin above and below, 3px border above and below
     height: fullScreen ? "100%" : "calc(100% - 48px)",
   },
@@ -99,6 +96,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
 
+  const [DMPHost, setDMPHost] = React.useState<?string>();
   const [DMPs, setDMPs] = useState(([]: Array<Plan>));
   const [selectedPlan, setSelectedPlan]: UseState<?Plan> = useState();
 
@@ -107,6 +105,13 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   const fetchingId = useRef(0);
 
   const [importing, setImporting] = useState(false);
+
+  React.useEffect(() => {
+    axios
+      .get<void, string>("/apps/dmptool/baseUrlHost")
+      .then((r) => setDMPHost(r.data))
+      .catch((e) => console.error("Cannot establish DMP host", e));
+  }, []);
 
   const getDMPs = (scope: Scope) => {
     setErrorFetching(null);
@@ -192,36 +197,42 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   return (
     <>
-      <AppBar position="relative" open={true}>
-        <Toolbar variant="dense">
-          <Typography variant="h6" noWrap component="h2">
-            DMPTool
-          </Typography>
-          <Box flexGrow={1}></Box>
-          <Box ml={1}>
-            <AccessibilityTips supportsHighContrastMode elementType="dialog" />
-          </Box>
-          <Box ml={1} sx={{ transform: "translateY(2px)" }}>
-            <HelpLinkIcon title="DMPTool help" link={docLinks.dmptool} />
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <AppBar
+        variant="dialog"
+        currentPage="DMPTool"
+        accessibilityTips={{
+          supportsHighContrastMode: true,
+        }}
+        helpPage={{
+          docLink: docLinks.dmptool,
+          title: "DMPTool help",
+        }}
+      />
+      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
         <Grid
           container
           direction="column"
           spacing={2}
           flexWrap="nowrap"
-          // this is so that just the table is scrollable
+          /*
+           * The height of 100% ensures that the table is scrollable
+           * The extra 16px prevents excessive whitespace, more and we get double scrollbars
+           */
           height="calc(100% + 16px)"
         >
           <Grid item>
-            <Typography variant="h3">Import a DMP into the Gallery</Typography>
-          </Grid>
-          <Grid item>
             <Typography variant="body2">
-              Importing a DMP will make it available to view and reference
-              within RSpace.
+              Importing a DMP{" "}
+              {mapNullable(
+                (host) => (
+                  <>
+                    from <strong>{host}</strong>{" "}
+                  </>
+                ),
+                DMPHost
+              ) ?? ""}
+              will make it available to view and reference within RSpace.
             </Typography>
             <Typography variant="body2">
               See <Link href="https://dmptool.org">dmptool.org</Link> and our{" "}
@@ -247,7 +258,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                     />
                   ),
                   hideable: false,
-                  width: 60,
+                  width: 70,
                   flex: 0,
                   disableColumnMenu: true,
                   sortable: false,
@@ -282,20 +293,18 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithValueGetter(
+                DataGridColumn.newColumnWithValueMapper<Plan, _>(
                   "created",
-                  (params: { row: Plan, ... }) =>
-                    new Date(params.row.created).toLocaleString(),
+                  (created) => new Date(created).toLocaleString(),
                   {
                     headerName: "Created At",
                     flex: 1,
                     sortable: false,
                   }
                 ),
-                DataGridColumn.newColumnWithValueGetter(
+                DataGridColumn.newColumnWithValueMapper<Plan, _>(
                   "modified",
-                  (params: { row: Plan, ... }) =>
-                    new Date(params.row.modified).toLocaleString(),
+                  (modified) => new Date(modified).toLocaleString(),
                   {
                     headerName: "Modified At",
                     flex: 1,

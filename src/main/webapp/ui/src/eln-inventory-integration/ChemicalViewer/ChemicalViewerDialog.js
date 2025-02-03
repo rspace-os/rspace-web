@@ -1,7 +1,6 @@
 //@flow
 
-import React, { type Node, useRef } from "react";
-import useStores from "../../stores/use-stores";
+import React, { type Node } from "react";
 import { makeStyles } from "tss-react/mui";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -10,6 +9,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import clsx from "clsx";
 import { type Attachment } from "../../stores/definitions/Attachment";
+import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
 
 const useStyles = makeStyles()((theme) => ({
   contentWrapper: {
@@ -79,12 +79,11 @@ const useStyles = makeStyles()((theme) => ({
 
 type ViewerArgs = {| attachment: Attachment, open: boolean |};
 
-export default function ChemicalViewerDialog({ attachment, open }: ViewerArgs): Node {
-  const {
-    uiStore: { isSingleColumnLayout },
-  } = useStores();
-
-  const chemicalString = attachment.chemicalString;
+export default function ChemicalViewerDialog({
+  attachment,
+  open,
+}: ViewerArgs): Node {
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
   const onClose = () => {
     attachment.revokeChemicalPreview();
@@ -103,8 +102,7 @@ export default function ChemicalViewerDialog({ attachment, open }: ViewerArgs): 
       }}
     >
       <DialogTitle>Chemical Viewer &mdash; File: {attachment.name}</DialogTitle>
-      <DialogContent className={classes.contentWrapper}>
-      </DialogContent>
+      <DialogContent className={classes.contentWrapper}></DialogContent>
       <DialogActions
         className={clsx(classes.barWrapper, classes.disableBackground)}
       >

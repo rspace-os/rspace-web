@@ -5,6 +5,7 @@ import com.researchspace.auth.SSOAuthenticationToken;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.webapp.controller.SignupController;
+import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
 import java.io.IOException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -29,6 +30,8 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
   public static final String SSOINFO_URL = "/public/ssoinfo";
 
   public static final String SSOINFO_USERNAMECONFLICT_URL = "/public/ssoinfoUsernameConflict";
+
+  public static final String SSOINFO_USERNAMENOTALIAS_URL = "/public/ssoinfoUsernameNotAlias";
 
   public static final String REMOTE_USER_USERNAME_ATTR = "remoteUserUsername";
 
@@ -86,7 +89,19 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
       if (user == null) {
         return false;
       }
-      if (!user.getUsername().equals(remoteUser)) {
+
+      if (user.getUsername().equals(remoteUser)) {
+        // block login attempt with username for user who also have an usernameAlias (RSDEV-263)
+        if (StringUtils.isNotEmpty(user.getUsernameAlias())) {
+          SECURITY_LOG.info(
+              String.format(
+                  "Blocked login attempt for username [%s], as there is a usernameAlias set for"
+                      + " user with this username",
+                  remoteUser));
+          redirectToLoginAttemptWithUsernameNotAliasPage(httpRequest, response);
+          return false;
+        }
+      } else {
         SECURITY_LOG.info(
             String.format(
                 "Processing login of user [%s] through username alias [%s]",
@@ -100,10 +115,10 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
         return false;
       }
 
-      boolean maintenanceLogin =
+      boolean maintenancePermitsLogin =
           maintenanceLoginAuthorizer.isLoginPermitted(httpRequest, response, user);
       boolean userEnabled = accountEnabledAuthorizer.isLoginPermitted(request, response, user);
-      if (maintenanceLogin && userEnabled) {
+      if (maintenancePermitsLogin && userEnabled) {
         AuthenticationToken token = new SSOAuthenticationToken(user.getUsername());
         Subject subject = SecurityUtils.getSubject();
         subject.login(token); // not call onLogSucess methods at all
@@ -131,22 +146,23 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
     return false;
   }
 
-  private void redirectToNoAccountPage(HttpServletRequest request, ServletResponse response)
+  private void redirectToLoginAttemptWithUsernameNotAliasPage(
+      HttpServletRequest request, ServletResponse response) throws IOException {
+    WebUtils.issueRedirect(request, response, SSOINFO_USERNAMENOTALIAS_URL);
+  }
+
+  private void redirectToAccountConflictPage(HttpServletRequest request, ServletResponse response)
       throws IOException {
-    if (!isResponseAlreadyRedirected(response)) {
-      if (properties.isUserSignup()) {
-        WebUtils.issueRedirect(request, response, SignupController.SIGNUP_URL, null);
-      } else {
-        WebUtils.issueRedirect(request, response, SSOINFO_URL, null);
-      }
-    }
+    WebUtils.issueRedirect(request, response, SSOINFO_USERNAMECONFLICT_URL);
   }
 
   private void updateUserIfAccountDetailsChanged(HttpServletRequest request, User user) {
     // RSPAC-2588
     if (properties.isSSOSelfDeclarePiEnabled()) {
       String isAllowedPiRoleParam =
-          remoteUserPolicy.getOtherRemoteAttributes(request).get("isAllowedPiRole");
+          remoteUserPolicy
+              .getOtherRemoteAttributes(request)
+              .get(RemoteUserAttribute.IS_ALLOWED_PI_ROLE);
       if (StringUtils.isEmpty(isAllowedPiRoleParam)) {
         log.info(
             "deployment property 'deployment.sso.selfDeclarePI.enabled' is set to true, "
@@ -166,9 +182,15 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
     }
   }
 
-  private void redirectToAccountConflictPage(HttpServletRequest request, ServletResponse response)
+  private void redirectToNoAccountPage(HttpServletRequest request, ServletResponse response)
       throws IOException {
-    WebUtils.issueRedirect(request, response, SSOINFO_USERNAMECONFLICT_URL);
+    if (!isResponseAlreadyRedirected(response)) {
+      if (properties.isUserSignup()) {
+        WebUtils.issueRedirect(request, response, SignupController.SIGNUP_URL, null);
+      } else {
+        WebUtils.issueRedirect(request, response, SSOINFO_URL, null);
+      }
+    }
   }
 
   @Override

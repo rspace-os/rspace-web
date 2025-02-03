@@ -12,6 +12,7 @@ import { type InventoryRecord } from "./InventoryRecord";
 import { type DocumentAttrs, type Document } from "./Document";
 import { type IdentifierAttrs, type Identifier } from "./Identifier";
 import { type GlobalId } from "./BaseRecord";
+import InvApiService from "../../common/InvApiService";
 
 /*
  * Objects which implement this interface provide an abstraction layer over the
@@ -30,7 +31,7 @@ export interface Factory {
 
   newPerson(PersonAttrs): Person;
   newBarcode(PersistedBarcodeAttrs): BarcodeRecord;
-  newIdentifier(IdentifierAttrs, GlobalId): Identifier;
+  newIdentifier(IdentifierAttrs, GlobalId, typeof InvApiService): Identifier;
   newDocument(DocumentAttrs): Document;
 
   /*

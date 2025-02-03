@@ -8,9 +8,10 @@ import { makeMockSample, sampleAttrs } from "./mocking";
 import { makeMockTemplate } from "../TemplateModel/mocking";
 import InvApiService from "../../../../common/InvApiService";
 
-var mockRootStore = {
+const mockRootStore = {
   unitStore: {
     assertValidUnitId: () => {},
+    getUnit: () => ({ label: "ml" }),
   },
   uiStore: {
     addAlert: () => {},
