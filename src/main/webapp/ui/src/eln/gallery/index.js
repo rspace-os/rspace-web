@@ -326,6 +326,29 @@ function GalleryFolder() {
   );
 }
 
+function GalleryFileInFolder() {
+  const { fileId } = useParams();
+  const { useNavigate } = React.useContext(NavigateContext);
+  const navigate = useNavigate();
+
+  // TODO: fetch this
+  const folderId = React.useMemo(() => {
+    return 132;
+  }, []);
+
+  // TODO: select the GalleryFile in the listing with id `fileId`
+
+  return (
+    <WholePage
+      listingOf={{ tag: "folder", folderId }}
+      setSelectedSection={({ mediaType }) => {
+        navigate(`/gallery/?mediaType=${mediaType}`);
+      }}
+      setPath={() => {}}
+    />
+  );
+}
+
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
   if (domContainer) {
@@ -366,6 +389,20 @@ window.addEventListener("load", () => {
                                 <GallerySelection>
                                   <FilestoreLoginProvider>
                                     <GalleryFolder />
+                                  </FilestoreLoginProvider>
+                                </GallerySelection>
+                              </RouterNavigationProvider>
+                            </Alerts>
+                          }
+                        />
+                        <Route
+                          path="gallery/item/:folderId"
+                          element={
+                            <Alerts>
+                              <RouterNavigationProvider>
+                                <GallerySelection>
+                                  <FilestoreLoginProvider>
+                                    <GalleryFileInFolder />
                                   </FilestoreLoginProvider>
                                 </GallerySelection>
                               </RouterNavigationProvider>

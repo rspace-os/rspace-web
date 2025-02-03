@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
 import com.researchspace.model.EcatMediaFile;
+import com.researchspace.model.record.Folder;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -37,18 +39,19 @@ import lombok.NoArgsConstructor;
       "created",
       "size",
       "version",
+      "parentFolderId",
       "_links"
     })
 public class ApiFile extends IdentifiableNameableApiObject {
 
   @JsonProperty("contentType")
-  private String contentType = null;
+  private String contentType;
 
   @JsonProperty("caption")
-  private String caption = null;
+  private String caption;
 
   @JsonProperty("size")
-  private Long size = null;
+  private Long size;
 
   @JsonProperty("version")
   private Integer version = 1;
@@ -59,6 +62,9 @@ public class ApiFile extends IdentifiableNameableApiObject {
   @JsonDeserialize(using = ISO8601DateTimeDeserialiser.class)
   private Long createdMillis;
 
+  @JsonProperty("parentFolderId")
+  private Long parentFolderId;
+
   public ApiFile(EcatMediaFile emf) {
     setId(emf.getId());
     setGlobalId(emf.getGlobalIdentifier());
@@ -68,5 +74,9 @@ public class ApiFile extends IdentifiableNameableApiObject {
     setCreatedMillis(emf.getCreationDateMillis());
     setSize(emf.getSize());
     setVersion(Long.valueOf(emf.getVersion()).intValue());
+    Optional<Folder> ownerParent = emf.getOwnerParent();
+    if (ownerParent.isPresent()) {
+      setParentFolderId(ownerParent.get().getId());
+    }
   }
 }

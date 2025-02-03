@@ -141,6 +141,10 @@
       <to>/eln/gallery.html</to>
     </rule>
     <rule match-type="regex">
+      <from>^/gallery/item/([0-9]+)$</from>
+      <to>/eln/gallery.html</to>
+    </rule>
+    <rule match-type="regex">
       <from>^/gallery/([0-9]+)$</from>
       <to>/eln/gallery.html</to>
     </rule>
