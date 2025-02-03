@@ -29,7 +29,7 @@ jobs:
           path-to-document: 'https://github.com/rspace-os/.github/blob/d5c5352e61e11e66baec71d0005407811b7f66e5/CLA.md' # e.g. a CLA or a DCO document
           # branch should not be protected
           branch: 'main'
-          allowlist: mKowalski256,rlamacraft,rs-nicof,tuxRamon,vaidap,rs-fraser,nebay-abraha,bot*
+          allowlist: mKowalski256,rlamacraft,rs-nicof,tuxRamon,vaidap,rs-fraser,nebay-abraha,ll4strw,bot*
 
          # the followings are the optional inputs - If the optional inputs are not given, then default values will be taken
           #remote-organization-name: 'rspace-os'

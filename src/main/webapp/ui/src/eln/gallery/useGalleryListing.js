@@ -896,29 +896,40 @@ export function useGalleryListing({
   React.useEffect(() => {
     if (listingOf.tag === "folder") {
       void (async () => {
-        const response = await (
-          await api
-        ).get<mixed>(
-          `folders/${listingOf.folderId}?includePathToRootFolder=true`
-        );
-        const data = Parsers.isObject(response.data).flatMap(Parsers.isNotNull);
-        setDirectSection(
-          data
-            .flatMap(Parsers.getValueWithKey("mediaType"))
-            .flatMap(Parsers.isString)
-            .flatMap(parseGallerySection)
-            .map((value) => ({ tag: "success", value }))
-            .orElseGet<FetchingData.Fetched<GallerySection>>(([e]) => ({
-              tag: "error",
-              error: e.message,
-            }))
-        );
         try {
-          const [, , ...pathToRootFolder] = data
+          const response = await (
+            await api
+          ).get<mixed>(
+            `folders/${listingOf.folderId}?includePathToRootFolder=true`
+          );
+          const data = Parsers.isObject(response.data).flatMap(
+            Parsers.isNotNull
+          );
+          setDirectSection(
+            data
+              .flatMap(Parsers.getValueWithKey("mediaType"))
+              .flatMap(Parsers.isString)
+              .flatMap(parseGallerySection)
+              .map((value) => ({ tag: "success", value }))
+              .elseThrow()
+          );
+          const path = data
             .flatMap(Parsers.getValueWithKey("pathToRootFolder"))
             .flatMap(Parsers.isArray)
             .map((array) => array.toReversed())
             .elseThrow();
+
+          if (path.length === 1) {
+            // the folder we fetched is the gallery section root
+            setDirectFolderPath({ tag: "success", value: [] });
+            return;
+          }
+
+          /*
+           * We drop the last two "folders" as the penultimate folder is the
+           * gallery section and the last folder is the gallery itself.
+           */
+          const [, , ...pathToRootFolder] = path;
           const parents = pathToRootFolder.reduce(
             (p: $ReadOnlyArray<GalleryFile>, obj: mixed) => [
               ...p,
@@ -931,6 +942,16 @@ export function useGalleryListing({
             ],
             []
           );
+          /*
+           * this code does not work when the folderId is that of the
+           * root of the gallery section. This can happen when the user
+           * goes to /gallery/item/<id>, where <id> is the id of a file
+           * at the root of the gallery section, but in principle could
+           * happen at any time when we link to the root of the section.
+           *
+           * When that happens, `pathToRootFolder` will only contain one
+           * element
+           */
           setDirectFolderPath({
             tag: "success",
             value: [
@@ -945,7 +966,11 @@ export function useGalleryListing({
             ],
           });
         } catch (e) {
+          setLoading(false);
+          setErrorState(true);
+          console.error(e);
           setDirectFolderPath({ tag: "error", error: e.message });
+          setDirectSection({ tag: "error", error: e.message });
         }
       })();
     }
@@ -1506,7 +1531,7 @@ export function useGalleryListing({
       const pa = FetchingData.getSuccessValue(path).elseThrow();
       const s = FetchingData.getSuccessValue(section).elseThrow();
       let newTotalHits: null | number = null;
-      if (section === GALLERY_SECTION.NETWORKFILES) {
+      if (s === GALLERY_SECTION.NETWORKFILES) {
         if (pa.length === 0) {
           return getFilestores();
         }
