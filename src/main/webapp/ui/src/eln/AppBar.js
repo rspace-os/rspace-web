@@ -81,6 +81,7 @@ function currentPage() {
     import: "My RSpace",
     groups: "My RSpace",
     gallery: "Gallery",
+    oldGallery: "Gallery",
   };
   const firstPathFragment = window.location.pathname.split("/")[1];
   if (firstPathFragment in pages) return pages[firstPathFragment];
