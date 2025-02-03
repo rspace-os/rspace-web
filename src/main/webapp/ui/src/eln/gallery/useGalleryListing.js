@@ -914,11 +914,23 @@ export function useGalleryListing({
             }))
         );
         try {
-          const [, , ...pathToRootFolder] = data
+          const path = data
             .flatMap(Parsers.getValueWithKey("pathToRootFolder"))
             .flatMap(Parsers.isArray)
             .map((array) => array.toReversed())
             .elseThrow();
+
+          if (path.length === 1) {
+            // the folder we fetched is the gallery section root
+            setDirectFolderPath({ tag: "success", value: [] });
+            return;
+          }
+
+          /*
+           * We drop the last two "folders" as the penultimate folder is the
+           * gallery section and the last folder is the gallery itself.
+           */
+          const [, , ...pathToRootFolder] = path;
           const parents = pathToRootFolder.reduce(
             (p: $ReadOnlyArray<GalleryFile>, obj: mixed) => [
               ...p,
@@ -931,6 +943,16 @@ export function useGalleryListing({
             ],
             []
           );
+          /*
+           * this code does not work when the folderId is that of the
+           * root of the gallery section. This can happen when the user
+           * goes to /gallery/item/<id>, where <id> is the id of a file
+           * at the root of the gallery section, but in principle could
+           * happen at any time when we link to the root of the section.
+           *
+           * When that happens, `pathToRootFolder` will only contain one
+           * element
+           */
           setDirectFolderPath({
             tag: "success",
             value: [
@@ -945,6 +967,7 @@ export function useGalleryListing({
             ],
           });
         } catch (e) {
+          console.error(e);
           setDirectFolderPath({ tag: "error", error: e.message });
         }
       })();
