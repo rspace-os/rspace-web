@@ -124,19 +124,23 @@ const WholePage = styled(
           <CallableAsposePreview>
             <OpenFolderProvider
               setPath={(newPath) => {
-                if (newPath.length > 0) {
-                  navigate(
-                    `/gallery/${idToString(newPath[newPath.length - 1].id)}`
-                  );
-                } else {
-                  try {
-                    const section =
-                      FetchingData.getSuccessValue(selectedSection).elseThrow();
-                    navigate(`/gallery/?mediaType=${section}`);
-                  } catch {
-                    // do nothing
+                FetchingData.getSuccessValue(selectedSection).do((section) => {
+                  if (section === GALLERY_SECTION.NETWORKFILES) {
+                    setPath(newPath);
+                    return;
                   }
-                }
+                  if (newPath.length > 0) {
+                    navigate(
+                      `/gallery/${idToString(newPath[newPath.length - 1].id)}`
+                    );
+                  } else {
+                    try {
+                      navigate(`/gallery/?mediaType=${section}`);
+                    } catch {
+                      // do nothing
+                    }
+                  }
+                });
               }}
             >
               <AppBar
