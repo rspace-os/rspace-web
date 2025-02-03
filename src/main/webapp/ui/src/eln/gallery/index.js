@@ -135,7 +135,7 @@ const WholePage = styled(
                     );
                   } else {
                     try {
-                      navigate(`/gallery/?mediaType=${section}`);
+                      navigate(`/gallery?mediaType=${section}`);
                     } catch {
                       // do nothing
                     }
@@ -323,7 +323,7 @@ function GalleryFolder() {
     <WholePage
       listingOf={{ tag: "folder", folderId }}
       setSelectedSection={({ mediaType }) => {
-        navigate(`/gallery/?mediaType=${mediaType}`);
+        navigate(`/gallery?mediaType=${mediaType}`);
       }}
       setPath={() => {}}
     />
