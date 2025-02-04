@@ -37,7 +37,6 @@
     <decorator:head />
 
     <script defer src="<c:url value='/scripts/segment.js'/>"></script>
-    <script defer src="<c:url value='/scripts/helpButton.js'/>"></script>
 
     <script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
     <script>
