@@ -229,6 +229,7 @@ export interface GalleryFile {
   +canBeExported: Result<null>;
   +canBeMoved: Result<null>;
   +canUploadNewVersion: Result<null>;
+  +canBeLoggedOutOf: Result<null>;
 
   /*
    * A unique identifier across all possible trees that this file may be
@@ -447,6 +448,10 @@ export class LocalGalleryFile implements GalleryFile {
     return Result.Ok(null);
   }
 
+  get canBeLoggedOutOf(): Result<null> {
+    return Result.Error([new Error("Cannot log out of local files and folders.")]);
+  }
+
   get treeViewItemId(): string {
     return `LOCAL_${idToString(this.id)}`;
   }
@@ -559,6 +564,10 @@ export class Filestore implements GalleryFile {
     return Result.Error([
       new Error("Filestores cannot be updated by uploading new versions."),
     ]);
+  }
+
+  get canBeLoggedOutOf(): Result<null> {
+    return Result.Ok(null);
   }
 
   get treeViewItemId(): string {
@@ -744,6 +753,12 @@ class RemoteFile implements GalleryFile {
       new Error(
         "Contents of filestores cannot be updated by uploading new versions."
       ),
+    ]);
+  }
+
+  get canBeLoggedOutOf(): Result<null> {
+    return Result.Error([
+      new Error("Cannot log out of files stored in filestores."),
     ]);
   }
 

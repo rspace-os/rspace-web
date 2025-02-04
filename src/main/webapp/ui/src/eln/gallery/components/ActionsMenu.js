@@ -18,7 +18,7 @@ import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
-import { type GalleryFile, idToString, type Id } from "../useGalleryListing";
+import { type GalleryFile, idToString, type Id, Filestore } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import Dialog from "@mui/material/Dialog";
@@ -58,6 +58,8 @@ import { useFolderOpen } from "./OpenFolderProvider";
 import { type URL } from "../../../util/types";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { Optional } from "../../../util/optional";
+import LogoutIcon from "@mui/icons-material/Logout";
+import useFilestoresEndpoint from "../useFilestoresEndpoint";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -447,6 +449,15 @@ function ActionsMenu({
     );
   });
 
+  const logOutAllowed = computed((): Result<Filestore> => {
+    return selection
+      .asSet()
+      .only.toResult(() => new Error("Only one item may be logged out of at once."))
+      .flatMapDiscarding((file) => file.canBeLoggedOutOf)
+      .flatMap((f: GalleryFile) => f instanceof Filestore ? Result.Ok(f) : Result.Error([new Error("Cannot log out of this item.")]));
+  });
+  const { logout } = useFilestoresEndpoint();
+
   return (
     <>
       <Button
@@ -739,6 +750,30 @@ function ActionsMenu({
             }}
           />
           <Divider aria-orientation="horizontal" />
+          {/*
+           * We hide the log out option rather than disabling it because it
+           * is only available for filestores so doesn't apply in the vast,
+           * vast majority of cases.
+           */}
+          {logOutAllowed.get().map(filestore => (
+            <AccentMenuItem
+              title="Log Out"
+              subheader={logOutAllowed
+                .get()
+                .map(() => "")
+                .orElseGet(([e]) => e.message)}
+              backgroundColor={lighten(theme.palette.warning.light, 0.5)}
+              foregroundColor={darken(theme.palette.warning.dark, 0.3)}
+              avatar={<LogoutIcon />}
+              onClick={() => {
+                void logout(filestore).then(() => {
+                  void refreshListing();
+                  setActionsMenuAnchorEl(null);
+                });
+              }}
+              compact
+            />
+          )).orElse(null)}
           <AccentMenuItem
             title="Delete"
             subheader={deleteAllowed

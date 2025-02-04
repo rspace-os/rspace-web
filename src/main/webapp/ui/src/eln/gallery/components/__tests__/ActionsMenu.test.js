@@ -146,6 +146,7 @@ describe("ActionsMenu", () => {
                 canBeExported: Result.Ok(null),
                 canBeMoved: Result.Ok(null),
                 canUploadNewVersion: Result.Ok(null),
+                canBeLoggedOutOf: Result.Ok(null),
                 treeViewItemId: "GF1",
               },
             ]}
@@ -226,6 +227,7 @@ describe("ActionsMenu", () => {
                 canBeExported: Result.Ok(null),
                 canBeMoved: Result.Ok(null),
                 canUploadNewVersion: Result.Ok(null),
+                canBeLoggedOutOf: Result.Ok(null),
                 treeViewItemId: "GF1",
               },
             ]}
@@ -305,6 +307,7 @@ describe("ActionsMenu", () => {
                 canBeExported: Result.Ok(null),
                 canBeMoved: Result.Ok(null),
                 canUploadNewVersion: Result.Ok(null),
+                canBeLoggedOutOf: Result.Ok(null),
                 treeViewItemId: "GF1",
               },
               {
@@ -343,6 +346,7 @@ describe("ActionsMenu", () => {
                 canBeExported: Result.Ok(null),
                 canBeMoved: Result.Ok(null),
                 canUploadNewVersion: Result.Ok(null),
+                canBeLoggedOutOf: Result.Ok(null),
                 treeViewItemId: "GF1",
               },
             ]}
