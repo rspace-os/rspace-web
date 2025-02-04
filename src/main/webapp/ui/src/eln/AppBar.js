@@ -128,6 +128,7 @@ window.addEventListener("load", () => {
    * many pages
    */
   const domContainer = document.createElement("div");
+  domContainer.setAttribute("id", "app-bar");
   document.body?.insertBefore(domContainer, document.body.firstChild);
 
   /*
