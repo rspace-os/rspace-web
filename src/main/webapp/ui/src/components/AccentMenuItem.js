@@ -21,6 +21,9 @@ type AccentMenuItemArgs = {|
   compact?: boolean,
   disabled?: boolean,
   "aria-haspopup"?: "menu" | "dialog",
+  titleTypographyProps?: {|
+    sx?: { ... },
+  |},
 
   /*
    * These properties are dynamically added by the MUI Menu parent component
@@ -53,6 +56,7 @@ export default (styled(
         title,
         subheader,
         avatar,
+        titleTypographyProps,
       }: {| ...AccentMenuItemArgs, className: string |},
       ref
     ) => (
@@ -71,6 +75,7 @@ export default (styled(
           title={title}
           avatar={avatar}
           subheader={subheader}
+          titleTypographyProps={titleTypographyProps}
           subheaderTypographyProps={{
             sx: {
               whiteSpace: "break-spaces",

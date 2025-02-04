@@ -90,6 +90,7 @@ import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import * as StringUtils from "../../../util/StringUtils";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
@@ -143,7 +144,6 @@ const StyledBreadcrumb = styled(
   "& .MuiChip-icon": {
     fontSize: "1.05rem",
     marginRight: theme.spacing(-0.5),
-    color: alpha(theme.palette.primary.contrastText, 0.85),
   },
 }));
 StyledBreadcrumb.displayName = "StyledBreadcrumb";
@@ -1511,8 +1511,18 @@ function GalleryMainPanel({
                 <AccentMenuItem
                   title={`Name${match<void, string>([
                     [() => orderBy !== "name", ""],
-                    [() => sortOrder === "ASC", " (Sorted from A to Z)"],
-                    [() => sortOrder === "DESC", " (Sorted from Z to A)"],
+                    [
+                      () => sortOrder === "ASC",
+                      ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
+                        "(Sorted from A to Z)"
+                      )}`,
+                    ],
+                    [
+                      () => sortOrder === "DESC",
+                      ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
+                        "(Sorted from Z to A)"
+                      )}`,
+                    ],
                   ])()}`}
                   subheader={match<void, string>([
                     [() => orderBy !== "name", "Tap to sort from A to Z"],
@@ -1547,12 +1557,23 @@ function GalleryMainPanel({
                       orderBy: "name",
                     });
                   }}
+                  titleTypographyProps={{ sx: { whiteSpace: "break-spaces" } }}
                 />
                 <AccentMenuItem
                   title={`Modification Date${match<void, string>([
                     [() => orderBy !== "modificationDate", ""],
-                    [() => sortOrder === "ASC", " (Sorted oldest first)"],
-                    [() => sortOrder === "DESC", " (Sorted newest first)"],
+                    [
+                      () => sortOrder === "ASC",
+                      ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
+                        "(Sorted oldest first)"
+                      )}`,
+                    ],
+                    [
+                      () => sortOrder === "DESC",
+                      ` ${StringUtils.replaceSpacesWithNonBreakingSpaces(
+                        "(Sorted newest first)"
+                      )}`,
+                    ],
                   ])()}`}
                   subheader={match<void, string>([
                     [
@@ -1590,6 +1611,7 @@ function GalleryMainPanel({
                       orderBy: "modificationDate",
                     });
                   }}
+                  titleTypographyProps={{ sx: { whiteSpace: "break-spaces" } }}
                 />
               </StyledMenu>
             </Stack>
