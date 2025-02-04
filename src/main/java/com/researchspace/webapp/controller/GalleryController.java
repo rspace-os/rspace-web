@@ -819,8 +819,7 @@ public class GalleryController extends BaseController {
 
   /**
    * Gets record information for a list of IDs (and revision numbers) of EcatMediaFiles
-   * If info cannot be retrieved, value of map will be null and there will be an error
-   *
+   * 
    * @param ids
    * @param revisions
    * @return a map with keys in "$id-$revision" format
