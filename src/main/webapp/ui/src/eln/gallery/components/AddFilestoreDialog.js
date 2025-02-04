@@ -26,6 +26,7 @@ import TextField from "@mui/material/TextField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useFilestoreLogin } from "./FilestoreLoginDialog";
 import Typography from "@mui/material/Typography";
+import EventBoundary from "../../../components/EventBoundary";
 
 type AddFilestoreDialogArgs = {|
   open: boolean,
@@ -436,46 +437,53 @@ export default function AddFilestoreDialog({
   }
 
   return (
-    <Dialog fullWidth maxWidth="sm" open={open} onClose={() => onClose(false)}>
-      <DialogTitle>Add a Filestore</DialogTitle>
-      <DialogContent>
-        <Stepper activeStep={activeStep} orientation="vertical">
-          <FilesystemSelectionStep
-            selectedFilesystem={selectedFilesystem}
-            setSelectedFilesystem={(fs) => {
-              setSelectedFilesystem(Optional.present(fs));
-              setActiveStep(1);
+    <EventBoundary>
+      <Dialog
+        fullWidth
+        maxWidth="sm"
+        open={open}
+        onClose={() => onClose(false)}
+      >
+        <DialogTitle>Add a Filestore</DialogTitle>
+        <DialogContent>
+          <Stepper activeStep={activeStep} orientation="vertical">
+            <FilesystemSelectionStep
+              selectedFilesystem={selectedFilesystem}
+              setSelectedFilesystem={(fs) => {
+                setSelectedFilesystem(Optional.present(fs));
+                setActiveStep(1);
+              }}
+            />
+            <FolderSelectionStep
+              selectedFilesystem={selectedFilesystem}
+              onConfirm={(newPath) => {
+                setPathOfSelectedFolder(newPath);
+                setActiveStep(2);
+              }}
+              onCancel={() => {
+                setActiveStep(0);
+              }}
+            />
+            <NameStep
+              onConfirm={(name) => {
+                void addFilestore(name);
+              }}
+              onCancel={() => {
+                setActiveStep(1);
+              }}
+            />
+          </Stepper>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              onClose(false);
             }}
-          />
-          <FolderSelectionStep
-            selectedFilesystem={selectedFilesystem}
-            onConfirm={(newPath) => {
-              setPathOfSelectedFolder(newPath);
-              setActiveStep(2);
-            }}
-            onCancel={() => {
-              setActiveStep(0);
-            }}
-          />
-          <NameStep
-            onConfirm={(name) => {
-              void addFilestore(name);
-            }}
-            onCancel={() => {
-              setActiveStep(1);
-            }}
-          />
-        </Stepper>
-      </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={() => {
-            onClose(false);
-          }}
-        >
-          Cancel
-        </Button>
-      </DialogActions>
-    </Dialog>
+          >
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </EventBoundary>
   );
 }
