@@ -839,7 +839,7 @@ export function useGalleryListing({
         section: GallerySection,
         path: $ReadOnlyArray<GalleryFile>,
       |}
-    | {| tag: "folder", folderId: Id |},
+    | {| tag: "folder", folderId: number |},
 
   /**
    * The contents of folders within the local sections of the Gallery can be

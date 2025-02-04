@@ -19,7 +19,6 @@ import {
   useGalleryListing,
   idToString,
   type GalleryFile,
-  type Id,
 } from "./useGalleryListing";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -27,7 +26,7 @@ import useViewportDimensions from "../../util/useViewportDimensions";
 import Alerts from "../../Inventory/components/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
-import { GallerySelection } from "./useGallerySelection";
+import { GallerySelection, useGallerySelection } from "./useGallerySelection";
 import { BrowserRouter, Navigate } from "react-router-dom";
 import { Routes, Route, useParams } from "react-router";
 import useUiPreference, {
@@ -51,12 +50,17 @@ import GoogleLoginProvider from "../../components/GoogleLoginProvider";
 import BroadcastIcon from "@mui/icons-material/Campaign";
 import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
+import * as Parsers from "../../util/parsers";
+import axios from "axios";
+import useOauthToken from "../../common/useOauthToken";
+import RsSet from "../../util/set";
 
 const WholePage = styled(
   ({
     listingOf,
     setSelectedSection,
     setPath,
+    autoSelect,
   }: {|
     listingOf:
       | {|
@@ -64,9 +68,10 @@ const WholePage = styled(
           section: GallerySection,
           path: $ReadOnlyArray<GalleryFile>,
         |}
-      | {| tag: "folder", folderId: Id |},
+      | {| tag: "folder", folderId: number |},
     setSelectedSection: ({| mediaType: GallerySection |}) => void,
     setPath: ($ReadOnlyArray<GalleryFile>) => void,
+    autoSelect?: $ReadOnlyArray<number>,
   |}) => {
     const theme = useTheme();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -90,6 +95,22 @@ const WholePage = styled(
         sortOrder,
       });
     const { isViewportSmall } = useViewportDimensions();
+
+    const selection = useGallerySelection();
+    React.useEffect(() => {
+      FetchingData.getSuccessValue(galleryListing).do((listing) => {
+        if (listing.tag === "empty") return;
+        for (const f of new RsSet(listing.list).intersectionMap(
+          ({ id }) => idToString(id),
+          new RsSet(autoSelect ?? []).map((id) => `${id}`)
+        )) {
+          selection.append(f);
+        }
+      });
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - selection should be allowed to change with re-triggering this
+       */
+    }, [autoSelect, galleryListing]);
 
     const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
       useUiPreference<boolean>(PREFERENCES.GALLERY_SIDEBAR_OPEN, {
@@ -330,6 +351,58 @@ function GalleryFolder() {
   );
 }
 
+function GalleryFileInFolder() {
+  const { fileId } = useParams();
+  const { useNavigate } = React.useContext(NavigateContext);
+  const navigate = useNavigate();
+  const [folderId, setFolderId] = React.useState<FetchingData.Fetched<number>>({
+    tag: "loading",
+  });
+  const { getToken } = useOauthToken();
+
+  async function fetchFileDetails() {
+    try {
+      const token = await getToken();
+      const { data } = await axios.get<mixed>(`/api/v1/files/${fileId}`, {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      });
+      setFolderId(
+        Parsers.objectPath(["parentFolderId"], data)
+          .flatMap(Parsers.isNumber)
+          .map((id) => ({ tag: "success", value: id }))
+          .orElseGet(([e]) => ({ tag: "error", error: e.message }))
+      );
+    } catch (error) {
+      console.error("Error fetching file details", error);
+      setFolderId({ tag: "error", error });
+    }
+  }
+
+  React.useEffect(() => {
+    void fetchFileDetails();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - fetchFileDetails will not meaningfully change
+     */
+  }, []);
+
+  return FetchingData.match(folderId, {
+    loading: () => "Loading...",
+    error: (error) => `Error: ${error}`,
+    success: (fId) => (
+      <WholePage
+        listingOf={{ tag: "folder", folderId: fId }}
+        setSelectedSection={({ mediaType }) => {
+          navigate(`/gallery/?mediaType=${mediaType}`);
+        }}
+        setPath={() => {}}
+        autoSelect={[fileId]}
+      />
+    ),
+  });
+}
+
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
   if (domContainer) {
@@ -370,6 +443,20 @@ window.addEventListener("load", () => {
                                 <GallerySelection>
                                   <FilestoreLoginProvider>
                                     <GalleryFolder />
+                                  </FilestoreLoginProvider>
+                                </GallerySelection>
+                              </RouterNavigationProvider>
+                            </Alerts>
+                          }
+                        />
+                        <Route
+                          path="gallery/item/:fileId"
+                          element={
+                            <Alerts>
+                              <RouterNavigationProvider>
+                                <GallerySelection>
+                                  <FilestoreLoginProvider>
+                                    <GalleryFileInFolder />
                                   </FilestoreLoginProvider>
                                 </GallerySelection>
                               </RouterNavigationProvider>

@@ -157,6 +157,7 @@ public class API_ModelTestUtils {
     assertEquals(mediaFile.getName(), apiFile.getName());
     assertEquals(mediaFile.getContentType(), apiFile.getContentType());
     assertEquals(mediaFile.getSize(), apiFile.getSize().longValue());
+    assertEquals(mediaFile.getOwnerParent().get().getId(), apiFile.getParentFolderId());
     assertEquals(Long.valueOf(mediaFile.getCreationDate().getTime()), apiFile.getCreatedMillis());
 
     assertEquals(2, apiFile.getLinks().size());
