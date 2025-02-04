@@ -144,7 +144,6 @@ const StyledBreadcrumb = styled(
   "& .MuiChip-icon": {
     fontSize: "1.05rem",
     marginRight: theme.spacing(-0.5),
-    color: alpha(theme.palette.primary.contrastText, 0.85),
   },
 }));
 StyledBreadcrumb.displayName = "StyledBreadcrumb";

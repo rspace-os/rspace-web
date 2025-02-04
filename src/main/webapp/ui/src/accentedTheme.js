@@ -841,6 +841,12 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   ),
                 },
               },
+              [`&.${chipClasses.clickable}`]: {
+                color: linkColor,
+                [`& .${chipClasses.icon}`]: {
+                  color: linkColor,
+                },
+              },
               [`&.${chipClasses.outlined}`]: {
                 border: accentedBorder,
                 [`& .${svgIconClasses.root}`]: {
