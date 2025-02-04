@@ -443,7 +443,7 @@ function GalleryAppBar({
                       "Gallery",
                       "Inventory",
                       "System",
-                      "MyLabGroups",
+                      "My RSpace",
                     ].includes(currentPage)
                       ? currentPage
                       : "Go to..."
