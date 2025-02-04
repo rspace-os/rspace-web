@@ -301,7 +301,10 @@ function App(): Node {
                                   sx={{
                                     p: 1,
                                     mb: 1,
-                                    whiteSpace: "break-spaces",
+                                    whiteSpace: {
+                                      xs: "break-spaces",
+                                      md: "unset",
+                                    },
                                   }}
                                   id="third-party-rspace-integrations"
                                 >
