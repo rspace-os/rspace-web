@@ -262,7 +262,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
       result = deleteByIdFailsWith4xxStatus(u1, apiKey, info.getId());
     }
 
-    // ser shouldn't be able to create content inside these folders either.
+    // user shouldn't be able to create content inside these folders either.
     ApiFolder folderPost = new ApiFolder();
     folderPost.setName("TestFolder");
     folderPost.setParentFolderId(sharedId);
@@ -292,6 +292,30 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     // pi can't delete user folder:
     result =
         deleteByIdFailsWith4xxStatus(group.getPi(), piApiKey, getRootFolderForUser(u1).getId());
+  }
+
+  @Test
+  public void listOwnSharedFolderInNonOwnedFolder_RSDEV_488() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User u1 = group.u1();
+    logoutAndLoginAs(u1);
+    String apiKey = createNewApiKeyForUser(u1);
+
+    Long groupSharedFolderId = group.getGroup().getCommunalGroupFolderId();
+    ApiFolder folderPost = new ApiFolder();
+    folderPost.setName("u1 test folder in group's shared folder");
+    folderPost.setParentFolderId(groupSharedFolderId);
+    MvcResult result = this.mockMvc.perform(folderCreate(u1, apiKey, folderPost)).andReturn();
+    ApiFolder created = getFromJsonResponseBody(result, ApiFolder.class);
+    assertNotNull(created.getId());
+
+    // listing of top-level folder works fine for u1 (RSDEV-488)
+    ApiRecordTreeItemListing sharedFolderListing =
+        performFolderListingById(u1, apiKey, groupSharedFolderId);
+    assertEquals(1, sharedFolderListing.getTotalHits().intValue());
+    RecordTreeItemInfo retrievedFolder = sharedFolderListing.getRecords().get(0);
+    assertEquals(u1.getUsername(), retrievedFolder.getOwner().getUsername());
+    assertEquals(groupSharedFolderId, retrievedFolder.getParentFolderId());
   }
 
   private long getIdFromNameForListing(String name, ApiRecordTreeItemListing listing) {
