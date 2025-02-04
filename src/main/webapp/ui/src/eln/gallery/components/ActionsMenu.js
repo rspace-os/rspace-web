@@ -819,7 +819,9 @@ function ActionsMenu({
               .orElseTry(() => FetchingData.getSuccessValue(folderId))
               .mapError(() => new Error("Current folder is not known"))
               .elseThrow();
-            await uploadFiles(idOfFolderThatFileIsIn, [newFile]);
+            await uploadFiles(idOfFolderThatFileIsIn, [newFile], {
+              originalImageId: file.id,
+            });
             void refreshListing();
             trackEvent("user:edit:image:gallery");
           } catch (e) {

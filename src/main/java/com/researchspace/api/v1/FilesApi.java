@@ -34,13 +34,14 @@ public interface FilesApi {
 
   @PostMapping
   @ResponseStatus(code = HttpStatus.CREATED)
-  ApiFile uploadFiles(Long folderId, String caption, MultipartFile file, User user)
+  ApiFile uploadFiles(
+      Long folderId, String caption, Long originalImageId, MultipartFile file, User user)
       throws BindException, IOException, URISyntaxException;
 
   /**
    * Replaces the file associated with mediaFileId with a new version
    *
-   * @param mediaFileId
+   * @param id
    * @param file
    * @param user
    * @return a new ApiFile representing the new file version

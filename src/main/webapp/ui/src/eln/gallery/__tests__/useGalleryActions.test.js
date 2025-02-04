@@ -44,6 +44,7 @@ describe("useGalleryActions", () => {
                   path: [],
                   thumbnailId: null,
                   gallerySection: "Images",
+                  originalImageId: null,
                   token: "",
                 }),
               ])
@@ -132,6 +133,7 @@ describe("useGalleryActions", () => {
                   path: [],
                   thumbnailId: null,
                   gallerySection: "Images",
+                  originalImageId: null,
                   token: "",
                 }),
               ])
@@ -222,6 +224,7 @@ describe("useGalleryActions", () => {
                   path: [],
                   thumbnailId: null,
                   gallerySection: "Images",
+                  originalImageId: null,
                   token: "",
                 }),
               ])

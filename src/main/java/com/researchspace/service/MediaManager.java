@@ -71,6 +71,8 @@ public interface MediaManager {
   EcatImage saveEditedImage(EcatImage sourceImage, String uiBase64Image, User user)
       throws IOException;
 
+  EcatImage saveOriginalImageLink(EcatImage image, Long originalImageId, User user);
+
   /**
    * Saves a file to File Store and creates a new EcatVideo entity for it. <br>
    * Delegates to {{@link #saveMediaFile(InputStream, Long, String, String, Long, Folder, String,
