@@ -425,12 +425,15 @@ export default function AddFilestoreDialog({
       );
       onClose(true);
     } catch (e) {
+      const message = Parsers.objectPath(["response", "data", "message"], e)
+        .flatMap(Parsers.isString)
+        .orElse(e.message);
       console.error(e);
       addAlert(
         mkAlert({
           variant: "error",
           title: "Failed to add new filestore",
-          message: e.message,
+          message,
         })
       );
     }
