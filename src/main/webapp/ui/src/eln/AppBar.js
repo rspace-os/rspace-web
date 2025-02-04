@@ -12,7 +12,35 @@ import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
 import { COLOR as GALLERY_COLOR } from "./gallery/common";
 
-const MYRSPACE_COLOR = {
+const WORKSPACE_COLOR = {
+  main: {
+    hue: 197,
+    saturation: 33,
+    lightness: 75,
+  },
+  darker: {
+    hue: 197,
+    saturation: 100,
+    lightness: 30,
+  },
+  contrastText: {
+    hue: 200,
+    saturation: 30,
+    lightness: 25,
+  },
+  background: {
+    hue: 200,
+    saturation: 33,
+    lightness: 83,
+  },
+  backgroundContrastText: {
+    hue: 203,
+    saturation: 17,
+    lightness: 35,
+  },
+};
+
+const INVENTORY_COLOR = {
   main: {
     hue: 120,
     saturation: 18,
@@ -89,7 +117,7 @@ function currentPage() {
 }
 
 function color(page: string) {
-  if (page === "My RSpace") return MYRSPACE_COLOR;
+  if (page === "Workspace") return WORKSPACE_COLOR;
   if (page === "Gallery") return GALLERY_COLOR;
   return OTHER_COLOR;
 }

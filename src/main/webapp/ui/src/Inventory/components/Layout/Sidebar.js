@@ -40,29 +40,29 @@ import createAccentedTheme from "../../../accentedTheme";
  */
 export const COLOR = {
   main: {
-    hue: 197,
-    saturation: 33,
-    lightness: 75,
+    hue: 120,
+    saturation: 18,
+    lightness: 71,
   },
   darker: {
-    hue: 197,
-    saturation: 100,
-    lightness: 30,
+    hue: 120,
+    saturation: 18,
+    lightness: 50,
   },
   contrastText: {
-    hue: 200,
-    saturation: 30,
-    lightness: 25,
+    hue: 120,
+    saturation: 18,
+    lightness: 20,
   },
   background: {
-    hue: 200,
-    saturation: 33,
-    lightness: 83,
+    hue: 120,
+    saturation: 18,
+    lightness: 81,
   },
   backgroundContrastText: {
-    hue: 203,
-    saturation: 17,
-    lightness: 35,
+    hue: 120,
+    saturation: 4,
+    lightness: 29,
   },
 };
 
