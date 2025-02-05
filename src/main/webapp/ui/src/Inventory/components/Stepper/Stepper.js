@@ -30,7 +30,7 @@ import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 const useStyles = makeStyles()((theme) => ({
   relativeBox: {
-    height: "calc(100% - 106px)",
+    minHeight: 0,
     overflowY: "auto",
   },
   rightSpacing: {

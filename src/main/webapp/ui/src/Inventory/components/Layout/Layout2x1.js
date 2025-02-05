@@ -82,6 +82,7 @@ export const RightPanelToggle: ComponentType<{||}> = observer(() => {
 const useStyles = makeStyles()((theme) => ({
   paper: {
     width: "100%",
+    height: "100%",
     padding: theme.spacing(0),
   },
   wrapper: {
@@ -105,6 +106,7 @@ const useStyles = makeStyles()((theme) => ({
     height: "100%",
   },
   leftPanelMobile: {
+    height: "100%",
     flexDirection: "column",
     padding: theme.spacing(1),
   },

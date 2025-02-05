@@ -16,7 +16,7 @@ function ResultsCards(): Node {
 
   return (
     <ScrollBox
-      overflowY={isSingleColumnLayout ? "unset" : "auto"}
+      overflowY="auto"
       sx={{ pb: 0.5 }}
     >
       <CardList records={search.filteredResults} />

@@ -137,7 +137,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): Node {
 
   return (
     <>
-      <ScrollBox overflowY={isSingleColumnLayout ? "unset" : "auto"}>
+      <ScrollBox overflowY="auto">
         <Table size="small" aria-label="Search results" stickyHeader>
           <CustomTableHead
             selectedCount={search.selectedResults.length}
