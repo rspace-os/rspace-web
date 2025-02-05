@@ -59,8 +59,18 @@ import { getRelativeTime } from "../../util/conversions";
 const IncomingMaintenancePopup = ({ startDate }: {| startDate: Date |}) => {
   const [anchorEl, setAnchorEl] = React.useState<null | EventTarget>(null);
   const popoverId = React.useId();
+
+  /*
+   * On the non-react parts of the product, the app bar is rendered inside of a
+   * shadow root to prevent the styles of the app bar from leaking into the
+   * rest of the page. It is important that the popover is rendered inside of
+   * the shadow root so that it is styled correctly. To do this, we pass a
+   * reference to this wrapper div.
+   */
+  const ref = React.useRef(null);
+
   return (
-    <>
+    <div ref={ref}>
       <IconButton
         onClick={(e) => {
           setAnchorEl(e.currentTarget);
@@ -75,6 +85,7 @@ const IncomingMaintenancePopup = ({ startDate }: {| startDate: Date |}) => {
         <MaintenanceIcon sx={{ color: "inherit !important" }} />
       </IconButton>
       <Popover
+        container={ref.current}
         id={popoverId}
         open={Boolean(anchorEl)}
         role="dialog"
@@ -95,7 +106,7 @@ const IncomingMaintenancePopup = ({ startDate }: {| startDate: Date |}) => {
           A scheduled maintenance window begins {getRelativeTime(startDate)}.
         </Typography>
       </Popover>
-    </>
+    </div>
   );
 };
 
