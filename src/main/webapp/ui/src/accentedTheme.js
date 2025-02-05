@@ -742,7 +742,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               },
             },
             h1: {
-              color: contrastTextColor,
+              color: backgroundContrastTextColor,
               marginBottom: baseTheme.spacing(3),
               textAlign: "left",
               borderBottom: accentedBorder,
