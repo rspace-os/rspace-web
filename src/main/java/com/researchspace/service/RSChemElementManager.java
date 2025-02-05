@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.EcatChemistryFile;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
@@ -177,15 +178,8 @@ public interface RSChemElementManager extends GenericManager<RSChemElement, Long
    */
   List<RSChemElement> getAllRSChemElementsByField(Long fieldId, User user);
 
-  /**
-   * Generate the byte representation of the given {@link RSChemElement} in the given format format
-   * is currently limited to either PNG or JPEG export with a specified size (width x height)
-   *
-   * @param format the ChemicalExportFormat to generate the bytes with
-   * @param rsChemElement the {@link RSChemElement} to generate the bytes of
-   * @return the byte array representation of the rschemelement
-   */
-  RSChemElement generateRsChemExportBytes(ChemicalExportFormat format, RSChemElement rsChemElement);
+  void generateRsChemElementForNewlyUploadedChemistryFile(EcatChemistryFile media,
+      User subject) throws IOException;
 
   /**
    * Get a list of the file extensions supported by the chemistry provider

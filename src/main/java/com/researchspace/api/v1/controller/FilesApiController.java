@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiFileSearchResult;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.files.service.FileStore;
+import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
@@ -21,6 +22,7 @@ import com.researchspace.model.record.EditInfo;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.MediaManager;
+import com.researchspace.service.RSChemElementManager;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,6 +53,7 @@ public class FilesApiController extends BaseApiController implements FilesApi {
   private @Autowired @Qualifier("compositeFileStore") FileStore fileStore;
   private @Autowired FilesAPIHandler fileHandler;
   private @Autowired MediaManager mediaMgr;
+  private @Autowired RSChemElementManager rsChemElementManager;
   private @Autowired FolderManager folderMgr;
   private @Autowired ApiAccountInitialiser contentInit;
   private @Autowired IPermissionUtils permUtils;
@@ -160,6 +163,10 @@ public class FilesApiController extends BaseApiController implements FilesApi {
 
     if (emf.isImage() && originalImageId != null) {
       mediaMgr.saveOriginalImageLink((EcatImage) emf, originalImageId, user);
+    }
+    if (emf.isChemistryFile()) {
+      rsChemElementManager.generateRsChemElementForNewlyUploadedChemistryFile(
+          (EcatChemistryFile) emf, user);
     }
     ApiFile apiFile = new ApiFile(emf);
     addFileLink(apiFile);

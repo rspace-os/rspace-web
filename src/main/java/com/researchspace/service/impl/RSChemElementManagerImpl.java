@@ -504,7 +504,38 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
   }
 
   @Override
-  public RSChemElement generateRsChemExportBytes(
+  public void generateRsChemElementForNewlyUploadedChemistryFile(EcatChemistryFile chemFile,
+      User subject) throws IOException {
+
+    // Create Basic Chem Element in order for searching of gallery files to work
+    RSChemElement rsChemElement =
+        RSChemElement.builder()
+            .chemElements(
+                chemistryProvider.convert(chemFile.getChemString()))
+            .chemElementsFormat(ChemElementsFormat.MRV)
+            .ecatChemFileId(chemFile.getId())
+            .build();
+
+    ChemicalExportFormat format =
+        ChemicalExportFormat.builder()
+            .exportType(ChemicalExportType.PNG)
+            .height(1000)
+            .width(1000)
+            .build();
+    generateRsChemExportBytes(format, rsChemElement);
+    saveChemImagePng(
+        rsChemElement, new ByteArrayInputStream(rsChemElement.getDataImage()), subject);
+  }
+
+  /**
+   * Generate the byte representation of the given {@link RSChemElement} in the given format format
+   * is currently limited to either PNG or JPEG export with a specified size (width x height)
+   *
+   * @param format the ChemicalExportFormat to generate the bytes with
+   * @param rsChemElement the {@link RSChemElement} to generate the bytes of
+   * @return the byte array representation of the rschemelement
+   */
+  private RSChemElement generateRsChemExportBytes(
       ChemicalExportFormat format, RSChemElement rsChemElement) {
     byte[] image = chemistryProvider.exportToImage(rsChemElement.getChemElements(), format);
     rsChemElement.setDataImage(image);

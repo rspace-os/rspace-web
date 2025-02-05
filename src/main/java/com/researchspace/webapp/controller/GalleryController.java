@@ -97,7 +97,6 @@ public class GalleryController extends BaseController {
   private @Autowired MediaManager mediaManager;
   private @Autowired DetailedRecordInformationProvider infoProvider;
   private @Autowired RSChemElementManager rsChemElementManager;
-  private @Autowired ChemistryProvider chemistryProvider;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 
   /**
@@ -419,24 +418,8 @@ public class GalleryController extends BaseController {
               "",
               subject);
       if (media.isChemistryFile() && fieldId == null && mediaFileId == null) {
-        // Create Basic Chem Element in order for searching of gallery files to work
-        RSChemElement rsChemElement =
-            RSChemElement.builder()
-                .chemElements(
-                    chemistryProvider.convert(((EcatChemistryFile) media).getChemString()))
-                .chemElementsFormat(ChemElementsFormat.MRV)
-                .ecatChemFileId(media.getId())
-                .build();
-
-        ChemicalExportFormat format =
-            ChemicalExportFormat.builder()
-                .exportType(ChemicalExportType.PNG)
-                .height(1000)
-                .width(1000)
-                .build();
-        rsChemElementManager.generateRsChemExportBytes(format, rsChemElement);
-        rsChemElementManager.saveChemImagePng(
-            rsChemElement, new ByteArrayInputStream(rsChemElement.getDataImage()), subject);
+        rsChemElementManager.generateRsChemElementForNewlyUploadedChemistryFile(
+            (EcatChemistryFile) media, subject);
       }
       return new AjaxReturnObject<>(media.toRecordInfo(), null);
 
