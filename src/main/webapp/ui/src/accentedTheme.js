@@ -270,7 +270,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                     content: "''",
                     width: "100%",
                     height: "2px",
-                    backgroundColor: contrastTextColor,
+                    backgroundColor: prefersMoreContrast ? "black" : contrastTextColor,
                     position: "relative",
                     left: 0,
                     bottom: "2px",
