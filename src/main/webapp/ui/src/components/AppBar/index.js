@@ -67,7 +67,7 @@ const IncomingMaintenancePopup = ({ startDate }: {| startDate: Date |}) => {
    * the shadow root so that it is styled correctly. To do this, we pass a
    * reference to this wrapper div.
    */
-  const ref = React.useRef(null);
+  const ref = React.useRef<HTMLElement | null>(null);
 
   return (
     <div ref={ref}>
