@@ -229,11 +229,15 @@ export function useGalleryActions(): {|
           )
       );
     } catch (e) {
+      const message = Parsers.objectPath(["response", "data", "message"], e)
+        .flatMap(Parsers.isString)
+        .orElse(e.message);
+      console.error(e);
       addAlert(
         mkAlert({
           variant: "error",
           title: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
-          message: e.message,
+          message,
         })
       );
       throw e;
