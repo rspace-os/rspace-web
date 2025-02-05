@@ -908,6 +908,17 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
             },
           },
         },
+        MuiPopover: {
+          styleOverrides: {
+            paper: {
+              ...(prefersReducedMotion
+                ? {
+                    transition: "none !important",
+                  }
+                : {}),
+            },
+          },
+        },
         MuiTextField: {
           styleOverrides: {
             root: {
