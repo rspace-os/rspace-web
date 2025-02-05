@@ -2,7 +2,6 @@ package com.researchspace.service;
 
 import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.EcatChemistryFile;
-import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
@@ -178,8 +177,8 @@ public interface RSChemElementManager extends GenericManager<RSChemElement, Long
    */
   List<RSChemElement> getAllRSChemElementsByField(Long fieldId, User user);
 
-  void generateRsChemElementForNewlyUploadedChemistryFile(EcatChemistryFile media,
-      User subject) throws IOException;
+  void generateRsChemElementForNewlyUploadedChemistryFile(EcatChemistryFile media, User subject)
+      throws IOException;
 
   /**
    * Get a list of the file extensions supported by the chemistry provider

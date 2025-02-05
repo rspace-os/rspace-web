@@ -504,14 +504,13 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
   }
 
   @Override
-  public void generateRsChemElementForNewlyUploadedChemistryFile(EcatChemistryFile chemFile,
-      User subject) throws IOException {
+  public void generateRsChemElementForNewlyUploadedChemistryFile(
+      EcatChemistryFile chemFile, User subject) throws IOException {
 
     // Create Basic Chem Element in order for searching of gallery files to work
     RSChemElement rsChemElement =
         RSChemElement.builder()
-            .chemElements(
-                chemistryProvider.convert(chemFile.getChemString()))
+            .chemElements(chemistryProvider.convert(chemFile.getChemString()))
             .chemElementsFormat(ChemElementsFormat.MRV)
             .ecatChemFileId(chemFile.getId())
             .build();

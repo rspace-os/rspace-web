@@ -7,7 +7,6 @@ import com.researchspace.core.util.PaginationObject;
 import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.SearchResultsImpl;
-import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
@@ -19,8 +18,6 @@ import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
-import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
-import com.researchspace.model.dtos.chemistry.ChemicalExportType;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -39,7 +36,6 @@ import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
-import com.researchspace.service.chemistry.ChemistryProvider;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -802,7 +798,7 @@ public class GalleryController extends BaseController {
 
   /**
    * Gets record information for a list of IDs (and revision numbers) of EcatMediaFiles
-   * 
+   *
    * @param ids
    * @param revisions
    * @return a map with keys in "$id-$revision" format
