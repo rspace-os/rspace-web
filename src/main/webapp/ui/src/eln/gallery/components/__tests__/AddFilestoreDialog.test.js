@@ -63,6 +63,10 @@ describe("AddFilestoreDialog", () => {
       await user.click(radio);
     });
 
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /choose filesystem/i }));
+    });
+
     const treeitem = await screen.findByRole("treeitem", { name: /^test$/i });
 
     // $FlowExpectedError[incompatible-call] See expect.extend above

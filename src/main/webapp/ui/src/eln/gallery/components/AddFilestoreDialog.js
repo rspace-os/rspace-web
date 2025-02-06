@@ -160,7 +160,7 @@ function FilesystemSelectionStep(props: {|
             }}
             sx={{ mt: 1, mr: 1 }}
           >
-            Choose Folder
+            Choose Filesystem
           </Button>
         </Box>
       </StepContent>
