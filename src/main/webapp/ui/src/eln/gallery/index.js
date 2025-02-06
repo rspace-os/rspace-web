@@ -54,6 +54,7 @@ import * as Parsers from "../../util/parsers";
 import axios from "axios";
 import useOauthToken from "../../common/useOauthToken";
 import RsSet from "../../util/set";
+import docLinks from "../../assets/DocLinks";
 
 const WholePage = styled(
   ({
@@ -129,8 +130,6 @@ const WholePage = styled(
     const { useNavigate } = React.useContext(NavigateContext);
     const navigate = useNavigate();
 
-    const [showAlert, setShowAlert] = React.useState(true);
-
     const { trackEvent } = React.useContext(AnalyticsContext);
     React.useEffect(() => {
       trackEvent("user:load:page:gallery", { section: selectedSection });
@@ -180,26 +179,22 @@ const WholePage = styled(
                   supports2xZoom: true,
                 }}
               />
-              {showAlert && (
-                <Box sx={{ borderBottom: theme.borders.card }}>
-                  <Alert
-                    icon={<BroadcastIcon fontSize="inherit" />}
-                    severity="info"
-                    onClose={() => setShowAlert(false)}
-                  >
-                    Welcome to the new Gallery! Whilst we hope everything is
-                    working as expected, please be aware that this is newly
-                    released and there may be some bugs. If you encounter any
-                    issues, please let us know by emailing{" "}
-                    <Link href="mailto:support@researchspace.com">support</Link>{" "}
-                    and using the{" "}
-                    <Link target="_self" href="/oldGallery">
-                      old Gallery
-                    </Link>{" "}
-                    in the meantime.
-                  </Alert>
-                </Box>
-              )}
+              <Box sx={{ borderBottom: theme.borders.card }}>
+                <Alert
+                  icon={<BroadcastIcon fontSize="inherit" />}
+                  severity="info"
+                >
+                  Welcome to the{" "}
+                  <Link href={docLinks.gallery}>new Gallery!</Link> If you
+                  encounter any issues, please let us know by emailing{" "}
+                  <Link href="mailto:support@researchspace.com">support</Link>{" "}
+                  and using the{" "}
+                  <Link target="_self" href="/oldGallery">
+                    old Gallery
+                  </Link>{" "}
+                  in the meantime.
+                </Alert>
+              </Box>
               <Box
                 sx={{ display: "flex", height: "calc(100% - 48px)" }}
                 component="main"
