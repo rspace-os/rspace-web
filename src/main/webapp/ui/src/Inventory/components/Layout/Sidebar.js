@@ -21,14 +21,12 @@ import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
 import Badge from "@mui/material/Badge";
-import Typography from "@mui/material/Typography";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
 import { isImportPage } from "../../../stores/stores/ImportStore";
 import ExportDialog from "../../components/Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
 import { mapNullable } from "../../../util/Util";
 import { InvalidState } from "../../../util/error";
-import Box from "@mui/material/Box";
 import { type Theme } from "../../../theme";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import { useTheme, ThemeProvider } from "@mui/material/styles";
@@ -526,4 +524,11 @@ function Sidebar({ id }: SidebarArgs): Node {
   );
 }
 
+/**
+ * The Inventory sidebar that provides rapid access the different types of
+ * records as well as the menu for creating new records. On larger viewpors it
+ * is always avaiable, although can be shrunk to hide the labels and provide
+ * more space for the main content, and on small viewports it is hidden behind
+ * a hamburger menu.
+ */
 export default (observer(Sidebar): ComponentType<SidebarArgs>);
