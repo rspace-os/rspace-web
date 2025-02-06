@@ -83,6 +83,7 @@ const AddButton = styled(({ drawerOpen, ...props }) => (
   </Button>
 ))(() => ({
   overflowX: "hidden",
+  height: "32px",
 }));
 
 const CustomDrawer = styled(Drawer)(({ open }) => ({
