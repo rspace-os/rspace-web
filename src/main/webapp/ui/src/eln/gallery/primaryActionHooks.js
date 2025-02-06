@@ -3,7 +3,7 @@
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import * as FetchingData from "../../util/fetchingData";
-import { type GalleryFile } from "./useGalleryListing";
+import { type GalleryFile, chemistryFilePreview } from "./useGalleryListing";
 import { useDeploymentProperty } from "../useDeploymentProperty";
 import useCollabora from "./useCollabora";
 import useOfficeOnline from "./useOfficeOnline";
@@ -20,7 +20,9 @@ export function useImagePreviewOfGalleryFile(): (
 ) => Result<() => Promise<URL>> {
   return (file) => {
     if (file.isImage && file.downloadHref) return Result.Ok(file.downloadHref);
-    return Result.Error([new Error("Not an image")]);
+    return chemistryFilePreview(file)
+      .map((url) => () => Promise.resolve(url))
+      .mapError(() => new Error("Not an image"));
   };
 }
 

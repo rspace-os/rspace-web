@@ -120,38 +120,6 @@ export class Description {
 }
 
 /**
- * For some file types we generate thumbnails of the content. For others we
- * have thumbnails to represent all files of that type.
- */
-function generateIconSrc(
-  name: string,
-  type: string,
-  extension: string | null,
-  thumbnailId: number | null,
-  id: number,
-  modificationDate: Date,
-  isFolder: boolean,
-  isSystemFolder: boolean
-) {
-  if (isFolder) {
-    if (isSystemFolder) return "/images/icons/system_folder.svg";
-    return "/images/icons/folder.svg";
-  }
-  if (type === "Image")
-    return `/gallery/getThumbnail/${id}/${Math.floor(
-      modificationDate.getTime() / 1000
-    )}`;
-  if ((type === "Documents" || type === "PdfDocuments") && thumbnailId !== null)
-    return `/image/docThumbnail/${id}/${thumbnailId}`;
-  if (type === "Chemistry")
-    return `/gallery/getChemThumbnail/${id}/${Math.floor(
-      modificationDate.getTime() / 1000
-    )}`;
-  if (extension === null) return "/images/icons/unknown.svg";
-  return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
-}
-
-/**
  * Objects of this shape model files and folders in the Gallery.
  */
 export interface GalleryFile {
@@ -242,6 +210,53 @@ export interface GalleryFile {
    * rendered in.
    */
   +treeViewItemId: string;
+}
+
+/**
+ * Tries to generate a URL to an image file from the GalleryFile using the
+ * chemistry service. If the file is not a chemistry file, then an error is
+ * returned.
+ */
+export function chemistryFilePreview(file: GalleryFile): Result<string> {
+  if (!file.modificationDate)
+    return Result.Error([new Error("No modification date")]);
+  const time = file.modificationDate.getTime();
+  if (file.type === "Chemistry")
+    return Result.Ok(
+      `/gallery/getChemThumbnail/${file.id}/${Math.floor(time / 1000)}`
+    );
+  return Result.Error([new Error("Not a chemistry file")]);
+}
+
+/**
+ * For some file types we generate thumbnails of the content. For others we
+ * have thumbnails to represent all files of that type.
+ */
+function generateIconSrc(
+  name: string,
+  type: string,
+  extension: string | null,
+  thumbnailId: number | null,
+  id: number,
+  modificationDate: Date,
+  isFolder: boolean,
+  isSystemFolder: boolean,
+  file: GalleryFile
+) {
+  if (isFolder) {
+    if (isSystemFolder) return "/images/icons/system_folder.svg";
+    return "/images/icons/folder.svg";
+  }
+  if (type === "Image")
+    return `/gallery/getThumbnail/${id}/${Math.floor(
+      modificationDate.getTime() / 1000
+    )}`;
+  if ((type === "Documents" || type === "PdfDocuments") && thumbnailId !== null)
+    return `/image/docThumbnail/${id}/${thumbnailId}`;
+  return chemistryFilePreview(file).orElseGet(() => {
+    if (extension === null) return "/images/icons/unknown.svg";
+    return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
+  });
 }
 
 /**
@@ -394,7 +409,8 @@ export class LocalGalleryFile implements GalleryFile {
       this.id,
       this.modificationDate,
       this.isFolder,
-      this.isSystemFolder
+      this.isSystemFolder,
+      this
     );
   }
 
@@ -459,7 +475,9 @@ export class LocalGalleryFile implements GalleryFile {
   }
 
   get canBeLoggedOutOf(): Result<null> {
-    return Result.Error([new Error("Cannot log out of local files and folders.")]);
+    return Result.Error([
+      new Error("Cannot log out of local files and folders."),
+    ]);
   }
 
   get treeViewItemId(): string {
@@ -665,7 +683,8 @@ class RemoteFile implements GalleryFile {
       -1,
       this.modificationDate,
       this.isFolder,
-      false
+      false,
+      this
     );
   }
 
