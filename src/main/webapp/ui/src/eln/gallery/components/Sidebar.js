@@ -194,6 +194,14 @@ const NewFolderMenuItem = ({
   const [submitting, setSubmitting] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
 
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    setTimeout(() => {
+      if (open) inputRef.current?.focus();
+    }, 100);
+  }, [inputRef, open]);
+
   return (
     <>
       <EventBoundary>
@@ -201,6 +209,7 @@ const NewFolderMenuItem = ({
           open={open}
           onClose={() => {
             setOpen(false);
+            onDialogClose(false);
           }}
         >
           <form /* onSubmit is handled by ValidatingSubmitButton */>
@@ -213,6 +222,7 @@ const NewFolderMenuItem = ({
                 size="small"
                 label="Name"
                 onChange={({ target: { value } }) => setName(value)}
+                inputProps={{ ref: inputRef }}
               />
             </DialogContent>
             <DialogActions>
