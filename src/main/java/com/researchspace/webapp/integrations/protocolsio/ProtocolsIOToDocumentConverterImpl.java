@@ -91,7 +91,8 @@ public class ProtocolsIOToDocumentConverterImpl extends AbstractExternalDocImpor
         form.getId(),
         toImport.getTitle(),
         subject,
-        new DefaultRecordContext());
+        new DefaultRecordContext(),
+        false);
   }
 
   StructuredDocument processHtml(String html, StructuredDocument rspaceDocument, User subject) {

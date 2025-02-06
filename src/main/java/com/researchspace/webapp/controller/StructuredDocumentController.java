@@ -298,7 +298,7 @@ public class StructuredDocumentController extends BaseController {
     User user = getUserByUsername(principal.getName());
     StructuredDocument newRecord = null;
     try {
-      newRecord = recordManager.createNewStructuredDocument(parentRecordId, formid, user);
+      newRecord = recordManager.createNewStructuredDocument(parentRecordId, formid, user, true);
       if (newRecord == null) {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Form", formid));
       }

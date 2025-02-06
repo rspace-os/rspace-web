@@ -167,7 +167,8 @@ public class ProtocolsIOConverterTest {
             Mockito.eq(aform.getId()),
             Mockito.eq(protocol.getTitle()),
             Mockito.eq(any),
-            Mockito.any(DefaultRecordContext.class)))
+            Mockito.any(DefaultRecordContext.class),
+            Mockito.eq(false)))
         .thenReturn(doc);
     when(recordMgr.save(doc, any)).thenReturn(doc);
   }

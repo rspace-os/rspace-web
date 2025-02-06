@@ -586,9 +586,10 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       if (selectedTargetFolder.isNotebook()) {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
-      selectedTargetFolder.addChild(docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy);
+      selectedTargetFolder.addChild(
+          docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, true); // check this
       saveRecordOrFolder(docOrNotebook);
-      folderDao.save(selectedTargetFolder);
+      selectedTargetFolder = folderDao.get(selectedTargetFolder.getId());
       log.info(
           "Added RTF for doc [{}] and folder [{}]",
           docOrNotebook.getId(),
