@@ -261,7 +261,7 @@ const CustomTreeItem = observer(
     const dropStyle: { [string]: string | number } = {};
     if (dndInProgress && file.isFolder) {
       if (isOver) {
-        dropStyle.borderColor = SELECTED_OR_FOCUS_BORDER;
+        dropStyle.border = SELECTED_OR_FOCUS_BORDER;
       } else {
         dropStyle.border = "2px solid white";
         dropStyle.animation = "drop 2s linear infinite";
