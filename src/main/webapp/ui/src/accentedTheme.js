@@ -641,6 +641,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           },
           styleOverrides: {
             root: {
+              "--DataGrid-containerBackground": mainBackground,
               border: "none",
               /*
                * typo.css is adding a margin to the bottom of all paragraphs,
