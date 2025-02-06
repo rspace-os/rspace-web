@@ -53,6 +53,11 @@ function FilesystemSelectionStep(props: {|
   |}>,
 |}) {
   const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
+  const [chosenFilesystem, setChosenFilesysem] = React.useState<{|
+    id: number,
+    name: string,
+    url: string,
+  |} | null>(null);
   const [filesystems, setFilesystems] = React.useState<null | $ReadOnlyArray<{|
     id: number,
     name: string,
@@ -120,7 +125,10 @@ function FilesystemSelectionStep(props: {|
       </StepLabel>
       <StepContent>
         <RadioGroup
-          value={selectedFilesystem.orElse(null)}
+          value={
+            chosenFilesystem?.id ??
+            selectedFilesystem.map(({ id }) => id).orElse(null)
+          }
           onChange={({ target: { value } }) => {
             const chosenId = parseInt(value, 10);
             Optional.fromNullable(filesystems)
@@ -128,7 +136,7 @@ function FilesystemSelectionStep(props: {|
                 ArrayUtils.find(({ id }) => id === chosenId, fss)
               )
               .do((fs) => {
-                setSelectedFilesystem(fs);
+                setChosenFilesysem(fs);
               });
           }}
         >
@@ -141,6 +149,20 @@ function FilesystemSelectionStep(props: {|
             />
           ))}
         </RadioGroup>
+        <Box sx={{ mb: 2 }}>
+          <Button
+            disabled={!chosenFilesystem}
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              if (chosenFilesystem !== null)
+                setSelectedFilesystem(chosenFilesystem);
+            }}
+            sx={{ mt: 1, mr: 1 }}
+          >
+            Choose Folder
+          </Button>
+        </Box>
       </StepContent>
     </Step>
   );
