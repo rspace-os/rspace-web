@@ -142,6 +142,8 @@ public class UserDetailsApiController extends BaseApiController implements UserD
     if (!ScheduledMaintenance.NULL.equals(nextMaintenance)) {
       navigationData.setNextMaintenance(new ApiUiNavigationScheduledMaintenance(nextMaintenance));
     }
+    navigationData.setOperatedAs(SecurityUtils.getSubject().isRunAs());
+
     return navigationData;
   }
 }
