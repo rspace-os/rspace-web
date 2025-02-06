@@ -194,7 +194,7 @@ const NewFolderMenuItem = ({
   const [submitting, setSubmitting] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
 
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     setTimeout(() => {
