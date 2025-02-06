@@ -469,30 +469,6 @@ const SettingsNavItem = observer(() => {
   );
 });
 
-const LoggedInLabel = withStyles<{||}, { username: string }>((theme) => ({
-  username: {
-    whiteSpace: "normal",
-    color: theme.palette.standardIcon.main,
-  },
-}))(
-  observer(({ classes }) => {
-    const { uiStore, peopleStore } = useStores();
-    const user = peopleStore.currentUser;
-
-    return uiStore.sidebarOpen ? (
-      <Box px={2} py={0.5}>
-        <Typography variant="overline">
-          {user?.isOperated ? "Operating" : "Logged in"} as
-        </Typography>
-        <br />
-        <Typography variant="body2" className={classes.username}>
-          {user?.label ?? "Loading...."}
-        </Typography>
-      </Box>
-    ) : null;
-  })
-);
-
 const useStyles = makeStyles()(() => ({
   drawerContainer: {
     overflowY: "auto",
@@ -545,7 +521,6 @@ function Sidebar({ id }: SidebarArgs): Node {
           <ExportNavItem />
           {isSysAdmin && <SettingsNavItem />}
         </List>
-        <LoggedInLabel />
       </div>
     </CustomDrawer>
   );
