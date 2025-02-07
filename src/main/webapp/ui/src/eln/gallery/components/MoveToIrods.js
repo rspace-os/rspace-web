@@ -26,7 +26,7 @@ import { withStyles } from "Styles";
 import Stack from "@mui/material/Stack";
 import useIrods, { type IrodsLocation } from "./useIrods";
 import Alert from "@mui/lab/Alert";
-import AlertTitle from "@mui/lab/AlertTitle";
+import AlertTitle from "@mui/material/AlertTitle";
 import * as FetchingData from "../../../util/fetchingData";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";

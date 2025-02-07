@@ -6,7 +6,7 @@ import Popover from "@mui/material/Popover";
 import Alert from "@mui/lab/Alert";
 import Stack from "@mui/material/Stack";
 import { styled } from "@mui/material/styles";
-import AlertTitle from "@mui/lab/AlertTitle";
+import AlertTitle from "@mui/material/AlertTitle";
 import Link from "@mui/material/Link";
 import SvgIcon from "@mui/material/SvgIcon";
 import AccentMenuItem from "./AccentMenuItem";
