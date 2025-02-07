@@ -800,15 +800,33 @@ export function useGalleryActions(): {|
         );
       }
       if (rejected.length > 0) {
+        const rejectedResponses = await Promise.all(
+          rejected.map(async (response) => {
+            try {
+              const data = Parsers.objectPath(
+                ["response", "data"],
+                response
+              ).elseThrow();
+              if (!(data instanceof Blob))
+                throw new Error("Response is not a blob");
+              const json: mixed = JSON.parse(await data.text());
+              return Parsers.objectPath(["message"], json)
+                .flatMap(Parsers.isString)
+                .elseThrow();
+            } catch (e) {
+              return Promise.resolve(e.message);
+            }
+          })
+        );
         addAlert(
           mkAlert({
             variant: "error",
             message: `Failed to download ${
               fulfilled.length > 0 ? "some of " : ""
             }the files.`,
-            details: rejected.map((e) => ({
+            details: rejectedResponses.map((errorMsg) => ({
               variant: "error",
-              title: e.message,
+              title: errorMsg,
             })),
           })
         );
