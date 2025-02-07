@@ -71,7 +71,9 @@ export function CallableAsposePreview({
     setLoading(true);
     try {
       const { data } = await axios.get<mixed>(
-        "/Streamfile/ajax/convert/" + idToString(file.id).elseThrow() + "?outputFormat=pdf"
+        "/Streamfile/ajax/convert/" +
+          idToString(file.id).elseThrow() +
+          "?outputFormat=pdf"
       );
       const fileName = Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -80,7 +82,10 @@ export function CallableAsposePreview({
         .orElse(null);
       if (fileName) {
         openPdfPreview(
-          "/Streamfile/direct/" + idToString(file.id).elseThrow() + "?fileName=" + fileName
+          "/Streamfile/direct/" +
+            idToString(file.id).elseThrow() +
+            "?fileName=" +
+            fileName
         );
       } else {
         Parsers.isObject(data)

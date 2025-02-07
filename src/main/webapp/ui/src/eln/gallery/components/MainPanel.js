@@ -26,7 +26,7 @@ import CardActionArea from "@mui/material/CardActionArea";
 import Avatar from "@mui/material/Avatar";
 import BrokenImageIcon from "@mui/icons-material/BrokenImage";
 import * as FetchingData from "../../../util/fetchingData";
-import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
+import { type GalleryFile, type Id } from "../useGalleryListing";
 import {
   useGalleryActions,
   folderDestination,
@@ -1735,10 +1735,7 @@ function GalleryMainPanel({
                  * new info panel when the selection changes to reset any
                  * modified state.
                  */
-                <InfoPanelForSmallViewports
-                  key={file.key}
-                  file={file}
-                />
+                <InfoPanelForSmallViewports key={file.key} file={file} />
               ))
               .orElse(null)}
           </Grid>

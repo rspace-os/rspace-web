@@ -327,7 +327,9 @@ export function useGalleryActions(): {|
       const formData = new FormData();
       formData.append(
         "target",
-        destination.key === "root" ? "0" : idToString(destination.folder.id).elseThrow()
+        destination.key === "root"
+          ? "0"
+          : idToString(destination.folder.id).elseThrow()
       );
       for (const file of files)
         formData.append("filesId[]", idToString(file.id).elseThrow());
@@ -433,7 +435,9 @@ export function useGalleryActions(): {|
       },
     });
     try {
-      await api.delete<mixed>(`filestores/${idToString(filestore.id).elseThrow()}`);
+      await api.delete<mixed>(
+        `filestores/${idToString(filestore.id).elseThrow()}`
+      );
       addAlert(
         mkAlert({
           message: "Successfully deleted filestore.",

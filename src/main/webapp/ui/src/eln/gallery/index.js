@@ -100,15 +100,15 @@ const WholePage = styled(
     const selection = useGallerySelection();
     React.useEffect(() => {
       try {
-      FetchingData.getSuccessValue(galleryListing).do((listing) => {
-        if (listing.tag === "empty") return;
-        for (const f of new RsSet(listing.list).intersectionMap(
-          ({ id }) => idToString(id).elseThrow(),
-          new RsSet(autoSelect ?? []).map((id) => `${id}`)
-        )) {
-          selection.append(f);
-        }
-      });
+        FetchingData.getSuccessValue(galleryListing).do((listing) => {
+          if (listing.tag === "empty") return;
+          for (const f of new RsSet(listing.list).intersectionMap(
+            ({ id }) => idToString(id).elseThrow(),
+            new RsSet(autoSelect ?? []).map((id) => `${id}`)
+          )) {
+            selection.append(f);
+          }
+        });
       } catch (e) {
         /*
          * This will throw when processing files from external filestores that
@@ -159,7 +159,9 @@ const WholePage = styled(
                   }
                   if (newPath.length > 0) {
                     navigate(
-                      `/gallery/${idToString(newPath[newPath.length - 1].id).elseThrow()}`
+                      `/gallery/${idToString(
+                        newPath[newPath.length - 1].id
+                      ).elseThrow()}`
                     );
                   } else {
                     try {

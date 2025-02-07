@@ -12,11 +12,7 @@ import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import * as FetchingData from "../../../util/fetchingData";
 import * as MapUtils from "../../../util/MapUtils";
-import {
-  useGalleryListing,
-  type GalleryFile,
-  idToString,
-} from "../useGalleryListing";
+import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import { useGalleryActions, folderDestination } from "../useGalleryActions";
 import { useGallerySelection, GallerySelection } from "../useGallerySelection";
 import { doNotAwait } from "../../../util/Util";

@@ -18,7 +18,12 @@ import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
-import { type GalleryFile, idToString, type Id, Filestore } from "../useGalleryListing";
+import {
+  type GalleryFile,
+  idToString,
+  type Id,
+  Filestore,
+} from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
 import Dialog from "@mui/material/Dialog";
@@ -452,9 +457,15 @@ function ActionsMenu({
   const logOutAllowed = computed((): Result<Filestore> => {
     return selection
       .asSet()
-      .only.toResult(() => new Error("Only one item may be logged out of at once."))
+      .only.toResult(
+        () => new Error("Only one item may be logged out of at once.")
+      )
       .flatMapDiscarding((file) => file.canBeLoggedOutOf)
-      .flatMap((f: GalleryFile) => f instanceof Filestore ? Result.Ok(f) : Result.Error([new Error("Cannot log out of this item.")]));
+      .flatMap((f: GalleryFile) =>
+        f instanceof Filestore
+          ? Result.Ok(f)
+          : Result.Error([new Error("Cannot log out of this item.")])
+      );
   });
   const { logout } = useFilestoresEndpoint();
 
@@ -695,28 +706,35 @@ function ActionsMenu({
             disabled={exportAllowed.get().isError}
           />
           <EventBoundary>
-            {Result.all(...selection.asSet().toArray().map(({ id }) => idToString(id))).map(exportIds => (
-            <ExportDialog
-              open={exportOpen}
-              onClose={() => {
-                setExportOpen(false);
-                setActionsMenuAnchorEl(null);
-              }}
-              exportSelection={{
-                type: "selection",
-                exportTypes: selection
-                  .asSet()
-                  .toArray()
-                  .map((f) => (f.isFolder ? "FOLDER" : "MEDIA_FILE")),
-                exportNames: selection
-                  .asSet()
-                  .toArray()
-                  .map(({ name }) => name),
-                exportIds,
-              }}
-              allowFileStores={false}
-            />
-            )).orElse(null)}
+            {Result.all(
+              ...selection
+                .asSet()
+                .toArray()
+                .map(({ id }) => idToString(id))
+            )
+              .map((exportIds) => (
+                <ExportDialog
+                  open={exportOpen}
+                  onClose={() => {
+                    setExportOpen(false);
+                    setActionsMenuAnchorEl(null);
+                  }}
+                  exportSelection={{
+                    type: "selection",
+                    exportTypes: selection
+                      .asSet()
+                      .toArray()
+                      .map((f) => (f.isFolder ? "FOLDER" : "MEDIA_FILE")),
+                    exportNames: selection
+                      .asSet()
+                      .toArray()
+                      .map(({ name }) => name),
+                    exportIds,
+                  }}
+                  allowFileStores={false}
+                />
+              ))
+              .orElse(null)}
           </EventBoundary>
           <AccentMenuItem
             title="Move to iRODS"
@@ -734,44 +752,54 @@ function ActionsMenu({
             disabled={moveToIrodsAllowed.get().isError}
             aria-haspopup="dialog"
           />
-            {Result.all(...selection.asSet().toArray().map(({ id }) => idToString(id))).map(selectedIds => (
-          <MoveToIrods
-            selectedIds={selectedIds}
-            dialogOpen={irodsOpen}
-            setDialogOpen={(newState) => {
-              setIrodsOpen(newState);
-              if (!newState) {
-                setActionsMenuAnchorEl(null);
-                void refreshListing();
-              }
-            }}
-          />
-          )).orElse(null)}
+          {Result.all(
+            ...selection
+              .asSet()
+              .toArray()
+              .map(({ id }) => idToString(id))
+          )
+            .map((selectedIds) => (
+              <MoveToIrods
+                selectedIds={selectedIds}
+                dialogOpen={irodsOpen}
+                setDialogOpen={(newState) => {
+                  setIrodsOpen(newState);
+                  if (!newState) {
+                    setActionsMenuAnchorEl(null);
+                    void refreshListing();
+                  }
+                }}
+              />
+            ))
+            .orElse(null)}
           <Divider aria-orientation="horizontal" />
           {/*
            * We hide the log out option rather than disabling it because it
            * is only available for filestores so doesn't apply in the vast,
            * vast majority of cases.
            */}
-          {logOutAllowed.get().map(filestore => (
-            <AccentMenuItem
-              title="Log Out"
-              subheader={logOutAllowed
-                .get()
-                .map(() => "")
-                .orElseGet(([e]) => e.message)}
-              backgroundColor={lighten(theme.palette.warning.light, 0.5)}
-              foregroundColor={darken(theme.palette.warning.dark, 0.3)}
-              avatar={<LogoutIcon />}
-              onClick={() => {
-                void logout(filestore).then(() => {
-                  void refreshListing();
-                  setActionsMenuAnchorEl(null);
-                });
-              }}
-              compact
-            />
-          )).orElse(null)}
+          {logOutAllowed
+            .get()
+            .map((filestore) => (
+              <AccentMenuItem
+                title="Log Out"
+                subheader={logOutAllowed
+                  .get()
+                  .map(() => "")
+                  .orElseGet(([e]) => e.message)}
+                backgroundColor={lighten(theme.palette.warning.light, 0.5)}
+                foregroundColor={darken(theme.palette.warning.dark, 0.3)}
+                avatar={<LogoutIcon />}
+                onClick={() => {
+                  void logout(filestore).then(() => {
+                    void refreshListing();
+                    setActionsMenuAnchorEl(null);
+                  });
+                }}
+                compact
+              />
+            ))
+            .orElse(null)}
           <AccentMenuItem
             title="Delete"
             subheader={deleteAllowed
