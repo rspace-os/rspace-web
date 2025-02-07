@@ -123,12 +123,12 @@
             <tr class="fileSystemDetailsIrodsZoneRow">
                <td><label for="fileSystemIrodsZone">
                    <spring:message code="system.netfilesystem.details.client.irods.zone" /></label></td>
-               <td><input id="fileSystemIrodsZone" type="text" style="width: 20em" required/></td>
+               <td><input id="fileSystemIrodsZone" type="text" style="width: 20em" /></td>
             </tr>
             <tr class="fileSystemDetailsIrodsHomeDirRow">
                <td><label for="fileSystemIrodsHomeDir">
                    <spring:message code="system.netfilesystem.details.client.irods.homedir" /></label></td>
-               <td><input id="fileSystemIrodsHomeDir" type="text" style="width: 20em" required/></td>
+               <td><input id="fileSystemIrodsHomeDir" type="text" style="width: 20em" /></td>
             </tr>
             <tr class="fileSystemDetailsIrodsPortRow">
                 <td><label for="fileSystemIrodsPort">
@@ -178,7 +178,7 @@
 	                <tr class="fileSystemDetailsIrodsAuthRow">
                 <td><label><spring:message code="system.netfilesystem.details.client.irods.auth" /></label></td>
                 <td>
-                    <label><input type="radio" id="iRODSfileSystemAuthTypeNative" name="iRODSfileSystemAuthType" value="NATIVE" required>
+                    <label><input type="radio" id="iRODSfileSystemAuthTypeNative" name="iRODSfileSystemAuthType" value="NATIVE">
                         <span id="iRODSfileSystemAuthTypeNativeSpan"><spring:message code="system.netfilesystem.details.client.irods.auth.native" /></span></label>
                     <label><input type="radio" id="iRODSfileSystemAuthTypePAM" name="iRODSfileSystemAuthType" value="PAM">
                         <span id="iRODSfileSystemAuthTypePAMSpan"><spring:message code="system.netfilesystem.details.client.irods.auth.pam" /></span></label>
