@@ -666,13 +666,17 @@ class RemoteFile implements GalleryFile {
       const filestoreId = path[0].id;
       this.downloadHref = async () => {
         if (this.#cachedDownloadHref) return this.#cachedDownloadHref;
+        const urlSearchParams = new URLSearchParams();
+        idToString(this.id).do((id) => {
+          urlSearchParams.append("remoteId", id);
+        });
+        urlSearchParams.append("remotePath", remotePath);
         const { data: blob } = await axios.get<Blob>(
           `/api/v1/gallery/filestores/${idToString(
             filestoreId
-          ).elseThrow()}/download?remoteId=${idToString(
-            this.id
-          ).elseThrow()}&remotePath=${remotePath}`,
+          ).elseThrow()}/download`,
           {
+            params: urlSearchParams,
             responseType: "blob",
             headers: {
               Authorization: "Bearer " + token,
