@@ -248,7 +248,7 @@ function TreeListing({
               <TreeListing
                 fsId={fsId}
                 fsName={name}
-                path={`${path}${name}/`}
+                path={encodeURIComponent(`${path}${name}/`)}
                 onFailToAuthenticate={onFailToAuthenticate}
               />
             </TreeItem>
