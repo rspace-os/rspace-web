@@ -88,7 +88,7 @@ function DescriptionList({
     <Dl className={classes.dl} sx={sx}>
       {content.map(
         ({ label, value, below = false, reducedPadding = false }, i) => (
-          <>
+          <React.Fragment key={i}>
             {i > 0 && dividers && (
               <Divider
                 orientation="horizontal"
@@ -119,7 +119,7 @@ function DescriptionList({
             >
               {value}
             </dd>
-          </>
+          </React.Fragment>
         )
       )}
     </Dl>
