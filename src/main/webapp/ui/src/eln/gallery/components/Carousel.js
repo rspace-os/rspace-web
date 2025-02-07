@@ -115,7 +115,7 @@ const PreviewWrapper = ({
         // a drag is in operation
         cursor: "grab",
       }}
-      key={idToString(file.id)}
+      key={file.key}
       onMouseDown={(e) => {
         const thisNode = e.target.closest("[role='button']");
         setScrollPos({
@@ -282,7 +282,7 @@ const Preview = ({
             try {
               const { data } = await axios.get<mixed>(
                 "/Streamfile/ajax/convert/" +
-                  idToString(file.id) +
+                  idToString(file.id).elseThrow() +
                   "?outputFormat=pdf"
               );
               const fileName = Parsers.isObject(data)
@@ -295,7 +295,7 @@ const Preview = ({
                   tag: "loaded",
                   url:
                     "/Streamfile/direct/" +
-                    idToString(file.id) +
+                    idToString(file.id).elseThrow() +
                     "?fileName=" +
                     fileName,
                 });
@@ -625,7 +625,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
             file={f}
             zoom={zoom}
             visible={i === visibleIndex}
-            key={idToString(f.id)}
+            key={f.key}
           />
         ))}
       </Grid>

@@ -12,11 +12,7 @@ import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import * as FetchingData from "../../../util/fetchingData";
 import * as MapUtils from "../../../util/MapUtils";
-import {
-  useGalleryListing,
-  type GalleryFile,
-  idToString,
-} from "../useGalleryListing";
+import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import { useGalleryActions, folderDestination } from "../useGalleryActions";
 import { useGallerySelection, GallerySelection } from "../useGallerySelection";
 import { doNotAwait } from "../../../util/Util";
@@ -167,7 +163,7 @@ const TreeItemContent: ComponentType<TreeItemContentArgs> = observer(
                   index={i}
                   path={[...path, file]}
                   section={section}
-                  key={idToString(f.id)}
+                  key={f.key}
                   treeViewItemIdMap={treeViewItemIdMap}
                   refreshListing={refreshListing}
                   filter={filter}
@@ -607,7 +603,7 @@ const TreeView = ({
               index={index}
               file={file}
               path={path}
-              key={idToString(file.id)}
+              key={file.key}
               section={selectedSection}
               treeViewItemIdMap={treeViewItemIdMap}
               refreshListing={refreshListing}

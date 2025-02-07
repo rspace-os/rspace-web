@@ -26,7 +26,7 @@ import CardActionArea from "@mui/material/CardActionArea";
 import Avatar from "@mui/material/Avatar";
 import BrokenImageIcon from "@mui/icons-material/BrokenImage";
 import * as FetchingData from "../../../util/fetchingData";
-import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
+import { type GalleryFile, type Id } from "../useGalleryListing";
 import {
   useGalleryActions,
   folderDestination,
@@ -350,7 +350,7 @@ const Path = ({
         .orElse(path)
         .map((f, i) => (
           <BreadcrumbLink
-            key={idToString(f.id)}
+            key={f.key}
             folder={f}
             section={section}
             setSelectedSection={setSelectedSection}
@@ -1013,7 +1013,7 @@ const GridView = observer(
               }}
               selected={selection.includes(file)}
               file={file}
-              key={idToString(file.id)}
+              key={file.key}
               index={index}
               tabIndex={
                 index % cols === tabIndexCoord.x &&
@@ -1724,7 +1724,7 @@ function GalleryMainPanel({
                  */
                 key={selection
                   .asSet()
-                  .reduce((acc, { id }) => `${acc},${idToString(id)}`, "")}
+                  .reduce((acc, f) => `${acc},${f.key}`, "")}
               />
             </Grid>
             {selection
@@ -1735,10 +1735,7 @@ function GalleryMainPanel({
                  * new info panel when the selection changes to reset any
                  * modified state.
                  */
-                <InfoPanelForSmallViewports
-                  key={idToString(file.id)}
-                  file={file}
-                />
+                <InfoPanelForSmallViewports key={file.key} file={file} />
               ))
               .orElse(null)}
           </Grid>

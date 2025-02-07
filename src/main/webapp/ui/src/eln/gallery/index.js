@@ -99,15 +99,23 @@ const WholePage = styled(
 
     const selection = useGallerySelection();
     React.useEffect(() => {
-      FetchingData.getSuccessValue(galleryListing).do((listing) => {
-        if (listing.tag === "empty") return;
-        for (const f of new RsSet(listing.list).intersectionMap(
-          ({ id }) => idToString(id),
-          new RsSet(autoSelect ?? []).map((id) => `${id}`)
-        )) {
-          selection.append(f);
-        }
-      });
+      try {
+        FetchingData.getSuccessValue(galleryListing).do((listing) => {
+          if (listing.tag === "empty") return;
+          for (const f of new RsSet(listing.list).intersectionMap(
+            ({ id }) => idToString(id).elseThrow(),
+            new RsSet(autoSelect ?? []).map((id) => `${id}`)
+          )) {
+            selection.append(f);
+          }
+        });
+      } catch (e) {
+        /*
+         * This will throw when processing files from external filestores that
+         * do not have an id, but that's fine as external filestores cannot be
+         * encoded in the URL and so cannot be autoselected.
+         */
+      }
       /* eslint-disable-next-line react-hooks/exhaustive-deps --
        * - selection should be allowed to change with re-triggering this
        */
@@ -151,7 +159,9 @@ const WholePage = styled(
                   }
                   if (newPath.length > 0) {
                     navigate(
-                      `/gallery/${idToString(newPath[newPath.length - 1].id)}`
+                      `/gallery/${idToString(
+                        newPath[newPath.length - 1].id
+                      ).elseThrow()}`
                     );
                   } else {
                     try {

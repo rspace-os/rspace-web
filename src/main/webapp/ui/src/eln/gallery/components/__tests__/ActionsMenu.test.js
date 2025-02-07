@@ -148,6 +148,7 @@ describe("ActionsMenu", () => {
                 canUploadNewVersion: Result.Ok(null),
                 canBeLoggedOutOf: Result.Ok(null),
                 treeViewItemId: "GF1",
+                key: "GF1",
               },
             ]}
           />
@@ -229,6 +230,7 @@ describe("ActionsMenu", () => {
                 canUploadNewVersion: Result.Ok(null),
                 canBeLoggedOutOf: Result.Ok(null),
                 treeViewItemId: "GF1",
+                key: "GF1",
               },
             ]}
           />
@@ -309,11 +311,12 @@ describe("ActionsMenu", () => {
                 canUploadNewVersion: Result.Ok(null),
                 canBeLoggedOutOf: Result.Ok(null),
                 treeViewItemId: "GF1",
+                key: "GF1",
               },
               {
                 deconstructor: () => {},
                 id: dummyId(),
-                globalId: "GF1",
+                globalId: "GF2",
                 name: "Foo",
                 extension: "",
                 creationDate: new Date(),
@@ -347,7 +350,8 @@ describe("ActionsMenu", () => {
                 canBeMoved: Result.Ok(null),
                 canUploadNewVersion: Result.Ok(null),
                 canBeLoggedOutOf: Result.Ok(null),
-                treeViewItemId: "GF1",
+                treeViewItemId: "GF2",
+                key: "GF2",
               },
             ]}
           />

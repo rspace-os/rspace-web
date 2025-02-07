@@ -8,18 +8,20 @@ import RsSet from "../../util/set";
 /*
  * We use a Map even though the interface exposed by this module is more akin
  * to a Set because we want to be able to check the inclusion of files based on
- * their Id. There are various points in the UI where the particular objects in
+ * their key. There are various points in the UI where the particular objects in
  * memory that are modelling the Gallery Files are replaced, and so we must
- * compare based on their Ids to make sure we don't end up with the same file
- * added to the Selection twice. We can't use RsSet, even though it has
- * `hasWithEq` that would suffice, because it is not observable.
+ * compare based on their keys to make sure we don't end up with the same file
+ * added to the Selection twice. We use keys rather than ids because remote
+ * files do not always have ids, sometimes a path is all we have. We can't use
+ * RsSet, even though it has `hasWithEq` that would suffice, because it is not
+ * observable.
  */
 class Selection {
   /*
    * Mobx does not support ECMA private fields, so we are forced to expose this
    * property. NOBODY outside of this module should fiddle with this Map.
    */
-  _state: Map<GalleryFile["id"], GalleryFile>;
+  _state: Map<GalleryFile["key"], GalleryFile>;
 
   #onlyAllowSingleSelection: boolean;
 
@@ -35,7 +37,7 @@ class Selection {
       append: action,
       remove: action,
     });
-    this._state = new Map<GalleryFile["id"], GalleryFile>();
+    this._state = new Map<GalleryFile["key"], GalleryFile>();
     this.#onlyAllowSingleSelection = onlyAllowSingleSelection;
   }
 
@@ -54,15 +56,15 @@ class Selection {
 
   append(file: GalleryFile) {
     if (this.#onlyAllowSingleSelection) this.clear();
-    this._state.set(file.id, file);
+    this._state.set(file.key, file);
   }
 
   remove(file: GalleryFile) {
-    this._state.delete(file.id);
+    this._state.delete(file.key);
   }
 
   includes(file: GalleryFile): boolean {
-    return this._state.has(file.id);
+    return this._state.has(file.key);
   }
 
   asSet(): RsSet<GalleryFile> {
