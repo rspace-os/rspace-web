@@ -26,6 +26,12 @@ type AccentMenuItemArgs = {|
   |},
 
   /*
+   * Use these properties to make the menu item a link.
+   */
+  component?: "a",
+  href?: string,
+
+  /*
    * These properties are dynamically added by the MUI Menu parent component
    */
   autoFocus?: boolean,
@@ -57,6 +63,8 @@ export default (styled(
         subheader,
         avatar,
         titleTypographyProps,
+        component,
+        href,
       }: {| ...AccentMenuItemArgs, className: string |},
       ref
     ) => (
@@ -70,6 +78,8 @@ export default (styled(
         autoFocus={autoFocus}
         tabIndex={tabIndex}
         aria-haspopup={ariaHasPopup}
+        component={component}
+        href={href}
       >
         <CardHeader
           title={title}

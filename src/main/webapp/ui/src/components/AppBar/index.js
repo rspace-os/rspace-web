@@ -754,8 +754,9 @@ function GalleryAppBar({
                 compact
                 onClick={() => {
                   setAccountMenuAnchorEl(null);
-                  window.location = "/dashboard";
                 }}
+                component="a"
+                href="/dashboard"
               />
               <AccentMenuItem
                 title="Apps"
@@ -763,8 +764,9 @@ function GalleryAppBar({
                 compact
                 onClick={() => {
                   setAccountMenuAnchorEl(null);
-                  window.location = "/apps";
                 }}
+                component="a"
+                href="/apps"
               />
               {FetchingData.getSuccessValue(uiNavigationData)
                 .map(({ visibleTabs: { published } }) => published)
@@ -775,13 +777,16 @@ function GalleryAppBar({
                     title="Published"
                     avatar={<PublicIcon />}
                     compact
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
                       setAccountMenuAnchorEl(null);
                       window.open(
                         "/public/publishedView/publishedDocuments",
                         "_target"
                       );
                     }}
+                    component="a"
+                    href="/public/publishedView/publishedDocuments"
                   />
                 ))
                 .orElse(null)}
