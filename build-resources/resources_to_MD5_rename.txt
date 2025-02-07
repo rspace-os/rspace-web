@@ -99,6 +99,7 @@ styles/sign-in-up-common.css
 styles/simplicity/header.css
 styles/simplicity/layout.css
 styles/simplicity/print.css
+styles/simplicity/theme.css
 styles/simplicity/typo.css
 styles/simplicity/typoEdit.css
 styles/structuredDocument.css
