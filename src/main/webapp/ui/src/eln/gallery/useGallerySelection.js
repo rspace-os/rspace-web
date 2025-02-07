@@ -19,7 +19,7 @@ class Selection {
    * Mobx does not support ECMA private fields, so we are forced to expose this
    * property. NOBODY outside of this module should fiddle with this Map.
    */
-  _state: Map<GalleryFile["id"], GalleryFile>;
+  _state: Map<GalleryFile["key"], GalleryFile>;
 
   #onlyAllowSingleSelection: boolean;
 
@@ -35,7 +35,7 @@ class Selection {
       append: action,
       remove: action,
     });
-    this._state = new Map<GalleryFile["id"], GalleryFile>();
+    this._state = new Map<GalleryFile["key"], GalleryFile>();
     this.#onlyAllowSingleSelection = onlyAllowSingleSelection;
   }
 
@@ -54,15 +54,15 @@ class Selection {
 
   append(file: GalleryFile) {
     if (this.#onlyAllowSingleSelection) this.clear();
-    this._state.set(file.id, file);
+    this._state.set(file.key, file);
   }
 
   remove(file: GalleryFile) {
-    this._state.delete(file.id);
+    this._state.delete(file.key);
   }
 
   includes(file: GalleryFile): boolean {
-    return this._state.has(file.id);
+    return this._state.has(file.key);
   }
 
   asSet(): RsSet<GalleryFile> {
