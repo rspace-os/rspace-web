@@ -695,6 +695,7 @@ function ActionsMenu({
             disabled={exportAllowed.get().isError}
           />
           <EventBoundary>
+            {Result.all(...selection.asSet().toArray().map(({ id }) => idToString(id))).map(exportIds => (
             <ExportDialog
               open={exportOpen}
               onClose={() => {
@@ -711,13 +712,11 @@ function ActionsMenu({
                   .asSet()
                   .toArray()
                   .map(({ name }) => name),
-                exportIds: selection
-                  .asSet()
-                  .toArray()
-                  .map(({ id }) => idToString(id)),
+                exportIds,
               }}
               allowFileStores={false}
             />
+            )).orElse(null)}
           </EventBoundary>
           <AccentMenuItem
             title="Move to iRODS"
@@ -735,11 +734,9 @@ function ActionsMenu({
             disabled={moveToIrodsAllowed.get().isError}
             aria-haspopup="dialog"
           />
+            {Result.all(...selection.asSet().toArray().map(({ id }) => idToString(id))).map(selectedIds => (
           <MoveToIrods
-            selectedIds={selection
-              .asSet()
-              .map(({ id }) => idToString(id))
-              .toArray()}
+            selectedIds={selectedIds}
             dialogOpen={irodsOpen}
             setDialogOpen={(newState) => {
               setIrodsOpen(newState);
@@ -749,6 +746,7 @@ function ActionsMenu({
               }
             }}
           />
+          )).orElse(null)}
           <Divider aria-orientation="horizontal" />
           {/*
            * We hide the log out option rather than disabling it because it

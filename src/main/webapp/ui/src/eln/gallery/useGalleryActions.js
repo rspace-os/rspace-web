@@ -187,11 +187,11 @@ export function useGalleryActions(): {|
         files.map((file) => {
           const formData = new FormData();
           formData.append("file", file);
-          formData.append("folderId", idToString(parentId));
+          formData.append("folderId", idToString(parentId).elseThrow());
           if (options?.originalImageId)
             formData.append(
               "originalImageId",
-              idToString(options.originalImageId)
+              idToString(options.originalImageId).elseThrow()
             );
           return api.post<FormData, mixed>("/", formData, {
             headers: {
@@ -250,7 +250,7 @@ export function useGalleryActions(): {|
     try {
       const formData = new FormData();
       formData.append("folderName", name);
-      formData.append("parentId", idToString(parentId));
+      formData.append("parentId", idToString(parentId).elseThrow());
       formData.append("isMedia", "true");
       const data = await galleryApi.post<FormData, mixed>(
         "createFolder",
@@ -327,10 +327,10 @@ export function useGalleryActions(): {|
       const formData = new FormData();
       formData.append(
         "target",
-        destination.key === "root" ? "0" : idToString(destination.folder.id)
+        destination.key === "root" ? "0" : idToString(destination.folder.id).elseThrow()
       );
       for (const file of files)
-        formData.append("filesId[]", idToString(file.id));
+        formData.append("filesId[]", idToString(file.id).elseThrow());
       // mediaType is required, but only actually used if target is 0
       formData.append("mediaType", section);
       const data = await galleryApi.post<FormData, mixed>(
@@ -388,7 +388,7 @@ export function useGalleryActions(): {|
       addAlert(deletingAlert);
       const formData = new FormData();
       for (const file of files)
-        formData.append("idsToDelete[]", idToString(file.id));
+        formData.append("idsToDelete[]", idToString(file.id).elseThrow());
       const data = await galleryApi.post<FormData, mixed>(
         "deleteElementFromGallery",
         formData,
@@ -433,7 +433,7 @@ export function useGalleryActions(): {|
       },
     });
     try {
-      await api.delete<mixed>(`filestores/${idToString(filestore.id)}`);
+      await api.delete<mixed>(`filestores/${idToString(filestore.id).elseThrow()}`);
       addAlert(
         mkAlert({
           message: "Successfully deleted filestore.",
@@ -496,7 +496,7 @@ export function useGalleryActions(): {|
     }
     const formData = new FormData();
     for (const file of files) {
-      formData.append("idToCopy[]", idToString(file.id));
+      formData.append("idToCopy[]", idToString(file.id).elseThrow());
       formData.append(
         "newName[]",
         file.transformFilename((name) => name + "_copy")
@@ -573,7 +573,7 @@ export function useGalleryActions(): {|
       isInfinite: true,
     });
     const formData = new FormData();
-    formData.append("recordId", idToString(file.id));
+    formData.append("recordId", idToString(file.id).elseThrow());
     formData.append(
       "newName",
       file.transformFilename(() => newName)
@@ -637,9 +637,9 @@ export function useGalleryActions(): {|
       throw new Error("The selected file cannot be updated with a new version");
     }
     const formData = new FormData();
-    formData.append("selectedMediaId", idToString(file.id));
+    formData.append("selectedMediaId", idToString(file.id).elseThrow());
     formData.append("xfile", newFile);
-    formData.append("targetFolderId", idToString(folderId));
+    formData.append("targetFolderId", idToString(folderId).elseThrow());
     const uploadingAlert = mkAlert({
       message: "Uploading...",
       variant: "notice",
@@ -713,7 +713,7 @@ export function useGalleryActions(): {|
       throw new Error("The file does not have a description");
     }
     const formData = new FormData();
-    formData.append("recordId", idToString(file.id));
+    formData.append("recordId", idToString(file.id).elseThrow());
     formData.append(
       "description",
       newDescription.match({

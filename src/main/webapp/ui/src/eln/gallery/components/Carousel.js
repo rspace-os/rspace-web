@@ -282,7 +282,7 @@ const Preview = ({
             try {
               const { data } = await axios.get<mixed>(
                 "/Streamfile/ajax/convert/" +
-                  idToString(file.id) +
+                  idToString(file.id).elseThrow() +
                   "?outputFormat=pdf"
               );
               const fileName = Parsers.isObject(data)
@@ -295,7 +295,7 @@ const Preview = ({
                   tag: "loaded",
                   url:
                     "/Streamfile/direct/" +
-                    idToString(file.id) +
+                    idToString(file.id).elseThrow() +
                     "?fileName=" +
                     fileName,
                 });

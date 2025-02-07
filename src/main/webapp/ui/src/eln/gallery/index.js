@@ -103,7 +103,7 @@ const WholePage = styled(
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
         if (listing.tag === "empty") return;
         for (const f of new RsSet(listing.list).intersectionMap(
-          ({ id }) => idToString(id),
+          ({ id }) => idToString(id).elseThrow(),
           new RsSet(autoSelect ?? []).map((id) => `${id}`)
         )) {
           selection.append(f);
@@ -159,7 +159,7 @@ const WholePage = styled(
                   }
                   if (newPath.length > 0) {
                     navigate(
-                      `/gallery/${idToString(newPath[newPath.length - 1].id)}`
+                      `/gallery/${idToString(newPath[newPath.length - 1].id).elseThrow()}`
                     );
                   } else {
                     try {

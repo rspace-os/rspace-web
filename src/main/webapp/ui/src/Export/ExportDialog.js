@@ -115,7 +115,7 @@ export type ExportSelection =
        */
       exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">,
       exportNames: Array<string>,
-      exportIds: Array<string>,
+      exportIds: $ReadOnlyArray<string>,
     |}
   | {|
       type: "group",
