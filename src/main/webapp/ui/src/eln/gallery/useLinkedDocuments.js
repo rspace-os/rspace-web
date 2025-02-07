@@ -74,7 +74,7 @@ export default function useLinkedDocuments(file: GalleryFile): {|
     setErrorMessage(null);
     try {
       const { data } = await axios.get<mixed>(
-        `/gallery/ajax/getLinkedDocuments/${idToString(file.id)}`
+        `/gallery/ajax/getLinkedDocuments/${idToString(file.id).elseThrow()}`
       );
 
       Parsers.objectPath(["data"], data)

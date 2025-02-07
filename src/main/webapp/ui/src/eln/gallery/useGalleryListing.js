@@ -30,7 +30,7 @@ import EXT_BY_TYPE from "./fileExtensionsByType.json";
 /**
  * The Id of a Gallery file
  */
-export opaque type Id = number;
+export opaque type Id = number | null;
 
 /*
  * dummyId is for use in tests ONLY. All other Ids MUST be got from API calls.
@@ -45,8 +45,9 @@ export const dummyId: () => Id = () => {
 /**
  * Produce a string representation of the Id
  */
-export function idToString(id: Id): string {
-  return `${id}`;
+export function idToString(id: Id): Result<string> {
+  if (id === null) return Result.Error([new Error("Id is null")]);
+  return Result.Ok(`${id}`);
 }
 
 /*
@@ -130,6 +131,7 @@ export interface GalleryFile {
   deconstructor(): void;
 
   +id: Id;
+  +key: string;
   +globalId?: string;
   name: string;
 
@@ -222,8 +224,8 @@ export function chemistryFilePreview(file: GalleryFile): Result<string> {
     return Result.Error([new Error("No modification date")]);
   const time = file.modificationDate.getTime();
   if (file.type === "Chemistry")
-    return Result.Ok(
-      `/gallery/getChemThumbnail/${file.id}/${Math.floor(time / 1000)}`
+    return idToString(file.id).map(
+      (id) => `/gallery/getChemThumbnail/${id}/${Math.floor(time / 1000)}`
     );
   return Result.Error([new Error("Not a chemistry file")]);
 }
@@ -237,7 +239,7 @@ function generateIconSrc(
   type: string,
   extension: string | null,
   thumbnailId: number | null,
-  id: number,
+  id: Id,
   modificationDate: Date,
   isFolder: boolean,
   isSystemFolder: boolean,
@@ -247,16 +249,26 @@ function generateIconSrc(
     if (isSystemFolder) return "/images/icons/system_folder.svg";
     return "/images/icons/folder.svg";
   }
-  if (type === "Image")
-    return `/gallery/getThumbnail/${id}/${Math.floor(
-      modificationDate.getTime() / 1000
-    )}`;
-  if ((type === "Documents" || type === "PdfDocuments") && thumbnailId !== null)
-    return `/image/docThumbnail/${id}/${thumbnailId}`;
-  return chemistryFilePreview(file).orElseGet(() => {
-    if (extension === null) return "/images/icons/unknown.svg";
-    return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
-  });
+  return idToString(id)
+    .flatMap((idStr) => {
+      if (type === "Image")
+        return Result.Ok(
+          `/gallery/getThumbnail/${idStr}/${Math.floor(
+            modificationDate.getTime() / 1000
+          )}`
+        );
+      if (
+        (type === "Documents" || type === "PdfDocuments") &&
+        thumbnailId !== null
+      )
+        return Result.Ok(`/image/docThumbnail/${idStr}/${thumbnailId}`);
+      return Result.Error<string>([new Error("No pre-computed thumbnail")]);
+    })
+    .orElseTry(() => chemistryFilePreview(file))
+    .orElseGet(() => {
+      if (extension === null) return "/images/icons/unknown.svg";
+      return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
+    });
 }
 
 /**
@@ -352,7 +364,7 @@ export class LocalGalleryFile implements GalleryFile {
       this.downloadHref = async () => {
         if (this.#cachedDownloadHref) return this.#cachedDownloadHref;
         const { data: blob } = await axios.get<Blob>(
-          `/api/v1/files/${idToString(this.id)}/file`,
+          `/api/v1/files/${idToString(this.id).elseThrow()}/file`,
           {
             responseType: "blob",
             headers: {
@@ -366,6 +378,10 @@ export class LocalGalleryFile implements GalleryFile {
       };
     }
     this.originalImageId = originalImageId;
+  }
+
+  get key(): string {
+    return idToString(this.id).elseThrow();
   }
 
   deconstructor() {
@@ -481,7 +497,7 @@ export class LocalGalleryFile implements GalleryFile {
   }
 
   get treeViewItemId(): string {
-    return `LOCAL_${idToString(this.id)}`;
+    return `LOCAL_${idToString(this.id).elseThrow()}`;
   }
 }
 
@@ -523,6 +539,10 @@ export class Filestore implements GalleryFile {
   }
 
   deconstructor() {}
+
+  get key(): string {
+    return idToString(this.id).elseThrow();
+  }
 
   get extension(): string | null {
     return null;
@@ -599,12 +619,12 @@ export class Filestore implements GalleryFile {
   }
 
   get treeViewItemId(): string {
-    return `FILESTORE_${idToString(this.id)}`;
+    return `FILESTORE_${idToString(this.id).elseThrow()}`;
   }
 }
 
 class RemoteFile implements GalleryFile {
-  +nfsId: number;
+  +nfsId: number | null;
   name: string;
   description: Description;
   +isFolder: boolean;
@@ -612,6 +632,7 @@ class RemoteFile implements GalleryFile {
   +modificationDate: Date;
   +path: $ReadOnlyArray<GalleryFile>;
   downloadHref: void | (() => Promise<UrlType>);
+  remotePath: string;
   #cachedDownloadHref: UrlType | void;
 
   constructor({
@@ -624,7 +645,7 @@ class RemoteFile implements GalleryFile {
     remotePath,
     token,
   }: {|
-    nfsId: number,
+    nfsId: number | null,
     name: string,
     folder: boolean,
     fileSize: number,
@@ -640,6 +661,7 @@ class RemoteFile implements GalleryFile {
     this.size = fileSize;
     this.modificationDate = modificationDate;
     this.path = path;
+    this.remotePath = remotePath;
     if (!this.isFolder) {
       const filestoreId = path[0].id;
       this.downloadHref = async () => {
@@ -647,7 +669,9 @@ class RemoteFile implements GalleryFile {
         const { data: blob } = await axios.get<Blob>(
           `/api/v1/gallery/filestores/${idToString(
             filestoreId
-          )}/download?remoteId=${idToString(this.id)}&remotePath=${remotePath}`,
+          ).elseThrow()}/download?remoteId=${idToString(
+            this.id
+          ).elseThrow()}&remotePath=${remotePath}`,
           {
             responseType: "blob",
             headers: {
@@ -668,6 +692,10 @@ class RemoteFile implements GalleryFile {
 
   get id(): Id {
     return this.nfsId;
+  }
+
+  get key(): string {
+    return this.remotePath;
   }
 
   get extension(): string | null {
@@ -793,7 +821,9 @@ class RemoteFile implements GalleryFile {
 
   get treeViewItemId(): string {
     const filestoreId = this.path[0].id;
-    return `REMOTE_FILE_${idToString(filestoreId)}_${idToString(this.id)}`;
+    return `REMOTE_FILE_${idToString(filestoreId).elseThrow()}_${idToString(
+      this.id
+    ).elseThrow()}`;
   }
 }
 
@@ -1324,9 +1354,9 @@ export function useGalleryListing({
       const { data } = await (
         await api
       ).get<mixed>(
-        `gallery/filestores/${filestore.id}/browse?remotePath=${ArrayUtils.last(
-          pa
-        )
+        `gallery/filestores/${idToString(
+          filestore.id
+        ).elseThrow()}/browse?remotePath=${ArrayUtils.last(pa)
           .map((file) => file.pathAsString())
           .orElse("/")}`
       );
@@ -1343,7 +1373,7 @@ export function useGalleryListing({
                   try {
                     const nfsId = Parsers.getValueWithKey("nfsId")(obj)
                       .flatMap(Parsers.isNumber)
-                      .elseThrow();
+                      .orElse(null);
 
                     const name = Parsers.getValueWithKey("name")(obj)
                       .flatMap(Parsers.isString)
@@ -1451,7 +1481,7 @@ export function useGalleryListing({
 
       let currentFolderId = "0";
       if (p.length > 0) {
-        currentFolderId = `${p[p.length - 1].id}`;
+        currentFolderId = idToString(p[p.length - 1].id).elseThrow();
       } else if (listingOf.tag === "folder") {
         currentFolderId = `${listingOf.folderId}`;
       }
@@ -1517,7 +1547,8 @@ export function useGalleryListing({
       const { data } = await axios.get<mixed>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: s,
-          currentFolderId: p.length > 0 ? `${p[p.length - 1].id}` : "0",
+          currentFolderId:
+            p.length > 0 ? idToString(p[p.length - 1].id).elseThrow() : "0",
           name: searchTerm,
           pageNumber: `${page + 1}`,
           sortOrder,
@@ -1578,7 +1609,7 @@ export function useGalleryListing({
     },
     path,
     folderId: parentId
-      .map((value: number) => ({ tag: "success", value }))
+      .map((value: Id) => ({ tag: "success", value }))
       .orElseGet(([error]) => ({ tag: "error", error: error.message })),
     refreshListing: async () => {
       const pa = FetchingData.getSuccessValue(path).elseThrow();
@@ -1603,7 +1634,9 @@ export function useGalleryListing({
                   params: new URLSearchParams({
                     mediatype: s,
                     currentFolderId:
-                      pa.length > 0 ? `${pa[pa.length - 1].id}` : "0",
+                      pa.length > 0
+                        ? idToString(pa[pa.length - 1].id).elseThrow()
+                        : "0",
                     name: searchTerm,
                     pageNumber: `${p}`,
                     sortOrder,
