@@ -632,6 +632,7 @@ class RemoteFile implements GalleryFile {
   +modificationDate: Date;
   +path: $ReadOnlyArray<GalleryFile>;
   downloadHref: void | (() => Promise<UrlType>);
+  logicPath: string;
   remotePath: string;
   #cachedDownloadHref: UrlType | void;
 
@@ -642,7 +643,7 @@ class RemoteFile implements GalleryFile {
     fileSize,
     modificationDate,
     path,
-    remotePath,
+    logicPath,
     token,
   }: {|
     nfsId: number | null,
@@ -651,7 +652,7 @@ class RemoteFile implements GalleryFile {
     fileSize: number,
     modificationDate: Date,
     path: $ReadOnlyArray<GalleryFile>,
-    remotePath: string,
+    logicPath: string,
     token: string,
   |}) {
     this.nfsId = nfsId;
@@ -661,7 +662,8 @@ class RemoteFile implements GalleryFile {
     this.size = fileSize;
     this.modificationDate = modificationDate;
     this.path = path;
-    this.remotePath = remotePath;
+    this.logicPath = logicPath;
+    this.remotePath = logicPath.split(":").slice(1).join(":");
     if (!this.isFolder) {
       const filestoreId = path[0].id;
       this.downloadHref = async () => {
@@ -670,7 +672,7 @@ class RemoteFile implements GalleryFile {
         idToString(this.id).do((id) => {
           urlSearchParams.append("remoteId", id);
         });
-        urlSearchParams.append("remotePath", remotePath);
+        urlSearchParams.append("remotePath", this.remotePath);
         const { data: blob } = await axios.get<Blob>(
           `/api/v1/gallery/filestores/${idToString(
             filestoreId
@@ -699,7 +701,7 @@ class RemoteFile implements GalleryFile {
   }
 
   get key(): string {
-    return this.remotePath;
+    return this.logicPath;
   }
 
   get extension(): string | null {
@@ -1398,7 +1400,7 @@ export function useGalleryListing({
                       .flatMap(Parsers.parseDate)
                       .elseThrow();
 
-                    const remotePath = Parsers.getValueWithKey("logicPath")(obj)
+                    const logicPath = Parsers.getValueWithKey("logicPath")(obj)
                       .flatMap(Parsers.isString)
                       .elseThrow();
 
@@ -1410,7 +1412,7 @@ export function useGalleryListing({
                         fileSize,
                         modificationDate,
                         path: pa,
-                        remotePath,
+                        logicPath,
                         token,
                       })
                     );
