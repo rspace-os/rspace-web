@@ -186,6 +186,7 @@ function TreeListing({
   onFailToAuthenticate: () => void,
 |}): Node {
   const { getToken } = useOauthToken();
+  const { addAlert } = React.useContext(AlertContext);
   const api = React.useRef<Promise<Axios>>(
     (async () => {
       return axios.create({
@@ -202,14 +203,13 @@ function TreeListing({
   React.useEffect(() => {
     async function browse(): Promise<void> {
       try {
-        const {
-          data: { content },
-        } = await (
+        const { data } = await (
           await api.current
         ).get<{ content: FilesystemListing, ... }>(
           `filesystems/${fsId}/browse?remotePath=${path}`
         );
-        setListing(content);
+        if (!data.content) throw new Error("No content");
+        setListing(data.content);
       } catch (e) {
         if (e.response?.status === 403) {
           if (
@@ -223,7 +223,15 @@ function TreeListing({
             onFailToAuthenticate();
           }
         } else {
-          throw e;
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Failed to browse filestore",
+              message: Parsers.objectPath(["response", "data", "message"], e)
+                .flatMap(Parsers.isString)
+                .orElse(e.message),
+            })
+          );
         }
       }
     }
