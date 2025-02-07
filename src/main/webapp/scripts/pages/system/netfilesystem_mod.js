@@ -162,7 +162,7 @@ define(function() {
             $('#fileSystemIrodsZone').val(clientOptions.IRODS_ZONE);
             $('#fileSystemIrodsHomeDir').val(clientOptions.IRODS_HOME_DIR);
             $('#fileSystemIrodsPort').val(clientOptions.IRODS_PORT);
-	    $('#fileSystemIrodsCsneg').val(clientOptions.IRODS_CSNEG);
+            $('#fileSystemIrodsCsneg').val(clientOptions.IRODS_CSNEG);
         }
         
         var isPasswordAuth = isExistingFileSystem && fileSystem.authType === 'PASSWORD';
@@ -174,18 +174,17 @@ define(function() {
 
         $('#fileSystemPubKeyRegistrationUrl').val("");
 
-
-	if (fileSystem.clientType === 'IRODS'){
-	    var rows =  fileSystem.clientOptions.split('\n');
-            for (var i = 0; i < rows.length; i++) {
-                var currRow = rows[i];
-                var currRowValue = currRow.substring(currRow.indexOf('=') + 1);
-                if (currRow.indexOf('IRODS_AUTH') === 0) {
-		    $('#iRODSfileSystemAuthTypeNative').prop('checked', currRowValue === 'NATIVE');
-		    $('#iRODSfileSystemAuthTypePAM').prop('checked', currRowValue === 'PAM');
-                 }
+        if (fileSystem.clientType === 'IRODS'){
+          var rows =  fileSystem.clientOptions.split('\n');
+          for (var i = 0; i < rows.length; i++) {
+            var currRow = rows[i];
+            var currRowValue = currRow.substring(currRow.indexOf('=') + 1);
+            if (currRow.indexOf('IRODS_AUTH') === 0) {
+              $('#iRODSfileSystemAuthTypeNative').prop('checked', currRowValue === 'NATIVE');
+              $('#iRODSfileSystemAuthTypePAM').prop('checked', currRowValue === 'PAM');
             }
-	}
+          }
+        }
 	
         if (fileSystem.authOptions) {
             if (isPubKeyAuth) {
@@ -316,34 +315,34 @@ define(function() {
         $('.fileSystemDetailsIrodsHomeDirRow').toggle(isIrodsClient);
         $('.fileSystemDetailsIrodsPortRow').toggle(isIrodsClient);
         $('.fileSystemDetailsIrodsCsnegRow').toggle(isIrodsClient);
-	$('.fileSystemDetailsIrodsAuthRow').toggle(isIrodsClient);
-	
-        $('#fileSystemAuthTypePubKey').prop('disabled', isSambaClient);
-        if (isSambaClient) {
+	      $('.fileSystemDetailsIrodsAuthRow').toggle(isIrodsClient);
+
+        $('#fileSystemIrodsZone').prop('required', isIrodsClient);
+        $('#fileSystemIrodsHomeDir').prop('required', isIrodsClient);
+        $('#iRODSfileSystemAuthTypeNative').prop('required', isIrodsClient);
+        $('#iRODSfileSystemAuthTypePAM').prop('required', isIrodsClient);
+
+        $('#fileSystemAuthTypePubKey').prop('disabled', isSambaClient || isSambaSmbjClient);
+        $("label[for='fileSystemAuthTypePubKey']").toggle(!isIrodsClient);
+        if (isSambaClient || isIrodsClient) {
             $('#fileSystemAuthTypePassword').click();
+        }
+        $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
+        $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
+        if (isIrodsClient) {
+            $("label[for='fileSystemUrl']").text('iRODS Host');
         }
 
         if (isSambaClient || isSambaSmbjClient) {
             $('#fileSystemUrl')
                 .attr('title', 'Samba server URL should start with smb://')
                 .attr('pattern', '^smb://.*');
-	          $("label[for='fileSystemAuthTypePubKey']").show();
-	          $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
-	          $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
         } else if (isIrodsClient) {
-	          $('#fileSystemAuthTypePassword').click();
 	          $('#fileSystemUrl')
 		            .removeAttr('pattern')
 		            .attr('title', 'iRODS hostname or IP without protocol');
-	          $("label[for='fileSystemUrl']").text('iRODS Host');
-	    $("label[for='fileSystemAuthTypePubKey']").hide();
-	    //$('#fileSystemAuthTypePasswordSpan').text('Native');
-	          $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
         } else {
             $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
-	          $("label[for='fileSystemAuthTypePubKey']").show();
-      	    $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
-      	    $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
         }
     }
 
