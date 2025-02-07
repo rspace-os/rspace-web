@@ -99,6 +99,7 @@ const WholePage = styled(
 
     const selection = useGallerySelection();
     React.useEffect(() => {
+      try {
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
         if (listing.tag === "empty") return;
         for (const f of new RsSet(listing.list).intersectionMap(
@@ -108,6 +109,13 @@ const WholePage = styled(
           selection.append(f);
         }
       });
+      } catch (e) {
+        /*
+         * This will throw when processing files from external filestores that
+         * do not have an id, but that's fine as external filestores cannot be
+         * encoded in the URL and so cannot be autoselected.
+         */
+      }
       /* eslint-disable-next-line react-hooks/exhaustive-deps --
        * - selection should be allowed to change with re-triggering this
        */

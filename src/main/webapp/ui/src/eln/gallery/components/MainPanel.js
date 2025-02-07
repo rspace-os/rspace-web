@@ -350,7 +350,7 @@ const Path = ({
         .orElse(path)
         .map((f, i) => (
           <BreadcrumbLink
-            key={idToString(f.id)}
+            key={f.key}
             folder={f}
             section={section}
             setSelectedSection={setSelectedSection}
@@ -1013,7 +1013,7 @@ const GridView = observer(
               }}
               selected={selection.includes(file)}
               file={file}
-              key={idToString(file.id)}
+              key={file.key}
               index={index}
               tabIndex={
                 index % cols === tabIndexCoord.x &&
@@ -1724,7 +1724,7 @@ function GalleryMainPanel({
                  */
                 key={selection
                   .asSet()
-                  .reduce((acc, { id }) => `${acc},${idToString(id)}`, "")}
+                  .reduce((acc, f) => `${acc},${f.key}`, "")}
               />
             </Grid>
             {selection
@@ -1736,7 +1736,7 @@ function GalleryMainPanel({
                  * modified state.
                  */
                 <InfoPanelForSmallViewports
-                  key={idToString(file.id)}
+                  key={file.key}
                   file={file}
                 />
               ))
