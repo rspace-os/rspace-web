@@ -222,7 +222,18 @@ export function Drawer(props: DrawerArgs): Node {
   }, [open]);
 
   return (
-    <MuiDrawer container={() => modalContainer.current} open={open} {...rest}>
+    <MuiDrawer
+      /*
+       * Only temporary drawers are modal and require the dialog boundary.
+       * Including the superfluous prop otherwise results in a console error.
+       * See https://mui.com/material-ui/api/drawer/
+       */
+      {...(props.variant === "temporary"
+        ? { container: () => modalContainer.current }
+        : {})}
+      open={open}
+      {...rest}
+    >
       {children}
     </MuiDrawer>
   );
