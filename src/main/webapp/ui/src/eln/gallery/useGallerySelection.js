@@ -8,11 +8,13 @@ import RsSet from "../../util/set";
 /*
  * We use a Map even though the interface exposed by this module is more akin
  * to a Set because we want to be able to check the inclusion of files based on
- * their Id. There are various points in the UI where the particular objects in
+ * their key. There are various points in the UI where the particular objects in
  * memory that are modelling the Gallery Files are replaced, and so we must
- * compare based on their Ids to make sure we don't end up with the same file
- * added to the Selection twice. We can't use RsSet, even though it has
- * `hasWithEq` that would suffice, because it is not observable.
+ * compare based on their keys to make sure we don't end up with the same file
+ * added to the Selection twice. We use keys rather than ids because remote
+ * files do not always have ids, sometimes a path is all we have. We can't use
+ * RsSet, even though it has `hasWithEq` that would suffice, because it is not
+ * observable.
  */
 class Selection {
   /*

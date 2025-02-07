@@ -28,7 +28,11 @@ import { LinkedDocumentsPanel } from "./components/LinkedDocumentsPanel";
 import EXT_BY_TYPE from "./fileExtensionsByType.json";
 
 /**
- * The Id of a Gallery file
+ * The Id of a Gallery file. It may be null if the filesystem being accessed
+ * does not support ids. It is an opaque alias because all other modules should
+ * either use the `key` attribute to get a globally unique string, or use the
+ * `idToString` function to get a string representation of the Id, with
+ * explicit handling for the case where there isn't an id.
  */
 export opaque type Id = number | null;
 
@@ -131,9 +135,15 @@ export interface GalleryFile {
   deconstructor(): void;
 
   +id: Id;
-  +key: string;
   +globalId?: string;
   name: string;
+
+  /*
+   * A string that uniquely identifies the file/folder within the gallery.
+   * This will either be an id or a path depending upon the filesystem being
+   * accessed, and thus how the class implements this interface.
+   */
+  +key: string;
 
   // null for folders, otherwise usually a non-empty string
   +extension: string | null;
