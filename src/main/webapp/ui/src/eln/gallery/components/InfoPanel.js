@@ -922,7 +922,7 @@ export const InfoPanelForSmallViewports: ComponentType<{|
       disableSwipeToOpen={false}
       ModalProps={{
         keepMounted: true,
-        ariaHidden: false,
+        "aria-hidden": false,
       }}
       allowSwipeInChildren={(event) => {
         if (event.target.id === "open") return false;
