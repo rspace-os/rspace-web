@@ -55,6 +55,8 @@ import MaintenanceIcon from "@mui/icons-material/Construction";
 import Popover from "@mui/material/Popover";
 import IconButton from "@mui/material/IconButton";
 import { getRelativeTime } from "../../util/conversions";
+import Result from "../../util/result";
+import useSessionStorage from "../../util/useSessionStorage";
 
 const IncomingMaintenancePopup = ({ startDate }: {| startDate: Date |}) => {
   const [anchorEl, setAnchorEl] = React.useState<null | EventTarget>(null);
@@ -274,6 +276,19 @@ function GalleryAppBar({
   const leftClipId = React.useId();
   const rightClipId = React.useId();
 
+  const [brandingHref, setBrandingHref] = useSessionStorage<string | null>(
+    "brandingHref",
+    null
+  );
+  React.useEffect(() => {
+    FetchingData.getSuccessValue(uiNavigationData).do(({ bannerImgSrc }) => {
+      setBrandingHref(bannerImgSrc);
+    });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - setBrandingHref wont meaningfully change
+     */
+  }, [uiNavigationData]);
+
   const { showInventory, showSystem, showMyLabGroups } =
     FetchingData.getSuccessValue(uiNavigationData)
       .map(({ visibleTabs: { inventory, system, myLabGroups } }) => ({
@@ -327,11 +342,19 @@ function GalleryAppBar({
           {sidebarToggle}
           {variant === "page" && !isViewportSmall && (
             <Box height="36px" sx={{ ml: 0.5, py: 0.25, position: "relative" }}>
-              {FetchingData.getSuccessValue(uiNavigationData)
-                .map(({ bannerImgSrc }) => (
+              {Result.fromNullable(
+                brandingHref,
+                new Error("branding not cached")
+              )
+                .orElseTry(() =>
+                  FetchingData.getSuccessValue(uiNavigationData).map(
+                    ({ bannerImgSrc }) => bannerImgSrc
+                  )
+                )
+                .map((href) => (
                   <img
                     key="branding small"
-                    src={bannerImgSrc}
+                    src={href}
                     role="presentation"
                     alt="branding"
                     style={{ height: "100%" }}
