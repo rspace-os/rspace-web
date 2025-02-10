@@ -21,7 +21,7 @@ var githubDialog = {
 				$('#gitHubHash').val(splitFile[1]);
 				$('#gitHubPath').val(splitFile[2]);
 
-				var branch = $('a[data-name="' + name +'"]').attr('rel').split('#')[1];
+				var branch = $('a[data-name="' + splitFile[0] +'"]').attr('rel').split('#')[1];
 				$('#gitHubBranch').val(branch);
 			}
 		});
