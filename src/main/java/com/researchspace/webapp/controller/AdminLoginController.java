@@ -26,7 +26,7 @@ public class AdminLoginController extends BaseController {
   public String getAdminLoginPage(Principal principal, Model model, HttpServletRequest request)
       throws IOException {
     if (!(properties.isSSO() && properties.getSSOAdminLoginEnabled())) {
-      return "/sso/adminLoginUnavailable";
+      return "sso/adminLoginUnavailable";
     }
 
     String remoteUser = remoteUserPolicy.getRemoteUser(request);
@@ -45,7 +45,7 @@ public class AdminLoginController extends BaseController {
       logoutController.logout(principal, request);
     }
 
-    return "/sso/adminLogin";
+    return "sso/adminLogin";
   }
 
   @GetMapping("/backToSsoUserWorkspace")
