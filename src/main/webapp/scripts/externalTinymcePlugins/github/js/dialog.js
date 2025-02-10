@@ -20,6 +20,9 @@ var githubDialog = {
 				$('#gitHubRepo').val(splitFile[0]);
 				$('#gitHubHash').val(splitFile[1]);
 				$('#gitHubPath').val(splitFile[2]);
+
+				var branch = $('a[data-name="' + name +'"]').attr('rel').split('#')[1];
+				$('#gitHubBranch').val(branch);
 			}
 		});
 	},
@@ -28,7 +31,8 @@ var githubDialog = {
 		var json = {
 			id: 'github-' + $('#gitHubHash').val(),
 			fileStore: 'github',
-			recordURL: 'https://github.com/' + $('#gitHubRepo').val() + '/blob/master' + $('#gitHubPath').val(),
+			recordURL: 'https://github.com/' + $('#gitHubRepo').val() + '/blob/'
+					+ $('#gitHubBranch').val() + $('#gitHubPath').val(),
 			name: $('#gitHubPath').val().split("/").splice(-1)[0],
 			iconPath: '/images/icons/textBig.png',
 			badgeIconPath: '/images/icons/GitHub-Mark-64px.png'
