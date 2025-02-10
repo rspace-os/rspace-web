@@ -207,7 +207,10 @@ const WholePage = styled(
                     in the meantime.
                   </Alert>
                 </Box>
-                <Box sx={{ display: "flex", minHeight: "0" }} component="main">
+                <Box
+                  sx={{ display: "flex", minHeight: "0", flexGrow: 1 }}
+                  component="main"
+                >
                   <Sidebar
                     selectedSection={FetchingData.getSuccessValue(
                       selectedSection
