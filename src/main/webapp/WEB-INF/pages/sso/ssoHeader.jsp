@@ -21,13 +21,14 @@
             }
 
             $('#ssoBackToSessionBtn').click(function() {
+              window.sessionStorage.removeItem("id_token");
               window.location.href = "/adminLogin/backToSsoUserWorkspace";
             });
 
             /* don't show logout within RSpace session, it would just duplicate 'Account'->'Sign out' */
             $('#ssoLogoutBtn').toggle(ssoheader_rspaceUsername == '');
             $('#ssoLogoutBtn').click(function() {
-              window.location.href = "/adminLogin/logoutFromSso"; 
+              window.location.href = "/adminLogin/logoutFromSso";
             });
         }
         

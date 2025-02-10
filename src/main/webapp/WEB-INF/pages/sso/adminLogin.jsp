@@ -86,6 +86,12 @@
 
     </form>
   </div>
-  <%-- END: login form --%>  
+  <%-- END: login form --%>
+
+  <!-- Remove the inventory JWT token -->
+  <script type="text/javascript">
+    window.sessionStorage.removeItem("id_token");
+  </script>
+
 
 </div>
