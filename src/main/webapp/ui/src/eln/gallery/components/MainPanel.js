@@ -314,7 +314,7 @@ const BreadcrumbLink = React.forwardRef<
 );
 BreadcrumbLink.displayName = "BreadcrumbLink";
 
-const Path = ({
+const Path = observer(({
   section,
   path,
   setSelectedSection,
@@ -360,7 +360,7 @@ const Path = ({
         ))}
     </StyledBreadcrumbs>
   );
-};
+});
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
