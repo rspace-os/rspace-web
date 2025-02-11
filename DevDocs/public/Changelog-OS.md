@@ -4,6 +4,28 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.7.0 2025-02-11
+
+### ELN Features
+
+- RSDEV-451 new Gallery UI is now a default option (old Gallery still available at /oldGallery)
+- RSDEV-297 new Gallery supporting URL-encoded paths
+- RSDEV-423 new Navigation UI (replacing "tabs" on the top of page)
+- RSDEV-435 PyRAT integration now supports connecting to multiple PyRAT servers (note: requires deployment property change, check the 1.106-to-1.107 changelog)
+- RSDEV-347 attachments in restored documents are now clearly marked as historical versions
+- RSDEV-362 persisting columns selection on System -> Users page 
+
+### ELN Bugfix
+
+- RSDEV-455 GitHub integration now recognize default branch (rather than returning 404)
+- RSDEV-488 fix problem with public API /folder/tree endpoint returning 500 in some cases
+- PRT-872: fix handling of oauth token after RSpace identity is changed within SSO session
+
+### Contributed by open-source community
+
+- #39 iRODS file system setup UX (contributed by ll4strw)
+- #111 additional iRODS client/server negotiation policy configuration (contributed by ll4strw)
+
 # 2.6.0 2025-01-10
 
 ### ELN Features
