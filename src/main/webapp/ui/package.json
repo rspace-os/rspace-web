@@ -12,7 +12,8 @@
     "serve": "webpack --watch --mode development --devtool eval-cheap-module-source-map",
     "flow": "flow",
     "flow-typed": "flow-typed",
-    "depcruise": "npx depcruise src"
+    "depcruise": "npx depcruise src",
+    "tsc": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
