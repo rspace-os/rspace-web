@@ -15,6 +15,7 @@ export type DateFieldArgs = {|
   value: ?string,
 
   // optional
+  label?: Node,
   alert?: Node,
   disabled?: boolean,
   noValueLabel?: ?string,
@@ -36,6 +37,7 @@ export type DateFieldArgs = {|
 |};
 
 function DateField({
+  label,
   disabled,
   value,
   onChange,
@@ -58,6 +60,7 @@ function DateField({
     <>
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
         <DatePicker
+          label={label}
           value={value}
           onChange={(newValue) => {
             onChange?.({ target: { value: newValue } });
