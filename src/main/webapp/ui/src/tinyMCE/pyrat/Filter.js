@@ -11,6 +11,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import { stableSort } from "../../util/table";
 import Grid from "@mui/material/Grid";
 import DateField2 from "../../components/Inputs/DateField";
+import { truncateIsoTimestamp } from "../../util/conversions";
 
 const useStyles = makeStyles()(() => ({
   button: {
@@ -137,7 +138,7 @@ export default function Filter({
         //     value={config.value}
         onChange={({ target: { value: date } }) => {
           const dateValue = date
-            ? `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`
+            ? truncateIsoTimestamp(date, "date").orElse(null)
             : null;
 
           // If current date field is '...-from', we will automatically set the '...-to'
