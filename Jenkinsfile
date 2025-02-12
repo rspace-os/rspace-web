@@ -104,6 +104,9 @@ pipeline {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
+                    changeset '**/*.js.flow'
+                    changeset '**/*.ts'
+                    changeset '**/*.tsx'
                     changeset '**/*.jsp'
                     changeset '**/*.css'
                     changeset '**/*.json'
@@ -121,6 +124,7 @@ pipeline {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
+                    changeset '**/*.js.flow'
                     changeset '**/*.jsp'
                     changeset '**/*.css'
                     changeset '**/*.json'
@@ -133,11 +137,32 @@ pipeline {
                 }
             }
         }
+        stage('TypeScript Check') {
+            when {
+                anyOf {
+                    expression { return params.FRONTEND_TESTS }
+                    changeset '**/*.ts'
+                    changeset '**/*.tsx'
+                    changeset '**/*.jsp'
+                    changeset '**/*.css'
+                    changeset '**/*.json'
+                }
+            }
+            steps {
+                dir('src/main/webapp/ui') {
+                    echo 'Running TypeScript check'
+                    sh 'npm run tsc --noEmit'
+                }
+            }
+        }
         stage('Dependency Cruiser') {
             when {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
+                    changeset '**/*.js.flow'
+                    changeset '**/*.ts'
+                    changeset '**/*.tsx'
                     changeset '**/*.jsp'
                     changeset '**/*.css'
                     changeset '**/*.json'
@@ -155,6 +180,9 @@ pipeline {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
+                    changeset '**/*.js.flow'
+                    changeset '**/*.ts'
+                    changeset '**/*.tsx'
                     changeset '**/*.jsp'
                     changeset '**/*.css'
                     changeset '**/*.json'
