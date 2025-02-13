@@ -17,7 +17,7 @@ const CustomToggleButtonGroup: ComponentType<
   (theme) => ({
     root: {
       border: theme.borders.section,
-      backgroundColor: theme.palette.background.main,
+      backgroundColor: theme.palette.background.default,
       display: "flex !important",
     },
   })
