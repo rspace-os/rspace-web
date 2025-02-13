@@ -24,7 +24,6 @@ scripts/externalTinymcePlugins/snip/plugin.min.js
 scripts/externalTinymcePlugins/toolbar/styles/main.css
 scripts/global.js
 scripts/global.settingsStorage.js
-scripts/helpButton.js
 scripts/pages/admin.js
 scripts/pages/apps/integration-static-data.json
 scripts/pages/apps/util/dispatcher.js
@@ -66,7 +65,6 @@ scripts/pages/workspace/editor/tinymceRS_scrollHandler.js
 scripts/pages/workspace/GalleriesCrudops.js
 scripts/pages/workspace/gallery/netfiles.js
 scripts/pages/workspace/mediaGalleryManager.js
-scripts/segment.js
 scripts/tags/createFromTemplateDlg.js
 scripts/tags/export.js
 scripts/tags/exportOtherDialogs.js

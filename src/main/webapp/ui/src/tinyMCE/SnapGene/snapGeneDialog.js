@@ -35,7 +35,6 @@ export default function SnapGeneDialog(props) {
   const handleClose = () => {
     setOpen(false);
     $(".snapgene-dialog").remove(); // clean up after dialog is closed
-    RS.showHelpButton();
   };
 
   const switchTab = (e, value) => {
@@ -125,7 +124,6 @@ $(document).on("click", ".snapGenePanel .previewActionLink", function (e) {
   let target_id = $(e.target).parent().parent()[0].getAttribute("bioid");
 
   renderDialog(target_id);
-  RS.hideHelpButton();
 });
 
 $(document).on("click", ".imageThumbnail", function (e) {

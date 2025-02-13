@@ -114,15 +114,6 @@ var tinymcesetup = {
 			ed.setDirty(true);
 		});
 
-		// The help button can obstruct text that is being written in fullscreen mode
-		ed.on("FullscreenStateChanged", function (event) {
-			if (event.state) {
-				RS.hideHelpButton();
-			} else {
-				RS.showHelpButton();
-			}
-		});
-
 		ed.on("dblclick", function (e) {
 			var $target = $(e.target ? e.target : e.explicitOriginalTarget);
 			if ($target.is('img')) {

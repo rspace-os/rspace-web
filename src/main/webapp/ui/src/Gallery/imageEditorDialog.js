@@ -90,8 +90,6 @@ export default function ImageEditorDialog(props) {
           setBase64(dataUrl);
         }
       );
-
-      RS.hideHelpButton();
     });
   }, []);
 
@@ -103,7 +101,6 @@ export default function ImageEditorDialog(props) {
     setBase64(null);
     setError(false);
     setDirty(false);
-    RS.showHelpButton();
   };
 
   const getImage = (url, callback) => {

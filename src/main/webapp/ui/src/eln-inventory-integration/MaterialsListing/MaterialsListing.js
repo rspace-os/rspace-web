@@ -103,17 +103,6 @@ const CustomBadge = withStyles<
   </Badge>
 ));
 
-function hideHelpButton(shouldHide: boolean) {
-  //eslint-disable-next-line
-  if (RS) {
-    if (shouldHide) {
-      void RS.hideHelpButton(); //eslint-disable-line
-    } else {
-      void RS.showHelpButton(); //eslint-disable-line
-    }
-  }
-}
-
 const MaterialsLauncher = observer(
   ({
     elnFieldId,
@@ -130,16 +119,7 @@ const MaterialsLauncher = observer(
     const [anchorEl, setAnchorEl] = useState(null);
     const { classes } = useStyles({ fabRightPadding });
 
-    useEffect(
-      () =>
-        autorun(() => {
-          hideHelpButton(isSingleColumnLayout);
-        }),
-      []
-    );
-
     const setShowDialog = (value: boolean) => {
-      hideHelpButton(value && isSingleColumnLayout);
       _setShowDialog(value);
       window.dispatchEvent(new CustomEvent("listOfMaterialsOpened"));
     };
@@ -272,7 +252,6 @@ const NewMaterialsListing = observer(
     const isSingleColumnLayout = useIsSingleColumnLayout();
     const [showDialog, _setShowDialog] = useState(false);
     const setShowDialog = (value: boolean) => {
-      hideHelpButton(value && isSingleColumnLayout);
       _setShowDialog(value);
       window.dispatchEvent(new CustomEvent("listOfMaterialsOpened"));
     };

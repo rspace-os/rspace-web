@@ -119,8 +119,4 @@ const initDragDropAreaHandling = () => {};
 
 const runAfterTinymceActiveEditorInitialized = () => {};
 
-RS.hideHelpButton = () => {};
-
-RS.showHelpButton = () => {};
-
 window.renderToolbar = () => {};
