@@ -58,7 +58,7 @@ type CardStructureArgs = {|
 const useStyles = makeStyles()((theme, { deleted }) => ({
   root: {
     "&:hover": {
-      backgroundColor: theme.palette.background.main,
+      backgroundColor: theme.palette.background.default,
     },
     height: "100%",
   },
