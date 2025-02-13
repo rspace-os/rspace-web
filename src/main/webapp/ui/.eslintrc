@@ -11,7 +11,6 @@
   },
   "extends": [
     "eslint:recommended",
-    "plugin:ft-flow/recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
     "plugin:jsx-a11y/recommended",
@@ -27,13 +26,17 @@
   },
   "overrides": [
     {
+      "files": ["**/*.js", "**/*.js.flow"],
+      "extends": ["plugin:ft-flow/recommended"],
+    },
+    {
       "files": ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
       "extends": ["plugin:testing-library/react", "plugin:jest-dom/recommended"]
     }
   ],
   "rules": {
     // please keep this list sorted
-    
+
     "array-callback-return": "error",
     "block-scoped-var": "warn",
     "camelcase": "warn",
