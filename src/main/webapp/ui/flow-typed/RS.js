@@ -2,8 +2,6 @@
 
 declare var RS: {|
   trackEvent: (string, any) => void,
-  showHelpButton: () => Promise<void>,
-  hideHelpButton: () => Promise<void>,
   waitForLighthouse: () => Promise<void>,
   tinymceInsertContent: (string, any) => void,
   newFileStoresExportEnabled: boolean,
