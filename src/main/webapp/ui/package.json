@@ -32,6 +32,7 @@
     "@testing-library/jest-dom": "=6.2.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.14",
     "axios-mock-adapter": "^1.20.0",
     "babel-loader": "=9.1.2",
     "babel-plugin-transform-import-meta": "^2.2.1",
@@ -52,10 +53,11 @@
     "flow-bin": "=0.239.1",
     "flow-typed": "=3.9.0",
     "hermes-eslint": "^0.22.0",
-    "jest": "=29.7.0",
+    "jest": "^29.7.0",
     "jest-environment-jsdom": "=29.7.0",
     "prettier": "=2.8.3",
     "style-loader": "=3.3.3",
+    "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "typescript": "^5.7.3",
     "url": "^0.11.4",
@@ -136,6 +138,19 @@
       "^.+\\.(svg)$": "<rootDir>/src/test-stubs/SVGStub.js",
       "react-photoswipe-gallery": "<rootDir>/src/test-stubs/PhotoswipeStub.js",
       "^__mocks__/(.*)$": "<rootDir>/__mocks__/$1"
+    },
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "ts",
+      "tsx"
+    ],
+    "transform": {
+      "^.+\\.(js|jsx)$": "babel-jest",
+      "^.+\\.(ts|tsx)$": [
+        "ts-jest",
+        "tsconfig.json"
+      ]
     },
     "testMatch": [
       "**/?*.test.js"
