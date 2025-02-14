@@ -4,12 +4,8 @@ import React, { type Node } from "react";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import { Dialog } from "../../../components/DialogBoundary";
 import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import { COLOR } from "../common";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
@@ -21,6 +17,48 @@ import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Box from "@mui/material/Box";
+import { ThemeProvider, styled } from "@mui/material/styles";
+import createAccentedTheme from "../../../accentedTheme";
+import AppBar from "../../../components/AppBar";
+import Drawer from "@mui/material/Drawer";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+
+const COLOR = {
+  main: {
+    hue: 188,
+    saturation: 46,
+    lightness: 70,
+  },
+  darker: {
+    hue: 188,
+    saturation: 93,
+    lightness: 33,
+  },
+  contrastText: {
+    hue: 188,
+    saturation: 35,
+    lightness: 26,
+  },
+  background: {
+    hue: 188,
+    saturation: 25,
+    lightness: 71,
+  },
+  backgroundContrastText: {
+    hue: 188,
+    saturation: 11,
+    lightness: 24,
+  },
+};
+
+const CustomDrawer = styled(Drawer)(() => ({
+  "& .MuiPaper-root": {
+    paddingTop: "8px",
+    position: "relative",
+  },
+}));
 
 function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
   const [image, setImage] = React.useState<null | string>(null);
@@ -216,33 +254,69 @@ export function CallableSnapGenePreview({
     <SnapGenePreviewContext.Provider value={{ setFile: openSnapGenePreview }}>
       {children}
       {file && (
-        <Dialog
-          open
-          onClose={() => {
-            setFile(null);
-          }}
-          fullWidth
-          maxWidth="xl"
-        >
-          <DialogTitle>SnapGene</DialogTitle>
-          <DialogContent>
+        <ThemeProvider theme={createAccentedTheme(COLOR)}>
+          <Dialog
+            open
+            onClose={() => {
+              setFile(null);
+            }}
+            fullWidth
+            maxWidth="xl"
+          >
+            <AppBar
+              variant="dialog"
+              currentPage="SnapGene"
+              accessibilityTips={{
+                supportsHighContrastMode: true,
+              }}
+            />
             <Stack direction="row" spacing={1}>
-              <Tabs value={tab} onChange={switchTab} orientation="vertical">
-                <Tab label="DNA preview" value="DNA preview" />
-                <Tab label="Enzyme sites" value="Enzyme sites" />
-                <Tab label="View as FASTA" value="View as FASTA" />
-                <Tab label="ORF table" value="ORF table" />
-              </Tabs>
-              <DnaPreview show={tab === "DNA preview"} file={file} />
-              <EnzymeSites show={tab === "Enzyme sites"} />
-              <ViewAsFasta show={tab === "View as FASTA"} />
-              <OrfTable show={tab === "ORF table"} />
+              <CustomDrawer variant="permanent" sx={{ mt: 2 }}>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    selected={tab === "DNA preview"}
+                    onClick={(e) => switchTab(e, "DNA preview")}
+                  >
+                    <ListItemText primary="DNA Preview" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    selected={tab === "Enzyme sites"}
+                    onClick={(e) => switchTab(e, "Enzyme sites")}
+                  >
+                    <ListItemText primary="Enzyme Sites" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    selected={tab === "View as FASTA"}
+                    onClick={(e) => switchTab(e, "View as FASTA")}
+                  >
+                    <ListItemText primary="FASTA" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    selected={tab === "ORF table"}
+                    onClick={(e) => switchTab(e, "ORF table")}
+                  >
+                    <ListItemText primary="ORF Table" />
+                  </ListItemButton>
+                </ListItem>
+              </CustomDrawer>
+              <DialogContent>
+                <DnaPreview show={tab === "DNA preview"} file={file} />
+                <EnzymeSites show={tab === "Enzyme sites"} />
+                <ViewAsFasta show={tab === "View as FASTA"} />
+                <OrfTable show={tab === "ORF table"} />
+              </DialogContent>
             </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setFile(null)}>Close</Button>
-          </DialogActions>
-        </Dialog>
+            <DialogActions>
+              <Button onClick={() => setFile(null)}>Close</Button>
+            </DialogActions>
+          </Dialog>
+        </ThemeProvider>
       )}
     </SnapGenePreviewContext.Provider>
   );
