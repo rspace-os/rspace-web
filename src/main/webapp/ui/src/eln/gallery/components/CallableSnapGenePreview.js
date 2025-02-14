@@ -24,6 +24,7 @@ import Drawer from "@mui/material/Drawer";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
+import axios from "axios";
 
 const COLOR = {
   main: {
@@ -176,10 +177,23 @@ function EnzymeSites({ show }: {| show: boolean |}) {
   );
 }
 
-function ViewAsFasta({ show }: {| show: boolean |}) {
+function ViewAsFasta({ show, file }: {| show: boolean, file: GalleryFile |}) {
+  const [sequence, setSequence] = React.useState<null | string>(null);
+
+  React.useEffect(() => {
+    try {
+      const url = `/molbiol/dna/fasta/${idToString(file.id).elseThrow()}`;
+      void axios.get<string>(url).then((response) => {
+        setSequence(response.data);
+      });
+    } catch (e) {
+      setSequence(e.message);
+    }
+  }, [file]);
+
   return (
     <section role="tabpanel" style={{ display: show ? "block" : "none" }}>
-      View as FASTA
+      <pre>{sequence}</pre>
     </section>
   );
 }
@@ -308,7 +322,7 @@ export function CallableSnapGenePreview({
               <DialogContent>
                 <DnaPreview show={tab === "DNA preview"} file={file} />
                 <EnzymeSites show={tab === "Enzyme sites"} />
-                <ViewAsFasta show={tab === "View as FASTA"} />
+                <ViewAsFasta show={tab === "View as FASTA"} file={file} />
                 <OrfTable show={tab === "ORF table"} />
               </DialogContent>
             </Stack>
