@@ -55,7 +55,6 @@ function OrfTable({ show }: {| show: boolean |}) {
 
 const SnapGenePreviewContext = React.createContext({
   setFile: (_file: GalleryFile) => {},
-  loading: false,
 });
 
 /**
@@ -67,14 +66,12 @@ export function useSnapGenePreview(): {|
    */
   openSnapGenePreview: (GalleryFile) => void,
 
-  loading: boolean,
 |} {
-  const { setFile: openSnapGenePreview, loading } = React.useContext(
+  const { setFile: openSnapGenePreview } = React.useContext(
     SnapGenePreviewContext
   );
   return {
     openSnapGenePreview,
-    loading,
   };
 }
 
@@ -91,7 +88,6 @@ export function CallableSnapGenePreview({
   children: Node,
 |}): Node {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
-  const [loading, setLoading] = React.useState(false);
   const [tab, setTab] = React.useState("DNA preview");
 
   function switchTab(
@@ -103,12 +99,11 @@ export function CallableSnapGenePreview({
 
   const openSnapGenePreview = (f: GalleryFile) => {
     setFile(f);
-    setLoading(true);
   };
 
   return (
     <SnapGenePreviewContext.Provider
-      value={{ setFile: openSnapGenePreview, loading }}
+      value={{ setFile: openSnapGenePreview }}
     >
       {children}
       {file && (
@@ -116,7 +111,6 @@ export function CallableSnapGenePreview({
           open
           onClose={() => {
             setFile(null);
-            setLoading(false);
           }}
         >
           <DialogTitle>SnapGene</DialogTitle>
