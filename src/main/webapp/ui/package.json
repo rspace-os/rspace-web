@@ -143,7 +143,8 @@
       "js",
       "jsx",
       "ts",
-      "tsx"
+      "tsx",
+      "json"
     ],
     "transform": {
       "^.+\\.(js|jsx)$": "babel-jest",
