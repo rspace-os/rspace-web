@@ -152,7 +152,7 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
   | {| tag: "officeonline", url: string |}
   | {| tag: "pdf", downloadHref: () => Promise<URL> |}
   | {| tag: "aspose" |}
-  | {| tag: "snapgene" |}
+  | {| tag: "snapgene", file: GalleryFile |}
 > {
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
@@ -194,7 +194,7 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
         }))
       )
       .orElseTry(() =>
-        canPreviewWithSnapGene(file).map(() => ({ tag: "snapgene" }))
+        canPreviewWithSnapGene(file).map(() => ({ tag: "snapgene", file }))
       )
       .orElseTry(() =>
         canPreviewWithAspose(file).map(() => ({ tag: "aspose" }))
