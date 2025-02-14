@@ -17,7 +17,7 @@
     "plugin:prettier/recommended",
     "prettier"
   ],
-  "plugins": ["react", "jsdoc", "ft-flow", "testing-library", "jest-dom", "jsx-a11y"],
+  "plugins": ["react", "jsdoc", "ft-flow", "testing-library", "jest-dom", "jsx-a11y", "@typescript-eslint"],
   "settings": {
     "react": {
       "version": "detect",
@@ -32,6 +32,16 @@
     {
       "files": ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
       "extends": ["plugin:testing-library/react", "plugin:jest-dom/recommended"]
+    },
+    {
+        "files": ["**/*.ts", "**/*.tsx"],
+        "parserOptions": {
+            "project": "./tsconfig.json",
+        },
+        "extends": [
+            "plugin:@typescript-eslint/recommended",
+            "plugin:@typescript-eslint/recommended-requiring-type-checking",
+        ],
     }
   ],
   "rules": {
