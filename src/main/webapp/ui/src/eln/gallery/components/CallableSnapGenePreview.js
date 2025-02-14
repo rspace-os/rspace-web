@@ -3,6 +3,44 @@
 import React, { type Node } from "react";
 import { type GalleryFile } from "../useGalleryListing";
 import { Dialog } from "../../../components/DialogBoundary";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+
+function DnaPreview({ show }: {| show: boolean |}) {
+  return (
+    <section role="tabpanel" style={{ display: show ? "block" : "none" }}>
+      Previewing DNA
+    </section>
+  );
+}
+
+function EnzymeSites({ show }: {| show: boolean |}) {
+  return (
+    <section role="tabpanel" style={{ display: show ? "block" : "none" }}>
+      Enzyme Sites
+    </section>
+  );
+}
+
+function ViewAsFasta({ show }: {| show: boolean |}) {
+  return (
+    <section role="tabpanel" style={{ display: show ? "block" : "none" }}>
+      View as FASTA
+    </section>
+  );
+}
+
+function OrfTable({ show }: {| show: boolean |}) {
+  return (
+    <section role="tabpanel" style={{ display: show ? "block" : "none" }}>
+      ORF Table
+    </section>
+  );
+}
 
 /*
  * If snapgene is configured, then users can preview the contents of various
@@ -54,6 +92,11 @@ export function CallableSnapGenePreview({
 |}): Node {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [tab, setTab] = React.useState(0);
+
+  function switchTab(e: Event, value: number) {
+    setTab(value);
+  }
 
   const openSnapGenePreview = (f: GalleryFile) => {
     setFile(f);
@@ -66,8 +109,29 @@ export function CallableSnapGenePreview({
     >
       {children}
       {file && (
-        <Dialog open onClose={() => {}}>
-          {file.name}
+        <Dialog
+          open
+          onClose={() => {
+            setFile(null);
+            setLoading(false);
+          }}
+        >
+          <DialogTitle>SnapGene</DialogTitle>
+          <DialogContent>
+            <Tabs value={tab} onChange={switchTab}>
+              <Tab label="DNA preview" />
+              <Tab label="Enzyme sites" />
+              <Tab label="View as FASTA" />
+              <Tab label="ORF table" />
+            </Tabs>
+            <DnaPreview show={tab === 0} />
+            <EnzymeSites show={tab === 1} />
+            <ViewAsFasta show={tab === 2} />
+            <OrfTable show={tab === 3} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setFile(null)}>Close</Button>
+          </DialogActions>
         </Dialog>
       )}
     </SnapGenePreviewContext.Provider>
