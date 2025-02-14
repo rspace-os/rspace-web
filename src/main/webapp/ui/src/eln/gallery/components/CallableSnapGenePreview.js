@@ -68,6 +68,14 @@ function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
   const [showORFs, setShowORFs] = React.useState(true);
   const [zoom, setZoom] = React.useState(1);
   const [error, setError] = React.useState<null | string>(null);
+  const [scrollPos, setScrollPos] = React.useState<null | {|
+    scrollLeft: number,
+    scrollTop: number,
+  |}>(null);
+  const [cursorOffset, setCursorOffset] = React.useState<null | {|
+    x: number,
+    y: number,
+  |}>(null);
 
   React.useEffect(() => {
     try {
@@ -138,6 +146,7 @@ function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
           </IconButton>
         </ButtonGroup>
       </Stack>
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- there is no semantic element */}
       <div
         style={{
           borderRadius: "3px",
@@ -146,6 +155,38 @@ function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          cursor: cursorOffset ? "grabbing" : "grab",
+        }}
+        onMouseDown={(e) => {
+          const thisNode = e.currentTarget;
+          setScrollPos({
+            scrollLeft: thisNode.scrollLeft,
+            scrollTop: thisNode.scrollTop,
+          });
+          setCursorOffset({
+            x: e.nativeEvent.clientX,
+            y: e.nativeEvent.clientY,
+          });
+        }}
+        onMouseMove={(e) => {
+          if (!scrollPos || !cursorOffset) return;
+          const thisNode = e.currentTarget;
+          const currentOffset = {
+            x: e.nativeEvent.clientX,
+            y: e.nativeEvent.clientY,
+          };
+          const moved = {
+            x: currentOffset.x - cursorOffset.x,
+            y: currentOffset.y - cursorOffset.y,
+          };
+          thisNode.scrollTo(
+            scrollPos.scrollLeft - moved.x,
+            scrollPos.scrollTop - moved.y
+          );
+        }}
+        onMouseUp={() => {
+          setCursorOffset(null);
+          setScrollPos(null);
         }}
       >
         {error ? (
