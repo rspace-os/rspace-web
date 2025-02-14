@@ -1,0 +1,33 @@
+//@flow strict
+
+import { Optional } from './optional.ts';
+
+declare export default class Result<T> {
+    static Ok<T>(T): Result<T>;
+    static Error<T>($ReadOnlyArray<Error>): Result<T>;
+    static fromNullable<T>(T | null | typeof undefined, Error): Result<T>;
+    +isError: boolean;
+    +isOk: boolean;
+    map<U>((T) => U): Result<U>;
+    flatMap<U>((T) => Result<U>): Result<U>;
+    flatMapDiscarding<U>((T) => Result<U>): Result<T>;
+    do((T) => void): Result<T>;
+    orElse<U>(U): T | U;
+    orElseGet<U>(($ReadOnlyArray<Error>) => U): T | U;
+    orElseTry<U>(($ReadOnlyArray<Error>) => Result<U>): Result<T | U>;
+    elseThrow(): T;
+    mapError(($ReadOnlyArray<Error>) => Error): Result<T>;
+    toString(): string;
+    toOptional(): Optional<T>;
+    toPromise(): Promise<T>;
+
+    static any<T>(Result<T>, ...$ReadOnlyArray<Result<T>>): Result<$ReadOnlyArray<T>>;
+    static first<T>(Result<T>, ...$ReadOnlyArray<Result<T>>): Result<T>;
+    static all<T>(Result<T>, ...$ReadOnlyArray<Result<T>>): Result<$ReadOnlyArray<T>>;
+    static lift<A, B>((A) => B): (Result<A>) => Result<B>;
+    static lift2<A, B, C>((A, B) => C): (Result<A>, Result<B>) => Result<C>;
+    static lift3<A, B, C, D>((A, B, C) => D): (Result<A>, Result<B>, Result<C>) => Result<D>;
+    static lift4<A, B, C, D, E>((A, B, C, D) => E): (Result<A>, Result<B>, Result<C>, Result<D>) => Result<E>;
+    static lift5<A, B, C, D, E, F>((A, B, C, D, E) => F): (Result<A>, Result<B>, Result<C>, Result<D>, Result<E>) => Result<F>;
+    static lift6<A, B, C, D, E, F, G>((A, B, C, D, E, F) => G): (Result<A>, Result<B>, Result<C>, Result<D>, Result<E>, Result<F>) => Result<G>;
+}

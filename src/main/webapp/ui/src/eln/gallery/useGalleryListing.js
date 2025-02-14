@@ -1332,7 +1332,9 @@ export function useGalleryListing({
         )
         .do(clearAndSetGalleryListing);
 
-      setParentId(Result.Error([new Error("Remote filesystems don't have parent ids") ]));
+      setParentId(
+        Result.Error([new Error("Remote filesystems don't have parent ids")])
+      );
 
       Parsers.isArray(data)
         .map((filestores) => filestores.length)
@@ -1444,7 +1446,9 @@ export function useGalleryListing({
         )
         .do(clearAndSetGalleryListing);
 
-      setParentId(Result.Error([new Error("Remote filesystems don't have parent ids") ]));
+      setParentId(
+        Result.Error([new Error("Remote filesystems don't have parent ids")])
+      );
 
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
