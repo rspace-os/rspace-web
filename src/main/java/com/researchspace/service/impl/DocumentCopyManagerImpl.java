@@ -320,11 +320,11 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
     copy.setName(newName);
     copy.setOwner(user);
     copy.setSharingACL(null); // wipe sharing
-    recordDao.save(copy);
+    copy = recordDao.save(copy);
 
     if (targetFolder != null && targetFolder.isFolder()) {
-      targetFolder.addChild(copy, user);
-      folderDao.save(targetFolder);
+      targetFolder.addChild(copy, user, true); // check this
+      copy = recordDao.save(copy);
     }
 
     if (original.hasType(RecordType.MEDIA_FILE)) {

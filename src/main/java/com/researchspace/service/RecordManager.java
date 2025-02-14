@@ -283,6 +283,9 @@ public interface RecordManager {
    */
   StructuredDocument createNewStructuredDocument(Long parentId, Long formId, User user);
 
+  StructuredDocument createNewStructuredDocument(
+      Long parentId, Long formId, User user, boolean skipAddingToChildren);
+
   /**
    * Overloaded createNewStructuredDocument that takes an {@link RecordContext} that can modify how
    * record-related method works.
@@ -300,7 +303,12 @@ public interface RecordManager {
    * context);
    */
   StructuredDocument createNewStructuredDocument(
-      Long parentId, Long formID, String name, User user, RecordContext context);
+      Long parentId,
+      Long formID,
+      String name,
+      User user,
+      RecordContext context,
+      boolean skipAddingToChildren);
 
   /**
    * Convenience method to create a new empty {@link StructuredDocument} based on the BasicDocument

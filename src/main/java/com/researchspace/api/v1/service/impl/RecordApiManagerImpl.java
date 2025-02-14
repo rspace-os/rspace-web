@@ -79,7 +79,7 @@ public class RecordApiManagerImpl implements RecordApiManager {
     try {
       createdDoc =
           recordManager.createNewStructuredDocument(
-              targetFolderId, docForm.getId(), name, user, new DefaultRecordContext());
+              targetFolderId, docForm.getId(), name, user, new DefaultRecordContext(), true);
       if (createdDoc == null) {
         throw new IllegalArgumentException(createNotFoundMessage("Form", docForm.getId()));
       }

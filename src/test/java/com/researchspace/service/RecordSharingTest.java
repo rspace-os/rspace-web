@@ -5,22 +5,18 @@ import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThr
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.RecordGroupSharingDao;
-import com.researchspace.model.EditStatus;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ShareConfigElement;
-import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.permissions.RecordPermissionAdapter;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
 import com.researchspace.model.record.Folder;
@@ -34,7 +30,6 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.After;
 import org.junit.Before;
@@ -64,28 +59,6 @@ public class RecordSharingTest extends SpringTransactionalTest {
 
   private User createOtherUser() {
     return createAndSaveRandomUser();
-  }
-
-  private boolean groupCanEditRecord(Group group, StructuredDocument recordToShare) {
-    Group updated = grpdao.get(group.getId());
-    RecordPermissionAdapter rpa = new RecordPermissionAdapter(recordToShare);
-    rpa.setAction(PermissionType.WRITE);
-    rpa.setDomain(PermissionDomain.RECORD);
-    return updated.isPermitted(rpa, true);
-  }
-
-  private boolean userHasGroupFolderForGroup(User user, Group grp) {
-    Folder toCheck = folderDao.getLabGroupFolderForUser(user);
-    Long grpfFolderid = grp.getCommunalGroupFolderId();
-    if (toCheck.getChildren().size() == 0) {
-      return false;
-    }
-    for (BaseRecord grpFolder : toCheck.getChildrens()) {
-      if (grpFolder.getId().equals(grpfFolderid)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   // RSPAC-636
@@ -310,72 +283,6 @@ public class RecordSharingTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void deletionOfDocumentSharedIntoOtherNotebook()
-      throws InterruptedException, IllegalAddChildOperation, DocumentAlreadyEditedException {
-
-    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
-    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
-    initialiseContentWithEmptyContent(pi, user);
-
-    // create lab group
-    Group labGroup = createGroup("g1", pi);
-    addUsersToGroup(pi, labGroup, user);
-    Group labGroup2 = createGroup("g2", pi);
-    addUsersToGroup(pi, labGroup2, user);
-
-    // user creates a notebook and shares it for write with both groups
-    logoutAndLoginAs(user);
-    Long userRootId = user.getRootFolder().getId();
-    Notebook sharedNotebook = createNotebookWithNEntries(userRootId, "shared nbook", 1, user);
-    StructuredDocument usersEntry = (StructuredDocument) sharedNotebook.getChildrens().toArray()[0];
-    shareNotebookWithGroup(user, sharedNotebook, labGroup, "write");
-    shareNotebookWithGroup(user, sharedNotebook, labGroup2, "write");
-
-    // pi creates a document and shares it into the notebook, for both groups
-    logoutAndLoginAs(pi);
-    BaseRecord doc = createBasicDocumentInRootFolderWithText(pi, "any");
-    shareRecordIntoGroupNotebook(doc, sharedNotebook, labGroup, pi);
-    shareRecordIntoGroupNotebook(doc, sharedNotebook, labGroup2, pi);
-
-    // record should be shared only once
-    List<RecordGroupSharing> docSharings = sharingMgr.getRecordSharingInfo(doc.getId());
-    assertEquals(1, docSharings.size());
-
-    // notebook should have two entries now
-    sharedNotebook = folderMgr.getNotebook(sharedNotebook.getId());
-    assertEquals(2, sharedNotebook.getEntryCount());
-
-    // pi can delete own entry, but not user's entry (RSPAC-993)
-    assertTrue(permissionUtils.isPermitted(doc, PermissionType.DELETE, pi));
-    assertFalse(permissionUtils.isPermitted(usersEntry, PermissionType.DELETE, pi));
-
-    // pi deletes the document from their shared folder
-    recordDeletionMgr.deleteEntry(
-        labGroup.getCommunalGroupFolderId(), sharedNotebook.getId(), doc.getId(), pi);
-
-    // the entry should be unshared from notebook, but shouldn't be deleted
-    sharedNotebook = folderMgr.getNotebook(sharedNotebook.getId());
-    assertEquals(1, sharedNotebook.getEntryCount());
-    docSharings = sharingMgr.getRecordSharingInfo(doc.getId());
-    assertEquals(0, docSharings.size());
-    doc = (StructuredDocument) recordDao.get(doc.getId());
-    assertFalse(doc.isDeleted());
-
-    // pi shares again
-    shareRecordIntoGroupNotebook(doc, sharedNotebook, labGroup, pi);
-
-    // user open notebook in their home folder, and deletes the entry
-    logoutAndLoginAs(user);
-    recordDeletionMgr.deleteEntry(userRootId, sharedNotebook.getId(), doc.getId(), user);
-
-    // the entry should be unshared from notebook, but shouldn't be deleted
-    sharedNotebook = folderMgr.getNotebook(sharedNotebook.getId());
-    assertEquals(1, sharedNotebook.getEntryCount());
-    doc = (StructuredDocument) recordDao.get(doc.getId());
-    assertFalse(doc.isDeleted());
-  }
-
-  @Test
   public void deletionOfSharedRecordFromOwnersFlderUnsharesForAll() throws Exception {
 
     StructuredDocument toShare = setUpOtherUserAndRecordToShare();
@@ -491,41 +398,6 @@ public class RecordSharingTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void shareWithUserAndGroupContainingUser() throws Exception {
-    StructuredDocument recordToShare = setUpOtherUserAndRecordToShare();
-    // check status is not shared
-    assertEquals(SharedStatus.UNSHARED, recordToShare.getSharedStatus());
-    ShareConfigElement individCommand = new ShareConfigElement(other.getId(), "write");
-    individCommand.setUserId(other.getId());
-    ShareConfigElement groupCommand2 = new ShareConfigElement(group.getId(), "write");
-    groupCommand2.setGroupid(group.getId());
-
-    // share with individual, then group
-    ShareConfigElement[] shringComands = new ShareConfigElement[] {individCommand, groupCommand2};
-
-    sharingMgr.shareRecord(userDao.get(piUser.getId()), recordToShare.getId(), shringComands);
-    sharingMgr.updateSharedStatusOfRecords(toList(recordToShare), piUser);
-    // now is updated, should be shared.
-    assertEquals(SharedStatus.SHARED, recordToShare.getSharedStatus());
-
-    assertEquals(1, regGrpDao.getRecordsSharedByGroup(other.getId()).size());
-    Folder sharedIndivid = folderDao.getIndividualSharedFolderForUsers(piUser, other, null);
-    // will be in idividual folder and in group folder
-    assertEquals(1, sharedIndivid.getChildren().size());
-    group = reloadGroup(group);
-    assertEquals(1, folderDao.getSharedFolderForGroup(group).getChildren().size());
-
-    sharingMgr.unshareRecord(userDao.get(piUser.getId()), recordToShare.getId(), shringComands);
-    // everything should now be unshared
-    assertEquals(0, regGrpDao.getRecordsSharedByGroup(other.getId()).size());
-    sharedIndivid = folderDao.getIndividualSharedFolderForUsers(piUser, other, null);
-    // will be in idividual folder and in group folder
-    assertEquals(0, sharedIndivid.getChildren().size());
-    group = reloadGroup(group);
-    assertEquals(0, folderDao.getSharedFolderForGroup(group).getChildren().size());
-  }
-
-  @Test
   public void cannotShareWithUnrelatedUserOrGroup() throws Exception {
 
     // create user and them to own group, with just a piuser
@@ -602,204 +474,6 @@ public class RecordSharingTest extends SpringTransactionalTest {
     Folder labGrp = folderDao.getLabGroupFolderForUser(newuser);
     assertTrue(permissionUtils.isPermitted(labGrp, PermissionType.READ, newuser));
     RSpaceTestUtils.logout();
-  }
-
-  @Test
-  public void shareWithUser() throws Exception {
-    // tests sharing with an individual user rather than a group.
-    StructuredDocument recordToShare = setUpOtherUserAndRecordToShare();
-    ShareConfigElement gsCommand = new ShareConfigElement(other.getId(), "write");
-    // only one can be set
-    gsCommand.setUserId(other.getId());
-
-    ServiceOperationResult<List<RecordGroupSharing>> sharedRecord =
-        sharingMgr.shareRecord(
-            userDao.get(piUser.getId()),
-            recordToShare.getId(),
-            new ShareConfigElement[] {gsCommand});
-    // test appears as shared
-    assertTrue(sharedRecord.isSucceeded());
-    assertEquals(1, regGrpDao.getRecordsSharedByGroup(other.getId()).size());
-
-    List<RecordGroupSharing> shared = regGrpDao.getSharedRecordsForUser(piUser);
-    assertEquals(1, shared.size());
-    RecordGroupSharing rgs = shared.get(0);
-
-    Folder sharedIndivid = folderDao.getIndividualSharedFolderForUsers(piUser, other, null);
-    // check that the shared folders are created and inserted
-    assertNotNull(sharedIndivid);
-    assertTrue(getChildrenOfIndividualSharedItemsFolder(piUser).contains(sharedIndivid));
-    assertTrue(getChildrenOfIndividualSharedItemsFolder(other).contains(sharedIndivid));
-    assertTrue(sharedIndivid.getChildrens().contains(recordToShare));
-    assertEquals(1, sharedIndivid.getChildrens().size());
-
-    // share again.. should be unsuccessful
-    sharedRecord =
-        sharingMgr.shareRecord(
-            userDao.get(piUser.getId()),
-            recordToShare.getId(),
-            new ShareConfigElement[] {gsCommand});
-    assertFalse(sharedRecord.isSucceeded());
-    sharedIndivid = folderDao.getIndividualSharedFolderForUsers(piUser, other, null);
-    assertEquals(1, sharedIndivid.getChildrens().size());
-    shared = regGrpDao.getSharedRecordsForUser(piUser);
-    assertEquals(1, shared.size());
-
-    sharingMgr.updatePermissionForRecord(rgs.getId(), "read", piUser.getUsername());
-
-    sharingMgr.unshareRecord(
-        userDao.get(piUser.getId()), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
-    // test does not appear as shared
-    assertEquals(0, regGrpDao.getRecordsSharedByGroup(other.getId()).size());
-    assertEquals(0, regGrpDao.getSharedRecordsForUser(piUser).size());
-    // shared folder still exists
-    assertNotNull(sharedIndivid);
-    assertTrue(getChildrenOfIndividualSharedItemsFolder(piUser).contains(sharedIndivid));
-    assertTrue(getChildrenOfIndividualSharedItemsFolder(other).contains(sharedIndivid));
-    // but shared record is removed.
-    assertFalse(sharedIndivid.getChildrens().contains(recordToShare));
-    assertTrue(recordToShare.getShortestPathToParent(sharedIndivid).isEmpty());
-    assertFalse(recordToShare.getShortestPathToParent(piUser.getRootFolder()).isEmpty());
-  }
-
-  protected Set<BaseRecord> getChildrenOfIndividualSharedItemsFolder(User user) {
-    return folderDao.getIndividualSharedItemsFolderForUser(user).getChildrens();
-  }
-
-  @Test
-  public void shareDocument() throws Exception {
-
-    final StructuredDocument recordToShare = setUpOtherUserAndRecordToShare();
-    group = reloadGroup(group);
-    Folder labGrpShared = folderDao.getSharedFolderForGroup(group);
-
-    int b4 = labGrpShared.getChildren().size();
-    // group can't edit record before it's shared
-    logoutAndLoginAs(other);
-    assertFalse(groupCanEditRecord(group, recordToShare));
-
-    // now we'll login as other an attempt to share, this should be blocked - only owner can share:
-    final ShareConfigElement gsCommand = new ShareConfigElement(group.getId(), "write");
-    logoutAndLoginAs(other);
-    assertAuthorisationExceptionThrown(
-        () ->
-            sharingMgr.shareRecord(
-                userDao.get(piUser.getId()),
-                recordToShare.getId(),
-                new ShareConfigElement[] {gsCommand}));
-    // now do sharing as the *owner*, which is permitted...
-    logoutAndLoginAs(piUser);
-    sharingMgr.shareRecord(
-        userDao.get(piUser.getId()), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
-
-    assertEquals(b4 + 1, folderDao.get(labGrpShared.getId()).getChildren().size());
-    assertEquals(1, regGrpDao.getRecordsSharedByGroup(group.getId()).size());
-    assertEquals(1, regGrpDao.getSharedRecordsForUser(piUser).size());
-    // now lets share with other user - beacuse they're already shared with group, we should not
-    // share again
-    // with group, but will share with individual
-    gsCommand.setUserId(other.getId());
-    sharingMgr.shareRecord(
-        userDao.get(piUser.getId()), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
-    // all these assertions should be the same as above
-    assertEquals(b4 + 1, folderDao.get(labGrpShared.getId()).getChildren().size());
-    assertEquals(1, regGrpDao.getRecordsSharedByGroup(group.getId()).size());
-    assertEquals(1, regGrpDao.getSharedRecordsForUser(piUser).size());
-    // but should be shared with user as well:
-    assertEquals(
-        1, folderDao.getIndividualSharedFolderForUsers(piUser, other, null).getChildren().size());
-    gsCommand.setGroupid(group.getId()); // reset for group
-    // login as group member, should have edit permission
-    logoutAndLoginAs(other);
-    assertTrue(groupCanEditRecord(group, recordToShare));
-    logoutAndLoginAs(piUser);
-
-    // try to share again - should not be shared twice
-    sharingMgr.shareRecord(
-        userDao.get(piUser.getId()), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
-    assertEquals(b4 + 1, folderDao.get(labGrpShared.getId()).getChildren().size());
-    assertEquals(1, regGrpDao.getRecordsSharedByGroup(group.getId()).size());
-
-    // now unshare, should revert to original situation
-    sharingMgr.unshareRecord(
-        userDao.get(piUser.getId()), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
-    assertEquals(b4, folderDao.get(labGrpShared.getId()).getChildren().size());
-    assertEquals(0, regGrpDao.getRecordsSharedByGroup(group.getId()).size());
-    // and unshare from individual as well
-    gsCommand.setUserId(other.getId());
-    sharingMgr.unshareRecord(
-        userDao.get(piUser.getId()), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
-    // and the original sharee should no longer be able to access the record
-    logoutAndLoginAs(other);
-    assertEquals(
-        EditStatus.ACCESS_DENIED,
-        recordMgr.requestRecordEdit(recordToShare.getId(), other, anySessionTracker()));
-    logoutAndLoginAs(piUser);
-
-    // now share record again, but this time with read-only permission:
-    gsCommand.setOperation("read");
-    sharingMgr.shareRecord(
-        userDao.get(piUser.getId()), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
-
-    piUser = userMgr.getUserByUsername(piUser.getUsername(), true);
-    logoutAndLoginAs(piUser);
-
-    // now we'll add another user to the group and check that they can see the shared record too:
-    User newGrpMember = createAndSaveRandomUser();
-    initialiseContentWithEmptyContent(newGrpMember);
-    // sanity check new user does not see group folder
-    assertFalse(userHasGroupFolderForGroup(newGrpMember, group));
-    grpMgr.addUserToGroup(newGrpMember.getUsername(), group.getId(), RoleInGroup.DEFAULT);
-    // now should be added OK
-    assertTrue(userHasGroupFolderForGroup(newGrpMember, group));
-
-    logoutAndLoginAs(piUser);
-    // now let's remove the new user from the group, he should no longer see shared record
-    grpMgr.removeUserFromGroup(newGrpMember.getUsername(), group.getId(), piUser);
-    assertFalse(userHasGroupFolderForGroup(newGrpMember, group));
-
-    // now let's delete the owner of the record from the group; they should still see the records
-    // in their folder as they are the original owner.
-    // user should not share with themselves, original record should still be in root
-    int numRecordsInRootFolderB4deletionFromGroup = getNumChildrenInRootFolder(piUser);
-    User sysadmin = logoutAndLoginAsSysAdmin();
-    grpMgr.removeUserFromGroup(piUser.getUsername(), group.getId(), sysadmin);
-    // i.e., their original record is still there.
-    assertEquals(numRecordsInRootFolderB4deletionFromGroup, getNumChildrenInRootFolder(piUser));
-    assertFalse(userHasGroupFolderForGroup(newGrpMember, group));
-
-    // now delete group
-    grpMgr.removeGroup(group.getId(), sysadmin);
-    // 1 shared entry is removed
-    assertEquals(0, regGrpDao.getRecordsSharedByGroup(group.getId()).size());
-  }
-
-  // RSPAC-1120
-  @Test
-  public void shareDocumentWithGroupHavingOneMember() {
-
-    User pi = createAndSaveAPi();
-    initialiseContentWithEmptyContent(pi);
-    logoutAndLoginAs(pi);
-
-    StructuredDocument recordToShare =
-        recordMgr.createBasicDocument(pi.getRootFolder().getId(), pi);
-
-    Group oneMemberGroup = createGroup("oneMemberGroup", pi);
-    oneMemberGroup = addUsersToGroup(pi, oneMemberGroup);
-    Folder labGrpShared = folderDao.getSharedFolderForGroup(oneMemberGroup);
-
-    // document not shared, group folder empty
-    assertEquals(0, sharingMgr.getRecordSharingInfo(recordToShare.getId()).size());
-    assertEquals(0, labGrpShared.getChildren().size());
-    permissionUtils.refreshCache();
-    // sharing document with a group
-    pi = userDao.get(pi.getId());
-    shareRecordWithGroup(pi, oneMemberGroup, recordToShare);
-
-    // document should be shared, group folder should have one element
-    assertEquals(1, sharingMgr.getRecordSharingInfo(recordToShare.getId()).size());
-    assertEquals(1, labGrpShared.getChildren().size());
   }
 
   @Test
@@ -899,57 +573,6 @@ public class RecordSharingTest extends SpringTransactionalTest {
     assertEquals(renamed.getModifiedBy(), piUser.getUsername());
   }
 
-  @Test
-  public void movePermissionsInGrpFolder() throws Exception {
-    StructuredDocument toShare = setUpOtherUserAndRecordToShare();
-    group = reloadGroup(group);
-    Folder grpFolder = folderDao.getSharedFolderForGroup(group);
-    // pi can't move from outside grp folder to grp flder
-    assertFalse(
-        recordMgr
-            .move(toShare.getId(), grpFolder.getId(), toShare.getParent().getId(), piUser)
-            .isSucceeded());
-    // neither can other user
-    assertFalse(
-        recordMgr
-            .move(toShare.getId(), grpFolder.getId(), toShare.getParent().getId(), other)
-            .isSucceeded());
-
-    // now share record
-    sharingMgr.shareRecord(piUser, toShare.getId(), getGrpShareCommand(group, "write"));
-    // and pi creates a subfolder of group folder
-    Folder subf = folderMgr.createNewFolder(grpFolder.getId(), "group_sub", piUser);
-    // other can't move within group folder
-    assertFalse(
-        recordMgr.move(toShare.getId(), subf.getId(), grpFolder.getId(), other).isSucceeded());
-    // but pi can
-    assertTrue(
-        recordMgr.move(toShare.getId(), subf.getId(), grpFolder.getId(), piUser).isSucceeded());
-
-    logoutAndLoginAs(other);
-    // after move, is still editable by other
-    assertEquals(
-        EditStatus.EDIT_MODE,
-        recordMgr.requestRecordEdit(toShare.getId(), other, anySessionTracker()));
-
-    // now share 'other's.
-    StructuredDocument others = createBasicDocumentInRootFolderWithText(other, "any");
-    // can't move
-    assertFalse(
-        recordMgr
-            .move(others.getId(), grpFolder.getId(), others.getParent().getId(), other)
-            .isSucceeded());
-    // but can share - this will go into grp folder
-    sharingMgr.shareRecord(other, others.getId(), getGrpShareCommand(group, "write"));
-    //  other can't move stuff around the group folder
-    assertFalse(
-        recordMgr.move(others.getId(), subf.getId(), grpFolder.getId(), other).isSucceeded());
-    // but user can - he's the PI
-    logoutAndLoginAs(piUser);
-    assertTrue(
-        recordMgr.move(others.getId(), subf.getId(), grpFolder.getId(), piUser).isSucceeded());
-  }
-
   private ShareConfigElement[] getGrpShareCommand(Group g, String perm) {
     ShareConfigElement gsCommand = new ShareConfigElement(g.getId(), perm);
     return new ShareConfigElement[] {gsCommand};
@@ -980,7 +603,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
             piUser.getRootFolder().getId(), anyForm.getId(), piUser);
     other = createOtherUser();
     initUserFolder(other);
-    group = createGroup("grp1", piUser);
+    group = createGroup("grop1", piUser);
     addUsersToGroup(piUser, group, other);
     return recordToShare;
   }

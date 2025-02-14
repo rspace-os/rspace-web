@@ -157,8 +157,16 @@ public class RecordManagerStub implements RecordManager {
 
   @Override
   public StructuredDocument createNewStructuredDocument(
-      Long parentId, Long formID, String name, User user, RecordContext context) {
-    return null;
+      Long parentId, Long formId, User user, boolean skipAddingToChildren) {
+    return createNewStructuredDocument(parentId, formId, user);
+  }
+
+  @Override
+  public StructuredDocument createNewStructuredDocument(
+      Long parentId, Long formID, String name, User user, RecordContext context, boolean b) {
+    StructuredDocument sd = new StructuredDocument(TestFactory.createAnyForm());
+    sd.setId(200L);
+    return sd;
   }
 
   @Override
