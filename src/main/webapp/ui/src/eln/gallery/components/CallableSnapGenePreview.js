@@ -1,7 +1,7 @@
 //@flow
 
 import React, { type Node } from "react";
-import { type GalleryFile } from "../useGalleryListing";
+import { type GalleryFile, idToString } from "../useGalleryListing";
 import { Dialog } from "../../../components/DialogBoundary";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -9,12 +9,123 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
+import { COLOR } from "../common";
+import Stack from "@mui/material/Stack";
+import IconButton from "@mui/material/IconButton";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import ResetZoomIcon from "./ResetZoomIcon";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Divider from "@mui/material/Divider";
 
-function DnaPreview({ show }: {| show: boolean |}) {
+function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
+  const [image, setImage] = React.useState<null | string>(null);
+  const [linear, setLinear] = React.useState(false);
+  const [showEnzymes, setShowEnzymes] = React.useState(true);
+  const [showORFs, setShowORFs] = React.useState(true);
+  const [zoom, setZoom] = React.useState(1);
+  const [error, setError] = React.useState<null | string>(null);
+
+  React.useEffect(() => {
+    try {
+      setImage(
+        `/molbiol/dna/png/${idToString(file.id).elseThrow()}?linear=${
+          linear ? "true" : "false"
+        }&showEnzymes=${showEnzymes ? "true" : "false"}&showORFs=${
+          showORFs ? "true" : "false"
+        }`
+      );
+    } catch (e) {
+      setError(e.message);
+    }
+  }, [file, linear, showEnzymes, showORFs]);
+
   return (
-    <section role="tabpanel" style={{ display: show ? "block" : "none" }}>
-      Previewing DNA
-    </section>
+    <Stack
+      component="section"
+      role="tabpanel"
+      direction="column"
+      spacing={2}
+      style={{ display: show ? "block" : "none", minHeight: 0 }}
+    >
+      <Stack direction="row" spacing={1}>
+        <Select
+          value={linear}
+          onChange={(e) => setLinear(e.target.value)}
+          size="small"
+        >
+          <MenuItem value={false}>Circular</MenuItem>
+          <MenuItem value={true}>Linear</MenuItem>
+        </Select>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showEnzymes}
+              onChange={({ target: { checked } }) => setShowEnzymes(checked)}
+            />
+          }
+          label="Show enzymes"
+        />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showORFs}
+              onChange={({ target: { checked } }) => setShowORFs(checked)}
+            />
+          }
+          label="Show ORFs"
+        />
+        <Divider orientation="vertical" flexItem />
+        <ButtonGroup>
+          <IconButton
+            onClick={() => setZoom((z) => z * 1.1)}
+            aria-label="zoom in"
+          >
+            <ZoomInIcon />
+          </IconButton>
+          <IconButton
+            onClick={() => setZoom((z) => z / 1.1)}
+            aria-label="zoom out"
+          >
+            <ZoomOutIcon />
+          </IconButton>
+          <IconButton onClick={() => setZoom(1)} aria-label="reset zoom">
+            <ResetZoomIcon />
+          </IconButton>
+        </ButtonGroup>
+      </Stack>
+      <div
+        style={{
+          borderRadius: "3px",
+          border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+          overflow: "hidden",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        {error ? (
+          <div>{error}</div>
+        ) : (
+          <img
+            alt={`DNA preview of ${file.name}`}
+            src={image}
+            style={{
+              maxHeight: "100%",
+              maxWidth: "100%",
+              transform: `scale(${zoom})`,
+              transition: "transform .5s ease-in-out",
+              transformOrigin: "left top",
+              objectFit: "contain",
+            }}
+          />
+        )}
+      </div>
+    </Stack>
   );
 }
 
@@ -65,7 +176,6 @@ export function useSnapGenePreview(): {|
    * Preview the dna sequence at this GalleryFile.
    */
   openSnapGenePreview: (GalleryFile) => void,
-
 |} {
   const { setFile: openSnapGenePreview } = React.useContext(
     SnapGenePreviewContext
@@ -102,9 +212,7 @@ export function CallableSnapGenePreview({
   };
 
   return (
-    <SnapGenePreviewContext.Provider
-      value={{ setFile: openSnapGenePreview }}
-    >
+    <SnapGenePreviewContext.Provider value={{ setFile: openSnapGenePreview }}>
       {children}
       {file && (
         <Dialog
@@ -115,16 +223,18 @@ export function CallableSnapGenePreview({
         >
           <DialogTitle>SnapGene</DialogTitle>
           <DialogContent>
-            <Tabs value={tab} onChange={switchTab}>
-              <Tab label="DNA preview" value="DNA preview" />
-              <Tab label="Enzyme sites" value="Enzyme sites" />
-              <Tab label="View as FASTA" value="View as FASTA" />
-              <Tab label="ORF table" value="ORF table" />
-            </Tabs>
-            <DnaPreview show={tab === "DNA preview"} />
-            <EnzymeSites show={tab === "Enzyme sites"} />
-            <ViewAsFasta show={tab === "View as FASTA"} />
-            <OrfTable show={tab === "ORF table"} />
+            <Stack direction="column" spacing={1}>
+              <Tabs value={tab} onChange={switchTab}>
+                <Tab label="DNA preview" value="DNA preview" />
+                <Tab label="Enzyme sites" value="Enzyme sites" />
+                <Tab label="View as FASTA" value="View as FASTA" />
+                <Tab label="ORF table" value="ORF table" />
+              </Tabs>
+              <DnaPreview show={tab === "DNA preview"} file={file} />
+              <EnzymeSites show={tab === "Enzyme sites"} />
+              <ViewAsFasta show={tab === "View as FASTA"} />
+              <OrfTable show={tab === "ORF table"} />
+            </Stack>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setFile(null)}>Close</Button>
