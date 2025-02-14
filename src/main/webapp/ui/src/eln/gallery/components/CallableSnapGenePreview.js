@@ -20,7 +20,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Divider from "@mui/material/Divider";
+import Box from "@mui/material/Box";
 
 function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
   const [image, setImage] = React.useState<null | string>(null);
@@ -50,6 +50,7 @@ function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
       role="tabpanel"
       direction="column"
       spacing={2}
+      flexGrow={1}
       style={{ display: show ? "block" : "none", minHeight: 0 }}
     >
       <Stack direction="row" spacing={1}>
@@ -79,7 +80,7 @@ function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
           }
           label="Show ORFs"
         />
-        <Divider orientation="vertical" flexItem />
+        <Box flexGrow={1} />
         <ButtonGroup>
           <IconButton
             onClick={() => setZoom((z) => z * 1.1)}
@@ -220,11 +221,13 @@ export function CallableSnapGenePreview({
           onClose={() => {
             setFile(null);
           }}
+          fullWidth
+          maxWidth="xl"
         >
           <DialogTitle>SnapGene</DialogTitle>
           <DialogContent>
-            <Stack direction="column" spacing={1}>
-              <Tabs value={tab} onChange={switchTab}>
+            <Stack direction="row" spacing={1}>
+              <Tabs value={tab} onChange={switchTab} orientation="vertical">
                 <Tab label="DNA preview" value="DNA preview" />
                 <Tab label="Enzyme sites" value="Enzyme sites" />
                 <Tab label="View as FASTA" value="View as FASTA" />
