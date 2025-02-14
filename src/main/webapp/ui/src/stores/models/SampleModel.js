@@ -882,7 +882,7 @@ export default class SampleModel
   }
 
   get createOptions(): $ReadOnlyArray<CreateOption> {
-    let splitExplanation = "Subsamples will be created by dividing the existing subsample quantity amongst them."; 
+    let splitExplanation = "Subsamples will be created by dividing the existing subsample quantity amongst them.";
     if (this.subSamples.length > 1)
       splitExplanation = "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead.";
     if (!this.canEdit)
