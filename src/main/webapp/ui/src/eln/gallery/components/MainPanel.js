@@ -1103,6 +1103,9 @@ const GridView = observer(
                       if (action.tag === "aspose") {
                         void openAsposePreview(file);
                       }
+                      if (action.tag === "snapgene") {
+                        alert("SnapGene is not yet supported");
+                      }
                     });
                     return;
                   }

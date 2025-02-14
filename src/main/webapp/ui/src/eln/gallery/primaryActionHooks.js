@@ -10,6 +10,22 @@ import useOfficeOnline from "./useOfficeOnline";
 import { supportedAsposeFile } from "./components/CallableAsposePreview";
 import { type URL } from "../../util/types";
 
+const dnaFileExtensions = ["fa", "gb", "gbk", "fasta", "fa", "dna", "seq", "sbd", "embl", "ab1"];
+/**
+ * Hook that provides a function that can be used to check if a file can be
+ * previewed as a DNA sequence in SnapGene. If it can, then a function that
+ * returns null is returned.
+ */
+export function useSnapGenePreviewOfGalleryFile(): (
+  file: GalleryFile
+) => Result<null> {
+  return (file) => {
+    if (!dnaFileExtensions.includes(file.extension))
+      return Result.Error([new Error("Not a DNA file")]);
+    return Result.Ok(null);
+  };
+}
+
 /**
  * Hook that provides a function that can be used to check if a file can be
  * previewed as an image. If it can, then a function that produces a URL to
@@ -136,12 +152,14 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
   | {| tag: "officeonline", url: string |}
   | {| tag: "pdf", downloadHref: () => Promise<URL> |}
   | {| tag: "aspose" |}
+  | {| tag: "snapgene" |}
 > {
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  const canPreviewWithSnapGene = useSnapGenePreviewOfGalleryFile();
 
   return (file) =>
     file.canOpen
@@ -174,6 +192,9 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
           tag: "pdf",
           downloadHref,
         }))
+      )
+      .orElseTry(() =>
+        canPreviewWithSnapGene(file).map(() => ({ tag: "snapgene" }))
       )
       .orElseTry(() =>
         canPreviewWithAspose(file).map(() => ({ tag: "aspose" }))

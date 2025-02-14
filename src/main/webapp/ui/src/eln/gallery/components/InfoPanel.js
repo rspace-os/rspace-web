@@ -832,6 +832,22 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   );
                 if (action.tag === "aspose")
                   return <AsposePreviewButton key={null} file={file} />;
+                if (action.tag === "snapgene")
+                  return (
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                      <ActionButton
+                        onClick={() => {
+                          alert("SnapGene preview not implemented");
+                        }}
+                        label="View"
+                        sx={{
+                          borderRadius: 1,
+                          px: 1.125,
+                          py: 0.25,
+                        }}
+                      />
+                    </Grid>
+                  );
                 return null;
               })
               .orElseGet((errors) => {

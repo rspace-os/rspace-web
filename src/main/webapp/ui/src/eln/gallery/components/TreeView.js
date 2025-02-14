@@ -567,6 +567,9 @@ const TreeView = ({
                 if (action.tag === "aspose") {
                   void openAsposePreview(file);
                 }
+                if (action.tag === "snapgene") {
+                  alert("SnapGene preview not implemented");
+                }
               });
             });
           }

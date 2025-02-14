@@ -50,6 +50,7 @@ import {
   useOfficeOnlineEdit,
   usePdfPreviewOfGalleryFile,
   useAsposePreviewOfGalleryFile,
+  useSnapGenePreviewOfGalleryFile,
 } from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
@@ -306,6 +307,7 @@ function ActionsMenu({
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  const canPreviewWithSnapGene = useSnapGenePreviewOfGalleryFile();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
@@ -390,6 +392,9 @@ function ActionsMenu({
           )
           .orElseTry(() =>
             canPreviewWithAspose(file).map(() => ({ key: "aspose", file }))
+          )
+          .orElseTry(() =>
+            canPreviewWithSnapGene(file).map(() => ({ key: "snapgene" }))
           )
           .mapError(() => new Error("Cannot view this item."))
       )
@@ -540,6 +545,8 @@ function ActionsMenu({
                     });
                   if (viewAction.key === "aspose")
                     void openAsposePreview(viewAction.file);
+                  if (viewAction.key === "snapgene")
+                    alert("opening snapgene preview");
                 });
                 setActionsMenuAnchorEl(null);
               }}
