@@ -303,7 +303,11 @@ function GalleryAppBar({
       });
 
   return (
-    <AppBar position="relative" open={true} aria-label="page header">
+    <AppBar
+      position="relative"
+      open={true}
+      aria-label={variant === "page" ? "page header" : "dialog header"}
+    >
       <Toolbar variant="dense">
         {variant === "page" && !isViewportSmall && (
           <>

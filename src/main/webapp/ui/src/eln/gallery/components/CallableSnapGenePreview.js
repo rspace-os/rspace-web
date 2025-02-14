@@ -61,7 +61,15 @@ const CustomDrawer = styled(Drawer)(() => ({
   },
 }));
 
-function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
+function DnaPreview({
+  show,
+  file,
+  idOfDnaPreviewTab,
+}: {|
+  show: boolean,
+  file: GalleryFile,
+  idOfDnaPreviewTab: string,
+|}) {
   const [image, setImage] = React.useState<null | string>(null);
   const [linear, setLinear] = React.useState(false);
   const [showEnzymes, setShowEnzymes] = React.useState(true);
@@ -99,6 +107,7 @@ function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
       spacing={2}
       flexGrow={1}
       style={{ display: show ? "flex" : "none", minHeight: 0, height: "100%" }}
+      aria-labelledby={idOfDnaPreviewTab}
     >
       <Stack direction="row" spacing={1}>
         <Select
@@ -210,15 +219,33 @@ function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
   );
 }
 
-function EnzymeSites({ show }: {| show: boolean |}) {
+function EnzymeSites({
+  show,
+  idOfEnzymeSitesTab,
+}: {|
+  show: boolean,
+  idOfEnzymeSitesTab: string,
+|}) {
   return (
-    <section role="tabpanel" style={{ display: show ? "flex" : "none" }}>
+    <section
+      role="tabpanel"
+      style={{ display: show ? "flex" : "none" }}
+      aria-labelledby={idOfEnzymeSitesTab}
+    >
       Enzyme Sites
     </section>
   );
 }
 
-function ViewAsFasta({ show, file }: {| show: boolean, file: GalleryFile |}) {
+function ViewAsFasta({
+  show,
+  file,
+  idOfViewAsFastaTab,
+}: {|
+  show: boolean,
+  file: GalleryFile,
+  idOfViewAsFastaTab: string,
+|}) {
   const [sequence, setSequence] = React.useState<null | string>(null);
 
   React.useEffect(() => {
@@ -233,15 +260,29 @@ function ViewAsFasta({ show, file }: {| show: boolean, file: GalleryFile |}) {
   }, [file]);
 
   return (
-    <section role="tabpanel" style={{ display: show ? "flex" : "none" }}>
+    <section
+      role="tabpanel"
+      style={{ display: show ? "flex" : "none" }}
+      aria-labelledby={idOfViewAsFastaTab}
+    >
       <pre>{sequence}</pre>
     </section>
   );
 }
 
-function OrfTable({ show }: {| show: boolean |}) {
+function OrfTable({
+  show,
+  idOfOrfTableTab,
+}: {|
+  show: boolean,
+  idOfOrfTableTab: string,
+|}) {
   return (
-    <section role="tabpanel" style={{ display: show ? "flex" : "none" }}>
+    <section
+      role="tabpanel"
+      style={{ display: show ? "flex" : "none" }}
+      aria-labelledby={idOfOrfTableTab}
+    >
       ORF Table
     </section>
   );
@@ -293,6 +334,10 @@ export function CallableSnapGenePreview({
 |}): Node {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [tab, setTab] = React.useState("DNA preview");
+  const idOfDnaPreviewTab = React.useId();
+  const idOfEnzymeSitesTab = React.useId();
+  const idOfViewAsFastaTab = React.useId();
+  const idOfOrfTableTab = React.useId();
 
   function switchTab(
     _e: Event,
@@ -326,8 +371,19 @@ export function CallableSnapGenePreview({
               }}
             />
             <Stack direction="row" spacing={1} sx={{ minHeight: 0 }}>
-              <CustomDrawer variant="permanent" sx={{ mt: 2 }}>
-                <ListItem disablePadding>
+              <CustomDrawer
+                variant="permanent"
+                sx={{ mt: 2 }}
+                role="tablist"
+                aria-orientation="vertical"
+              >
+                <ListItem
+                  disablePadding
+                  role="tab"
+                  aria-label="DNA preview"
+                  aria-selected={tab === "DNA preview"}
+                  id={idOfDnaPreviewTab}
+                >
                   <ListItemButton
                     selected={tab === "DNA preview"}
                     onClick={(e) => switchTab(e, "DNA preview")}
@@ -335,7 +391,13 @@ export function CallableSnapGenePreview({
                     <ListItemText primary="DNA Preview" />
                   </ListItemButton>
                 </ListItem>
-                <ListItem disablePadding>
+                <ListItem
+                  disablePadding
+                  role="tab"
+                  aria-label="Enzyme sites"
+                  aria-selected={tab === "Enzyme sites"}
+                  id={idOfEnzymeSitesTab}
+                >
                   <ListItemButton
                     selected={tab === "Enzyme sites"}
                     onClick={(e) => switchTab(e, "Enzyme sites")}
@@ -343,7 +405,13 @@ export function CallableSnapGenePreview({
                     <ListItemText primary="Enzyme Sites" />
                   </ListItemButton>
                 </ListItem>
-                <ListItem disablePadding>
+                <ListItem
+                  disablePadding
+                  role="tab"
+                  aria-label="FASTA"
+                  aria-selected={tab === "View as FASTA"}
+                  id={idOfViewAsFastaTab}
+                >
                   <ListItemButton
                     selected={tab === "View as FASTA"}
                     onClick={(e) => switchTab(e, "View as FASTA")}
@@ -351,7 +419,13 @@ export function CallableSnapGenePreview({
                     <ListItemText primary="FASTA" />
                   </ListItemButton>
                 </ListItem>
-                <ListItem disablePadding>
+                <ListItem
+                  disablePadding
+                  role="tab"
+                  aria-label="ORF table"
+                  aria-selected={tab === "ORF table"}
+                  id={idOfOrfTableTab}
+                >
                   <ListItemButton
                     selected={tab === "ORF table"}
                     onClick={(e) => switchTab(e, "ORF table")}
@@ -362,10 +436,24 @@ export function CallableSnapGenePreview({
               </CustomDrawer>
               <Stack orientation="vertical" spacing={1} flexGrow={1}>
                 <DialogContent>
-                  <DnaPreview show={tab === "DNA preview"} file={file} />
-                  <EnzymeSites show={tab === "Enzyme sites"} />
-                  <ViewAsFasta show={tab === "View as FASTA"} file={file} />
-                  <OrfTable show={tab === "ORF table"} />
+                  <DnaPreview
+                    show={tab === "DNA preview"}
+                    file={file}
+                    idOfDnaPreviewTab={idOfDnaPreviewTab}
+                  />
+                  <EnzymeSites
+                    show={tab === "Enzyme sites"}
+                    idOfEnzymeSitesTab={idOfEnzymeSitesTab}
+                  />
+                  <ViewAsFasta
+                    show={tab === "View as FASTA"}
+                    file={file}
+                    idOfViewAsFastaTab={idOfViewAsFastaTab}
+                  />
+                  <OrfTable
+                    show={tab === "ORF table"}
+                    idOfOrfTableTab={idOfOrfTableTab}
+                  />
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={() => setFile(null)}>Close</Button>
