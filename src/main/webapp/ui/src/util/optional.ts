@@ -1,4 +1,3 @@
-//@flow strict
 /* eslint no-use-before-define: 0 */
 import Result from "./result";
 
@@ -9,13 +8,13 @@ import Result from "./result";
  * type refinement to determine the existence of the value based on the key.
  */
 type OptionalInternals<T> =
-  | {|
-      key: "empty",
-    |}
-  | {|
-      key: "present",
-      value: T,
-    |};
+  | {
+      key: "empty";
+    }
+  | {
+      key: "present";
+      value: T;
+    };
 
 /**
  * Optional data structures are a common addition to most languages' standard
@@ -44,7 +43,7 @@ export class Optional<T> {
    * If you want to change it, create a new instance of the class
    * If you want to read it, use one of the methods to safely get at the value
    */
-  +#state: OptionalInternals<T>;
+  #state: OptionalInternals<T>;
 
   /*
    * DO NOT attempt to call this constructor from outside of this module. Use
@@ -55,8 +54,18 @@ export class Optional<T> {
   }
 
   isEqual(other: Optional<T>): boolean {
-    if (this.#state.key === "empty") return other.#state.key === "empty";
-    return this.#state.value === other.#state.value;
+    return this.destruct(
+      () =>
+        other.destruct(
+          () => true,
+          () => false
+        ),
+      (value) =>
+        other.destruct(
+          () => false,
+          (otherValue) => value === otherValue
+        )
+    );
   }
 
   /*
@@ -79,7 +88,7 @@ export class Optional<T> {
    * There really should be little reason to use this method outside of this
    * module. Always try to use one of the other, less generic, methods first.
    */
-  destruct<U>(emptyFunc: () => U, presentFunc: (T) => U): U {
+  destruct<U>(emptyFunc: () => U, presentFunc: (t: T) => U): U {
     if (this.#state.key === "present") return presentFunc(this.#state.value);
     return emptyFunc();
   }
@@ -97,7 +106,7 @@ export class Optional<T> {
 
   // altValueGetter doesn't have to return a value; it could throw an exception
   orElseGet<U>(altValueGetter: () => U): T | U {
-    return this.destruct(altValueGetter, (value) => value);
+    return this.destruct(altValueGetter, (value) => value as T | U);
   }
 
   /*
@@ -133,7 +142,7 @@ export class Optional<T> {
    * `Optional.present(3).map(n => n + 1)` will be the same as `Optional.present(4)`
    * `Optional.empty().map(n => n + 1)` will be the same as `Optional.empty()`
    */
-  map<U>(func: (T) => U): Optional<U> {
+  map<U>(func: (t: T) => U): Optional<U> {
     return this.destruct(
       () => Optional.empty(),
       (value: T) => Optional.present(func(value))
@@ -146,7 +155,7 @@ export class Optional<T> {
    * call to `Optional.prototype.map` does not return as eslint thinks that it
    * is a call to `Array.prototype.map`.
    */
-  do(func: (T) => void): void {
+  do(func: (t: T) => void): void {
     return this.destruct(() => {}, func);
   }
 
@@ -162,7 +171,7 @@ export class Optional<T> {
    * return by the function are Optional.empty then Optional.empty is
    * returned, otherwise the value returned by the function is.
    */
-  flatMap<U>(func: (T) => Optional<U>): Optional<U> {
+  flatMap<U>(func: (t: T) => Optional<U>): Optional<U> {
     return optionalFlat(this.map(func));
   }
 
@@ -170,7 +179,7 @@ export class Optional<T> {
    * Just like Java's `Optional.ofNullable`, it turns `null` into
    * Optional.empty and any other value is wrapped inside Optional.present
    */
-  static fromNullable(value: ?T): Optional<T> {
+  static fromNullable<U>(value: U | null | undefined): Optional<U> {
     return value === null || typeof value === "undefined"
       ? Optional.empty()
       : Optional.present(value);
@@ -218,10 +227,10 @@ export function optionalFlat<T>(opt: Optional<Optional<T>>): Optional<T> {
  */
 
 /**
- * Lift a function that operates on a normal value into one that operates on an
- * Optional value.
+ * Lift a function that operates on normal values into one that operates on
+ * Optional values.
  */
-export function lift<A, B>(f: (A) => B, optA: Optional<A>): Optional<B> {
+export function lift<A, B>(f: (a: A) => B, optA: Optional<A>): Optional<B> {
   return optA.map(f);
 }
 
@@ -230,7 +239,7 @@ export function lift<A, B>(f: (A) => B, optA: Optional<A>): Optional<B> {
  * two Optional values.
  */
 export function lift2<A, B, C>(
-  f: (A, B) => C,
+  f: (a: A, b: B) => C,
   optA: Optional<A>,
   optB: Optional<B>
 ): Optional<C> {
@@ -242,7 +251,7 @@ export function lift2<A, B, C>(
  * on three Optional values.
  */
 export function lift3<A, B, C, D>(
-  f: (A, B, C) => D,
+  f: (a: A, b: B, c: C) => D,
   optA: Optional<A>,
   optB: Optional<B>,
   optC: Optional<C>
@@ -255,7 +264,7 @@ export function lift3<A, B, C, D>(
  * on four Optional values.
  */
 export function lift4<A, B, C, D, E>(
-  f: (A, B, C, D) => E,
+  f: (a: A, b: B, c: C, d: D) => E,
   optA: Optional<A>,
   optB: Optional<B>,
   optC: Optional<C>,
@@ -275,11 +284,13 @@ export function lift4<A, B, C, D, E>(
  * undefined when the object has no such key, this function returns
  * Optional.empty
  */
-export function getByKey<Key: string, Value>(
-  key: Key,
-  obj: { +[Key]: Value }
-): Optional<Value> {
-  if (key in obj) return Optional.present(obj[key]);
+export function getByKey<T extends object, K extends keyof T>(
+  key: K,
+  obj: T
+): Optional<T[K]> {
+  if (key in obj) {
+    return Optional.present(obj[key]);
+  }
   return Optional.empty();
 }
 
