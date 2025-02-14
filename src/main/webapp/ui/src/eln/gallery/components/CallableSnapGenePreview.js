@@ -90,7 +90,7 @@ function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
       direction="column"
       spacing={2}
       flexGrow={1}
-      style={{ display: show ? "block" : "none", minHeight: 0 }}
+      style={{ display: show ? "flex" : "none", minHeight: 0, height: "100%" }}
     >
       <Stack direction="row" spacing={1}>
         <Select
@@ -171,7 +171,7 @@ function DnaPreview({ show, file }: {| show: boolean, file: GalleryFile |}) {
 
 function EnzymeSites({ show }: {| show: boolean |}) {
   return (
-    <section role="tabpanel" style={{ display: show ? "block" : "none" }}>
+    <section role="tabpanel" style={{ display: show ? "flex" : "none" }}>
       Enzyme Sites
     </section>
   );
@@ -192,7 +192,7 @@ function ViewAsFasta({ show, file }: {| show: boolean, file: GalleryFile |}) {
   }, [file]);
 
   return (
-    <section role="tabpanel" style={{ display: show ? "block" : "none" }}>
+    <section role="tabpanel" style={{ display: show ? "flex" : "none" }}>
       <pre>{sequence}</pre>
     </section>
   );
@@ -200,7 +200,7 @@ function ViewAsFasta({ show, file }: {| show: boolean, file: GalleryFile |}) {
 
 function OrfTable({ show }: {| show: boolean |}) {
   return (
-    <section role="tabpanel" style={{ display: show ? "block" : "none" }}>
+    <section role="tabpanel" style={{ display: show ? "flex" : "none" }}>
       ORF Table
     </section>
   );
@@ -284,7 +284,7 @@ export function CallableSnapGenePreview({
                 supportsHighContrastMode: true,
               }}
             />
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} sx={{ minHeight: 0 }}>
               <CustomDrawer variant="permanent" sx={{ mt: 2 }}>
                 <ListItem disablePadding>
                   <ListItemButton
@@ -319,16 +319,18 @@ export function CallableSnapGenePreview({
                   </ListItemButton>
                 </ListItem>
               </CustomDrawer>
-              <DialogContent>
-                <DnaPreview show={tab === "DNA preview"} file={file} />
-                <EnzymeSites show={tab === "Enzyme sites"} />
-                <ViewAsFasta show={tab === "View as FASTA"} file={file} />
-                <OrfTable show={tab === "ORF table"} />
-              </DialogContent>
+              <Stack orientation="vertical" spacing={1} flexGrow={1}>
+                <DialogContent>
+                  <DnaPreview show={tab === "DNA preview"} file={file} />
+                  <EnzymeSites show={tab === "Enzyme sites"} />
+                  <ViewAsFasta show={tab === "View as FASTA"} file={file} />
+                  <OrfTable show={tab === "ORF table"} />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setFile(null)}>Close</Button>
+                </DialogActions>
+              </Stack>
             </Stack>
-            <DialogActions>
-              <Button onClick={() => setFile(null)}>Close</Button>
-            </DialogActions>
           </Dialog>
         </ThemeProvider>
       )}
