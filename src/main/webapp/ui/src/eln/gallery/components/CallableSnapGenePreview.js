@@ -92,9 +92,12 @@ export function CallableSnapGenePreview({
 |}): Node {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [tab, setTab] = React.useState(0);
+  const [tab, setTab] = React.useState("DNA preview");
 
-  function switchTab(e: Event, value: number) {
+  function switchTab(
+    _e: Event,
+    value: "DNA preview" | "Enzyme sites" | "View as FASTA" | "ORF table"
+  ) {
     setTab(value);
   }
 
@@ -119,15 +122,15 @@ export function CallableSnapGenePreview({
           <DialogTitle>SnapGene</DialogTitle>
           <DialogContent>
             <Tabs value={tab} onChange={switchTab}>
-              <Tab label="DNA preview" />
-              <Tab label="Enzyme sites" />
-              <Tab label="View as FASTA" />
-              <Tab label="ORF table" />
+              <Tab label="DNA preview" value="DNA preview" />
+              <Tab label="Enzyme sites" value="Enzyme sites" />
+              <Tab label="View as FASTA" value="View as FASTA" />
+              <Tab label="ORF table" value="ORF table" />
             </Tabs>
-            <DnaPreview show={tab === 0} />
-            <EnzymeSites show={tab === 1} />
-            <ViewAsFasta show={tab === 2} />
-            <OrfTable show={tab === 3} />
+            <DnaPreview show={tab === "DNA preview"} />
+            <EnzymeSites show={tab === "Enzyme sites"} />
+            <ViewAsFasta show={tab === "View as FASTA"} />
+            <OrfTable show={tab === "ORF table"} />
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setFile(null)}>Close</Button>
