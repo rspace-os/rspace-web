@@ -527,7 +527,7 @@ function initTinyMCE(selector) {
 			addToMenuIfNotPresent(localTinymcesetup, " | optProtocols_io");
 		}
 		if (pyratEnabled) {
-			localTinymcesetup.external_plugins["pyrat"] = "/scripts/externalTinymcePlugins/pyrat/plugin.min.js";
+			localTinymcesetup.external_plugins["pyrat"] = "/ui/dist/tinymcePyrat.js";
 			addToToolbarIfNotPresent(localTinymcesetup, " | pyrat");
 			addToMenuIfNotPresent(localTinymcesetup, " | optPyrat");
 		}
