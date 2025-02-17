@@ -34,7 +34,6 @@ const useStyles = makeStyles()((theme) => ({
     width: "100%",
     flexGrow: 1,
     flexWrap: "nowrap",
-    margin: theme.spacing(1),
   },
   footWrapper: {
     flexDirection: "row",
@@ -45,9 +44,12 @@ const useStyles = makeStyles()((theme) => ({
   },
   grow: { flexGrow: 1 },
   headWrapper: {
+    overflowY: "auto",
+    height: "100%",
     marginRight: theme.spacing(1),
     marginLeft: theme.spacing(1),
     marginTop: theme.spacing(0.5),
+    paddingBottom: theme.spacing(3),
   },
   helpIconWrapper: {
     backgroundColor: "white",
