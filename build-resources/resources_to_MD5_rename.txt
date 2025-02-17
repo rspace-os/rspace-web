@@ -65,6 +65,7 @@ scripts/pages/workspace/editor/tinymceRS_scrollHandler.js
 scripts/pages/workspace/GalleriesCrudops.js
 scripts/pages/workspace/gallery/netfiles.js
 scripts/pages/workspace/mediaGalleryManager.js
+scripts/segment.js
 scripts/tags/createFromTemplateDlg.js
 scripts/tags/export.js
 scripts/tags/exportOtherDialogs.js
