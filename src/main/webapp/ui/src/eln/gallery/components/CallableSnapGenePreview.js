@@ -125,7 +125,7 @@ function DnaPreview({
               onChange={({ target: { checked } }) => setShowEnzymes(checked)}
             />
           }
-          label="Show enzymes"
+          label="Show restriction sites"
         />
         <FormControlLabel
           control={
