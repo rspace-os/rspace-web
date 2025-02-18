@@ -25,6 +25,20 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import axios from "axios";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TablePagination from "@mui/material/TablePagination";
+import TableRow from "@mui/material/TableRow";
+import EnhancedTableHead from "../../../components/EnhancedTableHead";
+import LoadingCircular from "../../../components/LoadingCircular";
+import Grid from "@mui/material/Grid";
+import FormControl from "@mui/material/FormControl";
+import FormLabel from "@mui/material/FormLabel";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import { stableSort, getSorting, paginationOptions } from "../../../util/table";
 
 const COLOR = {
   main: {
@@ -219,21 +233,226 @@ function DnaPreview({
   );
 }
 
+const enzymeSetOptions = {
+  UNIQUE_SIX_PLUS: "Unique six plus",
+  UNIQUE: "Unique",
+  SIX_PLUS: "Six plus",
+  UNIQUE_AND_DUAL: "Unique and dual",
+  COMMERCIAL_NONREDUNDANT: "Commercial nonredundant",
+};
+
+const enzymeHeadCells = [
+  { id: "name", numeric: false, disablePadding: false, label: "Enzyme" },
+  {
+    id: "bottomCutPosition",
+    numeric: true,
+    disablePadding: false,
+    label: "Bottom cut position",
+  },
+  {
+    id: "topCutPosition",
+    numeric: true,
+    disablePadding: false,
+    label: "Top cut position",
+  },
+];
+
 function EnzymeSites({
   show,
+  file,
   idOfEnzymeSitesTab,
 }: {|
   show: boolean,
+  file: GalleryFile,
   idOfEnzymeSitesTab: string,
 |}) {
+  const [order, setOrder] = React.useState("desc");
+  const [orderBy, setOrderBy] = React.useState("enzyme");
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [loading, setLoading] = React.useState(true);
+  const [enzymeSet, setEnzymeSet] = React.useState("UNIQUE_SIX_PLUS");
+  const [enzymeList, setEnzymeList] = React.useState<
+    $ReadOnlyArray<{|
+      name: string,
+      id: number,
+      topCutPosition: number,
+      bottomCutPosition: number,
+    |}>
+  >([]);
+  const [error, setError] = React.useState<null | string>(null);
+
+  const generateEnzymeList = (
+    list: $ReadOnlyArray<{|
+      id: number,
+      name: string,
+      hits: $ReadOnlyArray<{|
+        topCutPosition: number,
+        bottomCutPosition: number,
+      |}>,
+    |}>
+  ) => {
+    setEnzymeList(
+      list
+        .map((enzyme) =>
+          enzyme.hits.map((hit) => ({
+            name: enzyme.name,
+            id: enzyme.id,
+            topCutPosition: hit.topCutPosition,
+            bottomCutPosition: hit.bottomCutPosition,
+          }))
+        )
+        .flat()
+    );
+  };
+
+  const fetchEnzymes = async () => {
+    setLoading(true);
+
+    try {
+      const url = `/molbiol/dna/enzymes/${idToString(
+        file.id
+      ).elseThrow()}?enzymeSet=${enzymeSet}`;
+      const response = await axios.get<{|
+        enzymes: $ReadOnlyArray<{|
+          id: number,
+          name: string,
+          hits: $ReadOnlyArray<{|
+            topCutPosition: number,
+            bottomCutPosition: number,
+          |}>,
+        |}>,
+      |}>(url);
+      generateEnzymeList(response.data.enzymes);
+    } catch (e) {
+      setError(e.response.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    setPage(0);
+    setEnzymeList([]);
+    void fetchEnzymes();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - fetchEnzymes will not meaningfully change
+     */
+  }, [enzymeSet]);
+
+  const handleRequestSort = (_event: mixed, property: string) => {
+    const isDesc = orderBy === property && order === "desc";
+    setOrder(isDesc ? "asc" : "desc");
+    setOrderBy(property);
+    setPage(0);
+  };
+
+  const handleChangePage = (_event: mixed, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: {
+    target: { value: number, ... },
+    ...
+  }) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const emptyRows =
+    rowsPerPage - Math.min(rowsPerPage, enzymeList.length - page * rowsPerPage);
+
   return (
-    <section
+    <Grid
+      container
+      spacing={2}
+      component="section"
       role="tabpanel"
       style={{ display: show ? "flex" : "none" }}
       aria-labelledby={idOfEnzymeSitesTab}
     >
-      Enzyme Sites
-    </section>
+      <Grid item flexGrow={1}>
+        {error && <div>{error}</div>}
+        {!error && loading && <LoadingCircular />}
+        {!error && !loading && (
+          <>
+            <TableContainer style={{ maxHeight: "387px" }}>
+              <Table
+                stickyHeader
+                aria-labelledby="Enzyme table"
+                size="small"
+                aria-label="enhanced table"
+              >
+                <EnhancedTableHead
+                  headCells={enzymeHeadCells}
+                  order={order}
+                  orderBy={orderBy}
+                  onRequestSort={handleRequestSort}
+                  rowCount={enzymeList.length}
+                />
+                <TableBody>
+                  {stableSort(enzymeList, getSorting(order, orderBy))
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((enzyme) => (
+                      <TableRow
+                        hover
+                        tabIndex={-1}
+                        key={`${enzyme.name}-${enzyme.id}-${enzyme.topCutPosition}-${enzyme.bottomCutPosition}`}
+                      >
+                        <TableCell align="left">{enzyme.name}</TableCell>
+                        <TableCell align="right">
+                          {enzyme.bottomCutPosition}
+                        </TableCell>
+                        <TableCell align="right">
+                          {enzyme.topCutPosition}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  {emptyRows > 0 && (
+                    <TableRow style={{ height: 33 * emptyRows }}>
+                      <TableCell colSpan={6} />
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={paginationOptions(enzymeList.length)}
+              component="div"
+              count={enzymeList.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+            />
+          </>
+        )}
+      </Grid>
+
+      <Grid item>
+        <FormControl component="fieldset">
+          <FormLabel component="legend" sx={{ textAlign: "right" }}>
+            Enzyme Sets
+          </FormLabel>
+          <RadioGroup
+            aria-label="Enzyme type"
+            name="enzymeSet"
+            value={enzymeSet}
+            onChange={(event) => setEnzymeSet(event.target.value)}
+          >
+            {Object.keys(enzymeSetOptions).map((key) => (
+              <FormControlLabel
+                value={key}
+                key={key}
+                control={<Radio color="primary" />}
+                label={enzymeSetOptions[key]}
+                labelPlacement="start"
+              />
+            ))}
+          </RadioGroup>
+        </FormControl>
+      </Grid>
+    </Grid>
   );
 }
 
@@ -443,6 +662,7 @@ export function CallableSnapGenePreview({
                   />
                   <EnzymeSites
                     show={tab === "Enzyme sites"}
+                    file={file}
                     idOfEnzymeSitesTab={idOfEnzymeSitesTab}
                   />
                   <ViewAsFasta
