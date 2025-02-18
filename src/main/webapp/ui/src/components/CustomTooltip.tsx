@@ -1,5 +1,3 @@
-// @flow strict
-
 /*
  * Applied all over the UI, this component allows us to add tooltips to all
  * sorts of buttons, widgets, and links.
@@ -7,7 +5,7 @@
  * Due to its ubiquity throughout the application, its dependencies SHOULD be
  * kept to a minimum, and MUST NOT include any global state.
  */
-import React, { type Node } from "react";
+import React from "react";
 import Tooltip from "@mui/material/Tooltip";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
@@ -23,14 +21,14 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type CustomTooltipArgs = {|
+type CustomTooltipArgs = {
   title: string,
   enterDelay?: number,
-  children: ?Node,
+  children: React.ReactNode,
   block?: boolean,
   "aria-hidden"?: boolean,
   "aria-label"?: string,
-|};
+};
 
 export default function CustomTooltip({
   title,
@@ -39,7 +37,7 @@ export default function CustomTooltip({
   block = false,
   ["aria-hidden"]: ariaHidden,
   ["aria-label"]: ariaLabel,
-}: CustomTooltipArgs): Node {
+}: CustomTooltipArgs): React.ReactNode {
   const { classes } = useStyles();
 
   return (
