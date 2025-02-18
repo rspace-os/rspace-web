@@ -489,21 +489,234 @@ function ViewAsFasta({
   );
 }
 
+const readingFrameOptions = {
+  ALL: { label: "All", filter: [-3, -2, -1, 1, 2, 3] },
+  FORWARD: { label: "Forward", filter: [1, 2, 3] },
+  REVERSE: { label: "Reverse", filter: [-1, -2, -3] },
+  FIRST_FORWARD: { label: "First forward", filter: [1] },
+  FIRST_REVERSE: { label: "First reverse", filter: [-1] },
+};
+
+const orfHeadCells = [
+  {
+    id: "fullRangeBegin",
+    numeric: false,
+    disablePadding: false,
+    label: "Full Range Begin",
+  },
+  {
+    id: "fullRangeEnd",
+    numeric: false,
+    disablePadding: false,
+    label: "Full Range End",
+  },
+  {
+    id: "molecularWeight",
+    numeric: false,
+    disablePadding: false,
+    label: "Molecular Weight",
+  },
+  {
+    id: "readingFrame",
+    numeric: false,
+    disablePadding: false,
+    label: "Reading Frame",
+  },
+  {
+    id: "translation",
+    numeric: false,
+    disablePadding: false,
+    label: "Translation",
+  },
+];
+
+type Orf = {|
+  id: number,
+  fullRangeBegin: number,
+  fullRangeEnd: number,
+  molecularWeight: number,
+  readingFrame: number,
+  translation: string,
+|};
+
 function OrfTable({
   show,
+  file,
   idOfOrfTableTab,
 }: {|
   show: boolean,
+  file: GalleryFile,
   idOfOrfTableTab: string,
 |}) {
+  const [order, setOrder] = React.useState("desc");
+  const [orderBy, setOrderBy] = React.useState("version");
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [loading, setLoading] = React.useState(true);
+  const [readingFrameOption, setReadingFrameOption] = React.useState("ALL");
+  const [results, setResults] = React.useState<$ReadOnlyArray<Orf>>([]);
+  const [filteredResults, setFilteredResults] = React.useState<
+    $ReadOnlyArray<Orf>
+  >([]);
+  const [error, setError] = React.useState<null | string>(null);
+
+  const filterResults = (passedResults: $ReadOnlyArray<Orf>) => {
+    const toInclude = readingFrameOptions[readingFrameOption].filter;
+    const filtered = passedResults.filter((r) =>
+      toInclude.includes(r.readingFrame)
+    );
+    setFilteredResults(filtered);
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+
+    try {
+      const url = `/molbiol/dna/orfs/${idToString(file.id).elseThrow()}`;
+      const response = await axios.get<{
+        ORFs: $ReadOnlyArray<Orf>,
+      }>(url);
+      setResults(response.data.ORFs);
+      filterResults(response.data.ORFs);
+    } catch (e) {
+      setError(e.response.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    void fetchData();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - fetchData will not meaningfully change
+     */
+  }, []);
+
+  React.useEffect(() => {
+    setPage(0);
+    filterResults(results);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - filterResultswill not meaningfully change
+     */
+  }, [readingFrameOption]);
+
+  const handleRequestSort = (_event: mixed, property: string) => {
+    const isDesc = orderBy === property && order === "desc";
+    setOrder(isDesc ? "asc" : "desc");
+    setOrderBy(property);
+    setPage(0);
+  };
+
+  const handleChangePage = (_event: mixed, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: {
+    target: { value: string, ... },
+    ...
+  }) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const emptyRows =
+    rowsPerPage -
+    Math.min(rowsPerPage, filteredResults.length - page * rowsPerPage);
+
   return (
-    <section
+    <Grid
+      container
+      spacing={2}
+      flexWrap="nowrap"
+      component="section"
       role="tabpanel"
       style={{ display: show ? "flex" : "none" }}
       aria-labelledby={idOfOrfTableTab}
     >
-      ORF Table
-    </section>
+      <Grid item sx={{ minWidth: 0 }}>
+        {error && <div>{error}</div>}
+        {loading && !error && <LoadingCircular />}
+        {!loading && !error && (
+          <>
+            <TableContainer style={{ maxHeight: "449px" }}>
+              <Table
+                stickyHeader
+                aria-labelledby="ORF table"
+                size="small"
+                aria-label="enhanced table"
+              >
+                <EnhancedTableHead
+                  headCells={orfHeadCells}
+                  order={order}
+                  orderBy={orderBy}
+                  onRequestSort={handleRequestSort}
+                  rowCount={filteredResults.length}
+                />
+                <TableBody>
+                  {stableSort(filteredResults, getSorting(order, orderBy))
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((result) => (
+                      <TableRow hover tabIndex={-1} key={result.id}>
+                        <TableCell align="left">
+                          {result.fullRangeBegin}
+                        </TableCell>
+                        <TableCell align="left">
+                          {result.fullRangeEnd}
+                        </TableCell>
+                        <TableCell align="left">
+                          {result.molecularWeight}
+                        </TableCell>
+                        <TableCell align="left">
+                          {result.readingFrame}
+                        </TableCell>
+                        <TableCell align="left">{result.translation}</TableCell>
+                      </TableRow>
+                    ))}
+                  {emptyRows > 0 && (
+                    <TableRow style={{ height: 33 * emptyRows }}>
+                      <TableCell colSpan={6} />
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={paginationOptions(filteredResults.length)}
+              component="div"
+              count={filteredResults.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+            />
+          </>
+        )}
+      </Grid>
+
+      <Grid item sx={{ minWidth: "200px" }}>
+        <FormControl component="fieldset">
+          <FormLabel component="legend" sx={{ textAlign: "right" }}>
+            Open Reading Frames
+          </FormLabel>
+          <RadioGroup
+            aria-label="Enzyme type"
+            name="enzymeSet"
+            value={readingFrameOption}
+            onChange={(event) => setReadingFrameOption(event.target.value)}
+          >
+            {Object.keys(readingFrameOptions).map((key) => (
+              <FormControlLabel
+                value={key}
+                key={key}
+                control={<Radio color="primary" />}
+                label={readingFrameOptions[key].label}
+                labelPlacement="start"
+              />
+            ))}
+          </RadioGroup>
+        </FormControl>
+      </Grid>
+    </Grid>
   );
 }
 
@@ -653,7 +866,12 @@ export function CallableSnapGenePreview({
                   </ListItemButton>
                 </ListItem>
               </CustomDrawer>
-              <Stack orientation="vertical" spacing={1} flexGrow={1}>
+              <Stack
+                orientation="vertical"
+                spacing={1}
+                flexGrow={1}
+                sx={{ minWidth: 0 }}
+              >
                 <DialogContent>
                   <DnaPreview
                     show={tab === "DNA preview"}
@@ -672,6 +890,7 @@ export function CallableSnapGenePreview({
                   />
                   <OrfTable
                     show={tab === "ORF table"}
+                    file={file}
                     idOfOrfTableTab={idOfOrfTableTab}
                   />
                 </DialogContent>
