@@ -10,7 +10,18 @@ import useOfficeOnline from "./useOfficeOnline";
 import { supportedAsposeFile } from "./components/CallableAsposePreview";
 import { type URL } from "../../util/types";
 
-const dnaFileExtensions = ["fa", "gb", "gbk", "fasta", "fa", "dna", "seq", "sbd", "embl", "ab1"];
+const dnaFileExtensions = [
+  "fa",
+  "gb",
+  "gbk",
+  "fasta",
+  "fa",
+  "dna",
+  "seq",
+  "sbd",
+  "embl",
+  "ab1",
+];
 /**
  * Hook that provides a function that can be used to check if a file can be
  * previewed as a DNA sequence in SnapGene. If it can, then a function that
@@ -19,10 +30,17 @@ const dnaFileExtensions = ["fa", "gb", "gbk", "fasta", "fa", "dna", "seq", "sbd"
 export function useSnapGenePreviewOfGalleryFile(): (
   file: GalleryFile
 ) => Result<null> {
+  const snapGeneEnabled = useDeploymentProperty("snapgene.available");
   return (file) => {
     if (!dnaFileExtensions.includes(file.extension))
       return Result.Error([new Error("Not a DNA file")]);
-    return Result.Ok(null);
+    return FetchingData.getSuccessValue(snapGeneEnabled)
+      .flatMap(Parsers.isString)
+      .flatMap((str) =>
+        str === "ALLOWED"
+          ? Result.Ok(null)
+          : Result.Error([new Error("SnapGene is not enabled")])
+      );
   };
 }
 
