@@ -162,7 +162,13 @@ const MaterialsLauncher = observer(
               >
                 {({ TransitionProps }) => (
                   <Grow {...TransitionProps} className={classes.growTransform}>
-                    <Paper>
+                    <Paper
+                      sx={{
+                        maxHeight: "calc(100vh - 16px)",
+                        overflowY: "auto",
+                        marginBottom: "8px",
+                      }}
+                    >
                       <ClickAwayListener onClickAway={handleClose}>
                         <MenuList>
                           {fieldListings?.map((list, i) => (
