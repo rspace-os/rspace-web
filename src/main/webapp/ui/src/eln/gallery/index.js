@@ -308,7 +308,7 @@ function LandingPage() {
     loading: () => null,
     error: () => (
       <PlaceholderLabel>
-        Erorr checking if filestores are enabled.
+        Error checking if filestores are enabled.
       </PlaceholderLabel>
     ),
     success: (fsEnabled) => {
