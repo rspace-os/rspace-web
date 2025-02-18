@@ -18,7 +18,6 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
-import { autorun } from "mobx";
 import { type ElnFieldId } from "../../stores/models/MaterialsModel";
 import MenuItem from "@mui/material/MenuItem";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
@@ -31,7 +30,6 @@ import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNa
 library.add(faVial);
 import PrintedMaterialsListing from "./PrintedMaterialsListing";
 import { createRoot } from "react-dom/client";
-import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
 
 const FAB_SIZE = 48;
 
@@ -112,7 +110,6 @@ const MaterialsLauncher = observer(
     fabRightPadding: number,
   }) => {
     const { materialsStore } = useStores();
-    const isSingleColumnLayout = useIsSingleColumnLayout();
 
     const [showMenu, setShowMenu] = useState(false);
     const [showDialog, _setShowDialog] = useState(false);
@@ -217,6 +214,9 @@ const MaterialsListing = observer(
 
     useEffect(() => {
       materialsStore.canEdit = canEdit;
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - materialsStore will not meaningfully change
+       */
     }, [canEdit]);
 
     useEffect(() => {
@@ -224,20 +224,27 @@ const MaterialsListing = observer(
         .setup()
         .then(() => setLoading(false))
         .catch((e) => console.error(e));
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - materialsStore will not meaningfully change
+       */
     }, []);
 
     useEffect(() => {
       if (!loading)
-        void materialsStore.getFieldMaterialsListings(parseInt(elnFieldId));
+        void materialsStore.getFieldMaterialsListings(parseInt(elnFieldId, 10));
+      /* eslint-disable-next-line react-hooks/exhaustive-deps --
+       * - materialsStore will not meaningfully change
+       * - elnFieldId is not passed from the initial render call and so will not change
+       */
     }, [loading]);
 
     return !loading ? (
       <StyledEngineProvider injectFirst>
         <ThemeProvider theme={materialTheme}>
           <AlwaysNewWindowNavigationContext>
-            {materialsStore.fieldLists.has(parseInt(elnFieldId)) && (
+            {materialsStore.fieldLists.has(parseInt(elnFieldId, 10)) && (
               <MaterialsLauncher
-                elnFieldId={parseInt(elnFieldId)}
+                elnFieldId={parseInt(elnFieldId, 10)}
                 fabRightPadding={fabRightPadding}
               />
             )}
@@ -255,7 +262,6 @@ type NewMaterialsListingArgs = {|
 const NewMaterialsListing = observer(
   ({ elnFieldId }: NewMaterialsListingArgs) => {
     const { materialsStore } = useStores();
-    const isSingleColumnLayout = useIsSingleColumnLayout();
     const [showDialog, _setShowDialog] = useState(false);
     const setShowDialog = (value: boolean) => {
       _setShowDialog(value);
