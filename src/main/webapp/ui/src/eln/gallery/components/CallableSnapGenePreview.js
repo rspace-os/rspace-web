@@ -257,14 +257,14 @@ const enzymeHeadCells = [
   },
 ];
 
-function EnzymeSites({
+function RestrictionSites({
   show,
   file,
-  idOfEnzymeSitesTab,
+  idOfRestrictionSitesTab,
 }: {|
   show: boolean,
   file: GalleryFile,
-  idOfEnzymeSitesTab: string,
+  idOfRestrictionSitesTab: string,
 |}) {
   const [order, setOrder] = React.useState("desc");
   const [orderBy, setOrderBy] = React.useState("enzyme");
@@ -369,7 +369,7 @@ function EnzymeSites({
       component="section"
       role="tabpanel"
       style={{ display: show ? "flex" : "none" }}
-      aria-labelledby={idOfEnzymeSitesTab}
+      aria-labelledby={idOfRestrictionSitesTab}
     >
       <Grid item flexGrow={1}>
         {error && <div>{error}</div>}
@@ -767,13 +767,13 @@ export function CallableSnapGenePreview({
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [tab, setTab] = React.useState("DNA preview");
   const idOfDnaPreviewTab = React.useId();
-  const idOfEnzymeSitesTab = React.useId();
+  const idOfRestrictionSitesTab = React.useId();
   const idOfViewAsFastaTab = React.useId();
   const idOfOrfTableTab = React.useId();
 
   function switchTab(
     _e: Event,
-    value: "DNA preview" | "Enzyme sites" | "View as FASTA" | "ORF table"
+    value: "DNA preview" | "Restriction sites" | "View as FASTA" | "ORF table"
   ) {
     setTab(value);
   }
@@ -826,15 +826,15 @@ export function CallableSnapGenePreview({
                 <ListItem
                   disablePadding
                   role="tab"
-                  aria-label="Enzyme sites"
-                  aria-selected={tab === "Enzyme sites"}
-                  id={idOfEnzymeSitesTab}
+                  aria-label="Restriction sites"
+                  aria-selected={tab === "Restriction sites"}
+                  id={idOfRestrictionSitesTab}
                 >
                   <ListItemButton
-                    selected={tab === "Enzyme sites"}
-                    onClick={(e) => switchTab(e, "Enzyme sites")}
+                    selected={tab === "Restriction sites"}
+                    onClick={(e) => switchTab(e, "Restriction sites")}
                   >
-                    <ListItemText primary="Enzyme Sites" />
+                    <ListItemText primary="Restriction Sites" />
                   </ListItemButton>
                 </ListItem>
                 <ListItem
@@ -878,10 +878,10 @@ export function CallableSnapGenePreview({
                     file={file}
                     idOfDnaPreviewTab={idOfDnaPreviewTab}
                   />
-                  <EnzymeSites
-                    show={tab === "Enzyme sites"}
+                  <RestrictionSites
+                    show={tab === "Restriction sites"}
                     file={file}
-                    idOfEnzymeSitesTab={idOfEnzymeSitesTab}
+                    idOfRestrictionSitesTab={idOfRestrictionSitesTab}
                   />
                   <ViewAsFasta
                     show={tab === "View as FASTA"}
