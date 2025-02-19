@@ -218,6 +218,9 @@ function DnaPreview({
           <img
             alt={`DNA preview of ${file.name}`}
             src={image}
+            onError={() => {
+              setError("Coult not load DNA preview image.");
+            }}
             style={{
               maxHeight: "100%",
               maxWidth: "100%",
@@ -369,6 +372,7 @@ function RestrictionSites({
       component="section"
       role="tabpanel"
       style={{ display: show ? "flex" : "none" }}
+      flexWrap="nowrap"
       aria-labelledby={idOfRestrictionSitesTab}
     >
       <Grid item flexGrow={1}>
@@ -470,9 +474,14 @@ function ViewAsFasta({
   React.useEffect(() => {
     try {
       const url = `/molbiol/dna/fasta/${idToString(file.id).elseThrow()}`;
-      void axios.get<string>(url).then((response) => {
-        setSequence(response.data);
-      });
+      void axios
+        .get<string>(url)
+        .then((response) => {
+          setSequence(response.data);
+        })
+        .catch((e) => {
+          setSequence(e.response.data);
+        });
     } catch (e) {
       setSequence(e.message);
     }
