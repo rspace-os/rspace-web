@@ -7,6 +7,7 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
@@ -40,6 +41,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping("/dashboard")
 public class DashboardController extends BaseController {
+
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
   private @Autowired RSpaceRequestManager reqStatusUpdateMgr;
   private @Autowired CommunicationManager commService;
@@ -155,6 +157,30 @@ public class DashboardController extends BaseController {
         messageOrRequestId,
         optionalMessage);
     return new AjaxReturnObject<>("Success", null);
+  }
+
+  @GetMapping("/updateMessageStatus")
+  public String updateMessageStatusGet(
+      Principal principal,
+      Model model,
+      @RequestParam("messageOrRequestId") Long messageOrRequestId,
+      @RequestParam("status") String status) {
+    CommunicationStatus statusEnum = CommunicationStatus.valueOf(status);
+    Communication comm = commService.get(messageOrRequestId);
+    model.addAttribute("comm", comm);
+    switch (statusEnum) {
+      case ACCEPTED:
+      case COMPLETED:
+        model.addAttribute("requestStatus", "accepted");
+        break;
+      case REJECTED:
+        model.addAttribute("requestStatus", "declined");
+        break;
+      default:
+        return "error";
+    }
+    updateMessageStatus(principal, messageOrRequestId, status, null);
+    return "requestFeedback";
   }
 
   /**

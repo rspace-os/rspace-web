@@ -24,7 +24,6 @@ import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.RemoteLicenseService;
 import com.researchspace.service.impl.CommunicationManagerImpl;
-import com.researchspace.service.impl.DevBroadCaster;
 import com.researchspace.service.impl.DeveloperGroupSetup;
 import com.researchspace.service.impl.DummyConversionService;
 import com.researchspace.service.impl.EcatMediaFactory;
@@ -59,11 +58,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @Profile("run")
 @EnableAsync
 public class TestAppConfig extends BaseConfig {
-
-  @Bean
-  public Broadcaster broadcaster() {
-    return new DevBroadCaster("run");
-  }
 
   @Bean(name = "postUserCreate")
   public IPostUserCreationSetUp postUserCreationSetup() {

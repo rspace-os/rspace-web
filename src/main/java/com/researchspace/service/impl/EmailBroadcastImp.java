@@ -48,7 +48,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.tools.generic.DateTool;
 import org.jsoup.helper.Validate;
 import org.slf4j.Logger;
@@ -323,8 +322,7 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
   }
 
   private void logEmailSendStart(String txt, String id) {
-    final int maxWidth = 25;
-    log.info("Sending email [{}] with text :{}", id, StringUtils.abbreviate(txt, maxWidth));
+    log.debug("Sending email [{}] with text :{}", id, txt);
   }
 
   // package-scoped for testing
