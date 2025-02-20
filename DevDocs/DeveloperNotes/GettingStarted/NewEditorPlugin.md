@@ -222,5 +222,79 @@ pointing out that by using an accented theme, we automatically get a high
 contrast mode that stips out all of the superfluous colour, should the user wish
 to enable it (this is mentioned in the section titled "Accented Theme").
 
+### Step 2.4: Displaying a dialog
+Now we just need to define `NewPluginDialog`, the UI that will actually be shown
+when the user triggers the plugin. This component needs to accept the three
+props that we're passing
+  * `editor`, a reference the current TinyMCE editor.
+  * `open`, a boolean indicating whether the dialog should be shown or not.
+  * `onClose`, a function that will be called when the dialog should be closed.
+
+We want `NewPluginDialog` to return something like this:
+  ```
+    return (
+      <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+        <AppBar
+          variant="dialog"
+          currentPage="New Plugin"
+          helpPage={{
+            docLink: docLinks.newPlugin,
+            title: "New Plugin help",
+          }}
+        />
+        <DialogTitle>Insert from New Plugin</DialogTitle>
+        <DialogContent>
+          {/* TODO: Implement the dialog content here. */}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => onClose()}>Cancel</Button>
+          <Button
+            color="callToAction"
+            variant="contained"
+            onClick={() => {
+              editor.execCommand(
+                "mceInsertContent",
+                false,
+                /* TODO: Generate HTML content to be inserted into the editor */
+              );
+              onClose();
+            }}
+          >
+            Insert
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  ```
+  This gives us a few things
+  1. A header, utilising the branding colours as previously defined
+  2. A link to the help docs (once created the link will need to be added to [/src/main/webapp/ui/assets/DocLinks.js](/src/main/webapp/ui/assets/DocLinks.js)).
+  3. A title, briefly describing the purpose of the dialog. This may seem
+     superlfuous but in principle a single plugin, or any other integrations,
+     could provide multiple actions with multiple dialogs.
+  4. The DialogContent is where the behaviour of the plugins vary; it is here
+     that some display a list of options, while others may require user input.
+     If you would prefer, this could be the point where RSpace code calls out to
+     a separate NPM package, displaying a UI with visual similarity to your main
+     product, utilising a shared design system, component library, and be
+     written in any compiled-to-JS language. The dialog content could even be an
+     iframe if that would be easiest, although of course that comes with
+     security implications that would need to be carefully considered.
+  5. A cancel button for closing the dialog. No edits are made to the content of
+     the editor and it is as if the user never opened the dialog.
+  6. An insertion button that actually inserts some HTML content into the editor
+     and closes the dialog.
+
+The imports required for the dialog are as follows:
+```
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import AppBar from "../../components/AppBar";
+import docLinks from "../../assets/DocLinks";
+```
+
 ## Step 3: Testing
 - How will we know if the plugin stops working e.g. due to API changes/services being down?
