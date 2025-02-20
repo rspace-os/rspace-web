@@ -9,6 +9,7 @@ import { useGallerySelection } from "../useGallerySelection";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import usePrimaryAction, {
   useImagePreviewOfGalleryFile,
   usePdfPreviewOfGalleryFile,
@@ -81,6 +82,7 @@ const PreviewWrapper = ({
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
+  const { openSnapGenePreview } = useSnapGenePreview();
   const { openFolder } = useFolderOpen();
   const primaryAction = usePrimaryAction();
   const [scrollPos, setScrollPos] = React.useState<null | {|
@@ -170,6 +172,9 @@ const PreviewWrapper = ({
             if (action.tag === "aspose") {
               void openAsposePreview(file);
             }
+            if (action.tag === "snapgene") {
+              void openSnapGenePreview(file);
+            }
           });
         }
       }}
@@ -198,6 +203,9 @@ const PreviewWrapper = ({
             }
             if (action.tag === "aspose") {
               void openAsposePreview(file);
+            }
+            if (action.tag === "snapgene") {
+              void openSnapGenePreview(file);
             }
           });
         }

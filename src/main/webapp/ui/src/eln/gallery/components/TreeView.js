@@ -30,6 +30,7 @@ import LoadMoreButton from "./LoadMoreButton";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { useFolderOpen } from "./OpenFolderProvider";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
@@ -412,6 +413,7 @@ const TreeView = ({
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
+  const { openSnapGenePreview } = useSnapGenePreview();
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
 
@@ -566,6 +568,9 @@ const TreeView = ({
                 }
                 if (action.tag === "aspose") {
                   void openAsposePreview(file);
+                }
+                if (action.tag === "snapgene") {
+                  void openSnapGenePreview(file);
                 }
               });
             });

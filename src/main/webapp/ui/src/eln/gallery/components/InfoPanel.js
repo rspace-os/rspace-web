@@ -30,6 +30,7 @@ import { paperClasses } from "@mui/material/Paper";
 import usePrimaryAction from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
+import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { Optional } from "../../../util/optional";
 import { useFolderOpen } from "./OpenFolderProvider";
@@ -688,6 +689,7 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
   const selection = useGallerySelection();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
+  const { openSnapGenePreview } = useSnapGenePreview();
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -832,6 +834,22 @@ export const InfoPanelForLargeViewports: ComponentType<{||}> = () => {
                   );
                 if (action.tag === "aspose")
                   return <AsposePreviewButton key={null} file={file} />;
+                if (action.tag === "snapgene")
+                  return (
+                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                      <ActionButton
+                        onClick={() => {
+                          void openSnapGenePreview(file);
+                        }}
+                        label="View"
+                        sx={{
+                          borderRadius: 1,
+                          px: 1.125,
+                          py: 0.25,
+                        }}
+                      />
+                    </Grid>
+                  );
                 return null;
               })
               .orElseGet((errors) => {

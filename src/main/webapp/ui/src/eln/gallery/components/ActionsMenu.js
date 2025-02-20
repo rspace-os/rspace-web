@@ -50,10 +50,12 @@ import {
   useOfficeOnlineEdit,
   usePdfPreviewOfGalleryFile,
   useAsposePreviewOfGalleryFile,
+  useSnapGenePreviewOfGalleryFile,
 } from "../primaryActionHooks";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import axios from "axios";
 import ImageEditingDialog from "../../../components/ImageEditingDialog";
 import { doNotAwait } from "../../../util/Util";
@@ -306,9 +308,11 @@ function ActionsMenu({
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  const canPreviewWithSnapGene = useSnapGenePreviewOfGalleryFile();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
+  const { openSnapGenePreview } = useSnapGenePreview();
   const { openFolder } = useFolderOpen();
 
   const [renameOpen, setRenameOpen] = React.useState(false);
@@ -390,6 +394,9 @@ function ActionsMenu({
           )
           .orElseTry(() =>
             canPreviewWithAspose(file).map(() => ({ key: "aspose", file }))
+          )
+          .orElseTry(() =>
+            canPreviewWithSnapGene(file).map(() => ({ key: "snapgene", file }))
           )
           .mapError(() => new Error("Cannot view this item."))
       )
@@ -540,6 +547,8 @@ function ActionsMenu({
                     });
                   if (viewAction.key === "aspose")
                     void openAsposePreview(viewAction.file);
+                  if (viewAction.key === "snapgene")
+                    void openSnapGenePreview(viewAction.file);
                 });
                 setActionsMenuAnchorEl(null);
               }}

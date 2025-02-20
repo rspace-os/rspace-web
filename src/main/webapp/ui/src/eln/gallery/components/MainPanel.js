@@ -75,6 +75,7 @@ import {
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useAsposePreview } from "./CallableAsposePreview";
+import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { Optional, getByKey } from "../../../util/optional";
 import LoadMoreButton from "./LoadMoreButton";
@@ -813,6 +814,7 @@ const GridView = observer(
     const { openImagePreview } = useImagePreview();
     const { openPdfPreview } = usePdfPreview();
     const { openAsposePreview } = useAsposePreview();
+    const { openSnapGenePreview } = useSnapGenePreview();
     const { openFolder } = useFolderOpen();
     const primaryAction = usePrimaryAction();
 
@@ -1102,6 +1104,9 @@ const GridView = observer(
                       }
                       if (action.tag === "aspose") {
                         void openAsposePreview(file);
+                      }
+                      if (action.tag === "snapgene") {
+                        void openSnapGenePreview(file);
                       }
                     });
                     return;
