@@ -190,7 +190,7 @@ export function getAt<T>(index: number, array: $ReadOnlyArray<T>): Optional<T> {
   return Optional.empty();
 }
 
-/*
+/**
  * Map over the passed array, keeping only those elements which when applied to
  * the passed function are wrapped in an Optional.present. This can be useful
  * when discarding particular values from an array. If the values you're
@@ -225,7 +225,7 @@ export const mapOptional = <A, B>(
   return arrayOfPresent.map((opt) => opt.value);
 };
 
-/*
+/**
  * This is a better version of doing `as.filter(a => a !== null)`.
  *
  * Why is it better? Because flow remembers the fact that the filter has been
@@ -261,6 +261,6 @@ export const filterNull = <A>(as: $ReadOnlyArray<?A>): Array<A> =>
  */
 export const all = <A>(as: $ReadOnlyArray<Optional<A>>): Optional<Array<A>> => {
   if (as.length === 0) return Optional.present([]);
-  const [head, ...tail] = as;
-  return lift2((newHead, newTail) => [newHead, ...newTail], head, all(tail));
+  const [h, ...t] = as;
+  return lift2((newHead, newTail) => [newHead, ...newTail], h, all(t));
 };
