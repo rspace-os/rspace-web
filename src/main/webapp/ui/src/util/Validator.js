@@ -23,6 +23,10 @@
  * components and the associated validation logic in the child components.
  */
 
+/**
+ * A wrapper around a function that can be called to validate the state of the
+ * system.
+ */
 export type Validator = {|
   /*
    * All of the booleans are wrapped in promises so that the validation
@@ -36,6 +40,9 @@ export type Validator = {|
   isValid: () => Promise<boolean>,
 |};
 
+/**
+ * Constructor function for creating new Validator objects
+ */
 export const mkValidator = (
   isValidFunc?: () => Promise<boolean>
 ): Validator => {
