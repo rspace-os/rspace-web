@@ -4,7 +4,6 @@ import Grid from "@mui/material/Grid";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CircularProgress from "@mui/material/CircularProgress";
-import materialTheme from "../../theme";
 import { AnimalType, AnimalState, ErrorReason, Order, Sex } from "./Enums";
 import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
@@ -549,7 +548,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
   );
 }
 
-function Pyrat({ editor, open, onClose }) {
+function PyratDialog({ editor, open, onClose }) {
   const [serverAlias, setServerAlias] = React.useState(null);
   const servers = useAuthenticatedServers();
   const [selectedAnimals, setSelectedAnimals] = React.useState([]);
@@ -562,90 +561,88 @@ function Pyrat({ editor, open, onClose }) {
   });
 
   return (
-    <ThemeProvider theme={createAccentedTheme(COLOR)}>
-      <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
-        <AppBar
-          variant="dialog"
-          currentPage="PyRAT"
-          helpPage={{
-            docLink: docLinks.pyrat,
-            title: "PyRAT help",
-          }}
-        />
-        <DialogTitle>Insert from PyRAT</DialogTitle>
-        <DialogContent>
-          {FetchingData.match(servers, {
-            loading: () => <CircularProgress />,
-            error: (error) => (
-              <Typography color="error">{error.message}</Typography>
-            ),
-            success: (servers) => {
-              if (servers.length === 1)
-                return (
-                  <PyratListing
-                    serverAlias={servers[0].alias}
-                    setSelectedAnimals={setSelectedAnimals}
-                  />
-                );
-              if (serverAlias)
-                return (
-                  <PyratListing
-                    serverAlias={serverAlias}
-                    setSelectedAnimals={setSelectedAnimals}
-                  />
-                );
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+      <AppBar
+        variant="dialog"
+        currentPage="PyRAT"
+        helpPage={{
+          docLink: docLinks.pyrat,
+          title: "PyRAT help",
+        }}
+      />
+      <DialogTitle>Insert from PyRAT</DialogTitle>
+      <DialogContent>
+        {FetchingData.match(servers, {
+          loading: () => <CircularProgress />,
+          error: (error) => (
+            <Typography color="error">{error.message}</Typography>
+          ),
+          success: (servers) => {
+            if (servers.length === 1)
               return (
-                <>
-                  <Typography variant="body1" gutterBottom>
-                    Pick one of your authenticated servers
-                  </Typography>
-                  <List>
-                    <Divider />
-                    {servers.map((server) => (
-                      <>
-                        <ListItem disablePadding key={server.alias}>
-                          <ListItemButton
-                            onClick={() => {
-                              setServerAlias(server.alias);
-                              PYRAT_URL = server.url;
-                              PYRAT_ALIAS = server.alias;
-                            }}
-                          >
-                            <ListItemText
-                              primary={server.alias}
-                              secondary={server.url}
-                            />
-                          </ListItemButton>
-                        </ListItem>
-                        <Divider />
-                      </>
-                    ))}
-                  </List>
-                </>
+                <PyratListing
+                  serverAlias={servers[0].alias}
+                  setSelectedAnimals={setSelectedAnimals}
+                />
               );
-            },
-          })}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button
-            disabled={selectedAnimals.length === 0}
-            color="callToAction"
-            variant="contained"
-            onClick={() => {
-              editor.execCommand(
-                "mceInsertContent",
-                false,
-                createTinyMceTable(selectedAnimals).outerHTML
+            if (serverAlias)
+              return (
+                <PyratListing
+                  serverAlias={serverAlias}
+                  setSelectedAnimals={setSelectedAnimals}
+                />
               );
-              onClose();
-            }}
-          >
-            Insert
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </ThemeProvider>
+            return (
+              <>
+                <Typography variant="body1" gutterBottom>
+                  Pick one of your authenticated servers
+                </Typography>
+                <List>
+                  <Divider />
+                  {servers.map((server) => (
+                    <>
+                      <ListItem disablePadding key={server.alias}>
+                        <ListItemButton
+                          onClick={() => {
+                            setServerAlias(server.alias);
+                            PYRAT_URL = server.url;
+                            PYRAT_ALIAS = server.alias;
+                          }}
+                        >
+                          <ListItemText
+                            primary={server.alias}
+                            secondary={server.url}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                      <Divider />
+                    </>
+                  ))}
+                </List>
+              </>
+            );
+          },
+        })}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button
+          disabled={selectedAnimals.length === 0}
+          color="callToAction"
+          variant="contained"
+          onClick={() => {
+            editor.execCommand(
+              "mceInsertContent",
+              false,
+              createTinyMceTable(selectedAnimals).outerHTML
+            );
+            onClose();
+          }}
+        >
+          Insert
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
 
@@ -657,8 +654,8 @@ class PyratPlugin {
         const newProps = yield;
         root.render(
           <StyledEngineProvider injectFirst>
-            <ThemeProvider theme={materialTheme}>
-              <Pyrat
+            <ThemeProvider theme={createAccentedTheme(COLOR)}>
+              <PyratDialog
                 editor={editor}
                 open={false}
                 onClose={() => {}}
