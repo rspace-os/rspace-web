@@ -3,6 +3,10 @@
 import fc, { type Arbitrary } from "fast-check";
 import RsSet from "../../set";
 
+/**
+ * This is a helper function that generates an Arbitrary of RsSet. It is useful
+ * for testing functions that operate on sets.
+ */
 export function arbRsSet<T>(
   arb: Arbitrary<T>,
   options: ?{|
@@ -19,34 +23,18 @@ export function arbRsSet<T>(
     .map((array) => new RsSet(array));
 }
 
+/**
+ * This is a helper functions for generating arbitrary subsets of a set. It is
+ * useful for testing functions that operate on subsets of sets.
+ */
 export function arbSubsetOf<T>(arbSet: RsSet<T>): Arbitrary<RsSet<T>> {
   return fc.subarray(arbSet.toArray()).map((subarray) => new RsSet(subarray));
 }
 
-/*
- * This is used for testing subtractMap, intersectionMap, and unionWith
+/**
+ * A function for unwrapping objects with an id attribute, and a few sets of
+ * those objects for testing.
  */
-export type ArbMappedFunctionArgs<A, B> = [RsSet<A>, RsSet<B>, (A) => B];
-export const arbMappedFunctionArgs: Arbitrary<
-  ArbMappedFunctionArgs<{ id: mixed }, mixed>
-> = fc.uniqueArray(fc.anything()).chain((ids) => {
-  const mapFn = ({ id }: { id: mixed }) => id;
-  return fc.tuple<RsSet<{ id: mixed }>, RsSet<mixed>, typeof mapFn>(
-    fc
-      .shuffledSubarray(ids)
-      .map((someIds) => new RsSet(someIds).map((id) => ({ id }))),
-    fc.shuffledSubarray(ids).map((someIds) => new RsSet(someIds)),
-    fc.constant(mapFn)
-  );
-});
-
-/*
- * Functions like subtractMap, intersectionMap, and unionWith operate over a
- * collection of sets that are related based on some mapping function. This
- * arbitrary supports testing these functions by providing such a function and
- * several sets of arbitrary contents.
- */
-
 export type ArbitraryMappableSets<A, B: { id: A }> = [
   (B) => A,
   RsSet<B>,
@@ -54,6 +42,12 @@ export type ArbitraryMappableSets<A, B: { id: A }> = [
   RsSet<B>
 ];
 
+/**
+ * Functions like subtractMap, intersectionMap, and unionWith operate over a
+ * collection of sets that are related based on some mapping function. This
+ * arbitrary supports testing these functions by providing such a function and
+ * several sets of arbitrary contents.
+ */
 export const arbitraryMappableSets: Arbitrary<
   ArbitraryMappableSets<mixed, { id: mixed }>
 > = fc.uniqueArray(fc.anything()).chain((ids) => {
@@ -75,7 +69,7 @@ export const arbitraryMappableSets: Arbitrary<
   );
 });
 
-/*
+/**
  * This is for testing flattenWithUnion and flattenWithIntersection.
  *
  * This Arbitrary generates a set of between 1 and 3 sets, each containing
