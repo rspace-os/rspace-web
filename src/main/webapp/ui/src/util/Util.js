@@ -199,10 +199,6 @@ export const filterMap = <A, B>(
   f: (A, B) => boolean
 ): Map<A, B> => new Map([...map.entries()].filter(([k, v]) => f(k, v)));
 
-export const capitalise = (str: string): string => {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-};
-
 export function classMixin<T>(cls: Class<T>, ...src: Array<T>): void {
   for (const _cl of src) {
     // $FlowFixMe[incompatible-use]

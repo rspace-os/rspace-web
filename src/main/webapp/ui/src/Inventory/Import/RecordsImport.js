@@ -21,7 +21,7 @@ import { type ImportRecordType } from "../../stores/stores/ImportStore";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
-import { capitalise } from "../../util/Util";
+import { capitaliseJustFirstChar } from "../../util/Util";
 import { type URL } from "../../util/types";
 import { Link } from "react-router-dom";
 
@@ -150,7 +150,7 @@ function RecordsImport(): Node {
               key={value}
               label={value}
               value={value}
-              data-test-id={`${capitalise(value)}ImportTab`}
+              data-test-id={`${capitaliseJustFirstChar(value)}ImportTab`}
             />
           ))}
         </Tabs>
