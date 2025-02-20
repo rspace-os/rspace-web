@@ -5,6 +5,7 @@ import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import BorderInnerIcon from "@mui/icons-material/BorderInner";
 import ContainerModel from "../../../stores/models/ContainerModel";
+import SearchContext from "../../../stores/contexts/Search";
 
 const DRAGGER_SIZE = 24;
 
@@ -42,8 +43,9 @@ function Dragger({ container, parentRef }: DraggerArgs): Node {
     throw new Error("Locations of container must be known.");
   const locations = container.locations;
 
+  const { search } = React.useContext(SearchContext);
   const selectedLocations = () =>
-    locations.filter((loc) => loc.isShallow).length;
+    locations.filter((loc) => loc.isShallow(search)).length;
 
   const selectionWidth =
     Math.abs(container.selectionEnd.x - container.selectionStart.x) +
