@@ -9,7 +9,7 @@ import * as ArrayUtils from "../ArrayUtils";
  * tests.
  */
 
-/*
+/**
  * Useful for asserting that two distinct arrays contain the same elements in
  * the same order
  */
@@ -21,7 +21,7 @@ export const arrayOfSameElements = <T>(
     (isSame) => isSame
   );
 
-/*
+/**
  * Performs the combination of asserting that the value is not null for jest,
  * and performing type refinement for flow.
  */
@@ -52,6 +52,11 @@ export const assertNotNull = <T>(x: ?T): T => {
  *
  * The test covering Util's zipWith and outerProduct are examples of how these
  * can be used.
+ */
+
+/**
+ * The type of a mondoid; a function that generates a random value of the type,
+ * a binary function for combining two such values, and an identity value.
  */
 export type ArbitraryMonoid<T> = Arbitrary<
   [() => Arbitrary<T>, (T, T) => T, T]
@@ -94,6 +99,11 @@ const minimum: ArbitraryMonoid<number> = fc.tuple(
   fc.constant(Infinity)
 );
 
+/**
+ * A collection of common monoids, useful for testing generec algorithms that
+ * operate on data of a particular type and an associated binary function that
+ * together form a monoid.
+ */
 export const monoids: Array<
   ArbitraryMonoid<number> | ArbitraryMonoid<boolean> | ArbitraryMonoid<string>
 > = [
