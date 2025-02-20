@@ -2,6 +2,7 @@
 
 import { getByKey } from "./optional";
 import Result from "./result";
+import { match } from "./Util";
 
 /*
  * These are some simple functions for converting strings into slightly more
@@ -40,6 +41,15 @@ export function parseInteger(value: string): Result<number> {
     ? Result.Error([new Error(`"${value}" is not an integer`)])
     : Result.Ok(parseInt(value, 10));
 }
+
+/**
+ * Parse a boolean from a string of either "true" or "false".
+ */
+export const parseBoolean: ("true" | "false") => Result<boolean> = match([
+  [(value: "false" | "true") => value === "false", Result.Ok(false)],
+  [(value: "false" | "true") => value === "true", Result.Ok(true)],
+  [() => true, Result.Error([new Error("Neither 'true' nor 'false'")])],
+]);
 
 /**
  * Parses a string into a date.

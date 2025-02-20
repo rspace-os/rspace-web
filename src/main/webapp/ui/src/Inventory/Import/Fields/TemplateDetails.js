@@ -1,7 +1,7 @@
 // @flow
 
 import useStores from "../../../stores/use-stores";
-import { parseBoolean } from "../../../util/Util";
+import * as Parsers from "../../../util/parsers";
 import SummaryInfo from "../../Template/SummaryInfo";
 import HelpTextAlert from "../../../components/HelpTextAlert";
 import TemplateName from "./TemplateName";
@@ -25,8 +25,10 @@ function TemplateDetails(): Node {
       value={importStore.importData?.createNewTemplate.toString()}
       onChange={(event, value) => {
         if (event.target.name === "newOrExisting") {
-          importStore.importData?.setCreateNewTemplate(parseBoolean(value));
-          if (parseBoolean(value)) {
+          importStore.importData?.setCreateNewTemplate(
+            Parsers.parseBoolean(value).elseThrow()
+          );
+          if (Parsers.parseBoolean(value).elseThrow()) {
             importStore.importData?.setTemplate(null);
             importStore.importData?.setDefaultUnitId();
           }

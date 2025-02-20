@@ -209,11 +209,6 @@ export function classMixin<T>(cls: Class<T>, ...src: Array<T>): void {
   }
 }
 
-export const parseBoolean: ("true" | "false") => boolean = match([
-  [(value: "false" | "true") => value === "false", false],
-  [(value: "false" | "true") => value === "true", true],
-]);
-
 /*
  * AllSettled is the type returned by Promise.allSettled. This function
  * partitions the returned values and errors into two arrays.
