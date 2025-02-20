@@ -155,7 +155,7 @@
       ]
     },
     "testMatch": [
-      "**/?*.test.js"
+      "**/?*.test.(j|t)s"
     ],
     "testTimeout": 20000,
     "reporters": [
