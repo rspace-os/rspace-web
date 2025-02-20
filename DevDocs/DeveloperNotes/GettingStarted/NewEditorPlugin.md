@@ -40,5 +40,70 @@ into the document.
 
 ## Step 2: Define a new TinyMCE plugin
 
+### Step 2.1: Registering a plugin
+Lets define a script in `src/main/webapp/ui/tinyMCE/plugins/newPlugin/index.js`,
+inside of which we will call `tinymce.PluginManager.add("newPlugin", NewPlugin);`,
+where `NewPlugin` is a class. This class doesn't need to have any particular
+methods, it just needs to have a constructor that takes as its argument a
+reference to the editor. The class will be instantiated and the constructor
+called when the user goes to edit the rich text field and a new instance of
+TinyMCE is created, so whilst `tinymce.PluginManager.add("newPlugin", NewPlugin);`
+is to be called on page-load the class will be instantiated for each text field
+as it transitions from the viewing to editing modes.
+
+Inside this constructor, we want to set up handles for the insert menu, toolbar
+icon, and the slash menu. To do this we call the following code
+```
+editor.ui.registry.addMenuItem('optNewPlugin', {
+  text: 'New Plugin',
+  icon: 'newPlugin',
+  onAction: () => {
+    // do something
+  }
+});
+editor.ui.registry.addButton('newPlugin', {
+  tooltip: 'New Plugin',
+  icon: 'newPlugin',
+  onAction: () => {
+    // do something
+  }
+});
+if (!window.insertActions) window.insertActions = new Map();
+window.insertActions.set('optNewPlugin', {
+  text: 'New Plugin',
+  icon: 'newPlugin',
+  onAction: () => {
+    // do something
+  }
+});
+```
+In each case, the `onAction` callback is where the actual logic for the plugin
+should go. In most cases, this will involve displaying a dialog, making some API
+calls, and having the user make a selection before generating HTML to display,
+but before we get to that there are a few more initialisation steps to take care
+of.
+  1. In `src/main/webapp/ui/webpack.config.js` we need to add a new entry point for our new script.
+     We load the plugin through a separate entry point so that it is only downloaded
+     when the plugin is enabled.
+    ```
+      tinymceNewPlugin: "./src/tinyMCE/newPlugin/index.js",
+    ```
+  2. In `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`,
+     we need to add the following code:
+     * Check whether the plugin is enabled with
+        ```
+        const newPluginEnabled = integrations.NEW_PLUGIN.enabled && integrations.NEW_PLUGIN.available;
+        ```
+     * Register the new plugin's source file and to tell TinyMCE to show the
+       toolbar button and menu item when they are registered.
+        ```
+        if (newPluginEnabled) {
+          localTinymcesetup.external_plugins["newPlugin"] = "/ui/dist/tinymceNewPlugin.js";
+          addToToolbarIfNotPresent(localTinymcesetup, " | newPlugin");
+          addToMenuIfNotPresent(localTinymcesetup, " | optNewPlugin");
+        }
+        ```
+  3. A simple SVG needs to be added to `src/main/webapp/scripts/tinymce/tinymce516/icons/custom_icons/icons.js`
+
 ## Step 3: Testing
 - How will we know if the plugin stops working e.g. due to API changes/services being down?
