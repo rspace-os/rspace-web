@@ -22,8 +22,8 @@ type Operation =
   | "updated"
   | "transferred";
 
-export const bulkSuccessAlert = (
-  records: Array<InventoryRecord> = [],
+const bulkSuccessAlert = (
+  records: Array<InventoryRecord>,
   suffix: string
 ): string => {
   if (records.length === 0) {
@@ -36,11 +36,15 @@ export const bulkSuccessAlert = (
   return `${prefix} successfully ${suffix}.`;
 };
 
+/**
+ * Handles the success of a bulk operation, displaying a success alert with
+ * details of the operation.
+ */
 export const handleDetailedSuccesses = (
   records: Array<InventoryRecord>,
   operation: Operation,
   recordAltOperation: (InventoryRecord) => string = () => operation,
-  message?: ?string
+  message?: ?string = null
 ) => {
   const variant = "success";
   getRootStore().uiStore.addAlert(
@@ -101,6 +105,10 @@ const messages = {
   },
 };
 
+/**
+ * Handles the failure of a bulk operation, displaying an error alert with
+ * details of the operation.
+ */
 export const handleDetailedErrors = (
   errorCount: number,
   data: Array<{
@@ -151,6 +159,9 @@ export const handleDetailedErrors = (
   return Boolean(errorCount);
 };
 
+/**
+ * Shows a loading alert whilst a promise is pending.
+ */
 export const showToastWhilstPending = <A>(
   message: string,
   promise: Promise<A>
