@@ -6,6 +6,11 @@
 import fc, { type Arbitrary } from "fast-check";
 import { Optional } from "../optional";
 
+/**
+ * Generates an arbitrary Optional<T> from an arbitrary T.
+ * Sometimes it will return an empty Optional, sometimes it will return a
+ * non-empty Optional with the passed value.
+ */
 const arbOptional = <T>(arb: Arbitrary<T>): Arbitrary<Optional<T>> =>
   fc.option(arb).map((x) => Optional.fromNullable(x));
 
@@ -27,8 +32,8 @@ describe("optional", () => {
       fc.assert(
         fc.property(
           arbOptional(fc.anything()),
-          fc.func<mixed, mixed>(fc.anything()),
-          fc.func<mixed, mixed>(fc.anything()),
+          fc.func<Array<unknown>, unknown>(fc.anything()),
+          fc.func<Array<unknown>, unknown>(fc.anything()),
           (opt, funcA, funcB) => {
             expect(opt.map(funcA).map(funcB)).toEqual(
               opt.map((x) => funcB(funcA(x)))
@@ -50,7 +55,9 @@ describe("optional", () => {
       fc.assert(
         fc.property(
           fc.anything(),
-          fc.func<mixed, Optional<mixed>>(arbOptional(fc.anything())),
+          fc.func<Array<unknown>, Optional<unknown>>(
+            arbOptional(fc.anything())
+          ),
           (value, func) => {
             expect(Optional.present(value).flatMap(func)).toEqual(func(value));
           }
@@ -68,8 +75,12 @@ describe("optional", () => {
       fc.assert(
         fc.property(
           arbOptional(fc.anything()),
-          fc.func<mixed, Optional<mixed>>(arbOptional(fc.anything())),
-          fc.func<mixed, Optional<mixed>>(arbOptional(fc.anything())),
+          fc.func<Array<unknown>, Optional<unknown>>(
+            arbOptional(fc.anything())
+          ),
+          fc.func<Array<unknown>, Optional<unknown>>(
+            arbOptional(fc.anything())
+          ),
           (opt, funcA, funcB) => {
             expect(opt.flatMap(funcA).flatMap(funcB)).toEqual(
               opt.flatMap((x) => funcA(x).flatMap(funcB))
