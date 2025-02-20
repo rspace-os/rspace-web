@@ -32,7 +32,7 @@ the user to search, filter, and select, and finally inserts the generated HTML
 into the document.
 
 ## Step 1: Apps page & Authentication
-- See .../../../src/main/webapp/ui/src/eln/apps/AddingANewIntegration.md for the front-end changes needed
+- See [/src/main/webapp/ui/src/eln/apps/AddingANewIntegration.md](/src/main/webapp/ui/src/eln/apps/AddingANewIntegration.md) for the front-end changes needed
   - Pick a colour based on the branding of the organisation that provides the service
   - Even if no authentication is required and plugin is not supported by ResearchSpace,
     adding it to the bottom section will make it visible to researchers
@@ -82,13 +82,13 @@ should go. In most cases, this will involve displaying a dialog, making some API
 calls, and having the user make a selection before generating HTML to display,
 but before we get to that there are a few more initialisation steps to take care
 of.
-  1. In `src/main/webapp/ui/webpack.config.js` we need to add a new entry point for our new script.
+  1. In [/src/main/webapp/ui/webpack.config.js](/src/main/webapp/ui/webpack.config.js) we need to add a new entry point for our new script.
      We load the plugin through a separate entry point so that it is only downloaded
      when the plugin is enabled.
     ```
       tinymceNewPlugin: "./src/tinyMCE/newPlugin/index.js",
     ```
-  2. In `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`,
+  2. In [/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js](/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js),
      we need to add the following code:
      * Check whether the plugin is enabled with
         ```
@@ -103,7 +103,7 @@ of.
           addToMenuIfNotPresent(localTinymcesetup, " | optNewPlugin");
         }
         ```
-  3. A simple SVG needs to be added to `src/main/webapp/scripts/tinymce/tinymce516/icons/custom_icons/icons.js`
+  3. A simple SVG needs to be added to [/src/main/webapp/scripts/tinymce/tinymce516/icons/custom_icons/icons.js](/src/main/webapp/scripts/tinymce/tinymce516/icons/custom_icons/icons.js).
 
 ### Step 2.2: Rendering a react component
 The three `onAction` handlers should render a react component. Whilst the
@@ -180,7 +180,7 @@ This is much the same colour as set on the apps page, but with a few variations
 to be able to style all of the possible UI elements. There are five colours
 which need defining `main`, `darker`, `contrastText`, `background`, and
 `backgroundContrastText`. To find out more about how each is used, check out
-`src/main/webapp/ui/src/accentedTheme.js`. For a initial value, start by using
+[/src/main/webapp/ui/src/accentedTheme.js](/src/main/webapp/ui/src/accentedTheme.js). For a initial value, start by using
 this defining as a template, setting the hue to the same value used on the apps
 page, above.
 ```
@@ -217,11 +217,10 @@ Once we've implemented the dialog and any UI elements within you may need to
 tweak the saturation and lightness values to ensure there is sufficient contrast
 between all textual elements and the background they are shown on. To find out
 more about accessibility and contrast ratios, see the section titled "Colour
-Contrast" in `./Accessibility.md`. Whilst mentioning accessibility, it is worth
+Contrast" in [./Accessibility.md](./Accessibility.md). Whilst mentioning accessibility, it is worth
 pointing out that by using an accented theme, we automatically get a high
 contrast mode that stips out all of the superfluous colour, should the user wish
 to enable it (this is mentioned in the section titled "Accented Theme").
-
 
 ## Step 3: Testing
 - How will we know if the plugin stops working e.g. due to API changes/services being down?
