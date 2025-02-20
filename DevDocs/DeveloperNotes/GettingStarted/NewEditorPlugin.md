@@ -105,5 +105,123 @@ of.
         ```
   3. A simple SVG needs to be added to `src/main/webapp/scripts/tinymce/tinymce516/icons/custom_icons/icons.js`
 
+### Step 2.2: Rendering a react component
+The three `onAction` handlers should render a react component. Whilst the
+document editor is not currently implemented in react, we intend to migrate to a
+react-based tech stack in the future and all new development should be forwards
+compatible to minimise the disruption of the migration. Furthermore, each of our
+recently developed integrations utilise the branding colours of the
+organisations that develop and maintain the APIs that provide the source of the
+data to help users to visually recognise the point at which RSpace is
+interoperating with other systems. This is implemented using an accented theme
+that is applied to all of the UI elements, most notably the header where we
+consistently provide a link to the documentation for the integration.
+
+In the constructor of our new plugin, we want to define a generator function
+that with each call re-renders the react component, allowing us to change the
+`open` state.
+```
+function* renderNewPlugin(domContainer) {
+  const root = createRoot(domContainer);
+  while (true) {
+    const newProps = yield;
+    root.render(
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={createAccentedTheme(COLOR)}>
+          <NewPluginDialog
+            editor={editor}
+            open={false}
+            onClose={() => {}}
+            {...newProps}
+          />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    );
+  }
+}
+```
+
+We then want to add this dialog to the DOM, but initially hidden. The
+conditional logic is to make sure the dialog isn't added repeatedly every time
+the plugin is instantiated.
+```
+if (!document.getElementById("tinymce-new-plugin")) {
+  const div = document.createElement("div");
+  div.id = "tinymce-new-plugin";
+  document.body.appendChild(div);
+}
+const newPluginRenderer = renderNewPlugin(document.getElementById("tinymce-new-plugin"));
+newPluginRenderer.next({ open: false });
+```
+
+Finally we return to the `onAction`s, where we can call
+```
+newPluginRenderer.next({
+  open: true,
+  onClose: () => {
+    newPluginRenderer.next({ open: false });
+  },
+});
+```
+
+Note that the imports required at this point are
+```
+import React from "react";
+import { ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { createRoot } from "react-dom/client";
+import createAccentedTheme from "../../accentedTheme";
+```
+
+Now we just have two things to define `COLOR` and `NewPluginDialog`.
+
+### Step 2.3: Setting the colour of the accented theme
+This is much the same colour as set on the apps page, but with a few variations
+to be able to style all of the possible UI elements. There are five colours
+which need defining `main`, `darker`, `contrastText`, `background`, and
+`backgroundContrastText`. To find out more about how each is used, check out
+`src/main/webapp/ui/src/accentedTheme.js`. For a initial value, start by using
+this defining as a template, setting the hue to the same value used on the apps
+page, above.
+```
+const COLOR = {
+  main: {
+    hue: HUE,
+    saturation: 46,
+    lightness: 70,
+  },
+  darker: {
+    hue: HUE,
+    saturation: 93,
+    lightness: 33,
+  },
+  contrastText: {
+    hue: HUE,
+    saturation: 35,
+    lightness: 26,
+  },
+  background: {
+    hue: HUE,
+    saturation: 25,
+    lightness: 71,
+  },
+  backgroundContrastText: {
+    hue: HUE,
+    saturation: 11,
+    lightness: 24,
+  },
+};
+```
+
+Once we've implemented the dialog and any UI elements within you may need to
+tweak the saturation and lightness values to ensure there is sufficient contrast
+between all textual elements and the background they are shown on. To find out
+more about accessibility and contrast ratios, see the section titled "Colour
+Contrast" in `./Accessibility.md`. Whilst mentioning accessibility, it is worth
+pointing out that by using an accented theme, we automatically get a high
+contrast mode that stips out all of the superfluous colour, should the user wish
+to enable it (this is mentioned in the section titled "Accented Theme").
+
+
 ## Step 3: Testing
 - How will we know if the plugin stops working e.g. due to API changes/services being down?
