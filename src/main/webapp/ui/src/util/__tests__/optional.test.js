@@ -6,7 +6,7 @@
 import fc, { type Arbitrary } from "fast-check";
 import { Optional } from "../optional";
 
-export const arbOptional = <T>(arb: Arbitrary<T>): Arbitrary<Optional<T>> =>
+const arbOptional = <T>(arb: Arbitrary<T>): Arbitrary<Optional<T>> =>
   fc.option(arb).map((x) => Optional.fromNullable(x));
 
 describe("optional", () => {
