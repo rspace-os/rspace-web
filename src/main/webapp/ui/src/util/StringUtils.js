@@ -23,7 +23,7 @@ export function stripDiacritics(str: string): string {
 
 /**
  * Replace all spaces with non-breaking spaces.
- * 
+ *
  * This is useful when we want to ensure that a label wraps at a particular
  * point and so we can apply the CSS property `white-space: break-spaces` to
  * the parent element and repace all of the spaces that we don't want to break
