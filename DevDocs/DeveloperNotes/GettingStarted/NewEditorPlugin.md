@@ -31,12 +31,41 @@ menu. When invoked, the plugin usually opens a dialog, displays some data for
 the user to search, filter, and select, and finally inserts the generated HTML
 into the document.
 
+
 ## Step 1: Apps page & Authentication
-- See [/src/main/webapp/ui/src/eln/apps/AddingANewIntegration.md](/src/main/webapp/ui/src/eln/apps/AddingANewIntegration.md) for the front-end changes needed
-  - Pick a colour based on the branding of the organisation that provides the service
-  - Even if no authentication is required and plugin is not supported by ResearchSpace,
-    adding it to the bottom section will make it visible to researchers
-- Something, something, something about required backend changes
+Each integration that RSpace has with third-party services is enabled and
+configured on the apps page. Each integration is represented by a card on the
+page, which can be clicked to open a dialog with more information about the
+integration, a mechanism to enable it, and where applicable further
+configuration options such as authentication. The changes required can be broken
+down into two parts: the backend and the frontend.
+
+### Step 1.1: Backend changes
+- Deployment properties, where applicable
+- Sysadmin toggle
+- Enabled state (including how it is exposed for using in section 2.1 below)
+- Authentication
+
+### Step 1.2: Frontend changes
+The frontend changes required to add a new integration to the apps page are
+fully document in [/src/main/webapp/ui/src/eln/apps/AddingANewIntegration.md](/src/main/webapp/ui/src/eln/apps/AddingANewIntegration.md),
+but to summarise briefly there is
+  1. The API calls to get the state of the integration (whether is available, disabled, or enabled)
+  2. The UI for displaying the card and dialog
+  3. A unit test to verify 1. and 2. are working correctly
+
+The only part perhaps worth elaborating on further, given it is expanded on
+below, is the accented colour of the card and dialog. Each integration on the
+apps page utilises the branding colours of the organisation that develops and
+maintains the APIs that the integration relies on. This makes it easier to
+identify the integration by utilising brand recognition as well as providing an
+aesthetic appeal and a visual connection to the dialogs and UI elements that are
+made available by enabling the integration. The apps page requires just a single
+colour defintion for each integration, expressed as a (hue, saturation,
+lightness) triple. If the logo of the organisation has a solid background colour
+then simply use that colour, if it does not then pick the colour that is most
+associated with the branding of the organisation.
+
 
 ## Step 2: Define a new TinyMCE plugin
 
