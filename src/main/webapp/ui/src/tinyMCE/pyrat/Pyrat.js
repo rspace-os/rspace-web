@@ -4,7 +4,6 @@ import Grid from "@mui/material/Grid";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CircularProgress from "@mui/material/CircularProgress";
-import materialTheme from "../../theme";
 import { AnimalType, AnimalState, ErrorReason, Order, Sex } from "./Enums";
 import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
@@ -16,7 +15,6 @@ import Filter from "./Filter";
 import { createRoot } from "react-dom/client";
 import { getHeader } from "../../util/axios";
 import { parseInteger } from "../../util/parsers";
-import { useDeploymentProperty } from "../../eln/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -26,6 +24,42 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import createAccentedTheme from "../../accentedTheme";
+import AppBar from "../../components/AppBar";
+import docLinks from "../../assets/DocLinks";
+
+const COLOR = {
+  main: {
+    hue: 196,
+    saturation: 46,
+    lightness: 70,
+  },
+  darker: {
+    hue: 196,
+    saturation: 93,
+    lightness: 33,
+  },
+  contrastText: {
+    hue: 196,
+    saturation: 35,
+    lightness: 26,
+  },
+  background: {
+    hue: 196,
+    saturation: 25,
+    lightness: 71,
+  },
+  backgroundContrastText: {
+    hue: 196,
+    saturation: 11,
+    lightness: 24,
+  },
+};
 
 function useAuthenticatedServers() {
   const [servers, setServers] = React.useState([]);
@@ -107,11 +141,10 @@ const TABLE_HEADER_CELLS = [
 ];
 
 let VISIBLE_HEADER_CELLS = [];
-let SELECTED_ANIMALS = [];
 let PYRAT_URL = null;
 let PYRAT_ALIAS = null;
 
-function PyratListing({ serverAlias }) {
+function PyratListing({ serverAlias, setSelectedAnimals }) {
   const pyrat = axios.create({
     baseURL: "/apps/pyrat",
     timeout: 15000,
@@ -256,7 +289,7 @@ function PyratListing({ serverAlias }) {
     handleChangePage(0);
   };
 
-  useEffect(function assertPyratVersion() {
+  useEffect(() => {
     pyrat
       .get("version?serverAlias=" + serverAlias)
       .then((response) => {
@@ -269,7 +302,7 @@ function PyratListing({ serverAlias }) {
       });
   }, []);
 
-  useEffect(function makeBuildingEnum() {
+  useEffect(() => {
     pyrat
       .get(
         `locations?serverAlias=${serverAlias}&s=full_name:asc&k=building_id&k=full_name&type=building&=status=available`
@@ -288,7 +321,7 @@ function PyratListing({ serverAlias }) {
             ...filterSpecial,
             building_id: {
               ...filterSpecial.building_id,
-              enumObj: enumObj,
+              enumObj,
             },
           });
         }
@@ -311,7 +344,7 @@ function PyratListing({ serverAlias }) {
       .get(`${collection}?` + makeQueryString)
       .then((response) => {
         if (response.data) {
-          let animals = response.data;
+          const animals = response.data;
 
           // Not done at render time as "animals" is reused for inserting TinyMCE table
           animals.forEach((animal) => {
@@ -383,9 +416,9 @@ function PyratListing({ serverAlias }) {
       }
     });
 
-    return `serverAlias=${serverAlias}&l=${rowsPerPage}&o=${page * rowsPerPage}&${params.join(
-      ""
-    )}&s=${orderBy}:${order}`;
+    return `serverAlias=${serverAlias}&l=${rowsPerPage}&o=${
+      page * rowsPerPage
+    }&${params.join("")}&s=${orderBy}:${order}`;
   }, [filterCounter, order, orderBy, rowsPerPage, page]);
 
   VISIBLE_HEADER_CELLS = useMemo(
@@ -394,20 +427,16 @@ function PyratListing({ serverAlias }) {
     [visibleColumnIds]
   );
 
-  SELECTED_ANIMALS = useMemo(() => {
-    const selected_animals = animals.filter((animal) =>
-      selectedAnimalIds.includes(animal.eartag_or_id)
+  React.useEffect(() => {
+    setSelectedAnimals(
+      animals.filter((animal) =>
+        selectedAnimalIds.includes(animal.eartag_or_id)
+      )
     );
-
-    window.parent.postMessage(
-      {
-        mceAction: selected_animals.length > 0 ? "enable" : "disable",
-      },
-      "*"
-    );
-
-    return selected_animals;
-  }, [selectedAnimalIds]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - setSelectedAnimals will not meaningfully change
+     */
+  }, [animals, selectedAnimalIds]);
 
   function handlePyratError(error) {
     if (error.message === "Network Error") {
@@ -519,82 +548,180 @@ function PyratListing({ serverAlias }) {
   );
 }
 
-function Pyrat() {
+function PyratDialog({ editor, open, onClose }) {
   const [serverAlias, setServerAlias] = React.useState(null);
   const servers = useAuthenticatedServers();
+  const [selectedAnimals, setSelectedAnimals] = React.useState([]);
 
   FetchingData.getSuccessValue(servers).do((servers) => {
     if (servers.length === 1) {
       PYRAT_URL = servers[0].url;
-      PYRAT_ALIAS = servers[0].alias
+      PYRAT_ALIAS = servers[0].alias;
     }
   });
 
-  return FetchingData.match(servers, {
-    loading: () => <CircularProgress />,
-    error: (error) => <Typography color="error">{error.message}</Typography>,
-    success: (servers) => {
-      if (servers.length === 1)
-        return <PyratListing serverAlias={servers[0].alias} />;
-      if (serverAlias) return <PyratListing serverAlias={serverAlias} />;
-      return (
-        <>
-          <Typography variant="body1" gutterBottom>
-            Pick one of your authenticated servers
-          </Typography>
-          <List>
-            <Divider />
-            {servers.map((server) => (
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+      <AppBar
+        variant="dialog"
+        currentPage="PyRAT"
+        helpPage={{
+          docLink: docLinks.pyrat,
+          title: "PyRAT help",
+        }}
+      />
+      <DialogTitle>Insert from PyRAT</DialogTitle>
+      <DialogContent>
+        {FetchingData.match(servers, {
+          loading: () => <CircularProgress />,
+          error: (error) => (
+            <Typography color="error">{error.message}</Typography>
+          ),
+          success: (servers) => {
+            if (servers.length === 1)
+              return (
+                <PyratListing
+                  serverAlias={servers[0].alias}
+                  setSelectedAnimals={setSelectedAnimals}
+                />
+              );
+            if (serverAlias)
+              return (
+                <PyratListing
+                  serverAlias={serverAlias}
+                  setSelectedAnimals={setSelectedAnimals}
+                />
+              );
+            return (
               <>
-                <ListItem disablePadding key={server.alias}>
-                  <ListItemButton
-                    onClick={() => {
-                      setServerAlias(server.alias);
-                      PYRAT_URL = server.url;
-                      PYRAT_ALIAS = server.alias;
-                    }}
-                  >
-                    <ListItemText
-                      primary={server.alias}
-                      secondary={server.url}
-                    />
-                  </ListItemButton>
-                </ListItem>
-                <Divider />
+                <Typography variant="body1" gutterBottom>
+                  Pick one of your authenticated servers
+                </Typography>
+                <List>
+                  <Divider />
+                  {servers.map((server) => (
+                    <>
+                      <ListItem disablePadding key={server.alias}>
+                        <ListItemButton
+                          onClick={() => {
+                            setServerAlias(server.alias);
+                            PYRAT_URL = server.url;
+                            PYRAT_ALIAS = server.alias;
+                          }}
+                        >
+                          <ListItemText
+                            primary={server.alias}
+                            secondary={server.url}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                      <Divider />
+                    </>
+                  ))}
+                </List>
               </>
-            ))}
-          </List>
-        </>
-      );
-    },
-  });
+            );
+          },
+        })}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button
+          disabled={selectedAnimals.length === 0}
+          color="callToAction"
+          variant="contained"
+          onClick={() => {
+            editor.execCommand(
+              "mceInsertContent",
+              false,
+              createTinyMceTable(selectedAnimals).outerHTML
+            );
+            onClose();
+          }}
+        >
+          Insert
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const domContainer = document.getElementById("tinymce-pyrat");
-  const root = createRoot(domContainer);
-  root.render(
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={materialTheme}>
-        <Pyrat />
-      </ThemeProvider>
-    </StyledEngineProvider>
-  );
-});
-
-parent.tinymce.activeEditor.on("pyrat-insert", function () {
-  if (parent && parent.tinymce) {
-    const ed = parent.tinymce.activeEditor;
-
-    if (SELECTED_ANIMALS.length > 0) {
-      const pyratTable = createTinyMceTable();
-      ed.execCommand("mceInsertContent", false, pyratTable.outerHTML);
+class PyratPlugin {
+  constructor(editor) {
+    function* renderPyrat(domContainer) {
+      const root = createRoot(domContainer);
+      while (true) {
+        const newProps = yield;
+        root.render(
+          <StyledEngineProvider injectFirst>
+            <ThemeProvider theme={createAccentedTheme(COLOR)}>
+              <PyratDialog
+                editor={editor}
+                open={false}
+                onClose={() => {}}
+                {...newProps}
+              />
+            </ThemeProvider>
+          </StyledEngineProvider>
+        );
+      }
     }
-    ed.windowManager.close();
-  }
-});
 
-function createTinyMceTable() {
+    if (!document.getElementById("tinymce-pyrat")) {
+      const div = document.createElement("div");
+      div.id = "tinymce-pyrat";
+      document.body.appendChild(div);
+    }
+    const pyratRenderer = renderPyrat(document.getElementById("tinymce-pyrat"));
+    pyratRenderer.next({ open: false });
+
+    // Add a button to the toolbar
+    editor.ui.registry.addButton("pyrat", {
+      tooltip: "Link to PyRAT",
+      icon: "pyrat",
+      onAction() {
+        pyratRenderer.next({
+          open: true,
+          onClose: () => {
+            pyratRenderer.next({ open: false });
+          },
+        });
+      },
+    });
+
+    // Adds a menu item to the insert menu
+    editor.ui.registry.addMenuItem("optPyrat", {
+      text: "From PyRAT",
+      icon: "pyrat",
+      onAction() {
+        pyratRenderer.next({
+          open: true,
+          onClose: () => {
+            pyratRenderer.next({ open: false });
+          },
+        });
+      },
+    });
+
+    // Adds an option to the slash-menu
+    if (!window.insertActions) window.insertActions = new Map();
+    window.insertActions.set("optPyrat", {
+      text: "From PyRAT",
+      icon: "pyrat",
+      action: () => {
+        pyratRenderer.next({
+          open: true,
+          onClose: () => {
+            pyratRenderer.next({ open: false });
+          },
+        });
+      },
+    });
+  }
+}
+tinymce.PluginManager.add("pyrat", PyratPlugin);
+
+function createTinyMceTable(selectedAnimals) {
   const pyratTable = document.createElement("table");
   pyratTable.setAttribute("data-tableSource", "pyrat");
   pyratTable.style = "font-size: 0.7em";
@@ -615,7 +742,9 @@ function createTinyMceTable() {
   linkCell.appendChild(document.createTextNode(" on "));
   linkCell.appendChild(document.createTextNode(new Date().toDateString()));
   linkCell.appendChild(document.createTextNode(" "));
-  linkCell.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
+  linkCell.appendChild(
+    document.createTextNode(new Date().toLocaleTimeString())
+  );
   linkCell.setAttribute("colspan", VISIBLE_HEADER_CELLS.length);
   linkCell.style = "font-weight: 400";
   linkRow.appendChild(linkCell);
@@ -629,7 +758,7 @@ function createTinyMceTable() {
   });
   pyratTable.appendChild(tableHeader);
 
-  SELECTED_ANIMALS.forEach((animal) => {
+  selectedAnimals.forEach((animal) => {
     const row = document.createElement("tr");
 
     VISIBLE_HEADER_CELLS.forEach((headerCell) => {

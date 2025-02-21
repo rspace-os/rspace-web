@@ -18,7 +18,6 @@ scripts/externalTinymcePlugins/onedrive/plugin.min.js
 scripts/externalTinymcePlugins/owncloud/plugin.min.js
 scripts/externalTinymcePlugins/omero/plugin.min.js
 scripts/externalTinymcePlugins/protocols_io/plugin.min.js
-scripts/externalTinymcePlugins/pyrat/plugin.min.js
 scripts/externalTinymcePlugins/sketch/plugin.min.js
 scripts/externalTinymcePlugins/snip/plugin.min.js
 scripts/externalTinymcePlugins/toolbar/styles/main.css

@@ -32,7 +32,6 @@ const useStyles = makeStyles()(() => ({
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    position: "fixed",
     left: "0",
     bottom: "0",
     width: "calc(100% - 16px)",
