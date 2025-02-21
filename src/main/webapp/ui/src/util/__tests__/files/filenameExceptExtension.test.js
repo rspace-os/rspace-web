@@ -18,4 +18,8 @@ describe("filenameExceptExtension", () => {
   test('filenameExceptExtension("testing") === "testing"', () => {
     expect(filenameExceptExtension("testing")).toBe("testing");
   });
+
+  test('filenameExceptExtension("testing.js.flow") === "testing.js"', () => {
+    expect(filenameExceptExtension("testing.js.flow")).toBe("testing.js");
+  });
 });
