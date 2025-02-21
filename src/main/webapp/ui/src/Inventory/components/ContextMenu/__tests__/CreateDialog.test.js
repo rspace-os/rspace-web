@@ -167,6 +167,7 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
+      // $FlowExpectedError[cannot-write]
       container.fetchAdditionalInfo = jest.fn();
       render(
         <ThemeProvider theme={materialTheme}>
@@ -231,6 +232,7 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
+      // $FlowExpectedError[cannot-write]
       container.fetchAdditionalInfo = jest.fn();
       render(
         <ThemeProvider theme={materialTheme}>
