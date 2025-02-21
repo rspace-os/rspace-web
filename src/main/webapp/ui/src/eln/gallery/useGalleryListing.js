@@ -253,11 +253,15 @@ function generateIconSrc(
   modificationDate: Date,
   isFolder: boolean,
   isSystemFolder: boolean,
-  file: GalleryFile
+  file: GalleryFile,
+  section: GallerySection
 ) {
   if (isFolder) {
     if (isSystemFolder) return "/images/icons/system_folder.svg";
     return "/images/icons/folder.svg";
+  }
+  if (section === GALLERY_SECTION.DMPS) {
+    return "/images/icons/dmp.svg";
   }
   return idToString(id)
     .flatMap((idStr) => {
@@ -296,7 +300,7 @@ export class LocalGalleryFile implements GalleryFile {
   description: Description;
   +type: string;
   +ownerName: string;
-  +gallerySection: string;
+  +gallerySection: GallerySection;
   +size: number;
   +version: number;
   +thumbnailId: number | null;
@@ -339,7 +343,7 @@ export class LocalGalleryFile implements GalleryFile {
     type: string,
     ownerName: string,
     path: $ReadOnlyArray<GalleryFile>,
-    gallerySection: string,
+    gallerySection: GallerySection,
     size: number,
     version: number,
     thumbnailId: number | null,
@@ -436,7 +440,8 @@ export class LocalGalleryFile implements GalleryFile {
       this.modificationDate,
       this.isFolder,
       this.isSystemFolder,
-      this
+      this,
+      this.gallerySection
     );
   }
 
@@ -728,7 +733,8 @@ class RemoteFile implements GalleryFile {
       this.modificationDate,
       this.isFolder,
       false,
-      this
+      this,
+      GALLERY_SECTION.NETWORKFILES
     );
   }
 
@@ -867,6 +873,7 @@ function parseGalleryFileFromFolderApiResponse(
       .elseThrow();
     const mediaType = Parsers.getValueWithKey("mediaType")(obj)
       .flatMap(Parsers.isString)
+      .flatMap(parseGallerySection)
       .elseThrow();
     return Result.Ok(
       new LocalGalleryFile({
