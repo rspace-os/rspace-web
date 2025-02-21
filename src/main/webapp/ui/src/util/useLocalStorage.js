@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { type UseState } from "./types";
 
-/* Like useState, but synchronised with local storage */
+/**
+ * Like useState, but synchronised with local storage 
+ */
 export default function useLocalStorage<T>(
   key: string,
   defaultValue: T
