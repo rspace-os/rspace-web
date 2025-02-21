@@ -106,7 +106,7 @@ export class Optional<T> {
 
   // altValueGetter doesn't have to return a value; it could throw an exception
   orElseGet<U>(altValueGetter: () => U): T | U {
-    return this.destruct(altValueGetter, (value) => value as T | U);
+    return this.destruct<T | U>(altValueGetter, (value) => value);
   }
 
   /*
