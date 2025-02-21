@@ -247,7 +247,25 @@ const LocationPicker: ComponentType<{|
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /*
+   * If the container has locations but the details have not been fetched,
+   * then fetch them before rendering otherwise the container will show as
+   * empty.
+   */
+  React.useEffect(() => {
+    if (
+      state.container.locationsCount > 0 &&
+      state.container.locations?.length === 0
+    )
+      void state.container.fetchAdditionalInfo();
+  }, [state.container]);
+
   if (state.container.cType === "LIST") return null;
+  if (
+    state.container.locationsCount > 0 &&
+    state.container.locations?.length === 0
+  )
+    return null;
   return (
     <SearchContext.Provider
       value={{

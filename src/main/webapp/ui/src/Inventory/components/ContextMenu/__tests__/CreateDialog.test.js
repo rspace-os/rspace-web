@@ -167,6 +167,7 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
+      container.fetchAdditionalInfo = jest.fn();
       render(
         <ThemeProvider theme={materialTheme}>
           <CreateDialog
@@ -230,6 +231,7 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
+      container.fetchAdditionalInfo = jest.fn();
       render(
         <ThemeProvider theme={materialTheme}>
           <CreateDialog

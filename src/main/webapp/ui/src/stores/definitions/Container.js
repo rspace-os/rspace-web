@@ -150,6 +150,7 @@ export interface Container extends InventoryRecord {
    *   relative to the associated locations image. Locations can be add, moved,
    *   and removed (provided they are empty).
    */
+  locationsCount: number;
   locations: ?Array<Location>;
   findLocation(col: number, row: number): ?Location;
 
