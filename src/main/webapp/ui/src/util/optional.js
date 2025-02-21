@@ -17,7 +17,7 @@ type OptionalInternals<T> =
       value: T,
     |};
 
-/*
+/**
  * Optional data structures are a common addition to most languages' standard
  * library, but which JavaScript lacks. JavaScript has optional chaining and
  * null coalescing, allowing for some of the same capabilities but, without
@@ -184,7 +184,7 @@ export class Optional<T> {
   }
 }
 
-/*
+/**
  * Converts a nested Optional into one of a single depth. If the outer or inner
  * Optionals are Optional.empty, then Optional.empty is returned,
  * otherwise the inner Optional.present is returned.
@@ -217,10 +217,18 @@ export function optionalFlat<T>(opt: Optional<Optional<T>>): Optional<T> {
  * where required. Don't preempt that though.
  */
 
+/**
+ * Lift a function that operates on a normal value into one that operates on an
+ * Optional value.
+ */
 export function lift<A, B>(f: (A) => B, optA: Optional<A>): Optional<B> {
   return optA.map(f);
 }
 
+/**
+ * Lift a function that operates on two normal values into one that operates on
+ * two Optional values.
+ */
 export function lift2<A, B, C>(
   f: (A, B) => C,
   optA: Optional<A>,
@@ -229,6 +237,10 @@ export function lift2<A, B, C>(
   return optA.flatMap((a) => lift((b) => f(a, b), optB));
 }
 
+/**
+ * Lift a function that operates on three normal values into one that operates
+ * on three Optional values.
+ */
 export function lift3<A, B, C, D>(
   f: (A, B, C) => D,
   optA: Optional<A>,
@@ -238,6 +250,10 @@ export function lift3<A, B, C, D>(
   return optA.flatMap((a) => lift2((b, c) => f(a, b, c), optB, optC));
 }
 
+/**
+ * Lift a function that operates on four normal values into one that operates
+ * on four Optional values.
+ */
 export function lift4<A, B, C, D, E>(
   f: (A, B, C, D) => E,
   optA: Optional<A>,
@@ -254,7 +270,7 @@ export function lift4<A, B, C, D, E>(
  * Other helper functions
  */
 
-/*
+/**
  * Just like the standard square bracket syntax but rather than returning
  * undefined when the object has no such key, this function returns
  * Optional.empty

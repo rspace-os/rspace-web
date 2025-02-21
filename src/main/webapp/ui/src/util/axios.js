@@ -7,7 +7,7 @@ import Result from "./result";
  * library.
  */
 
-/*
+/**
  * This function gets a particular header from the response object of a call to
  * axios. If the header is available then it is returned wrapped in an
  * Result.Ok, otherwise Result.Error is returned. There are a few
@@ -20,7 +20,7 @@ import Result from "./result";
  *    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
  */
 export function getHeader(
-  response: { headers: {[string]: string}, ... },
+  response: { headers: { [string]: string }, ... },
   headerName: string
 ): Result<string> {
   if (typeof response.headers[headerName] === "undefined")

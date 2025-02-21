@@ -1,9 +1,8 @@
 //@flow
 
-import React from "react";
 import { useSearchParams } from "react-router-dom";
 
-/*
+/**
  * Single-page applications often have pieces of state that should be
  * synchronised with the browser's location search params so that back,
  * forward, and bookmarkering work. This custom hook abstracts over that
@@ -11,7 +10,6 @@ import { useSearchParams } from "react-router-dom";
  * the initial value is populated from the search params and the passed
  * `fallback` is only used where the keys are not present in the current URL.
  */
-
 export function useSearchParamState<
   T: { [key: string]: string | Array<string>, ... }
 >(fallback: T): [T, (T) => void] {

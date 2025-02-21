@@ -16,9 +16,9 @@ describe("incrementForever", () => {
           ),
         ([count, indexAssertion]) => {
           // create list from generator
-          let list = [];
+          const list = [];
           let i = 0;
-          for (let x of incrementForever()) {
+          for (const x of incrementForever()) {
             if (i > count) break;
             i++;
             list.push(x);

@@ -8,7 +8,7 @@ describe("progress", () => {
     fc.assert(
       fc.property(fc.nat(), (total) => {
         fc.pre(total > 0);
-        const progress = calculateProgress({ progressMade: 0, total: total });
+        const progress = calculateProgress({ progressMade: 0, total });
         expect(asPercentageString(progress)).toEqual("0%");
       })
     );
@@ -20,7 +20,7 @@ describe("progress", () => {
         fc.pre(total > 0);
         const progress = calculateProgress({
           progressMade: total,
-          total: total,
+          total,
         });
         expect(asPercentageString(progress)).toEqual("100%");
       })
@@ -32,7 +32,7 @@ describe("progress", () => {
       fc.property(fc.nat(), (progressMade) => {
         fc.pre(progressMade > 0);
         const progress = calculateProgress({
-          progressMade: progressMade,
+          progressMade,
           total: progressMade * 2,
         });
         expect(asPercentageString(progress)).toEqual("50%");

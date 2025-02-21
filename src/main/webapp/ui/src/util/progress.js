@@ -5,7 +5,7 @@
  * the some asynchronous process.
  */
 
-/*
+/**
  * Progress is a number between 0 and 100, inclusive, rounded to a single
  * decimal place. This invariant is enforced by the fact that it is opaque, so
  * other modules can only create and use an instance of the type via the
@@ -13,6 +13,9 @@
  */
 export opaque type Progress = number;
 
+/**
+ * Calcuate the progress. Constructor function for Progress.
+ */
 export function calculateProgress({
   progressMade,
   total,
@@ -30,24 +33,44 @@ export function calculateProgress({
   return Math.floor((progressMade / total) * 10) * 10;
 }
 
+/**
+ * Render the progress as a percentage string.
+ */
 export function asPercentageString(progress: Progress): string {
   return `${progress}%`;
 }
 
+/**
+ * Constant of no progress.
+ */
 export const noProgress: Progress = 0;
+
+/**
+ * Constant of complete progress.
+ */
 export const complete: Progress = 100;
 
 /*
  * Some helper functions for use in setting aria- attributes.
  */
+
+/**
+ * Helper for setting aria-valuenow.
+ */
 export function ariaValueNow(progress: Progress): number {
   return progress;
 }
 
+/**
+ * Helper for setting aria-valuemin.
+ */
 export function ariaValueMin(): number {
   return noProgress;
 }
 
+/**
+ * Helper for setting aria-valuemax.
+ */
 export function ariaValueMax(): number {
   return complete;
 }

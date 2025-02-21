@@ -1,6 +1,6 @@
 //@flow
 
-/*
+/**
  * Scales the dimensions of images larger than 1MB down to approximately 1MB.
  * All strings here are data URLs.
  * `canvas` must be a Canvas element, hidden, somewhere in the DOM.
@@ -29,7 +29,6 @@ export function capImageAt1MB(
       };
       image.src = dataURL;
     });
-  } else {
-    throw new Error("Could not find canvas");
   }
+  throw new Error("Could not find canvas");
 }

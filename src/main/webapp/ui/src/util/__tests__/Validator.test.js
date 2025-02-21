@@ -24,7 +24,7 @@ function Child1({ validator }: { validator: Validator }) {
     validator.setValidFunc(() => {
       return Promise.resolve(state.text.length > 2);
     });
-  }, []);
+  }, [state.text.length, validator]);
 
   return (
     <>

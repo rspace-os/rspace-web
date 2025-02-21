@@ -42,7 +42,9 @@ describe("mapOptional", () => {
   test("A function that always returns Optional.present will always result in an unchanged set.", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
-        expect(set.mapOptional((x) => Optional.present(x)).size).toEqual(set.size);
+        expect(set.mapOptional((x) => Optional.present(x)).size).toEqual(
+          set.size
+        );
       })
     );
   });
@@ -76,5 +78,4 @@ describe("mapOptional", () => {
       )
     );
   });
-
 });

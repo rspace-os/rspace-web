@@ -1,5 +1,10 @@
 //@flow
 
+/* eslint-disable camelcase */
+
+/**
+ * Given a barcode format, return a human-readable string.
+ */
 export function barcodeFormatAsString(
   barcodeFormat: BarcodeFormat | "Unknown"
 ): string {
