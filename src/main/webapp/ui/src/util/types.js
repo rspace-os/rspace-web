@@ -1,7 +1,6 @@
 //@flow strict
 
 import { parseString } from "./parsers";
-import { Optional } from "./optional";
 import Result from "./result";
 
 /*
