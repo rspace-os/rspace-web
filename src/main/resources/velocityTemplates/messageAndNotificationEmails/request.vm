@@ -1,21 +1,46 @@
 <html>
 #utf8header
 <body>
-<h2> RSpace Request from $cmm.originator.fullName </h2>
-<a href="$baseURL/userform?userId=$cmm.originator.id">$cmm.originator.fullName</a>
-sent you a request on #formatDate($dateOb)
-#if ($cmm.record && $cmm.record.notebook)
-concerning notebook <a href="$baseURL/notebookEditor/$cmm.record.id">$cmm.record.name</a>  
-<br>
-#elseif($cmm.record)
-concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">$cmm.record.name </a>  
-<br>
-#end
+<h2> RSpace Request from "$cmm.originator.fullName" (user "$cmm.originator.username")</h2>
+The RSpace Principal Investigator "<b>$cmm.originator.fullName</b>" sent you a
+request on $date.format('full_date', $dateOb) at $date.format('short_time', $dateOb).
+ #if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP" || $cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
+ <br/><br/>
+ In order to join the
+  #if($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
+  Lab
+  #elseif($cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
+  Project
+  #end
+ Group "<b>$cmm.group.displayName</b>" click to
+ <a rel="nofollow" target="_blank" class="word-wrap"
+    href="$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=COMPLETED">ACCEPT</a>
+ or
+ <a rel="nofollow" target="_blank" class="word-wrap"
+    href="$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=REJECTED">REJECT</a>
+ this invitation, then log in to RSpace with your credentials.
+ <br/>
+  #if($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
+  If you accept, the group's PI will be permitted to view your documents.
+  #elseif($cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
+  Project Groups have no PI, your documents won't be visible to other group members until you explicitly share them.
+  #end
 
-#if ($cmm.message) 
+ <br/><br/>
+ #end
+
+ #if ($cmm.record && $cmm.record.notebook)
+ concerning notebook <a href="$baseURL/notebookEditor/$cmm.record.id">$cmm.record.name</a>
+ <br>
+ #elseif($cmm.record)
+ concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">$cmm.record.name </a>
+ <br>
+ #end
+
+ #if ($cmm.message)
  More details: <br>
-$cmm.message
-#end
+  $cmm.message
+ #end
 <p/>
 #dontReply
 </body>

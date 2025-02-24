@@ -7,6 +7,8 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
+import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.CommunicationTarget;
@@ -128,9 +130,12 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   @Test
   public void testGenerateEmailForRequest() {
     User sender = createSender();
+    sender.addRole(Role.PI_ROLE);
 
     Record record = TestFactory.createAnyRecord(sender);
-    MessageOrRequest mor = TestFactory.createAnyRequest(sender, record);
+    Group group = TestFactory.createAnyGroup(sender);
+    group.setId(999L);
+    MessageOrRequest mor = TestFactory.createAnyGroupRequest(sender, record, group);
     mor.setMessage("message1");
     record.setId(1L);
     EmailContent msgbody = broadcast.generateEmailBody(mor);
