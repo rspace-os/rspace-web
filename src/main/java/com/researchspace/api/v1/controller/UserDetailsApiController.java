@@ -9,6 +9,7 @@ import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.ImageBlob;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.repository.spi.ExternalId;
@@ -110,7 +111,7 @@ public class UserDetailsApiController extends BaseApiController implements UserD
 
     ApiUiNavigationVisibleTabs visibleTabs = new ApiUiNavigationVisibleTabs();
     visibleTabs.setInventory(systemPropertyManager.isPropertyAllowed(user, "inventory.available"));
-    visibleTabs.setMyLabGroups(user.hasAnyPiOrLabGroupViewAllRole());
+    visibleTabs.setMyLabGroups(user.hasRole(Role.PI_ROLE));
     visibleTabs.setPublished(
         systemPropertyPermissionManager.isPropertyAllowed(user, "public_sharing"));
     visibleTabs.setSystem(user.hasAdminRole());
