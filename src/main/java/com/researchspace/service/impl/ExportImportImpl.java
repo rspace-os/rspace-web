@@ -637,7 +637,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     } catch (AuthorizationException e) {
       String msg =
           authGenerator.getFailedMessage(
-              exporter.getUsername(), " export records of [" + userToExport.getUsername() + "]");
+              exporter.getUsername(), "export records of [" + userToExport.getUsername() + "]");
       throw new AuthorizationException(msg);
     }
   }

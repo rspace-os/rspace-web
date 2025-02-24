@@ -211,10 +211,6 @@ public class GroupController extends BaseController {
   @GetMapping("/viewPIGroup")
   public String viewPIGroup() {
     User subject = userManager.getAuthenticatedUserInSession();
-    if (!subject.hasRole(Role.PI_ROLE)) {
-      String msg = authGenerator.getFailedMessage(subject.getUsername(), " view PI's group");
-      throw new AuthorizationException(msg);
-    }
     Group piGroup = subject.getPrimaryLabGroupWithPIRole();
     if (piGroup != null) {
       return "redirect:/groups/view/" + piGroup.getId();
