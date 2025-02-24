@@ -505,14 +505,15 @@ public class GroupControllerMVCIT extends MVCTestBase {
         .andExpect(view().name(containsString("redirect:/userform")))
         .andReturn();
 
-    User user1 = createAndSaveUser("pi" + getRandomName(7));
-    logoutAndLoginAs(user1);
     // regular user
+    User user1 = createAndSaveUser("user" + getRandomName(7));
+    logoutAndLoginAs(user1);
     mockMvc
         .perform(get("/groups/viewPIGroup").principal(pi1::getUsername))
-        .andExpect(view().name(containsString("error")))
+        .andExpect(view().name(containsString("redirect:/userform")))
         .andReturn();
 
+    // pi with group
     logoutAndLoginAs(pi1);
     initUser(pi1);
     createGroupForUsers(pi1, pi1.getUsername(), "", pi1);
