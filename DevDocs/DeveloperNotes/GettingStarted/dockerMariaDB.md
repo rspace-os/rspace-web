@@ -40,7 +40,7 @@ Place all these files in your home dir, inside a folder called "rspace-db". Once
 Once the database container has started up for the first time, you will need to create the database with the following commands:
 ```
 docker exec -it rspace-db bash
-mariadb -u rspacedbuser -p
+mariadb -u root -p
 CREATE DATABASE rspace collate 'utf8mb4_unicode_ci';
 GRANT ALL ON rspace.* TO 'rspacedbuser'@'127.0.0.1';
 exit
