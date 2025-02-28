@@ -50,7 +50,9 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.velocity.app.VelocityEngine;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,8 +121,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   /**
    * Updates the DMPs after a deposit has been made.
    *
-   * @param result            the result of the deposit to the repository
-   * @param subject           the user who made the deposit
+   * @param result the result of the deposit to the repository
+   * @param subject the user who made the deposit
    * @param repoDepositConfig the configuration of the deposit
    */
   void updateDMPS(
@@ -235,17 +237,81 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   @Qualifier("compositeFileStore")
   private FileStore fileStore;
 
-  private SubmissionMetadata setDmpOnlineDmpUrlOnSubmissionMetadata(
+  private SubmissionMetadata setDmpOnlineDmpToolOnSubmissionMetadata(
+      User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig)
+      throws IOException, IllegalStateException {
+    if (archiveConfig.hasDMPs()) {
+      IntegrationInfo dmpOnlineInfo =
+          integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPONLINE_APP_NAME);
+
+      if (dmpOnlineInfo.isEnabled() && dmpOnlineInfo.isAvailable()) {
+        List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
+        if (dmpsForUser.isEmpty()) {
+          return metadata;
+        }
+
+        List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
+        List<DMPUser> dmpsToUpdate =
+            dmpsForUser.stream()
+                .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
+                .collect(Collectors.toList());
+        if (dmpsToUpdate.size() != 1) {
+          throw new NoSuchElementException("Could not find DMP with selected ID.");
+        }
+
+        DMPUser selectedDMP = dmpsToUpdate.get(0);
+        EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadPdf();
+        File file = fileStore.findFile(jsonFile.getFileProperty());
+
+        // read json from file
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode dmpFile = objectMapper.readValue(file, JsonNode.class);
+        Optional<String> url = extractUrlFromDmpFile(dmpFile);
+        if (url.isPresent()) {
+          metadata.setDmpDoi(url);
+        } else {
+          log.warn("it is not been possible to attach the Dmp DOI to the metadata");
+        }
+      }
+    }
+    return metadata;
+  }
+
+  @Nullable
+  private static Optional<String> extractUrlFromDmpFile(JsonNode dmpFile) {
+    String url = null;
+    if (dmpFile.get("dmp_id") != null) { // DMPOnline json file
+      url = dmpFile.get("dmp_id").get("identifier").asText().replace("/api/v1", "");
+    } else { // DMPTool json file
+      Iterator<JsonNode> nodeIt = dmpFile.get("items").iterator();
+      while (nodeIt.hasNext() && url == null) {
+        JsonNode dmpNode = nodeIt.next();
+        if (dmpNode.get("dmp") != null) {
+          url = dmpNode.get("dmp").get("dmp_id").get("identifier").asText().replace("/api/v1", "");
+        }
+      }
+    }
+    UrlValidator urlValidator = new UrlValidator();
+    return urlValidator.isValid(url) ? Optional.of(url) : Optional.empty();
+  }
+
+  private SubmissionMetadata setArgosDmpDoiOnSubmissionMetadata(
       User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig)
       throws IOException, IllegalStateException {
     if (!archiveConfig.hasDMPs()) {
       return metadata;
     }
 
-    IntegrationInfo dmpOnlineInfo =
-        integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPONLINE_APP_NAME);
+    IntegrationInfo argosInfo =
+        integrationsHandler.getIntegration(subject, IntegrationsHandler.ARGOS_APP_NAME);
+    if (argosInfo.isEnabled() && argosInfo.isAvailable()) {
 
-    if (dmpOnlineInfo.isEnabled() && dmpOnlineInfo.isAvailable()) {
+      IntegrationInfo dmpToolInfo =
+          integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
+      if (dmpToolInfo.isEnabled()) {
+        throw new IllegalStateException("DMPTool and Argos cannot both be enabled");
+      }
+
       List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
       if (dmpsForUser.isEmpty()) {
         return metadata;
@@ -264,69 +330,14 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadPdf();
       File file = fileStore.findFile(jsonFile.getFileProperty());
 
-      // read json from file
       ObjectMapper objectMapper = new ObjectMapper();
-      JsonNode dmpFile = objectMapper.readValue(file, JsonNode.class);
-      Iterator<JsonNode> nodeIt = dmpFile.get("items").iterator();
-      String url = null;
-      while (nodeIt.hasNext() && url == null) {
-        JsonNode dmpNode = nodeIt.next();
-        if (dmpNode.get("dmp") != null) {
-          url = dmpNode.get("dmp").get("dmp_id").get("identifier").asText().replace("/api/v1", "");
-          metadata.setDmpDoi(Optional.of(url));
-        }
+      ArgosDMP dmp = objectMapper.readValue(file, ArgosDMP.class);
+      Optional<String> doi = dmp.getDoi();
+      if (doi.isPresent()) {
+        metadata.setDmpDoi(doi);
+      } else {
+        throw new NoSuchElementException("DMP doesn't have a DOI");
       }
-      if (metadata.getDmpDoi().isEmpty()) {
-        log.warn("it is not been possible to attach the Dmp DOI to the metadata");
-      }
-    }
-    return metadata;
-  }
-
-  private SubmissionMetadata setArgosDmpDoiOnSubmissionMetadata(
-      User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig)
-      throws IOException, IllegalStateException {
-    if (!archiveConfig.hasDMPs()) {
-      return metadata;
-    }
-
-    IntegrationInfo argosInfo =
-        integrationsHandler.getIntegration(subject, IntegrationsHandler.ARGOS_APP_NAME);
-    if (!argosInfo.isEnabled() || !argosInfo.isAvailable()) {
-      return metadata;
-    }
-
-    IntegrationInfo dmpToolInfo =
-        integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
-    if (dmpToolInfo.isEnabled()) {
-      throw new IllegalStateException("DMPTool and Argos cannot both be enabled");
-    }
-
-    List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
-    if (dmpsForUser.isEmpty()) {
-      return metadata;
-    }
-
-    List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
-    List<DMPUser> dmpsToUpdate =
-        dmpsForUser.stream()
-            .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
-            .collect(Collectors.toList());
-    if (dmpsToUpdate.size() != 1) {
-      throw new NoSuchElementException("Could not find DMP with selected ID.");
-    }
-
-    DMPUser selectedDMP = dmpsToUpdate.get(0);
-    EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadPdf();
-    File file = fileStore.findFile(jsonFile.getFileProperty());
-
-    ObjectMapper objectMapper = new ObjectMapper();
-    ArgosDMP dmp = objectMapper.readValue(file, ArgosDMP.class);
-    Optional<String> doi = dmp.getDoi();
-    if (doi.isPresent()) {
-      metadata.setDmpDoi(doi);
-    } else {
-      throw new NoSuchElementException("DMP doesn't have a DOI");
     }
     return metadata;
   }
@@ -370,7 +381,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     }
     metadata.setTerms(terms);
 
-    return setDmpOnlineDmpUrlOnSubmissionMetadata(
+    return setDmpOnlineDmpToolOnSubmissionMetadata(
         subject,
         setArgosDmpDoiOnSubmissionMetadata(subject, metadata, archiveConfig),
         archiveConfig);
