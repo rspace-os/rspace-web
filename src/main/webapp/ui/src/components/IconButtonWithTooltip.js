@@ -49,6 +49,10 @@ const IconButtonWithTooltip = forwardRef<
 });
 
 IconButtonWithTooltip.displayName = "IconButtonWithTooltip";
+/**
+ * This components provided a clickable icon button with a tooltip. The tooltip
+ * is then used as the aria-label for the button.
+ */
 export default (observer(
   IconButtonWithTooltip
 ): ComponentType<IconButtonWithTooltipArgs>);
