@@ -55,7 +55,7 @@ public class DMPUpdateHandler {
       for (String dmpStr : dmpsToUpdate) {
         var dmpUpdated = dmpClient.addDoiIdentifierToDMP(dmpStr, doi.toString(), subject);
         if (!dmpUpdated.isSucceeded()) {
-          log.error("Updating didn't succeed : {}" + dmpUpdated.getMessage());
+          log.error("Updating didn't succeed : {}", dmpUpdated.getMessage());
         } else {
           log.info("Updated DMP {}", dmpStr);
         }
