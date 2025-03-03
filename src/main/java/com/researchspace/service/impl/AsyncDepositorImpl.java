@@ -241,40 +241,48 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig)
       throws IOException, IllegalStateException {
     if (archiveConfig.hasDMPs()) {
-      IntegrationInfo dmpOnlineInfo =
-          integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPONLINE_APP_NAME);
-
-      if (dmpOnlineInfo.isEnabled() && dmpOnlineInfo.isAvailable()) {
+      if (isDmpOnlineEnabledAndAvailable(subject) || isDmpToolEnabledAndAvailable(subject)) {
         List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
-        if (dmpsForUser.isEmpty()) {
-          return metadata;
-        }
+        if (!dmpsForUser.isEmpty()) {
 
-        List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
-        List<DMPUser> dmpsToUpdate =
-            dmpsForUser.stream()
-                .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
-                .collect(Collectors.toList());
-        if (dmpsToUpdate.size() != 1) {
-          throw new NoSuchElementException("Could not find DMP with selected ID.");
-        }
+          List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
+          List<DMPUser> dmpsToUpdate =
+              dmpsForUser.stream()
+                  .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
+                  .collect(Collectors.toList());
+          if (dmpsToUpdate.size() != 1) {
+            throw new NoSuchElementException("Could not find DMP with selected ID.");
+          }
 
-        DMPUser selectedDMP = dmpsToUpdate.get(0);
-        EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadPdf();
-        File file = fileStore.findFile(jsonFile.getFileProperty());
+          DMPUser selectedDMP = dmpsToUpdate.get(0);
+          EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadPdf();
+          File file = fileStore.findFile(jsonFile.getFileProperty());
 
-        // read json from file
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode dmpFile = objectMapper.readValue(file, JsonNode.class);
-        Optional<String> url = extractUrlFromDmpFile(dmpFile);
-        if (url.isPresent()) {
-          metadata.setDmpDoi(url);
-        } else {
-          log.warn("it is not been possible to attach the Dmp DOI to the metadata");
+          // read json from file
+          ObjectMapper objectMapper = new ObjectMapper();
+          JsonNode dmpFile = objectMapper.readValue(file, JsonNode.class);
+          Optional<String> url = extractUrlFromDmpFile(dmpFile);
+          if (url.isPresent()) {
+            metadata.setDmpDoi(url);
+          } else {
+            log.warn("it is not been possible to attach the Dmp DOI to the metadata");
+          }
         }
       }
     }
     return metadata;
+  }
+
+  private boolean isDmpOnlineEnabledAndAvailable(User subject) {
+    IntegrationInfo dmpOnlineInfo =
+        integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPONLINE_APP_NAME);
+    return dmpOnlineInfo.isEnabled() && dmpOnlineInfo.isAvailable();
+  }
+
+  private boolean isDmpToolEnabledAndAvailable(User subject) {
+    IntegrationInfo dmpToolInfo =
+        integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
+    return dmpToolInfo.isEnabled() && dmpToolInfo.isAvailable();
   }
 
   @Nullable
