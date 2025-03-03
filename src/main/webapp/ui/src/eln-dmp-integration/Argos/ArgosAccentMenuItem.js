@@ -12,6 +12,9 @@ type ArgosAccentMenuItemArgs = {|
   onDialogClose: () => void,
 |};
 
+/**
+ * The menu item for the create menu for importing DMPs from Argos.
+ */
 export default function ArgosMenuItem({
   onDialogClose,
 }: ArgosAccentMenuItemArgs): Node {
