@@ -44,7 +44,6 @@ function loadScript(url: string): void {
  * Displays the HelpDocs popup window.
  */
 function HelpDocs({ Action }: HelpDocsArgs): Node {
-  const [chatEnabled, setChatEnabled] = useState(false);
   const api = useRef(
     axios.create({
       baseURL: "/session/ajax",
@@ -97,7 +96,6 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
           hide_default_launcher: true,
         });
       }
-      setChatEnabled(livechatEnabled);
       loadLighthouse(livechatEnabled);
     })();
   }, []);
