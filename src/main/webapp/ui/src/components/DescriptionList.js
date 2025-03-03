@@ -1,11 +1,5 @@
 // @flow strict
 
-/*
- * General-purpose component that abstracts over the <dl>, <dd>, and <dt> tags.
- *
- * This component MUST ONLY have a dependency on this directory and ../util.
- */
-
 import React, { type Node, type ComponentType } from "react";
 import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
@@ -126,4 +120,9 @@ function DescriptionList({
   );
 }
 
+/**
+ * General-purpose component that abstracts over the <dl>, <dd>, and <dt> tags.
+ *
+ * This component MUST ONLY have a dependency on this directory and ../util.
+ */
 export default (observer(DescriptionList): ComponentType<DescriptionListArgs>);
