@@ -123,14 +123,14 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
         view_all: "View All Articles",
         suggested_articles: "Suggested Articles",
       },
-      onReady: function () {
+      onReady() {
         if (typeof window.Intercom !== "undefined") {
           const intercom = window.Intercom;
-          intercom("onShow", function () {
+          intercom("onShow", () => {
             window.Lighthouse.hide();
             window.Lighthouse.showButton();
           });
-          intercom("onHide", function () {
+          intercom("onHide", () => {
             window.Lighthouse.show();
           });
           if (document.getElementById("intercom-container")) {
@@ -139,16 +139,16 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
         }
         setLighthouseIsLoaded(true);
       },
-      onShow: function () {
+      onShow() {
         if (typeof window.Intercom !== "undefined") {
           const intercom = window.Intercom;
           intercom("hide");
         }
       },
-      onLoad: function () {
+      onLoad() {
         window.Lighthouse.hideButton();
       },
-      onHide: function () {
+      onHide() {
         window.Lighthouse.hideButton();
       },
     };
