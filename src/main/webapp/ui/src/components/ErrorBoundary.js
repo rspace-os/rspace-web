@@ -5,6 +5,10 @@ import React, { type Node } from "react";
 import clsx from "clsx";
 import { withStyles } from "Styles";
 
+/**
+ * Error message to display when we cannot recover from an error and we cannot
+ * provide any more specific information.
+ */
 export const ERROR_MSG: Node = (
   <>
     Something went wrong! Please refresh the page. If this error persists,
@@ -56,6 +60,11 @@ type ErrorBoundaryState = {|
   hasError: boolean,
 |};
 
+/**
+ * The ErrorBoundary component is a React component that catches errors in its
+ * children and displays an error message instead. This is useful for catching
+ * errors that are not recoverable and would otherwise crash the app.
+ */
 export default class ErrorBoundary extends React.Component<
   ErrorBoundaryArgs,
   ErrorBoundaryState
