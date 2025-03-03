@@ -76,6 +76,11 @@ export default function useOneDimensionalRovingTabIndex<
 
   React.useEffect(() => {
     if (hasFocus) refOfRovingTabIndex.current?.focus();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * We don't need this useEffect to run when hasFocus changes because by
+     * setting the tabIndex we ensure that `refOfRovingTabIndex.current` will
+     * already have focus.
+     */
   }, [rovingTabIndex]);
 
   function getTabIndex(i: number) {
