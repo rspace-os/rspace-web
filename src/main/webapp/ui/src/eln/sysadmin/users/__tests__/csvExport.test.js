@@ -14,6 +14,7 @@ import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import USER_LISTING from "./userListing";
 import PDF_CONFIG from "./pdfConfig";
+import userEvent from "@testing-library/user-event";
 
 // Replace JSDOM's Blob with node's so that we have .text()
 // $FlowExpectedError[cannot-resolve-module]
@@ -166,6 +167,50 @@ describe("CSV Export", () => {
       expect((await blob.text()).split("\n")[0].split(",").length).toBe(
         numberOfColumns
       );
+    });
+    test("The usage column should be a precise number.", async () => {
+      const user = userEvent.setup();
+      let blob;
+      const createObjectURL = jest
+        .fn<[Blob], string>()
+        .mockImplementation((b) => {
+          blob = b;
+          return "";
+        });
+      window.URL.createObjectURL = createObjectURL;
+      window.URL.revokeObjectURL = jest.fn();
+
+      mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
+
+      mockAxios
+        .onGet("/userform/ajax/preference?preference=UI_JSON_SETTINGS")
+        .reply(200, {});
+      mockAxios.onPost("/userform/ajax/preference").reply(200, {});
+      mockAxios
+        .onGet("/export/ajax/defaultPDFConfig")
+        .reply(200, { ...PDF_CONFIG });
+
+      render(
+        <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={materialTheme}>
+            <UsersPage />
+          </ThemeProvider>
+        </StyledEngineProvider>
+      );
+
+      await user.click(await screen.findByRole("button", { name: /Export/ }));
+      await user.click(
+        screen.getByRole("menuitem", {
+          name: /Export this page of rows to CSV/,
+        })
+      );
+
+      expect(createObjectURL).toHaveBeenCalled();
+      if (typeof blob === "undefined")
+        throw new Error("Impossible, because createObjectURL has been called");
+      const csvData = await blob.text();
+      expect(csvData).toContain("362006");
+      expect(csvData).not.toContain("362.01 kB");
     });
   });
 });
