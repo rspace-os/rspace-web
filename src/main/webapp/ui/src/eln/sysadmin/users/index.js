@@ -1574,7 +1574,7 @@ export const UsersPage = (): Node => {
     ),
     DataGridColumn.newColumnWithValueMapper<User, _>(
       "fileUsage",
-      (fileUsage) => fileUsage,
+      (fileUsage) => `${fileUsage}`,
       {
         headerName: "Usage",
         flex: 1,
