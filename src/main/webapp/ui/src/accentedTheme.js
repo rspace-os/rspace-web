@@ -26,13 +26,6 @@ import { inputLabelClasses } from "@mui/material/InputLabel";
 import { inputAdornmentClasses } from "@mui/material/InputAdornment";
 import { linkClasses } from "@mui/material/Link";
 
-/**
- * This theme is used for pages that use the new styling, wherein the page (or
- * just part thereof) is styled with an accent colour. This is being done to
- * provide a consistent branding for the various parts of the product as they
- * are interwoven, as well as the integrations with third-parties.
- */
-
 type Hsl = {|
   hue: number,
   saturation: number,
@@ -81,6 +74,15 @@ type AccentColor = {|
   backgroundContrastText: Hsl,
 |};
 
+/**
+ * The accented theme is used for pages that use the new styling, wherein the
+ * page (or just part thereof) is styled with an accent colour. This is being
+ * done to provide a consistent branding for the various parts of the product
+ * as they are interwoven, as well as the integrations with third-parties.
+ *
+ * This function creates a new theme, given an accent colour.
+ */
+// eslint-disable-next-line complexity -- This is going to be complex because it's defining a lot of styles and a lot of those styles are conditioned on the user's preferences.
 export default function createAccentedTheme(accent: AccentColor): { ... } {
   const prefersMoreContrast = window.matchMedia(
     "(prefers-contrast: more)"
@@ -200,9 +202,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                 paddingLeft: 0,
                 paddingRight: `${baseTheme.spacing(1)} !important`,
                 color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
-                background: prefersMoreContrast
-                  ? "white"
-                  : accentedBackground,
+                background: prefersMoreContrast ? "white" : accentedBackground,
                 borderBottom: prefersMoreContrast ? accentedBorder : "none",
                 [`& .${svgIconClasses.root}`]: {
                   color: prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor,
@@ -270,7 +270,9 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                     content: "''",
                     width: "100%",
                     height: "2px",
-                    backgroundColor: prefersMoreContrast ? "black" : contrastTextColor,
+                    backgroundColor: prefersMoreContrast
+                      ? "black"
+                      : contrastTextColor,
                     position: "relative",
                     left: 0,
                     bottom: "2px",
