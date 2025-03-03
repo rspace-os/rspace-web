@@ -23,6 +23,9 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
+/**
+ * The dimensions of the image being previewed.
+ */
 export type PreviewSize = {|
   width: number,
   height: number,
@@ -42,6 +45,9 @@ type ImagePreviewArgs = {|
   caption?: null | $ReadOnlyArray<string>,
 |};
 
+/**
+ * A full-screen image previewer.
+ */
 export default function ImagePreview({
   closePreview,
   link,
