@@ -1888,7 +1888,7 @@
     <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>dmptool-java-client</artifactId>
-        <version>0.2.0</version>
+        <version>RSDEV-528-client-SNAPSHOT</version>
         <exclusions>
             <exclusion>
                 <groupId>com.fasterxml.jackson.core</groupId>
