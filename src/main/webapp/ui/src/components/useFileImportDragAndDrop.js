@@ -10,11 +10,6 @@ import React, { type Node } from "react";
  * considerations, and generic customisation; for more information see DndKit's
  * Architectural justification[dndkit-architecture].
  *
- * This module provides a custom react hook that, much like DndKit, handles the
- * logic of determining whether the user is currently hovering over the
- * dropzone. It also provides some utility components for ensuring a robust
- * user experience.
- *
  * [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
  * [dndkit-architecture]: https://docs.dndkit.com/#architecture
  */
@@ -60,6 +55,18 @@ export const DisableDragAndDropByDefault = ({
   </div>
 );
 
+/**
+ * This custom react hook, much like DndKit, handles the logic of determining
+ * whether the user is currently hovering over the dropzone. It also provides
+ * some utility components for ensuring a robust user experience.
+ *
+ * @arg onDrop   - The function to call when the user drops files onto the dropzone.
+ * @arg disabled - If true, the dropzone will not accept files.
+ * @returns An object with event handlers for onDragEnter, onDragOver,
+ *          onDragLeave, and onDrop, which should be attached to the dropzone
+ *          element. The object also contains a boolean value 'over' which is
+ *          true when the user is hovering over the dropzone.
+ */
 export const useFileImportDropZone = ({
   onDrop: onDropProp,
   disabled,
