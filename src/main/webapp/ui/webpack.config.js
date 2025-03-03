@@ -81,6 +81,7 @@ module.exports = {
     runtimeChunk: "single",
   },
   resolve: {
+    extensions: [".js", ".jsx", ".ts", ".tsx"],
     alias: {
       Styles: path.resolve(__dirname, "src/util/styles"),
       '@': path.resolve(__dirname, 'src'),
