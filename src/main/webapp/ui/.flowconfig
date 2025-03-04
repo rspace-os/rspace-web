@@ -15,6 +15,7 @@ unclear-type=off
 [options]
 include_warnings=true
 module.name_mapper='^Styles$' -> '<PROJECT_ROOT>/src/util/styles'
+module.name_mapper='^@' -> '<PROJECT_ROOT>/src'
 module.name_mapper='^__mocks__' -> '<PROJECT_ROOT>/__mocks__'
 exact_by_default=false
 

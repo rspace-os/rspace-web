@@ -83,6 +83,7 @@ module.exports = {
   resolve: {
     alias: {
       Styles: path.resolve(__dirname, "src/util/styles"),
+      '@': path.resolve(__dirname, 'src'),
     },
     fallback: {
       url: require.resolve("url/"),

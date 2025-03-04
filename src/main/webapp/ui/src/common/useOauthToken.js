@@ -1,6 +1,6 @@
 //@flow
 
-import axios from "./axios";
+import axios from "@/common/axios";
 import JwtService from "./JwtService";
 import React from "react";
 
