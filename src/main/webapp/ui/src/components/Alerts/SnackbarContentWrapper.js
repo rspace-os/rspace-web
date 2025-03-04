@@ -193,7 +193,7 @@ const SnackbarContentWrapper = forwardRef<
               />
             )}
             {alert.allowClosing && (
-              <DismissButton onClose={onClose} alert={alert} />
+              <DismissButton onClose={onClose} />
             )}
           </Grid>
         </Grid>
@@ -280,6 +280,9 @@ const SnackbarContentWrapper = forwardRef<
 
 SnackbarContentWrapper.displayName = "SnackbarContentWrapper";
 
+/**
+ * The actual content of the alert toast.
+ */
 export default (observer(
   SnackbarContentWrapper
 ): ComponentType<SnackbarContentWrapperArgs>);

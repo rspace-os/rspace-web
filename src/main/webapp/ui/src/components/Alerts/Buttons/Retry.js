@@ -40,4 +40,7 @@ function Retry({ retryFunction, onClose }: RetryArgs): Node {
   );
 }
 
+/**
+ * The retry button for the alert toasts.
+ */
 export default (observer(Retry): ComponentType<RetryArgs>);
