@@ -15,7 +15,7 @@ import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import LinearProgress from "@mui/material/LinearProgress";
 import Fade from "@mui/material/Fade";
-import axios from "axios";
+import axios from "@/common/axios";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
 import { createRoot } from "react-dom/client";

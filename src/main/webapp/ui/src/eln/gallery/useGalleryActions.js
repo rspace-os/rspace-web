@@ -1,7 +1,7 @@
 //@flow
 
 import React from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import RsSet from "../../util/set";

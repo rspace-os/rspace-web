@@ -5,7 +5,7 @@ import Button from "@mui/material/Button";
 import materialTheme from "../../../theme";
 import AdditionalInfo from "./Autoshare/AdditionalInfo";
 import { makeStyles } from "tss-react/mui";
-import axios from "axios";
+import axios from "@/common/axios";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";

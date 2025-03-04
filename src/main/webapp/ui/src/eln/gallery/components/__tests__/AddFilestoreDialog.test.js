@@ -9,7 +9,7 @@ import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import AddFilestoreDialog from "../AddFilestoreDialog";
 import { axe, toHaveNoViolations } from "jest-axe";
-import axios from "axios";
+import axios from "@/common/axios";
 import MockAdapter from "axios-mock-adapter";
 import browseFilesystem1 from "./browseFilesystem1.json";
 

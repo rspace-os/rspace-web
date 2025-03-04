@@ -1,6 +1,6 @@
 //@flow
 
-import axios from "axios";
+import axios from "@/common/axios";
 import React from "react";
 import Result from "../../../util/result";
 import * as Parsers from "../../../util/parsers";

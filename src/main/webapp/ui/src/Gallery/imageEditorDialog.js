@@ -6,7 +6,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Button from "@mui/material/Button";
-import axios from "axios";
+import axios from "@/common/axios";
 import LoadingCircular from "../components/LoadingCircular";
 import { makeStyles } from "tss-react/mui";
 import "tui-image-editor/dist/tui-image-editor.css";

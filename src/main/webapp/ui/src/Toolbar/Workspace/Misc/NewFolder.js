@@ -10,7 +10,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import TextField from "@mui/material/TextField";
-import axios from "axios";
+import axios from "@/common/axios";
 
 export default function NewNotebook() {
   const [open, setOpen] = React.useState(false);

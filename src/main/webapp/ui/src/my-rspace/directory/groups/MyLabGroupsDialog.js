@@ -18,7 +18,7 @@ import {
   faCaretRight,
   faAngleDoubleLeft,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
+import axios from "@/common/axios";
 import Grid from "@mui/material/Grid";
 library.add(faCaretLeft, faCaretRight, faAngleDoubleLeft);
 

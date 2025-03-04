@@ -27,7 +27,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import TimeAgo from "react-timeago";
-import axios from "axios";
+import axios from "@/common/axios";
 import { createRoot } from "react-dom/client";
 import { makeStyles } from "tss-react/mui";
 

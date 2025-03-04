@@ -1,7 +1,7 @@
 //@flow
 
 import React, { type Context } from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import * as Parsers from "../../util/parsers";
 
 /**

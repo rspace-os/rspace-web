@@ -8,7 +8,7 @@ import Grid from "@mui/material/Grid";
 import UserSelect from "./UserBox";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import axios from "axios";
+import axios from "@/common/axios";
 import { createRoot } from "react-dom/client";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";

@@ -8,7 +8,7 @@ import TimeAgoCustom from "../../../components/TimeAgoCustom";
 import UserDetails from "./../../../components/UserDetails";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import { desc, stableSort, getSorting } from "../../../util/table";
-import axios from "axios";
+import axios from "@/common/axios";
 import { createRoot } from "react-dom/client";
 
 const headCells = [

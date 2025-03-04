@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { makeStyles } from "tss-react/mui";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import axios from "axios";
+import axios from "@/common/axios";
 import LoadingCircular from "../../components/LoadingCircular";
 import Typography from "@mui/material/Typography";
 

@@ -1,6 +1,6 @@
 //@flow strict
 
-import axios from "axios";
+import axios from "@/common/axios";
 import * as ArrayUtils from "../../util/ArrayUtils";
 
 export type Repository = {|

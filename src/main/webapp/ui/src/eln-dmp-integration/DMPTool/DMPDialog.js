@@ -18,7 +18,7 @@ import Grid from "@mui/material/Grid";
 import { withStyles } from "Styles";
 import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
-import axios from "axios";
+import axios from "@/common/axios";
 import { type UseState } from "../../util/types";
 import ScopeField, { type Scope } from "./ScopeField";
 import useViewportDimensions from "../../util/useViewportDimensions";

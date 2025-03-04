@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect, type Node } from "react";
 import DMPDialog from "./DMPDialog";
-import axios from "axios";
+import axios from "@/common/axios";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
 import {

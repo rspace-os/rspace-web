@@ -1,7 +1,7 @@
 //@flow strict
 
 import React from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import { isoToLocale } from "../../util/Util";
 import AlertContext, { mkAlert, type Alert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";

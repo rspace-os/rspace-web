@@ -1,5 +1,5 @@
 // @flow
-import axios, { type AxiosPromise } from "axios";
+import axios, { type AxiosPromise } from "@/common/axios";
 import type { OmeroDataList, OmeroDataTypes, OmeroItem } from "./OmeroTypes";
 
 const getOmeroDataList = (

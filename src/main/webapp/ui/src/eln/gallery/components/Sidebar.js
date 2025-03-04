@@ -46,7 +46,7 @@ import ValidatingSubmitButton, {
 } from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import DnsIcon from "@mui/icons-material/Dns";
-import axios, { type Axios } from "axios";
+import axios, { type Axios } from "@/common/axios";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 import { useDeploymentProperty } from "../../useDeploymentProperty";

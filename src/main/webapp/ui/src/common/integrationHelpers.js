@@ -5,7 +5,7 @@
  * integrations.
  */
 
-import axios from "axios";
+import axios from "@/common/axios";
 import * as FetchingData from "../util/fetchingData";
 import { doNotAwait } from "../util/Util";
 import React from "react";

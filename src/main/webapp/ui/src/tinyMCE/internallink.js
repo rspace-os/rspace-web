@@ -15,7 +15,7 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import axios from "axios";
+import axios from "@/common/axios";
 import UserDetails from "../components/UserDetails";
 import TimeAgoCustom from "../components/TimeAgoCustom";
 import EnhancedTableHead from "../components/EnhancedTableHead";

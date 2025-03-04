@@ -1,7 +1,7 @@
 //@flow
 
 import React from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import useOauthToken from "../../common/useOauthToken";
 import { type Filestore } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";

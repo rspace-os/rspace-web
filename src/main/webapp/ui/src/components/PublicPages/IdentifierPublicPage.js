@@ -25,7 +25,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
 import clsx from "clsx";
 import { makeStyles } from "tss-react/mui";
-import axios from "axios";
+import axios from "@/common/axios";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import IGSNlogo from "../../assets/graphics/IGSNlogo.jpg";

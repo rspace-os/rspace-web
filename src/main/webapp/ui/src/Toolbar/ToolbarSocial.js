@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import styled from "@emotion/styled";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";

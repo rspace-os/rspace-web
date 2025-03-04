@@ -4,7 +4,7 @@ import React, { type Node, useState, useEffect } from "react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import LoadingFade from "../components/LoadingFade";
-import axios from "axios";
+import axios from "@/common/axios";
 import { formatFileSize } from "../util/files";
 import { sum } from "../util/iterators";
 import RsSet, { flattenWithUnion } from "../util/set";

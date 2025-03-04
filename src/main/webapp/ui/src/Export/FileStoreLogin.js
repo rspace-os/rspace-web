@@ -4,7 +4,7 @@ import React, { type Node, useState } from "react";
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
-import axios from "axios";
+import axios from "@/common/axios";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import LoadingFade from "../components/LoadingFade";

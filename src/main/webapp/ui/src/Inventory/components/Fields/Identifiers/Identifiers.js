@@ -48,7 +48,7 @@ import RadioField from "../../../../components/Inputs/RadioField";
 import PublicPreviewDialog, { MissingDataAlert } from "./PublicPreviewDialog";
 import { makeStyles } from "tss-react/mui";
 import MultipleInputHandler from "./MultipleInputHandler";
-import axios from "axios";
+import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import PublishButton from "./PublishButton";
 import FormControlLabel from "@mui/material/FormControlLabel";

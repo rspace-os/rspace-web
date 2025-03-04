@@ -8,7 +8,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import { stableSort, getSorting, paginationOptions } from "../../util/table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
-import axios from "axios";
+import axios from "@/common/axios";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import { library } from "@fortawesome/fontawesome-svg-core";
