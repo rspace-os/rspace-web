@@ -32,9 +32,6 @@ type DMPToolMenuItemArgs = {|
   onClick: () => void,
 |};
 
-/**
- * The menu item for the create menu for importing DMPs from DMPTool.
- */
 export default function DMPToolMenuItem({
   onClick,
 }: DMPToolMenuItemArgs): Node {
