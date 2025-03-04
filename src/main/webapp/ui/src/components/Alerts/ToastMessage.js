@@ -12,10 +12,10 @@ import {
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import useViewportDimensions from "../../util/useViewportDimensions";
-import AlertContext, { mkAlert, type Alert } from "../../stores/contexts/Alert";
+import AlertContext, { type Alert } from "../../stores/contexts/Alert";
 
 const useStyles = makeStyles()((theme, { verySmallLayout }) => ({
-  toastMessage_Snackbar: {
+  toastMessageSnackbar: {
     position: "relative",
     marginBottom: 10,
     maxWidth: verySmallLayout ? "100%" : 500,
@@ -44,6 +44,9 @@ function ToastMessage({ alert }: ToastMessageArgs): Node {
     if (!alert.isInfinite) {
       setTimeoutId(setTimeout(() => removeAlert(alert), alert.duration));
     }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - alert will not change because the caller sets the key to the alert id
+     */
   }, []);
 
   const stopTimeout = () => {
@@ -63,7 +66,7 @@ function ToastMessage({ alert }: ToastMessageArgs): Node {
         }}
         open={alert.isOpen}
         onClose={handleClose}
-        className={classes.toastMessage_Snackbar}
+        className={classes.toastMessageSnackbar}
         role="group"
         aria-label={`${alert.variant} alert`}
       >
@@ -79,4 +82,7 @@ function ToastMessage({ alert }: ToastMessageArgs): Node {
   );
 }
 
+/**
+ * This components displays a single toast alert.
+ */
 export default (observer(ToastMessage): ComponentType<ToastMessageArgs>);
