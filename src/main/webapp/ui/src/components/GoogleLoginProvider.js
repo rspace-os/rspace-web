@@ -1,7 +1,5 @@
 //@flow
 
-// that checks the deployment property for cloud
-
 import React, { type Node } from "react";
 import * as FetchingData from "../util/fetchingData";
 import * as Parsers from "../util/parsers";
