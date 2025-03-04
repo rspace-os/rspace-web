@@ -1572,14 +1572,11 @@ export const UsersPage = (): Node => {
         flex: 1,
       }
     ),
-    DataGridColumn.newColumnWithValueMapper<User, _>(
-      "fileUsage",
-      (fileUsage) => formatFileSize(fileUsage),
-      {
-        headerName: "Usage",
-        flex: 1,
-      }
-    ),
+    DataGridColumn.newColumnWithFieldName<User, _>("fileUsage", {
+      headerName: "Usage",
+      flex: 1,
+      renderCell: (params: { value: number }) => formatFileSize(params.value),
+    }),
     DataGridColumn.newColumnWithFieldName<User, _>("lastLogin", {
       headerName: "Last Login",
       flex: 1,
