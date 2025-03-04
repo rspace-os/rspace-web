@@ -10,6 +10,20 @@ module.exports = {
         licenseNot: ["MIT", "BSD", "Apache", "Hippocratic", "ISC"]
       }
     },
+    {
+      name: "axios-only",
+      comment: "Only src/common/axios.js should import axios",
+      severity: "error",
+      from: {
+        // only src/common/axios.js and test files...
+        pathNot: "^(@/common/axios\\.js|.*\\.test\\.js)$",
+      },
+      to: {
+        // ...should import axios
+        path: "node_modules/axios/dist/node/axios.cjs",
+      },
+    },
+
     // {
     //   name: 'no-circular',
     //   severity: 'warn',
