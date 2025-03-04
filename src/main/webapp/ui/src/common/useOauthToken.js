@@ -1,6 +1,6 @@
 //@flow
 
-import axios from "axios";
+import axios from "./axios";
 import JwtService from "./JwtService";
 import React from "react";
 
@@ -108,7 +108,6 @@ export default function useOauthToken(): {| getToken: () => Promise<string> |} {
       setTimeout(() => {
         void refreshToken();
       }, JwtService.secondsToExpiry(savedToken) * 1000);
-
       return savedToken;
     },
   };
