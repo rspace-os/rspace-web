@@ -19,6 +19,11 @@ export type Id = ?number;
  */
 export type GlobalId = string;
 
+/**
+ * The Global ID prefix is a two character string that identifies the class of
+ * record that the Global ID refers to. Various record classes supported by the
+ * frontend code are detailed below.
+ */
 export type GlobalIdPrefix =
   | "SA"
   | "SS"
@@ -32,19 +37,10 @@ export type GlobalIdPrefix =
   | "GP";
 
 /**
- * Once saved to the server all records have a Global ID, but this fact is not
- * encoded in the BaseRecord type. As such, Flow will complain if the globalId
- * is extracted from a record and used as if it were not null, even in places
- * where other logic is enforcing that only saved records will be available.
- * This function extracts the Global ID in a way that enforces the invariant
- * that the Global ID will be available in a way that Flow can recognise.
+ * The Global ID pattern is a regular expression that matches all Global IDs of
+ * a given class of record. This object provides a pattern for various classes
+ * of record supported by the frontend code.
  */
-export const getSavedGlobalId = (record: BaseRecord): GlobalId => {
-  if (record.globalId === null || typeof record.globalId === "undefined")
-    throw new TypeError('"globalId" is null.');
-  return record.globalId;
-};
-
 export const globalIdPatterns: { [string]: RegExp } = {
   sample: /^sa\d+$/i,
   subsample: /^ss\d+$/i,
@@ -73,6 +69,20 @@ export interface BaseRecord {
    */
   globalId: ?GlobalId;
 }
+
+/**
+ * Once saved to the server all records have a Global ID, but this fact is not
+ * encoded in the BaseRecord type. As such, Flow will complain if the globalId
+ * is extracted from a record and used as if it were not null, even in places
+ * where other logic is enforcing that only saved records will be available.
+ * This function extracts the Global ID in a way that enforces the invariant
+ * that the Global ID will be available in a way that Flow can recognise.
+ */
+export const getSavedGlobalId = (record: BaseRecord): GlobalId => {
+  if (record.globalId === null || typeof record.globalId === "undefined")
+    throw new TypeError('"globalId" is null.');
+  return record.globalId;
+};
 
 /**
  * The data needed by the components that render the icons of the various
