@@ -11,9 +11,6 @@ type DmpOnlineMenuItemArgs = {|
   onClick: (boolean) => void,
 |};
 
-/**
- * The menu item for the create menu for importing DMPs from DMPonline.
- */
 export default function DmpOnlineMenuItem({
   onClick,
 }: DmpOnlineMenuItemArgs): Node {
