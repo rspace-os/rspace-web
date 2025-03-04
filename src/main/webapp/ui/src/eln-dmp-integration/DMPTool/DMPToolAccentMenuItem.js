@@ -12,6 +12,9 @@ type DMPToolAccentMenuItemArgs = {|
   onDialogClose: () => void,
 |};
 
+/**
+ * The menu item for the create menu for importing DMPs from DMPTool.
+ */
 export default function DMPToolAccentMenuItem({
   onDialogClose,
 }: DMPToolAccentMenuItemArgs): Node {

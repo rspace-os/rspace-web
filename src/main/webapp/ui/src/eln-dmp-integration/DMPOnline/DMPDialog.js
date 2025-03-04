@@ -15,7 +15,6 @@ import {
   DataGrid,
   GridToolbarContainer,
   GridToolbarColumnsButton,
-  GridToolbarDensitySelector,
 } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
 import { makeStyles } from "tss-react/mui";
@@ -343,7 +342,7 @@ type DMPDialogArgs = {|
   setOpen: (boolean) => void,
 |};
 
-/*
+/**
  * This simple function just for the outer-most components is so that the
  * content of the dialog can use the Alerts context
  *
