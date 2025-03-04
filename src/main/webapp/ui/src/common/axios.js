@@ -1,4 +1,4 @@
-//@flow
+//@flow strict
 
 /**
  * @module axios
@@ -13,6 +13,12 @@
  */
 
 import axios from "axios";
+
+export type {
+  Axios,
+  AxiosPromise,
+  AxiosXHRConfigBase
+} from "axios";
 
 /*
  * The server remembers the last the page the user attempted to load when
@@ -35,3 +41,4 @@ import axios from "axios";
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
 
 export default axios;
+
