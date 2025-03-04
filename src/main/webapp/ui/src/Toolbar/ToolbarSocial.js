@@ -23,7 +23,6 @@ export default function ToolbarSocial(props) {
   const [messageCount, setMessageCount] = React.useState(0);
 
   useEffect(() => {
-    axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
     const getNotifications = async () => {
       try {
         const response = await axios.get("/dashboard/ajax/poll");

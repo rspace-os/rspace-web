@@ -84,7 +84,6 @@ class MyLabGroupsDialog extends React.Component {
       data.append("memberString", this.state.chosenUsers[i].username);
     }
 
-    axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
     axios
       .post(url, data, config)
       .then((msg) => {
