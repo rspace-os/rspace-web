@@ -31,4 +31,8 @@ function ExpandButton({
   );
 }
 
+/**
+ * The button on the alert toasts for expanding and collapsing the details
+ * section.
+ */
 export default (observer(ExpandButton): ComponentType<ExpandButtonArgs>);
