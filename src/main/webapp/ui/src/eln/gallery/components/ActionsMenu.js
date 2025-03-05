@@ -393,12 +393,11 @@ function ActionsMenu({
             }))
           )
           .orElseTry(() =>
-            canPreviewWithAspose(file).map(() => ({ key: "aspose", file }))
-          )
-          .orElseTry(() =>
             canPreviewWithSnapGene(file).map(() => ({ key: "snapgene", file }))
           )
-          .mapError(() => new Error("Cannot view this item."))
+          .orElseTry(() =>
+            canPreviewWithAspose(file).map(() => ({ key: "aspose", file }))
+          )
       )
   );
 
@@ -531,7 +530,19 @@ function ActionsMenu({
               subheader={viewAllowed
                 .get()
                 .map(() => "")
-                .orElseGet(([e]) => e.message)}
+                .orElseGet((errors) => {
+                  if (errors.length === 1) return errors[0].message;
+                  return (
+                    <>
+                      <span>Cannot view this file because</span>
+                      <ul>
+                        {errors.map((e, i) => (
+                          <li key={i}>{e.message}</li>
+                        ))}
+                      </ul>
+                    </>
+                  );
+                })}
               avatar={<VisibilityIcon />}
               onClick={() => {
                 viewAllowed.get().do((viewAction) => {

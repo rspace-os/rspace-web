@@ -33,13 +33,15 @@ export function useSnapGenePreviewOfGalleryFile(): (
   const snapGeneEnabled = useDeploymentProperty("snapgene.available");
   return (file) => {
     if (!dnaFileExtensions.includes(file.extension))
-      return Result.Error([new Error("Not a DNA file")]);
+      return Result.Error([new Error("The file is not a DNA file")]);
     return FetchingData.getSuccessValue(snapGeneEnabled)
       .flatMap(Parsers.isString)
       .flatMap((str) =>
         str === "ALLOWED"
           ? Result.Ok(null)
-          : Result.Error([new Error("SnapGene is not enabled")])
+          : Result.Error([
+              new Error("The system admin has not made SnapGene available"),
+            ])
       );
   };
 }
@@ -56,7 +58,7 @@ export function useImagePreviewOfGalleryFile(): (
     if (file.isImage && file.downloadHref) return Result.Ok(file.downloadHref);
     return chemistryFilePreview(file)
       .map((url) => () => Promise.resolve(url))
-      .mapError(() => new Error("Not an image"));
+      .mapError(() => new Error("The file is not an image"));
   };
 }
 
@@ -130,7 +132,8 @@ export function usePdfPreviewOfGalleryFile(): (
   file: GalleryFile
 ) => Result<() => Promise<URL>> {
   return (file) => {
-    if (file.extension !== "pdf") return Result.Error([new Error("Not a PDF")]);
+    if (file.extension !== "pdf")
+      return Result.Error([new Error("The file is not a PDF")]);
     if (!file.downloadHref)
       return Result.Error([new Error("URL to download is missing")]);
     return Result.Ok(file.downloadHref);
