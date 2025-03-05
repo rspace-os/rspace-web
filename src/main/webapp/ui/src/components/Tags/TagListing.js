@@ -50,6 +50,12 @@ type TagListingArgs = {|
   onClick?: (Tag) => void,
 |};
 
+/**
+ * This component provides a listing of tags, with the ability to delete tags
+ * if `onDelete` is true, to show the associated metadata if
+ * `showMetadataPopup` is true, and to perform an action when a tag is clicked
+ * if `onClick` is provided.
+ */
 export default function TagListing({
   tags,
   size = "medium",
