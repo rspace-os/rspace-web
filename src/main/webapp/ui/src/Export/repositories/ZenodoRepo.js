@@ -84,6 +84,10 @@ function ZenodoRepo({
         value: "DUMMY_VALUE",
       },
     });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - handleChange will not meaningfully change
+     * - updatePeople will not meaningfully change
+     */
   }, []);
 
   return (
@@ -120,8 +124,8 @@ function ZenodoRepo({
         <Tags
           fieldOwner={{
             fieldValues: { tags },
-            setFieldsDirty: ({ tags }: { tags?: Array<Tag> }) => {
-              if (tags) onTagsChange({ target: { value: tags } });
+            setFieldsDirty: ({ tags: newTags }: { tags?: Array<Tag> }) => {
+              if (newTags) onTagsChange({ target: { value: newTags } });
             },
             setFieldEditable: () => {},
             noValueLabel: { tags: null },
@@ -135,4 +139,8 @@ function ZenodoRepo({
   );
 }
 
+/**
+ * This components provides a form for the user to fill in the details of the
+ * deposit that will be made with Zenodo.
+ */
 export default (ZenodoRepo: ComponentType<ZenodoRepoArgs>);

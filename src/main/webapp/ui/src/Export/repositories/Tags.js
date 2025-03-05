@@ -14,6 +14,9 @@ import Button from "@mui/material/Button";
 import TagListing from "../../components/Tags/TagListing";
 import { Optional } from "../../util/optional";
 
+/**
+ * The definition of a tag as used in the export flow.
+ */
 export type Tag = {|
   value: string,
   vocabulary: string,
@@ -117,4 +120,9 @@ function Tags<
   );
 }
 
+/**
+ * This component provides a form field for the user to fill in the
+ * tags/controlled vocabulary terms for the deposit that will be made with the
+ * chosen repository.
+ */
 export default (observer(Tags): typeof Tags);
