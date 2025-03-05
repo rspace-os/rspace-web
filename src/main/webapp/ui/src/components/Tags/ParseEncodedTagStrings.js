@@ -11,13 +11,19 @@ import * as ArrayUtils from "../../util/ArrayUtils";
  * encoded in this way.
  */
 
-/*
- * These strings, when they appear in the list of tags returned by the server,
- * signal that no more tags are available and that another page should not be
+/**
+ * This string, when it appears in the list of tags returned by the server,
+ * signals that no more tags are available and that another page should not be
  * requested.
  */
 export const SMALL_DATASET_SIGNAL =
   "=========SMALL_DATASET_IN_SINGLE_BLOCK=========";
+
+/**
+ * This string, when it appears in the list of tags returned by the server,
+ * signals that no more tags are available and that another page should not be
+ * requested.
+ */
 export const FINAL_DATA_SIGNAL = "=========FINAL_DATA=========";
 
 /**
@@ -77,6 +83,11 @@ export function encodeTags(tags: Array<Tag>): Optional<string> {
   ).map((encodedTags) => encodedTags.join(","));
 }
 
+/**
+ * Parse a list of encoded tags into a list of Tag objects.
+ * The value of the tag can always be extracted from the encoded tag (although
+ * it might be the empty string), and the other properties of Tag are optional.
+ */
 export function parseEncodedTags(encodedTags: Array<string>): Array<Tag> {
   return encodedTags
     .filter(
