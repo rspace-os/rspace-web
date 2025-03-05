@@ -133,6 +133,23 @@ pipeline {
                 }
             }
         }
+        stage('Dependency Cruiser') {
+            when {
+                anyOf {
+                    expression { return params.FRONTEND_TESTS }
+                    changeset '**/*.js'
+                    changeset '**/*.jsp'
+                    changeset '**/*.css'
+                    changeset '**/*.json'
+                }
+            }
+            steps {
+                dir('src/main/webapp/ui') {
+                    echo 'Running dependency cruiser'
+                    sh 'npm run depcruise'
+                }
+            }
+        }
         stage('Jest Tests') {
             when {
                 anyOf {
