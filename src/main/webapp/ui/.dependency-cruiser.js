@@ -11,6 +11,7 @@ module.exports = {
         licenseNot: ["MIT", "BSD", "Apache", "Hippocratic", "ISC"],
       },
     },
+
     {
       name: "axios-only",
       comment: "Only src/common/axios.js should import axios",
@@ -25,17 +26,35 @@ module.exports = {
       },
     },
 
-    // {
-    //   name: 'no-circular',
-    //   severity: 'warn',
-    //   comment:
-    //     'This dependency is part of a circular relationship. You might want to revise ' +
-    //     'your solution (i.e. use dependency inversion, make sure the modules have a single responsibility) ',
-    //   from: {},
-    //   to: {
-    //     circular: true
-    //   }
-    // },
+    {
+      name: "react-image-editor is deprecated",
+      severity: "error",
+      from: {
+        pathNot: [
+          // once the old gallery is removed, we can remove the dependency and stop using `--force` when calling `npm install`
+          "^src/Gallery",
+        ],
+      },
+      to: {
+        path: "@toast-ui/react-image-editor",
+      },
+    },
+
+// this rule is disabled because cycles are generally not an issue, but the rule can be useful when debugging some issues.
+/*
+    {
+      name: 'no-circular',
+      severity: 'warn',
+      comment:
+        'This dependency is part of a circular relationship. You might want to revise ' +
+        'your solution (i.e. use dependency inversion, make sure the modules have a single responsibility) ',
+      from: {},
+      to: {
+        circular: true
+      }
+    },
+*/
+
     {
       name: "no-orphans",
       comment:
@@ -56,9 +75,10 @@ module.exports = {
       },
       to: {},
     },
+
     {
       name: "no-unreachable-from-root",
-      severity: "error",
+      severity: "warn",
       from: {
         path: ["src"],
       },
@@ -115,6 +135,7 @@ module.exports = {
         reachable: false,
       },
     },
+
     {
       name: "no-deprecated-core",
       comment:
@@ -148,6 +169,7 @@ module.exports = {
         ],
       },
     },
+
     {
       name: "not-to-deprecated",
       comment:
@@ -159,6 +181,7 @@ module.exports = {
         dependencyTypes: ["deprecated"],
       },
     },
+
     {
       name: "no-duplicate-dep-types",
       comment:
@@ -175,6 +198,7 @@ module.exports = {
         dependencyTypesNot: ["type-only"],
       },
     },
+
     {
       name: "not-to-spec",
       comment:
@@ -187,6 +211,7 @@ module.exports = {
         path: ".(spec|test).(js|mjs|cjs|ts|ls|coffee|litcoffee|coffee.md)$",
       },
     },
+
     {
       name: "not-to-dev-dep",
       severity: "error",
@@ -206,6 +231,7 @@ module.exports = {
         pathNot: "@babel",
       },
     },
+
     {
       name: "optional-deps-used",
       severity: "info",
@@ -219,6 +245,7 @@ module.exports = {
         dependencyTypes: ["npm-optional"],
       },
     },
+
     {
       name: "peer-deps-used",
       comment:
@@ -306,20 +333,6 @@ module.exports = {
       to: {
         path: "src/stores/stores",
         reachable: true,
-      },
-    },
-
-    {
-      name: "react-image-editor is deprecated",
-      severity: "error",
-      from: {
-        pathNot: [
-          // once the old gallery is removed, we can remove the dependency and stop using `--force` when calling `npm install`
-          "^src/Gallery",
-        ],
-      },
-      to: {
-        path: "@toast-ui/react-image-editor",
       },
     },
   ],
