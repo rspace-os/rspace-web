@@ -253,7 +253,11 @@ const MyBenchNavItem = observer(() => {
     <NavItem
       label="My Bench"
       datatestid="MyBenchNavFilter"
-      selected={currentUser && searchStore.search.onUsersBench(currentUser)}
+      selected={
+        !isImportPage() &&
+        currentUser &&
+        searchStore.search.onUsersBench(currentUser)
+      }
       icon={<MyBenchIcon />}
       disabled={!currentUser}
       badge={Math.min(benchContentCount ?? 0, largestFittingCount)}
