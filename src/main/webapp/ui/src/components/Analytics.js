@@ -1,7 +1,7 @@
 //@flow strict
 
 import React, { type Node, useEffect, useRef, useContext } from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import AnalyticsContext from "../stores/contexts/Analytics";
 import { runInAction } from "mobx";
 import { usePostHog, PostHogProvider } from "posthog-js/react";

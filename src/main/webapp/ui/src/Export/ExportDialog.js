@@ -10,7 +10,7 @@ import DialogContent from "@mui/material/DialogContent";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import MobileStepper from "@mui/material/MobileStepper";
-import axios from "axios";
+import axios from "@/common/axios";
 import FormatChoice, { type ArchiveType } from "./FormatChoice";
 import FormatSpecificOptions from "./FormatSpecificOptions";
 import ExportRepo from "./ExportRepo";

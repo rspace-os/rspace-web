@@ -1,6 +1,6 @@
 //@flow
 
-import axios from "axios";
+import axios from "@/common/axios";
 import { type PlanSummary } from "./PlanSummary";
 
 /*

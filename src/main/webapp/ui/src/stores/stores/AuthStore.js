@@ -1,6 +1,6 @@
 // @flow
 
-import axios from "axios";
+import axios from "@/common/axios";
 import { action, observable, makeObservable } from "mobx";
 import InvApiService from "../../common/InvApiService";
 import ElnApiService from "../../common/ElnApiService";
@@ -58,11 +58,7 @@ export default class AuthStore {
       (publicView ? "/public/publicView" : "") +
       "/userform/ajax/inventoryOauthToken";
     return axios
-      .get<{ data: string }>(oAuthUrl, {
-        headers: {
-          ["X-Requested-With"]: "XMLHttpRequest",
-        },
-      })
+      .get<{ data: string }>(oAuthUrl)
       .then(
         action((response) => {
           const token = response.data.data;

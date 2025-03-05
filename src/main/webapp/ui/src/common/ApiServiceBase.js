@@ -4,7 +4,7 @@ import axios, {
   type Axios,
   type AxiosPromise,
   type AxiosXHRConfigBase,
-} from "axios";
+} from "@/common/axios";
 import { when } from "mobx";
 import getRootStore from "../stores/stores/RootStore";
 import JwtService from "./JwtService";

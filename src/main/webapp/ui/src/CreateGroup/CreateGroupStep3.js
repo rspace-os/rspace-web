@@ -7,7 +7,7 @@ import Chip from "@mui/material/Chip";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
-import axios from "axios";
+import axios from "@/common/axios";
 import Select from "react-select";
 import EmailValidator from "email-validator";
 import FormControl from "@mui/material/FormControl";

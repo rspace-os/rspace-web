@@ -1,6 +1,6 @@
 // @flow
 
-import axios from "axios";
+import axios from "@/common/axios";
 import type { RootStore } from "./RootStore";
 import JwtService from "../../common/JwtService";
 import { type URL as URLType } from "../../util/types";

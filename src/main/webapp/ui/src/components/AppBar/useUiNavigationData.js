@@ -2,7 +2,7 @@
 
 import React from "react";
 import * as FetchingData from "../../util/fetchingData";
-import axios from "axios";
+import axios from "@/common/axios";
 import useOauthToken from "../../common/useOauthToken";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";

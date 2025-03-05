@@ -33,7 +33,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 library.add(faSpinner);
 import Grow from "@mui/material/Grow";
-import axios from "axios";
+import axios from "@/common/axios";
 
 /*
  * This component is a general purpose combobox for selecting a user tag. The

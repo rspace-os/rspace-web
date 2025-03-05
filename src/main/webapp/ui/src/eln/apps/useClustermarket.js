@@ -1,7 +1,7 @@
 //@flow strict
 
 import React from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;

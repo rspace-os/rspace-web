@@ -13,7 +13,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import TimeAgo from "react-timeago";
-import axios from "axios";
+import axios from "@/common/axios";
 import { makeStyles } from "tss-react/mui";
 import { type PersonId } from "../../stores/definitions/Person";
 import Chip from "@mui/material/Chip";

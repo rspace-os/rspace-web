@@ -1,6 +1,6 @@
 //@flow strict
 
-import axios from "axios";
+import axios from "@/common/axios";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 

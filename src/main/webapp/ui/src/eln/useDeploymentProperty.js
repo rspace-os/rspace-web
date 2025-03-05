@@ -1,7 +1,7 @@
 //@flow strict
 
 import React, { type Context } from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import * as FetchingData from "../util/fetchingData";
 import * as MapUtils from "../util/MapUtils";
 

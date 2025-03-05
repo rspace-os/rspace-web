@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { observer } from "mobx-react-lite";
-import axios from "axios";
+import axios from "@/common/axios";
 import Intercom from "@intercom/messenger-js-sdk";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;

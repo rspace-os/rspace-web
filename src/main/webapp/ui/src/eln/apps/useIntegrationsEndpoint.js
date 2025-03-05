@@ -1,7 +1,7 @@
 //@flow strict
 
 import React, { useContext } from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import { getByKey, Optional } from "../../util/optional";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";

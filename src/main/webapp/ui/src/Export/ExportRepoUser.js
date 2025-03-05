@@ -24,7 +24,7 @@ import DialogActions from "@mui/material/DialogActions";
 import EmailValidator from "email-validator";
 import FormHelperText from "@mui/material/FormHelperText";
 import styled from "@emotion/styled";
-import axios from "axios";
+import axios from "@/common/axios";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons";

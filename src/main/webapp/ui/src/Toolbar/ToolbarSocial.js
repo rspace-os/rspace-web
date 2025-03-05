@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import styled from "@emotion/styled";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
@@ -23,7 +23,6 @@ export default function ToolbarSocial(props) {
   const [messageCount, setMessageCount] = React.useState(0);
 
   useEffect(() => {
-    axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
     const getNotifications = async () => {
       try {
         const response = await axios.get("/dashboard/ajax/poll");

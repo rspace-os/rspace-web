@@ -1,6 +1,6 @@
 // @flow
 
-import axios, { type AxiosPromise } from "axios";
+import axios, { type AxiosPromise } from "@/common/axios";
 import { SearchParam } from "./Enums";
 
 export type ArticleId = any;

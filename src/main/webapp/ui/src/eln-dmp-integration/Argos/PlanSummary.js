@@ -1,6 +1,6 @@
 // @flow
 
-import axios from "axios";
+import axios from "@/common/axios";
 
 export type PlanSummary = {
   id: string,

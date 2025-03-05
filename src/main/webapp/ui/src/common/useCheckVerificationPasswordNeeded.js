@@ -1,7 +1,7 @@
 //@flow
 
 import React from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import * as FetchingData from "../util/fetchingData";
 
 export default function useCheckVerificationPasswordNeeded(): FetchingData.Fetched<boolean> {

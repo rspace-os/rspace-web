@@ -5,7 +5,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../theme";
 import Button from "@mui/material/Button";
-import axios from "axios";
+import axios from "@/common/axios";
 import { withStyles } from "Styles";
 import { makeStyles } from "tss-react/mui";
 import Dialog from "@mui/material/Dialog";

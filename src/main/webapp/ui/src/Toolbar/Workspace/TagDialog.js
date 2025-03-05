@@ -14,7 +14,7 @@ import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
 import TagListing from "../../components/Tags/TagListing";
 import Grid from "@mui/material/Grid";
 import AddTag from "../../components/Tags/AddTag";
-import axios from "axios";
+import axios from "@/common/axios";
 import { type Tag, areSameTag } from "../../stores/definitions/Tag";
 import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
 import {

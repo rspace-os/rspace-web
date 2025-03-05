@@ -18,7 +18,7 @@ import { faPencilAlt } from "@fortawesome/free-solid-svg-icons";
 import Tooltip from "@mui/material/Tooltip";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
-import axios from "axios";
+import axios from "@/common/axios";
 import styled from "@emotion/styled";
 import { CardWrapper } from "../../../styles/CommonStyles.js";
 import { createRoot } from "react-dom/client";

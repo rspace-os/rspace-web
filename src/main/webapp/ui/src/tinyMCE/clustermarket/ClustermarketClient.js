@@ -1,5 +1,5 @@
 // @flow
-import axios from "axios";
+import axios from "@/common/axios";
 // eslint-disable-next-line no-duplicate-imports
 import type { AxiosPromise } from "axios";
 import { BookingType } from "./Enums";

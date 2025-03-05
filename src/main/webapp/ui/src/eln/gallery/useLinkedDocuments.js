@@ -1,7 +1,7 @@
 //@flow
 
 import React from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import { type GalleryFile, idToString } from "./useGalleryListing";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";

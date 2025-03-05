@@ -7,7 +7,7 @@ import React from "react";
 import { render, cleanup, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
-import axios from "axios";
+import axios from "@/common/axios";
 import { useIntegrationIsAllowedAndEnabled } from "../integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
 import fc from "fast-check";

@@ -1,7 +1,7 @@
 //@flow
 
 import React, { type Node } from "react";
-import axios, { type Axios } from "axios";
+import axios, { type Axios } from "@/common/axios";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";

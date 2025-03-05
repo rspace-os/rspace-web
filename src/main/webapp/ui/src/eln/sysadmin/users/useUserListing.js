@@ -2,7 +2,7 @@
 
 import React from "react";
 import * as FetchingData from "../../../util/fetchingData";
-import axios from "axios";
+import axios from "@/common/axios";
 import { Optional } from "../../../util/optional";
 import Result from "../../../util/result";
 import RsSet from "../../../util/set";

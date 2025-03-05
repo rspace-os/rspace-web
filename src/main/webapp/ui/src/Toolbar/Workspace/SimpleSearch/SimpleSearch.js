@@ -1,6 +1,6 @@
 "use strict";
 import React from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import update from "immutability-helper";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";

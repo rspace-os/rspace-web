@@ -10,7 +10,7 @@ import TextField from "@mui/material/TextField";
 import DialogContentText from "@mui/material/DialogContentText";
 import Stack from "@mui/material/Stack";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
-import axios from "axios";
+import axios from "@/common/axios";
 import { doNotAwait } from "../../../util/Util";
 import useOauthToken from "../../../common/useOauthToken";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";

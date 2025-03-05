@@ -2,7 +2,7 @@
 
 import { type UseState } from "./types";
 import React, { type Node, type Context } from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import { mapObject } from "./Util";
 
 /**

@@ -7,7 +7,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
-import axios from "axios";
+import axios from "@/common/axios";
 import { type ExportSelection } from "./ExportDialog";
 import { type Validator } from "../util/Validator";
 import { observer } from "mobx-react-lite";

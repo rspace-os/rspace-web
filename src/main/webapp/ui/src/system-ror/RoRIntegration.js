@@ -6,7 +6,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
 import { createRoot } from "react-dom/client";
 import GenericsearchBar from "../components/GenericsearchBar";
-import axios from "axios";
+import axios from "@/common/axios";
 import styled from "@emotion/styled";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";

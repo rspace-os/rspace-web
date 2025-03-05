@@ -1,7 +1,7 @@
 "use strict";
 import React from "react";
 import update from "immutability-helper";
-import axios from "axios";
+import axios from "@/common/axios";
 import List from "@mui/material/List";
 
 import Folder from "./Folder";

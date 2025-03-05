@@ -1,5 +1,5 @@
 import React from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import AutoshareStatus from "../../../profile/Autoshare/AutoshareStatus";
 import { createRoot } from "react-dom/client";
 

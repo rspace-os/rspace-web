@@ -10,7 +10,7 @@ import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import StepContent from "@mui/material/StepContent";
 import Result from "../../../util/result";
-import axios, { type Axios } from "axios";
+import axios, { type Axios } from "@/common/axios";
 import useOauthToken from "../../../common/useOauthToken";
 import * as Parsers from "../../../util/parsers";
 import Radio from "@mui/material/Radio";

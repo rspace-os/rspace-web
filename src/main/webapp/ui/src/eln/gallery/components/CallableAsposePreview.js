@@ -3,7 +3,7 @@
 import React, { type Node } from "react";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import { usePdfPreview } from "./CallablePdfPreview";
-import axios from "axios";
+import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as Parsers from "../../../util/parsers";
 import * as ArrayUtils from "../../../util/ArrayUtils";

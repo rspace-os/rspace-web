@@ -18,7 +18,7 @@ import {
   faCaretRight,
   faAngleDoubleLeft,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
+import axios from "@/common/axios";
 import Grid from "@mui/material/Grid";
 library.add(faCaretLeft, faCaretRight, faAngleDoubleLeft);
 
@@ -84,7 +84,6 @@ class MyLabGroupsDialog extends React.Component {
       data.append("memberString", this.state.chosenUsers[i].username);
     }
 
-    axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
     axios
       .post(url, data, config)
       .then((msg) => {

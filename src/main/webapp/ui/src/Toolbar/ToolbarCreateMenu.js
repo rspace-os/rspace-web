@@ -1,5 +1,5 @@
 import React from "react";
-import axios from "axios";
+import axios from "@/common/axios";
 import styled from "@emotion/styled";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
