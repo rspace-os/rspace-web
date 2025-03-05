@@ -310,19 +310,31 @@ export default class Result<T> {
 
   /*
    * These helper functions transform passed functions that operate on normal
-   * values into function that operate on values wrapped in Results.
+   * values into function that operate on values wrapped in Results, e.g.:
+   *   const resultC = lift2((a, b) => a + b)(resultA, resultB);
    *
    * They can't all simply be replaced with a single function that takes a rest
    * argument and recurses over that array because the types of each of the
    * wrapped values is different and we want to preserve that difference. As
    * such, if the function you require is not defined then add it, and in order
-   * to do so all of functions beneath it.
+   * to do so all of functions beneath it. Alternatively, you can use try-catch
+   * logic and the `elseThrow` method to operate on the values held by multiple
+   * Results:
+   *    try {
+   *      const a = resultA.elseThrow();
+   *      const b = resultB.elseThrow();
+   *      return Result.Ok(a + b);
+   *    } catch (error) {
+   *      return Result.Error(error);
+   *    }
+   * As you can see, this is a lot verbose for just two values but may be
+   * preferable when working with lots of results than having to define `lift42`.
    *
    * It is possible that all of this deep function calls and instantiation of
    * Result may have performance implications, in which case this functional
    * approach may not be most applicable and the code should instead be
-   * implemented using `null`s, exception handling, and flow type suppressions
-   * where required. Don't preempt that though.
+   * implemented using `null`s, exception handling, and flow suppressions
+   * required. Don't preempt that though.
    */
 
   static lift<A, B>(func: (A) => B): (Result<A>) => Result<B> {
