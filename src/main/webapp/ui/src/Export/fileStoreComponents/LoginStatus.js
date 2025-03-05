@@ -27,7 +27,7 @@ type LoginStatusArgs = {|
   fileStoreCheck: () => void,
 |};
 
-/*
+/**
  * This component displays a status of whether the user is logged into all of
  * the accounts that authorise us to fetch the data from the filestores to
  * which the linked files belong. It also displays a button that opens a
@@ -39,7 +39,9 @@ export default function LoginStatus({
   fileStoreCheck,
 }: LoginStatusArgs): Node {
   const [open, setOpen] = useState(false);
-  const loggedOutCount = fileSystems.filter((fs) => fs.loggedAs === null).length;
+  const loggedOutCount = fileSystems.filter(
+    (fs) => fs.loggedAs === null
+  ).length;
 
   return (
     <Card sx={{ p: 1 }}>
