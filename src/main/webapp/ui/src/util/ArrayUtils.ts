@@ -1,5 +1,3 @@
-//@flow strict
-
 import Result from "./result";
 import { Optional, lift2 } from "./optional";
 
@@ -8,9 +6,9 @@ import { Optional, lift2 } from "./optional";
  * to elements at each index in turn.
  */
 export const zipWith = <A, B, C>(
-  listA: $ReadOnlyArray<A>,
-  listB: $ReadOnlyArray<B>,
-  f: (A, B, number) => C
+  listA: ReadonlyArray<A>,
+  listB: ReadonlyArray<B>,
+  f: (a: A, b: B, index: number) => C
 ): Array<C> => {
   if (listA.length !== listB.length) {
     throw new Error("Both lists must have the same length");
@@ -21,17 +19,17 @@ export const zipWith = <A, B, C>(
 /**
  * Checks whether an array of values are all unique.
  */
-export const allAreUnique = <T>(array: $ReadOnlyArray<T>): boolean =>
+export const allAreUnique = <T>(array: ReadonlyArray<T>): boolean =>
   array.length === [...new Set(array)].length;
 
 /**
  * Same as Array.prototype.splice, but without mutation.
  */
 export const splice = <T>(
-  arr: $ReadOnlyArray<T>,
+  arr: ReadonlyArray<T>,
   start: number,
   deleteCount: number,
-  ...items: $ReadOnlyArray<T>
+  ...items: ReadonlyArray<T>
 ): Array<T> => {
   const array = [...arr];
   array.splice(start, deleteCount, ...items);
@@ -42,13 +40,13 @@ export const splice = <T>(
  * Simply reverses a list, making it clear that the copying of the array is due
  * to the fact that Array.prototype.reverse acts on the array in place.
  */
-export const reverse = <A>(list: $ReadOnlyArray<A>): Array<A> =>
+export const reverse = <A>(list: ReadonlyArray<A>): Array<A> =>
   [...list].reverse();
 
 /**
  * Extract the head of the passed array, if there is one.
  */
-export function head<T>(array: $ReadOnlyArray<T>): Result<T> {
+export function head<T>(array: ReadonlyArray<T>): Result<T> {
   return array.length > 0
     ? Result.Ok(array[0])
     : Result.Error([new Error("Array is empty")]);
@@ -57,7 +55,7 @@ export function head<T>(array: $ReadOnlyArray<T>): Result<T> {
 /**
  * Extract the last element of an array, if there is one
  */
-export function last<T>(array: $ReadOnlyArray<T>): Result<T> {
+export function last<T>(array: ReadonlyArray<T>): Result<T> {
   return array.length > 0
     ? Result.Ok(array[array.length - 1])
     : Result.Error([new Error("Array is empty")]);
@@ -67,9 +65,7 @@ export function last<T>(array: $ReadOnlyArray<T>): Result<T> {
  * Take a copy of an array but without the last element.
  * Returns Result.Error if the array is empty.
  */
-export function dropLast<T>(
-  array: $ReadOnlyArray<T>
-): Result<$ReadOnlyArray<T>> {
+export function dropLast<T>(array: ReadonlyArray<T>): Result<ReadonlyArray<T>> {
   if (array.length === 0) return Result.Error([new Error("Array is empty")]);
   const copy = [...array];
   copy.pop();
@@ -83,9 +79,9 @@ export function dropLast<T>(
  *  outerProduct([1,2,3], [4,5], (x,y) => x * y) // [[4,5],[8,10],[12,15]]
  */
 export const outerProduct = <A, B, C>(
-  as: $ReadOnlyArray<A>,
-  bs: $ReadOnlyArray<B>,
-  f: (A, B) => C
+  as: ReadonlyArray<A>,
+  bs: ReadonlyArray<B>,
+  f: (a: A, b: B) => C
 ): Array<Array<C>> => as.map((a) => bs.map((b) => f(a, b)));
 
 /**
@@ -97,28 +93,28 @@ export const outerProduct = <A, B, C>(
  *   // [['e', 'o', 'o'], ['H', 'l', 'l', ' ', 'W', 'r', 'l', 'd']]
  */
 export const partition = <T>(
-  predicate: (T) => boolean,
-  list: $ReadOnlyArray<T>
+  predicate: (t: T) => boolean,
+  list: ReadonlyArray<T>
 ): [Array<T>, Array<T>] =>
-  list.reduce(
-    ([yes, no], element) => [
-      [...yes, ...(predicate(element) ? [element] : [])],
-      [...no, ...(!predicate(element) ? [element] : [])],
-    ],
+  list.reduce<[Array<T>, Array<T>]>(
+    ([yes, no], element) => {
+      if (predicate(element)) return [[...yes, element], no];
+      return [yes, [...no, element]];
+    },
     [[], []]
   );
 
 /**
  * Group the elements of an array based on the result of the passed function.
  */
-export const groupBy = <T, K: string>(
-  f: (T) => K,
-  list: $ReadOnlyArray<T>
-): { [K]: Array<T> } =>
+export const groupBy = <T, K extends string>(
+  f: (t: T) => K,
+  list: ReadonlyArray<T>
+): { [key in K]: Array<T> } =>
   list.reduce((acc, element) => {
     const key = f(element);
     return { ...acc, [key]: [...(acc[key] || []), element] };
-  }, ({}: { [K]: Array<T> }));
+  }, {} as { [key in K]: Array<T> });
 
 /**
  * Just like normal filter, but specifically just to check whether the elements
@@ -126,10 +122,10 @@ export const groupBy = <T, K: string>(
  * recognise a normal filter.
  */
 export const filterClass = <T, U>(
-  clazz: Class<T>,
-  array: $ReadOnlyArray<U>
+  clazz: { new (...args: unknown[]): T },
+  array: ReadonlyArray<U>
 ): Array<T> => {
-  const arrayOft = ([]: Array<T>);
+  const arrayOft: Array<T> = [];
   for (const a of array) {
     if (a instanceof clazz) arrayOft.push(a);
   }
@@ -143,7 +139,7 @@ export const filterClass = <T, U>(
  * @arg a  The constant value to be inserted between the elements.
  * @arg as The source array from which elements will be copied.
  */
-export const intersperse = <A>(a: A, as: $ReadOnlyArray<A>): Array<A> => {
+export const intersperse = <A>(a: A, as: ReadonlyArray<A>): Array<A> => {
   if (as.length === 0) return [];
   const output = [as[0]];
   for (let i = 1; i < as.length; i++) {
@@ -160,8 +156,8 @@ export const intersperse = <A>(a: A, as: $ReadOnlyArray<A>): Array<A> => {
  * from an array by generating random array of booleans of the same length.
  */
 export const takeWhere = <A>(
-  as: $ReadOnlyArray<A>,
-  where: $ReadOnlyArray<boolean>
+  as: ReadonlyArray<A>,
+  where: ReadonlyArray<boolean>
 ): Array<A> => {
   if (as.length !== where.length) throw new Error("length must match");
   const output = [];
@@ -176,10 +172,10 @@ export const takeWhere = <A>(
  * undefined or null
  */
 export function find<T>(
-  func: (T) => boolean,
-  array: $ReadOnlyArray<T>
+  func: (t: T) => boolean,
+  array: ReadonlyArray<T>
 ): Optional<T> {
-  const found: ?T = array.find(func);
+  const found: T | undefined = array.find(func);
   if (typeof found === "undefined" || found === null) return Optional.empty();
   return Optional.present(found);
 }
@@ -189,7 +185,7 @@ export function find<T>(
  * rather than return undefined if the index is out of range this
  * function return Optional.empty
  */
-export function getAt<T>(index: number, array: $ReadOnlyArray<T>): Optional<T> {
+export function getAt<T>(index: number, array: ReadonlyArray<T>): Optional<T> {
   if (
     !isNaN(index) &&
     Number.isInteger(index) &&
@@ -210,8 +206,8 @@ export function getAt<T>(index: number, array: $ReadOnlyArray<T>): Optional<T> {
  * function, `filterNull`, below.
  */
 export const mapOptional = <A, B>(
-  f: (A) => Optional<B>,
-  as: $ReadOnlyArray<A>
+  f: (a: A) => Optional<B>,
+  as: ReadonlyArray<A>
 ): Array<B> => {
   // These classes are here solely so that filterClass can be used
   class Present<T> {
@@ -222,16 +218,16 @@ export const mapOptional = <A, B>(
   }
   class Empty {}
 
-  const arrayOfOptionals: $ReadOnlyArray<Optional<B>> = as.map(f);
-  const arrayOfPresentOrEmpty: $ReadOnlyArray<Present<B> | Empty> =
+  const arrayOfOptionals: ReadonlyArray<Optional<B>> = as.map(f);
+  const arrayOfPresentOrEmpty: ReadonlyArray<Present<B> | Empty> =
     arrayOfOptionals.map((opt) =>
       opt.destruct(
         () => new Empty(),
         (v) => new Present(v)
       )
     );
-  const arrayOfPresent: $ReadOnlyArray<Present<B>> = filterClass(
-    Present,
+  const arrayOfPresent: ReadonlyArray<Present<B>> = filterClass(
+    Present as { new (...args: unknown[]): Present<B> },
     arrayOfPresentOrEmpty
   );
   return arrayOfPresent.map((opt) => opt.value);
@@ -256,7 +252,7 @@ export const mapOptional = <A, B>(
  * const justNums: Array<number> = filterNull(mixture);
  * ```
  */
-export const filterNull = <A>(as: $ReadOnlyArray<?A>): Array<A> =>
+export const filterNull = <A>(as: ReadonlyArray<A | null>): Array<A> =>
   mapOptional((a) => Optional.fromNullable(a), as);
 
 /**
@@ -271,7 +267,7 @@ export const filterNull = <A>(as: $ReadOnlyArray<?A>): Array<A> =>
  *   all([Optional.present(1), Optional.empty()])    // Optional.empty()
  *   all([])                                         // Optional.present([])
  */
-export const all = <A>(as: $ReadOnlyArray<Optional<A>>): Optional<Array<A>> => {
+export const all = <A>(as: ReadonlyArray<Optional<A>>): Optional<Array<A>> => {
   if (as.length === 0) return Optional.present([]);
   const [h, ...t] = as;
   return lift2((newHead, newTail) => [newHead, ...newTail], h, all(t));
