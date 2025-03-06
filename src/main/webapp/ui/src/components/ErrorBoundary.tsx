@@ -1,7 +1,5 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
-import React, { type Node } from "react";
+import React from "react";
 import clsx from "clsx";
 import { withStyles } from "Styles";
 
@@ -9,7 +7,7 @@ import { withStyles } from "Styles";
  * Error message to display when we cannot recover from an error and we cannot
  * provide any more specific information.
  */
-export const ERROR_MSG: Node = (
+export const ERROR_MSG: React.ReactNode = (
   <>
     Something went wrong! Please refresh the page. If this error persists,
     please contact{" "}
@@ -21,8 +19,8 @@ export const ERROR_MSG: Node = (
 );
 
 const Container = withStyles<
-  {| topOfViewport?: boolean, children: Node |},
-  {| topOfViewport: string |}
+  { topOfViewport?: boolean; children: React.ReactNode },
+  { topOfViewport: string }
 >(() => ({
   topOfViewport: {
     position: "fixed",
@@ -35,30 +33,40 @@ const Container = withStyles<
     zIndex: 9999 /* higher than anything else */,
     paddingBottom: 0,
   },
-}))(({ topOfViewport, classes, children }) => (
-  <Grid
-    container
-    direction="column"
-    alignItems="center"
-    justifyContent="center"
-    className={clsx(
-      (topOfViewport === false || topOfViewport === null) &&
-        classes.topOfViewport
-    )}
-  >
-    {children}
-  </Grid>
-));
+}))(
+  ({
+    topOfViewport,
+    classes,
+    children,
+  }: {
+    topOfViewport?: boolean;
+    children: React.ReactNode;
+    classes: { topOfViewport: string };
+  }) => (
+    <Grid
+      container
+      direction="column"
+      alignItems="center"
+      justifyContent="center"
+      className={clsx(
+        (topOfViewport === false || topOfViewport === null) &&
+          classes.topOfViewport
+      )}
+    >
+      {children}
+    </Grid>
+  )
+);
 
-type ErrorBoundaryArgs = {|
-  message?: string,
-  topOfViewport?: boolean,
-  children: Node,
-|};
+type ErrorBoundaryArgs = {
+  message?: string;
+  topOfViewport?: boolean;
+  children: React.ReactNode;
+};
 
-type ErrorBoundaryState = {|
-  hasError: boolean,
-|};
+type ErrorBoundaryState = {
+  hasError: boolean;
+};
 
 /**
  * The ErrorBoundary component is a React component that catches errors in its
@@ -69,7 +77,7 @@ export default class ErrorBoundary extends React.Component<
   ErrorBoundaryArgs,
   ErrorBoundaryState
 > {
-  message: Node;
+  message: React.ReactNode;
 
   constructor(props: ErrorBoundaryArgs) {
     super(props);
@@ -81,7 +89,7 @@ export default class ErrorBoundary extends React.Component<
     return { hasError: true };
   }
 
-  render(): Node {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       return (
         <Container topOfViewport={this.props.topOfViewport}>
