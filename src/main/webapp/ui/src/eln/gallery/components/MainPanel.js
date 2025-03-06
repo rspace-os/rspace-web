@@ -26,7 +26,7 @@ import CardActionArea from "@mui/material/CardActionArea";
 import Avatar from "@mui/material/Avatar";
 import BrokenImageIcon from "@mui/icons-material/BrokenImage";
 import * as FetchingData from "../../../util/fetchingData";
-import { type GalleryFile, type Id } from "../useGalleryListing";
+import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
 import {
   useGalleryActions,
   folderDestination,
@@ -92,6 +92,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as StringUtils from "../../../util/StringUtils";
+import LinkIcon from "@mui/icons-material/Link";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
@@ -315,53 +317,106 @@ const BreadcrumbLink = React.forwardRef<
 );
 BreadcrumbLink.displayName = "BreadcrumbLink";
 
-const Path = observer(({
-  section,
-  path,
-  setSelectedSection,
-}: {|
-  section: GallerySection,
-  path: $ReadOnlyArray<GalleryFile>,
-  setSelectedSection: (GallerySection) => void,
-|}) => {
-  const {
-    eventHandlers: { onFocus, onBlur, onKeyDown },
-    getTabIndex,
-    getRef,
-  } = useOneDimensionalRovingTabIndex<typeof Link>({
-    max: path.length,
-    direction: "row",
-  });
-  const selection = useGallerySelection();
+const Path = observer(
+  ({
+    section,
+    path,
+    setSelectedSection,
+  }: {|
+    section: GallerySection,
+    path: $ReadOnlyArray<GalleryFile>,
+    setSelectedSection: (GallerySection) => void,
+  |}) => {
+    const {
+      eventHandlers: { onFocus, onBlur, onKeyDown },
+      getTabIndex,
+      getRef,
+    } = useOneDimensionalRovingTabIndex<typeof Link>({
+      max: path.length,
+      direction: "row",
+    });
+    const selection = useGallerySelection();
+    const { addAlert } = React.useContext(AlertContext);
 
-  return (
-    <StyledBreadcrumbs onFocus={onFocus} onBlur={onBlur} onKeyDown={onKeyDown}>
-      <BreadcrumbLink
-        section={section}
-        setSelectedSection={setSelectedSection}
-        sx={{
-          pl: 1,
-        }}
-        ref={getRef(0)}
-        tabIndex={getTabIndex(0)}
-      />
-      {selection
-        .asSet()
-        .only.map((f) => f.path)
-        .orElse(path)
-        .map((f, i) => (
+    return (
+      <Stack direction="row">
+        <StyledBreadcrumbs
+          onFocus={onFocus}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
+        >
           <BreadcrumbLink
-            key={f.key}
-            folder={f}
             section={section}
             setSelectedSection={setSelectedSection}
-            ref={getRef(i + 1)}
-            tabIndex={getTabIndex(i + 1)}
+            sx={{
+              pl: 1,
+            }}
+            ref={getRef(0)}
+            tabIndex={getTabIndex(0)}
           />
-        ))}
-    </StyledBreadcrumbs>
-  );
-});
+          {selection
+            .asSet()
+            .only.map((f) => f.path)
+            .orElse(path)
+            .map((f, i) => (
+              <BreadcrumbLink
+                key={f.key}
+                folder={f}
+                section={section}
+                setSelectedSection={setSelectedSection}
+                ref={getRef(i + 1)}
+                tabIndex={getTabIndex(i + 1)}
+              />
+            ))}
+        </StyledBreadcrumbs>
+        <IconButtonWithTooltip
+          title="Copy to clipboard"
+          onClick={() => {
+            try {
+              if (path.length === 0) {
+                navigator.clipboard.writeText(
+                  `${window.location.origin}/gallery?mediaType=${section}`
+                );
+              } else {
+                navigator.clipboard.writeText(
+                  `${window.location.origin}/gallery/${idToString(
+                    path[path.length - 1].id
+                  ).elseThrow()}`
+                );
+              }
+              addAlert(
+                mkAlert({
+                  message: "Link copied to clipboard successfully!",
+                  variant: "success",
+                })
+              );
+            } catch (error) {
+              addAlert(
+                mkAlert({
+                  message:
+                    "Failed to copy link to clipboard. Please try again.",
+                  variant: "error",
+                })
+              );
+            }
+          }}
+          color="standardIcon"
+          icon={<LinkIcon />}
+          sx={{
+            backgroundColor: (theme) => theme.palette.primary.main,
+            "&:hover": {
+              backgroundColor: (theme) =>
+                alpha(theme.palette.primary.main, 0.85),
+            },
+            borderRadius: "6px",
+            padding: "2px",
+            marginLeft: (theme) => theme.spacing(1),
+          }}
+        />
+      </Stack>
+    );
+  }
+);
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
