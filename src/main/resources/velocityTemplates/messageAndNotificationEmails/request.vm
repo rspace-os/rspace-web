@@ -2,8 +2,9 @@
 #utf8header
 <body>
 <h2> RSpace Request from "$cmm.originator.fullName" (user "$cmm.originator.username")</h2>
-The RSpace Principal Investigator "<b>$cmm.originator.fullName</b>" sent you a
-request on $date.format('full_date', $dateOb) at $date.format('short_time', $dateOb).
+The RSpace#if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP") Principal Investigator #else User #end
+"<b>$cmm.originator.fullName</b>" sent you a
+request on $date.format('full_date', $dateOb) at #if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP") $date.format('short_time', $dateOb). #else $date.format('short_time', $dateOb)#end
  #if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP" || $cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
  <br/><br/>
  In order to join the
@@ -30,14 +31,14 @@ request on $date.format('full_date', $dateOb) at $date.format('short_time', $dat
  #end
 
  #if ($cmm.record && $cmm.record.notebook)
- concerning notebook <a href="$baseURL/notebookEditor/$cmm.record.id">$cmm.record.name</a>
+ concerning notebook <a href="$baseURL/notebookEditor/$cmm.record.id">$cmm.record.name</a>.
  <br>
  #elseif($cmm.record)
- concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">$cmm.record.name </a>
+ concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">$cmm.record.name</a>.
  <br>
  #end
 
- #if ($cmm.message)
+ #if ($cmm.message && $cmm.message != "")
  More details: <br>
   $cmm.message
  #end
