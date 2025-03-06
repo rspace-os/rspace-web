@@ -1,0 +1,33 @@
+//@flow strict
+
+import Result from "./result";
+
+export type UseStateSetter<T> = (((T) => T) | T) => void;
+export type UseState<T> = [T, UseStateSetter<T>];
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export type Order = "asc" | "desc";
+
+declare export function parseOrder(str: string): Result<Order>;
+
+export type AllSettled<A> = Array<
+  | {|
+      +status: "fulfilled",
+      +value: A,
+    |}
+  | {|
+      +status: "rejected",
+      +reason: Error,
+    |}
+>;
+
+export type Panel = "left" | "right";
+
+export type IsoTimestamp = string;
+
+export type URL = string;
+export type BlobUrl = URL;

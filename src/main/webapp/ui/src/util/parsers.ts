@@ -1,5 +1,3 @@
-//@flow strict
-
 import { getByKey } from "./optional";
 import Result from "./result";
 import { match } from "./Util";
@@ -27,7 +25,10 @@ import { match } from "./Util";
  * const parsedValue: Options = parseString("Foo", value);
  * ```
  */
-export function parseString<T: string>(pattern: T, value: string): Result<T> {
+export function parseString<T extends string>(
+  pattern: T,
+  value: string
+): Result<T> {
   if (pattern === value) return Result.Ok(pattern);
   return Result.Error<T>([new Error(`"${value}" !== "${pattern}"`)]);
 }
@@ -45,11 +46,13 @@ export function parseInteger(value: string): Result<number> {
 /**
  * Parse a boolean from a string of either "true" or "false".
  */
-export const parseBoolean: ("true" | "false") => Result<boolean> = match([
-  [(value: "false" | "true") => value === "false", Result.Ok(false)],
-  [(value: "false" | "true") => value === "true", Result.Ok(true)],
-  [() => true, Result.Error([new Error("Neither 'true' nor 'false'")])],
-]);
+export const parseBoolean: (value: "true" | "false") => Result<boolean> = match(
+  [
+    [(value: "false" | "true") => value === "false", Result.Ok(false)],
+    [(value: "false" | "true") => value === "true", Result.Ok(true)],
+    [() => true, Result.Error([new Error("Neither 'true' nor 'false'")])],
+  ]
+);
 
 /**
  * Parses a string into a date.
@@ -80,7 +83,7 @@ export function parseDate(s: string | number): Result<Date> {
  * Parses anything into an Object (i.e. not a primitive value
  * like string or number).
  */
-export function isObject(m: mixed): Result<{ ... } | null> {
+export function isObject(m: unknown): Result<object | null> {
   return typeof m === "object"
     ? Result.Ok(m)
     : Result.Error([new TypeError("Not an object")]);
@@ -91,7 +94,7 @@ export function isObject(m: mixed): Result<{ ... } | null> {
  */
 export function isNull<T>(x: T | null): Result<null> {
   return x === null
-    ? Result.Ok(x)
+    ? Result.Ok(null)
     : Result.Error<null>([new TypeError("Is not null")]);
 }
 
@@ -115,7 +118,7 @@ export function isNotNull<T>(x: T | null): Result<T> {
  * Parsers something that might be bottom (undefined or null) into just that
  * something.
  */
-export function isNotBottom<T>(x: ?T): Result<T> {
+export function isNotBottom<T>(x: T | undefined | null): Result<T> {
   return typeof x === "undefined" || x === null
     ? Result.Error<T>([new TypeError("Is undefined or null")])
     : Result.Ok(x);
@@ -124,7 +127,7 @@ export function isNotBottom<T>(x: ?T): Result<T> {
 /**
  * Parses anything into an array of anything
  */
-export function isArray(m: mixed): Result<$ReadOnlyArray<mixed>> {
+export function isArray(m: unknown): Result<ReadonlyArray<unknown>> {
   return Array.isArray(m)
     ? Result.Ok(m)
     : Result.Error([new TypeError("Is not an array")]);
@@ -133,7 +136,7 @@ export function isArray(m: mixed): Result<$ReadOnlyArray<mixed>> {
 /**
  * Parses anything into a string
  */
-export function isString(m: mixed): Result<string> {
+export function isString(m: unknown): Result<string> {
   return typeof m === "string"
     ? Result.Ok(m)
     : Result.Error([new TypeError("Is not a string")]);
@@ -142,7 +145,7 @@ export function isString(m: mixed): Result<string> {
 /**
  * Parses anything into a number
  */
-export function isNumber(m: mixed): Result<number> {
+export function isNumber(m: unknown): Result<number> {
   return typeof m === "number"
     ? Result.Ok(m)
     : Result.Error([new TypeError("Is not a number")]);
@@ -161,7 +164,7 @@ export function isNotNaN(n: number): Result<number> {
 /**
  * Parses anything into a boolean
  */
-export function isBoolean(m: mixed): Result<boolean> {
+export function isBoolean(m: unknown): Result<boolean> {
   return typeof m === "boolean"
     ? Result.Ok(m)
     : Result.Error([new TypeError("Is not a boolean")]);
@@ -188,10 +191,11 @@ export function isTrue(b: boolean): Result<true> {
  * ```
  */
 export const getValueWithKey =
-  <Key: string>(key: Key): (({ +[Key]: mixed }) => Result<mixed>) =>
-  (obj: { +[Key]: mixed }): Result<mixed> =>
+  <Key extends string>(
+    key: Key
+  ): ((obj: Record<Key, unknown>) => Result<unknown>) =>
+  (obj: Record<Key, unknown>): Result<unknown> =>
     getByKey(key, obj).toResult(() => new Error(`key '${key}' is missing`));
-
 /**
  * Traverses a series of nested objects, only returning Result.Ok if each is an
  * object, is not null, and contains the specified key.
@@ -202,13 +206,13 @@ export const getValueWithKey =
  * ```
  */
 export const objectPath = (
-  path: $ReadOnlyArray<string>,
-  obj: mixed
-): Result<mixed> => {
+  path: ReadonlyArray<string>,
+  obj: unknown
+): Result<unknown> => {
   if (path.length === 0) return Result.Ok(obj);
   const [head, ...tail] = path;
   return isObject(obj)
     .flatMap(isNotNull)
-    .flatMap(getValueWithKey<_, mixed>(head))
+    .flatMap((x) => getValueWithKey(head)(x as Record<string, unknown>))
     .flatMap((x) => objectPath(tail, x));
 };

@@ -1,0 +1,25 @@
+//@flow strict
+
+import Result from "./result";
+
+declare export function parseString<T: string>(T, string): Result<T>;
+declare export function parseInteger(string): Result<number>;
+declare export function parseBoolean("true" | "false"): Result<boolean>;
+declare export function parseDate(string | number): Result<Date>;
+declare export function isObject(mixed): Result<{ ... } | null>;
+declare export function isNull<T>(T | null): Result<null>;
+declare export function isNotNull<T>(T | null): Result<T>;
+declare export function isNotBottom<T>(?T): Result<T>;
+declare export function isArray(mixed): Result<$ReadOnlyArray<mixed>>;
+declare export function isString(mixed): Result<string>;
+declare export function isNumber(mixed): Result<number>;
+declare export function isNotNaN(number): Result<number>;
+declare export function isBoolean(mixed): Result<boolean>;
+declare export function isTrue(boolean): Result<true>;
+declare export function getValueWithKey<Key: string>(
+  key: Key
+): ({ +[Key]: mixed }) => Result<mixed>;
+declare export function objectPath(
+  $ReadOnlyArray<string>,
+  mixed
+): Result<mixed>;

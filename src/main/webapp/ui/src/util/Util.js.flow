@@ -1,0 +1,74 @@
+// @flow strict
+
+import { type AllSettled } from "./types";
+
+declare export function clamp(number, number, number): number;
+declare export function preventEventBubbling(
+  f?: (Event) => void
+): (Event) => void;
+declare export function preventEventDefault(
+  f?: (Event) => void
+): (Event) => void;
+declare export function omitNull<T: { ... }>(obj: T): Partial<T>;
+declare export function toTitleCase(string): string;
+declare export function capitaliseJustFirstChar(string): string;
+declare export function mapObject<K, V, W>(
+  f: (K, V) => W,
+  obj: {| [K]: V |}
+): {| [K]: W |};
+declare export function mapObjectKeyAndValue<K1, V1, K2, V2>(
+  keyFunc: (K1, V1) => K2,
+  valueFunc: (K1, V1) => V2,
+  obj: {| [K1]: V1 |}
+): {| [K2]: V2 |};
+declare export function values<K: string, V>(obj: { [K]: V }): Array<V>;
+declare export function filterObject<K: string, V>(
+  f: (K, V) => boolean,
+  obj: { [K]: V }
+): { [K]: V };
+declare export function invertObject<K: string, V>(obj: { [K]: V }): { [V]: K };
+declare export function sameKeysAndValues(
+  obj1: { ... },
+  obj2: { ... }
+): boolean;
+declare export function dropProperty<Key: string, Rest>(
+  obj: { [Key]: mixed, ...Rest },
+  key: Key
+): Rest;
+declare export function match<T, U>(
+  pairs: Array<[(T) => boolean, U]>
+): (T) => U;
+declare export function toYesNo(boolean): string;
+type IsoToLocalOptions = {|
+  locale?: ?string,
+  dateOnly?: ?boolean,
+|};
+declare export function isoToLocale(
+  isoString: string,
+  ?IsoToLocalOptions
+): string;
+declare export function listToObject<T, V>(
+  list: Array<T>,
+  f: (T) => V
+): { [T]: V };
+declare export function objectToSet<K>(obj: { [K]: boolean }): Set<K>;
+declare export function sleep(number): Promise<void>;
+declare export function isEmptyObject({ ... }): boolean;
+declare export function doNotAwait<T>(
+  f: (...Array<T>) => Promise<mixed>
+): (...Array<T>) => void;
+declare export function filterMap<A, B>(
+  map: Map<A, B>,
+  f: (A, B) => boolean
+): Map<A, B>;
+declare export function classMixin<T>(Class<T>, ...Array<T>): void;
+declare export function partitionAllSettled<A>(allSettled: AllSettled<A>): {|
+  fulfilled: Array<A>,
+  rejected: Array<Error>,
+|};
+declare export function readFileAsBinaryString(File): Promise<string>;
+declare export function isValidDate(string): boolean;
+declare export function isUrl(string): boolean;
+declare export function isInventoryPermalink(string): boolean;
+declare export function mapNullable<A, B>(f: (A) => B, a: ?A): ?B;
+declare export function modulo(number, number): number;

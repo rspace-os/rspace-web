@@ -1,5 +1,3 @@
-//@flow strict
-
 import { parseString } from "./parsers";
 import Result from "./result";
 
@@ -12,7 +10,7 @@ import Result from "./result";
  * Usage:
  *  const [count, setCount]: UseState<number> = useState(0);
  */
-export type UseStateSetter<T> = (((T) => T) | T) => void;
+export type UseStateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
 export type UseState<T> = [T, UseStateSetter<T>];
 
 /*
@@ -30,8 +28,8 @@ export type Order = "asc" | "desc";
 
 export function parseOrder(str: string): Result<Order> {
   return Result.first(
-    (parseString("asc", str): Result<Order>),
-    (parseString("desc", str): Result<Order>)
+    parseString("asc", str) as Result<Order>,
+    parseString("desc", str) as Result<Order>
   );
 }
 
@@ -39,14 +37,14 @@ export function parseOrder(str: string): Result<Order> {
  * The return type of Promise.allSettled
  */
 export type AllSettled<A> = Array<
-  | {|
-      +status: "fulfilled",
-      +value: A,
-    |}
-  | {|
-      +status: "rejected",
-      +reason: Error,
-    |}
+  | {
+      status: "fulfilled";
+      value: A;
+    }
+  | {
+      status: "rejected";
+      reason: Error;
+    }
 >;
 
 /*
