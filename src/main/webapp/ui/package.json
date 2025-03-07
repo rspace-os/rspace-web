@@ -13,7 +13,8 @@
     "flow": "flow",
     "flow-typed": "flow-typed",
     "depcruise": "npx depcruise src",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "test-ct": "playwright test -c playwright-ct.config.ts"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +30,7 @@
     "@babel/preset-flow": "=7.18.6",
     "@babel/preset-react": "=7.18.6",
     "@babel/runtime": "=7.24.6",
+    "@playwright/experimental-ct-react": "^1.51.0",
     "@testing-library/jest-dom": "=6.2.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.5.2",
@@ -36,6 +38,7 @@
     "@types/dompurify": "^3.0.5",
     "@types/jest": "^29.5.14",
     "@types/jest-axe": "^3.5.9",
+    "@types/node": "^22.13.9",
     "axios-mock-adapter": "^1.20.0",
     "babel-loader": "=9.1.2",
     "babel-plugin-transform-import-meta": "^2.2.1",
