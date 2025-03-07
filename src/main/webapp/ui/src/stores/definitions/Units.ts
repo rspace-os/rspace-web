@@ -1,5 +1,3 @@
-//@flow
-
 import { match } from "../../util/Util";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
@@ -69,7 +67,7 @@ export type QuantityValue = number;
 /**
  * The unit associated with a particular quantity.
  */
-export type QuantityUnitId = $Values<typeof quantityIds>;
+export type QuantityUnitId = (typeof quantityIds)[keyof typeof quantityIds];
 
 /**
  * Checks where a quantity's unit is one that measures volume.
@@ -246,7 +244,7 @@ export function getRelativeTime(targetDate: Date): string {
     (futureDate.getTime() - now.getTime()) / 1000
   );
 
-  const units = [
+  const units: Array<{ name: Intl.RelativeTimeFormatUnit; seconds: number }> = [
     { name: "year", seconds: 60 * 60 * 24 * 365 },
     { name: "month", seconds: 60 * 60 * 24 * 30 },
     { name: "day", seconds: 60 * 60 * 24 },
@@ -258,7 +256,6 @@ export function getRelativeTime(targetDate: Date): string {
   for (const unit of units) {
     if (Math.abs(diffInSeconds) >= unit.seconds) {
       const value = Math.floor(diffInSeconds / unit.seconds);
-      //$FlowExpectedError[prop-missing] -- Flow doesn't know about Intl.RelativeTimeFormat
       return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
         value,
         unit.name
@@ -289,7 +286,7 @@ export const KELVIN = 9;
 export const FAHRENHEIT = 10;
 
 /**
- * The type of any temperature scale.
+ * The type of any temerature scale.
  */
 export type TemperatureScale =
   | typeof CELSIUS
@@ -299,10 +296,10 @@ export type TemperatureScale =
 /**
  * A particular temperature, in a particular scale.
  */
-export type Temperature = {|
-  numericValue: number,
-  unitId: TemperatureScale,
-|};
+export type Temperature = {
+  numericValue: number;
+  unitId: TemperatureScale;
+};
 
 /**
  * Absolute zero in degrees Celsius.
@@ -336,16 +333,11 @@ export function temperatureFromTo(
  * If a non-null value is passed, then it is check to be not NaN and not less
  * than absolute zero.
  */
-export const validateTemperature = (temp: ?Temperature): Result<null> =>
+export const validateTemperature = (temp: Temperature | null): Result<null> =>
   Result.first(
     !temp ? Result.Ok(null) : Result.Error<null>([]),
     Parsers.isNotBottom(temp)
-      .flatMap((t) =>
-        Parsers.isNotNaN(t.numericValue).map((numericValue) => ({
-          numericValue,
-          ...t,
-        }))
-      )
+      .flatMapDiscarding((t) => Parsers.isNotNaN(t.numericValue))
       .mapError(() => new Error("Temperature is invalid"))
       .flatMap((t) =>
         t.numericValue >= temperatureFromTo(CELSIUS, t.unitId, ABSOLUTE_ZERO)
