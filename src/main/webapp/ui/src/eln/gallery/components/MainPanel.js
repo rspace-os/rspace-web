@@ -92,6 +92,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as StringUtils from "../../../util/StringUtils";
+import * as ArrayUtils from "../../../util/ArrayUtils";
 import LinkIcon from "@mui/icons-material/Link";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
@@ -373,17 +374,11 @@ const Path = observer(
           title="Copy to clipboard"
           onClick={doNotAwait(async () => {
             try {
-              if (path.length === 0) {
-                await navigator.clipboard.writeText(
-                  `${window.location.origin}/gallery?mediaType=${section}`
-                );
-              } else {
-                await navigator.clipboard.writeText(
-                  `${window.location.origin}/gallery/${idToString(
-                    path[path.length - 1].id
-                  ).elseThrow()}`
-                );
-              }
+              await navigator.clipboard.writeText(
+                `${window.location.origin}/gallery${ArrayUtils.last(path)
+                  .map(({ id }) => `/${idToString(id).elseThrow()}`)
+                  .orElse(`?mediaType=${section}`)}`
+              );
               addAlert(
                 mkAlert({
                   message: "Link copied to clipboard successfully!",
@@ -403,7 +398,8 @@ const Path = observer(
           color="standardIcon"
           icon={<LinkIcon />}
           sx={{
-            backgroundColor: (theme) => alpha(lighten(theme.palette.primary.main, 0.1), 0.6),
+            backgroundColor: (theme) =>
+              alpha(lighten(theme.palette.primary.main, 0.1), 0.6),
             "&:hover": {
               backgroundColor: (theme) =>
                 alpha(theme.palette.primary.main, 0.85),
