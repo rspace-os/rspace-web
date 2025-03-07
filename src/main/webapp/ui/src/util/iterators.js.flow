@@ -1,0 +1,8 @@
+//@flow strict
+
+declare export function incrementForever(): Generator<number, void, void>;
+declare export function take<T>(
+  iterator: Iterable<T>,
+  n: number
+): Generator<T, void, void>;
+declare export function sum(iterator: Iterable<number>): number;

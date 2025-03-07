@@ -1,5 +1,3 @@
-//@flow strict
-
 /**
  * This script contains a number of utility functions for working with
  * iterators and generators. Here are a few definitions used in this script:
@@ -38,8 +36,7 @@ export function* take<T>(
   n: number
 ): Generator<T, void, void> {
   let count = n;
-  const it = iterator[Symbol.iterator]();
-  for (const x of it) {
+  for (const x of iterator) {
     if (count === 0) return;
     yield x;
     count--;
@@ -50,8 +47,7 @@ export function* take<T>(
  * Compute the sum of an iterator of numbers.
  */
 export function sum(iterator: Iterable<number>): number {
-  const it = iterator[Symbol.iterator]();
   let result = 0;
-  for (const x of it) result += x;
+  for (const x of iterator) result += x;
   return result;
 }
