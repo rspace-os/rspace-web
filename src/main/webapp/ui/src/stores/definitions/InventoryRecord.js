@@ -9,7 +9,7 @@
 import { match } from "../../util/Util";
 import { globalIdPatterns, type Id, type GlobalId } from "./BaseRecord";
 import { type Record, type ReadAccessLevel } from "./Record";
-import { type BlobUrl } from "../stores/ImageStore";
+import { type BlobUrl } from "../../util/types";
 import { type Editable } from "./Editable";
 import { type HasChildren } from "./HasChildren";
 import { type Factory } from "./Factory";

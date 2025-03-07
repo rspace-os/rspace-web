@@ -37,7 +37,7 @@ import UserDetails from "../UserDetails";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SampleModel from "../../../stores/models/SampleModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
-import { type BlobUrl } from "../../../stores/stores/ImageStore";
+import { type BlobUrl } from "../../../util/types";
 
 const CustomCardStructure = withStyles<
   {|

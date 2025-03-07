@@ -64,3 +64,8 @@ export type IsoTimestamp = string;
  * This is a string in the format of a URL.
  */
 export type URL = string;
+
+/*
+ * This is a URL whose protocol is "blob".
+ */
+export type BlobUrl = URL;

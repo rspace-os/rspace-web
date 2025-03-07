@@ -37,7 +37,7 @@ import { withStyles } from "Styles";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { type Attachment } from "../../../../stores/definitions/Attachment";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-import { type BlobUrl } from "../../../../stores/stores/ImageStore";
+import { type BlobUrl } from "../../../../util/types";
 import BigIconButton from "../../../../components/BigIconButton";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";

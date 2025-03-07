@@ -5,7 +5,7 @@ import React, { type Node, useContext } from "react";
 import { observer } from "mobx-react-lite";
 import { doNotAwait } from "../../../util/Util";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
-import { type BlobUrl } from "../../../stores/stores/ImageStore";
+import { type BlobUrl } from "../../../util/types";
 import { capImageAt1MB } from "../../../util/images";
 import SearchContext from "../../../stores/contexts/Search";
 import { Alert } from "@mui/material";

@@ -29,7 +29,7 @@ import {
   type AdjustableTableRow,
   type AdjustableTableRowOptions,
 } from "../definitions/Tables";
-import { type BlobUrl } from "../stores/ImageStore";
+import { type BlobUrl } from "../../util/types";
 import getRootStore from "../stores/RootStore";
 import { mkAlert, type Alert } from "../contexts/Alert";
 import { newExistingAttachment } from "./AttachmentModel";

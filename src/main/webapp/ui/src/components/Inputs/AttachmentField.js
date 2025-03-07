@@ -18,7 +18,7 @@ import Grid from "@mui/material/Grid";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import type { HasEditableFields } from "../../stores/definitions/Editable";
-import { type BlobUrl } from "../../stores/stores/ImageStore";
+import { type BlobUrl } from "../../util/types";
 import type { Attachment } from "../../stores/definitions/Attachment";
 import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
 import UploadIcon from "@mui/icons-material/Publish";

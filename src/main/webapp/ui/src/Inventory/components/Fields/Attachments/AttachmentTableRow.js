@@ -21,7 +21,7 @@ import InsertPhotoIcon from "@mui/icons-material/InsertPhoto";
 import useStores from "../../../../stores/use-stores";
 import { mkAlert } from "../../../../stores/contexts/Alert";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-import { type BlobUrl } from "../../../../stores/stores/ImageStore";
+import { type BlobUrl } from "../../../../util/types";
 import { doNotAwait } from "../../../../util/Util";
 
 const ChemicalPreview = observer(
