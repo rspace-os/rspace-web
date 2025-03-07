@@ -371,14 +371,14 @@ const Path = observer(
         </StyledBreadcrumbs>
         <IconButtonWithTooltip
           title="Copy to clipboard"
-          onClick={() => {
+          onClick={doNotAwait(async () => {
             try {
               if (path.length === 0) {
-                navigator.clipboard.writeText(
+                await navigator.clipboard.writeText(
                   `${window.location.origin}/gallery?mediaType=${section}`
                 );
               } else {
-                navigator.clipboard.writeText(
+                await navigator.clipboard.writeText(
                   `${window.location.origin}/gallery/${idToString(
                     path[path.length - 1].id
                   ).elseThrow()}`
@@ -399,7 +399,7 @@ const Path = observer(
                 })
               );
             }
-          }}
+          })}
           color="standardIcon"
           icon={<LinkIcon />}
           sx={{
