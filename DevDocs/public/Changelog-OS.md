@@ -4,6 +4,21 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.8.0 2025-03-07
+
+### ELN Features
+
+- RSDEV-508 new Gallery supports viewing of .dna files through SnapGene integration
+- RSDEV-487 group invitation email updated with links that allow todirectly Accept/Decline the invitation
+- RSDEV-557, ISSUE#227 'Usage' column on System -> Users listing is formatted as number in CSV export
+
+### ELN Bugfix
+
+- RSDEV-527 fix problems with exporting to repository when DMPonline integration was enabled
+- RSDEV-528 fix problem with DMP from dmptool not being updated with a link to exported RSpace archive
+- RSDEV-507 add scrolling to List of Materials selector
+- RSDEV-557 fix rare UI problem where after period of inactivity user was navigated to a page with printout of json data
+
 # 2.7.0 2025-02-11
 
 ### ELN Features
