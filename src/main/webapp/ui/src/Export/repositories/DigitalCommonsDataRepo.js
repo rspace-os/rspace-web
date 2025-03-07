@@ -9,7 +9,7 @@ import {
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import { type Person, type StandardValidations } from "./common";
-import Tags, { type Tag } from "./Tags";
+import { type Tag } from "./Tags";
 
 /*
  * This component collects the metadata required by Digital Commons Data to make a deposit.
@@ -54,9 +54,9 @@ function DigitalCommonsDataRepo({
   updatePeople,
   title,
   description,
-  tags,
-  onTagsChange,
-  fetchingTags,
+  tags: _tags,
+  onTagsChange: _onTagsChange,
+  fetchingTags: _fetchingTags,
 }: DigitalCommonsDataRepoArgs): Node {
   /*
    * DigitalCommonsData doesn't require all of the same information as all of the other
@@ -120,4 +120,8 @@ function DigitalCommonsDataRepo({
   );
 }
 
+/**
+ * This components provides a form for the user to fill in the details of the
+ * deposit that will be made with Digital Commons Data.
+ */
 export default (DigitalCommonsDataRepo: ComponentType<DigitalCommonsDataRepoArgs>);

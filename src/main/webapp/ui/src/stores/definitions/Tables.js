@@ -12,7 +12,7 @@ export type CellContent =
   | {| renderOption: "globalId", data: InventoryRecord |}
   | {| renderOption: "location", data: InventoryRecord |}
   | {| renderOption: "owner", data: Person |}
-  | {| renderOption: "tags", data: Array<Tag> |}
+  | {| renderOption: "tags", data: Array<Tag> |};
 export type AdjustableTableRowOptions<T: AdjustableTableRowLabel> = Map<
   T,
   () => CellContent

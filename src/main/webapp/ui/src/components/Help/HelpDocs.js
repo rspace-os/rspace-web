@@ -13,6 +13,8 @@ import { observer } from "mobx-react-lite";
 import axios from "@/common/axios";
 import Intercom from "@intercom/messenger-js-sdk";
 
+/* eslint-disable camelcase -- lighthouse requires object properties with camel casing */
+
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
 type HelpDocsArgs = {|
@@ -44,7 +46,6 @@ function loadScript(url: string): void {
  * Displays the HelpDocs popup window.
  */
 function HelpDocs({ Action }: HelpDocsArgs): Node {
-  const [chatEnabled, setChatEnabled] = useState(false);
   const api = useRef(
     axios.create({
       baseURL: "/session/ajax",
@@ -54,7 +55,7 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
   const analyticsContext = useContext(AnalyticsContext);
   const { trackEvent } = analyticsContext;
 
-  // this is simply to trigger a re-render once lighthouse is loaded
+  // eslint-disable-next-line no-unused-vars -- this is simply to trigger a re-render once lighthouse is loaded
   const [_lighthouseIsLoaded, setLighthouseIsLoaded] = useState(false);
 
   function loadLighthouse(livechatEnabled: boolean): void {
@@ -78,15 +79,9 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
   useEffect(() => {
     void (async () => {
       const {
-        data: {
-          livechatEnabled,
-          livechatServerHost,
-          livechatServerKey,
-          livechatUserId,
-        },
+        data: { livechatEnabled, livechatServerKey, livechatUserId },
       } = await api.current.get<{|
         livechatEnabled: boolean,
-        livechatServerHost: string,
         livechatServerKey: string,
         livechatUserId: string,
       |}>("/livechatProperties");
@@ -97,7 +92,6 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
           hide_default_launcher: true,
         });
       }
-      setChatEnabled(livechatEnabled);
       loadLighthouse(livechatEnabled);
     })();
   }, []);
@@ -123,14 +117,14 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
         view_all: "View All Articles",
         suggested_articles: "Suggested Articles",
       },
-      onReady: function () {
+      onReady() {
         if (typeof window.Intercom !== "undefined") {
           const intercom = window.Intercom;
-          intercom("onShow", function () {
+          intercom("onShow", () => {
             window.Lighthouse.hide();
             window.Lighthouse.showButton();
           });
-          intercom("onHide", function () {
+          intercom("onHide", () => {
             window.Lighthouse.show();
           });
           if (document.getElementById("intercom-container")) {
@@ -139,16 +133,16 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
         }
         setLighthouseIsLoaded(true);
       },
-      onShow: function () {
+      onShow() {
         if (typeof window.Intercom !== "undefined") {
           const intercom = window.Intercom;
           intercom("hide");
         }
       },
-      onLoad: function () {
+      onLoad() {
         window.Lighthouse.hideButton();
       },
-      onHide: function () {
+      onHide() {
         window.Lighthouse.hideButton();
       },
     };
@@ -169,4 +163,10 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
   );
 }
 
+/**
+ * This is component that when the provided Action component is clicked, it
+ * opens a popup window that displays the RSpace help documentation. This
+ * allows us to centralise the logic for initialising the Lighthouse help
+ * widget and the Intercom chat widget.
+ */
 export default (observer(HelpDocs): ComponentType<HelpDocsArgs>);
