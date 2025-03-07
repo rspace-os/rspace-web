@@ -19,7 +19,7 @@ import {
   type GallerySection,
   GALLERY_SECTION,
 } from "../common";
-import { styled, alpha } from "@mui/material/styles";
+import { styled, alpha, lighten } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
@@ -403,12 +403,11 @@ const Path = observer(
           color="standardIcon"
           icon={<LinkIcon />}
           sx={{
-            backgroundColor: (theme) => theme.palette.primary.main,
+            backgroundColor: (theme) => alpha(lighten(theme.palette.primary.main, 0.1), 0.6),
             "&:hover": {
               backgroundColor: (theme) =>
                 alpha(theme.palette.primary.main, 0.85),
             },
-            borderRadius: "6px",
             padding: "2px",
             marginLeft: (theme) => theme.spacing(1),
           }}
