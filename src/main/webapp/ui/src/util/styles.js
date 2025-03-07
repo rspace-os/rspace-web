@@ -17,7 +17,7 @@ export function withStyles<Config, Classes: { ... }>(
 }
 
 export type Sx =
-  | { ... }
+  | { [string]: string | number | ((Theme) => string | number) | Sx }
   | ((Theme) => { ... } | Array<boolean | { ... } | ((Theme) => { ... })>);
 
 /**
