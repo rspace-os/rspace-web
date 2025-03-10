@@ -1,5 +1,3 @@
-//@flow strict
-
 import Result from "./result";
 
 /*
@@ -20,7 +18,7 @@ import Result from "./result";
  *    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
  */
 export function getHeader(
-  response: { headers: { [string]: string }, ... },
+  response: { headers: { [key: string]: string } },
   headerName: string
 ): Result<string> {
   if (typeof response.headers[headerName] === "undefined")
