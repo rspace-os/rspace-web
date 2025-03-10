@@ -21,7 +21,6 @@ import { withStyles } from "Styles";
 import { faSpinner, faHandHolding } from "@fortawesome/free-solid-svg-icons";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import Alert from "../../../stores/models/Alert";
 library.add(faSpinner, faHandHolding);
 
 const CustomAutocomplete = withStyles<

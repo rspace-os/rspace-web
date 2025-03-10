@@ -92,8 +92,8 @@ export function mkAlert(config: AlertParams): Alert {
  * To use, wrap the page in the Alert component
  * (../../components/Alerts/Alert.js) which creates an instance of this
  * context. Any components rendered anywhere in the component tree beneath the
- * component can simply do the following, importing `AlertContext` from this
- * file and `Alert` from "../models/Alert"
+ * component can simply do the following, importing `AlertContext` and
+ * `mkAlert` from this file:
  * ```
  * const { addAlert } = useContext(AlertContext);
  * addAlert(mkAlert({

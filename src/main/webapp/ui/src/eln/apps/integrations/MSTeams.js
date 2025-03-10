@@ -19,7 +19,6 @@ import TableHead from "@mui/material/TableHead";
 import TableBody from "@mui/material/TableBody";
 import Button from "@mui/material/Button";
 import { doNotAwait } from "../../../util/Util";
-import Alert from "../../../stores/models/Alert";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { runInAction } from "mobx";
 import Card from "@mui/material/Card";

@@ -12,7 +12,6 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import Alert from "../../../stores/models/Alert";
 import ProtocolsIOIcon from "../icons/protocolsio.svg";
 import { useProtocolsioEndpoint } from "../useProtocolsio";
 

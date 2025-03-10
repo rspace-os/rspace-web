@@ -11,7 +11,6 @@ import React, {
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import Alert from "../../../stores/models/Alert";
 import Button from "@mui/material/Button";
 import OwnCloudIcon from "../icons/owncloud.svg";
 import { useOwncloudEndpoint } from "../useOwncloud";

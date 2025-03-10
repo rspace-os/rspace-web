@@ -12,7 +12,6 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import Alert from "../../../stores/models/Alert";
 import DryadIcon from "../icons/dryad.svg";
 import Link from "@mui/material/Link";
 import { useDryadEndpoint } from "../useDryad";

@@ -23,7 +23,6 @@ import CardActions from "@mui/material/CardActions";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { runInAction, observable } from "mobx";
 import { doNotAwait } from "../../../util/Util";
-import Alert from "../../../stores/models/Alert";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useDataverseTestEndpoint } from "../useDataverseTestEndpoint";
 import RsSet from "../../../util/set";

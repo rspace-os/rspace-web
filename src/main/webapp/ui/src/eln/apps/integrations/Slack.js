@@ -11,7 +11,6 @@ import IntegrationCard from "../IntegrationCard";
 import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import { Optional } from "../../../util/optional";
-import Alert from "../../../stores/models/Alert";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useSlackEndpoint } from "../useSlackEndpoint";
 import Button from "@mui/material/Button";

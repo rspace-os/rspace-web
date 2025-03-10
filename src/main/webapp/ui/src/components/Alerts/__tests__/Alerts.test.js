@@ -7,7 +7,6 @@ import React, { useContext, useEffect } from "react";
 import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import Alert from "../../../stores/models/Alert";
 import Alerts from "../Alerts";
 
 beforeEach(() => {
