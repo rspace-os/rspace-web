@@ -1,5 +1,3 @@
-// @flow strict
-
 /*
  * Types and utility functions for calculating and displaying the progress of
  * the some asynchronous process.
@@ -7,11 +5,10 @@
 
 /**
  * Progress is a number between 0 and 100, inclusive, rounded to a single
- * decimal place. This invariant is enforced by the fact that it is opaque, so
- * other modules can only create and use an instance of the type via the
- * functions exported by this module.
+ * decimal place. Other modules MUST only create an instance by calling the
+ * exported functions.
  */
-export opaque type Progress = number;
+export type Progress = number;
 
 /**
  * Calcuate the progress. Constructor function for Progress.
@@ -19,10 +16,10 @@ export opaque type Progress = number;
 export function calculateProgress({
   progressMade,
   total,
-}: {|
-  progressMade: number,
-  total: number,
-|}): Progress {
+}: {
+  progressMade: number;
+  total: number;
+}): Progress {
   if (progressMade < 0)
     throw new TypeError(
       "progressMade must either be zero or a positive number."
