@@ -6,7 +6,7 @@
 import "@testing-library/jest-dom";
 import Result from "../../Result";
 import { type Alert } from "../../../contexts/Alert";
-import { type Model } from "./scopedToastsModelTests.test";
+import { type Model } from "./common";
 import { type Command } from "fast-check";
 
 export class AddScopedToastCommand implements Command<Model, Result> {

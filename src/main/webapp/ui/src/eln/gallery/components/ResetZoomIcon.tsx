@@ -1,13 +1,11 @@
-//@flow strict
-
-import React, { type Node } from "react";
+import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
 
 /**
  * A magnifying glass icon with a '1' inside to indicate that the zoom level
  * will be reset to the initial zoom level when tapped.
  */
-export default function ResetZoomIcon(): Node {
+export default function ResetZoomIcon(): React.ReactNode {
   return (
     <SvgIcon>
       <svg

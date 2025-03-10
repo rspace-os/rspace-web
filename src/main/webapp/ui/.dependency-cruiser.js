@@ -408,9 +408,9 @@ module.exports = {
        dependency-cruiser's current working directory). When not provided
        defaults to './tsconfig.json'.
      */
-    // tsConfig: {
-    //   fileName: 'tsconfig.json'
-    // },
+     tsConfig: {
+       fileName: 'tsconfig.json'
+     },
 
     /* Webpack configuration to use to get resolve options from.
 
@@ -434,9 +434,9 @@ module.exports = {
       behavior a bit over time (e.g. more precise results for used module
       systems) without dependency-cruiser getting a major version bump.
      */
-    babelConfig: {
-      fileName: "babel.config.js",
-    },
+    //babelConfig: {
+      //fileName: 'babel.config.js'
+    //},
 
     /* List of strings you have in use in addition to cjs/ es6 requires
        & imports to declare module dependencies. Use this e.g. if you've

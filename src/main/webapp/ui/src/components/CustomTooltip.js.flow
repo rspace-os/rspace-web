@@ -1,0 +1,12 @@
+// @flow strict
+
+import { type Node } from "react";
+
+declare export default function CustomTooltip({|
+  title: string,
+  enterDelay?: number,
+  children: ?Node,
+  block?: boolean,
+  "aria-hidden"?: boolean,
+  "aria-label"?: string,
+|}): Node;

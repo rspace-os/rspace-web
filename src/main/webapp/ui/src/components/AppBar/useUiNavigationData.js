@@ -71,7 +71,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
           orcidId: event.detail.orcidId,
         },
       });
-    }
+    };
     window.addEventListener("USER_SET_ORCID", handleUserSetOrcid);
     return () => {
       window.removeEventListener("USER_SET_ORCID", handleUserSetOrcid);
@@ -90,7 +90,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
           email: event.detail.email,
         },
       });
-    }
+    };
     window.addEventListener("USER_SET_EMAIL", handleUserSetEmail);
     return () => {
       window.removeEventListener("USER_SET_EMAIL", handleUserSetEmail);

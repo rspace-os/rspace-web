@@ -81,6 +81,7 @@ module.exports = {
     runtimeChunk: "single",
   },
   resolve: {
+    extensions: [".js", ".jsx", ".ts", ".tsx"],
     alias: {
       Styles: path.resolve(__dirname, "src/util/styles"),
       '@': path.resolve(__dirname, 'src'),
@@ -100,6 +101,13 @@ module.exports = {
         exclude: /node_modules/,
         use: {
           loader: "babel-loader",
+        },
+      },
+      {
+        test: /\.(ts|tsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "ts-loader",
         },
       },
       {
