@@ -7,10 +7,12 @@ import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import StorageTemperature from "../../StorageTemperature";
-import { CELSIUS } from "../../../../../stores/definitions/Units";
+import {
+  CELSIUS,
+  type Temperature,
+} from "../../../../../stores/definitions/Units";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
-import { type Temperature } from "../../../../../stores/definitions/Sample";
 import userEvent from "@testing-library/user-event";
 
 const mockFieldOwner = (mockedParts: {|

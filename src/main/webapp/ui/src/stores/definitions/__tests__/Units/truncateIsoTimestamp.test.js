@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
-import { truncateIsoTimestamp } from "../../conversions";
+import { truncateIsoTimestamp } from "../../Units";
 
 describe("truncateIsoTimestamp", () => {
   test("Simple examples with string", () => {

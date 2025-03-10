@@ -1,6 +1,6 @@
 //@flow
 /* eslint-env jest */
-import { getRelativeTime } from "../../conversions";
+import { getRelativeTime } from "../../Units";
 import fc from "fast-check";
 
 describe("getRelativeTime", () => {

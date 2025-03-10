@@ -4,7 +4,10 @@ import React, { type Node } from "react";
 import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
-import { todaysDate, truncateIsoTimestamp } from "../../../util/conversions";
+import {
+  todaysDate,
+  truncateIsoTimestamp,
+} from "../../../stores/definitions/Units";
 import DateField from "../../../components/Inputs/DateField";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 

@@ -10,14 +10,10 @@ import { type InventoryRecord } from "./InventoryRecord";
 import { type Template } from "./Template";
 import { type Id } from "./BaseRecord";
 import { type Field } from "./Field";
+import { type Temperature } from "./Units";
 
 export type Alias = {| alias: string, plural: string |};
 export type SampleSource = "LAB_CREATED" | "VENDOR_SUPPLIED" | "OTHER";
-
-export type Temperature = {|
-  numericValue: number,
-  unitId: number,
-|};
 
 export interface Sample extends InventoryRecord {
   template: ?Template;

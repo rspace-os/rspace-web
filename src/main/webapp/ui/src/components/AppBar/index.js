@@ -54,7 +54,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import MaintenanceIcon from "@mui/icons-material/Construction";
 import Popover from "@mui/material/Popover";
 import IconButton from "@mui/material/IconButton";
-import { getRelativeTime } from "../../util/conversions";
+import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
 import useSessionStorage from "../../util/useSessionStorage";
 
