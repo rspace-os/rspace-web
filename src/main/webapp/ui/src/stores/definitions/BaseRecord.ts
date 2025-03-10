@@ -1,5 +1,3 @@
-//@flow strict
-
 /**
  * IDs are used to identify a record within a given class of record i.e. to
  * identify a container amongst all other containers.
@@ -9,7 +7,7 @@
  * non-zero positive integer value. As such, boolean logic can be used to check
  * for null.
  */
-export type Id = ?number;
+export type Id = number | null;
 
 /**
  * A Global ID is a uniue identifier for a record over all records of all
@@ -41,7 +39,7 @@ export type GlobalIdPrefix =
  * a given class of record. This object provides a pattern for various classes
  * of record supported by the frontend code.
  */
-export const globalIdPatterns: { [string]: RegExp } = {
+export const globalIdPatterns: Record<string, RegExp> = {
   sample: /^sa\d+$/i,
   subsample: /^ss\d+$/i,
   container: /^ic\d+$/i,
@@ -67,7 +65,7 @@ export interface BaseRecord {
    * Global ID MUST be null when user is creating a new record that has not yet
    * been persisted on the server, and MUST NOT be null at any other time.
    */
-  globalId: ?GlobalId;
+  globalId: null | GlobalId;
 }
 
 /**
@@ -90,8 +88,8 @@ export const getSavedGlobalId = (record: BaseRecord): GlobalId => {
  */
 export interface RecordIconData {
   // Used for determining the icon
-  +iconName: string;
+  readonly iconName: string;
 
   // Used for displaying tooltip and aria-label
-  +recordTypeLabel: string;
+  readonly recordTypeLabel: string;
 }
