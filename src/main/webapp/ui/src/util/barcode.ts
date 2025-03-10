@@ -1,12 +1,25 @@
-//@flow
-
 /* eslint-disable camelcase */
+
+type BarcodeFormat =
+  | "aztec"
+  | "code_128"
+  | "code_39"
+  | "code_93"
+  | "codabar"
+  | "data_matrix"
+  | "ean_13"
+  | "ean_8"
+  | "itf"
+  | "pdf417"
+  | "qr_code"
+  | "upc_a"
+  | "upc_e";
 
 /**
  * Given a barcode format, return a human-readable string.
  */
 export function barcodeFormatAsString(
-  barcodeFormat: BarcodeFormat | "Unknown"
+  barcodeFormat: BarcodeFormat | "unknown"
 ): string {
   return {
     aztec: "Aztec",
@@ -22,6 +35,6 @@ export function barcodeFormatAsString(
     qr_code: "QR Code",
     upc_a: "UPC-A",
     upc_e: "UPC-E",
-    Unknown: "Unknown",
+    unknown: "Unknown",
   }[barcodeFormat];
 }
