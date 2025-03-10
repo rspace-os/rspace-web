@@ -1,5 +1,3 @@
-//@flow strict
-
 import { type BaseRecord, type RecordIconData } from "./BaseRecord";
 import { type URL } from "../../util/types";
 
@@ -24,5 +22,5 @@ export interface LinkableRecord extends BaseRecord, RecordIconData {
    *
    * Unsaved records will not yet have a permalinkURL as they do not have an ID
    */
-  +permalinkURL: ?URL;
+  readonly permalinkURL: URL | null;
 }

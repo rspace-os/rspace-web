@@ -1,0 +1,8 @@
+//@flow strict
+
+import { type BaseRecord, type RecordIconData } from "./BaseRecord";
+import { type URL } from "../../util/types";
+
+export interface LinkableRecord extends BaseRecord, RecordIconData {
+  +permalinkURL: ?URL;
+}
