@@ -165,21 +165,6 @@ export function fromCommonUnit(
  */
 
 /**
- * Converts a number of milliseconds to a string in the format HH:MM:SS.
- */
-export function msToHMS(ms: number): string {
-  let seconds = ms / 1000;
-  const hours = parseInt(seconds / 3600, 10);
-  seconds = seconds % 3600;
-  const minutes = parseInt(seconds / 60, 10);
-  seconds = seconds % 60;
-  const hmsFormatted = `${hours < 10 ? "0" : ""}${hours}:${
-    minutes < 10 ? "0" : ""
-  }${minutes}:${seconds < 10 ? "0" : ""}${parseInt(seconds, 10)}`;
-  return hmsFormatted;
-}
-
-/**
  * Converts a number of milliseconds to a number of days
  */
 export function msToDays(ms: number): number {
