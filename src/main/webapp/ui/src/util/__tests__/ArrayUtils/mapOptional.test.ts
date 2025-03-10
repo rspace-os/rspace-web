@@ -1,22 +1,20 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import * as ArrayUtils from "../../ArrayUtils";
 import { Optional } from "../../optional";
 import fc from "fast-check";
 
 const presentIfTrue =
-  <T>(f: (T) => boolean): ((T) => Optional<T>) =>
+  <T>(f: (t: T) => boolean): ((t: T) => Optional<T>) =>
   (x) =>
     f(x) ? Optional.present(x) : Optional.empty();
 
 describe("mapOptional", () => {
   test("Example", () => {
     const data: Array<
-      | {| tag: "hasNumber", value: number |}
-      | {| tag: "hasString", value: string |}
+      { tag: "hasNumber"; value: number } | { tag: "hasString"; value: string }
     > = [
       { tag: "hasNumber", value: 4 },
       { tag: "hasString", value: "hello" },
@@ -24,7 +22,7 @@ describe("mapOptional", () => {
     ];
 
     // note how the type has changed, which it would not have done using filter
-    const justNumbers: Array<{| tag: "hasNumber", value: number |}> =
+    const justNumbers: Array<{ tag: "hasNumber"; value: number }> =
       ArrayUtils.mapOptional(
         (obj) =>
           obj.tag === "hasNumber" ? Optional.present(obj) : Optional.empty(),
@@ -40,10 +38,7 @@ describe("mapOptional", () => {
   test("Idempotence", () => {
     fc.assert(
       fc.property(
-        fc.tuple<Array<mixed>, (mixed) => boolean>(
-          fc.array(fc.anything()),
-          fc.func(fc.boolean())
-        ),
+        fc.tuple(fc.array(fc.anything()), fc.func(fc.boolean())),
         ([array, func]) => {
           expect(
             ArrayUtils.mapOptional(
@@ -80,8 +75,8 @@ describe("mapOptional", () => {
     fc.assert(
       fc.property(
         fc.constantFrom(
-          () => Optional.empty<mixed>(),
-          (x) => Optional.present(x)
+          () => Optional.empty<unknown>(),
+          (x: unknown) => Optional.present(x)
         ),
         (func) => {
           expect(ArrayUtils.mapOptional(func, [])).toEqual([]);
@@ -93,10 +88,7 @@ describe("mapOptional", () => {
   test("Length of output will always be less than or equal to length of input.", () => {
     fc.assert(
       fc.property(
-        fc.tuple<Array<mixed>, (mixed) => boolean>(
-          fc.array(fc.anything()),
-          fc.func(fc.boolean())
-        ),
+        fc.tuple(fc.array(fc.anything()), fc.func(fc.boolean())),
         ([array, func]) => {
           expect(
             ArrayUtils.mapOptional(presentIfTrue(func), array).length

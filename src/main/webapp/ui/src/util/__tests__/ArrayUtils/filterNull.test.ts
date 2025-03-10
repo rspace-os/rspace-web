@@ -1,13 +1,12 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("filterNull", () => {
   test("Example", () => {
-    const mixOfNumbersAndNulls: Array<?number> = [1, 2, null];
+    const mixOfNumbersAndNulls: Array<number | null> = [1, 2, null];
 
     // $FlowExpectedError[incompatible-call] Note how flow does not notice that null is no longer an option
     const withFilter: Array<number> = mixOfNumbersAndNulls.filter(

@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";
@@ -14,11 +13,8 @@ describe("all", () => {
       fc.property(
         fc
           .array(fc.option(fc.nat(), { nil: null }))
-          .map(
-            (nullable: Array<?number>) =>
-              (nullable.map((x) => Optional.fromNullable(x)): Array<
-                Optional<number>
-              >)
+          .map((nullable: Array<number | null>) =>
+            nullable.map((x) => Optional.fromNullable(x))
           ),
         (optionals) => {
           expect(
