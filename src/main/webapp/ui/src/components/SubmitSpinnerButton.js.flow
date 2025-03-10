@@ -1,0 +1,16 @@
+//@flow strict
+
+import { type Node } from "react";
+import { type Progress } from "../util/progress";
+
+declare export default function SubmitSpinnerButton({|
+  onClick?: (Event & { currentTarget: EventTarget, ... }) => void,
+  disabled: boolean,
+  loading: boolean,
+  label?: Node,
+  progress?: Progress,
+  fullWidth?: boolean,
+  type?: "button" | "submit",
+  size?: "small" | "medium" | "large",
+  className?: string,
+|}): Node;

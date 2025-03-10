@@ -59,10 +59,23 @@ declare module "@mui/material/styles" {
   }
 }
 
+/*
+ * Various components in MUI have a `color` prop which can be used to change
+ * the colour of the component. This prop is typed as a string, and the
+ * available colours are defined in the default theme. However, it is often
+ * useful to be able to use custom colours that extend the default theme.  In
+ * the theme we define some additional colours, such as `callToAction` and as
+ * these are available anywhere within the scope of our theme, they can be used
+ * in the `color` prop of components such as Buttons. However, the TypeScript
+ * type of the `color` prop does not allow for these custom colours so we need
+ * to extend the interfaces that define the colours that these components
+ * accept.
+ */
 declare module "@mui/material/Button" {
   // eslint-disable-next-line no-unused-vars
   interface ButtonPropsColorOverrides {
     standardIcon: true;
+    callToAction: true;
   }
 }
 

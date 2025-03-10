@@ -1,6 +1,4 @@
-//@flow strict
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import Button from "@mui/material/Button";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -17,8 +15,8 @@ import {
   ariaValueMax,
 } from "../util/progress";
 
-const useStyles = makeStyles()(
-  (theme, { progress }: {| progress: Progress |}) => ({
+const useStyles = makeStyles<{ progress: Progress }>()(
+  (theme, { progress }) => ({
     hidden: {
       opacity: 0,
     },
@@ -45,17 +43,17 @@ const useStyles = makeStyles()(
   })
 );
 
-type SubmitSpinnerButtonArgs = {|
-  onClick?: (Event & { currentTarget: EventTarget, ... }) => void,
-  disabled: boolean,
-  loading: boolean,
-  label?: Node,
-  progress?: Progress,
-  fullWidth?: boolean,
-  type?: "button" | "submit",
-  size?: "small" | "medium" | "large",
-  className?: string,
-|};
+type SubmitSpinnerButtonArgs = {
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  disabled: boolean;
+  loading: boolean;
+  label?: React.ReactNode;
+  progress?: Progress;
+  fullWidth?: boolean;
+  type?: "button" | "submit";
+  size?: "small" | "medium" | "large";
+  className?: string;
+};
 
 function SubmitSpinnerButton({
   onClick,
@@ -67,8 +65,8 @@ function SubmitSpinnerButton({
   type = "button",
   size = "medium",
   className,
-}: SubmitSpinnerButtonArgs): Node {
-  const { classes } = useStyles({ progress });
+}: SubmitSpinnerButtonArgs): React.ReactNode {
+  const { classes } = useStyles({ progress: progress ?? 0 });
   return (
     <Button
       color="callToAction"
@@ -110,6 +108,4 @@ function SubmitSpinnerButton({
 /**
  * This is a submit button that shows a spinner when loading.
  */
-export default (observer(
-  SubmitSpinnerButton
-): ComponentType<SubmitSpinnerButtonArgs>);
+export default observer(SubmitSpinnerButton);
