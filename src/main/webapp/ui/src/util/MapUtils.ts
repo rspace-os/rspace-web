@@ -1,5 +1,3 @@
-//@flow strict
-
 import { Optional } from "./optional";
 
 /**
