@@ -8,21 +8,22 @@ import React, {
 } from "react";
 import { observer } from "mobx-react-lite";
 import Box from "@mui/material/Box";
-import { type Temperature } from "../../../stores/definitions/Sample";
-import Grid from "@mui/material/Grid";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import Button from "@mui/material/Button";
-import { withStyles } from "Styles";
 import {
+  type Temperature,
   CELSIUS,
   KELVIN,
   FAHRENHEIT,
   ABSOLUTE_ZERO,
   LIQUID_NITROGEN,
   type TemperatureScale,
+  temperatureFromTo,
+  validateTemperature,
 } from "../../../stores/definitions/Units";
-import { temperatureFromTo, validateTemperature } from "../../../util/conversions";
+import Grid from "@mui/material/Grid";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Button from "@mui/material/Button";
+import { withStyles } from "Styles";
 import NumberField from "../../../components/Inputs/NumberField";
 import InputAdornment from "@mui/material/InputAdornment";
 import { FormLabel } from "@mui/material";
@@ -173,7 +174,8 @@ function SpecifiedStorageTemperature({
     const newMaxTemp = { numericValue: newMax, unitId };
     setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
     onErrorStateChange(
-      !validateTemperature(newMinTemp).isError || !validateTemperature(newMaxTemp).isError
+      !validateTemperature(newMinTemp).isError ||
+        !validateTemperature(newMaxTemp).isError
     );
   };
 
@@ -187,7 +189,8 @@ function SpecifiedStorageTemperature({
     const newMaxTemp = { numericValue: newMax, unitId };
     setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
     onErrorStateChange(
-      !validateTemperature(newMinTemp).isError || !validateTemperature(newMaxTemp).isError
+      !validateTemperature(newMinTemp).isError ||
+        !validateTemperature(newMaxTemp).isError
     );
   };
 
@@ -239,7 +242,8 @@ function SpecifiedStorageTemperature({
                             variant="outlined"
                             size="small"
                             error={
-                              validateTemperature({ numericValue: min, unitId }).isError
+                              validateTemperature({ numericValue: min, unitId })
+                                .isError
                             }
                             fullWidth
                             InputProps={{
@@ -260,7 +264,8 @@ function SpecifiedStorageTemperature({
                             variant="outlined"
                             size="small"
                             error={
-                              validateTemperature({ numericValue: max, unitId }).isError
+                              validateTemperature({ numericValue: max, unitId })
+                                .isError
                             }
                             fullWidth
                             InputProps={{

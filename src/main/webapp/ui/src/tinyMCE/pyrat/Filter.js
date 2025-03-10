@@ -11,7 +11,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import { stableSort } from "../../util/table";
 import Grid from "@mui/material/Grid";
 import DateField2 from "../../components/Inputs/DateField";
-import { truncateIsoTimestamp } from "../../util/conversions";
+import { truncateIsoTimestamp } from "../../stores/definitions/Units";
 
 const useStyles = makeStyles()(() => ({
   button: {

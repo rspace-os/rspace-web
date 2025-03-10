@@ -2,7 +2,7 @@
 
 import InvApiService from "../../common/InvApiService";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import { toCommonUnit, fromCommonUnit } from "../../util/conversions";
+import { toCommonUnit, fromCommonUnit } from "../definitions/Units";
 import RsSet from "../../util/set";
 import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
 import SubSampleModel, { type SubSampleAttrs } from "../models/SubSampleModel";

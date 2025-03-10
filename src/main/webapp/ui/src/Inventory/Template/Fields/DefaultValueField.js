@@ -11,7 +11,7 @@ import InputWrapper from "../../../components/Inputs/InputWrapper";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import { makeStyles } from "tss-react/mui";
-import { truncateIsoTimestamp } from "../../../util/conversions";
+import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 
 const useStyles = makeStyles()((theme) => ({
   buttonWrapper: {

@@ -2,11 +2,10 @@
 
 import React, { type Node } from "react";
 import { observer } from "mobx-react-lite";
-import { type Temperature } from "../../../stores/definitions/Sample";
+import { type Temperature, CELSIUS } from "../../../stores/definitions/Units";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import Button from "@mui/material/Button";
 import SpecifiedStorageTemperature from "./SpecifiedStorageTemperature";
-import { CELSIUS } from "../../../stores/definitions/Units";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
 function StorageTemperature<

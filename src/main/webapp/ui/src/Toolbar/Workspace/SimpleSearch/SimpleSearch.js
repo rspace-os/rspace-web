@@ -15,7 +15,7 @@ import DateField from "../../../components/Inputs/DateField";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilter, faSearch, faBars } from "@fortawesome/free-solid-svg-icons";
-import { truncateIsoTimestamp } from "../../../util/conversions";
+import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 library.add(faFilter, faSearch, faBars);
 
 import UserSelect from "../AdvancedSearch/UserSelect/UserSelect";

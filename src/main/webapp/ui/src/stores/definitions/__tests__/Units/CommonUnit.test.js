@@ -9,9 +9,9 @@ import {
   massIds,
   fromCommonUnit,
   quantityIds,
-} from "../../conversions";
+} from "../../Units";
 import fc from "fast-check";
-import { values } from "../../Util";
+import { values } from "../../../../util/Util";
 
 // number of decimal places for floating point comparison
 const PRECISION = 5;

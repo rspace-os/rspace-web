@@ -5,7 +5,7 @@ import { action, observable, makeObservable, computed, override } from "mobx";
 import { match } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
-import { truncateIsoTimestamp } from "../../util/conversions";
+import { truncateIsoTimestamp } from "../definitions/Units";
 import {
   type HasEditableFields,
 } from "../definitions/Editable";

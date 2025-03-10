@@ -1,7 +1,7 @@
 //@flow
 /* eslint-env jest */
 import fc from "fast-check";
-import { msToHMS } from "../../conversions";
+import { msToHMS } from "../../Units";
 
 describe("msToHMS", () => {
   test("Input of less than a day should output format of a series of 2 digits", () => {

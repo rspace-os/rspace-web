@@ -10,12 +10,12 @@ import {
   CELSIUS,
   KELVIN,
   FAHRENHEIT,
+  type Temperature,
 } from "../../../../../stores/definitions/Units";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 
 import StorageTemperature from "../../StorageTemperature";
-import { type Temperature } from "../../../../../stores/definitions/Sample";
 
 beforeEach(() => {
   jest.clearAllMocks();
