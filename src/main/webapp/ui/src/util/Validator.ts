@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * This is an abstraction over the concept of a function that can be called to
  * validate whether the system is in a valid state. Let's say there's some
@@ -27,7 +25,7 @@
  * A wrapper around a function that can be called to validate the state of the
  * system.
  */
-export type Validator = {|
+export type Validator = {
   /*
    * All of the booleans are wrapped in promises so that the validation
    * function may perform asynchronous operations. To ensure that the user is
@@ -36,9 +34,9 @@ export type Validator = {|
    * be to display a confirmation dialog asking the user if they would like to
    * override any validation warnings.
    */
-  setValidFunc: (f: () => Promise<boolean>) => void,
-  isValid: () => Promise<boolean>,
-|};
+  setValidFunc: (f: () => Promise<boolean>) => void;
+  isValid: () => Promise<boolean>;
+};
 
 /**
  * Constructor function for creating new Validator objects
@@ -46,7 +44,7 @@ export type Validator = {|
 export const mkValidator = (
   isValidFunc?: () => Promise<boolean>
 ): Validator => {
-  let validFunc = isValidFunc ?? ((_) => Promise.resolve(true));
+  let validFunc = isValidFunc ?? (() => Promise.resolve(true));
   return {
     setValidFunc: (f: () => Promise<boolean>) => {
       validFunc = f;
