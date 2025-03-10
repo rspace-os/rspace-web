@@ -1,0 +1,29 @@
+//@flow
+
+import { type ValidationResult } from "../../components/ValidatingSubmitButton";
+import { type Progress } from "../../util/progress";
+
+
+export type OptionalString = (mixed) => ?string;
+
+export interface Editable {
+  loading: boolean;
+  uploadProgress: Progress;
+  +submittable: ValidationResult;
+  cancel(): Promise<void>;
+  update(): Promise<void>;
+}
+
+export interface HasEditableFields<Fields> {
+  isFieldEditable($Keys<Fields>): boolean;
+  +fieldValues: Fields;
+  setFieldsDirty(any): void;
+  +canChooseWhichToEdit: boolean;
+  setFieldEditable($Keys<Fields>, boolean): void;
+  +noValueLabel: {[ key in keyof Fields]: ?string};
+}
+
+export interface HasUneditableFields<Fields> {
+  +fieldValues: Fields;
+  +noValueLabel: {[ key in keyof Fields]: ?string};
+}

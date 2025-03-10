@@ -1,5 +1,3 @@
-//@flow
-
 import { type ValidationResult } from "../../components/ValidatingSubmitButton";
 import { type Progress } from "../../util/progress";
 
@@ -9,14 +7,14 @@ import { type Progress } from "../../util/progress";
  * document are to be interpreted as described in RFC 2119.
  */
 
-/*
+/**
  * Maps any given type to an optional string, which when coupled with $ObjMap,
  * allows for any object to be mapped to one with the same keys but where the
  * values are optional strings.
  */
-export type OptionalString = (mixed) => ?string;
+export type OptionalString = (anything: unknown) => string | null;
 
-/*
+/**
  * Objects and classes that implement this interface can be edited by the user
  * and those changes can then be persisted on the server. By providing a
  * generic interface components can be reused across the application wherever
@@ -46,7 +44,7 @@ export interface Editable {
    * record in its current state. It is the enforcement mechanism for all
    * invariants that must be enforced on the client-side before submission.
    */
-  +submittable: ValidationResult;
+  readonly submittable: ValidationResult;
 
   /*
    * When called, all edits SHOULD be discarded.
@@ -60,7 +58,7 @@ export interface Editable {
   update(): Promise<void>;
 }
 
-/*
+/**
  * Objects that implement this interface describe data, organised into distinct
  * fields, that the user is able to edit.
  *
@@ -72,13 +70,13 @@ export interface HasEditableFields<Fields> {
    * Given the name of one of the editable fields, this method MUST return
    * whether the user is currently allowed to edit the field.
    */
-  isFieldEditable($Keys<Fields>): boolean;
+  isFieldEditable(f: keyof Fields): boolean;
 
   /*
    * This computed property MUST return the current value of the editable
    * fields.
    */
-  +fieldValues: Fields;
+  readonly fieldValues: Fields;
 
   /*
    * Given an object, mapping names of editables fields to values of their
@@ -86,12 +84,12 @@ export interface HasEditableFields<Fields> {
    * updated to the new value. It MUST be idempotent. It SHOULD also set a
    * dirty flag which is used to enable the save button.
    *
-   * Despite best effort to find some way to type this argument something akin
-   * to `Partial<Fields>`, it seems impossible to get this to correctly type.
-   * Rather than add supression at every call site, it seems cleaner to make the
-   * parameter be any-typed.
+   * Despite best effort to find some way to type this argument, it seems
+   * impossible to get this to correctly type. Rather than add supression at
+   * every call site, it seems cleaner to make the parameter be any-typed.
    */
-  setFieldsDirty(any): void;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  setFieldsDirty(newState: any): void;
 
   /*
    * When true, the user MUST be given the option of not editing each field,
@@ -99,7 +97,7 @@ export interface HasEditableFields<Fields> {
    * prevented from eding each field; however the current value MUST be
    * retained if they take no action.
    */
-  +canChooseWhichToEdit: boolean;
+  readonly canChooseWhichToEdit: boolean;
 
   /*
    * Given the name of the one of the editable fields and a boolean, this
@@ -107,7 +105,7 @@ export interface HasEditableFields<Fields> {
    * MAY fail and have no effect if there are addition factors causing the
    * field to be uneditable.
    */
-  setFieldEditable($Keys<Fields>, boolean): void;
+  setFieldEditable(f: keyof Fields, editable: boolean): void;
 
   /*
    * This computed property SHOULD provide the option to provide an alternative
@@ -117,10 +115,10 @@ export interface HasEditableFields<Fields> {
    * field will result in the default string being shown and any implementation
    * choosing not to support this option MUST return an empty object.
    */
-  +noValueLabel: {[ key in keyof Fields]: ?string};
+  readonly noValueLabel: { [key in keyof Fields]: string | null };
 }
 
-/*
+/**
  * Some pieces of data associated with a given record are shown as fields of a
  * form but cannot be edited by the user.
  */
@@ -129,7 +127,7 @@ export interface HasUneditableFields<Fields> {
    * This computed property MUST return the current value of the uneditable
    * fields.
    */
-  +fieldValues: Fields;
+  readonly fieldValues: Fields;
 
   /*
    * This computed property SHOULD provide the option to provide an alternative
@@ -139,5 +137,5 @@ export interface HasUneditableFields<Fields> {
    * field will result in the default string being shown and any implementation
    * choosing not to support this option MUST return an empty object.
    */
-  +noValueLabel: {[ key in keyof Fields]: ?string};
+  readonly noValueLabel: { [key in keyof Fields]: string | null };
 }
