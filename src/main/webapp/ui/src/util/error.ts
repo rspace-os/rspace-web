@@ -1,5 +1,3 @@
-//@flow
-
 /**
  * This script contains various common general-purpose error classes that can
  * be used throughout the application.
