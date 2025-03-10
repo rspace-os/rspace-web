@@ -9,21 +9,40 @@
  * components.
  */
 
+/**
+ * The definition of a person when collecting metadata such as author and
+ * contact.
+ */
 export type Person = {|
   uniqueName: string,
   email: string,
   type: string,
 |};
 
-export type DMPId = number | string;
+/**
+ * The Id of DMP, according to the service from which is originated.
+ */
+type DMPId = number | string;
+
+/**
+ * The Id of DMP, according to RSpace.
+ */
 export type DMPUserInternalId = number;
 
+/**
+ * A definition of a DMP, for the purposes of selecting one to attach to a
+ * deposit to a repository.
+ */
 export type Plan = {
   dmpId: DMPId,
   dmpTitle: string,
   dmpUserInternalId: DMPUserInternalId,
 };
 
+/**
+ * The definition of a repository, for the purposes of selecting one to
+ * deposit to.
+ */
 export type Repo = {|
   repoName: string,
   displayName: string,
@@ -36,12 +55,18 @@ export type Repo = {|
       defaultLicense: boolean,
     }>,
   },
+
+  /*
+   * The set of DMPs from the user's Gallery, from which they can pick some to
+   * associate with the export.
+   */
   linkedDMPs: ?Array<Plan>,
+
   label?: string,
   repoCfg: mixed,
 |};
 
-/*
+/**
  * These are the standard fields that each of the Repositories have to
  * collect metadata about the export that the user is making. For each,
  * ExportRepo performs some validations and then sets these booleans to true

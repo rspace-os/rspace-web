@@ -12,6 +12,9 @@ type DMPonlineAccentMenuItemArgs = {|
   onDialogClose: () => void,
 |};
 
+/**
+ * The menu item for the create menu for importing DMPs from DMPonline.
+ */
 export default function DMPonlineAccentMenuItem({
   onDialogClose,
 }: DMPonlineAccentMenuItemArgs): Node {

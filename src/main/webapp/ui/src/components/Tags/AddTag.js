@@ -34,6 +34,11 @@ type AddTagArgs<
   disabled?: boolean,
 |};
 
+/**
+ * This component provides a button to add a tag to a list of tags.
+ * It is parameterized by the type of tag that it will add, requiring that the
+ * selected tag have all of the metadata when `enforceOntologies` is true.
+ */
 export default function AddTag<
   Toggle:
     | {|

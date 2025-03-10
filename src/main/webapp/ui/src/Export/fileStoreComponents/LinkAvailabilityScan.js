@@ -27,7 +27,7 @@ type FoundLinksListingArgs = {|
   checkedFileSystems: Array<FileSystem>,
 |};
 
-/*
+/**
  * This component allows the user to trigger a server-side scan of the export
  * plan that will check that all of the included links are accessible.
  */
@@ -217,10 +217,12 @@ export default function LinkAvailabilityScan({
                                             </TableRow>
                                           );
                                         }
+                                        return null;
                                       })}
                                   </>
                                 );
                               }
+                              return null;
                             })}
                           </TableBody>
                         </Table>
