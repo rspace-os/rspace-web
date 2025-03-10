@@ -1,0 +1,4 @@
+//@flow strict
+
+declare export function stripDiacritics(string): string;
+declare export function replaceSpacesWithNonBreakingSpaces(string): string;
