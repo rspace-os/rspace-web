@@ -1,6 +1,4 @@
-//@flow strict
-
-import { type Context, type Node, createContext } from "react";
+import React, { type Context, createContext } from "react";
 import { take } from "../../util/iterators";
 import { type LinkableRecord } from "../definitions/LinkableRecord";
 
@@ -24,26 +22,26 @@ let id = 0;
  * button: some elements fail and are listed in the details, the user can go to
  * each linked record in turn to correct the issue, then retry the action.
  */
-export type AlertDetails = {|
-  title: string,
-  variant: AlertVariant,
-  record?: LinkableRecord,
-  help?: string,
-|};
+export type AlertDetails = {
+  title: string;
+  variant: AlertVariant;
+  record?: LinkableRecord;
+  help?: string;
+};
 
-type AlertParams = {|
-  title?: ?string,
-  message: string,
-  variant?: AlertVariant,
-  duration?: number,
-  isInfinite?: boolean,
-  actionLabel?: string,
-  onActionClick?: () => void,
-  details?: $ReadOnlyArray<AlertDetails>,
-  retryFunction?: () => Promise<void>,
-  allowClosing?: boolean,
-  icon?: Node,
-|};
+type AlertParams = {
+  title?: string | null;
+  message: string;
+  variant?: AlertVariant;
+  duration?: number;
+  isInfinite?: boolean;
+  actionLabel?: string;
+  onActionClick?: () => void;
+  details?: ReadonlyArray<AlertDetails>;
+  retryFunction?: () => Promise<void>;
+  allowClosing?: boolean;
+  icon?: React.ReactNode;
+};
 
 /**
  * An alert that can be displayed to the user. Alerts are displayed in the top
@@ -51,22 +49,22 @@ type AlertParams = {|
  * automatically dismissed after a certain amount of time. They can also have
  * an action button, a retry button, a number of details, and an icon.
  */
-export type Alert = {|
-  title: ?string,
-  message: string,
-  id: number,
-  variant: AlertVariant,
-  duration: number,
-  isInfinite: boolean,
-  isOpen: boolean,
-  actionLabel: ?string,
-  onActionClick: () => void,
-  details: Array<AlertDetails>,
-  detailsCount: number,
-  retryFunction: ?() => Promise<void>,
-  allowClosing: boolean,
-  icon: ?Node,
-|};
+export type Alert = {
+  title: string | null | undefined;
+  message: string;
+  id: number;
+  variant: AlertVariant;
+  duration: number;
+  isInfinite: boolean;
+  isOpen: boolean;
+  actionLabel: string | null;
+  onActionClick: () => void;
+  details: Array<AlertDetails>;
+  detailsCount: number;
+  retryFunction: (() => Promise<void>) | null | undefined;
+  allowClosing: boolean;
+  icon: React.ReactNode;
+};
 
 /**
  * Smart constructor function for alerts. Various defaults are set here, such
@@ -123,12 +121,12 @@ export function mkAlert(config: AlertParams): Alert {
  * ```
  */
 
-type AlertContextType = {|
+type AlertContextType = {
   /*
    * Displays an alert. Will be displayed until either its timeout expires or
    * it is passed to `removeAlert`.
    */
-  addAlert: (Alert) => void,
+  addAlert: (newAlert: Alert) => void;
   /*
    * Closes the alert. Passing an alert that has already been removed MUST NOT
    * error; this function SHOULD simply do nothing.
@@ -140,8 +138,8 @@ type AlertContextType = {|
    * application where those alerts will no longer be relevant or for the
    * implementation details of displaying the alerts.
    */
-  removeAlert: (Alert) => void,
-|};
+  removeAlert: (oldAlert: Alert) => void;
+};
 
 const DEFAULT_ALERT_CONTEXT: AlertContextType = {
   addAlert: () => {},
