@@ -1,8 +1,6 @@
-//@flow
-
 import Result from "../util/result";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
-import React, { type Node } from "react";
+import React from "react";
 import Popover from "@mui/material/Popover";
 import Alert from "@mui/lab/Alert";
 import Stack from "@mui/material/Stack";
@@ -25,16 +23,19 @@ export const IsInvalid = (reason: string): ValidationResult =>
   Result.Error([new Error(reason)]);
 
 export const allAreValid = (
-  v: $ReadOnlyArray<ValidationResult>
-): ValidationResult => Result.all(...v).map(() => null);
+  v: ReadonlyArray<ValidationResult>
+): ValidationResult =>
+  Result.all(...(v as [ValidationResult, ...ValidationResult[]])).map(
+    () => null
+  );
 
-type ValidatingSubmitButtonArgs = {|
-  children: Node,
-  loading: boolean,
-  validationResult: ValidationResult,
-  onClick: (Event) => void,
-  progress?: Progress,
-|};
+type ValidatingSubmitButtonArgs = {
+  children: React.ReactNode;
+  loading: boolean;
+  validationResult: ValidationResult;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  progress?: Progress;
+};
 
 const StyledPopover = styled(Popover)(() => ({
   "& > .MuiPaper-root": {
@@ -43,9 +44,16 @@ const StyledPopover = styled(Popover)(() => ({
   },
 }));
 
-const StyledButton = styled(({ animating: _animating, ...rest }) => (
-  <SubmitSpinnerButton {...rest} />
-))(({ animating }) => ({
+const StyledButton = styled(
+  ({
+    animating: _animating,
+    ...rest
+  }: {
+    animating: boolean;
+  } & Omit<React.ComponentProps<typeof SubmitSpinnerButton>, "animating">) => (
+    <SubmitSpinnerButton {...rest} />
+  )
+)(({ animating }) => ({
   "@keyframes wiggle": {
     "0%, 7%": {
       transform: "translateX(0)",
@@ -83,8 +91,8 @@ export default function ValidatingSubmitButton({
   validationResult,
   onClick,
   progress,
-}: ValidatingSubmitButtonArgs): Node {
-  const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
+}: ValidatingSubmitButtonArgs): React.ReactNode {
+  const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   const [playAnimation, setPlayAnimation] = React.useState(false);
 
   return (
@@ -104,7 +112,7 @@ export default function ValidatingSubmitButton({
          */
         type="submit"
         progress={progress}
-        onClick={(e: Event & { currentTarget: EventTarget, ... }) => {
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.preventDefault();
           setPlayAnimation(false);
           if (validationResult.isOk) return onClick(e);
