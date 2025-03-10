@@ -1,5 +1,3 @@
-//@flow
-
 import { Optional, lift2 } from "../../util/optional";
 
 /**
@@ -13,12 +11,12 @@ import { Optional, lift2 } from "../../util/optional";
  * simpler. If flow cannot reason about this difference then using a disjoint
  * union may become necessary.
  */
-export type Tag = {|
-  value: string,
-  version: Optional<string>,
-  vocabulary: Optional<string>,
-  uri: Optional<string>,
-|};
+export type Tag = {
+  value: string;
+  version: Optional<string>;
+  vocabulary: Optional<string>;
+  uri: Optional<string>;
+};
 
 /**
  * Checks if two tags are describing the same term. If they are both from a
