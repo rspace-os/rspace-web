@@ -4,8 +4,7 @@
 //@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
-import { temperatureFromTo } from "../../conversions";
-import { CELSIUS, KELVIN, FAHRENHEIT } from "../../../stores/definitions/Units";
+import { temperatureFromTo, CELSIUS, KELVIN, FAHRENHEIT } from "../../Units";
 
 describe("conversions", () => {
   describe("Simple examples", () => {
