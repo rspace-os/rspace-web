@@ -1,0 +1,15 @@
+//@flow
+
+import { type UseState } from "./types";
+import { type Node } from "react";
+
+// eslint-disable-next-line prettier/prettier
+declare export const PREFERENCES: { [string]: symbol };
+
+declare export function UiPreferences({| children: Node |}): Node;
+declare export default function useUiPreference<T>(
+  preference: $Values<typeof PREFERENCES>,
+  opts: {|
+    defaultValue: T,
+  |}
+): UseState<T>;
