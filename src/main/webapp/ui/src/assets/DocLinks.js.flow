@@ -1,0 +1,6 @@
+//@flow strict
+
+import { type URL } from "../util/types";
+
+declare export default { [string]: URL };
+
