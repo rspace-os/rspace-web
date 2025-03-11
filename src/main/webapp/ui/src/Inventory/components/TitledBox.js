@@ -7,9 +7,8 @@ import Typography from "@mui/material/Typography";
 import { makeStyles } from "tss-react/mui";
 import Divider from "@mui/material/Divider";
 import clsx from "clsx";
-import useStores from "../../stores/use-stores";
 
-const useStyles = makeStyles()((theme, { isSmall, allowOverflow }) => ({
+const useStyles = makeStyles()((theme, { allowOverflow }) => ({
   title: {
     wordBreak: "break-word",
   },
@@ -19,7 +18,7 @@ const useStyles = makeStyles()((theme, { isSmall, allowOverflow }) => ({
     backgroundColor: "white !important",
   },
   body: {
-    padding: isSmall ? 0 : theme.spacing(2),
+    padding: theme.spacing(2),
     overflow: "auto",
     overflowX: allowOverflow ? "auto" : "hidden",
   },
@@ -45,10 +44,8 @@ function TitledBox({
   allowOverflow = true,
   border = false,
 }: TitledBoxArgs): Node {
-  const { uiStore } = useStores();
   const { classes } = useStyles({
     allowOverflow,
-    isSmall: uiStore.isVerySmall,
   });
 
   return (
@@ -84,4 +81,9 @@ function TitledBox({
   );
 }
 
+/**
+ * This component defines a box with an optional title and a body.  It is
+ * useful in laying out pages that have multiple sections that the user should
+ * browse sequentially.
+ */
 export default (observer(TitledBox): ComponentType<TitledBoxArgs>);
