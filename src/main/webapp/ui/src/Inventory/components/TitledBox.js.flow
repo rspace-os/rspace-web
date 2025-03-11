@@ -1,0 +1,10 @@
+// @flow
+
+import { type Node } from "react";
+
+declare export default function TitledBox({|
+  title?: Node,
+  children?: Node,
+  allowOverflow?: boolean,
+  border?: boolean,
+|}): Node;
