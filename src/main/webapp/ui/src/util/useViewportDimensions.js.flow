@@ -1,0 +1,25 @@
+//@flow strict
+
+import React from "react";
+import { useLocalObservable } from "mobx-react-lite";
+import { runInAction, makeObservable, observable, computed } from "mobx";
+import theme from "../theme";
+
+declare class ViewportDimensions {
+  width: number;
+  height: number;
+
+  constructor({| width: number, height: number |}): ViewportDimensions;
+
+  get viewportSize(): "xl" | "lg" | "md" | "sm" | "xs";
+
+  get isViewportVerySmall(): boolean;
+
+  get isViewportSmall(): boolean;
+
+  get isViewportLarge(): boolean;
+
+  get isViewportNotLarge(): boolean;
+}
+
+declare export default function useViewportDimensions(): ViewportDimensions;

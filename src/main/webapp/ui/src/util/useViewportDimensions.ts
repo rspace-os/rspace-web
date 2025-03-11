@@ -1,5 +1,3 @@
-//@flow strict
-
 import React from "react";
 import { useLocalObservable } from "mobx-react-lite";
 import { runInAction, makeObservable, observable, computed } from "mobx";
@@ -9,7 +7,7 @@ class ViewportDimensions {
   width: number;
   height: number;
 
-  constructor({ width, height }: {| width: number, height: number |}) {
+  constructor({ width, height }: { width: number; height: number }) {
     makeObservable(this, {
       width: observable,
       height: observable,
