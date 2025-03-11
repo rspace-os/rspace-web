@@ -1,5 +1,3 @@
-//@flow strict
-
 /**
  * @module axios
  * @summary Set the HTTP headers that are common to all requests.
@@ -13,12 +11,6 @@
  */
 
 import axios from "axios";
-
-export type {
-  Axios,
-  AxiosPromise,
-  AxiosXHRConfigBase
-} from "axios";
 
 /*
  * The server remembers the last the page the user attempted to load when
@@ -37,8 +29,26 @@ export type {
  * page the user was trying to access.
  *
  */
-// $FlowExpectedError[incompatible-use]
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
 
+/**
+ * We re-export the axios instance so that it can be used by the modules that
+ * call this one.
+ *
+ * Technically, we could just have the callers import axios directly provided
+ * that they import this module but by re-exporting axios we can use dependency
+ * cruiser to prohibit the use of axios directly in the rest of the codebase
+ * thereby ensuring that all uses of axios correctly set the X-Requested-With
+ * header.
+ */
 export default axios;
 
+/**
+ * We re-export the axios types so that they can be used by the modules that
+ * call this one.
+ *
+ * As per the default export, this is done so that we can prohibit the use of
+ * axios directly in the rest of the codebase and ensure that the
+ * X-Requested-With header is always set.
+ */
+export { type Axios, type AxiosPromise, type AxiosRequestConfig } from "axios";
