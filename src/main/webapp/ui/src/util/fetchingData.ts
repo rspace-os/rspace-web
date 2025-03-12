@@ -1,5 +1,3 @@
-//@flow strict
-
 /*
  * These are just some generic helper functions and types to aid with ensuring
  * that the various states that the system can be in when fetching data --
@@ -12,9 +10,9 @@ import Result from "./result";
  * Represents the state of a network call for data.
  */
 export type Fetched<A> =
-  | {| tag: "loading" |}
-  | {| tag: "error", error: string |}
-  | {| tag: "success", value: A |};
+  | { tag: "loading" }
+  | { tag: "error"; error: string }
+  | { tag: "success"; value: A };
 
 /**
  * Decompose the state of some fetched data, considering all of the possible
@@ -22,11 +20,11 @@ export type Fetched<A> =
  */
 export function match<A, B>(
   fetched: Fetched<A>,
-  matcher: {|
-    loading: () => B,
-    error: (string) => B,
-    success: (A) => B,
-  |}
+  matcher: {
+    loading: () => B;
+    error: (error: string) => B;
+    success: (loadedValue: A) => B;
+  }
 ): B {
   if (fetched.tag === "loading") return matcher.loading();
   if (fetched.tag === "error") return matcher.error(fetched.error);
@@ -39,7 +37,10 @@ export function match<A, B>(
  * been fetched, by applying a function that returns some JSX, with the result
  * being as if we had fetched the JSX directly.
  */
-export function map<A, B>(fetched: Fetched<A>, func: (A) => B): Fetched<B> {
+export function map<A, B>(
+  fetched: Fetched<A>,
+  func: (loadedValue: A) => B
+): Fetched<B> {
   if (fetched.tag === "success")
     return { tag: "success", value: func(fetched.value) };
   return fetched;
