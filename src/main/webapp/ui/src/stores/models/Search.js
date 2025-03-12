@@ -1117,7 +1117,7 @@ export default class Search implements SearchInterface {
     records: Array<InventoryRecord>
   ): Promise<void> {
     this.setProcessingContextActions(true);
-    const { uiStore } = getRootStore();
+    const { uiStore, trackingStore } = getRootStore();
     try {
       const {
         exportMode,
@@ -1168,6 +1168,7 @@ export default class Search implements SearchInterface {
       link.setAttribute("rel", downloadLink.rel);
       link.setAttribute("download", fileName);
       link.click(); // trigger download
+      trackingStore.trackEvent("user:export:selection:Inventory");
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
