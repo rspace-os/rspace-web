@@ -18,6 +18,7 @@ import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.FormDao;
 import com.researchspace.dao.FormUsageDao;
+import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.NameDateFilter;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.RecordGroupSharingDao;
@@ -132,6 +133,7 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired MovePermissionChecker movePermissionChecker;
   private @Autowired IPermissionUtils permissnUtils;
   private @Autowired RecordDao recordDao;
+  private @Autowired GroupDao groupDao;
   private @Autowired UserManager userManager;
   private @Autowired UserDao userDao;
   private @Autowired AuditDao auditDao;
@@ -328,12 +330,14 @@ public class RecordManagerImpl implements RecordManager {
     if (parentId != null) {
       parentFolder = folderDao.get(parentId);
     }
-    if (!context.enableDirectTemplateCreationInTemplateFolder()
-        || !(parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true))) {
-      permissnUtils.assertIsPermitted(
-          parentFolder, PermissionType.CREATE, user, "create document in parent folder");
-    }
 
+    if (!parentFolder.isSharedFolder()) {
+      if (!context.enableDirectTemplateCreationInTemplateFolder()
+          || !(parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true))) {
+        permissnUtils.assertIsPermitted(
+            parentFolder, PermissionType.CREATE, user, "create document in parent folder");
+      }
+    }
     RSForm form = formDao.get(formID);
 
     if (form.isPublishedAndHidden() && !context.ignoreUnpublishedForms()) {
@@ -359,7 +363,13 @@ public class RecordManagerImpl implements RecordManager {
 
     if (parentFolder != null) {
       recordDao.save(rc);
-      parentFolder.addChild(rc, user, skipAddingToChildren);
+      if (parentFolder.isSharedFolder()) {
+        // add the document on the root folder
+        Folder rootFolder = folderDao.get(user.getRootFolder().getId());
+        rootFolder.addChild(rc, user, skipAddingToChildren);
+      } else {
+        parentFolder.addChild(rc, user, skipAddingToChildren);
+      }
       if (!skipAddingToChildren) {
         folderDao.save(parentFolder);
       } else {

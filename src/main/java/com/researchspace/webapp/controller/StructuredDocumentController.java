@@ -56,6 +56,7 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordSigningManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
@@ -113,6 +114,7 @@ public class StructuredDocumentController extends BaseController {
   private @Autowired RecordEditorTracker tracker;
   private @Autowired DocumentHTMLPreviewHandler htmlGenerator;
   private @Autowired SystemPropertyPermissionManager systemPropertyMgr;
+  private @Autowired SharingHandler recordShareHandler;
 
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
   @Autowired private DocumentTagManager documentTagManager;
@@ -301,6 +303,11 @@ public class StructuredDocumentController extends BaseController {
       newRecord = recordManager.createNewStructuredDocument(parentRecordId, formid, user, true);
       if (newRecord == null) {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Form", formid));
+      }
+      Folder originalParentFolder = folderManager.getFolder(parentRecordId, user);
+      if (originalParentFolder.isSharedFolder()) {
+        // shareDocument into the current parentFolder
+        recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newRecord);
       }
     } catch (AuthorizationException ae) {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", parentRecordId));
@@ -595,6 +602,7 @@ public class StructuredDocumentController extends BaseController {
   @Getter
   @AllArgsConstructor
   static class DocumentEditContext {
+
     private EditStatus editStatus;
     private UserSessionTracker userTracker;
     private StructuredDocument structuredDocument;
@@ -723,7 +731,7 @@ public class StructuredDocumentController extends BaseController {
    * @param recordId The record ID
    * @param principal
    * @return AjaxReturnObject<PublicUserInfo>. The payload of the return object may be <code>null
-   *     </code> if either:
+   * </code> if either:
    *     <ol>
    *       <li>Noone is currently editing, or
    *       <li>The subject is the current editor.

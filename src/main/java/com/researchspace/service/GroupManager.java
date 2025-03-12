@@ -244,4 +244,6 @@ public interface GroupManager {
 
   /** Creates an autoshare folder for user in group with a given folderName */
   Folder createAutoshareFolder(User user, Group group, String folderName);
+
+  Group getGroupByCommunalGroupFolderId(Long communalGroupFolderId);
 }
