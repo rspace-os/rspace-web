@@ -1,51 +1,53 @@
-//@flow
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { styled } from "@mui/material/styles";
 import MenuItem from "@mui/material/MenuItem";
 import CardHeader from "@mui/material/CardHeader";
-import { alpha } from "@mui/system";
+import { alpha, SxProps, Theme } from "@mui/system";
 
-type AccentMenuItemArgs = {|
-  title: string,
-  avatar: Node,
-  subheader?: Node,
+type AccentMenuItemArgs = {
+  title: string;
+  avatar: React.ReactNode;
+  subheader?: React.ReactNode;
   foregroundColor?:
     | string
-    | {| hue: number, saturation: number, lightness: number |},
+    | { hue: number; saturation: number; lightness: number };
   backgroundColor?:
     | string
-    | {| hue: number, saturation: number, lightness: number |},
-  onClick?: (Event) => void,
-  onKeyDown?: (KeyboardEvent) => void,
-  compact?: boolean,
-  disabled?: boolean,
-  "aria-haspopup"?: "menu" | "dialog",
-  titleTypographyProps?: {|
-    sx?: { ... },
-  |},
+    | { hue: number; saturation: number; lightness: number };
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
+  compact?: boolean;
+  disabled?: boolean;
+  "aria-haspopup"?: "menu" | "dialog";
+  titleTypographyProps?: {
+    sx?: SxProps<Theme>;
+  };
 
   /*
    * Use these properties to make the menu item a link.
    */
-  component?: "a",
-  href?: string,
+  //component?: "a";
+  component?: React.ElementType<any>;
+  href?: string;
 
   /*
    * These properties are dynamically added by the MUI Menu parent component
    */
-  autoFocus?: boolean,
-  tabIndex?: number,
-|};
+  autoFocus?: boolean;
+  tabIndex?: number;
+};
 
 /**
  * A menu item for the various menus in the application. It can be styled
  * according to the branding of a third-party integration, or to match the
  * accent colour of the current page.
  */
-export default (styled(
+export default styled(
   // eslint-disable-next-line react/display-name -- Just a styled wrapper around MenuItem
-  React.forwardRef(
+  React.forwardRef<
+    typeof MenuItem,
+    AccentMenuItemArgs & { className?: string }
+  >(
     (
       {
         foregroundColor: _foregroundColor,
@@ -63,9 +65,9 @@ export default (styled(
         subheader,
         avatar,
         titleTypographyProps,
-        component,
+        component = "li",
         href,
-      }: {| ...AccentMenuItemArgs, className: string |},
+      },
       ref
     ) => (
       <MenuItem
@@ -159,4 +161,4 @@ export default (styled(
       },
     };
   }
-): ComponentType<AccentMenuItemArgs>);
+);

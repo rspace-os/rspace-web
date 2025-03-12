@@ -1,0 +1,33 @@
+//@flow
+
+import { type Node } from "react";
+
+declare export default function AccentMenuItem({|
+  title: string,
+  avatar: Node,
+  subheader?: Node,
+  foregroundColor?: | string
+    | {| hue: number, saturation: number, lightness: number |},
+  backgroundColor?: | string
+    | {| hue: number, saturation: number, lightness: number |},
+  onClick?: (Event) => void,
+  onKeyDown?: (KeyboardEvent) => void,
+  compact?: boolean,
+  disabled?: boolean,
+  "aria-haspopup"?: "menu" | "dialog",
+  titleTypographyProps?: {|
+    sx?: { ... },
+  |},
+
+  /*
+   * Use these properties to make the menu item a link.
+   */
+  component?: "a",
+  href?: string,
+
+  /*
+   * These properties are dynamically added by the MUI Menu parent component
+   */
+  autoFocus?: boolean,
+  tabIndex?: number,
+|}): Node;
