@@ -1,0 +1,50 @@
+//@flow strict
+
+import { type Node, type ComponentType } from "react";
+
+declare export function DialogBoundary({| children: Node |}): Node;
+
+declare export function Dialog<T>({|
+  onClose: () => void,
+  open: boolean,
+  maxWidth?: "sm" | "md" | "lg" | "xl",
+  fullWidth?: boolean,
+  fullScreen?: boolean,
+  children: Node,
+  style?: { ... },
+  classes?: {|
+    paper?: string,
+  |},
+  TransitionComponent?: ComponentType<T> | Node,
+  className?: string,
+  onClick?: () => void,
+|}): Node;
+
+declare export function Menu({|
+  onClose: () => void,
+  open: boolean,
+  anchorEl: EventTarget | null,
+  children: Node,
+  MenuListProps?: { ... },
+  anchorOrigin?: {|
+    vertical: "top" | "center" | "bottom",
+    horizontal: "left" | "center" | "right",
+  |},
+  transformOrigin?: {|
+    vertical: "top" | "center" | "bottom",
+    horizontal: "left" | "center" | "right",
+  |},
+  id?: string,
+  sx?: { ... },
+|}): Node;
+
+declare export function Drawer({|
+  children: Node,
+  open: boolean,
+  anchor: "left",
+  variant: "temporary" | "permanent",
+  onClose: () => void,
+  role: "region",
+  "aria-label": string,
+  id: string,
+|}): Node;

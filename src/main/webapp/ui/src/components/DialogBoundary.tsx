@@ -1,13 +1,4 @@
-//@flow strict
-
-import React, {
-  type Node,
-  type Context,
-  type ComponentType,
-  createContext,
-  useContext,
-  useRef,
-} from "react";
+import React, { createContext, useContext, useRef } from "react";
 import MuiDialog from "@mui/material/Dialog";
 import MuiMenu from "@mui/material/Menu";
 import MuiDrawer from "@mui/material/Drawer";
@@ -71,17 +62,16 @@ import MuiDrawer from "@mui/material/Drawer";
  * concerned with how this works.
  */
 
-type DialogBoundaryContextType = {|
-  modalContainer: {| current: HTMLElement | null |},
-|};
+type DialogBoundaryContextType = {
+  modalContainer: { current: HTMLElement | null };
+};
 
 const DEFAULT_DIALOG_BOUNDARY_CONTEXT: DialogBoundaryContextType = {
   modalContainer: { current: null },
 };
 
-const DialogBoundaryContext: Context<DialogBoundaryContextType> = createContext(
-  DEFAULT_DIALOG_BOUNDARY_CONTEXT
-);
+const DialogBoundaryContext: React.Context<DialogBoundaryContextType> =
+  createContext(DEFAULT_DIALOG_BOUNDARY_CONTEXT);
 
 /**
  * This component defines a <div> into which all UI components exported by this
@@ -89,8 +79,12 @@ const DialogBoundaryContext: Context<DialogBoundaryContextType> = createContext(
  * the <body> element of the document but with this component they will be
  * rendered as children of this <div> instead.
  */
-export function DialogBoundary({ children }: {| children: Node |}): Node {
-  const modalContainer = useRef<HTMLElement | null>(null);
+export function DialogBoundary({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactNode {
+  const modalContainer = useRef<HTMLDivElement | null>(null);
   return (
     <div ref={modalContainer}>
       <DialogBoundaryContext.Provider value={{ modalContainer }}>
@@ -100,35 +94,18 @@ export function DialogBoundary({ children }: {| children: Node |}): Node {
   );
 }
 
-// everything from MuiDialog except container
-type DialogArgs<T> = {|
-  onClose: () => void,
-  open: boolean,
-  maxWidth?: "sm" | "md" | "lg" | "xl",
-  fullWidth?: boolean,
-  fullScreen?: boolean,
-  children: Node,
-  style?: { ... },
-  classes?: {|
-    paper?: string,
-  |},
-  TransitionComponent?: ComponentType<T> | Node,
-  className?: string,
-  onClick?: () => void,
-
-  /*
-   * If one of the descendents of the Dialog is not a Material UI DialogTitle
-   * then jest-axe will rightly complain that the dialog does not have a label.
-   * Instead of passing `aria-label` or `aria-labelledby` here, be sure to use
-   * a DialogTitle as the Material UI Dialog and DialogTitle already contain
-   * the logic for wiring up the `aria-labelledby` attribute correctly.
-   */
-|};
-
 /**
  * A Dialog that is rendered within the boundary defined by DialogBoundary.
+ *
+ * If one of the descendents of the Dialog is not a Material UI DialogTitle
+ * then jest-axe will rightly complain that the dialog does not have a label.
+ * Instead of passing `aria-label` or `aria-labelledby` here, be sure to use
+ * a DialogTitle as the Material UI Dialog and DialogTitle already contain
+ * the logic for wiring up the `aria-labelledby` attribute correctly.
  */
-export function Dialog<T>(props: DialogArgs<T>): Node {
+export function Dialog(
+  props: Omit<React.ComponentProps<typeof MuiDialog>, "container">
+): React.ReactNode {
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
 
@@ -149,29 +126,12 @@ export function Dialog<T>(props: DialogArgs<T>): Node {
   );
 }
 
-// everything from MuiMenu except container
-type MenuArgs = {|
-  onClose: () => void,
-  open: boolean,
-  anchorEl: EventTarget | null,
-  children: Node,
-  MenuListProps?: { ... },
-  anchorOrigin?: {|
-    vertical: "top" | "center" | "bottom",
-    horizontal: "left" | "center" | "right",
-  |},
-  transformOrigin?: {|
-    vertical: "top" | "center" | "bottom",
-    horizontal: "left" | "center" | "right",
-  |},
-  id?: string,
-  sx?: { ... },
-|};
-
 /**
  * A Menu that is rendered within the boundary defined by DialogBoundary.
  */
-export function Menu(props: MenuArgs): Node {
+export function Menu(
+  props: Omit<React.ComponentProps<typeof MuiMenu>, "container">
+): React.ReactNode {
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
 
@@ -192,22 +152,12 @@ export function Menu(props: MenuArgs): Node {
   );
 }
 
-// everything from MuiDrawer except container
-type DrawerArgs = {|
-  children: Node,
-  open: boolean,
-  anchor: "left",
-  variant: "temporary" | "permanent",
-  onClose: () => void,
-  role: "region",
-  "aria-label": string,
-  id: string,
-|};
-
 /**
  * A Drawer that is rendered within the boundary defined by DialogBoundary.
  */
-export function Drawer(props: DrawerArgs): Node {
+export function Drawer(
+  props: Omit<React.ComponentProps<typeof MuiDrawer>, "container">
+): React.ReactNode {
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
 
