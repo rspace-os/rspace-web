@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import Popover from "@mui/material/Popover";
 import Alert from "@mui/lab/Alert";
@@ -12,7 +10,12 @@ import SvgIcon from "@mui/material/SvgIcon";
 import AccentMenuItem from "./AccentMenuItem";
 
 const StyledPopover = styled(
-  ({ highContrastMode: _highContrastMode, ...rest }) => <Popover {...rest} />
+  ({
+    highContrastMode: _highContrastMode,
+    ...rest
+  }: { highContrastMode: boolean } & React.ComponentProps<typeof Popover>) => (
+    <Popover {...rest} />
+  )
 )(({ highContrastMode }) => ({
   "& > .MuiPaper-root": {
     padding: "2px",
@@ -51,16 +54,16 @@ function AccessibilityTipsPopup({
   anchorOrigin,
   transformOrigin,
   elementType,
-}: {|
-  anchorEl: null | EventTarget,
-  setAnchorEl: (null) => void,
-  supportsHighContrastMode: boolean,
-  supportsReducedMotion: boolean,
-  supports2xZoom: boolean,
-  anchorOrigin: {| vertical: "bottom" | "top", horizontal: "center" | "left" |},
-  transformOrigin: {| vertical: "top", horizontal: "center" | "right" |},
-  elementType: "dialog" | "page",
-|}) {
+}: {
+  anchorEl: null | Element;
+  setAnchorEl: (newAnchorEl: null) => void;
+  supportsHighContrastMode: boolean;
+  supportsReducedMotion: boolean;
+  supports2xZoom: boolean;
+  anchorOrigin: { vertical: "bottom" | "top"; horizontal: "center" | "left" };
+  transformOrigin: { vertical: "top"; horizontal: "center" | "right" };
+  elementType: "dialog" | "page";
+}) {
   const highContrastModeIsEnabled = window.matchMedia(
     "(prefers-contrast: more)"
   ).matches;
@@ -189,11 +192,11 @@ function AccessibilityIcon() {
   );
 }
 
-type AccessibilityTipsComponentArgs = {|
-  supportsHighContrastMode?: boolean,
-  supportsReducedMotion?: boolean,
-  supports2xZoom?: boolean,
-|};
+type AccessibilityTipsComponentArgs = {
+  supportsHighContrastMode?: boolean;
+  supportsReducedMotion?: boolean;
+  supports2xZoom?: boolean;
+};
 
 /**
  * @summary This component provides an icon button for use in the headers of
@@ -205,8 +208,8 @@ export function AccessibilityTipsIconButton({
   supportsHighContrastMode,
   supportsReducedMotion,
   supports2xZoom,
-}: AccessibilityTipsComponentArgs): Node {
-  const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
+}: AccessibilityTipsComponentArgs): React.ReactNode {
+  const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
 
   if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom)
     return null;
@@ -217,7 +220,7 @@ export function AccessibilityTipsIconButton({
         title="Accessibility tips"
         icon={<AccessibilityIcon />}
         size="small"
-        onClick={(e: Event & { +currentTarget: EventTarget, ... }) => {
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           setAnchorEl(e.currentTarget);
         }}
       />
@@ -253,11 +256,10 @@ export function AccessibilityTipsMenuItem({
   supportsReducedMotion,
   supports2xZoom,
   onClose,
-}: {|
-  ...AccessibilityTipsComponentArgs,
-  onClose: () => void,
-|}): Node {
-  const [anchorEl, setAnchorEl] = React.useState<EventTarget | null>(null);
+}: {
+  onClose: () => void;
+} & AccessibilityTipsComponentArgs): React.ReactNode {
+  const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
 
   if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom)
     return null;
