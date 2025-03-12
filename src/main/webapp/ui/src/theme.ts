@@ -78,6 +78,12 @@ declare module "@mui/material/Button" {
     callToAction: true;
   }
 }
+declare module "@mui/material/IconButton" {
+  // eslint-disable-next-line no-unused-vars
+  interface IconButtonPropsColorOverrides {
+    standardIcon: true;
+  }
+}
 
 /**
  * These colours are defined in a way that can be adjusted where they are
