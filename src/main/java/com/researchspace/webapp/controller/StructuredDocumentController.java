@@ -17,6 +17,7 @@ import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.Group;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Signature;
 import com.researchspace.model.SignatureInfo;
 import com.researchspace.model.User;
@@ -46,6 +47,7 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.FolderRecordPair;
 import com.researchspace.model.views.MessagedServiceOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
+import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.model.views.SigningResult;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DocumentAlreadyEditedException;
@@ -56,6 +58,7 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordSigningManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
@@ -113,6 +116,7 @@ public class StructuredDocumentController extends BaseController {
   private @Autowired RecordEditorTracker tracker;
   private @Autowired DocumentHTMLPreviewHandler htmlGenerator;
   private @Autowired SystemPropertyPermissionManager systemPropertyMgr;
+  private @Autowired SharingHandler recordShareHandler;
 
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
   @Autowired private DocumentTagManager documentTagManager;
@@ -297,16 +301,24 @@ public class StructuredDocumentController extends BaseController {
 
     User user = getUserByUsername(principal.getName());
     StructuredDocument newRecord = null;
+    List<RecordGroupSharing> sharedWithGroup = null;
     try {
       newRecord = recordManager.createNewStructuredDocument(parentRecordId, formid, user, true);
       if (newRecord == null) {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Form", formid));
       }
+      Folder originalParentFolder = folderManager.getFolder(parentRecordId, user);
+      if (originalParentFolder.isSharedFolder()) {
+        // shareDocument into the current parentFolder
+        ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
+            recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newRecord.getId());
+        sharedWithGroup = sharingResult.getResults();
+      }
     } catch (AuthorizationException ae) {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", parentRecordId));
     }
     publisher.publishEvent(createGenericEvent(user, newRecord, AuditAction.CREATE));
-    return redirectToDocumentEditorInEditMode(newRecord);
+    return redirectToDocumentEditorInEditMode(newRecord, sharedWithGroup);
   }
 
   @PostMapping("/createEntry/{notebookid}")
@@ -356,14 +368,20 @@ public class StructuredDocumentController extends BaseController {
       @RequestParam(value = "newname", required = false) String newname,
       Principal principal)
       throws RecordAccessDeniedException {
-
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;
     StructuredDocument rc = null;
+    Folder originalParentFolder = null;
+    List<RecordGroupSharing> sharedWithGroup = null;
     try {
-      if (targetFolderId == null || targetFolderId == -1) {
+      if (targetFolderId != null) {
+        originalParentFolder = folderManager.getFolder(parentRecordId, user);
+      }
+      if ((targetFolderId == null || targetFolderId == -1)
+          || (originalParentFolder != null && originalParentFolder.isSharedFolder())) {
         targetFolderId = folderManager.getRootFolderForUser(user).getId();
       }
+
       if (StringUtils.isBlank(newname) || newname.contains("/")) {
         newname = StructuredDocument.DEFAULT_NAME;
       }
@@ -372,22 +390,35 @@ public class StructuredDocumentController extends BaseController {
           recordManager.createFromTemplate(templateid, newname, user, targetFolderId);
       rc = (StructuredDocument) fromTemplate.getUniqueCopy();
 
-      if (rc == null) {
+      if (rc != null && (originalParentFolder != null && originalParentFolder.isSharedFolder())) {
+        ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
+            recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, rc.getId());
+        sharedWithGroup = sharingResult.getResults();
+      } else {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Template", templateid));
       }
+
     } catch (AuthorizationException ae) {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", null));
     }
     publisher.publishEvent(createGenericEvent(user, rc, AuditAction.CREATE));
-    return redirectToDocumentEditorInEditMode(rc);
+    return redirectToDocumentEditorInEditMode(rc, sharedWithGroup);
   }
 
   private String redirectToDocumentEditorInEditMode(StructuredDocument newRecord) {
+    return redirectToDocumentEditorInEditMode(newRecord, null);
+  }
+
+  private String redirectToDocumentEditorInEditMode(
+      StructuredDocument newRecord, List<RecordGroupSharing> sharedWithGroup) {
     String redirectUrl = "redirect:" + STRUCTURED_DOCUMENT_EDITOR_URL + "/" + newRecord.getId();
     if (newRecord.isNotebookEntry()) {
       redirectUrl += "?fromNotebook=" + newRecord.getParentNotebook().getId();
     } else {
       redirectUrl += "?editMode=true";
+    }
+    if (!(sharedWithGroup == null || sharedWithGroup.isEmpty())) {
+      redirectUrl += "&sharedWithGroup=" + sharedWithGroup.get(0).getSharee().getDisplayName();
     }
     return redirectUrl;
   }
@@ -595,6 +626,7 @@ public class StructuredDocumentController extends BaseController {
   @Getter
   @AllArgsConstructor
   static class DocumentEditContext {
+
     private EditStatus editStatus;
     private UserSessionTracker userTracker;
     private StructuredDocument structuredDocument;
@@ -723,7 +755,7 @@ public class StructuredDocumentController extends BaseController {
    * @param recordId The record ID
    * @param principal
    * @return AjaxReturnObject<PublicUserInfo>. The payload of the return object may be <code>null
-   *     </code> if either:
+   * </code> if either:
    *     <ol>
    *       <li>Noone is currently editing, or
    *       <li>The subject is the current editor.

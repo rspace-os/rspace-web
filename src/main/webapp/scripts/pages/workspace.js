@@ -40,7 +40,7 @@ function showRecordList(result) {
     // RSPAC-1212 Blocking: Setting the height to fit the height of the
     // previously displayed content and the blocking message
     if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
-      $(tableElement).css({ height: temporaryHeightOfBlockedElement });
+      $(tableElement).css({height: temporaryHeightOfBlockedElement});
     }
 
     $(".rs-working-area, .tabularViewBottom").show();
@@ -59,7 +59,7 @@ function showRecordList(result) {
 
     // RSPAC-1212 Blocking: Setting the height to fit the height of the previously displayed content and the blocking message
     if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
-      $(tableElement).css({ height: temporaryHeightOfBlockedElement });
+      $(tableElement).css({height: temporaryHeightOfBlockedElement});
     }
 
     $(".rs-working-area, .tabularViewBottom").hide();
@@ -67,7 +67,8 @@ function showRecordList(result) {
     $("#searchModePanel").removeClass();
     if (workspaceSettings.searchMode) {
       $("#searchModePanel").addClass("searchError");
-      $("#searchModePanel #message").text("Your search returned no results. Please search again or");
+      $("#searchModePanel #message").text(
+          "Your search returned no results. Please search again or");
       $("#resetSearch").show();
       $("#searchModePanel").slideDown(fadeTime);
     } else {
@@ -94,7 +95,8 @@ function resetCrudops() {
 function getSelectedIdsAndNames(ids, names) {
   $("input[class='record_checkbox']:checked").each(function () {
     var recordID = $(this).attr('id').split("_")[1];
-    var name = $(this).closest('tr').children().find("a.recordNameCell").text().trim();
+    var name = $(this).closest('tr').children().find(
+        "a.recordNameCell").text().trim();
     ids.push(recordID);
     names.push(name);
   });
@@ -102,7 +104,7 @@ function getSelectedIdsAndNames(ids, names) {
 
 // Gets ids, names and record types for selected records
 function getSelectedIdsNamesAndTypes() {
-  var selection = { ids: [], names: [], types: [] };
+  var selection = {ids: [], names: [], types: []};
   getSelectedIdsAndNames(selection.ids, selection.names);
   $.each(selection.ids, function () {
     var tpx = $("#type_" + this).val();
@@ -141,6 +143,8 @@ function init() {
 
 function configurePermittedActions() {
   var canCreateRecord = $('#authzCreateRecord').val() === 'true';
+  var canCreateThirdPartyRecord = $('#authzCreateThirdPartyRecord').val() === 'true';
+  var canCreateFormRecord = $('#authzCreateFormRecord').val() === 'true';
   var isNotebook = $('#isNotebook').val() === 'true';
 
   $('#createEntry').toggle(canCreateRecord && isNotebook);
@@ -152,11 +156,12 @@ function configurePermittedActions() {
   var canCreateFolder = $('#authzCreateFolder').val() === 'true';
   $("#createFolder").toggle(canCreateFolder);
   $("#create").toggle(canCreateFolder || canCreateRecord);
-  $('#createFromWord').toggle(canCreateRecord);
-  $('#createFromEvernote').toggle(canCreateRecord);
+  $('#createFromWord').toggle(canCreateRecord && canCreateThirdPartyRecord);
+  $('#createFromEvernote').toggle(canCreateRecord && canCreateThirdPartyRecord);
 
-  $('#createFromProtocolsIo').toggle(canCreateRecord);
-  $('#createNewForm').toggle(canCreateRecord);
+  $('#createFromProtocolsIo').toggle(
+      canCreateRecord && canCreateThirdPartyRecord);
+  $('#createNewForm').toggle(canCreateRecord && canCreateFormRecord);
   // if permitted to create a record, there will be at least one option in the 2nd and 3rd menu sections therefore show the dividers
   $('.createMenuItemDivider').toggle(canCreateRecord);
 }
@@ -166,15 +171,16 @@ function navigateToFolder(folderId) {
   workspaceSettings.url = "/workspace/ajax/view/" + folderId;
   workspaceSettings.pageNumber = 0;
   resetToolbar();
-  var jqxhr = $.get(workspaceSettings.url, workspaceSettings, function (result) {
-    hideRecordList();
-    setTimeout(function () {
-      showRecordList(result);
-      workspaceSettings.grandparentFolderId = workspaceSettings.parentFolderId;
-      workspaceSettings.parentFolderId = folderId;
-      init();
-    }, effectDuration);
-  });
+  var jqxhr = $.get(workspaceSettings.url, workspaceSettings,
+      function (result) {
+        hideRecordList();
+        setTimeout(function () {
+          showRecordList(result);
+          workspaceSettings.grandparentFolderId = workspaceSettings.parentFolderId;
+          workspaceSettings.parentFolderId = folderId;
+          init();
+        }, effectDuration);
+      });
   jqxhr.fail(function () {
     RS.ajaxFailed("Opening folder ", false, jqxhr);
   });
@@ -183,14 +189,14 @@ function navigateToFolder(folderId) {
 function setUpWorkspaceBreadcrumbs() {
   var $breadcrumbTag = $('#breadcrumbTag_workspaceBcrumb');
   $breadcrumbTag.find(".breadcrumbLink")
-    .attr('href', function () {
-      var folderId = $(this).attr('id').split('_')[1];
-      return '/workspace/' + folderId;
-    }).click(function (e) {
-      e.preventDefault();
-      var folderId = $(this).attr('id').split('_')[1];
-      navigateToFolder(folderId);
-    });
+  .attr('href', function () {
+    var folderId = $(this).attr('id').split('_')[1];
+    return '/workspace/' + folderId;
+  }).click(function (e) {
+    e.preventDefault();
+    var folderId = $(this).attr('id').split('_')[1];
+    navigateToFolder(folderId);
+  });
   if ($breadcrumbTag.find(".breadcrumbLink").length <= 0) {
     $breadcrumbTag.addClass("empty");
     $breadcrumbTag.parent().hide();
@@ -205,7 +211,9 @@ function initFormListDlg() {
       autoOpen: false,
       title: "Choose a form",
       buttons: {
-        Cancel: function () { $(this).dialog('close'); },
+        Cancel: function () {
+          $(this).dialog('close');
+        },
       },
       open: function () {
         var t = $(this).parent(), w = window;
@@ -221,19 +229,20 @@ function initFormListDlg() {
       }
     });
   } else {
-    formListModal = RS.apprise($('#formListDlg').html(), false, undefined, undefined, {
-      title: "Choose a form",
-      textOk: "Cancel",
-      size: 'small',
-      // TO-DO: Find out why using the Cancel button fails on undefined
-      // current modal handle
-      open: function (e) {
-        // make sure at least 1 radio button is checked
-        if (!$(this).find("input:checked").val()) {
-          $(this).find("input").eq(0).attr('checked', 'checked');
-        }
-      }
-    });
+    formListModal = RS.apprise($('#formListDlg').html(), false, undefined,
+        undefined, {
+          title: "Choose a form",
+          textOk: "Cancel",
+          size: 'small',
+          // TO-DO: Find out why using the Cancel button fails on undefined
+          // current modal handle
+          open: function (e) {
+            // make sure at least 1 radio button is checked
+            if (!$(this).find("input:checked").val()) {
+              $(this).find("input").eq(0).attr('checked', 'checked');
+            }
+          }
+        });
   }
 }
 
@@ -251,7 +260,9 @@ function toolbarButtonsEventHandler() {
   $('#createEntry').click(function (e) {
     e.preventDefault();
     var form = document.createElement('form');
-    form.setAttribute('action', '/workspace/editor/structuredDocument/createEntry/' + workspaceSettings.parentFolderId);
+    form.setAttribute('action',
+        '/workspace/editor/structuredDocument/createEntry/'
+        + workspaceSettings.parentFolderId);
     form.setAttribute('method', 'POST');
     document.body.appendChild(form);
     form.submit();
@@ -269,7 +280,9 @@ function toolbarButtonsEventHandler() {
     RS.trackEvent('CreateFromWord');
     openWordChooserDlg(getSelectedIdsNamesAndTypes, {
       title: "Import from Word/Open Office",
-      fileType: "Word or Open Office", showImportOptions: true, listNotebooks: true
+      fileType: "Word or Open Office",
+      showImportOptions: true,
+      listNotebooks: true
     });
   });
 
@@ -323,14 +336,16 @@ function toolbarButtonsEventHandler() {
   $("#list_view").click(function () {
     var id = this.id;
     list_view();
-    history.pushState({ data: id, title: "List View" }, "List View", "?list_view");
+    history.pushState({data: id, title: "List View"}, "List View",
+        "?list_view");
   });
 
   $("#tree_view").click(function () {
     RS.trackEvent('Workspace Tree Viewed');
     var id = this.id;
     tree_view();
-    history.pushState({ data: id, title: "Tree View" }, "Tree View", "?tree_view");
+    history.pushState({data: id, title: "Tree View"}, "Tree View",
+        "?tree_view");
   });
 
   $('#createRequest').click(function () {
@@ -349,15 +364,15 @@ function orderInfoEventHandler() {
     var orderByLink = $(this).children('.orderByLink');
     var url = orderByLink.attr('id').split('_')[1];
     if (url.indexOf("orderBy=name") > -1 &&
-      workspaceSettings.orderBy !== "name") {
+        workspaceSettings.orderBy !== "name") {
       workspaceSettings.orderBy = "name";
       workspaceSettings.sortOrder = "DESC";
     } else if (url.indexOf("orderBy=modificationDateMillis") > -1 &&
-      workspaceSettings.orderBy !== "modificationDateMillis") {
+        workspaceSettings.orderBy !== "modificationDateMillis") {
       workspaceSettings.orderBy = "modificationDateMillis";
       workspaceSettings.sortOrder = "DESC";
     } else if (url.indexOf("orderBy=creationDateMillis") > -1 &&
-      workspaceSettings.orderBy !== "creationDateMillis") {
+        workspaceSettings.orderBy !== "creationDateMillis") {
       workspaceSettings.orderBy = "creationDateMillis";
       workspaceSettings.sortOrder = "DESC";
     } else {
@@ -398,15 +413,16 @@ var paginationEventHandler = function (source, e) {
 };
 
 /**
-* Reloads the workspace results by either searching or viewing a folder (depending on `url` being either
-* 'workspace/ajax/view' or 'workspace/ajax/search'). `data` should be the workspace settings, which all get added to the
-* URL so that the server knows what they are. Optional parameter onLoad(result) is a function that gets called when
-* the results load.
-*
-* Gets used when opening a folder, searching, changing sorting options, switching
-* pages, etc.
-**/
-function getAndDisplayWorkspaceResults(url, data, onLoad = result => { }) {
+ * Reloads the workspace results by either searching or viewing a folder (depending on `url` being either
+ * 'workspace/ajax/view' or 'workspace/ajax/search'). `data` should be the workspace settings, which all get added to the
+ * URL so that the server knows what they are. Optional parameter onLoad(result) is a function that gets called when
+ * the results load.
+ *
+ * Gets used when opening a folder, searching, changing sorting options, switching
+ * pages, etc.
+ **/
+function getAndDisplayWorkspaceResults(url, data, onLoad = result => {
+}) {
   // block page so that user knows something is loading
   RS.blockPage("Loading records...", false, $('.rs-working-area'));
 
@@ -421,7 +437,7 @@ function getAndDisplayWorkspaceResults(url, data, onLoad = result => { }) {
     }, effectDuration);
   }).fail(function () {
     RS.ajaxFailed("Display Workspace Settings", true, jqxhr);
-  }).always(function() {
+  }).always(function () {
     RS.unblockPage($('.rs-working-area'));
   });
 }
@@ -430,7 +446,8 @@ function displayOrderIcon() {
   if (workspaceSettings.sortOrder === "ASC") {
     $('.orderButtonClass').css('background-image', 'url(/images/arrow_up.png)');
   } else if (workspaceSettings.sortOrder === "DESC") {
-    $('.orderButtonClass').css('background-image', 'url(/images/arrow_down.png)');
+    $('.orderButtonClass').css('background-image',
+        'url(/images/arrow_down.png)');
   }
 
   $('.orderButtonClass').css("vertical-align", "middle");
@@ -444,8 +461,12 @@ function displayOrderIcon() {
 }
 
 function saveWorkplaceSettings() {
-  var jqxhr = $.post("/workspace/ajax/saveWorkspaceSettings/?settingsKey=" + settingsKey, workspaceSettings,
-    function (_) { console.log("Saved settings successfully") }
+  var jqxhr = $.post(
+      "/workspace/ajax/saveWorkspaceSettings/?settingsKey=" + settingsKey,
+      workspaceSettings,
+      function (_) {
+        console.log("Saved settings successfully")
+      }
   );
   jqxhr.fail(function () {
     RS.ajaxFailed("Failed to save workspace settings", false, jqxhr);
@@ -490,7 +511,7 @@ function initWorkspaceRequestDlg() {
 }
 
 function showChemicalSearchIfIntegrationEnabled() {
-  var jqxhr = $.get('/integration/integrationInfo', { name: 'CHEMISTRY' });
+  var jqxhr = $.get('/integration/integrationInfo', {name: 'CHEMISTRY'});
   jqxhr.done(function (response) {
     var integration = response.data;
     if (integration && integration.available && integration.enabled) {
@@ -501,9 +522,9 @@ function showChemicalSearchIfIntegrationEnabled() {
 
 function updateUIForWorkspaceSettingsFromServer() {
   displayOrderIcon();
-  if (workspaceSettings.currentViewMode == "TREE_VIEW")
+  if (workspaceSettings.currentViewMode == "TREE_VIEW") {
     tree_view();
-  else {
+  } else {
     list_view();
   }
 }
@@ -511,7 +532,8 @@ function updateUIForWorkspaceSettingsFromServer() {
 $(document).ready(function () {
   workspaceSettings.parentFolderId = recordId;
   workspaceSettings.fallbackFolderId = recordId;
-  workspaceSettings.url = "/workspace/ajax/view/" + workspaceSettings.parentFolderId;
+  workspaceSettings.url = "/workspace/ajax/view/"
+      + workspaceSettings.parentFolderId;
   if (typeof isWorkspaceSearch !== 'undefined' && isWorkspaceSearch === true) {
     workspaceSettings.url = "/workspace/ajax/search/";
   }
@@ -554,18 +576,23 @@ $(document).ready(function () {
 
 var balanceTableColumns = function () {
   var dateCell = $("#file_table td:nth-child(4)").first();
-  var longestOwnerName = getLongestCellContent($("#file_table td:nth-child(7)"));
-  var longestOwnerNameText = $("#file_table td:nth-child(7)").eq(longestOwnerName.index).text().trim();
+  var longestOwnerName = getLongestCellContent(
+      $("#file_table td:nth-child(7)"));
+  var longestOwnerNameText = $("#file_table td:nth-child(7)").eq(
+      longestOwnerName.index).text().trim();
   var ownerCell = $("#file_table td:nth-child(7)").first();
   var ownerMinWidth = $('<span>').hide().appendTo(document.body)
-    .text(longestOwnerNameText)
-    .css(RS.getFontProperties(dateCell))
-    .outerWidth() +
-    parseInt(ownerCell.css("padding-left")) + parseInt(ownerCell.css("padding-right")) +
-    parseInt(ownerCell.css("border-left-width")) + parseInt(ownerCell.css("border-right-width")) + 2;
+      .text(longestOwnerNameText)
+      .css(RS.getFontProperties(dateCell))
+      .outerWidth() +
+      parseInt(ownerCell.css("padding-left")) + parseInt(
+          ownerCell.css("padding-right")) +
+      parseInt(ownerCell.css("border-left-width")) + parseInt(
+          ownerCell.css("border-right-width")) + 2;
 
   if (ownerMinWidth < 200) {
-    $("#file_table td:nth-child(7)").eq(longestOwnerName.index).css({ "white-space": "nowrap" });
+    $("#file_table td:nth-child(7)").eq(longestOwnerName.index).css(
+        {"white-space": "nowrap"});
   }
 };
 
@@ -578,7 +605,7 @@ var getLongestCellContent = function (cells) {
       maxPosition = i;
     }
   });
-  return { maxLength: max, index: maxPosition };
+  return {maxLength: max, index: maxPosition};
 }
 
 var resetToolbar;

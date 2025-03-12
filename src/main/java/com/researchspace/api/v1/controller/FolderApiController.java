@@ -11,6 +11,7 @@ import com.researchspace.api.v1.model.RecordTreeItemInfo;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
@@ -22,6 +23,7 @@ import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +48,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
 
   private @Autowired FolderManager folderMgr;
   private @Autowired RecordDeletionManager recordDeletionManager;
+  private @Autowired SharingHandler recordShareHandler;
 
   /** Only name field of folder is required. */
   @Override
@@ -56,35 +59,48 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       throws BindException {
     throwBindExceptionIfErrors(errors);
     Folder targetFolder = null;
-    if (toCreate.getParentFolderId() != null) {
+    Folder originalParentFolder = null;
+
+    if (toCreate.getParentFolderId() == null) {
+      targetFolder = folderMgr.getRootFolderForUser(user);
+    } else {
       targetFolder = folderMgr.getFolder(toCreate.getParentFolderId(), user);
       if (targetFolder.isNotebook()) {
         errors.reject("notebook.nestednotebook.error", "Nested notebooks are prohibited");
         throw new BindException(errors);
       }
-    } else {
-      targetFolder = folderMgr.getRootFolderForUser(user);
+      if (targetFolder.isSharedFolder() && toCreate.isNotebook()) {
+        originalParentFolder = targetFolder;
+        targetFolder = folderMgr.getRootFolderForUser(user);
+      }
     }
     if (targetFolder.hasType(RecordType.ROOT_MEDIA)) {
       errors.reject("gallery.api.no_top_level_folder", "Can't create top-level Gallery folder");
       throw new BindException(errors);
     }
 
-    Folder folder = null;
+    Folder newCreatedFolder = null;
     if (toCreate.isNotebook()) {
       if (!targetFolder.isInWorkspace()) {
         errors.reject(
             "notebook.no_notebook_in_gallery.error", "Notebooks can only exist in the Workspace");
         throw new BindException(errors);
       }
-      folder =
+      newCreatedFolder =
           folderMgr.createNewNotebook(
               targetFolder.getId(), toCreate.getName(), new DefaultRecordContext(), user);
+      if (originalParentFolder != null
+          && originalParentFolder.isSharedFolder()
+          && toCreate.isNotebook()) {
+        ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
+            recordShareHandler.shareIntoSharedFolder(
+                user, originalParentFolder, newCreatedFolder.getId());
+      }
     } else {
-      folder = folderMgr.createNewFolder(targetFolder.getId(), toCreate.getName(), user);
+      newCreatedFolder = folderMgr.createNewFolder(targetFolder.getId(), toCreate.getName(), user);
     }
 
-    ApiFolder rc = new ApiFolder(folder, user);
+    ApiFolder rc = new ApiFolder(newCreatedFolder, user);
     buildAndAddSelfLink(FOLDERS_ENDPOINT, rc);
     return rc;
   }

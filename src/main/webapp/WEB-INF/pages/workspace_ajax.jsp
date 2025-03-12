@@ -28,6 +28,8 @@
 <div style="position: relative;" class="optionsPopup">
     <input id="currFolderId" type="hidden" value="${recordId}" />
     <input id="authzCreateRecord" type="hidden" value="${createPermission.createRecord}" />
+    <input id="authzCreateThirdPartyRecord" type="hidden" value="${allowThirdPartyImport}" />
+    <input id="authzCreateFormRecord" type="hidden" value="${allowCreateForm}" />
     <input id="authzCreateFolder" type="hidden" value="${createPermission.createFolder}" />
     <input id="movetargetRoot" type="hidden" value="${movetargetRoot}" />
     <input id="isNotebook" type="hidden" value="${isNotebook}" />

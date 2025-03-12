@@ -395,6 +395,21 @@ public class GroupManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void testGetGroupByCommunalGroupFolderId() throws IllegalAddChildOperation {
+    User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    User user = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group g1 = new Group(CoreTestUtils.getRandomName(10), admin);
+    g1 = grpMgr.saveGroup(g1, admin);
+    initialiseContentWithEmptyContent(user, admin);
+
+    g1 = grpMgr.addMembersToGroup(g1.getId(), Arrays.asList(user, admin), "", "admin2", admin);
+    Folder grpSharedFolder =
+        grpMgr.createSharedCommunalGroupFolders(g1.getId(), admin.getUsername());
+    Group actualGroup = grpMgr.getGroupByCommunalGroupFolderId(grpSharedFolder.getId());
+    assertEquals(g1, actualGroup);
+  }
+
+  @Test
   public void testSetUpSharedSnippetGroupFolderForGroupWithMembers()
       throws IllegalAddChildOperation {
     User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));

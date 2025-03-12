@@ -8,14 +8,20 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.researchspace.api.v1.model.ApiDocument;
 import com.researchspace.api.v1.model.ApiDocumentField;
+import com.researchspace.core.testutil.CoreTestUtils;
+import com.researchspace.model.Group;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.RenameAuditEvent;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +34,8 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
   @Autowired private RecordApiManager recordApiMgr;
   @Autowired private RecordManager recordMgr;
   @Autowired private FormManager formMgr;
+  @Autowired private GroupManager groupManager;
+  @Autowired private SharingHandler recordShareHandler;
   @Mock private AuditTrailService auditTrailService;
 
   private User testUser;
@@ -39,6 +47,34 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);
     assertTrue(testUser.isContentInitialized());
+  }
+
+  @Test
+  public void testCreateDocumentIntoSharedFolder() {
+    RSForm anyForm = formMgr.getBasicDocumentForm();
+
+    User admin = createAndSaveAPi();
+    User user = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group group = new Group(CoreTestUtils.getRandomName(10), admin);
+    group = grpMgr.saveGroup(group, user);
+    initialiseContentWithEmptyContent(user, admin);
+
+    group = grpMgr.addUserToGroup(admin.getUsername(), group.getId(), RoleInGroup.PI);
+    Folder sharedFolder =
+        grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
+    flushDatabaseState();
+
+    ApiDocument apiDoc = new ApiDocument();
+    apiDoc.setParentFolderId(sharedFolder.getId());
+    apiDoc.setName("NewDoc-SharedFolder");
+
+    Long docId = recordApiMgr.createNewDocument(apiDoc, anyForm, admin);
+    StructuredDocument newCreatedDoc = (StructuredDocument) recordMgr.get(docId);
+
+    assertEquals(2, newCreatedDoc.getParentFolders().size());
+    assertTrue(newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.equals(sharedFolder)));
+    assertTrue(
+        newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.getName().equals("Api Inbox")));
   }
 
   @Test

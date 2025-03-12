@@ -102,6 +102,7 @@ import lombok.Value;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
@@ -224,7 +225,9 @@ public class WorkspaceController extends BaseController {
     if (isValidSettingsKey(settingsKey)) {
       WorkspaceListingConfig cfg =
           (WorkspaceListingConfig) request.getSession().getAttribute(settingsKey);
-      if (cfg != null) rootRecord = folderManager.getFolder(cfg.getParentFolderId(), user);
+      if (cfg != null) {
+        rootRecord = folderManager.getFolder(cfg.getParentFolderId(), user);
+      }
     }
 
     relist(workspaceSettings, settingsKey, model, request, session, response, user, rootRecord);
@@ -398,9 +401,34 @@ public class WorkspaceController extends BaseController {
       @PathVariable("recordid") long parentRecordId,
       @RequestParam("notebookNameField") String notebookName,
       Principal principal) {
+    User user = getUserByUsername(principal.getName());
+    Long targetFolderId = parentRecordId;
+    Folder originalParentFolder = null;
+    List<RecordGroupSharing> sharedWithGroup = null;
 
-    Long newNotebookId = createNotebook(parentRecordId, notebookName, principal);
-    return "redirect:/notebookEditor/" + newNotebookId;
+    originalParentFolder = folderManager.getFolder(parentRecordId, user);
+    if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
+      targetFolderId = folderManager.getRootFolderForUser(user).getId();
+    }
+    Long newNotebookId = createNotebook(targetFolderId, notebookName, principal);
+
+    if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
+      ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
+          recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newNotebookId);
+      sharedWithGroup = sharingResult.getResults();
+    }
+
+    return getNotebookRedirectUrl(newNotebookId, sharedWithGroup);
+  }
+
+  @NotNull
+  private static String getNotebookRedirectUrl(
+      Long newNotebookId, List<RecordGroupSharing> sharedWithGroup) {
+    String redirectUrl = "redirect:/notebookEditor/" + newNotebookId;
+    if (!(sharedWithGroup == null || sharedWithGroup.isEmpty())) {
+      redirectUrl += "?sharedWithGroup=" + sharedWithGroup.get(0).getSharee().getDisplayName();
+    }
+    return redirectUrl;
   }
 
   @PostMapping("/ajax/createNotebook")
@@ -673,6 +701,7 @@ public class WorkspaceController extends BaseController {
   /** Handles case when document can't be accessed for edit */
   @Value
   class NoAccessHandler implements BiConsumer<Long, EditStatus> {
+
     Model model;
 
     @Override
@@ -935,8 +964,11 @@ public class WorkspaceController extends BaseController {
 
     model.addAttribute("user", user);
     Folder rootRecord;
-    if (config.isAttachmentSearch()) rootRecord = folderManager.getGalleryRootFolderForUser(user);
-    else rootRecord = folderManager.getRootFolderForUser(user);
+    if (config.isAttachmentSearch()) {
+      rootRecord = folderManager.getGalleryRootFolderForUser(user);
+    } else {
+      rootRecord = folderManager.getRootFolderForUser(user);
+    }
     config.setParentFolderId(rootRecord.getId());
 
     updateResultsPerPageProperty(user, config.getPgCrit(), Preference.WORKSPACE_RESULTS_PER_PAGE);
@@ -1236,14 +1268,15 @@ public class WorkspaceController extends BaseController {
       Principal principal,
       HttpSession session) {
     // basic validation
-    if (!isValidSettingsKey(settingsKey))
+    if (!isValidSettingsKey(settingsKey)) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid settings key");
-    if (session.getAttribute(settingsKey) == null)
+    }
+    if (session.getAttribute(settingsKey) == null) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
           .body(
               "Session did not contain a workspace listing associated with the "
                   + "given settings key");
-    else {
+    } else {
       WorkspaceListingConfig cfg = new WorkspaceListingConfig(settings);
       session.setAttribute(settingsKey, cfg);
     }

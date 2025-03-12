@@ -158,6 +158,13 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   @Override
+  public RSPath getShortestPathToSharedRootFolder(Long sharedSubfolderId, User user) {
+    Folder sharedSubfolder = folderDao.get(sharedSubfolderId);
+    Folder sharedRootfolder = folderDao.getUserSharedFolder(user);
+    return sharedSubfolder.getShortestPathToParent(sharedRootfolder);
+  }
+
+  @Override
   public Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
       Long srcRecordId, User user) {
     Folder src = folderDao.get(srcRecordId);
@@ -700,7 +707,15 @@ public class FolderManagerImpl implements FolderManager {
     String parentFolderName = isDestinationWorkspace ? subject.getUsername() : contentType;
 
     // we return or create default ApiInbox folder
-    if (folderId == null) {
+    Optional<Folder> targetFolderOpt = Optional.empty();
+    if (folderId != null) {
+      targetFolderOpt = folderDao.getSafeNull(folderId);
+      // folder id was not existing
+      if (targetFolderOpt.isEmpty()) {
+        throw new AuthorizationException(unauthorisedMsg(subject));
+      }
+    }
+    if (targetFolderOpt.isEmpty() || targetFolderOpt.get().isSharedFolder()) {
       Optional<Folder> apiInboxOpt =
           folderDao.getApiFolderForContentType(parentFolderName, subject);
       Folder apiInbox;
@@ -723,14 +738,12 @@ public class FolderManagerImpl implements FolderManager {
       return apiInbox;
     }
 
-    // return requested folder
-    Optional<Folder> targetFolderOpt = folderDao.getSafeNull(folderId);
-    if (!targetFolderOpt.isPresent()) {
-      throw new AuthorizationException(unauthorisedMsg(subject));
-    }
     Folder targetFolder = targetFolderOpt.get();
     assertUserHasReadPermission(subject, targetFolder);
     Validate.isTrue(!targetFolder.isSharedFolder(), "Can't add API content into a shared folder");
+    if (targetFolder.isSharedFolder()) {
+      targetFolder = folderDao.getRootRecordForUser(subject); // save to root folder
+    }
     if (isDestinationGallery) {
       Validate.isTrue(
           targetFolder.hasAncestorMatchingPredicate(

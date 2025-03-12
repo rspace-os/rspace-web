@@ -54,6 +54,7 @@ import com.researchspace.service.AuditManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.testutils.RSpaceTestUtils;
+import com.researchspace.testutils.TestGroup;
 import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -593,6 +594,37 @@ public class SDocControllerMVCIT extends MVCTestBase {
         .andExpect(status().is3xxRedirection())
         .andReturn();
     assertEquals(initialRecordsCount + 1, getRecordCountInFolderForUser(rootFolder));
+  }
+
+  @Test
+  public void createIntoSharedFolder() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User u = group.u1();
+    initUser(u);
+    RSpaceTestUtils.login(u.getUsername(), TESTPASSWD);
+    RSForm form = createAnyForm(u);
+
+    openTransaction();
+    Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
+    commitTransaction();
+    Long rootFolderId = folderMgr.getRootRecordForUser(u, u).getId();
+    final int initialRecordsCount = (int) getRecordCountInFolderForUser(rootFolderId);
+    MvcResult resultUrl =
+        this.mockMvc
+            .perform(
+                post(
+                        StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
+                            + "/create/{recordId}",
+                        sharedFolderId + "")
+                    .param("template", form.getId() + "")
+                    .principal(new MockPrincipal(u.getUsername())))
+            .andExpect(status().is3xxRedirection())
+            .andReturn();
+    String redirectUrl = resultUrl.getResponse().getHeader("Location");
+
+    assertEquals(initialRecordsCount + 1, getRecordCountInFolderForUser(rootFolderId));
+    assertEquals(1, getRecordCountInFolderForUser(sharedFolderId));
+    assertTrue(redirectUrl.contains("&sharedWithGroup=" + group.getGroup().getDisplayName()));
   }
 
   @Test

@@ -38,6 +38,8 @@ public interface GroupDao extends GenericDao<Group, Long> {
    */
   Group getByUniqueName(String uniqueName);
 
+  Group getByCommunalGroupFolderId(Long folderId);
+
   List<Group> getForOwner(User owner);
 
   /**

@@ -110,6 +110,11 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
+  public RSPath getShortestPathToSharedRootFolder(Long sharedSubfolderId, User user) {
+    return null;
+  }
+
+  @Override
   public Folder removeBaseRecordFromFolder(BaseRecord toDelete, Long parentfolderid) {
     return null;
   }

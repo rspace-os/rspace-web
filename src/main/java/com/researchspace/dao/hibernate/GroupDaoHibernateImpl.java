@@ -178,6 +178,14 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
   }
 
   @Override
+  public Group getByCommunalGroupFolderId(Long folderId) {
+    return getSession()
+        .createQuery("from Group where communalGroupFolderId=:folderId", Group.class)
+        .setParameter("folderId", folderId)
+        .uniqueResult();
+  }
+
+  @Override
   public List<Group> getForOwner(User owner) {
     return getSession()
         .createQuery("from Group where owner=:owner", Group.class)

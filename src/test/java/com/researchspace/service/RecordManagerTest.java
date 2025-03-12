@@ -1606,4 +1606,29 @@ public class RecordManagerTest extends SpringTransactionalTest {
     logoutAndLoginAs(user);
     assertTrue(recordMgr.getAuthorisedRecordsById(anyUserIds, user, PermissionType.READ).isEmpty());
   }
+
+  @Test
+  public void testCreateNewStructuredDocumentIntoSharedFolder() throws Exception {
+    User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group group = new Group(CoreTestUtils.getRandomName(10), admin);
+    group.addMember(user, RoleInGroup.DEFAULT);
+    group = grpMgr.saveGroup(group, admin);
+    initialiseContentWithEmptyContent(user, admin);
+    grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
+
+    Long sharedFolderId = group.getCommunalGroupFolderId();
+    Folder rootFolder = user.getRootFolder();
+
+    flushDatabaseState();
+
+    long initialCountRootFolder =
+        recordMgr.listFolderRecords(rootFolder.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
+    anyForm = formDao.getAll().get(0);
+    StructuredDocument newCreatedDocument =
+        recordMgr.createNewStructuredDocument(sharedFolderId, anyForm.getId(), user);
+    assertColumnIndicesAreTheSameForFieldsAndFormss(newCreatedDocument);
+    assertNotNull(recordMgr.get(newCreatedDocument.getId()));
+    assertNotNull(newCreatedDocument.getId());
+    assertEquals(initialCountRootFolder + 1, rootFolder.getChildren().size());
+  }
 }
