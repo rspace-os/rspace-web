@@ -151,7 +151,7 @@ export default class PersonModel implements Person {
       link.setAttribute("rel", downloadLink.rel);
       link.setAttribute("download", fileName);
       link.click(); // trigger download
-      trackingStore.trackEvent("user:export:allTheirItems:Inventory");
+      trackingStore.trackEvent("user:export:allTheirItems:Inventory", exportOptions);
     } catch (error) {
       uiStore.addAlert(
         mkAlert({

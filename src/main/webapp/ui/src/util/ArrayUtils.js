@@ -109,6 +109,18 @@ export const partition = <T>(
   );
 
 /**
+ * Group the elements of an array based on the result of the passed function.
+ */
+export const groupBy = <T, K: string>(
+  f: (T) => K,
+  list: $ReadOnlyArray<T>
+): { [K]: Array<T> } =>
+  list.reduce((acc, element) => {
+    const key = f(element);
+    return { ...acc, [key]: [...(acc[key] || []), element] };
+  }, ({}: { [K]: Array<T> }));
+
+/**
  * Just like normal filter, but specifically just to check whether the elements
  * of the array are instances of the passed class. Useful where Flow would not
  * recognise a normal filter.
