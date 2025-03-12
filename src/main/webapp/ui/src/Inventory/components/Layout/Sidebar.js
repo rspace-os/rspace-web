@@ -32,6 +32,7 @@ import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import { useTheme, ThemeProvider } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import createAccentedTheme from "../../../accentedTheme";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 /**
  * Theme colour for the Inventory part of the product
@@ -418,6 +419,7 @@ const ExportNavItem = observer(() => {
   const {
     peopleStore: { currentUser },
   } = useStores();
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   const [openExportDialog, setOpenExportDialog] = useState(false);
 
@@ -427,6 +429,7 @@ const ExportNavItem = observer(() => {
         label="Export Data"
         datatestid="ExportUserDataFilter"
         onClick={() => {
+          trackEvent("user:open:allTheirItemsExportDialog:InventorySidebar");
           setOpenExportDialog(true);
         }}
         selected={false}

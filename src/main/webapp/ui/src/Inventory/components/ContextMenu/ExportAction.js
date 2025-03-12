@@ -15,6 +15,7 @@ import { match } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import ExportDialog from "../Export/ExportDialog";
 import SearchContext from "../../../stores/contexts/Search";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 type ExportActionArgs = {|
   as: ContextMenuRenderOptions,
@@ -27,8 +28,10 @@ const ExportAction: ComponentType<ExportActionArgs> = forwardRef(
   ({ as, closeMenu, disabled, selectedResults }: ExportActionArgs, ref) => {
     const { search } = useContext(SearchContext);
     const [openExportDialog, setOpenExportDialog] = useState(false);
+    const { trackEvent } = React.useContext(AnalyticsContext);
 
     const handleOpen = () => {
+      trackEvent("user:open:selectionExportDialog:Inventory");
       setOpenExportDialog(true);
     };
 
