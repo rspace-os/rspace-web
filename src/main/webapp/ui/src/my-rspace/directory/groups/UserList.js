@@ -68,6 +68,7 @@ class UserList extends React.Component {
             data-test-id={`user-search-${this.props.listTitle
               .split(" ")
               .join("-")}`}
+            inputProps={{ spellcheck: "false" }}
           />
           <List
             dense

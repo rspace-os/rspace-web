@@ -98,6 +98,7 @@ export default function UserList(props): Node {
         value={searchTerm}
         onChange={handleSearch}
         data-test-id={`user-search-${props.listTitle.split(" ").join("-")}`}
+        inputProps={{ spellcheck: "false" }}
       />
       {visibleUsers.length == 0 && (
         <div

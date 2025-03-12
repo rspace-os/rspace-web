@@ -13,7 +13,7 @@
   </tr>
   <tr>
       <td><form:label path="recipientnames">To</form:label></td>
-      <td><form:textarea class="recipientsMessageArea form-control" path="recipientnames" rows="1" /></td>
+      <td><form:textarea class="recipientsMessageArea form-control" path="recipientnames" rows="1" spellcheck="false"/></td>
   </tr>
   <tr>
       <td><form:label path="messageType">Request Type</form:label></td>
