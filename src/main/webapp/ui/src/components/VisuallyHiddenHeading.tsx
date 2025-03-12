@@ -1,14 +1,12 @@
-//@flow strict
-
-import React, { type Node } from "react";
+import React from "react";
 import Typography from "@mui/material/Typography";
 
-type VisuallyHiddenHeadingArgs = {|
-  variant: "h1" | "h2" | "h3" | "h4" | "h5" | "h6",
-  children: Node,
-|};
+type VisuallyHiddenHeadingArgs = {
+  variant: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  children: React.ReactNode;
+};
 
-/*
+/**
  * This component is for adding a heading to the DOM that is not visible to
  * sighted users but is provided to ensure compliance with the accessibility
  * standard on not skipping any heading levels. This is so that accessibility
@@ -23,7 +21,7 @@ type VisuallyHiddenHeadingArgs = {|
 export default function VisuallyHiddenHeading({
   variant,
   children,
-}: VisuallyHiddenHeadingArgs): Node {
+}: VisuallyHiddenHeadingArgs): React.ReactNode {
   return (
     <Typography
       variant={variant}

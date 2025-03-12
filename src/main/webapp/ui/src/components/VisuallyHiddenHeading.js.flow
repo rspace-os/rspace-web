@@ -1,0 +1,8 @@
+//@flow strict
+
+import { type Node } from "react";
+
+declare export default function VisuallyHiddenHeading({|
+  variant: "h1" | "h2" | "h3" | "h4" | "h5" | "h6",
+  children: Node,
+|}): Node;
