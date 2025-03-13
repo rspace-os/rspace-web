@@ -1,9 +1,11 @@
-//@flow strict
 import { computed, makeObservable } from "mobx";
 import { filterMap } from "./Util";
 import { Optional } from "./optional";
 
-/*
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Class<T> = new (...args: any[]) => T;
+
+/**
  * This is an extension of the standard Set data structure, with the addition
  * of methods that operate on the contents of the set in a manner similar to
  * Array (map, filter, etc.) as well as the standard collection of set
@@ -22,14 +24,13 @@ import { Optional } from "./optional";
  * about 1KB (that is, in addition to the memory cost of the actual data stored
  * in the set).
  */
-
 export default class RsSet<A> extends Set<A> {
   /*
    * Usage:
    *  new RsSet([1,2,3])    // just like Set
    *  new RsSet(null)       // null creates the empty set
    */
-  constructor(init: ?Iterable<A>) {
+  constructor(init?: Iterable<A> | null) {
     super(init);
     makeObservable(this, {
       isEmpty: computed,
@@ -56,7 +57,7 @@ export default class RsSet<A> extends Set<A> {
    * method runs in linear time so for large enough sets this may not be
    * the best solution.
    */
-  hasWithEq(elem: A, eq: (A, A) => boolean): boolean {
+  hasWithEq(elem: A, eq: (elem1: A, elem2: A) => boolean): boolean {
     for (const each of this) {
       if (eq(elem, each)) return true;
     }
@@ -67,7 +68,7 @@ export default class RsSet<A> extends Set<A> {
    * This is for Flow's benefit, because it returns an instance of RsSet,
    *  not Set but is otherwise not necessary
    */
-  add(a: A): RsSet<A> {
+  add(a: A): this {
     super.add(a);
     return this;
   }
@@ -111,7 +112,7 @@ export default class RsSet<A> extends Set<A> {
    *  new RsSet([1,2]).map(x => x + 1)                    // new RsSet([2,3])
    *  new RsSet([0.25,0.5,0.75]).map(x => Math.round(x))  // new RsSet([0,1])
    */
-  map<B>(f: (A) => B): RsSet<B> {
+  map<B>(f: (elem: A) => B): RsSet<B> {
     return new RsSet([...this].map(f));
   }
 
@@ -120,7 +121,7 @@ export default class RsSet<A> extends Set<A> {
    * Usage:
    *  new RsSet([1,2,3]).filter(x => x < 3)    // new RsSet([1,2])
    */
-  filter(f: (A) => boolean): RsSet<A> {
+  filter(f: (elem: A) => boolean): RsSet<A> {
     return new RsSet([...this].filter(f));
   }
 
@@ -131,8 +132,9 @@ export default class RsSet<A> extends Set<A> {
    * filter.
    * Usage: see test
    */
-  filterClass<T>(clazz: Class<T>): RsSet<T> {
-    const setOft = new RsSet<T>();
+  // filterClass<U extends A>(clazz: { new (...args: unknown[]): U }): RsSet<U> {
+  filterClass<U extends A>(clazz: Class<U>): RsSet<U> {
+    const setOft = new RsSet<U>();
     for (const a of this) {
       if (a instanceof clazz) setOft.add(a);
     }
@@ -144,7 +146,7 @@ export default class RsSet<A> extends Set<A> {
    * Usage:
    *  new RsSet([1,2,3]).reduce((acc,x) => acc + x, 0)    // 6
    */
-  reduce<B>(f: (B, A) => B, init: B): B {
+  reduce<B>(f: (acc: B, elem: A) => B, init: B): B {
     return [...this].reduce(f, init);
   }
 
@@ -153,7 +155,7 @@ export default class RsSet<A> extends Set<A> {
    * Usage:
    *  new RsSet([1,2,3]).every(x => x < 4)    // true
    */
-  every(f: (A) => boolean): boolean {
+  every(f: (elem: A) => boolean): boolean {
     return [...this].every(f);
   }
 
@@ -162,7 +164,7 @@ export default class RsSet<A> extends Set<A> {
    * Usage:
    *  new RsSet([1,2,3]).some(x => x > 2)    // true
    */
-  some(f: (A) => boolean): boolean {
+  some(f: (elem: A) => boolean): boolean {
     return [...this].some(f);
   }
 
@@ -227,7 +229,7 @@ export default class RsSet<A> extends Set<A> {
    *  thingsWithIds.subtractMap(x => x.id, unwantedIds)
    *    // new RsSet([{id: 3}])
    */
-  subtractMap<B>(f: (A) => B, s: RsSet<B>): RsSet<A> {
+  subtractMap<B>(f: (elem: A) => B, s: RsSet<B>): RsSet<A> {
     const map = new Map([...this].map((e) => [f(e), e]));
     const set = new RsSet([...map.keys()]).subtract(s);
     return new RsSet([...filterMap(map, (k) => set.has(k)).values()]);
@@ -245,7 +247,7 @@ export default class RsSet<A> extends Set<A> {
    *  thingsWithIds.intersectionMap(x => x.id, wantedIds)
    *    // new RsSet([{id: 1}])
    */
-  intersectionMap<B>(f: (A) => B, s: RsSet<B>): RsSet<A> {
+  intersectionMap<B>(f: (elem: A) => B, s: RsSet<B>): RsSet<A> {
     const map = new Map([...this].map((e) => [f(e), e]));
     const set = new RsSet([...map.keys()]).intersection(s);
     return new RsSet([...filterMap(map, (k) => set.has(k)).values()]);
@@ -256,7 +258,7 @@ export default class RsSet<A> extends Set<A> {
    * returns true when called with elements of the passed set `s`. The elements
    * of `s` are never in the returned set.
    */
-  unionWithEq(s: RsSet<A>, eq: (A, A) => boolean): RsSet<A> {
+  unionWithEq(s: RsSet<A>, eq: (elem1: A, elem2: A) => boolean): RsSet<A> {
     const result = new RsSet<A>();
     outerA: for (const elementOfThis of this) {
       for (const alreadyAdded of result) {
@@ -273,7 +275,7 @@ export default class RsSet<A> extends Set<A> {
     return result;
   }
 
-  subtractWithEq(s: RsSet<A>, eq: (A, A) => boolean): RsSet<A> {
+  subtractWithEq(s: RsSet<A>, eq: (elem1: A, elem2: A) => boolean): RsSet<A> {
     const result = new RsSet<A>();
     outer: for (const elementOfThis of this) {
       for (const elementOfS of s) {
@@ -321,7 +323,7 @@ export default class RsSet<A> extends Set<A> {
    *  new RsSet([1,2]).union(new RsSet([2,3])).toArray()    // [1,2,3]
    *  new RsSet([2,3]).union(new RsSet([1,2])).toArray()    // [2,3,1]
    */
-  toArray(f: ?(A, A) => number): Array<A> {
+  toArray(f?: (elem1: A, elem2: A) => number): Array<A> {
     const array = [...this];
     if (f) array.sort(f);
     return array;
@@ -340,7 +342,7 @@ export default class RsSet<A> extends Set<A> {
    *    (x) => (x instanceof Number ? Optional.present(x) : Optional.empty())
    *  ); // new RsSet([1])
    */
-  mapOptional<B>(f: (A) => Optional<B>): RsSet<B> {
+  mapOptional<B>(f: (elem: A) => Optional<B>): RsSet<B> {
     // These classes are here solely so that filterClass can be used
     class Present<T> {
       value: T;
@@ -358,13 +360,14 @@ export default class RsSet<A> extends Set<A> {
           (v) => new Present(v)
         )
     );
-    const setOfPresent: RsSet<Present<B>> =
-      setOfPresentOrEmpty.filterClass(Present);
+    const setOfPresent: RsSet<Present<B>> = setOfPresentOrEmpty.filterClass<
+      Present<B>
+    >(Present<B>);
     return setOfPresent.map((opt) => opt.value);
   }
 }
 
-/*
+/**
  * Turns a set of sets into a flat set by taking the intersection of all of the sets,
  *  similar to Array.prototype.flatten, but with intersection instead of appending.
  * Usage:
@@ -378,13 +381,25 @@ export const flattenWithIntersection = <A>(
   return first.intersection(...rest);
 };
 
-/*
+/**
+ * Turns a set of sets into a flat set by taking the union of all of the sets,
+ *  similar to Array.prototype.flatten, but with union instead of appending.
+ * Usage:
+ *  flattenWithUnion(new RsSet([new RsSet([1,2]), new RsSet([2,3])]))    // new RsSet([1,2,3])
+ */
+export const flattenWithUnion = <A>(setOfSets: RsSet<RsSet<A>>): RsSet<A> => {
+  if (setOfSets.isEmpty) return new RsSet();
+  const [first, ...rest] = setOfSets.toArray();
+  return first.union(...rest);
+};
+
+/**
  * Does the same as flattenWithIntersection, but with a custom equality
  * function rather than relying on how `Set` is defined.
  */
 export const flattenWithIntersectionWithEq = <A>(
   setOfSets: RsSet<RsSet<A>>,
-  eqFunc: (A, A) => boolean
+  eqFunc: (elem1A: A, elem2A: A) => boolean
 ): RsSet<A> => {
   const allElements = flattenWithUnion(setOfSets);
   const intersection = new RsSet<A>();
@@ -412,19 +427,7 @@ export const flattenWithIntersectionWithEq = <A>(
   return intersection;
 };
 
-/*
- * Turns a set of sets into a flat set by taking the union of all of the sets,
- *  similar to Array.prototype.flatten, but with union instead of appending.
- * Usage:
- *  flattenWithUnion(new RsSet([new RsSet([1,2]), new RsSet([2,3])]))    // new RsSet([1,2,3])
- */
-export const flattenWithUnion = <A>(setOfSets: RsSet<RsSet<A>>): RsSet<A> => {
-  if (setOfSets.isEmpty) return new RsSet();
-  const [first, ...rest] = setOfSets.toArray();
-  return first.union(...rest);
-};
-
-/*
+/**
  * Performs union operation on a list of sets, where uniquness is defined by a provided function,
  *  rather than based on === which considers all objects unique.
  * Example:
@@ -434,7 +437,7 @@ export const flattenWithUnion = <A>(setOfSets: RsSet<RsSet<A>>): RsSet<A> => {
  *  ])  // new RsSet([{id: 1, foo: "A"}, {id: 2, foo: "C"}])
  */
 export const unionWith = <A, B>(
-  eqFunc: (A) => B,
+  eqFunc: (elem: A) => B,
   sets: Array<RsSet<A>>
 ): RsSet<A> => {
   const uniqueBs = new RsSet<B>();
@@ -450,12 +453,12 @@ export const unionWith = <A, B>(
   return uniqueAs;
 };
 
-/*
+/**
  * Takes a value that may or may not be null/undefined and converts it into
  *  either an empty or singleton set.
  * Example:
  *  nullishToSingleton(null)   // new RsSet()
  *  nullishToSingleton(3)      // new RsSet([3])
  */
-export const nullishToSingleton = <A>(a: ?A): RsSet<A> =>
+export const nullishToSingleton = <A>(a: A | null | undefined): RsSet<A> =>
   a === null || typeof a === "undefined" ? new RsSet<A>() : new RsSet([a]);
