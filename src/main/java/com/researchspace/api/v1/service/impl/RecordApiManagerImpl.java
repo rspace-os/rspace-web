@@ -65,7 +65,7 @@ public class RecordApiManagerImpl implements RecordApiManager {
       Folder originalTargetFolder = folderManager.getFolder(apiDocument.getParentFolderId(), user);
       if (originalTargetFolder.isSharedFolder()) {
         // shareDocument into the current parentFolder
-        recordShareHandler.shareIntoSharedFolder(user, originalTargetFolder, result);
+        recordShareHandler.shareIntoSharedFolder(user, originalTargetFolder, result.getId());
       }
     }
     try {

@@ -19,7 +19,6 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSPath;
-import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.FolderManager;
@@ -89,7 +88,7 @@ public class SharingHandlerImpl implements SharingHandler {
 
   @Override
   public ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
-      shareIntoSharedFolder(User user, Folder sharedFolder, StructuredDocument result) {
+      shareIntoSharedFolder(User user, Folder sharedFolder, Long recordId) {
     Optional<Folder> sharedFolderRoot =
         folderManager.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
             sharedFolder.getId(), user);
@@ -108,7 +107,7 @@ public class SharingHandlerImpl implements SharingHandler {
     shareConfigElement.setGroupFolderId(sharedFolder.getId());
     ShareConfigCommand shareConfig =
         new ShareConfigCommand(
-            new Long[] {result.getId()}, new ShareConfigElement[] {shareConfigElement});
+            new Long[] {recordId}, new ShareConfigElement[] {shareConfigElement});
     return this.shareRecords(shareConfig, user);
   }
 

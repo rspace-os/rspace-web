@@ -263,7 +263,7 @@ public class StructuredDocumentController extends BaseController {
               mf.getOriginalFilename(), (int) progress.getPercentComplete()));
     }
     progress.done();
-    return new AjaxReturnObject<List<RecordInformation>>(rc, el); // TODO[nik]?
+    return new AjaxReturnObject<List<RecordInformation>>(rc, el);
   }
 
   private Optional<ExternalFileImporter> getFileImporterForMultipartFile(MultipartFile mf) {
@@ -311,7 +311,7 @@ public class StructuredDocumentController extends BaseController {
       if (originalParentFolder.isSharedFolder()) {
         // shareDocument into the current parentFolder
         ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
-            recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newRecord);
+            recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newRecord.getId());
         sharedWithGroup = sharingResult.getResults();
       }
     } catch (AuthorizationException ae) {
@@ -326,7 +326,7 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("notebookid") Long notebookId, Principal principal)
       throws RecordAccessDeniedException {
     StructuredDocument newEntry = createNamedEntry(notebookId, null, principal);
-    return redirectToDocumentEditorInEditMode(newEntry, null);
+    return redirectToDocumentEditorInEditMode(newEntry);
   }
 
   @PostMapping("/ajax/createEntry")
@@ -368,14 +368,20 @@ public class StructuredDocumentController extends BaseController {
       @RequestParam(value = "newname", required = false) String newname,
       Principal principal)
       throws RecordAccessDeniedException {
-    //TODO[nik]: change this
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;
     StructuredDocument rc = null;
+    Folder originalParentFolder = null;
+    List<RecordGroupSharing> sharedWithGroup = null;
     try {
-      if (targetFolderId == null || targetFolderId == -1) {
+      if (targetFolderId != null) {
+        originalParentFolder = folderManager.getFolder(parentRecordId, user);
+      }
+      if ((targetFolderId == null || targetFolderId == -1)
+          || (originalParentFolder != null && originalParentFolder.isSharedFolder())) {
         targetFolderId = folderManager.getRootFolderForUser(user).getId();
       }
+
       if (StringUtils.isBlank(newname) || newname.contains("/")) {
         newname = StructuredDocument.DEFAULT_NAME;
       }
@@ -384,14 +390,23 @@ public class StructuredDocumentController extends BaseController {
           recordManager.createFromTemplate(templateid, newname, user, targetFolderId);
       rc = (StructuredDocument) fromTemplate.getUniqueCopy();
 
-      if (rc == null) {
+      if (rc != null && (originalParentFolder != null && originalParentFolder.isSharedFolder())) {
+        ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
+            recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, rc.getId());
+        sharedWithGroup = sharingResult.getResults();
+      } else {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Template", templateid));
       }
+
     } catch (AuthorizationException ae) {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", null));
     }
     publisher.publishEvent(createGenericEvent(user, rc, AuditAction.CREATE));
-    return redirectToDocumentEditorInEditMode(rc, null); // TODO[nik]
+    return redirectToDocumentEditorInEditMode(rc, sharedWithGroup);
+  }
+
+  private String redirectToDocumentEditorInEditMode(StructuredDocument newRecord) {
+    return redirectToDocumentEditorInEditMode(newRecord, null);
   }
 
   private String redirectToDocumentEditorInEditMode(
