@@ -1,0 +1,6 @@
+//@flow strict
+
+declare export function formatFileSize(?number, ?number): string;
+declare export function filenameExceptExtension(string): string;
+declare export function justFilenameExtension(string): string;
+declare export function blobToBase64(Blob): Promise<?string>;

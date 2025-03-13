@@ -1,5 +1,3 @@
-//@flow strict
-
 /*
  * General purpose functions for working with files
  */
@@ -8,7 +6,7 @@
  * Given the number of bytes, return a human-readable string using SI units.
  */
 export function formatFileSize(
-  bytes: ?number,
+  bytes: number | null | undefined,
   decimalPlaces: number = 2
 ): string {
   if (bytes === null || typeof bytes === "undefined") return "";
@@ -48,7 +46,7 @@ export const justFilenameExtension = (filename: string): string =>
 /**
  * Encodes the contents of blob as a base 64 string.
  */
-export const blobToBase64 = (blob: Blob): Promise<?string> =>
+export const blobToBase64 = (blob: Blob): Promise<string | null> =>
   new Promise((resolve) => {
     const reader = new FileReader();
     reader.onloadend = () =>
