@@ -1,5 +1,3 @@
-// @flow
-
 /**
  * This is a bit of a hack to allow parts of the context menus in Inventory to
  * know which context menu they are being rendered within. They should be
