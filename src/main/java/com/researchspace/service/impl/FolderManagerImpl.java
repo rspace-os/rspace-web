@@ -707,9 +707,11 @@ public class FolderManagerImpl implements FolderManager {
     String parentFolderName = isDestinationWorkspace ? subject.getUsername() : contentType;
 
     // we return or create default ApiInbox folder
-    Optional<Folder> targetFolderOpt = folderDao.getSafeNull(folderId);
-    if (folderId == null
-        || (targetFolderOpt.isPresent() && targetFolderOpt.get().isSharedFolder())) {
+    Optional<Folder> targetFolderOpt = Optional.empty();
+    if(folderId != null) {
+      targetFolderOpt = folderDao.getSafeNull(folderId);
+    }
+    if (targetFolderOpt.isEmpty() || targetFolderOpt.get().isSharedFolder()) {
       Optional<Folder> apiInboxOpt =
           folderDao.getApiFolderForContentType(parentFolderName, subject);
       Folder apiInbox;
