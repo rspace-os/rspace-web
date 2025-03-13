@@ -17,6 +17,7 @@ import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.Group;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Signature;
 import com.researchspace.model.SignatureInfo;
 import com.researchspace.model.User;
@@ -46,6 +47,7 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.FolderRecordPair;
 import com.researchspace.model.views.MessagedServiceOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
+import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.model.views.SigningResult;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DocumentAlreadyEditedException;
@@ -261,7 +263,7 @@ public class StructuredDocumentController extends BaseController {
               mf.getOriginalFilename(), (int) progress.getPercentComplete()));
     }
     progress.done();
-    return new AjaxReturnObject<List<RecordInformation>>(rc, el);
+    return new AjaxReturnObject<List<RecordInformation>>(rc, el); // TODO[nik]?
   }
 
   private Optional<ExternalFileImporter> getFileImporterForMultipartFile(MultipartFile mf) {
@@ -299,6 +301,7 @@ public class StructuredDocumentController extends BaseController {
 
     User user = getUserByUsername(principal.getName());
     StructuredDocument newRecord = null;
+    List<RecordGroupSharing> sharedWithGroup = null;
     try {
       newRecord = recordManager.createNewStructuredDocument(parentRecordId, formid, user, true);
       if (newRecord == null) {
@@ -307,13 +310,15 @@ public class StructuredDocumentController extends BaseController {
       Folder originalParentFolder = folderManager.getFolder(parentRecordId, user);
       if (originalParentFolder.isSharedFolder()) {
         // shareDocument into the current parentFolder
-        recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newRecord);
+        ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
+            recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, newRecord);
+        sharedWithGroup = sharingResult.getResults();
       }
     } catch (AuthorizationException ae) {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", parentRecordId));
     }
     publisher.publishEvent(createGenericEvent(user, newRecord, AuditAction.CREATE));
-    return redirectToDocumentEditorInEditMode(newRecord);
+    return redirectToDocumentEditorInEditMode(newRecord, sharedWithGroup);
   }
 
   @PostMapping("/createEntry/{notebookid}")
@@ -321,7 +326,7 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("notebookid") Long notebookId, Principal principal)
       throws RecordAccessDeniedException {
     StructuredDocument newEntry = createNamedEntry(notebookId, null, principal);
-    return redirectToDocumentEditorInEditMode(newEntry);
+    return redirectToDocumentEditorInEditMode(newEntry, null);
   }
 
   @PostMapping("/ajax/createEntry")
@@ -363,7 +368,7 @@ public class StructuredDocumentController extends BaseController {
       @RequestParam(value = "newname", required = false) String newname,
       Principal principal)
       throws RecordAccessDeniedException {
-
+    //TODO[nik]: change this
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;
     StructuredDocument rc = null;
@@ -386,15 +391,19 @@ public class StructuredDocumentController extends BaseController {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", null));
     }
     publisher.publishEvent(createGenericEvent(user, rc, AuditAction.CREATE));
-    return redirectToDocumentEditorInEditMode(rc);
+    return redirectToDocumentEditorInEditMode(rc, null); // TODO[nik]
   }
 
-  private String redirectToDocumentEditorInEditMode(StructuredDocument newRecord) {
+  private String redirectToDocumentEditorInEditMode(
+      StructuredDocument newRecord, List<RecordGroupSharing> sharedWithGroup) {
     String redirectUrl = "redirect:" + STRUCTURED_DOCUMENT_EDITOR_URL + "/" + newRecord.getId();
     if (newRecord.isNotebookEntry()) {
       redirectUrl += "?fromNotebook=" + newRecord.getParentNotebook().getId();
     } else {
       redirectUrl += "?editMode=true";
+    }
+    if (!(sharedWithGroup == null || sharedWithGroup.isEmpty())) {
+      redirectUrl += "&sharedWithGroup=" + sharedWithGroup.get(0).getSharee().getDisplayName();
     }
     return redirectUrl;
   }

@@ -708,7 +708,7 @@ public class FolderManagerImpl implements FolderManager {
 
     // we return or create default ApiInbox folder
     Optional<Folder> targetFolderOpt = Optional.empty();
-    if(folderId != null) {
+    if (folderId != null) {
       targetFolderOpt = folderDao.getSafeNull(folderId);
     }
     if (targetFolderOpt.isEmpty() || targetFolderOpt.get().isSharedFolder()) {
