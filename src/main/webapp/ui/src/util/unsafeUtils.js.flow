@@ -1,0 +1,11 @@
+//@flow
+
+// eslint-disable-next-line prettier/prettier
+declare export const pick: (...Array<string>) => ((any) => any);
+
+declare export const traverseObjectTree: (
+  obj: {},
+  prop: string,
+  defval: any,
+) => any;
+
