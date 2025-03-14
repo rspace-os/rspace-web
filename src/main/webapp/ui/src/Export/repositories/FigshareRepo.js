@@ -152,4 +152,9 @@ function FigshareRepo({
     </Grid>
   );
 }
+
+/**
+ * This components provides a form for the user to fill in the details of the
+ * deposit that will be made with Figshare.
+ */
 export default (FigshareRepo: ComponentType<FigshareArgs>);

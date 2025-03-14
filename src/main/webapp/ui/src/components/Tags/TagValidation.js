@@ -13,7 +13,7 @@
 import { lift2 } from "../../util/optional";
 import { type Tag } from "../../stores/definitions/Tag";
 
-/*
+/**
  * The max length of an individual tag. Chosen rather arbitrarily based on the
  * typically length of tags from the ontology file used for testing.
  */
@@ -44,7 +44,7 @@ opaque type TagValidation =
 
 const forbiddenCharacters = new Set("<>\\".split(""));
 
-/*
+/**
  * Given a Tag, which is to say a simple string, there are some validations
  * that can be performed on it alone.
  */
@@ -67,7 +67,7 @@ export const checkTagString = (tag: string): TagValidation => {
   return { reason: "NoIssues" };
 };
 
-/*
+/**
  * In addition to the restrictions above, a tag entered by the user also has
  * some additional checks
  */
@@ -85,16 +85,16 @@ export const checkUserInputString = (tag: string): TagValidation => {
   return checkTagString(tag);
 };
 
-/*
+type InternalTag = {|
+  ...Tag,
+  selected: boolean,
+|};
+/**
  * Internal to the components for rendering the means with which a user may
  * choose a tag, additional state is used to richly render these tags. This
  * additional state gives us additional information with which to validate
  * that a tag can be chosen.
  */
-type InternalTag = {|
-  ...Tag,
-  selected: boolean,
-|};
 export const checkInternalTag = (
   tag: InternalTag,
   { enforceOntologies }: { enforceOntologies: boolean }
@@ -126,6 +126,9 @@ export const checkInternalTag = (
  * =======================
  */
 
+/**
+ * For disabling a tab based on the validation of a tag.
+ */
 export const isAllowed = (tagValidation: TagValidation): boolean => {
   return (
     tagValidation.reason === "NoIssues" ||
@@ -133,6 +136,9 @@ export const isAllowed = (tagValidation: TagValidation): boolean => {
   );
 };
 
+/**
+ * For explaining why a tag is not allowed.
+ */
 export const helpText = (tagValidation: TagValidation): ?string => {
   if (tagValidation.reason === "NoIssues") return null;
   if (tagValidation.reason === "OntologiesAreEnforced")
@@ -155,9 +161,4 @@ export const helpText = (tagValidation: TagValidation): ?string => {
     if (tagValidation.detail === "Consecutive")
       return "Tags cannot contain consecutive whitespace characters.";
   }
-};
-
-export const filterFieldError = (tagValidation: TagValidation): ?string => {
-  if (tagValidation.reason === "NoIssues") return null;
-  return helpText(tagValidation);
 };

@@ -12,7 +12,7 @@ import { makeStyles } from "tss-react/mui";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import { preventEventBubbling } from "../../util/Util";
 import useViewportDimensions from "../../util/useViewportDimensions";
-import AlertContext, { mkAlert, type Alert } from "../../stores/contexts/Alert";
+import AlertContext, { type Alert } from "../../stores/contexts/Alert";
 import { runInAction } from "mobx";
 import { DialogBoundary } from "../DialogBoundary";
 
@@ -57,6 +57,9 @@ function Alerts({ children }: AlertsArgs): Node {
         });
       },
     }),
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - alerts will not change as it is a local observable
+     */
     []
   );
 
@@ -78,4 +81,8 @@ function Alerts({ children }: AlertsArgs): Node {
   );
 }
 
+/**
+ * This component maintains the state of the current alerts and displays them
+ * in the top-right corner of the viewport.
+ */
 export default (observer(Alerts): ComponentType<AlertsArgs>);
