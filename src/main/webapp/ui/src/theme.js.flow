@@ -1,0 +1,132 @@
+//@flow strict
+
+import { grey } from "@mui/material/colors";
+
+export type RecordPalette = {|
+  bg: string,
+  fg: string,
+  lighter: string,
+|};
+
+type Color = {
+  main: string,
+  light?: string,
+  contrastText?: string,
+  saturated?: string,
+  ...
+};
+
+declare export const COLORS: {
+  primary: {|
+    hue: number,
+    saturation: number,
+    lightness: number
+  |},
+  ...
+};
+
+export type Theme = {|
+  palette: {
+    primary: {
+      ...Color,
+      placeholderText: string,
+      ...
+    },
+    secondary: {
+      ...Color,
+      ...
+    },
+    tertiary: {
+      ...Color,
+      ...
+    },
+    background: Color,
+    hover: {|
+      tableRow: string,
+      iconButton: string,
+    |},
+    record: {|
+      container: RecordPalette,
+      sample: RecordPalette,
+      subSample: RecordPalette,
+      sampleTemplate: RecordPalette,
+      document: RecordPalette,
+      mixed: RecordPalette,
+      attachment: {|
+        fg: string,
+      |},
+      gallery: {|
+        fg: string,
+      |},
+    |},
+    standardIcon: Color,
+    sidebar: {|
+      selected: {|
+        bg: string,
+        badge: string,
+      |},
+    |},
+    lightestGrey: string,
+    menuIconGrey: string,
+    faIconGrey: string,
+    modifiedHighlight: string,
+    warningRed: string,
+    deletedGrey: string,
+
+    ...typeof grey,
+    ...
+  },
+  breakpoints: {|
+    values: {|
+      xs: number,
+      sm: number,
+      md: number,
+      lg: number,
+      xl: number,
+    |},
+    up: ("sm") => string,
+  |},
+  borders: {|
+    table: string,
+    descriptionList: string,
+    menu: string,
+    section: string,
+    menuButton: string,
+    card: string,
+    themedDialog: (number, number, number) => string,
+  |},
+  transitions: {|
+    iconTransformations: string,
+    filterToggle: string,
+    create: (
+      string | Array<string>,
+      ?{|
+        easing?: string,
+        duration?: string | number,
+        delay?: string | number,
+      |}
+    ) => string,
+    easing: {|
+      sharp: string,
+    |},
+    duration: {|
+      enteringScreen: string,
+      leavingScreen: string,
+    |},
+  |},
+  typography: {|
+    hnumber: {|
+      fontSize: string,
+    |},
+  |},
+  components: { ... },
+  spacing: (...Array<number>) => number,
+|};
+
+declare export default Theme;
+
+declare export const globalStyles: () => {|
+  classes: {|
+    greyOut: string,
+  |},
+|}

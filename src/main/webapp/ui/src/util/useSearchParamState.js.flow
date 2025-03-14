@@ -1,0 +1,5 @@
+//@flow
+
+declare export function useSearchParamState<
+  T: { [key: string]: string | Array<string>, ... }
+>(fallback: T): [T, (T) => void];

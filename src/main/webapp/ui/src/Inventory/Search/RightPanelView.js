@@ -34,7 +34,7 @@ const border = (
   const color =
     recordType && recordType !== "mixed"
       ? theme.palette.record[recordType].bg
-      : theme.palette.background.main;
+      : theme.palette.background.default;
   return `${width}px solid ${color}`;
 };
 
