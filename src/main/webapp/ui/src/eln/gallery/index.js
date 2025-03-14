@@ -23,7 +23,7 @@ import {
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
 import useViewportDimensions from "../../util/useViewportDimensions";
-import Alerts from "../../Inventory/components/Alerts";
+import Alerts from "../../components/Alerts/Alerts";
 import { DisableDragAndDropByDefault } from "../../components/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection, useGallerySelection } from "./useGallerySelection";
