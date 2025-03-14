@@ -16,7 +16,7 @@ import FormatSpecificOptions from "./FormatSpecificOptions";
 import ExportRepo from "./ExportRepo";
 import ExportFileStore from "./ExportFileStore";
 import LoadingFade from "../components/LoadingFade";
-import Confirm from "../components/ConfirmContextDialog";
+import Confirm from "../components/ConfirmProvider";
 import { runInAction, action, observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import {

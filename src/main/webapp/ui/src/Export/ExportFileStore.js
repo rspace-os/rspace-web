@@ -14,7 +14,7 @@ import FileFilters from "./fileStoreComponents/FileFilters";
 import LinkAvailabilityScan from "./fileStoreComponents/LinkAvailabilityScan";
 import { type UseState } from "../util/types";
 import { type Validator } from "../util/Validator";
-import useConfirm from "../util/useConfirm";
+import { useConfirm } from "../components/ConfirmProvider";
 import { Optional } from "../util/optional";
 import { runInAction, observable } from "mobx";
 import { type ExportSelection } from "./ExportDialog";
