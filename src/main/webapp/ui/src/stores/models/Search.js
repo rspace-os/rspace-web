@@ -6,6 +6,7 @@ import {
   doNotAwait,
   omitNull,
   sameKeysAndValues,
+  mapObject,
 } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import {
@@ -21,7 +22,10 @@ import {
   type GlobalId,
   getSavedGlobalId,
 } from "../definitions/BaseRecord";
-import { type InventoryRecord } from "../definitions/InventoryRecord";
+import {
+  type InventoryRecord,
+  type ApiRecordType,
+} from "../definitions/InventoryRecord";
 import { type AdjustableTableRowLabel } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
 import { mkAlert } from "../contexts/Alert";
@@ -349,7 +353,8 @@ export default class Search implements SearchInterface {
     return this.editLoading === "batch" && !this.batchEditingRecords;
   }
 
-  get batchEditingRecordsByType(): | null
+  get batchEditingRecordsByType():
+    | null
     | {| type: "container", records: RsSet<ContainerModel> |}
     | {| type: "sample", records: RsSet<SampleModel> |}
     | {| type: "subSample", records: RsSet<SubSampleModel> |}
@@ -1117,7 +1122,7 @@ export default class Search implements SearchInterface {
     records: Array<InventoryRecord>
   ): Promise<void> {
     this.setProcessingContextActions(true);
-    const { uiStore } = getRootStore();
+    const { uiStore, trackingStore } = getRootStore();
     try {
       const {
         exportMode,
@@ -1168,6 +1173,16 @@ export default class Search implements SearchInterface {
       link.setAttribute("rel", downloadLink.rel);
       link.setAttribute("download", fileName);
       link.click(); // trigger download
+      trackingStore.trackEvent("user:export:selection:Inventory", {
+        ...exportOptions,
+        count: {
+          ...mapObject(
+            (_type: ApiRecordType, list) => list.length,
+            ArrayUtils.groupBy(({ type }) => type, records)
+          ),
+          total: records.length,
+        },
+      });
     } catch (error) {
       uiStore.addAlert(
         mkAlert({

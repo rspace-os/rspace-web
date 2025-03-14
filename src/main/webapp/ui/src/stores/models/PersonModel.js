@@ -114,7 +114,7 @@ export default class PersonModel implements Person {
     username: Username
   ): Promise<void> {
     this.setProcessingUserActions(true);
-    const { uiStore } = getRootStore();
+    const { uiStore, trackingStore } = getRootStore();
     try {
       const { exportMode, includeContainerContent, resultFileType } =
         exportOptions;
@@ -151,6 +151,7 @@ export default class PersonModel implements Person {
       link.setAttribute("rel", downloadLink.rel);
       link.setAttribute("download", fileName);
       link.click(); // trigger download
+      trackingStore.trackEvent("user:export:allTheirItems:Inventory", exportOptions);
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
