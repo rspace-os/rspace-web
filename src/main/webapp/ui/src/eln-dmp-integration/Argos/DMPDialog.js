@@ -569,7 +569,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   disableColumnMenu: true,
                   sortable: false,
                 },
-                DataGridColumn.newColumnWithFieldName<PlanSummary, _>("label", {
+                DataGridColumn.newColumnWithFieldName<_, PlanSummary>("label", {
                   headerName: "Label",
                   flex: 1,
                   sortable: false,
@@ -584,7 +584,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithValueMapper<PlanSummary, _>(
+                DataGridColumn.newColumnWithValueMapper<_, PlanSummary>(
                   "createdAt",
                   (createdAt) => new Date(createdAt).toLocaleString(),
                   {
@@ -593,7 +593,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                     sortable: false,
                   }
                 ),
-                DataGridColumn.newColumnWithValueMapper<PlanSummary, _>(
+                DataGridColumn.newColumnWithValueMapper<_, PlanSummary>(
                   "modifiedAt",
                   (modifiedAt) => new Date(modifiedAt).toLocaleString(),
                   {

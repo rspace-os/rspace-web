@@ -1531,19 +1531,19 @@ export const UsersPage = (): Node => {
         disableExport: true,
       }
     ),
-    DataGridColumn.newColumnWithFieldName<User, _>("firstName", {
+    DataGridColumn.newColumnWithFieldName<_, User>("firstName", {
       headerName: "First Name",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithFieldName<User, _>("lastName", {
+    DataGridColumn.newColumnWithFieldName<_, User>("lastName", {
       headerName: "Last Name",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithFieldName<User, _>("email", {
+    DataGridColumn.newColumnWithFieldName<_, User>("email", {
       headerName: "Email",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueMapper<User, _>(
+    DataGridColumn.newColumnWithValueMapper<_, User>(
       "role",
       (role) => {
         const roles = role.split(",");
@@ -1560,11 +1560,11 @@ export const UsersPage = (): Node => {
         flex: 1,
       }
     ),
-    DataGridColumn.newColumnWithFieldName<User, _>("username", {
+    DataGridColumn.newColumnWithFieldName<_, User>("username", {
       headerName: "Username",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueMapper<User, _>(
+    DataGridColumn.newColumnWithValueMapper<_, User>(
       "recordCount",
       (recordCount) => `${recordCount}`,
       {
@@ -1572,24 +1572,24 @@ export const UsersPage = (): Node => {
         flex: 1,
       }
     ),
-    DataGridColumn.newColumnWithFieldName<User, _>("fileUsage", {
+    DataGridColumn.newColumnWithFieldName<_, User>("fileUsage", {
       headerName: "Usage",
       flex: 1,
       renderCell: (params: { value: number }) => formatFileSize(params.value),
     }),
-    DataGridColumn.newColumnWithFieldName<User, _>("lastLogin", {
+    DataGridColumn.newColumnWithFieldName<_, User>("lastLogin", {
       headerName: "Last Login",
       flex: 1,
       valueFormatter: (value: Optional<Date>) =>
         value.map((l) => l.toLocaleString()).orElse("—"),
     }),
-    DataGridColumn.newColumnWithFieldName<User, _>("created", {
+    DataGridColumn.newColumnWithFieldName<_, User>("created", {
       headerName: "Creation Date",
       flex: 1,
       valueFormatter: (value: Optional<Date>) =>
         value.map((l) => l.toLocaleString()).orElse("—"),
     }),
-    DataGridColumn.newColumnWithFieldName<User, _>("enabled", {
+    DataGridColumn.newColumnWithFieldName<_, User>("enabled", {
       headerName: "Enabled",
       flex: 1,
       sortable: false,
@@ -1601,7 +1601,7 @@ export const UsersPage = (): Node => {
           <CrossIcon color="error" aria-label="Disabled" aria-hidden="false" />
         ),
     }),
-    DataGridColumn.newColumnWithFieldName<User, _>("locked", {
+    DataGridColumn.newColumnWithFieldName<_, User>("locked", {
       headerName: "Locked",
       flex: 1,
       sortable: false,
@@ -1613,7 +1613,7 @@ export const UsersPage = (): Node => {
           <>&mdash;</>
         ),
     }),
-    DataGridColumn.newColumnWithFieldName<User, _>("groups", {
+    DataGridColumn.newColumnWithFieldName<_, User>("groups", {
       headerName: "Group Membership",
       flex: 1,
       sortable: false,
@@ -1648,7 +1648,7 @@ export const UsersPage = (): Node => {
         );
       },
     }),
-    DataGridColumn.newColumnWithFieldName<User, _>("tags", {
+    DataGridColumn.newColumnWithFieldName<_, User>("tags", {
       headerName: "Tags",
       flex: 1,
       sortable: false,
@@ -1683,7 +1683,7 @@ export const UsersPage = (): Node => {
         );
       },
     }),
-    DataGridColumn.newColumnWithFieldName<User, _>("usernameAlias", {
+    DataGridColumn.newColumnWithFieldName<_, User>("usernameAlias", {
       headerName: "Username Alias",
       flex: 1,
       sortable: false,

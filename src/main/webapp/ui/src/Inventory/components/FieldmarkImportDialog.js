@@ -336,17 +336,17 @@ export default function FieldmarkImportDialog({
                     disableColumnMenu: true,
                     sortable: false,
                   },
-                  DataGridColumn.newColumnWithFieldName<Notebook, _>("name", {
+                  DataGridColumn.newColumnWithFieldName<_, Notebook>("name", {
                     headerName: "Name",
                     flex: 1,
                     sortable: false,
                   }),
-                  DataGridColumn.newColumnWithFieldName<Notebook, _>("status", {
+                  DataGridColumn.newColumnWithFieldName<_, Notebook>("status", {
                     headerName: "Status",
                     flex: 1,
                     sortable: false,
                   }),
-                  DataGridColumn.newColumnWithValueGetter<Notebook, _>(
+                  DataGridColumn.newColumnWithValueGetter<_, Notebook>(
                     "isPublic",
                     (notebook) => notebook.metadata.ispublic,
                     {
@@ -355,7 +355,7 @@ export default function FieldmarkImportDialog({
                       sortable: false,
                     }
                   ),
-                  DataGridColumn.newColumnWithValueGetter<Notebook, _>(
+                  DataGridColumn.newColumnWithValueGetter<_, Notebook>(
                     "description",
                     (notebook) => notebook.metadata.pre_description,
                     {
@@ -364,7 +364,7 @@ export default function FieldmarkImportDialog({
                       sortable: false,
                     }
                   ),
-                  DataGridColumn.newColumnWithValueGetter<Notebook, _>(
+                  DataGridColumn.newColumnWithValueGetter<_, Notebook>(
                     "projectLead",
                     (notebook) => notebook.metadata.project_lead,
                     {
@@ -373,7 +373,7 @@ export default function FieldmarkImportDialog({
                       sortable: false,
                     }
                   ),
-                  DataGridColumn.newColumnWithValueGetter<Notebook, _>(
+                  DataGridColumn.newColumnWithValueGetter<_, Notebook>(
                     "id",
                     (notebook) => notebook.metadata.project_id,
                     {
