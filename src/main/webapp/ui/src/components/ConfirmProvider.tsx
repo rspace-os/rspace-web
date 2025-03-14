@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * A general-purpose confirmation dialog that wraps all child nodes in a
  * context through which they can invoke the dialog.
@@ -18,29 +16,24 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import {
-  default as React,
-  type Node,
-  type ComponentType,
-  useState,
-} from "react";
+import { default as React, useState } from "react";
 import { observer } from "mobx-react-lite";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
-type ConfirmState = {|
-  title: Node,
-  message: Node,
-  yesLabel?: string,
-  noLabel?: string,
-  yes: () => void,
-  no: () => void,
-  confirmationSpinner: boolean,
-|};
+type ConfirmState = {
+  title: React.ReactNode;
+  message: React.ReactNode;
+  yesLabel?: string;
+  noLabel?: string;
+  yes: () => void;
+  no: () => void;
+  confirmationSpinner: boolean;
+};
 
-type ConfirmContextType = {|
-  confirmState: ConfirmState | null,
-  setConfirmState: (ConfirmState | null) => void,
-|};
+type ConfirmContextType = {
+  confirmState: ConfirmState | null;
+  setConfirmState: React.Dispatch<React.SetStateAction<ConfirmState | null>>;
+};
 
 const DEFAULT_CONFIRM_CONTEXT: ConfirmContextType = {
   confirmState: null,
@@ -52,8 +45,8 @@ const ConfirmContext: React.Context<ConfirmContextType> = React.createContext(
 );
 
 type ConfirmFunction = (
-  title: Node,
-  message: Node,
+  title: React.ReactNode,
+  message: React.ReactNode,
   yesLabel?: string,
   noLabel?: string,
 
@@ -125,11 +118,11 @@ export function useConfirm(): ConfirmFunction {
   };
 }
 
-type ConfirmProviderArgs = {|
-  children: Node,
-|};
+type ConfirmProviderArgs = {
+  children: React.ReactNode;
+};
 
-function ConfirmProvider({ children }: ConfirmProviderArgs): Node {
+function ConfirmProvider({ children }: ConfirmProviderArgs): React.ReactNode {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
   return (
@@ -169,4 +162,4 @@ function ConfirmProvider({ children }: ConfirmProviderArgs): Node {
   );
 }
 
-export default (observer(ConfirmProvider): ComponentType<ConfirmProviderArgs>);
+export default observer(ConfirmProvider);
