@@ -1,5 +1,21 @@
-// @flow
-/*
+import { action, observable, computed, makeObservable } from "mobx";
+import RsSet from "./set";
+
+type TransitionMapping<T extends string> = { [state in T]: Set<T> };
+type TransitionCallbackReturn<T> = {
+  state: T;
+  data: unknown;
+};
+type TransitionCallback<T> = {
+  before: Set<T>;
+  after: Set<T>;
+  callback: (
+    oldState: TransitionCallbackReturn<T>,
+    newState: TransitionCallbackReturn<T>
+  ) => void;
+};
+
+/**
  * This class implements a simple finite state automata (state machine).
  *
  * An example of how to use:
@@ -24,31 +40,16 @@
  * SM.assertCurrentState("three"); // ERROR: Current state is not one of {"three"}.
  * SM.isCurrentState(new RsSet(["one", "two"])); // true
  */
-
-import { action, observable, computed, makeObservable } from "mobx";
-import RsSet from "./set";
-
-type TransitionMapping<T> = { [T]: Set<T> };
-type TransitionCallbackReturn<T> = {
-  state: T,
-  data: any,
-};
-type TransitionCallback<T> = {
-  before: Set<T>,
-  after: Set<T>,
-  callback: (TransitionCallbackReturn<T>, TransitionCallbackReturn<T>) => void,
-};
-
-export default class StateMachine<T> {
+export default class StateMachine<T extends string> {
   // Defintion of the state machine
   transitionMapping: TransitionMapping<T>;
 
   // Current state of the system
   currentState: T;
-  data: any; // Be sure to type check usages of this as Flow types are erased.
+  data: unknown; // Be sure to type check usages of this as TypeScript types are erased.
 
   // For logging, error messages, and debugging
-  showFn: (T) => string;
+  showFn: (currentState: T) => string;
   enableLogging: boolean;
 
   /*
@@ -61,8 +62,8 @@ export default class StateMachine<T> {
   constructor(
     transitionMapping: TransitionMapping<T>,
     initialState: T,
-    showFn: (T) => string,
-    initialData: ?any
+    showFn: (currentState: T) => string,
+    initialData: unknown
   ) {
     makeObservable(this, {
       currentState: observable,
@@ -85,7 +86,7 @@ export default class StateMachine<T> {
   }
 
   get states(): RsSet<T> {
-    return new RsSet(Object.keys(this.transitionMapping));
+    return new RsSet(Object.keys(this.transitionMapping) as Array<T>);
   }
 
   setOfStatesToString(states: Set<T>): string {
@@ -120,7 +121,11 @@ export default class StateMachine<T> {
     }
   }
 
-  transitionTo(state: T, dataFn: (any) => any = (x) => x): void {
+  transitionTo(
+    state: T,
+    dataFn: (oldData: unknown) => unknown = (x) => x
+  ): void {
+    // eslint-disable-next-line no-console
     if (this.enableLogging) console.log(this.currentState, "->", state);
     if (!this.transitionMapping[this.currentState].has(state)) {
       throw new Error(
@@ -136,7 +141,7 @@ export default class StateMachine<T> {
     this.data = dataFn(this.data);
     this.currentState = state;
 
-    for (let [, tc] of this.transitionCallbacks) {
+    for (const [, tc] of this.transitionCallbacks) {
       const {
         before: beforeSet,
         after: afterSet,
