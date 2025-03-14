@@ -1,14 +1,13 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";
 
 import { match } from "../../Util";
 
-const stringMatcher: (str: ?string) => ?number = match([
+const stringMatcher: (str?: string | null) => number | null = match([
   [(s) => s === "one", 1],
   [(s) => s === "two", 2],
   [(s) => s === "", 0],
@@ -28,15 +27,14 @@ describe("match util", () => {
 
   test("Has the same short-circuit behaviour as logical OR.", () => {
     fc.assert(
-      fc.property(fc.array<mixed>(fc.anything()), (list) => {
-        const matcher = match<void, mixed>([
-          ...list.map((x) => [() => Boolean(x), x]),
+      fc.property(fc.array<unknown>(fc.anything()), (list) => {
+        const matcher = match<void, unknown>([
+          ...list.map((x) => [() => Boolean(x), x] as [() => boolean, unknown]),
           [() => true, false],
         ]);
-        const or = (sublist: Array<mixed>): boolean => {
+        const or = (sublist: Array<unknown>): unknown => {
           if (sublist.length === 0) return false;
           const [head, ...tail] = sublist;
-          // $FlowExpectedError[incompatible-return] Flow doesn't like as relying on truthiness of || operator
           return head || or(tail);
         };
         expect(matcher()).toEqual(or(list));

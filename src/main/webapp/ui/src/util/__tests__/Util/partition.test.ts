@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import fc from "fast-check";
 import * as ArrayUtils from "../../ArrayUtils";
@@ -28,7 +27,7 @@ describe("partition", () => {
   test("The size of the two resulting arrays will always sum to the size of the input array.", () => {
     fc.assert(
       fc.property(
-        fc.func<mixed, boolean>(fc.boolean()),
+        fc.func<unknown[], boolean>(fc.boolean()),
         fc.array(fc.anything()),
         (predicate, list) => {
           const [yes, no] = ArrayUtils.partition(predicate, list);
@@ -41,7 +40,7 @@ describe("partition", () => {
   test("Partition distributes over concatenation.", () => {
     fc.assert(
       fc.property(
-        fc.func<mixed, boolean>(fc.boolean()),
+        fc.func<unknown[], boolean>(fc.boolean()),
         fc.array(fc.anything()),
         fc.array(fc.anything()),
         (predicate, listA, listB) => {
@@ -61,7 +60,7 @@ describe("partition", () => {
   test("Order is maintained.", () => {
     fc.assert(
       fc.property(
-        fc.func<mixed, boolean>(fc.boolean()),
+        fc.func<unknown[], boolean>(fc.boolean()),
         fc.array(fc.string()),
         (predicate, list) => {
           const sorted = list.sort();

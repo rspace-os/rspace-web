@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 import fc from "fast-check";
 import { isUrl } from "../../Util";

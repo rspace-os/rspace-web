@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";
@@ -13,7 +12,7 @@ describe("filterMap", () => {
       fc.property(
         fc.tuple(
           fc.array(fc.tuple(fc.anything(), fc.anything())),
-          fc.func<mixed, boolean>(fc.boolean())
+          fc.func<unknown[], boolean>(fc.boolean())
         ),
         ([mapContents, boolFunc]) => {
           const map = new Map(mapContents);

@@ -1,12 +1,13 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import fc from "fast-check";
 import * as ArrayUtils from "../../ArrayUtils";
 import { monoids } from "../helpers";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 describe("outerProduct", () => {
   test("When composed with .flat(), it has property of associativity over monoids.", () => {
@@ -14,28 +15,30 @@ describe("outerProduct", () => {
       fc.property(
         fc
           // reasonable max length is necessary to not cause memory usage issues
-          // $FlowExpectedError[incompatible-call] Might be a way of getting this to work, but not worth the effort
           .tuple(fc.nat(10), fc.oneof(...monoids))
           .chain(([length, [valueGenerator, booleanFunction]]) =>
-            // $FlowExpectedError[incompatible-call] Might be a way of getting this to work, but not worth the effort
             fc.tuple(
-              fc.array(valueGenerator(), {
+              fc.array(valueGenerator() as fc.Arbitrary<any>, {
                 minLength: length,
                 maxLength: length,
               }),
-              fc.array(valueGenerator(), {
+              fc.array(valueGenerator() as fc.Arbitrary<any>, {
                 minLength: length,
                 maxLength: length,
               }),
-              fc.array(valueGenerator(), {
+              fc.array(valueGenerator() as fc.Arbitrary<any>, {
                 minLength: length,
                 maxLength: length,
               }),
-              fc.constant(booleanFunction)
+              fc.constant(booleanFunction as (a: any, b: any) => any)
             )
           ),
-        // $FlowExpectedError[incompatible-use] Might be a way of getting this to work, but not worth the effort
-        ([as, bs, cs, booleanFunction]) => {
+        <T>([as, bs, cs, booleanFunction]: [
+          T[],
+          T[],
+          T[],
+          (a: T, b: T) => T
+        ]) => {
           expect(
             ArrayUtils.outerProduct(
               as,

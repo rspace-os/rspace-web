@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 
 import { mapObject } from "../../Util";
@@ -29,7 +28,7 @@ describe("mapObject", () => {
     fc.assert(
       fc.property(
         fc.tuple(
-          fc.func<mixed, mixed>(fc.anything()),
+          fc.func<unknown[], unknown>(fc.anything()),
           fc.dictionary(arbObjectKey, fc.anything())
         ),
         ([valueFunc, obj]) => {
@@ -45,8 +44,8 @@ describe("mapObject", () => {
     fc.assert(
       fc.property(
         fc.tuple(
-          fc.func<mixed, mixed>(fc.anything()),
-          fc.func<mixed, mixed>(fc.anything()),
+          fc.func<unknown[], unknown>(fc.anything()),
+          fc.func<unknown[], unknown>(fc.anything()),
           fc.dictionary(arbObjectKey, fc.anything())
         ),
         ([valueFunc1, valueFunc2, obj]) => {

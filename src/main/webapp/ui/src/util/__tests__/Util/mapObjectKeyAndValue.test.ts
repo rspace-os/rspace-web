@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 
 import { mapObjectKeyAndValue } from "../../Util";
@@ -36,7 +35,7 @@ describe("mapObjectKeyAndValue", () => {
     fc.assert(
       fc.property(
         fc.tuple(
-          fc.func<mixed, mixed>(fc.anything()),
+          fc.func<unknown[], unknown>(fc.anything()),
           fc.dictionary(arbObjectKey, fc.anything())
         ),
         ([valueFunc, obj]) => {
@@ -55,14 +54,15 @@ describe("mapObjectKeyAndValue", () => {
     fc.assert(
       fc.property(
         fc.tuple(
-          fc.func<mixed, mixed>(fc.anything()),
+          fc.func<unknown[], unknown>(fc.anything()),
           fc.dictionary(arbObjectKey, fc.anything())
         ),
         ([valueFunc, obj]) => {
           expect(
             Object.entries(
               mapObjectKeyAndValue(
-                () => keyGenerator.next().value,
+                // the -1 is just to satisfy TypeScript; incrementForever wont ever return a .value of null
+                () => `${keyGenerator.next().value ?? -1}`,
                 valueFunc,
                 obj
               )
