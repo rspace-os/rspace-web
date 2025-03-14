@@ -22,6 +22,7 @@ import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.service.impl.RecordEditorTracker;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -48,7 +49,8 @@ public class RecordApiManagerImpl implements RecordApiManager {
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired ApiFieldsHelper apiFieldsHelper;
   private @Autowired @Setter AuditTrailService auditTrailService;
-  @Autowired private DocumentTagManager documentTagManager;
+  private @Autowired DocumentTagManager documentTagManager;
+  private @Autowired SharingHandler recordShareHandler;
 
   @Override
   public Long createNewDocument(ApiDocument apiDocument, RSForm docForm, User user) {
@@ -59,6 +61,13 @@ public class RecordApiManagerImpl implements RecordApiManager {
         createNewDocumentInTargetLocation(
             user, docForm, apiDocument.getName(), targetFolder.getId());
 
+    if (apiDocument.getParentFolderId() != null) {
+      Folder originalTargetFolder = folderManager.getFolder(apiDocument.getParentFolderId(), user);
+      if (originalTargetFolder.isSharedFolder()) {
+        // shareDocument into the current parentFolder
+        recordShareHandler.shareIntoSharedFolder(user, originalTargetFolder, result.getId());
+      }
+    }
     try {
       saveApiDocumentChangesToStructuredDocument(apiDocument, user, result);
     } catch (DocumentAlreadyEditedException e) {

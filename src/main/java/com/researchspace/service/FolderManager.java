@@ -213,6 +213,8 @@ public interface FolderManager {
 
   Folder getGalleryRootFolderForUser(User user);
 
+  RSPath getShortestPathToSharedRootFolder(Long sharedSubfolderId, User user);
+
   /**
    * Given the ID of a group-shared folder(i.e., a folder where
    *

@@ -38,6 +38,14 @@ public interface GroupDao extends GenericDao<Group, Long> {
    */
   Group getByUniqueName(String uniqueName);
 
+  /**
+   * Gets group by folder id, or <code>null</code> if not found.
+   *
+   * @param folderId
+   * @return
+   */
+  public Group getByCommunalGroupFolderId(Long folderId);
+
   List<Group> getForOwner(User owner);
 
   /**

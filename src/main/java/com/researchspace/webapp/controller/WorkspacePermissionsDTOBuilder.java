@@ -39,7 +39,9 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
       Long previousFolderId,
       boolean isSearch) {
 
-    boolean createRecord = parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE);
+    boolean createRecord =
+        parentFolder.isSharedFolder()
+            || parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE);
     boolean createFolder =
         parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE_FOLDER);
 
