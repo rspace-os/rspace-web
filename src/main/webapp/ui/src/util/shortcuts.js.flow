@@ -1,0 +1,9 @@
+// @flow
+
+declare export const arraysEqual: <T: string | number>(Array<T>, Array<T>) => boolean;
+declare export const isMac: () => boolean;
+declare export const humanize: (combination: string) => string;
+declare export const rev_humanize: (combination: string) => string;
+declare export const isShortcutSingle: (combination: string) => boolean;
+declare export const isShiftwithsomeKey: (combination: string) => boolean;
+declare export const isShortcutForbidden: (combination: string, forbidden: Array<string>) => boolean;

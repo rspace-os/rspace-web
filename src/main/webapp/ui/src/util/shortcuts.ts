@@ -1,6 +1,4 @@
-// @flow
-
-export const arraysEqual = <T: string | number>(
+export const arraysEqual = <T extends string | number>(
   _arr1: Array<T>,
   _arr2: Array<T>
 ): boolean => {
@@ -11,10 +9,10 @@ export const arraysEqual = <T: string | number>(
   )
     return false;
 
-  var arr1 = _arr1.concat<T, T>().sort();
-  var arr2 = _arr2.concat<T, T>().sort();
+  const arr1 = _arr1.concat().sort();
+  const arr2 = _arr2.concat().sort();
 
-  for (var i = 0; i < arr1.length; i++) {
+  for (let i = 0; i < arr1.length; i++) {
     if (arr1[i] !== arr2[i]) return false;
   }
   return true;
@@ -50,7 +48,7 @@ export const rev_humanize = (combination: string): string => {
 
 export const isShortcutSingle = (combination: string): boolean => {
   const combKeys = combination.split(" ");
-  var keys = [
+  const keys = [
     String.fromCharCode(17),
     String.fromCharCode(16),
     String.fromCharCode(18),
@@ -62,8 +60,7 @@ export const isShortcutSingle = (combination: string): boolean => {
 
 export const isShiftwithsomeKey = (combination: string): boolean => {
   const keys = combination.split(" ");
-  let flag = keys.length === 2 && keys[0] === "Shift";
-  return flag;
+  return keys.length === 2 && keys[0] === "Shift";
 };
 
 export const isShortcutForbidden = (
@@ -73,7 +70,7 @@ export const isShortcutForbidden = (
   const keys = combination.split(" ");
   let isForbidden = false;
 
-  forbidden.forEach(function (command) {
+  forbidden.forEach((command) => {
     const commandKeys = command.split("+");
     if (arraysEqual(commandKeys, keys)) {
       isForbidden = true;
