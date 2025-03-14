@@ -710,6 +710,10 @@ public class FolderManagerImpl implements FolderManager {
     Optional<Folder> targetFolderOpt = Optional.empty();
     if (folderId != null) {
       targetFolderOpt = folderDao.getSafeNull(folderId);
+      // folder id was not existing
+      if (targetFolderOpt.isEmpty()) {
+        throw new AuthorizationException(unauthorisedMsg(subject));
+      }
     }
     if (targetFolderOpt.isEmpty() || targetFolderOpt.get().isSharedFolder()) {
       Optional<Folder> apiInboxOpt =
@@ -734,10 +738,6 @@ public class FolderManagerImpl implements FolderManager {
       return apiInbox;
     }
 
-    // return requested folder
-    if (targetFolderOpt.isEmpty()) {
-      throw new AuthorizationException(unauthorisedMsg(subject));
-    }
     Folder targetFolder = targetFolderOpt.get();
     assertUserHasReadPermission(subject, targetFolder);
     Validate.isTrue(!targetFolder.isSharedFolder(), "Can't add API content into a shared folder");
