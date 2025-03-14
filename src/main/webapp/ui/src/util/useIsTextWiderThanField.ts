@@ -1,9 +1,7 @@
-//@flow
-
-import { useRef, useState, useLayoutEffect, type Ref } from "react";
+import { useRef, useState, useLayoutEffect } from "react";
 import { Optional } from "./optional";
 
-/*
+/**
  * This custom hook is for detecting when the text within an input field is
  * longer than the field is wide. This works equally well with MUI TextFields,
  * InputBase, and other similar components.
@@ -16,12 +14,12 @@ import { Optional } from "./optional";
  * `inputRef.current` is null, otherwise it will contain a boolean value that
  * can be used wherever needed.
  */
-export default function useIsTextWiderThanField(): {|
-  inputRef: ?Ref<"input">,
-  textTooWide: Optional<boolean>,
-|} {
+export default function useIsTextWiderThanField(): {
+  inputRef: React.MutableRefObject<HTMLInputElement | undefined>;
+  textTooWide: Optional<boolean>;
+} {
   const [width, setWidth] = useState(0);
-  const ref = useRef<?HTMLInputElement>();
+  const ref = useRef<HTMLInputElement>();
 
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
@@ -33,9 +31,10 @@ export default function useIsTextWiderThanField(): {|
     const inputElement = ref.current;
     if (!inputElement) return;
 
-    resizeObserver.current.observe(inputElement);
+    const x = resizeObserver.current;
+    x.observe(inputElement);
     return () => {
-      resizeObserver.current.disconnect();
+      x.disconnect();
     };
   }, [ref]);
 
@@ -50,10 +49,12 @@ export default function useIsTextWiderThanField(): {|
     return `${fontWeight} ${fontSize} ${fontFamily}`;
   }
 
-  function getTextWidth(text: string) {
+  function getTextWidth(inputElement: HTMLInputElement) {
+    const text = inputElement.value;
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    context.font = Optional.fromNullable(ref.current)
+    if (!context) throw new Error("Canvas context is not available");
+    context.font = Optional.fromNullable(inputElement)
       .map(getCanvasFont)
       .orElse("");
     const metrics = context.measureText(text);
@@ -62,7 +63,7 @@ export default function useIsTextWiderThanField(): {|
 
   return {
     textTooWide: Optional.fromNullable(ref.current).map(
-      (inputElement) => getTextWidth(inputElement.value) > width
+      (inputElement) => getTextWidth(inputElement) > width
     ),
     inputRef: ref,
   };

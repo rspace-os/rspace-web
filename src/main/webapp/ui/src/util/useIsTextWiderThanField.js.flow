@@ -1,0 +1,9 @@
+//@flow
+
+import { type Ref } from "react";
+import { Optional } from "./optional";
+
+declare export default function useIsTextWiderThanField(): {|
+  inputRef: ?Ref<"input">,
+  textTooWide: Optional<boolean>,
+|};
