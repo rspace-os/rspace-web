@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 
 import fc, { type Arbitrary } from "fast-check";
@@ -25,7 +24,7 @@ export const arrayOfSameElements = <T>(
  * Performs the combination of asserting that the value is not null for jest,
  * and performing type refinement for flow.
  */
-export const assertNotNull = <T>(x: ?T): T => {
+export const assertNotNull = <T>(x: T | null | undefined): T => {
   // first we assert that x is not null for the purposes of the jest test
   expect(x).not.toBeNull();
 
@@ -59,7 +58,7 @@ export const assertNotNull = <T>(x: ?T): T => {
  * a binary function for combining two such values, and an identity value.
  */
 export type ArbitraryMonoid<T> = Arbitrary<
-  [() => Arbitrary<T>, (T, T) => T, T]
+  [() => Arbitrary<T>, (t1: T, t2: T) => T, T]
 >;
 
 const addition: ArbitraryMonoid<number> = fc.tuple(

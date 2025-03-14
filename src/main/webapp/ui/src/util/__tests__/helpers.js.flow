@@ -1,0 +1,13 @@
+//@flow
+
+import { type Arbitrary } from "fast-check";
+
+declare export const arrayOfSameElements: <T>(Array<T>, Array<T>) => boolean;
+declare export const assertNotNull: <T>(x: ?T) => T;
+
+export type ArbitraryMonoid<T> = Arbitrary<
+  [() => Arbitrary<T>, (T, T) => T, T]
+>;
+declare export const monoids: Array<
+  ArbitraryMonoid<number> | ArbitraryMonoid<boolean> | ArbitraryMonoid<string>
+>;
