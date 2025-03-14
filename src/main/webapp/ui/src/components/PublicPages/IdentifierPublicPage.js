@@ -54,7 +54,7 @@ import TableRow from "@mui/material/TableRow";
 import NoValue from "../NoValue";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import IdentifierModel from "../../stores/models/IdentifierModel";
-import { truncateIsoTimestamp } from "../../util/conversions";
+import { truncateIsoTimestamp } from "../../stores/definitions/Units";
 
 const useStyles = makeStyles()((theme) => ({
   styledDescriptionList: {

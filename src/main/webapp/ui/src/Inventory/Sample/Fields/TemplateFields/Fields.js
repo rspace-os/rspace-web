@@ -8,7 +8,7 @@ import FormField from "../../../components/Inputs/FormField";
 import AttachmentField from "../../../../components/Inputs/AttachmentField";
 import ChoiceField from "../../../../components/Inputs/ChoiceField";
 import DateField from "../../../../components/Inputs/DateField";
-import { truncateIsoTimestamp } from "../../../../util/conversions";
+import { truncateIsoTimestamp } from "../../../../stores/definitions/Units";
 import NumberField from "../../../../components/Inputs/NumberField";
 import RadioField from "../../../../components/Inputs/RadioField";
 import ReferenceField from "../../../../components/Inputs/ReferenceField";

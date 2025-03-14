@@ -6,12 +6,14 @@
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { CELSIUS } from "../../../../../stores/definitions/Units";
+import {
+  CELSIUS,
+  type Temperature,
+} from "../../../../../stores/definitions/Units";
 import StorageTemperature from "../../StorageTemperature";
 import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
-import { type Temperature } from "../../../../../stores/definitions/Sample";
 
 jest.mock("@mui/material/Button", () => jest.fn(() => <></>));
 

@@ -59,12 +59,10 @@ import { type Template } from "../definitions/Template";
 import { type Attachment } from "../definitions/Attachment";
 import {
   type Sample,
-  type Temperature,
   type Alias,
   type SampleSource,
 } from "../definitions/Sample";
-import { CELSIUS } from "../definitions/Units";
-import { validateTemperature } from "../../util/conversions";
+import { CELSIUS, type Temperature, validateTemperature } from "../definitions/Units";
 import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
 import React, { type Node } from "react";
 import { type BarcodeAttrs } from "../definitions/Barcode";
