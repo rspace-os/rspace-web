@@ -65,8 +65,8 @@ export default function IgsnManagementPage(): Node {
       <Header sidebarId={sidebarId} />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <Sidebar id={sidebarId} />
-        <Main>
-          <Stack spacing={2} sx={{ mt: 2, mr: 1 }}>
+        <Main sx={{ overflowY: "auto" }}>
+          <Stack spacing={2} sx={{ my: 2, mr: 1 }}>
             <TitledBox title="IGSNs" border>
               <Typography>
                 The RSpace IGSN ID integration enables researchers to create,

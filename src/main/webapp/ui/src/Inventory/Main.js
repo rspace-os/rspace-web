@@ -3,6 +3,7 @@
 import { makeStyles } from "tss-react/mui";
 import React, { type Node } from "react";
 import clsx from "clsx";
+import styled from "@mui/system/styled";
 
 const useStyles = makeStyles()((theme) => ({
   main: {
@@ -17,10 +18,13 @@ const useStyles = makeStyles()((theme) => ({
 
 type MainArgs = {|
   children: Node,
+  sx?: { ... },
 |};
 
-export default function Main({ children }: MainArgs): Node {
+const StyledMain = styled('main')``;
+
+export default function Main({ children, sx }: MainArgs): Node {
   const { classes } = useStyles();
 
-  return <main className={clsx(classes.main)}>{children}</main>;
+  return <StyledMain className={clsx(classes.main)} sx={sx}>{children}</StyledMain>;
 }
