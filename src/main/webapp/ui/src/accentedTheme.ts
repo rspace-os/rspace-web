@@ -30,7 +30,10 @@ import { inputLabelClasses } from "@mui/material/InputLabel";
 import { inputAdornmentClasses } from "@mui/material/InputAdornment";
 import { linkClasses } from "@mui/material/Link";
 
-type Hsl = {
+/**
+ * Represents an HSL color.
+ */
+export type Hsl = {
   hue: number;
   saturation: number;
   lightness: number;

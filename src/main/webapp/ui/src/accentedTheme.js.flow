@@ -1,6 +1,6 @@
 //@flow strict
 
-type Hsl = {|
+export type Hsl = {|
   hue: number,
   saturation: number,
   lightness: number,
