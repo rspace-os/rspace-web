@@ -23,7 +23,6 @@ import {
   checkUserInputString,
   checkInternalTag,
   helpText,
-  filterFieldError,
   isAllowed,
 } from "./TagValidation";
 import Alert from "@mui/material/Alert";
@@ -872,7 +871,7 @@ export default function TagsCombobox<
               setKeyboardFocusIndex(null);
             }}
             error={!isAllowed(checkUserInputString(filter))}
-            helperText={filterFieldError(checkUserInputString(filter))}
+            helperText={helpText(checkUserInputString(filter))}
             tabIndex={0}
             fullWidth
             value={filter}

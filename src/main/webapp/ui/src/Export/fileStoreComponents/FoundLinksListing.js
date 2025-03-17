@@ -12,7 +12,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { type FileSystem, type FileLink } from "../ExportFileStore";
+import { type FileSystem } from "../ExportFileStore";
 
 type FoundLinksListingArgs = {|
   // The total number of files found across all of the filestores
@@ -22,7 +22,7 @@ type FoundLinksListingArgs = {|
   fileSystems: Array<FileSystem>,
 |};
 
-/*
+/**
  * This component displays a card that shows some summary information
  * about the links to files in filestores that have been found as
  * well as a dialog that the user can open that displays more

@@ -37,8 +37,6 @@ import ValidatingSubmitButton, {
   IsInvalid,
   IsValid,
 } from "../../components/ValidatingSubmitButton";
-import { AccessibilityTipsIconButton } from "../../components/AccessibilityTips";
-import Box from "@mui/material/Box";
 import docLinks from "../../assets/DocLinks";
 import Link from "@mui/material/Link";
 import createAccentedTheme from "../../accentedTheme";
@@ -244,14 +242,16 @@ const SearchControls = ({
 }: SearchControlsArgs) => {
   const { addAlert } = useContext(AlertContext);
   const [searchParameters, setSearchParameters]: UseState<
-    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>> = useState({
+    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>
+  > = useState({
     like: null,
     grantsLike: null,
     fundersLike: null,
     collaboratorsLike: null,
   });
   const [appliedSearchParameters, setAppliedSearchParameters]: UseState<
-    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>> = useState({
+    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>
+  > = useState({
     like: null,
     grantsLike: null,
     fundersLike: null,
@@ -260,7 +260,8 @@ const SearchControls = ({
   const modifySearchParameters = (
     newSearchParameters: $Diff<
       SearchParameters,
-      { page: mixed, pageSize: mixed }>
+      { page: mixed, pageSize: mixed }
+    >
   ) => {
     setSearchParameters(newSearchParameters);
     setPage(0);
@@ -269,7 +270,8 @@ const SearchControls = ({
   const getDMPs = async (
     newSearchParameters: $Diff<
       SearchParameters,
-      { page: mixed, pageSize: mixed }>
+      { page: mixed, pageSize: mixed }
+    >
   ) => {
     setFetching(true);
     setDMPs([]);

@@ -19,7 +19,7 @@ type FoundLinksListingArgs = {|
   setExcludedFileExtensions: (string) => void,
 |};
 
-/*
+/**
  * This component allows the user to filter the files from the filestore that
  * will be included in the export, either based on their size or their
  * extension.

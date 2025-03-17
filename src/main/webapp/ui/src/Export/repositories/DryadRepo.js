@@ -8,6 +8,9 @@ import MenuItem from "@mui/material/MenuItem";
 import Users from "../ExportRepoUser";
 import { type Person, type Repo, type StandardValidations } from "./common";
 
+/**
+ * Boolean flags for the valid state of the Dryad metadata fields.
+ */
 export type DryadValidations = {|
   ...StandardValidations,
   crossrefFunder: boolean,
@@ -141,4 +144,8 @@ function DryadRepo({
   );
 }
 
+/**
+ * This components provides a form for the user to fill in the details of the
+ * deposit that will be made with Dryad.
+ */
 export default (DryadRepo: ComponentType<DryadRepoArgs>);

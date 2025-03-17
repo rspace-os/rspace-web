@@ -107,6 +107,9 @@ function SubmitSpinnerButton({
   );
 }
 
+/**
+ * This is a submit button that shows a spinner when loading.
+ */
 export default (observer(
   SubmitSpinnerButton
 ): ComponentType<SubmitSpinnerButtonArgs>);

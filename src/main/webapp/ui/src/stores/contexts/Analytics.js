@@ -39,4 +39,11 @@ const AnalyticsContext: Context<AnalyticsContextType> = createContext(
   DEFAULT_ANALYTICS_CONTEXT
 );
 
+/**
+ * The context that provides the ability to track events with the analytics
+ * service. This allows any part of the UI to quickly fire off an analytics
+ * events without having to be concerned about where those events are sent and
+ * how they are collated. This allows for sections of the UI to enrich the
+ * events with additional metadata before they are sent.
+ */
 export default AnalyticsContext;
