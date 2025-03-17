@@ -1,0 +1,53 @@
+//@flow strict
+
+type Hsl = {|
+  hue: number,
+  saturation: number,
+  lightness: number,
+  opacity?: number,
+|};
+
+export type AccentColor = {|
+  /**
+   * This the main accent colour from which various variants are derived.
+   * The lightness MUST not be less than 5.
+   * DO NOT specify an opacity.
+   */
+  main: Hsl,
+
+  /**
+   * A darker variant used for link text, icons, etc.
+   * DO NOT specify an opacity.
+   */
+  darker: Hsl,
+
+  /**
+   * Used where text appears atop a background of the main color, and thus MUST
+   * have a contrast ratio of at least 4.5:1. If the accent if particularly
+   * dark then an almost-white is recommended, otherwise an almost-black.
+   * DO NOT specify an opacity.
+   */
+  contrastText: Hsl,
+
+  /**
+   * Used when the background of an element should have the accent, such as app
+   * bars and filled buttons. The almost-white background of panels and dialogs
+   * is also derived from this colour.
+   *
+   * Satuation SHOULD be around 30 and MUST be greater than 10.
+   * Lightness SHOULD be around 80 and MUST be greater than 20.
+   */
+  background: Hsl,
+
+  /**
+   * The colour of general text. This SHOULD be pretty close to black.
+   *
+   * Saturation SHOULD be around 20.
+   * Lightness SHOULD be around 30.
+   */
+  backgroundContrastText: Hsl,
+|};
+
+declare export default function createAccentedTheme(accent: AccentColor): {
+  ...
+};
