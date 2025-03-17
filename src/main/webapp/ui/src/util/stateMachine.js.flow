@@ -1,0 +1,39 @@
+// @flow
+
+import RsSet from "./set";
+
+type TransitionMapping<T> = { [T]: Set<T> };
+type TransitionCallbackReturn<T> = {
+  state: T,
+  data: any,
+};
+type TransitionCallback<T> = {
+  before: Set<T>,
+  after: Set<T>,
+  callback: (TransitionCallbackReturn<T>, TransitionCallbackReturn<T>) => void,
+};
+
+declare export default class StateMachine<T> {
+  transitionMapping: TransitionMapping<T>;
+  currentState: T;
+  data: any; // Be sure to type check usages of this as Flow types are erased.
+  showFn: (T) => string;
+  enableLogging: boolean;
+  transitionCallbacks: Map<number, TransitionCallback<T>>;
+  transitionCallbacksNextId: number;
+
+  constructor(
+    transitionMapping: TransitionMapping<T>,
+    initialState: T,
+    showFn: (T) => string,
+    initialData: ?any
+  ): StateMachine<T>;
+
+  get states(): RsSet<T>;
+  setOfStatesToString(states: Set<T>): string;
+  isCurrentState(states: RsSet<T> | T): boolean;
+  assertCurrentState(states: RsSet<T> | T): void;
+  transitionTo(state: T, dataFn?: (any) => any): void;
+  addTransitionCallback(callback: TransitionCallback<T>): number;
+  removeTransitionCallback(id: number): void;
+}

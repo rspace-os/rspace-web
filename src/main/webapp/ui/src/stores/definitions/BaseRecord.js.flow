@@ -1,0 +1,29 @@
+// @flow strict
+
+export type Id = ?number;
+export type GlobalId = string;
+export type GlobalIdPrefix =
+  | "SA"
+  | "SS"
+  | "IC"
+  | "IT"
+  | "BE"
+  | "BA"
+  | "IF"
+  | "SF"
+  | "SD"
+  | "GP";
+declare export const globalIdPatterns: { [string]: RegExp };
+
+export interface BaseRecord {
+  id: Id;
+  name: string;
+  globalId: ?GlobalId;
+}
+
+declare export function getSavedGlobalId(BaseRecord): GlobalId;
+
+export interface RecordIconData {
+  +iconName: string;
+  +recordTypeLabel: string;
+}

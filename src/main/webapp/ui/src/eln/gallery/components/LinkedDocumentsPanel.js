@@ -51,13 +51,13 @@ export const LinkedDocumentsPanel: ComponentType<{| file: GalleryFile |}> = ({
       </Typography>
       <DataGrid
         columns={[
-          DataGridColumn.newColumnWithFieldName<Document, _>("name", {
+          DataGridColumn.newColumnWithFieldName<_, Document>("name", {
             headerName: "Name",
             flex: 1,
             sortable: false,
             resizable: true,
           }),
-          DataGridColumn.newColumnWithFieldName<Document, _>("globalId", {
+          DataGridColumn.newColumnWithFieldName<_, Document>("globalId", {
             headerName: "Global ID",
             flex: 0,
             resizable: true,

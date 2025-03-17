@@ -1,0 +1,8 @@
+//@flow strict
+
+import Result from "./result";
+
+declare export function getHeader(
+  response: { headers: { [string]: string }, ... },
+  headerName: string
+): Result<string>;

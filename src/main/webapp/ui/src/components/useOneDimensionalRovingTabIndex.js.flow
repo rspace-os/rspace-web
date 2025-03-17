@@ -1,0 +1,16 @@
+//@flow
+
+declare export default function useOneDimensionalRovingTabIndex<
+  RefComponent: HTMLElement
+>({|
+  max: number,
+  direction?: "row" | "column",
+|}): {|
+  eventHandlers: {|
+    onFocus: () => void,
+    onBlur: () => void,
+    onKeyDown: (KeyboardEvent) => void,
+  |},
+  getTabIndex: (number) => -1 | 0,
+  getRef: (number) => null | {| current: RefComponent | null |},
+|};

@@ -1,0 +1,12 @@
+//@flow
+
+declare export class InvalidState extends Error { }
+
+declare export class UnparsableString extends Error {
+  constructor(string, string): UnparsableString;
+}
+
+declare export class UserCancelledAction extends Error { }
+
+declare export class InvalidLocalStorageState extends Error { }
+

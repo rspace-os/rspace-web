@@ -18,7 +18,7 @@ module.exports = {
       severity: "error",
       from: {
         // only src/common/axios.js and test files...
-        pathNot: "^(src/common/axios\\.js|.*\\.test\\.js)$",
+        pathNot: "^(src/common/axios\\.ts|.*\\.test\\.js)$",
       },
       to: {
         // ...should import axios

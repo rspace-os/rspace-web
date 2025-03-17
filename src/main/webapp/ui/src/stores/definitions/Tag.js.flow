@@ -1,0 +1,13 @@
+//@flow
+
+import { Optional } from "../../util/optional";
+
+export type Tag = {|
+  value: string,
+  version: Optional<string>,
+  vocabulary: Optional<string>,
+  uri: Optional<string>,
+|};
+
+// eslint-disable-next-line prettier/prettier
+declare export const areSameTag: (tagA: Tag, tagB: Tag) => boolean;

@@ -136,7 +136,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
       disableColumnMenu: true,
     },
     // $FlowExpectedError[class-object-subtyping]
-    DataGridColumn.newColumnWithFieldName<DmpSummary, _>("title", {
+    DataGridColumn.newColumnWithFieldName<_, DmpSummary>("title", {
       headerName: "Title",
       hideable: false,
     }),
@@ -155,11 +155,11 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (boolean) => void }) => {
         ),
     },
     // $FlowExpectedError[class-object-subtyping]
-    DataGridColumn.newColumnWithFieldName<DmpSummary, _>("created", {
+    DataGridColumn.newColumnWithFieldName<_, DmpSummary>("created", {
       headerName: "Created",
     }),
     // $FlowExpectedError[class-object-subtyping]
-    DataGridColumn.newColumnWithFieldName<DmpSummary, _>("modified", {
+    DataGridColumn.newColumnWithFieldName<_, DmpSummary>("modified", {
       headerName: "Modified",
     }),
   ].map((colDefinition) => ({

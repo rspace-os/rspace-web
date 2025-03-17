@@ -132,7 +132,7 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "^Styles$": "<rootDir>/src/util/styles.js",
+      "^Styles$": "<rootDir>/src/util/styles.ts",
       "^@/(.*)$": "<rootDir>/src/$1",
       "^.+\\.(css)$": "<rootDir>/src/test-stubs/CSSStub.js",
       "^.+\\.(jpg)$": "<rootDir>/src/test-stubs/JPGStub.js",

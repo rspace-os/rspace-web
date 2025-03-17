@@ -1,0 +1,10 @@
+//@flow
+
+export type Validator = {|
+  setValidFunc: (f: () => Promise<boolean>) => void,
+  isValid: () => Promise<boolean>,
+|};
+
+// eslint-disable-next-line prettier/prettier
+declare export const mkValidator: (isValidFunc?: () => Promise<boolean>) => Validator;
+

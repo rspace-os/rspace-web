@@ -1,0 +1,12 @@
+// @flow
+
+declare export const menuIDs: {|
+  RESULTS: string,
+  STEPPER: string,
+  CONTENT: string,
+  PICKER: string,
+  CARD: string,
+  NONE: string
+|};
+
+

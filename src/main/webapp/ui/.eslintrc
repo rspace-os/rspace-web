@@ -107,6 +107,7 @@
     // explicity states it takes no props. For more info see
     // https://eslint.org/docs/latest/rules/no-unused-vars#argsignorepattern
     "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
 
     "no-use-before-define": "warn",
     "no-useless-concat": "error",

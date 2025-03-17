@@ -3,7 +3,7 @@
 import axios, {
   type Axios,
   type AxiosPromise,
-  type AxiosXHRConfigBase,
+  type AxiosRequestConfig,
 } from "@/common/axios";
 import { when } from "mobx";
 import getRootStore from "../stores/stores/RootStore";
@@ -117,7 +117,7 @@ class ApiServiceBase {
   post<T, U>(
     resource: string,
     params: JSON | FormData,
-    config?: AxiosXHRConfigBase<any, any>
+    config?: AxiosRequestConfig<any, any>
   ): AxiosPromise<T, U> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.post(`${resource}`, params, config);
@@ -128,7 +128,7 @@ class ApiServiceBase {
     resource: string,
     slug: string | number,
     params: JSON,
-    config?: AxiosXHRConfigBase<any, any>
+    config?: AxiosRequestConfig<any, any>
   ): AxiosPromise<T, U> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.put(`${resource}/${slug}`, params, config);

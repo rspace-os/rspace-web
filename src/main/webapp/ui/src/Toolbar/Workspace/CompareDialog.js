@@ -303,17 +303,17 @@ function CompareDialog(): Node {
   }, []);
 
   const columns = [
-    DataGridColumn.newColumnWithFieldName<Document, _>("name", {
+    DataGridColumn.newColumnWithFieldName<_, Document>("name", {
       headerName: "Name",
       flex: 1,
       sortable: false,
     }),
-    DataGridColumn.newColumnWithFieldName<Document, _>("globalId", {
+    DataGridColumn.newColumnWithFieldName<_, Document>("globalId", {
       headerName: "Global ID",
       flex: 1,
       sortable: false,
     }),
-    DataGridColumn.newColumnWithFieldName<Document, _>("owner", {
+    DataGridColumn.newColumnWithFieldName<_, Document>("owner", {
       headerName: "Owner",
       flex: 1,
       sortable: false,
@@ -327,7 +327,7 @@ function CompareDialog(): Node {
         />
       ),
     }),
-    DataGridColumn.newColumnWithFieldName<Document, _>("created", {
+    DataGridColumn.newColumnWithFieldName<_, Document>("created", {
       headerName: "Created Date",
       flex: 1,
       valueFormatter: (value: string) =>
@@ -335,7 +335,7 @@ function CompareDialog(): Node {
           .map((l) => l.toLocaleString())
           .orElse("—"),
     }),
-    DataGridColumn.newColumnWithFieldName<Document, _>("lastModified", {
+    DataGridColumn.newColumnWithFieldName<_, Document>("lastModified", {
       headerName: "Modified Date",
       flex: 1,
       valueFormatter: (value: string) =>
@@ -343,7 +343,7 @@ function CompareDialog(): Node {
           .map((l) => l.toLocaleString())
           .orElse("—"),
     }),
-    DataGridColumn.newColumnWithFieldName<Document, _>("signed", {
+    DataGridColumn.newColumnWithFieldName<_, Document>("signed", {
       headerName: "Signed",
       flex: 1,
       sortable: false,
@@ -356,7 +356,7 @@ function CompareDialog(): Node {
           <CrossIcon color="error" aria-label="Unsigned" aria-hidden="false" />
         ),
     }),
-    DataGridColumn.newColumnWithFieldName<Document, _>("tags", {
+    DataGridColumn.newColumnWithFieldName<_, Document>("tags", {
       headerName: "Tags",
       flex: 1,
       sortable: false,
@@ -364,7 +364,7 @@ function CompareDialog(): Node {
   ];
   for (const [formId, fieldName] of fieldColumns) {
     columns.push(
-      DataGridColumn.newColumnWithValueGetter<Document, _>(
+      DataGridColumn.newColumnWithValueGetter<_, Document>(
         `${formId}:${fieldName}`,
         (doc: Document) => {
           if (doc.form.id !== formId) return "";

@@ -7,7 +7,6 @@ import { match, classMixin, clamp } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { selectColor } from "../../util/colors";
 import RsSet from "../../util/set";
-import { layoutToLabels } from "../../util/table";
 import {
   type Container,
   type ContainerType,
@@ -15,6 +14,7 @@ import {
   type GridLayout,
   type ContentSummary,
   cTypeToDefaultSearchView,
+  layoutToLabels,
 } from "../definitions/Container";
 import {
   type AllowedTypeFilters,
