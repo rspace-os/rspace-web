@@ -9,6 +9,7 @@ var autoSaveLastErrorStatus = -1;
 var autoSaveFailureCount = 0;
 var autoSaveSkipCount = 0;
 var autosaveRequestTimeout = 30000; // will increase on failed autosaves
+var chemistryAvailable = false;
 
 var unchangedContentCounter = 0;
 var isWorkspacePage = true;

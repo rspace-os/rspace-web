@@ -765,7 +765,6 @@ function generateIconSrc(type, extension, thumbnailId, id) {
       iconSrc = "/images/icons/audioIcon.png";
     }
   } else if (type == 'Documents' || type == 'Miscellaneous' || type == 'DMPs') {
-	
     var iconSrc = "";
     if(type == 'Documents' & id != null) {
 	   let suffix = (thumbnailId!=null)?thumbnailId:"none";
@@ -783,7 +782,11 @@ function generateIconSrc(type, extension, thumbnailId, id) {
       iconSrc = RS.getIconPathForExtension(extension);
     }
   } else if (type == MEDIA_TYPE_CHEMISTRY) {
-    iconSrc = createURL("/gallery/getChemThumbnail/" + id);
+    if (chemistryAvailable) {
+      iconSrc = createURL("/gallery/getChemThumbnail/" + id);
+    } else {
+      iconSrc = RS.getIconPathForExtension(extension);
+    }
   }
   return iconSrc;
 }
@@ -1070,7 +1073,11 @@ function addFromGallery(data) {
       insertGenericDoc(mediaTypeSelectedVal, data);
       break;
     case MEDIA_TYPE_CHEMISTRY:
-      insertChemistryFileFromGallery(mediaTypeSelectedVal, data);
+      if (chemistryAvailable) {
+        insertChemistryFileFromGallery(mediaTypeSelectedVal, data);
+      } else {
+        insertGenericDoc(mediaTypeSelectedVal, data);
+      }
       break;
     case MEDIA_TYPE_SNIPPETS:
       insertSnippetFromGallery(data);
@@ -1183,8 +1190,8 @@ function insertAVFromGallery(mediaType, data) {
  * @param data - the record information for an item(returned by getRecordInformation)
  */
 function insertGenericDoc(mediaType, data) {
-  var templateId = (mediaType == MEDIA_TYPE_MISCDOCS) ?
-    "#insertedMiscdocTemplate" : "#insertedDocumentTemplate";
+  var templateId = (mediaType == MEDIA_TYPE_DOCS) ?
+      "#insertedDocumentTemplate" : "#insertedMiscdocTemplate";
   var fieldId = getFieldIdFromTextFieldId(tinymce.activeEditor.id);
   var selected = (data != null) ? data : $('.selectable input:checked').parents('div.selectable');
   var fromPaste = (data != null);
