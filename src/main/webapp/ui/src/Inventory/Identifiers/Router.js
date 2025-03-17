@@ -5,6 +5,7 @@ import { Routes, Route } from "react-router";
 import { Navigate } from "react-router-dom";
 import IGSNs from "./IGSN";
 import PageNotFoundScreen from "../components/Layout/PageNotFoundScreen";
+import NavigationContext from "./NavigationContext";
 
 /**
  * This component provides the routing logic for the /identifiers section of
@@ -17,10 +18,15 @@ export default function Router(): React.Node {
    * this configuration leaves open that possibility.
    */
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/inventory/identifiers/igsn" />} />
-      <Route path="igsn" element={<IGSNs />} />
-      <Route path="*" element={<PageNotFoundScreen />} />
-    </Routes>
+    <NavigationContext>
+      <Routes>
+        <Route
+          path="/"
+          element={<Navigate to="/inventory/identifiers/igsn" />}
+        />
+        <Route path="igsn" element={<IGSNs />} />
+        <Route path="*" element={<PageNotFoundScreen />} />
+      </Routes>
+    </NavigationContext>
   );
 }
