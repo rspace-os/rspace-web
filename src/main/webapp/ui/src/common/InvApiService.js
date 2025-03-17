@@ -1,7 +1,7 @@
 // @flow
 
 import ApiServiceBase from "./ApiServiceBase";
-import type { AxiosPromise } from "axios";
+import { type AxiosPromise } from "@/common/axios";
 import { when } from "mobx";
 import getRootStore from "../stores/stores/RootStore";
 import { type ApiRecordType } from "../stores/definitions/InventoryRecord";

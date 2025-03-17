@@ -11,14 +11,13 @@
   },
   "extends": [
     "eslint:recommended",
-    "plugin:ft-flow/recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
     "plugin:jsx-a11y/recommended",
     "plugin:prettier/recommended",
     "prettier"
   ],
-  "plugins": ["react", "jsdoc", "ft-flow", "testing-library", "jest-dom", "jsx-a11y"],
+  "plugins": ["react", "jsdoc", "ft-flow", "testing-library", "jest-dom", "jsx-a11y", "@typescript-eslint"],
   "settings": {
     "react": {
       "version": "detect",
@@ -27,13 +26,33 @@
   },
   "overrides": [
     {
+      "files": ["**/*.js", "**/*.js.flow"],
+      "extends": ["plugin:ft-flow/recommended"],
+      "rules": {
+        "react/prop-types": "error"
+      }
+    },
+    {
       "files": ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
       "extends": ["plugin:testing-library/react", "plugin:jest-dom/recommended"]
+    },
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "parserOptions": {
+          "project": "./tsconfig.json",
+      },
+      "extends": [
+          "plugin:@typescript-eslint/recommended",
+          "plugin:@typescript-eslint/recommended-requiring-type-checking",
+      ],
+      "rules": {
+        "react/prop-types": "off"
+      }
     }
   ],
   "rules": {
     // please keep this list sorted
-    
+
     "array-callback-return": "error",
     "block-scoped-var": "warn",
     "camelcase": "warn",

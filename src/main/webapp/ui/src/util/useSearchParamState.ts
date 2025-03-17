@@ -1,5 +1,3 @@
-//@flow
-
 import { useSearchParams } from "react-router-dom";
 
 /**
@@ -11,13 +9,17 @@ import { useSearchParams } from "react-router-dom";
  * `fallback` is only used where the keys are not present in the current URL.
  */
 export function useSearchParamState<
-  T: { [key: string]: string | Array<string>, ... }
->(fallback: T): [T, (T) => void] {
+  T extends { [key: string]: string | string[] }
+>(fallback: T): [T, (newState: T) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
 
   function calculateState(sp: URLSearchParams, fb: T) {
-    const tmp: T = { ...fb };
-    Object.assign(tmp, Object.fromEntries(sp.entries()));
+    const tmp = { ...fb };
+    for (const [key, value] of sp.entries()) {
+      if (key in tmp) {
+        (tmp as any)[key] = value;
+      }
+    }
     return tmp;
   }
 

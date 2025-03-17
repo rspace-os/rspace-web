@@ -5,8 +5,8 @@
 /* eslint-env jest */
 import "@testing-library/jest-dom";
 import Result from "../../Result";
-import { type Model } from "./scopedToastsModelTests.test";
 import { type Command } from "fast-check";
+import { type Model } from "./common";
 
 export class ClearAllScopedToastsCommand implements Command<Model, Result> {
   constructor() {}
