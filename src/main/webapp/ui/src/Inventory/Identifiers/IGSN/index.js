@@ -10,6 +10,7 @@ import TitledBox from "../../components/TitledBox";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import docLinks from "../../../assets/DocLinks";
+import Button from "@mui/material/Button";
 
 /**
  * This is the page where researchers can manage their IGSNs.
@@ -38,6 +39,23 @@ export default function IgsnManagementPage(): Node {
                 </Link>
                 .
               </Typography>
+            </TitledBox>
+            <TitledBox title="Register IGSNs" border>
+              <Stack spacing={2} alignItems="flex-start">
+                <Typography>
+                  You can register and associate an IGSN with an existing item
+                  in Inventory by selecting{" "}
+                  <strong>Create a new Identifier</strong> under its{" "}
+                  <strong>Identifiers</strong> heading.
+                </Typography>
+                <Typography>
+                  You can also bulk-register IGSN IDs to be used at a later
+                  date, such as a field collection trip:
+                </Typography>
+                <Button variant="contained" color="primary" disableElevation>
+                  Bulk Register
+                </Button>
+              </Stack>
             </TitledBox>
           </Stack>
         </Main>
