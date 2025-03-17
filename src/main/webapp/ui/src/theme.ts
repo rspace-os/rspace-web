@@ -64,6 +64,7 @@ declare module "@mui/material/styles/createPalette" {
   interface Palette {
     callToAction: PaletteColor;
     standardIcon: PaletteColor;
+    lightestGrey: string;
   }
   interface PaletteOptions {
     callToAction: PaletteColorOptions;
