@@ -1,6 +1,6 @@
 //@flow
 
-import React, { type Node } from "react";
+import React from "react";
 
 /**
  * All of the DOM events that happen inside of a dialog shouldn't propagate
@@ -10,9 +10,9 @@ import React, { type Node } from "react";
  */
 export default function EventBoundary({
   children,
-}: {|
-  children: Node,
-|}): Node {
+}: {
+  children: React.ReactNode;
+}): React.ReactNode {
   return (
     /*
      * The eslint suppression is required because `div`s should not ordinarilly
