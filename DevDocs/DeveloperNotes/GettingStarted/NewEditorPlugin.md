@@ -101,16 +101,16 @@ if (!window.insertActions) window.insertActions = new Map();
 window.insertActions.set('optNewPlugin', {
   text: 'New Plugin',
   icon: 'newPlugin',
-  onAction: () => {
+  action: () => {
     // do something
   }
 });
 ```
-In each case, the `onAction` callback is where the actual logic for the plugin
-should go. In most cases, this will involve displaying a dialog, making some API
-calls, and having the user make a selection before generating HTML to display,
-but before we get to that there are a few more initialisation steps to take care
-of.
+In each case, the `onAction` or `action` callback is where the actual logic for
+the plugin should go. In most cases, this will involve displaying a dialog,
+making some API calls, and having the user make a selection before generating
+HTML to display, but before we get to that there are a few more initialisation
+steps to take care of.
   1. In [/src/main/webapp/ui/webpack.config.js](/src/main/webapp/ui/webpack.config.js) we need to add a new entry point for our new script.
      We load the plugin through a separate entry point so that it is only downloaded
      when the plugin is enabled.
