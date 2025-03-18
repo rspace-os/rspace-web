@@ -53,7 +53,13 @@ function Toolbar(): React.Node {
   );
 }
 
-export default function IgsnManagementPage(): Node {
+export default function IgsnManagementPage({
+  selectedIgsns,
+  setSelectedIgsns,
+}: {|
+  selectedIgsns: Set<string>,
+  setSelectedIgsns: (Set<string>) => void,
+|}): Node {
   return (
     <Main sx={{ overflowY: "auto" }}>
       <Stack spacing={2} sx={{ my: 2, mr: 1 }}>
@@ -116,12 +122,23 @@ export default function IgsnManagementPage(): Node {
                   {
                     field: "checkbox",
                     headerName: "Select",
-                    renderCell: () => (
+                    renderCell: (params: { row: Igsn, ... }) => (
                       <Checkbox
                         color="primary"
-                        value={false}
-                        checked={false}
+                        value={selectedIgsns.has(params.row.igsn)}
+                        checked={selectedIgsns.has(params.row.igsn)}
                         inputProps={{ "aria-label": "IGSN selection" }}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIgsns(
+                              new Set(selectedIgsns).add(params.row.igsn)
+                            );
+                          } else {
+                            const newSet = new Set(selectedIgsns);
+                            newSet.delete(params.row.igsn);
+                            setSelectedIgsns(newSet);
+                          }
+                        }}
                         sx={{ p: 0.5 }}
                       />
                     ),
