@@ -1,0 +1,8 @@
+// @flow strict
+
+// eslint-disable-next-line prettier/prettier
+declare export const LOGO_COLOR: {|
+  hue: number, saturation: number, lightness: number
+|};
+
+

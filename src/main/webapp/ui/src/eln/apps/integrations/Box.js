@@ -4,7 +4,7 @@ import Grid from "@mui/material/Grid";
 import React, { type AbstractComponent, type Node } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import BoxIcon from "../icons/Box.svg";
+import BoxIcon from "../../../assets/branding/box/logo.svg";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
@@ -14,6 +14,7 @@ import Button from "@mui/material/Button";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Typography from "@mui/material/Typography";
 import { Optional } from "../../../util/optional";
+import { LOGO_COLOR } from "../../../assets/branding/box";
 
 type BoxArgs = {|
   integrationState: IntegrationStates["BOX"],
@@ -41,11 +42,7 @@ function Box({ integrationState, update }: BoxArgs): Node {
         name="Box"
         explanatoryText="Collaborate with anyone from anywhere with a content management and workflow cloud."
         image={BoxIcon}
-        color={{
-          hue: 213,
-          saturation: 100,
-          lightness: 42,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({
             mode: newMode,
