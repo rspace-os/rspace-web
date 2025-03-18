@@ -16,7 +16,7 @@ export default function IGSN(): Node {
       <Header sidebarId={sidebarId} />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <Sidebar id={sidebarId} />
-        <IgsnManagementPage />
+        <IgsnManagementPage selectedIgsns={new Set()} setSelectedIgsns={() => {}}/>
       </Box>
     </>
   );

@@ -43,6 +43,7 @@ function IdentifiersDialog({
   onClose: () => void,
   editor: Editor,
 |}) {
+  const [selectedIgsns, setSelectedIgsns] = React.useState(new Set<string>());
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
       <AppBar
@@ -52,7 +53,10 @@ function IdentifiersDialog({
       />
       <DialogTitle>Insert Identifiers Table</DialogTitle>
       <DialogContent>
-        <IgsnManagementPage />
+        <IgsnManagementPage
+          selectedIgsns={selectedIgsns}
+          setSelectedIgsns={setSelectedIgsns}
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
@@ -60,7 +64,11 @@ function IdentifiersDialog({
           variant="contained"
           color="primary"
           onClick={() => {
-            editor.execCommand("mceInsertContent", false, tableHtml().outerHTML);
+            editor.execCommand(
+              "mceInsertContent",
+              false,
+              tableHtml().outerHTML
+            );
             onClose();
           }}
         >
@@ -178,5 +186,4 @@ function tableHtml() {
     identifiersTable.appendChild(row);
   });
   return identifiersTable;
-
 }
