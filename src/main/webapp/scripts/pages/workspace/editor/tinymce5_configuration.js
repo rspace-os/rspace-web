@@ -454,6 +454,8 @@ function initTinyMCE(selector) {
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
 		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
 
+		chemistryAvailable = integrations.CHEMISTRY.available;
+
 		// File repositories section
 		var enabledFileRepositories = "";
 		var fileRepositoriesMenu = "";
