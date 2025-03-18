@@ -3,8 +3,8 @@
 import React, { type Node } from "react";
 import DMPDialog from "./DMPDialog";
 import AccentMenuItem from "../../components/AccentMenuItem";
-import DMPToolIcon from "../../eln/apps/icons/dmptool.svg";
-import { COLOR } from "../../eln/apps/integrations/DMPTool";
+import DMPToolIcon from "../../assets/branding/dmptool/logo.svg";
+import { LOGO_COLOR } from "../../assets/branding/dmptool";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
 
@@ -25,8 +25,8 @@ export default function DMPToolAccentMenuItem({
       <AccentMenuItem
         title="DMPTool"
         avatar={<CardMedia image={DMPToolIcon} />}
-        backgroundColor={COLOR}
-        foregroundColor={{ ...COLOR, lightness: 30 }}
+        backgroundColor={LOGO_COLOR}
+        foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}
         onClick={() => {
           setShowDMPDialog(true);
         }}
