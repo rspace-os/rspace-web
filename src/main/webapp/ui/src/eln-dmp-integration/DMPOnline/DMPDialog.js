@@ -36,34 +36,7 @@ import ValidatingSubmitButton, {
   IsInvalid,
 } from "../../components/ValidatingSubmitButton";
 import { DataGridColumn } from "../../util/table";
-
-const COLOR = {
-  main: {
-    hue: 40,
-    saturation: 100,
-    lightness: 46,
-  },
-  darker: {
-    hue: 39,
-    saturation: 93,
-    lightness: 33,
-  },
-  contrastText: {
-    hue: 39,
-    saturation: 35,
-    lightness: 26,
-  },
-  background: {
-    hue: 32,
-    saturation: 100,
-    lightness: 68,
-  },
-  backgroundContrastText: {
-    hue: 39,
-    saturation: 20,
-    lightness: 35,
-  },
-};
+import { ACCENT_COLOR } from "../../assets/branding/argos";
 
 const useStyles = makeStyles()((theme, props) => ({
   table: {
@@ -361,7 +334,7 @@ export default function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Portal>
         <DialogBoundary>
           <CustomDialog
