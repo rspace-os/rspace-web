@@ -30,6 +30,7 @@ type Editor = {
     },
     ...
   },
+  execCommand: (string, boolean, string) => void,
   ...
 };
 
@@ -56,11 +57,10 @@ function IdentifiersDialog({
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
         <Button
-          disabled
           variant="contained"
           color="primary"
           onClick={() => {
-            alert("Inserting table");
+            editor.execCommand("mceInsertContent", false, tableHtml().outerHTML);
             onClose();
           }}
         >
@@ -156,3 +156,27 @@ class IdentifiersPlugin {
 
 // $FlowExpectedError[cannot-resolve-name]
 tinyMCE.PluginManager.add("identifiers", IdentifiersPlugin);
+
+function tableHtml() {
+  const identifiersTable = document.createElement("table");
+  identifiersTable.setAttribute("data-tableSource", "identifiers");
+  const tableHeader = document.createElement("tr");
+  ["IGSN", "barcode"].forEach((cell) => {
+    const columnName = document.createElement("th");
+    columnName.textContent = cell;
+    tableHeader.appendChild(columnName);
+  });
+  identifiersTable.appendChild(tableHeader);
+  ["10.5/431235", "10.5/124567"].forEach((igsn) => {
+    const row = document.createElement("tr");
+    const igsnCell = document.createElement("td");
+    igsnCell.textContent = igsn;
+    row.appendChild(igsnCell);
+    const barcodeCell = document.createElement("td");
+    barcodeCell.textContent = "[barcode to go here]";
+    row.appendChild(barcodeCell);
+    identifiersTable.appendChild(row);
+  });
+  return identifiersTable;
+
+}
