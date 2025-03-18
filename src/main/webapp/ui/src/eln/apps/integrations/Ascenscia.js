@@ -3,16 +3,11 @@
 import Grid from "@mui/material/Grid";
 import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
-import AscensciaIcon from "../icons/Ascenscia.svg";
+import AscensciaIcon from "../../../assets/branding/ascenscia/logo.svg";
 import { observer } from "mobx-react-lite";
 import docLinks from "../../../assets/DocLinks";
 import Link from "@mui/material/Link";
-
-export const COLOR = {
-  hue: 243,
-  saturation: 99,
-  lightness: 68,
-};
+import { LOGO_COLOR } from "../../../assets/branding/ascenscia";
 
 /*
  * The integration is actually on Ascenscia's end; the user passes their RSpace
@@ -25,7 +20,7 @@ function Ascenscia(): Node {
         name="Ascenscia"
         explanatoryText="A highly specialized voice assistant mobile application for scientific labs."
         image={AscensciaIcon}
-        color={COLOR}
+        color={LOGO_COLOR}
         usageText="The software solution acts as a personal assistant for scientists in the labs to mediate their interactions with Electronic Lab Notebooks outside of the lab."
         helpLinkText="Ascenscia integration docs"
         website="ascenscia.ai"
