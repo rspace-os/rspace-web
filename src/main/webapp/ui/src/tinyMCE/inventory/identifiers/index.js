@@ -6,12 +6,14 @@ import { createRoot } from "react-dom/client";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import createAccentedTheme from "../../../accentedTheme";
 import AppBar from "../../../components/AppBar";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import { Optional } from "../../../util/optional";
 import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManagementPage";
+import Button from "@mui/material/Button";
 
 type Editor = {
   ui: {
@@ -48,7 +50,23 @@ function IdentifiersDialog({
         accessibilityTips={{}}
       />
       <DialogTitle>Insert Identifiers Table</DialogTitle>
-      <DialogContent><IgsnManagementPage /></DialogContent>
+      <DialogContent>
+        <IgsnManagementPage />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+        <Button
+          disabled
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            alert("Inserting table");
+            onClose();
+          }}
+        >
+          Insert Table
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 }
