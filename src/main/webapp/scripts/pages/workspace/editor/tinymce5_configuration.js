@@ -453,6 +453,7 @@ function initTinyMCE(selector) {
 		const clustermarketEnabled =  integrations.CLUSTERMARKET.enabled && integrations.CLUSTERMARKET.available && properties["clustermarket.web.url"] !== "";
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
 		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
+		const identifiersEnabled = true; // TODO: check if Inventory is enabled
 
 		chemistryAvailable = integrations.CHEMISTRY.available;
 
@@ -535,6 +536,11 @@ function initTinyMCE(selector) {
 		}
 		if (chemistryEnabled) {
 			localTinymcesetup.external_plugins["cheminfo"] = "/scripts/externalTinymcePlugins/chemInfo/plugin.min.js";
+		}
+		if (identifiersEnabled) {
+			localTinymcesetup.external_plugins["identifiers"] = "/ui/dist/tinymceIdentifiers.js";
+			addToToolbarIfNotPresent(localTinymcesetup, " | identifiers");
+			addToMenuIfNotPresent(localTinymcesetup, " | optIdentifiers");
 		}
 	});
 
