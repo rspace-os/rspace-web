@@ -11,6 +11,7 @@ import { type PlanSummary } from "./PlanSummary";
 export async function importPlan(plan: PlanSummary): Promise<void> {
   const id: string = `${plan.id}`;
   await axios.post<void, void>(`/apps/argos/importPlan/${id}`);
-  // eslint-disable-next-line no-undef
+  // @ts-expect-error gallery is a global on the old gallery
+  // eslint-disable-next-line no-undef, @typescript-eslint/no-unsafe-call
   gallery();
 }
