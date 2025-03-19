@@ -1,0 +1,13 @@
+//@flow
+
+import { type Node } from "react";
+import { type URL } from "../util/types";
+
+type HelpIconProps = {|
+  link: URL,
+  title: string,
+  size?: "small" | "medium" | "large",
+  color?: "primary" | string,
+|};
+
+declare export default function HelpLinkIcon(HelpIconProps): Node;

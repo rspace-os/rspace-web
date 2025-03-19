@@ -1,21 +1,26 @@
-//@flow
-
 import { type URL } from "../util/types";
-import React, { type Node, type ElementProps } from "react";
+import React from "react";
 import IconButton from "@mui/material/IconButton";
 import HelpIcon from "@mui/icons-material/Help";
 import { withStyles } from "Styles";
 import CustomTooltip from "./CustomTooltip";
 
-type HelpIconProps = {|
-  link: URL,
-  title: string,
-  size?: "small" | "medium" | "large",
-  color?: "primary" | string,
-|};
+type HelpIconProps = {
+  link: URL;
+  title: string;
+  size?: "small" | "medium" | "large";
+  color?: React.ComponentProps<typeof IconButton>["color"];
+};
+
+type AnchorLinkProps = {
+  component: "a";
+  href: string;
+  target: string;
+  rel: string;
+};
 
 const IconLink = withStyles<
-  {| color: string, ...ElementProps<typeof IconButton> |},
+  React.ComponentProps<typeof IconButton> & AnchorLinkProps,
   { root: string }
 >((theme, { color }) => ({
   root: {
@@ -34,12 +39,12 @@ const IconLink = withStyles<
     transform: "translateY(-2px)",
   },
 }))((props) => {
-  const rest = { ...props };
+  const rest: React.ComponentProps<typeof IconButton> = { ...props };
   delete rest.color;
   return <IconButton {...rest} />;
 });
 
-/*
+/**
  * A simple question mark icon button for linking to documentation.
  */
 export default function HelpLinkIcon({
@@ -47,7 +52,7 @@ export default function HelpLinkIcon({
   title,
   size = "small",
   color = "primary",
-}: HelpIconProps): Node {
+}: HelpIconProps): React.ReactNode {
   return (
     <CustomTooltip title={title}>
       <IconLink
