@@ -4,9 +4,10 @@ import Grid from "@mui/material/Grid";
 import React, { type Node, useState, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import OmeroIcon from "../icons/Omero.svg";
+import OmeroIcon from "../../../assets/branding/omero/logo.svg";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import { LOGO_COLOR } from "../../../assets/branding/omero";
 
 type OmeroArgs = {|
   integrationState: IntegrationStates["OMERO"],
@@ -26,11 +27,7 @@ function Omero({ integrationState, update }: OmeroArgs): Node {
         integrationState={integrationState}
         explanatoryText="View, manage, and share your microscopy image data with an extensible central repository."
         image={OmeroIcon}
-        color={{
-          hue: 214,
-          saturation: 66,
-          lightness: 32,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
         usageText="You can import OMERO image thumbnails and metadata into RSpace documents."
         helpLinkText="Omero integration docs"
