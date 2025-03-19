@@ -12,8 +12,9 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import FigshareIcon from "../icons/figshare.svg";
+import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
 import { useFigshareEndpoint } from "../useFigshare";
+import { LOGO_COLOR } from "../../../assets/branding/figshare";
 
 type FigshareArgs = {|
   integrationState: IntegrationStates["FIGSHARE"],
@@ -74,11 +75,7 @@ function Figshare({ integrationState, update }: FigshareArgs): Node {
         integrationState={integrationState}
         explanatoryText="Easily manage all your research outputs and make them available in a citable, shareable and discoverable manner."
         image={FigshareIcon}
-        color={{
-          hue: 169,
-          saturation: 50,
-          lightness: 60,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
