@@ -1,9 +1,7 @@
-//@flow strict
-
 import { type Context, createContext } from "react";
 import { makeAutoObservable } from "mobx";
 
-type AnalyticsContextType = {|
+type AnalyticsContextType = {
   /**
    * isAvailable is true only if analytics are enabled and if posthog is not
    * configured then intercom has been successfully loaded. Analytics are
@@ -17,7 +15,7 @@ type AnalyticsContextType = {|
    * UI. One such example being that the contact-us form inside of Lighthouse
    * is disabled, replaced with a mailto link, when analytics are disabled.
    */
-  isAvailable: ?boolean,
+  isAvailable: boolean | null;
 
   /**
    * When called this function reports an event to Segment, to say that the
@@ -27,8 +25,8 @@ type AnalyticsContextType = {|
    * @arg properties An optional collection of key-value pairs of data
    *                 associated with the event
    */
-  trackEvent: (event: string, properties?: { ... }) => void,
-|};
+  trackEvent: (event: string, properties?: object) => void;
+};
 
 const DEFAULT_ANALYTICS_CONTEXT: AnalyticsContextType = makeAutoObservable({
   isAvailable: null,

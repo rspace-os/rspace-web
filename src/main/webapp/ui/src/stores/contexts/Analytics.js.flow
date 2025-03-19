@@ -1,0 +1,9 @@
+//@flow strict
+
+import { type Context } from "react";
+
+declare export default Context<{|
+  isAvailable: ?boolean,
+  trackEvent: (event: string, properties?: { ... }) => void,
+|}>;
+
