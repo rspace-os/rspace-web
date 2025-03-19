@@ -4,7 +4,8 @@ import Grid from "@mui/material/Grid";
 import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import GoogleDriveIcon from "../icons/drive.svg";
+import GoogleDriveIcon from "../../../assets/branding/googledrive/logo.svg";
+import { LOGO_COLOR } from "../../../assets/branding/googledrive";
 
 type GoogleDriveArgs = {|
   integrationState: IntegrationStates["GOOGLEDRIVE"],
@@ -22,11 +23,7 @@ function GoogleDrive({ integrationState, update }: GoogleDriveArgs): Node {
         integrationState={integrationState}
         explanatoryText="Create, organise, and share on your files through a collaborative cloud-based service."
         image={GoogleDriveIcon}
-        color={{
-          hue: 44,
-          saturation: 100,
-          lightness: 50,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
