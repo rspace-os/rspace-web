@@ -32,34 +32,7 @@ import Button from "@mui/material/Button";
 import createAccentedTheme from "../../accentedTheme";
 import AppBar from "../../components/AppBar";
 import docLinks from "../../assets/DocLinks";
-
-const COLOR = {
-  main: {
-    hue: 196,
-    saturation: 46,
-    lightness: 70,
-  },
-  darker: {
-    hue: 196,
-    saturation: 93,
-    lightness: 33,
-  },
-  contrastText: {
-    hue: 196,
-    saturation: 35,
-    lightness: 26,
-  },
-  background: {
-    hue: 196,
-    saturation: 25,
-    lightness: 71,
-  },
-  backgroundContrastText: {
-    hue: 196,
-    saturation: 11,
-    lightness: 24,
-  },
-};
+import { ACCENT_COLOR } from "../../assets/branding/pyrat";
 
 function useAuthenticatedServers() {
   const [servers, setServers] = React.useState([]);
@@ -654,7 +627,7 @@ class PyratPlugin {
         const newProps = yield;
         root.render(
           <StyledEngineProvider injectFirst>
-            <ThemeProvider theme={createAccentedTheme(COLOR)}>
+            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <PyratDialog
                 editor={editor}
                 open={false}
