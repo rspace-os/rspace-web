@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, type ComponentType, type Element } from "react";
+import React from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
@@ -58,8 +56,20 @@ import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
 import useSessionStorage from "../../util/useSessionStorage";
 
-const IncomingMaintenancePopup = ({ startDate }: {| startDate: Date |}) => {
-  const [anchorEl, setAnchorEl] = React.useState<null | EventTarget>(null);
+declare global {
+  interface Window {
+    gapi?: {
+      auth2?: {
+        getAuthInstance(): {
+          signOut(): Promise<void>;
+        };
+      };
+    };
+  }
+}
+
+const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const popoverId = React.useId();
 
   /*
@@ -69,7 +79,7 @@ const IncomingMaintenancePopup = ({ startDate }: {| startDate: Date |}) => {
    * the shadow root so that it is styled correctly. To do this, we pass a
    * reference to this wrapper div.
    */
-  const ref = React.useRef<HTMLElement | null>(null);
+  const ref = React.useRef<HTMLDivElement>(null);
 
   return (
     <div ref={ref}>
@@ -112,7 +122,9 @@ const IncomingMaintenancePopup = ({ startDate }: {| startDate: Date |}) => {
   );
 };
 
-const StyledAvatar = styled(Avatar)(({ size }) => ({
+const StyledAvatar: React.FC<
+  { size?: "small" } & React.ComponentProps<typeof Avatar>
+> = styled(Avatar)(({ size }: { size?: "small" }) => ({
   /*
    * This pink colour is taken from the RSpace logo, a
    * colour that we don't otherwise use in the product. The
@@ -142,10 +154,10 @@ const StyledAvatar = styled(Avatar)(({ size }) => ({
 const DynamicAvatar = ({
   uiNavigationData,
   size,
-}: {|
-  uiNavigationData: FetchingData.Fetched<UiNavigationData>,
-  size?: "small",
-|}) => {
+}: {
+  uiNavigationData: FetchingData.Fetched<UiNavigationData>;
+  size?: "small";
+}) => {
   return FetchingData.match(uiNavigationData, {
     loading: () => (
       <StyledAvatar size={size}>
@@ -164,7 +176,10 @@ const DynamicAvatar = ({
         );
       }
       return (
-        <StyledAvatar size={size} src={profileImgSrc}>
+        <StyledAvatar
+          size={size}
+          {...(profileImgSrc !== null ? { src: profileImgSrc } : {})}
+        >
           {fullName[0]}
         </StyledAvatar>
       );
@@ -172,7 +187,7 @@ const DynamicAvatar = ({
   });
 };
 
-const OrcidIcon = styled(({ className }) => (
+const OrcidIcon = styled(({ className }: { className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     version="1.1"
@@ -213,48 +228,54 @@ const OrcidIcon = styled(({ className }) => (
   },
 }));
 
-type GalleryAppBarArgs = {|
+type GalleryAppBarArgs = {
   /**
    * The app bar is used across the top of the pages that consistitute most of
    * the product, as wel as several dialogs. The behaviour of this component is
    * slightly different based on this, providing navigation only when `variant`
    * is "page".
    */
-  variant: "page" | "dialog",
+  variant: "page" | "dialog";
 
   /**
    * The app bar is used across the product on whole pages and some dialogs. If
    * the variant is "page" then we provide a series of links for jumping
    * between the main parts of the product and if the `currentPage` is one of
-   * them then it is shown as active. If the variant is "dialog" then
-   * `currentPage` is just used to show a heading.
+   * them then it is shown as active (e.g. "Gallery", "Inventory",
+   * "Workspace"). If the variant is "dialog" then `currentPage` is just used
+   * to show a heading.
    */
-  currentPage: "Gallery" | "Inventory" | "Workspace" | string,
+  currentPage: string;
 
   /**
    * Some pages have a sidebar that needs a toggle for opening and closing.
    * Those pages should pass an instance of SidebarToggle here.
    */
-  sidebarToggle?: Element<typeof SidebarToggle>,
+  sidebarToggle?: React.ReactElement<
+    React.ComponentProps<typeof SidebarToggle>
+  >;
 
   /**
    * Which accessibility tips to show based on the conformance the current
    * page/dialog has with the accessibility standard.
    * @see {@link module:AccessibilityTips} for more info.
    */
-  accessibilityTips: {|
-    supportsReducedMotion?: boolean,
-    supportsHighContrastMode?: boolean,
-    supports2xZoom?: boolean,
-  |},
+  accessibilityTips: {
+    supportsReducedMotion?: boolean;
+    supportsHighContrastMode?: boolean;
+    supports2xZoom?: boolean;
+  };
 
   /*
    * A page of documentation to link to in the top right corner. If one is not
    * specified then the lighthouse dialog is opened allowing the user to browse
    * the documentation.
    */
-  helpPage?: {| docLink: $Values<typeof docLinks>, title: string |},
-|};
+  helpPage?: {
+    docLink: (typeof docLinks)[keyof typeof docLinks];
+    title: string;
+  };
+};
 
 // eslint-disable-next-line complexity -- yep, there's quite a lot of conditional logic here
 function GalleryAppBar({
@@ -263,16 +284,17 @@ function GalleryAppBar({
   sidebarToggle,
   accessibilityTips,
   helpPage,
-}: GalleryAppBarArgs): Node {
+}: GalleryAppBarArgs): React.ReactNode {
   const theme = useTheme();
   const { isViewportSmall } = useViewportDimensions();
   const uiNavigationData = useUiNavigationData();
-  const [appMenuAnchorEl, setAppMenuAnchorEl] = React.useState(null);
+  const [appMenuAnchorEl, setAppMenuAnchorEl] =
+    React.useState<null | HTMLElement>(null);
   function handleAppMenuClose() {
     setAppMenuAnchorEl(null);
   }
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
-    React.useState<null | EventTarget>(null);
+    React.useState<null | HTMLElement>(null);
   const leftClipId = React.useId();
   const rightClipId = React.useId();
 
@@ -305,7 +327,6 @@ function GalleryAppBar({
   return (
     <AppBar
       position="relative"
-      open={true}
       aria-label={variant === "page" ? "page header" : "dialog header"}
     >
       <Toolbar variant="dense">
@@ -536,7 +557,7 @@ function GalleryAppBar({
                   lightness: 75,
                 }}
                 onClick={() => {
-                  window.location = "/workspace";
+                  window.location.href = "/workspace";
                   handleAppMenuClose();
                 }}
               />
@@ -547,7 +568,7 @@ function GalleryAppBar({
                 foregroundColor={GALLERY_COLOR.contrastText}
                 backgroundColor={GALLERY_COLOR.main}
                 onClick={() => {
-                  window.location = "/gallery";
+                  window.location.href = "/gallery";
                   handleAppMenuClose();
                 }}
               />
@@ -559,7 +580,7 @@ function GalleryAppBar({
                   foregroundColor={INVENTORY_COLOR.contrastText}
                   backgroundColor={INVENTORY_COLOR.main}
                   onClick={() => {
-                    window.location = "/inventory";
+                    window.location.href = "/inventory";
                     handleAppMenuClose();
                   }}
                 />
@@ -579,7 +600,7 @@ function GalleryAppBar({
                   lightness: 70,
                 }}
                 onClick={() => {
-                  window.location = showMyLabGroups
+                  window.location.href = showMyLabGroups
                     ? "/groups/viewPIGroup"
                     : "/userform";
                   setAccountMenuAnchorEl(null);
@@ -601,7 +622,7 @@ function GalleryAppBar({
                     lightness: 70,
                   }}
                   onClick={() => {
-                    window.location = "/system";
+                    window.location.href = "/system";
                     handleAppMenuClose();
                   }}
                 />
@@ -837,7 +858,7 @@ function GalleryAppBar({
                     onClick={() => {
                       JwtService.destroyToken();
                       setAccountMenuAnchorEl(null);
-                      window.location = "/logout/runAsRelease";
+                      window.location.href = "/logout/runAsRelease";
                     }}
                   />
                 ))
@@ -856,12 +877,13 @@ function GalleryAppBar({
                        * Login workflow. On those servers, `gapi` will be
                        * defined globally by header.jsp
                        */
-                      // $FlowExpectedError[cannot-resolve-name]
-                      if (typeof gapi !== "undefined" && gapi.auth2) {
-                        // $FlowExpectedError[cannot-resolve-name]
-                        const auth2 = gapi.auth2.getAuthInstance();
+                      if (
+                        typeof window.gapi !== "undefined" &&
+                        window.gapi.auth2
+                      ) {
+                        const auth2 = window.gapi.auth2.getAuthInstance();
                         if (auth2) {
-                          auth2.signOut().then(() => {
+                          void auth2.signOut().then(() => {
                             // eslint-disable-next-line no-console
                             console.log("User signed out.");
                           });
@@ -875,7 +897,7 @@ function GalleryAppBar({
                       }
 
                       setAccountMenuAnchorEl(null);
-                      window.location = "/logout";
+                      window.location.href = "/logout";
                     }}
                   />
                 )}
@@ -910,4 +932,4 @@ function GalleryAppBar({
 /**
  * GalleryAppBar is the header bar for the gallery page.
  */
-export default (observer(GalleryAppBar): ComponentType<GalleryAppBarArgs>);
+export default observer(GalleryAppBar);
