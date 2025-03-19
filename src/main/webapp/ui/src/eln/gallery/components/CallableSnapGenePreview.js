@@ -39,34 +39,7 @@ import FormLabel from "@mui/material/FormLabel";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { stableSort, getSorting, paginationOptions } from "../../../util/table";
-
-const COLOR = {
-  main: {
-    hue: 188,
-    saturation: 46,
-    lightness: 70,
-  },
-  darker: {
-    hue: 188,
-    saturation: 93,
-    lightness: 33,
-  },
-  contrastText: {
-    hue: 188,
-    saturation: 35,
-    lightness: 26,
-  },
-  background: {
-    hue: 188,
-    saturation: 25,
-    lightness: 71,
-  },
-  backgroundContrastText: {
-    hue: 188,
-    saturation: 11,
-    lightness: 24,
-  },
-};
+import { ACCENT_COLOR } from "../../../assets/branding/snapgene";
 
 const CustomDrawer = styled(Drawer)(() => ({
   "& .MuiPaper-root": {
@@ -173,7 +146,7 @@ function DnaPreview({
       <div
         style={{
           borderRadius: "3px",
-          border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+          border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
           overflow: "hidden",
           display: "flex",
           justifyContent: "center",
@@ -795,7 +768,7 @@ export function CallableSnapGenePreview({
     <SnapGenePreviewContext.Provider value={{ setFile: openSnapGenePreview }}>
       {children}
       {file && (
-        <ThemeProvider theme={createAccentedTheme(COLOR)}>
+        <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
           <Dialog
             open
             onClose={() => {
