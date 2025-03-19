@@ -1,5 +1,3 @@
-// @flow
-
 import jwtDecode from "jwt-decode";
 
 class JwtService {
@@ -7,7 +5,7 @@ class JwtService {
   static ID_TOKEN_KEY: string = "id_token";
   static JWT_TOKEN_PATTERN: RegExp = /^.+\..+\..+$/;
 
-  static getToken(): string {
+  static getToken(): string | null {
     return window.sessionStorage.getItem(JwtService.ID_TOKEN_KEY);
   }
 
