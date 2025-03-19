@@ -26,12 +26,13 @@ import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
 import { Optional } from "../../../util/optional";
-import TeamsIcon from "../icons/teams.svg";
+import TeamsIcon from "../../../assets/branding/msteams/logo.svg";
 import Link from "@mui/material/Link";
 import docLinks from "../../../assets/DocLinks";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import { LOGO_COLOR } from "../../../assets/branding/msteams";
 
 type MSTeamsArgs = {|
   integrationState: IntegrationStates["MSTEAMS"],
@@ -56,11 +57,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): Node {
         integrationState={integrationState}
         explanatoryText="Message and video call your colleagues through a workspace platform with file storage."
         image={TeamsIcon}
-        color={{
-          hue: 236,
-          saturation: 45,
-          lightness: 51,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
