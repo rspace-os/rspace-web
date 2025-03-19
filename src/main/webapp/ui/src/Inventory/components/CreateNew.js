@@ -12,13 +12,12 @@ import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
-import FieldmarkIcon from "../../eln/apps/icons/fieldmark.svg";
+import FieldmarkIcon from "../../assets/branding/fieldmark/logo.svg";
 import CardMedia from "@mui/material/CardMedia";
-import FieldmarkImportDialog, {
-  FIELDMARK_COLOR,
-} from "./FieldmarkImportDialog";
+import FieldmarkImportDialog from "./FieldmarkImportDialog";
 import { useIntegrationIsAllowedAndEnabled } from "../../common/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
+import { ACCENT_COLOR as FIELDMARK_COLOR } from "../../assets/branding/fieldmark";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -288,16 +287,8 @@ function CreateNew({ onClick }: CreateNewArgs): Node {
               compact
               title="Fieldmark"
               avatar={<CardMedia image={FieldmarkIcon} />}
-              backgroundColor={{
-                hue: FIELDMARK_COLOR.background.hue,
-                saturation: FIELDMARK_COLOR.background.saturation,
-                lightness: FIELDMARK_COLOR.background.lightness,
-              }}
-              foregroundColor={{
-                hue: FIELDMARK_COLOR.backgroundContrastText.hue,
-                saturation: FIELDMARK_COLOR.backgroundContrastText.saturation,
-                lightness: FIELDMARK_COLOR.backgroundContrastText.lightness,
-              }}
+              backgroundColor={FIELDMARK_COLOR.background}
+              foregroundColor={FIELDMARK_COLOR.backgroundContrastText}
               onClick={() => {
                 setFieldmarkOpen(true);
                 /*

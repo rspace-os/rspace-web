@@ -5,23 +5,18 @@ import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import FieldmarktIcon from "../icons/fieldmark.svg";
+import FieldmarktIcon from "../../../assets/branding/fieldmark/logo.svg";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
 import { Optional } from "../../../util/optional";
+import { LOGO_COLOR } from "../../../assets/branding/fieldmark";
 
 type FieldmarkArgs = {|
   integrationState: IntegrationStates["FIELDMARK"],
   update: (IntegrationStates["FIELDMARK"]) => void,
 |};
-
-export const COLOR = {
-  hue: 82,
-  saturation: 80,
-  lightness: 33,
-};
 
 /*
  * Fieldmark uses OAuth based authentication, as implemeted by the form below.
@@ -38,7 +33,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): Node {
         integrationState={integrationState}
         explanatoryText="Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory."
         image={FieldmarktIcon}
-        color={COLOR}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
