@@ -136,6 +136,7 @@ public class TestAppConfig extends BaseConfig {
     inits.add(devGrpSetup());
     inits.add(integrationsHandlerInitialisor());
     inits.add(dBDataIntegrityChecker());
+    inits.add(systemConfigurationUpdater());
     inits.add(customForms());
     inits.add(sharedSnippetsFolderCreator());
     inits.add(sanityChecker()); // must be last

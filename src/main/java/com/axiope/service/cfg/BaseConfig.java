@@ -207,6 +207,7 @@ import com.researchspace.service.impl.SanityChecker;
 import com.researchspace.service.impl.SharingHandlerImpl;
 import com.researchspace.service.impl.StrictEmailContentGenerator;
 import com.researchspace.service.impl.SysadminUserCreationHandlerImpl;
+import com.researchspace.service.impl.SystemConfigurationInitialisor;
 import com.researchspace.service.impl.SystemPropertyPermissionManagerImpl;
 import com.researchspace.service.impl.UserContentUpdater;
 import com.researchspace.service.impl.UserContentUpdaterImpl;
@@ -497,6 +498,11 @@ public abstract class BaseConfig {
   @Bean(name = "sharedSnippetsFolderCreator")
   public IApplicationInitialisor sharedSnippetsFolderCreator() {
     return new GroupSharedSnippetsFolderAppInitialiser();
+  }
+
+  @Bean
+  public IApplicationInitialisor systemConfigurationUpdater() {
+    return new SystemConfigurationInitialisor();
   }
 
   @Bean

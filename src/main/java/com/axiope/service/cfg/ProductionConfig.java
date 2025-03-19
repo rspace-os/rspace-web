@@ -171,6 +171,7 @@ public class ProductionConfig extends BaseConfig {
     inits.add(customForms());
     // should be last
     inits.add(dBDataIntegrityChecker());
+    inits.add(systemConfigurationUpdater());
     inits.add(sharedSnippetsFolderCreator());
     inits.add(sanityChecker());
     mgr.setApplicationInitialisors(inits);
