@@ -1,10 +1,8 @@
 // @flow strict
 
-import { type Hsl } from "../../../accentedTheme";
+import { type Hsl } from "../../../../accentedTheme";
 
 // eslint-disable-next-line prettier/prettier
-declare export const LOGO_COLOR: Hsl;
-
 declare export const ACCENT_COLOR: {|
   main: Hsl,
   darker: Hsl,
@@ -12,4 +10,5 @@ declare export const ACCENT_COLOR: {|
   background: Hsl,
   backgroundContrastText: Hsl,
 |};
+
 

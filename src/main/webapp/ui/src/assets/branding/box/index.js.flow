@@ -1,8 +1,8 @@
 // @flow strict
 
+import { type Hsl } from "../../../accentedTheme";
+
 // eslint-disable-next-line prettier/prettier
-declare export const LOGO_COLOR: {|
-  hue: number, saturation: number, lightness: number
-|};
+declare export const LOGO_COLOR: Hsl;
 
 

@@ -28,6 +28,7 @@ import Divider from "@mui/material/Divider";
 import CardHeader from "@mui/material/CardHeader";
 import Grid from "@mui/material/Grid";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import { type Hsl } from "../../accentedTheme";
 
 function hsl(
   hue: number,
@@ -45,22 +46,22 @@ function hsl(
 }
 
 const accentTextColor = (
-  color: {| hue: number, saturation: number, lightness: number |},
+  color: Hsl,
   opacity: number = 100
 ) => hsl(color.hue, color.saturation, 27, opacity);
 
 const mainTextColor = (
-  color: {| hue: number, saturation: number, lightness: number |},
+  color: Hsl,
   opacity: number = 100
 ) => hsl(color.hue, color.saturation, 20, opacity);
 
 const borderColor = (
-  color: {| hue: number, saturation: number, lightness: number |},
+  color: Hsl,
   opacity: number = 25
 ) => hsl(color.hue, color.saturation, 20, opacity);
 
 const shadowColor = (
-  color: {| hue: number, saturation: number, lightness: number |},
+  color: Hsl,
   elevation: "high" | "low"
 ) =>
   `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px ${
@@ -91,7 +92,7 @@ type IntegrationCardArgs<Credentials> = {|
   // the card, the dialog, and both their contents. If the most appropriate
   // colour is very light, then do make sure that all UI elements meet the AA
   // colour contrast accessibility requirement.
-  color: {| hue: number, saturation: number, lightness: number |},
+  color: Hsl,
 
   // The current state of the integration; whether it is enabled or disabled,
   // any configurations/credentials.

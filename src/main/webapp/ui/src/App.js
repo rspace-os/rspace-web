@@ -15,7 +15,7 @@ import useStores from "./stores/use-stores";
 import materialTheme from "./theme";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import Analytics from "./components/Analytics";
-import { COLOR as INVENTORY_COLOR } from "./Inventory/components/Layout/Sidebar";
+import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
 
 function App(): Node {

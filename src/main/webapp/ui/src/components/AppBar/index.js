@@ -28,7 +28,7 @@ import FileIcon from "@mui/icons-material/InsertDriveFile";
 import FlaskIcon from "@mui/icons-material/Science";
 import AppsIcon from "@mui/icons-material/AppRegistration";
 import { COLOR as GALLERY_COLOR } from "../../eln/gallery/common";
-import { COLOR as INVENTORY_COLOR } from "../../Inventory/components/Layout/Sidebar";
+import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import MessageIcon from "@mui/icons-material/Message";
 import ProfileIcon from "@mui/icons-material/ManageAccounts";
 import PublicIcon from "@mui/icons-material/Public";

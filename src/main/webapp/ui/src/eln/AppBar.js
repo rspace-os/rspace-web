@@ -11,6 +11,7 @@ import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
 import { COLOR as GALLERY_COLOR } from "./gallery/common";
+import { ACCENT_COLOR as INVENTORY_COLOR } from "../assets/branding/rspace/inventory";
 
 const WORKSPACE_COLOR = {
   main: {
@@ -37,34 +38,6 @@ const WORKSPACE_COLOR = {
     hue: 203,
     saturation: 17,
     lightness: 35,
-  },
-};
-
-const INVENTORY_COLOR = {
-  main: {
-    hue: 120,
-    saturation: 18,
-    lightness: 71,
-  },
-  darker: {
-    hue: 120,
-    saturation: 18,
-    lightness: 50,
-  },
-  contrastText: {
-    hue: 120,
-    saturation: 18,
-    lightness: 20,
-  },
-  background: {
-    hue: 120,
-    saturation: 18,
-    lightness: 81,
-  },
-  backgroundContrastText: {
-    hue: 120,
-    saturation: 4,
-    lightness: 29,
   },
 };
 
