@@ -65,6 +65,16 @@ declare module "@mui/material/styles/createPalette" {
     callToAction: PaletteColor;
     standardIcon: PaletteColor;
     lightestGrey: string;
+    record: {
+      container: RecordPalette;
+      sample: RecordPalette;
+      subSample: RecordPalette;
+      sampleTemplate: RecordPalette;
+      document: RecordPalette;
+      mixed: RecordPalette;
+      attachment: Pick<RecordPalette, "fg">;
+      gallery: Pick<RecordPalette, "fg">;
+    };
   }
   interface PaletteOptions {
     callToAction: PaletteColorOptions;
