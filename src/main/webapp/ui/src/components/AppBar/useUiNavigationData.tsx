@@ -1,5 +1,3 @@
-//@flow
-
 import React from "react";
 import * as FetchingData from "../../util/fetchingData";
 import axios from "@/common/axios";
@@ -10,25 +8,37 @@ import Result from "../../util/result";
 /**
  * The state requried to display the conditional parts of the AppBar.
  */
-export type UiNavigationData = {|
-  userDetails: {|
-    email: string,
-    orcidId: null | string,
-    orcidAvailable: boolean,
-    fullName: string,
-    username: string,
-    profileImgSrc: null | string,
-  |},
-  visibleTabs: {|
-    published: boolean,
-    inventory: boolean,
-    system: boolean,
-    myLabGroups: boolean,
-  |},
-  bannerImgSrc: string,
-  operatedAs: boolean,
-  nextMaintenance: null | {| startDate: Date |},
-|};
+export type UiNavigationData = {
+  userDetails: {
+    email: string;
+    orcidId: null | string;
+    orcidAvailable: boolean;
+    fullName: string;
+    username: string;
+    profileImgSrc: null | string;
+  };
+  visibleTabs: {
+    published: boolean;
+    inventory: boolean;
+    system: boolean;
+    myLabGroups: boolean;
+  };
+  bannerImgSrc: string;
+  operatedAs: boolean;
+  nextMaintenance: null | { startDate: Date };
+};
+
+interface UserRenameEvent extends CustomEvent {
+  detail: { fullName: string };
+}
+
+interface UserSetOrcidEvent extends CustomEvent {
+  detail: { orcidId: string | null };
+}
+
+interface UserSetEmailEvent extends CustomEvent {
+  detail: { email: string };
+}
 
 /**
  * This hook fetches the state required to display the conditional parts of
@@ -38,18 +48,17 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
   const { getToken } = useOauthToken();
   const [loading, setLoading] = React.useState(true);
   const [uiData, setUiData] = React.useState<null | UiNavigationData>(null);
-  const [errorMessage, setErrrorMessage] = React.useState<null | string>(null);
+  const [errorMessage, setErrorMessage] = React.useState<null | string>(null);
 
   React.useEffect(() => {
-    const handleUserRename = (
-      event: Event & { detail: { fullName: string, ... }, ... }
-    ): void => {
+    const handleUserRename = (event: Event): void => {
       if (!uiData) return;
+      const customEvent = event as UserRenameEvent;
       setUiData({
         ...uiData,
         userDetails: {
           ...uiData.userDetails,
-          fullName: event.detail.fullName,
+          fullName: customEvent.detail.fullName,
         },
       });
     };
@@ -60,15 +69,14 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
   }, [uiData]);
 
   React.useEffect(() => {
-    const handleUserSetOrcid = (
-      event: Event & { detail: { orcidId: string | null, ... }, ... }
-    ): void => {
+    const handleUserSetOrcid = (event: Event): void => {
       if (!uiData) return;
+      const customEvent = event as UserSetOrcidEvent;
       setUiData({
         ...uiData,
         userDetails: {
           ...uiData.userDetails,
-          orcidId: event.detail.orcidId,
+          orcidId: customEvent.detail.orcidId,
         },
       });
     };
@@ -79,15 +87,14 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
   }, [uiData]);
 
   React.useEffect(() => {
-    const handleUserSetEmail = (
-      event: Event & { detail: { email: string, ... }, ... }
-    ): void => {
+    const handleUserSetEmail = (event: Event): void => {
       if (!uiData) return;
+      const customEvent = event as UserSetEmailEvent;
       setUiData({
         ...uiData,
         userDetails: {
           ...uiData.userDetails,
-          email: event.detail.email,
+          email: customEvent.detail.email,
         },
       });
     };
@@ -100,10 +107,10 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
   async function getUiNavigationData(): Promise<void> {
     setUiData(null);
     setLoading(true);
-    setErrrorMessage(null);
+    setErrorMessage(null);
     try {
       const token = await getToken();
-      const { data } = await axios.get<mixed>(
+      const { data } = await axios.get<unknown>(
         "/api/v1/userDetails/uiNavigationData",
         {
           headers: {
@@ -224,7 +231,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
         });
     } catch (e) {
       console.error(e);
-      setErrrorMessage(e.message);
+      if (e instanceof Error) setErrorMessage(e.message);
     } finally {
       setLoading(false);
     }
