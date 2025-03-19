@@ -1,23 +1,45 @@
-//@flow strict
-
-import React, {
-  type Node,
-  useEffect,
-  useState,
-  useContext,
-  useRef,
-  type ComponentType,
-} from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { observer } from "mobx-react-lite";
 import axios from "@/common/axios";
 import Intercom from "@intercom/messenger-js-sdk";
 
+declare global {
+  interface Window {
+    Lighthouse: {
+      hide: () => void;
+      show: () => void;
+      showButton: () => void;
+      hideButton: () => void;
+    };
+    hdlh: {
+      widget_key: string;
+      logo: string;
+      launcher_button_image: string;
+      brand: string;
+      color_mode: string;
+      disable_authorship: boolean;
+      suggestions: string[];
+      i18n: {
+        contact_button: string;
+        search_placeholder: string;
+        view_all: string;
+        suggested_articles: string;
+      };
+      onReady: () => void;
+      onShow: () => void;
+      onLoad: () => void;
+      onHide: () => void;
+      onNavigate?: ({ page }: { page: string }) => void;
+    };
+  }
+}
+
 /* eslint-disable camelcase -- lighthouse requires object properties with camel casing */
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
-type HelpDocsArgs = {|
+type HelpDocsArgs = {
   /**
    * This inner component is for rendering a button that triggers the opening
    * of the popup. This is so that the HelpDocs component can be used in various
@@ -26,8 +48,11 @@ type HelpDocsArgs = {|
    * Note: if the HelpDocs component is not rendered inside of an Analytics
    * context then disabled will always be true.
    */
-  Action: ({| onClick: () => void, disabled: boolean |}) => Node,
-|};
+  Action: (props: {
+    onClick: () => void;
+    disabled: boolean;
+  }) => React.ReactNode;
+};
 
 function loadScript(url: string): void {
   const s = document.createElement("script");
@@ -45,7 +70,7 @@ function loadScript(url: string): void {
 /**
  * Displays the HelpDocs popup window.
  */
-function HelpDocs({ Action }: HelpDocsArgs): Node {
+function HelpDocs({ Action }: HelpDocsArgs): React.ReactNode {
   const api = useRef(
     axios.create({
       baseURL: "/session/ajax",
@@ -55,7 +80,7 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
   const analyticsContext = useContext(AnalyticsContext);
   const { trackEvent } = analyticsContext;
 
-  // eslint-disable-next-line no-unused-vars -- this is simply to trigger a re-render once lighthouse is loaded
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- this is simply to trigger a re-render once lighthouse is loaded
   const [_lighthouseIsLoaded, setLighthouseIsLoaded] = useState(false);
 
   function loadLighthouse(livechatEnabled: boolean): void {
@@ -66,7 +91,7 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
        * the intercom functionality that handles personal identifiable
        * information, such as the contact-us form.
        */
-      window.hdlh.onNavigate = ({ page }) => {
+      window.hdlh.onNavigate = ({ page }: { page: string }) => {
         if (page !== "contact") return;
         window.open("mailto:support@researchspace.com", "_blank");
         window.Lighthouse.hide();
@@ -80,11 +105,11 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
     void (async () => {
       const {
         data: { livechatEnabled, livechatServerKey, livechatUserId },
-      } = await api.current.get<{|
-        livechatEnabled: boolean,
-        livechatServerKey: string,
-        livechatUserId: string,
-      |}>("/livechatProperties");
+      } = await api.current.get<{
+        livechatEnabled: boolean;
+        livechatServerKey: string;
+        livechatUserId: string;
+      }>("/livechatProperties");
       if (livechatEnabled) {
         Intercom({
           app_id: livechatServerKey,
@@ -120,13 +145,19 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
       onReady() {
         if (typeof window.Intercom !== "undefined") {
           const intercom = window.Intercom;
-          intercom("onShow", () => {
-            window.Lighthouse.hide();
-            window.Lighthouse.showButton();
-          });
-          intercom("onHide", () => {
-            window.Lighthouse.show();
-          });
+          (intercom as unknown as (event: "onShow", cb: () => void) => void)(
+            "onShow",
+            () => {
+              window.Lighthouse.hide();
+              window.Lighthouse.showButton();
+            }
+          );
+          (intercom as unknown as (event: "onHide", cb: () => void) => void)(
+            "onHide",
+            () => {
+              window.Lighthouse.show();
+            }
+          );
           if (document.getElementById("intercom-container")) {
             window.Lighthouse.showButton();
           }
@@ -136,7 +167,7 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
       onShow() {
         if (typeof window.Intercom !== "undefined") {
           const intercom = window.Intercom;
-          intercom("hide");
+          (intercom as unknown as (action: "hide") => void)("hide");
         }
       },
       onLoad() {
@@ -169,4 +200,4 @@ function HelpDocs({ Action }: HelpDocsArgs): Node {
  * allows us to centralise the logic for initialising the Lighthouse help
  * widget and the Intercom chat widget.
  */
-export default (observer(HelpDocs): ComponentType<HelpDocsArgs>);
+export default observer(HelpDocs);
