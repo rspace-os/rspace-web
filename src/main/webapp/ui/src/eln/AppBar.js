@@ -12,34 +12,7 @@ import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
 import { COLOR as GALLERY_COLOR } from "./gallery/common";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../assets/branding/rspace/inventory";
-
-const WORKSPACE_COLOR = {
-  main: {
-    hue: 197,
-    saturation: 33,
-    lightness: 75,
-  },
-  darker: {
-    hue: 197,
-    saturation: 100,
-    lightness: 30,
-  },
-  contrastText: {
-    hue: 200,
-    saturation: 30,
-    lightness: 25,
-  },
-  background: {
-    hue: 200,
-    saturation: 33,
-    lightness: 83,
-  },
-  backgroundContrastText: {
-    hue: 203,
-    saturation: 17,
-    lightness: 35,
-  },
-};
+import { ACCENT_COLOR as WORKSPACE_COLOR } from "../assets/branding/rspace/workspace";
 
 const OTHER_COLOR = {
   main: {
