@@ -1,15 +1,13 @@
-// @flow strict
-
 import React, { type ComponentType } from "react";
 import { withStyles } from "Styles";
 
-type BenchIconArgs = {|
-  color: string,
-|};
+type BenchIconArgs = {
+  color: string;
+};
 
 const BenchIcon: ComponentType<BenchIconArgs> = withStyles<
   BenchIconArgs,
-  {| svg: string, wrapper: string |}
+  { svg: string; wrapper: string }
 >((theme, { color }) => ({
   svg: {
     fill: color ?? theme.palette.standardIcon.main,
