@@ -1,5 +1,3 @@
-//@flow
-
 import axios from "@/common/axios";
 import JwtService from "./JwtService";
 import React from "react";
@@ -38,7 +36,7 @@ import React from "react";
  * storage then it is used and a timer is set up to refresh the token when it
  * expires just as if the token and been fetched directly.
  */
-export default function useOauthToken(): {| getToken: () => Promise<string> |} {
+export default function useOauthToken(): { getToken: () => Promise<string> } {
   /*
    * We memoise the token, even if all we've done is pull it from the session
    * storage, so that every call to `getToken` does not set up a new
@@ -58,7 +56,7 @@ export default function useOauthToken(): {| getToken: () => Promise<string> |} {
    * across page loads and only incur that penalty on the first page load.
    */
   async function fetchToken(): Promise<string> {
-    const response = await axios.get<{| data: string |}>(
+    const response = await axios.get<{ data: string }>(
       "/userform/ajax/inventoryOauthToken"
     );
     const newToken = response.data.data;
