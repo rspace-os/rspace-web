@@ -12,9 +12,10 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import DryadIcon from "../icons/dryad.svg";
+import DryadIcon from "../../../assets/branding/dryad/logo.svg";
 import Link from "@mui/material/Link";
 import { useDryadEndpoint } from "../useDryad";
+import { LOGO_COLOR } from "../../../assets/branding/dryad";
 
 type DryadArgs = {|
   integrationState: IntegrationStates["DRYAD"],
@@ -75,11 +76,7 @@ function Dryad({ integrationState, update }: DryadArgs): Node {
         integrationState={integrationState}
         explanatoryText="Deposit, discover, and cite research data through a curated open-access repository."
         image={DryadIcon}
-        color={{
-          hue: 118,
-          saturation: 36,
-          lightness: 38,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
