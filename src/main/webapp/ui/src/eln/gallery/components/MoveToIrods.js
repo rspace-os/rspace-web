@@ -32,37 +32,7 @@ import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import Result from "../../../util/result";
 import docLinks from "../../../assets/DocLinks";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-
-/**
- * The color scheme to match the iRODS branding.
- */
-export const COLOR = {
-  main: {
-    hue: 180,
-    saturation: 30,
-    lightness: 80,
-  },
-  darker: {
-    hue: 180,
-    saturation: 30,
-    lightness: 40,
-  },
-  contrastText: {
-    hue: 180,
-    saturation: 20,
-    lightness: 29,
-  },
-  background: {
-    hue: 180,
-    saturation: 30,
-    lightness: 80,
-  },
-  backgroundContrastText: {
-    hue: 180,
-    saturation: 20,
-    lightness: 29,
-  },
-};
+import { ACCENT_COLOR } from "../../../assets/branding/irods";
 
 const CustomDialog = styled(Dialog)(() => ({
   "& .MuiDialog-container > .MuiPaper-root": {
@@ -424,7 +394,7 @@ type WrapperArgs = {|
   setDialogOpen: (boolean) => void,
 |};
 
-const accentTheme = Object.freeze(createAccentedTheme(COLOR));
+const accentTheme = Object.freeze(createAccentedTheme(ACCENT_COLOR));
 
 /**
  * A dialog for copying or moving files to an iRODS server.
