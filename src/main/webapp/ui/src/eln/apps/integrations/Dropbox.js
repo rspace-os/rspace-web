@@ -4,7 +4,8 @@ import Grid from "@mui/material/Grid";
 import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import DropboxIcon from "../icons/Dropbox.svg";
+import DropboxIcon from "../../../assets/branding/dropbox/logo.svg";
+import { LOGO_COLOR } from "../../../assets/branding/dropbox";
 
 type DropboxArgs = {|
   integrationState: IntegrationStates["DROPBOX"],
@@ -29,11 +30,7 @@ function Dropbox({ integrationState, update }: DropboxArgs): Node {
         integrationState={integrationState}
         explanatoryText="Store, access, and share your files across devices with others through online cloud storage."
         image={DropboxIcon}
-        color={{
-          hue: 217,
-          saturation: 100,
-          lightness: 50,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
         usageText="You can include files from Dropbox in your RSpace documents. Files are embedded as links to the Dropbox location of that file."
         helpLinkText="Cloud Storage integrations docs"
