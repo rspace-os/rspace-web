@@ -1,6 +1,4 @@
-// @flow strict
-
-import React, { type Node } from "react";
+import React from "react";
 import CustomTooltip from "./CustomTooltip";
 import { toTitleCase } from "../util/Util";
 import { useTheme } from "@mui/material/styles";
@@ -30,19 +28,19 @@ library.add(
 );
 import { type RecordIconData } from "../stores/definitions/BaseRecord";
 
-type RecordTypeIconArgs = {|
-  record: RecordIconData,
-  color?: ?string,
-  "aria-hidden"?: boolean,
-  style?: { ... },
-|};
+type RecordTypeIconArgs = {
+  record: RecordIconData;
+  color?: string | null;
+  "aria-hidden"?: boolean;
+  style?: object;
+};
 
 export default function RecordTypeIcon({
   record,
   color, // Empty string signifies default styling
   ["aria-hidden"]: ariaHidden,
   style,
-}: RecordTypeIconArgs): Node {
+}: RecordTypeIconArgs): React.ReactNode {
   const theme = useTheme();
 
   let icon;
