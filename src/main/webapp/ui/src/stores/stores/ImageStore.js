@@ -35,7 +35,7 @@ export default class ImageStore {
       url,
       responseType: "blob",
       headers: {
-        Authorization: `Bearer ${JwtService.getToken()}`,
+        Authorization: `Bearer ${JwtService.getToken() ?? ""}`,
       },
     });
     this.waiting.set(url, promise);

@@ -76,7 +76,7 @@ class ApiServiceBase {
       error.config.baseURL = "";
       error.config.data = { __isRetryRequest: true };
 
-      error.config.headers.Authorization = "Bearer " + JwtService.getToken();
+      error.config.headers.Authorization = "Bearer " + (JwtService.getToken() ?? "");
 
       if (getRootStore().authStore.isAuthenticated) {
         return this.api(error.config);
@@ -88,7 +88,7 @@ class ApiServiceBase {
   setAuthorizationHeader() {
     // for when you use the bearer token
     this.api.defaults.headers.common = {
-      Authorization: "Bearer " + JwtService.getToken(),
+      Authorization: "Bearer " + (JwtService.getToken() ?? ""),
     };
 
     // for when using the api key
