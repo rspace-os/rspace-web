@@ -12,8 +12,9 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import NextCloudIcon from "../icons/nextcloud.svg";
+import NextCloudIcon from "../../../assets/branding/nextcloud/logo.svg";
 import { useNextcloudEndpoint } from "../useNextcloud";
+import { LOGO_COLOR } from "../../../assets/branding/nextcloud";
 
 type NextCloudArgs = {|
   integrationState: IntegrationStates["NEXTCLOUD"],
@@ -74,11 +75,7 @@ function NextCloud({ integrationState, update }: NextCloudArgs): Node {
         integrationState={integrationState}
         explanatoryText="Create, organise, and share your files through an open-source file hosting system."
         image={NextCloudIcon}
-        color={{
-          hue: 201,
-          saturation: 100,
-          lightness: 39,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
