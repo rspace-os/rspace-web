@@ -13,34 +13,7 @@ import { DialogBoundary } from "../components/DialogBoundary";
 import { COLOR as GALLERY_COLOR } from "./gallery/common";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../assets/branding/rspace/inventory";
 import { ACCENT_COLOR as WORKSPACE_COLOR } from "../assets/branding/rspace/workspace";
-
-const OTHER_COLOR = {
-  main: {
-    hue: 200,
-    saturation: 10,
-    lightness: 70,
-  },
-  darker: {
-    hue: 200,
-    saturation: 10,
-    lightness: 50,
-  },
-  contrastText: {
-    hue: 200,
-    saturation: 10,
-    lightness: 20,
-  },
-  background: {
-    hue: 200,
-    saturation: 10,
-    lightness: 81,
-  },
-  backgroundContrastText: {
-    hue: 200,
-    saturation: 4,
-    lightness: 29,
-  },
-};
+import { ACCENT_COLOR as OTHER_COLOR } from "../assets/branding/rspace/other";
 
 function currentPage() {
   const pages = {
