@@ -1,26 +1,23 @@
-// @flow
-
-import React, { type ComponentType } from "react";
+import React from "react";
 import { withStyles } from "Styles";
 
-type MyBenchIconArgs = {|
-  size?: "small",
-  color?: string,
-|};
+type MyBenchIconArgs = {
+  size?: "small";
+  color?: string;
+};
 
-const MyBenchIcon: ComponentType<MyBenchIconArgs> = withStyles<
-  MyBenchIconArgs,
-  { svg: string, path: string }
->((theme, { size, color }) => ({
-  svg: {
-    marginTop: size === "small" ? theme.spacing(0.5) : 0,
-    marginBottom: size === "small" ? 0 : theme.spacing(0.25),
-    fill: color ?? theme.palette.standardIcon.main,
-  },
-  path: {
-    fill: "#e3e3e3", // appear transparent
-  },
-}))(({ classes }) => (
+const MyBenchIcon = withStyles<MyBenchIconArgs, { svg: string; path: string }>(
+  (theme, { size, color }) => ({
+    svg: {
+      marginTop: size === "small" ? theme.spacing(0.5) : 0,
+      marginBottom: size === "small" ? 0 : theme.spacing(0.25),
+      fill: color ?? theme.palette.standardIcon.main,
+    },
+    path: {
+      fill: "#e3e3e3", // appear transparent
+    },
+  })
+)(({ classes }) => (
   <svg
     version="1.1"
     id="Layer_1"
