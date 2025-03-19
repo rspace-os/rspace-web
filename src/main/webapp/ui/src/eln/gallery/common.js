@@ -28,6 +28,7 @@ library.add(faShapes);
 library.add(faNoteSticky);
 library.add(faCircleDown);
 library.add(faVolumeLow);
+import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 
 /**
  * Constants for the strings that identify gallery sections.
@@ -143,38 +144,6 @@ export const gallerySectionCollectiveNoun = {
   Snippets: "snippets",
   Miscellaneous: "miscellaneous files",
   PdfDocuments: "exports",
-};
-
-/**
- * The accent colour of the gallery; giving the part of the product a
- * distinguishing identity from Inventory and the other parts of the ELN.
- */
-export const COLOR = {
-  main: {
-    hue: 280,
-    saturation: 14,
-    lightness: 81,
-  },
-  darker: {
-    hue: 280,
-    saturation: 13,
-    lightness: 22,
-  },
-  contrastText: {
-    hue: 280,
-    saturation: 13,
-    lightness: 19,
-  },
-  background: {
-    hue: 280,
-    saturation: 10,
-    lightness: 81,
-  },
-  backgroundContrastText: {
-    hue: 280,
-    saturation: 4,
-    lightness: 29,
-  },
 };
 
 /**

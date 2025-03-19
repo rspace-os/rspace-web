@@ -11,7 +11,7 @@ import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../../accentedTheme";
-import { COLOR } from "../../common";
+import { ACCENT_COLOR } from "../../../../assets/branding/rspace/gallery";
 import "../../../../../__mocks__/matchMedia";
 import page1 from "../../__tests__/getUploadedFiles_1.json";
 
@@ -41,7 +41,7 @@ mockAxios.onGet("/officeOnline/supportedExts").reply(200, { data: {} });
 describe("MoveDialog", () => {
   test("Should request only folders", async () => {
     render(
-      <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <MoveDialog
           open={true}
           onClose={() => {}}

@@ -10,7 +10,7 @@ import createAccentedTheme from "../accentedTheme";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
-import { COLOR as GALLERY_COLOR } from "./gallery/common";
+import { ACCENT_COLOR as GALLERY_COLOR } from "../assets/branding/rspace/gallery";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../assets/branding/rspace/inventory";
 import { ACCENT_COLOR as WORKSPACE_COLOR } from "../assets/branding/rspace/workspace";
 import { ACCENT_COLOR as OTHER_COLOR } from "../assets/branding/rspace/other";

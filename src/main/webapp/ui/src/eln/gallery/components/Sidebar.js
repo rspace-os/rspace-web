@@ -5,11 +5,11 @@ import Box from "@mui/material/Box";
 import { Drawer, Menu } from "../../../components/DialogBoundary";
 import { styled } from "@mui/material/styles";
 import {
-  COLOR,
   gallerySectionLabel,
   gallerySectionIcon,
   type GallerySection,
 } from "../common";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItem from "@mui/material/ListItem";
@@ -138,8 +138,8 @@ const UploadMenuItem = ({
       <AccentMenuItem
         title="Upload Files"
         avatar={<UploadFileIcon />}
-        backgroundColor={COLOR.background}
-        foregroundColor={COLOR.contrastText}
+        backgroundColor={ACCENT_COLOR.background}
+        foregroundColor={ACCENT_COLOR.contrastText}
         onKeyDown={(e: KeyboardEvent) => {
           if (e.key === " ") inputRef.current?.click();
         }}
@@ -263,8 +263,8 @@ const NewFolderMenuItem = ({
       <AccentMenuItem
         title="New Folder"
         avatar={<CreateNewFolderIcon />}
-        backgroundColor={COLOR.background}
-        foregroundColor={COLOR.contrastText}
+        backgroundColor={ACCENT_COLOR.background}
+        foregroundColor={ACCENT_COLOR.contrastText}
         onClick={() => {
           setOpen(true);
         }}
@@ -368,8 +368,8 @@ const AddFilestoreMenuItem = ({
                 : null
             }
             avatar={<DnsIcon />}
-            backgroundColor={COLOR.background}
-            foregroundColor={COLOR.contrastText}
+            backgroundColor={ACCENT_COLOR.background}
+            foregroundColor={ACCENT_COLOR.contrastText}
             onClick={() => {
               setOpen(true);
             }}
@@ -485,14 +485,14 @@ const DrawerTab = styled(
   "& .MuiListItemButton-root": {
     "&:hover": {
       backgroundColor: darken(
-        `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 100%)`,
+        `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 100%)`,
         0.05
       ),
     },
     "&.Mui-selected": {
       "&:hover": {
         backgroundColor: darken(
-          `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 100%)`,
+          `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 100%)`,
           0.05
         ),
       },

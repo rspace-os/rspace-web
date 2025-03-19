@@ -17,7 +17,8 @@ import { observer } from "mobx-react-lite";
 import Sidebar from "../components/Sidebar";
 import MainPanel from "../components/MainPanel";
 import useUiPreference, { PREFERENCES } from "../../../util/useUiPreference";
-import { COLOR, type GallerySection } from "../common";
+import { type GallerySection } from "../common";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { CallableImagePreview } from "../components/CallableImagePreview";
 import { CallablePdfPreview } from "../components/CallablePdfPreview";
 import { CallableAsposePreview } from "../components/CallableAsposePreview";
@@ -263,7 +264,7 @@ export default function Wrapper({
   validateSelection?: (GalleryFile) => Result<null>,
 |}): Node {
   return (
-    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <GallerySelection onlyAllowSingleSelection={onlyAllowSingleSelection}>
         <DisableDragAndDropByDefault>
           <Picker

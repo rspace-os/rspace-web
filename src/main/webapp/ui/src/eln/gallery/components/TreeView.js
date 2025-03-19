@@ -3,10 +3,10 @@
 import React, { type Node, type ComponentType } from "react";
 import Fade from "@mui/material/Fade";
 import {
-  COLOR,
   SELECTED_OR_FOCUS_BORDER,
   type GallerySection,
 } from "../common";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { styled } from "@mui/material/styles";
 import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
@@ -254,7 +254,7 @@ const CustomTreeItem = observer(
     );
     const dndInProgress = Boolean(dndContext.active);
 
-    const normalBorder = `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`;
+    const normalBorder = `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`;
     const dropStyle: { [string]: string | number } = {};
     if (dndInProgress && file.isFolder) {
       if (isOver) {

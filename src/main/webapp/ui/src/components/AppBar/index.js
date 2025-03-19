@@ -27,7 +27,7 @@ import NotebookIcon from "@mui/icons-material/AutoStories";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import FlaskIcon from "@mui/icons-material/Science";
 import AppsIcon from "@mui/icons-material/AppRegistration";
-import { COLOR as GALLERY_COLOR } from "../../eln/gallery/common";
+import { ACCENT_COLOR as GALLERY_COLOR } from "../../assets/branding/rspace/gallery";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import MessageIcon from "@mui/icons-material/Message";
 import ProfileIcon from "@mui/icons-material/ManageAccounts";
