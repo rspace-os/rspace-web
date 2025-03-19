@@ -4,7 +4,8 @@ import Grid from "@mui/material/Grid";
 import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import OneDriveIcon from "../icons/onedrive.svg";
+import OneDriveIcon from "../../../assets/branding/onedrive/logo.svg";
+import { LOGO_COLOR } from "../../../assets/branding/onedrive";
 
 type OneDriveArgs = {|
   integrationState: IntegrationStates["ONEDRIVE"],
@@ -29,11 +30,7 @@ function OneDrive({ integrationState, update }: OneDriveArgs): Node {
         integrationState={integrationState}
         explanatoryText="Store, share, and sync your files with a file hosting service integrated with Microsoft 365."
         image={OneDriveIcon}
-        color={{
-          hue: 203,
-          saturation: 84,
-          lightness: 48,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
         usageText="You can include files from OneDrive in your RSpace documents. Files are embedded as links to the OneDrive location of that file."
         helpLinkText="Cloud Storage integrations docs"
