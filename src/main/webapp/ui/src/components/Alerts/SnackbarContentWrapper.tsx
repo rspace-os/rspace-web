@@ -1,5 +1,3 @@
-// @flow strict
-
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Badge from "@mui/material/Badge";
@@ -15,67 +13,74 @@ import SnackbarContent from "@mui/material/SnackbarContent";
 import WarningIcon from "@mui/icons-material/Warning";
 import clsx from "clsx";
 import { green } from "@mui/material/colors";
-import { default as React, type ComponentType, forwardRef, useId } from "react";
+import React, { forwardRef, useId } from "react";
 import { makeStyles } from "tss-react/mui";
 import DismissButton from "./Buttons/Dismiss";
 import ExpandButton from "./Buttons/Expand";
 import RetryButton from "./Buttons/Retry";
 import { observer } from "mobx-react-lite";
-import Snackbar from "@mui/material/Snackbar";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import { type Alert as AlertType } from "../../stores/contexts/Alert";
 
-const useStyles = makeStyles()((theme, { verySmallLayout }) => ({
-  success: {
-    backgroundColor: green[600],
-  },
-  error: {
-    backgroundColor: theme.palette.error.main,
-  },
-  warning: {
-    backgroundColor: theme.palette.warning.main,
-  },
-  icon: {
-    fontSize: 20,
-  },
-  iconVariant: {
-    opacity: 0.9,
-    marginRight: theme.spacing(1),
-  },
-  spacer: {
-    flexGrow: 1,
-  },
-  buttons: {
-    margin: -12,
-    flexShrink: 0,
-    marginLeft: 0,
-  },
-  content: {
-    width: "100%",
-  },
-  badge: {
-    right: 8,
-    top: 2,
-    width: 20,
-    border: "2px solid white",
-  },
-  successBadge: {
-    backgroundColor: theme.palette.success.main,
-  },
-  alertTitle: {
-    whiteSpace: "normal",
-  },
-  alertContainer: {
-    maxHeight: verySmallLayout ? "calc(100vh - 210px)" : "max(175px, 50vh)",
-    overflowY: "auto",
-  },
-  detailedAlert: {
-    alignItems: "center",
-  },
-  detailedText: {
-    wordBreak: "break-word",
-  },
-}));
+declare module "@mui/material/Alert" {
+  interface AlertPropsColorOverrides {
+    notice: true;
+  }
+}
+const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
+  (theme, { verySmallLayout }: { verySmallLayout: boolean }) => ({
+    success: {
+      backgroundColor: green[600],
+    },
+    error: {
+      backgroundColor: theme.palette.error.main,
+    },
+    warning: {
+      backgroundColor: theme.palette.warning.main,
+    },
+    notice: {},
+    icon: {
+      fontSize: 20,
+    },
+    iconVariant: {
+      opacity: 0.9,
+      marginRight: theme.spacing(1),
+    },
+    spacer: {
+      flexGrow: 1,
+    },
+    buttons: {
+      margin: -12,
+      flexShrink: 0,
+      marginLeft: 0,
+    },
+    content: {
+      width: "100%",
+    },
+    badge: {
+      right: 8,
+      top: 2,
+      width: 20,
+      border: "2px solid white",
+    },
+    successBadge: {
+      backgroundColor: theme.palette.success.main,
+    },
+    alertTitle: {
+      whiteSpace: "normal",
+    },
+    alertContainer: {
+      maxHeight: verySmallLayout ? "calc(100vh - 210px)" : "max(175px, 50vh)",
+      overflowY: "auto",
+    },
+    detailedAlert: {
+      alignItems: "center",
+    },
+    detailedText: {
+      wordBreak: "break-word",
+    },
+  })
+);
 
 const variantIcon = {
   success: CheckCircleIcon,
@@ -84,18 +89,18 @@ const variantIcon = {
   notice: InfoIcon,
 };
 
-type SnackbarContentWrapperArgs = {|
-  className?: string,
-  onClose: () => void,
-  alert: AlertType,
-  setExpanded: (boolean) => void,
-  expanded: boolean,
-  onInteraction: () => void,
-|};
+type SnackbarContentWrapperArgs = {
+  className?: string;
+  onClose: () => void;
+  alert: AlertType;
+  setExpanded: (newExpanded: boolean) => void;
+  expanded: boolean;
+  onInteraction: () => void;
+};
 
 const SnackbarContentWrapper = forwardRef<
-  SnackbarContentWrapperArgs,
-  typeof Snackbar
+  HTMLDivElement,
+  SnackbarContentWrapperArgs
 >(
   (
     {
@@ -192,9 +197,7 @@ const SnackbarContentWrapper = forwardRef<
                 }}
               />
             )}
-            {alert.allowClosing && (
-              <DismissButton onClose={onClose} />
-            )}
+            {alert.allowClosing && <DismissButton onClose={onClose} />}
           </Grid>
         </Grid>
       </Grid>
@@ -283,6 +286,4 @@ SnackbarContentWrapper.displayName = "SnackbarContentWrapper";
 /**
  * The actual content of the alert toast.
  */
-export default (observer(
-  SnackbarContentWrapper
-): ComponentType<SnackbarContentWrapperArgs>);
+export default observer(SnackbarContentWrapper);
