@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import DMPDialog from "./DMPDialog";
 import AccentMenuItem from "../../components/AccentMenuItem";
 import ArgosIcon from "../../assets/branding/argos/logo.svg";
@@ -8,16 +6,16 @@ import { LOGO_COLOR } from "../../assets/branding/argos";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
 
-type ArgosAccentMenuItemArgs = {|
-  onDialogClose: () => void,
-|};
+type ArgosAccentMenuItemArgs = {
+  onDialogClose: () => void;
+};
 
 /**
  * The menu item for the create menu for importing DMPs from Argos.
  */
 export default function ArgosMenuItem({
   onDialogClose,
-}: ArgosAccentMenuItemArgs): Node {
+}: ArgosAccentMenuItemArgs): React.ReactNode {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
