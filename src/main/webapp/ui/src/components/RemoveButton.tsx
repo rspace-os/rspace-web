@@ -1,15 +1,13 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { makeStyles } from "tss-react/mui";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import ClearIcon from "@mui/icons-material/Clear";
 
-type RemoveButtonArgs = {|
-  onClick?: () => void,
-  title?: string,
-  disabled?: boolean,
-|};
+type RemoveButtonArgs = {
+  onClick?: () => void;
+  title?: string;
+  disabled?: boolean;
+};
 
 const useStyles = makeStyles()((theme) => ({
   removeIcon: {
@@ -23,7 +21,7 @@ const RemoveButton = ({
   onClick,
   title = "Delete",
   disabled = false,
-}: RemoveButtonArgs): Node => {
+}: RemoveButtonArgs): React.ReactNode => {
   const { classes } = useStyles();
   return (
     <IconButtonWithTooltip
