@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node } from "react";
+import React from "react";
 import DMPDialog from "./DMPDialog";
 import AccentMenuItem from "../../components/AccentMenuItem";
 import DMPonlineIcon from "../../assets/branding/dmponline/logo.svg";
@@ -8,16 +6,16 @@ import { LOGO_COLOR } from "../../assets/branding/dmponline";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
 
-type DMPonlineAccentMenuItemArgs = {|
-  onDialogClose: () => void,
-|};
+type DMPonlineAccentMenuItemArgs = {
+  onDialogClose: () => void;
+};
 
 /**
  * The menu item for the create menu for importing DMPs from DMPonline.
  */
 export default function DMPonlineAccentMenuItem({
   onDialogClose,
-}: DMPonlineAccentMenuItemArgs): Node {
+}: DMPonlineAccentMenuItemArgs): React.ReactNode {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
