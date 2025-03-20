@@ -1,42 +1,40 @@
-// @flow strict
-
 import ErrorBoundary from "../ErrorBoundary";
-import Snackbar from "@mui/material/Snackbar";
+import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
 import SnackbarContentWrapper from "./SnackbarContentWrapper";
-import {
-  default as React,
-  useContext,
-  type Node,
-  type ComponentType,
-} from "react";
+import React, { useContext } from "react";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
 
-const useStyles = makeStyles()((theme, { verySmallLayout }) => ({
-  toastMessageSnackbar: {
-    position: "relative",
-    marginBottom: 10,
-    maxWidth: verySmallLayout ? "100%" : 500,
-    textAlign: "left",
-    width: "100%",
-    left: 0,
-  },
-}));
+const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
+  (theme, { verySmallLayout }: { verySmallLayout: boolean }) => ({
+    toastMessageSnackbar: {
+      position: "relative",
+      marginBottom: 10,
+      maxWidth: verySmallLayout ? "100%" : 500,
+      textAlign: "left",
+      width: "100%",
+      left: 0,
+    },
+  })
+);
 
-type ToastMessageArgs = {|
-  alert: Alert,
-|};
+type ToastMessageArgs = {
+  alert: Alert;
+};
 
-function ToastMessage({ alert }: ToastMessageArgs): Node {
+function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
   const [expanded, setExpanded] = React.useState(false);
-  const [timeoutId, setTimeoutId] = React.useState<?TimeoutID>(null);
+  const [timeoutId, setTimeoutId] = React.useState<NodeJS.Timeout | null>(null);
   const { isViewportVerySmall } = useViewportDimensions();
   const { classes } = useStyles({ verySmallLayout: isViewportVerySmall });
   const { removeAlert } = useContext(AlertContext);
 
-  const handleClose = (event: ?Event, reason: ?string): void => {
+  const handleClose = (
+    event?: Event | React.SyntheticEvent,
+    reason?: SnackbarCloseReason
+  ): void => {
     if (reason !== "clickaway") removeAlert(alert);
   };
 
@@ -85,4 +83,4 @@ function ToastMessage({ alert }: ToastMessageArgs): Node {
 /**
  * This components displays a single toast alert.
  */
-export default (observer(ToastMessage): ComponentType<ToastMessageArgs>);
+export default observer(ToastMessage);
