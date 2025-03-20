@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import Grid from "@mui/material/Grid";
 import RadioField, {
   type RadioOption,
@@ -15,18 +13,16 @@ const scopeOptions: Array<RadioOption<"MINE" | "PUBLIC" | "BOTH">> = [
   { value: "BOTH", label: "Both" },
 ];
 
-type ScopeFieldArgs = {|
-  getDMPs: (Scope) => void,
-|};
+type ScopeFieldArgs = {
+  getDMPs: (scope: Scope) => void;
+};
 
-export default function ScopeField({ getDMPs }: ScopeFieldArgs): Node {
+export default function ScopeField({
+  getDMPs,
+}: ScopeFieldArgs): React.ReactNode {
   const [currentScope, setCurrentScope] = useState("MINE");
 
-  const onScopeSwitch = (e: {
-    target: { name: string, value: ?Scope, ... },
-    ...
-  }) => {
-    const newScope = e.target.value;
+  const onScopeSwitch = (newScope: Scope | null) => {
     if (newScope) {
       setCurrentScope(newScope);
       getDMPs(newScope);
@@ -39,7 +35,7 @@ export default function ScopeField({ getDMPs }: ScopeFieldArgs): Node {
         <RadioField
           value={currentScope}
           name="DMP Scope Options"
-          onChange={(e) => onScopeSwitch(e)}
+          onChange={(e) => onScopeSwitch(e.target.value as Scope | null)}
           options={scopeOptions}
           disabled={false}
           labelPlacement="top"
