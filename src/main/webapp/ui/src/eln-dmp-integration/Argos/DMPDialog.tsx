@@ -1,13 +1,4 @@
-// @flow
-
-import React, {
-  type Node,
-  useState,
-  useEffect,
-  useContext,
-  type ComponentType,
-  type ElementProps,
-} from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
@@ -41,7 +32,7 @@ import docLinks from "../../assets/DocLinks";
 import Link from "@mui/material/Link";
 import createAccentedTheme from "../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
 import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -49,7 +40,7 @@ import AppBar from "../../components/AppBar";
 import { ACCENT_COLOR } from "../../assets/branding/argos";
 
 const CustomTablePagination = withStyles<
-  ElementProps<typeof TablePagination>,
+  React.ComponentProps<typeof TablePagination> & { component?: string },
   { root: string }
 >(() => ({
   root: {
@@ -73,10 +64,10 @@ const Panel = ({
   onClose,
   onSubmit,
 }: {
-  anchorEl: ?HTMLElement,
-  children: Node,
-  onClose: () => void,
-  onSubmit: () => void,
+  anchorEl: HTMLElement | null;
+  children: React.ReactNode;
+  onClose: () => void;
+  onSubmit: () => void;
 }) => (
   <Popover
     open={Boolean(anchorEl)}
@@ -115,29 +106,30 @@ const CustomStringField = ({
   value,
   autoFocus = false,
   fullWidth = false,
-}: {|
-  onChange: (string) => void,
-  value: string,
-  autoFocus?: boolean,
-  fullWidth?: boolean,
-|}) => (
+}: {
+  onChange: (newValue: string) => void;
+  value: string;
+  autoFocus?: boolean;
+  fullWidth?: boolean;
+}) => (
   <StringField
     value={value}
     onChange={({ target: { value: newValue } }) => onChange(newValue)}
+    // eslint-disable-next-line jsx-a11y/no-autofocus
     autoFocus={autoFocus}
     fullWidth={fullWidth}
   />
 );
 
-type SearchControlArgs = {|
-  name: string,
-  value: ?string,
-  onChange: (string) => void,
-  onSubmit: () => void,
-|};
+type SearchControlArgs = {
+  name: string;
+  value: string | null;
+  onChange: (newValue: string) => void;
+  onSubmit: () => void;
+};
 
 const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
-  const [anchorEl, setAnchorEl] = useState<?HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   return (
     <Grid item>
@@ -155,6 +147,7 @@ const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
           <CustomStringField
             value={value ?? ""}
             onChange={(newValue) => onChange(newValue)}
+            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus={true}
             fullWidth={true}
           />
@@ -164,13 +157,13 @@ const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
   );
 };
 
-type ChipArgs = {|
-  name: string,
-  value: ?string,
-  onDelete: () => void,
-|};
+type ChipArgs = {
+  name: string;
+  value: string | null;
+  onDelete: () => void;
+};
 
-const CustomChip = withStyles<ChipArgs, { label: string, root: string }>(
+const CustomChip = withStyles<ChipArgs, { label: string; root: string }>(
   () => ({
     label: {
       letterSpacing: "0.02em",
@@ -194,15 +187,15 @@ const CustomChip = withStyles<ChipArgs, { label: string, root: string }>(
   );
 });
 
-type SearchControlsArgs = {|
-  setDMPs: (Array<PlanSummary>) => void,
-  fetching: boolean,
-  setFetching: (boolean) => void,
-  setTotalCount: (number) => void,
-  page: number,
-  pageSize: number,
-  setPage: (number) => void,
-|};
+type SearchControlsArgs = {
+  setDMPs: (dmps: Array<PlanSummary>) => void;
+  fetching: boolean;
+  setFetching: (fetching: boolean) => void;
+  setTotalCount: (totalCount: number) => void;
+  page: number;
+  pageSize: number;
+  setPage: (page: number) => void;
+};
 
 const SearchControls = ({
   setDMPs,
@@ -215,36 +208,30 @@ const SearchControls = ({
 }: SearchControlsArgs) => {
   const { addAlert } = useContext(AlertContext);
   const [searchParameters, setSearchParameters]: UseState<
-    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>
+    Omit<SearchParameters, "page" | "pageSize">
   > = useState({
-    like: null,
-    grantsLike: null,
-    fundersLike: null,
-    collaboratorsLike: null,
+    like: null as string | null,
+    grantsLike: null as string | null,
+    fundersLike: null as string | null,
+    collaboratorsLike: null as string | null,
   });
   const [appliedSearchParameters, setAppliedSearchParameters]: UseState<
-    $Diff<SearchParameters, { page: mixed, pageSize: mixed }>
+    Omit<SearchParameters, "page" | "pageSize">
   > = useState({
-    like: null,
-    grantsLike: null,
-    fundersLike: null,
-    collaboratorsLike: null,
+    like: null as string | null,
+    grantsLike: null as string | null,
+    fundersLike: null as string | null,
+    collaboratorsLike: null as string | null,
   });
   const modifySearchParameters = (
-    newSearchParameters: $Diff<
-      SearchParameters,
-      { page: mixed, pageSize: mixed }
-    >
+    newSearchParameters: Omit<SearchParameters, "page" | "pageSize">
   ) => {
     setSearchParameters(newSearchParameters);
     setPage(0);
   };
 
   const getDMPs = async (
-    newSearchParameters: $Diff<
-      SearchParameters,
-      { page: mixed, pageSize: mixed }
-    >
+    newSearchParameters: Omit<SearchParameters, "page" | "pageSize">
   ) => {
     setFetching(true);
     setDMPs([]);
@@ -412,8 +399,8 @@ const SearchControls = ({
 };
 
 const CustomDialog = withStyles<
-  {| fullScreen: boolean, ...ElementProps<typeof Dialog> |},
-  {| paper?: string |}
+  { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
+  { paper?: string }
 >((theme, { fullScreen }) => ({
   paper: {
     overflow: "hidden",
@@ -427,14 +414,17 @@ const CustomDialog = withStyles<
   },
 }))(Dialog);
 
-function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
+function DMPDialogContent({
+  setOpen,
+}: {
+  setOpen: (open: boolean) => void;
+}): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
 
-  const [DMPs, setDMPs]: UseState<Array<PlanSummary>> = useState([]);
-  const [totalCount, setTotalCount]: UseState<number> = useState(0);
-  const [selectedPlan, setSelectedPlan]: UseState<?PlanSummary> =
-    useState(null);
+  const [DMPs, setDMPs] = useState<Array<PlanSummary>>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [selectedPlan, setSelectedPlan] = useState<PlanSummary | null>(null);
   const [pageSize, setPageSize]: UseState<number> = useState(10);
   const [page, setPage]: UseState<number> = useState(0);
 
@@ -528,7 +518,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                 {
                   field: "radio",
                   headerName: "Select",
-                  renderCell: (params: { row: PlanSummary, ... }) => (
+                  renderCell: (params: { row: PlanSummary }) => (
                     <Radio
                       color="primary"
                       value={selectedPlan?.id === params.row.id}
@@ -542,22 +532,31 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   disableColumnMenu: true,
                   sortable: false,
                 },
-                DataGridColumn.newColumnWithFieldName<_, PlanSummary>("label", {
-                  headerName: "Label",
-                  flex: 1,
-                  sortable: false,
-                }),
-                DataGridColumn.newColumnWithFieldName("id", {
+                DataGridColumn.newColumnWithFieldName<"label", PlanSummary>(
+                  "label",
+                  {
+                    headerName: "Label",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+                DataGridColumn.newColumnWithFieldName<"id", PlanSummary>("id", {
                   headerName: "Id",
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithFieldName("grant", {
-                  headerName: "Grant",
-                  flex: 1,
-                  sortable: false,
-                }),
-                DataGridColumn.newColumnWithValueMapper<_, PlanSummary>(
+                DataGridColumn.newColumnWithFieldName<"grant", PlanSummary>(
+                  "grant",
+                  {
+                    headerName: "Grant",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+                DataGridColumn.newColumnWithValueMapper<
+                  "createdAt",
+                  PlanSummary
+                >(
                   "createdAt",
                   (createdAt) => new Date(createdAt).toLocaleString(),
                   {
@@ -566,7 +565,10 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                     sortable: false,
                   }
                 ),
-                DataGridColumn.newColumnWithValueMapper<_, PlanSummary>(
+                DataGridColumn.newColumnWithValueMapper<
+                  "modifiedAt",
+                  PlanSummary
+                >(
                   "modifiedAt",
                   (modifiedAt) => new Date(modifiedAt).toLocaleString(),
                   {
@@ -599,16 +601,18 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               loading={fetching}
               getRowId={(row) => row.id}
               onRowSelectionModelChange={(
-                newSelection: $ReadOnlyArray<PlanSummary["id"]>
+                newSelection: GridRowSelectionModel
               ) => {
                 if (newSelection[0]) {
-                  setSelectedPlan(DMPs.find((d) => d.id === newSelection[0]));
+                  setSelectedPlan(
+                    DMPs.find((d) => d.id === newSelection[0]) ?? null
+                  );
                 }
               }}
               getRowHeight={() => "auto"}
               onCellKeyDown={({ id }, e) => {
                 if (e.key === " " || e.key === "Enter") {
-                  setSelectedPlan(DMPs.find((d) => d.id === id));
+                  setSelectedPlan(DMPs.find((d) => d.id === id) ?? null);
                   e.stopPropagation();
                 }
               }}
@@ -626,19 +630,18 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               component="div"
               rowsPerPage={Math.min(pageSize, totalCount)}
               SelectProps={{
-                renderValue: (value: number) =>
-                  value < totalCount ? value : `${value} (All)`,
+                renderValue: (value: unknown): React.ReactNode => {
+                  if (typeof value !== "number")
+                    throw new Error("Invalid value");
+                  return value < totalCount ? value : `${value} (All)`;
+                },
               }}
               page={page}
-              onPageChange={(_: mixed, newPage: number) => {
+              onPageChange={(_: unknown, newPage: number) => {
                 setPage(newPage);
               }}
-              onRowsPerPageChange={({
-                target: { value: newPageSize },
-              }: {
-                target: { value: number },
-              }) => {
-                setPageSize(newPageSize);
+              onRowsPerPageChange={(e) => {
+                setPageSize(parseInt(e.target.value, 10));
                 setPage(0);
               }}
             />
@@ -667,10 +670,10 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   );
 }
 
-type DMPDialogArgs = {|
-  open: boolean,
-  setOpen: (boolean) => void,
-|};
+type DMPDialogArgs = {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+};
 
 /*
  * This simple function just for the outer-most components is so that the
@@ -680,7 +683,7 @@ type DMPDialogArgs = {|
  * custom tabbing behaviour of the Gallery page takes control of the tab key
  * events away from the React+MUI tech stack. See ../../../../scripts/global.js
  */
-function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
+function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   /*
@@ -711,4 +714,4 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
   );
 }
 
-export default (observer(DMPDialog): ComponentType<DMPDialogArgs>);
+export default observer(DMPDialog);

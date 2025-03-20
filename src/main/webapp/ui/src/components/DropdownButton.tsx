@@ -10,7 +10,7 @@ import CustomTooltip from "./CustomTooltip";
 type DropdownButtonArgs = {
   name: React.ReactNode;
   children: React.ReactNode;
-  onClick: (event: { target: EventTarget; currentTarget: EventTarget }) => void;
+  onClick: (event: React.MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
   title?: string;
 };
