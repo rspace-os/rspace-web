@@ -1,17 +1,17 @@
-// @flow
-
-import React, { useState, useEffect, type Node } from "react";
+import React, { useState, useEffect } from "react";
 import DMPDialog from "./DMPDialog";
 import MenuItem from "@mui/material/MenuItem";
 import { fetchIntegrationInfo } from "../../common/integrationHelpers";
 import Alerts from "../../components/Alerts/Alerts";
 import ErrorBoundary from "../../components/ErrorBoundary";
 
-type ArgosMenuItemArgs = {|
-  onClick: (boolean) => void,
-|};
+type ArgosMenuItemArgs = {
+  onClick: (imported: boolean) => void;
+};
 
-export default function ArgosMenuItem({ onClick }: ArgosMenuItemArgs): Node {
+export default function ArgosMenuItem({
+  onClick,
+}: ArgosMenuItemArgs): React.ReactNode {
   const [DMPAppEnabled, setDMPAppEnabled] = useState(false);
   const [showDMPDialog, setShowDMPDialog] = useState(false);
 
