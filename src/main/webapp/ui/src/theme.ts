@@ -70,6 +70,7 @@ declare module "@mui/material/styles/createPalette" {
     callToAction: PaletteColor;
     standardIcon: PaletteColor;
     lightestGrey: string;
+    warningRed: string;
     record: {
       container: RecordPalette;
       sample: RecordPalette;
