@@ -1,6 +1,4 @@
-//@flow strict
-
-import React, { useContext, type Node, type ComponentType } from "react";
+import React, { useContext } from "react";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import Chip from "@mui/material/Chip";
@@ -9,7 +7,9 @@ import NavigateContext from "../stores/contexts/Navigate";
 import AnalyticsContext from "../stores/contexts/Analytics";
 import { type LinkableRecord } from "../stores/definitions/LinkableRecord";
 
-const useStyles = makeStyles({ name: "GlobalId" })((theme, { variant }) => ({
+const useStyles = makeStyles<{ variant: "color" | "white" }>({
+  name: "GlobalId",
+})((theme, { variant }) => ({
   globalId: {
     display: "flex",
     flexDirection: "row",
@@ -38,24 +38,28 @@ const useStyles = makeStyles({ name: "GlobalId" })((theme, { variant }) => ({
     "&:focus-visible": {
       outline: `2px solid ${theme.palette.primary.main}`,
     },
-    transitionDuration: 500,
+    transitionDuration: "500ms",
   },
 }));
 
-type GlobalIdArgs = {|
-  record: LinkableRecord,
-  size?: "medium" | "small",
-  variant?: "color" | "white",
-  onClick?: () => void,
-|};
+type GlobalIdArgs = {
+  record: LinkableRecord;
+  size?: "medium" | "small";
+  variant?: "color" | "white";
+  onClick?: () => void;
+};
 
-function GlobalId({ record, variant = "color", onClick }: GlobalIdArgs): Node {
+function GlobalId({
+  record,
+  variant = "color",
+  onClick,
+}: GlobalIdArgs): React.ReactNode {
   const { classes } = useStyles({ variant });
   const { useNavigate } = useContext(NavigateContext);
   const { trackEvent } = useContext(AnalyticsContext);
   const navigate = useNavigate();
 
-  const handleClick = (e: Event) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (
@@ -72,7 +76,8 @@ function GlobalId({ record, variant = "color", onClick }: GlobalIdArgs): Node {
     <Chip
       className={classes.chip}
       component="a"
-      href={record.permalinkURL /* this is how right-click copy works */}
+      /* this is how right-click copy works */
+      {...(record.permalinkURL !== null ? { href: record.permalinkURL } : {})}
       label={record.globalId}
       icon={
         <RecordIcon
@@ -87,4 +92,4 @@ function GlobalId({ record, variant = "color", onClick }: GlobalIdArgs): Node {
   );
 }
 
-export default (observer(GlobalId): ComponentType<GlobalIdArgs>);
+export default observer(GlobalId);
