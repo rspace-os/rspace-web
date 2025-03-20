@@ -12,11 +12,14 @@ import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.User;
+import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -60,6 +63,28 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
   public SystemPropertyValue save(Long sysPropertyValueId, String newValue, User subject) {
     SystemPropertyValue spv = syspropdao.get(sysPropertyValueId);
     return doSave(spv.getProperty().getName(), newValue, spv, subject);
+  }
+
+  @Override
+  @CachePut(key = "#name.propertyName")
+  @CacheEvict(allEntries = true, value = INTEGRATION_INFO)
+  public SystemPropertyValue save(
+      SystemPropertyName name, HierarchicalPermission newValue, User subject) {
+    return save(name.getPropertyName(), newValue.name(), subject);
+  }
+
+  @Override
+  @CachePut(key = "#name.propertyName")
+  @CacheEvict(allEntries = true, value = INTEGRATION_INFO)
+  public SystemPropertyValue save(SystemPropertyName name, String newValue, User subject) {
+    return save(name.getPropertyName(), newValue, subject);
+  }
+
+  @Override
+  @CachePut(key = "#preference.name")
+  @CacheEvict(allEntries = true, value = INTEGRATION_INFO)
+  public SystemPropertyValue save(Preference preference, String newValue, User subject) {
+    return save(preference.name(), newValue, subject);
   }
 
   @Override
@@ -182,7 +207,18 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
   }
 
   @Override
-  @Cacheable(key = "#name")
+  @Cacheable(key = "#name.propertyName")
+  public SystemPropertyValue findByName(SystemPropertyName name) {
+    return findByName(name.getPropertyName());
+  }
+
+  @Override
+  @Cacheable(key = "#preference.name")
+  public SystemPropertyValue findByName(Preference preference) {
+    return findByName(preference.name());
+  }
+
+  @Override
   public SystemPropertyValue findByName(String name) {
     return syspropdao.findByPropertyNameAndCommunity(name, null);
   }

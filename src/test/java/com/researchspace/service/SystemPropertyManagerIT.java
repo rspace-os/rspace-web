@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 // Most of these tests are about enabling system features hierarchically described in RSPAC-1185
 public class SystemPropertyManagerIT extends RealTransactionSpringTestBase {
-  private static final String BOX_AVAILABLE = "box.available";
 
   private @Autowired SystemPropertyManager sysPropMgr;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
@@ -38,18 +37,25 @@ public class SystemPropertyManagerIT extends RealTransactionSpringTestBase {
   public void enablingSystemPropertyNullHandling() {
     subject = logoutAndLoginAsSysAdmin();
     // Enable Ecat on system admin level
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.ALLOWED.toString(), subject);
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, subject);
 
     // In case of a null user, isPropertyAllowed will check system admin level property only
-    assertTrue(systemPropertyPermissionUtils.isPropertyAllowed((User) null, BOX_AVAILABLE));
+    assertTrue(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            (User) null, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
 
     // DENIED_BY_DEFAULT -> not available
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT.toString(), subject);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed((User) null, BOX_AVAILABLE));
+    sysPropMgr.save(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, subject);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            (User) null, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
 
     // DENIED -> not available
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED.toString(), subject);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed((User) null, BOX_AVAILABLE));
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, subject);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            (User) null, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
   }
 
   @Test
@@ -59,14 +65,21 @@ public class SystemPropertyManagerIT extends RealTransactionSpringTestBase {
     User user = createAndSaveUser(getRandomAlphabeticString("anyUser"));
     subject = logoutAndLoginAsSysAdmin();
     // Enable Ecat on system admin level
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.ALLOWED.toString(), subject);
-    assertTrue(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, subject);
+    assertTrue(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // DENIED_BY_DEFAULT -> not available
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT.toString(), subject);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    sysPropMgr.save(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, subject);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // DENIED -> not available
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED.toString(), subject);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, subject);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
   }
 
   @Test
@@ -86,58 +99,99 @@ public class SystemPropertyManagerIT extends RealTransactionSpringTestBase {
     // No community wide setting
 
     // System wide allowed
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.ALLOWED.toString(), subject);
-    assertTrue(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, subject);
+    assertTrue(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // System wide denied by default
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT.toString(), subject);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    sysPropMgr.save(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, subject);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // System wide denied
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED.toString(), subject);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, subject);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
 
     // Community wide settings
 
     // System wide allowed
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.ALLOWED.toString(), subject);
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, subject);
 
     // Community wide allowed
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, subject);
-    assertTrue(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, subject);
+    assertTrue(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied by default
     saveSystemPropertyValue(
-        BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+        SystemPropertyName.BOX_AVAILABLE,
+        HierarchicalPermission.DENIED_BY_DEFAULT,
+        community,
+        sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
 
     // System wide denied by default
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT.toString(), sysadmin);
+    sysPropMgr.save(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, sysadmin);
 
     // Community wide allowed
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
-    assertTrue(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
+    assertTrue(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied by default
     saveSystemPropertyValue(
-        BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+        SystemPropertyName.BOX_AVAILABLE,
+        HierarchicalPermission.DENIED_BY_DEFAULT,
+        community,
+        sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
 
     // System wide denied
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED.toString(), sysadmin);
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, sysadmin);
 
     // Community wide allowed
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied by default
     saveSystemPropertyValue(
-        BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+        SystemPropertyName.BOX_AVAILABLE,
+        HierarchicalPermission.DENIED_BY_DEFAULT,
+        community,
+        sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(user, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            user, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
   }
 
   @Test
@@ -157,67 +211,111 @@ public class SystemPropertyManagerIT extends RealTransactionSpringTestBase {
     // No community wide setting
 
     // System wide allowed
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.ALLOWED.toString(), sysadmin);
-    assertTrue(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, sysadmin);
+    assertTrue(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // System wide denied by default
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT.toString(), sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+    sysPropMgr.save(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // System wide denied
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED.toString(), sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
 
     // Community wide settings
 
     // System wide allowed
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.ALLOWED.toString(), sysadmin);
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, sysadmin);
 
     // Community wide allowed
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
-    assertTrue(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
+    assertTrue(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied by default
     saveSystemPropertyValue(
-        BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+        SystemPropertyName.BOX_AVAILABLE,
+        HierarchicalPermission.DENIED_BY_DEFAULT,
+        community,
+        sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
 
     // System wide denied by default
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT.toString(), sysadmin);
+    sysPropMgr.save(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, sysadmin);
 
     // Community wide allowed
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
-    assertTrue(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
+    assertTrue(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied by default
     saveSystemPropertyValue(
-        BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+        SystemPropertyName.BOX_AVAILABLE,
+        HierarchicalPermission.DENIED_BY_DEFAULT,
+        community,
+        sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
 
     // System wide denied
-    sysPropMgr.save(BOX_AVAILABLE, HierarchicalPermission.DENIED.toString(), sysadmin);
+    sysPropMgr.save(SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, sysadmin);
 
     // Community wide allowed
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.ALLOWED, community, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied by default
     saveSystemPropertyValue(
-        BOX_AVAILABLE, HierarchicalPermission.DENIED_BY_DEFAULT, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+        SystemPropertyName.BOX_AVAILABLE,
+        HierarchicalPermission.DENIED_BY_DEFAULT,
+        community,
+        sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
     // Community wide denied
-    saveSystemPropertyValue(BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
-    assertFalse(systemPropertyPermissionUtils.isPropertyAllowed(group, BOX_AVAILABLE));
+    saveSystemPropertyValue(
+        SystemPropertyName.BOX_AVAILABLE, HierarchicalPermission.DENIED, community, sysadmin);
+    assertFalse(
+        systemPropertyPermissionUtils.isPropertyAllowed(
+            group, SystemPropertyName.BOX_AVAILABLE.getPropertyName()));
   }
 
   private void saveSystemPropertyValue(
-      String property, HierarchicalPermission permission, Community community, User subject2) {
+      SystemPropertyName name,
+      HierarchicalPermission permission,
+      Community community,
+      User subject2) {
     SystemPropertyValue systemPropertyValue =
-        sysPropMgr.findByNameAndCommunity(property, community.getId());
+        sysPropMgr.findByNameAndCommunity(name.getPropertyName(), community.getId());
 
     if (systemPropertyValue == null) {
-      SystemProperty systemProperty = sysPropMgr.findByName(property).getProperty();
+      SystemProperty systemProperty = sysPropMgr.findByName(name).getProperty();
       systemPropertyValue =
           new SystemPropertyValue(systemProperty, permission.toString(), community);
     } else {

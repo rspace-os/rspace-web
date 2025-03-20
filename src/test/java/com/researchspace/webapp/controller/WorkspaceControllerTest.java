@@ -25,6 +25,7 @@ import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.dtos.FormMenu;
 import com.researchspace.model.dtos.WorkspaceSettings;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DetailedRecordInformation;
@@ -44,6 +45,7 @@ import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordFavoritesManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
@@ -149,10 +151,12 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
 
   private void setupSystemPropertyForPublishAllowedAndSeoAllowed() {
     sysadmin1 = workspaceController.getUserByUsername("sysadmin1");
-    existingPublicSharingValue = systemPropertyManager.findByName("public_sharing");
-    existingPublicSharingValue.setValue("ALLOWED");
-    existingPublicSeoValue = systemPropertyManager.findByName("publicdocs_allow_seo");
-    existingPublicSeoValue.setValue("ALLOWED");
+    existingPublicSharingValue =
+        systemPropertyManager.findByName(SystemPropertyName.PUBLIC_SHARING);
+    existingPublicSharingValue.setValue(HierarchicalPermission.ALLOWED.name());
+    existingPublicSeoValue =
+        systemPropertyManager.findByName(SystemPropertyName.PUBLICDOCS_ALLOW_SEO);
+    existingPublicSeoValue.setValue(HierarchicalPermission.ALLOWED.name());
     systemPropertyManager.save(existingPublicSharingValue, sysadmin1);
     systemPropertyManager.save(existingPublicSeoValue, sysadmin1);
   }

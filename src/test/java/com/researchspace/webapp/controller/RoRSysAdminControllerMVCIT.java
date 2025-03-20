@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.service.impl.RoRServiceManagerImpl.RORPROPERTYNAME;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -13,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.User;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
   @Before
   public void setup() throws Exception {
     super.setUp();
-    systemPropertyManager.save(RORPROPERTYNAME, "", getSysAdminUser());
+    systemPropertyManager.save(SystemPropertyName.RSPACE_ROR, "", getSysAdminUser());
   }
 
   @After

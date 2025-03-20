@@ -44,6 +44,7 @@ import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
@@ -179,7 +180,8 @@ public class IntegrationsHandlerTest {
     SystemPropertyValue expectedDropboxAvailableProp =
         new SystemPropertyValue(new SystemProperty(null), "true");
     when(userMgr.getPreferenceForUser(subject, Preference.DROPBOX)).thenReturn(expectedDropboxPref);
-    when(sysPropMgr.findByName("dropbox.available")).thenReturn(expectedDropboxAvailableProp);
+    when(sysPropMgr.findByName(SystemPropertyName.DROPBOX_AVAILABLE.getPropertyName()))
+        .thenReturn(expectedDropboxAvailableProp);
 
     assertNotNull(handler.updateIntegrationInfo(subject, info));
   }
@@ -204,7 +206,8 @@ public class IntegrationsHandlerTest {
     when(userMgr.getPreferenceForUser(subject, Preference.BOX_LINK_TYPE))
         .thenReturn(expectedBoxLinkTypePref);
     when(userMgr.getPreferenceForUser(subject, Preference.BOX)).thenReturn(expectedBoxPref);
-    when(sysPropMgr.findByName("box.available")).thenReturn(expectedBoxAvailableProp);
+    when(sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE.getPropertyName()))
+        .thenReturn(expectedBoxAvailableProp);
 
     handler.updateIntegrationInfo(subject, info);
 
@@ -297,7 +300,8 @@ public class IntegrationsHandlerTest {
   @Test
   public void getBoxOptions() {
     SystemPropertyValue boxAvailable = getSystemPropertyValueAllowed("box.available");
-    when(sysPropMgr.findByName("box.available")).thenReturn(boxAvailable);
+    when(sysPropMgr.findByName(SystemPropertyName.BOX_AVAILABLE.getPropertyName()))
+        .thenReturn(boxAvailable);
 
     UserPreference boxEnablement = new UserPreference(Preference.BOX, subject, "true");
     when(userMgr.getPreferenceForUser(subject, Preference.BOX)).thenReturn(boxEnablement);
@@ -312,7 +316,7 @@ public class IntegrationsHandlerTest {
   @Test
   public void getSlackOptions() {
     SystemPropertyValue slackAvailable = getSystemPropertyValueAllowed("slack.available");
-    when(sysPropMgr.findByName("slack.available")).thenReturn(slackAvailable);
+    when(sysPropMgr.findByName(SystemPropertyName.SLACK_AVAILABLE)).thenReturn(slackAvailable);
 
     IntegrationInfo info = handler.getIntegration(subject, SLACK_APP_NAME);
     Map<String, Object> options = info.getOptions();

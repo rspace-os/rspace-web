@@ -732,7 +732,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's enable this functionality
     User sysadmin = logoutAndLoginAsSysAdmin();
     systemPropertyManager.save(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.ALLOWED.name(),
         sysadmin);
 
@@ -781,7 +781,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's enable this functionality
     User sysadmin = logoutAndLoginAsSysAdmin();
     systemPropertyManager.save(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.ALLOWED.name(),
         sysadmin);
 
@@ -816,7 +816,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's disable this functionality
     logoutAndLoginAsSysAdmin();
     systemPropertyManager.save(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.DENIED.name(),
         sysadmin);
 
@@ -830,7 +830,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's enable this functionality
     User sysadmin = logoutAndLoginAsSysAdmin();
     systemPropertyManager.save(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.ALLOWED.name(),
         sysadmin);
 
@@ -854,7 +854,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     Community community = createAndSaveCommunity(admin, getRandomAlphabeticString("community"));
     community = communityMgr.addGroupToCommunity(grp.getId(), community.getId(), admin);
     saveSystemPropertyValue(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.ALLOWED,
         community,
         admin);
@@ -875,7 +875,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's disable this functionality on community level
     logoutAndLoginAs(admin);
     saveSystemPropertyValue(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.DENIED,
         community,
         admin);
@@ -920,12 +920,12 @@ public class GroupManagerTest extends SpringTransactionalTest {
   }
 
   private void saveSystemPropertyValue(
-      String property, HierarchicalPermission permission, Community community, User admin) {
+      Preference preference, HierarchicalPermission permission, Community community, User admin) {
     SystemPropertyValue systemPropertyValue =
-        systemPropertyManager.findByNameAndCommunity(property, community.getId());
+        systemPropertyManager.findByNameAndCommunity(preference.name(), community.getId());
 
     if (systemPropertyValue == null) {
-      SystemProperty systemProperty = systemPropertyManager.findByName(property).getProperty();
+      SystemProperty systemProperty = systemPropertyManager.findByName(preference).getProperty();
       systemPropertyValue =
           new SystemPropertyValue(systemProperty, permission.toString(), community);
     } else {

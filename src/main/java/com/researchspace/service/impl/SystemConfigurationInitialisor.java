@@ -1,8 +1,10 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
@@ -47,8 +49,9 @@ public class SystemConfigurationInitialisor implements IApplicationInitialisor {
 
     if (StringUtils.isEmpty(chemistryProvider) || StringUtils.isEmpty(chemistryServiceUrl)) {
       SystemPropertyValue chemistryAvailableValue =
-          systemPropertyManager.findByName("chemistry.available");
-      boolean isChemistryDisabled = "DENIED".equals(chemistryAvailableValue.getValue());
+          systemPropertyManager.findByName(SystemPropertyName.CHEMISTRY_AVAILABLE);
+      boolean isChemistryDisabled =
+          HierarchicalPermission.DENIED.name().equals(chemistryAvailableValue.getValue());
 
       if (!isChemistryDisabled) {
         log.info(
@@ -59,7 +62,8 @@ public class SystemConfigurationInitialisor implements IApplicationInitialisor {
 
         /* passing 'null' as subject - this works because saving new value of 'chemistry.available'
          * doesn't trigger any side effect requiring authenticated user */
-        systemPropertyManager.save("chemistry.available", "DENIED", null);
+        systemPropertyManager.save(
+            SystemPropertyName.CHEMISTRY_AVAILABLE, HierarchicalPermission.DENIED, null);
         log.info("chemistry.available system property changed to 'DENIED'");
       }
     }

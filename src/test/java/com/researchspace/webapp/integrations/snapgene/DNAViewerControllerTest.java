@@ -6,7 +6,7 @@ import static com.researchspace.model.preference.HierarchicalPermission.ALLOWED;
 import static com.researchspace.model.preference.HierarchicalPermission.DENIED;
 import static com.researchspace.model.preference.HierarchicalPermission.DENIED_BY_DEFAULT;
 import static com.researchspace.model.record.TestFactory.createAFileProperty;
-import static com.researchspace.webapp.controller.DeploymentPropertiesController.SNAPGENE_AVAILABLE;
+import static com.researchspace.service.SystemPropertyName.SNAPGENE_AVAILABLE;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
