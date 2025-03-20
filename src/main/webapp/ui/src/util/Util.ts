@@ -15,8 +15,10 @@ export const clamp = (num: number, min: number, max: number): number => {
  * DOM.
  */
 export const preventEventBubbling =
-  (f: (e: Event) => void = () => {}): ((e: Event) => void) =>
-  (e: Event): void => {
+  <E extends { stopPropagation: () => void }>(
+    f: (e: E) => void = () => {}
+  ): ((e: E) => void) =>
+  (e: E): void => {
     e.stopPropagation();
     return f(e);
   };
@@ -25,8 +27,10 @@ export const preventEventBubbling =
  * Wrap an event handler function to prevent the default action of the event.
  */
 export const preventEventDefault =
-  (f: (e: Event) => void = () => {}): ((e: Event) => void) =>
-  (e: Event): void => {
+  <E extends { preventDefault: () => void }>(
+    f: (e: E) => void = () => {}
+  ): ((e: E) => void) =>
+  (e: E): void => {
     e.preventDefault();
     return f(e);
   };
