@@ -1,5 +1,3 @@
-//@flow strict
-
 import React, { type Context } from "react";
 import { type URL } from "../../util/types";
 import { type Location } from "react-router-dom";
@@ -14,7 +12,7 @@ export type UseLocation = Location;
  * component tree as possible, such that it encompasses all components that
  * perform navigation and should provide the following values:
  */
-type NavigateContextType = {|
+type NavigateContextType = {
   /*
    *  A function that should return a function that itself, given a URL, will
    *  navigate the user, however is most appropiate for that front-end. All
@@ -52,23 +50,23 @@ type NavigateContextType = {|
    *    attention.
    */
   useNavigate: () => (
-    URL,
-    opts?: {| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
-  ) => void,
+    url: URL,
+    opts?: { skipToParentContext?: boolean; modifyVisiblePanel?: boolean }
+  ) => void;
 
   /*
    *  A function that returns an object that represents the current search
    *  parameters as encoded in the URL. This is only useful within the main
    *  Inventory webapp and should be mocked elsewhere.
    */
-  useLocation: () => Location,
-|};
+  useLocation: () => Location;
+};
 
 /*
  * This should never be directly used because the entire app should be wrapped
  * in an actual instance
  */
-const DEFAULT_NAVIGATION_CONTEXT = {
+const DEFAULT_NAVIGATION_CONTEXT: NavigateContextType = {
   useNavigate: () => () => {},
   useLocation: () => ({
     hash: "",

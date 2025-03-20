@@ -1,0 +1,17 @@
+//@flow strict
+
+import React, { type Context } from "react";
+import { type URL } from "../../util/types";
+import { type Location } from "react-router-dom";
+
+export type UseLocation = Location;
+
+type NavigateContextType = {|
+  useNavigate: () => (
+    URL,
+    opts?: {| skipToParentContext?: boolean, modifyVisiblePanel?: boolean |}
+  ) => void,
+  useLocation: () => Location,
+|};
+
+declare export default Context<NavigateContextType>;
