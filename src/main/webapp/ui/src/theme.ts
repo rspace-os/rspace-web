@@ -1,8 +1,4 @@
-import {
-  createTheme,
-  ThemeOptions as MuiThemeOptions,
-  TransitionsOptions,
-} from "@mui/material";
+import { createTheme, ThemeOptions as MuiThemeOptions } from "@mui/material";
 import { makeStyles } from "tss-react/mui";
 import { grey, red } from "@mui/material/colors";
 import { hslToHex } from "./util/colors";
@@ -32,6 +28,10 @@ declare module "@mui/material/styles" {
       themedDialog?: (hue: number, sat: number, lig: number) => string;
       themedDialogTitle?: (hue: number, sat: number, lig: number) => string;
     };
+    transitions: {
+      iconTransformations: string;
+      filterToggle: string;
+    };
   }
 
   // eslint-disable-next-line no-unused-vars
@@ -39,6 +39,11 @@ declare module "@mui/material/styles" {
     saturated?: string;
     placeholderText?: string;
     background?: string;
+  }
+
+  interface TransitionsOptions {
+    iconTransformations: string;
+    filterToggle: string;
   }
 }
 
@@ -297,7 +302,7 @@ const baseTheme = createTheme({
   transitions: {
     iconTransformations: "transform 0.3s cubic-bezier(0.42, 0, 0.94, 1.49) 0s", // just a little bounce
     filterToggle: "filter .2s ease-in-out, opacity .2s ease-in-out",
-  } as TransitionsOptions & { iconTransformations: string },
+  },
   typography: {
     h6: {
       fontSize: "1.1rem",
