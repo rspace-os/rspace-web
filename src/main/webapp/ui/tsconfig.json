@@ -16,5 +16,5 @@
       "Styles": ["src/util/styles"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "custom.d.ts"]
 }
