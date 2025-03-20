@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * This file contains helper functions for working with third-party
  * integrations.
@@ -25,14 +23,14 @@ export type IntegrationName = string;
 /**
  * The current status of a particular integration
  */
-export type IntegrationInfo = {|
-  available: boolean,
-  displayName: IntegrationDisplayName,
-  enabled: boolean,
-  name: IntegrationName,
-  oauthConnected: boolean,
-  options: {},
-|};
+export type IntegrationInfo = {
+  available: boolean;
+  displayName: IntegrationDisplayName;
+  enabled: boolean;
+  name: IntegrationName;
+  oauthConnected: boolean;
+  options: object;
+};
 
 /**
  * A simple function for fetching information on the status of a particular
@@ -43,7 +41,7 @@ export type IntegrationInfo = {|
 export async function fetchIntegrationInfo(
   name: IntegrationName
 ): Promise<IntegrationInfo> {
-  const { data } = await axios.get<{| data: IntegrationInfo |}>(
+  const { data } = await axios.get<{ data: IntegrationInfo }>(
     "/integration/integrationInfo",
     {
       params: new URLSearchParams({ name }),
@@ -81,7 +79,8 @@ export async function fetchIntegrationInfo(
           options: {},
         });
       } catch (e) {
-        return Result.Error<IntegrationInfo>([e]);
+        if (e instanceof Error) return Result.Error<IntegrationInfo>([e]);
+        return Result.Error<IntegrationInfo>([new Error("Unknown error")]);
       }
     })
     .elseThrow();
@@ -121,7 +120,7 @@ export function useIntegrationIsAllowedAndEnabled(
       try {
         setIntegrationState(await fetchIntegrationInfo(name));
       } catch (e) {
-        setError(e.message);
+        if (e instanceof Error) setError(e.message);
       } finally {
         setLoading(false);
       }
