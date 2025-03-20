@@ -64,6 +64,8 @@ import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -418,7 +420,10 @@ public class StructuredDocumentController extends BaseController {
       redirectUrl += "?editMode=true";
     }
     if (!(sharedWithGroup == null || sharedWithGroup.isEmpty())) {
-      redirectUrl += "&sharedWithGroup=" + sharedWithGroup.get(0).getSharee().getDisplayName();
+      redirectUrl +=
+          "&sharedWithGroup="
+              + URLEncoder.encode(
+                  sharedWithGroup.get(0).getSharee().getDisplayName(), StandardCharsets.UTF_8);
     }
     return redirectUrl;
   }

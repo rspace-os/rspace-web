@@ -337,6 +337,12 @@ public class RecordManagerImpl implements RecordManager {
         permissnUtils.assertIsPermitted(
             parentFolder, PermissionType.CREATE, user, "create document in parent folder");
       }
+    } else {
+      log.warn(
+          "The record will be created inside the root folder since the"
+              + " specified one [{}] is a shared folder",
+          parentFolder.getName());
+      parentFolder = folderDao.get(user.getRootFolder().getId());
     }
     RSForm form = formDao.get(formID);
 
@@ -363,18 +369,7 @@ public class RecordManagerImpl implements RecordManager {
 
     if (parentFolder != null) {
       recordDao.save(rc);
-      if (parentFolder.isSharedFolder()) {
-        // if is a shared folder then add the document ONLY on the root folder
-        log.warn(
-            "The record with globalId[{}] will be created inside the root folder since the"
-                + " specified folder [{}] was a shared one",
-            rc.getGlobalIdentifier(),
-            parentFolder.getName());
-        Folder rootFolder = folderDao.get(user.getRootFolder().getId());
-        rootFolder.addChild(rc, user, skipAddingToChildren);
-      } else {
-        parentFolder.addChild(rc, user, skipAddingToChildren);
-      }
+      parentFolder.addChild(rc, user, skipAddingToChildren);
       if (!skipAddingToChildren) {
         folderDao.save(parentFolder);
       } else {

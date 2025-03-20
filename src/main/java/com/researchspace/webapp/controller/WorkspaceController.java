@@ -81,6 +81,8 @@ import com.researchspace.session.UserSessionTracker;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -426,7 +428,10 @@ public class WorkspaceController extends BaseController {
       Long newNotebookId, List<RecordGroupSharing> sharedWithGroup) {
     String redirectUrl = "redirect:/notebookEditor/" + newNotebookId;
     if (!(sharedWithGroup == null || sharedWithGroup.isEmpty())) {
-      redirectUrl += "?sharedWithGroup=" + sharedWithGroup.get(0).getSharee().getDisplayName();
+      redirectUrl +=
+          "?sharedWithGroup="
+              + URLEncoder.encode(
+                  sharedWithGroup.get(0).getSharee().getDisplayName(), StandardCharsets.UTF_8);
     }
     return redirectUrl;
   }
