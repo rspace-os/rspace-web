@@ -1,19 +1,17 @@
-// @flow
-
-import React, { useState, useEffect, type Node } from "react";
+import React, { useState, useEffect } from "react";
 import DMPDialog from "./DMPDialog";
 import MenuItem from "@mui/material/MenuItem";
 import { fetchIntegrationInfo } from "../../common/integrationHelpers";
 import Alerts from "../../components/Alerts/Alerts";
 import ErrorBoundary from "../../components/ErrorBoundary";
 
-type DmpOnlineMenuItemArgs = {|
-  onClick: (boolean) => void,
-|};
+type DmpOnlineMenuItemArgs = {
+  onClick: (completed: boolean) => void;
+};
 
 export default function DmpOnlineMenuItem({
   onClick,
-}: DmpOnlineMenuItemArgs): Node {
+}: DmpOnlineMenuItemArgs): React.ReactNode {
   const [DMPAppEnabled, setDMPAppEnabled] = useState(false);
   const [showDMPDialog, setShowDMPDialog] = useState(false);
 
