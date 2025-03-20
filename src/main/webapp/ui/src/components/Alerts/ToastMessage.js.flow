@@ -1,0 +1,8 @@
+// @flow strict
+
+import { type Node } from "react";
+import { type Alert } from "../../stores/contexts/Alert";
+
+declare export default function ToastMessage({|
+  alert: Alert,
+|}): Node;
