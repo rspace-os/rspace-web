@@ -1,5 +1,3 @@
-//@flow strict
-
 import React from "react";
 import axios from "@/common/axios";
 import { isoToLocale } from "../../util/Util";
@@ -15,31 +13,28 @@ import { Optional } from "../../util/optional";
  */
 
 type Plan = {
-  title: string,
-  dmp_id: {| identifier: string |},
+  title: string;
+  dmp_id: { identifier: string };
   contact?: {
-    name: string,
+    name: string;
     affiliation: {
-      name: string,
-      ...
-    },
-    ...
-  },
-  created: string,
-  modified: string,
-  ...
+      name: string;
+    };
+  };
+  created: string;
+  modified: string;
 };
 
 export class DmpSummary {
   #title: string;
-  #contact: Optional<{ name: string, affiliation: { name: string, ... }, ... }>;
+  #contact: Optional<{ name: string; affiliation: { name: string } }>;
   #created: string;
   #modified: string;
-  #dmp_id: {| identifier: string |};
+  #dmp_id: { identifier: string };
 
-  #addAlert: (Alert) => void;
+  #addAlert: (alert: Alert) => void;
 
-  constructor(dmp: Plan, addAlert: (Alert) => void) {
+  constructor(dmp: Plan, addAlert: (alert: Alert) => void) {
     this.#title = dmp.title;
     this.#contact = Optional.fromNullable(dmp.contact);
     this.#dmp_id = dmp.dmp_id;
@@ -86,26 +81,28 @@ export class DmpSummary {
         })
       );
     } catch (error) {
-      this.#addAlert(
-        mkAlert({
-          title: "Failed to import DMP.",
-          message: error.message,
-          variant: "error",
-        })
-      );
+      if (error instanceof Error) {
+        this.#addAlert(
+          mkAlert({
+            title: "Failed to import DMP.",
+            message: error.message,
+            variant: "error",
+          })
+        );
+      }
     }
   }
 }
 
-type ListPlansResponse = {|
-  data: {|
-    items: Array<{| dmp: Plan |}>,
-    total_items: number,
-  |},
-  error: null | {|
-    errorMessages: Array<string>,
-  |},
-|};
+type ListPlansResponse = {
+  data: {
+    items: Array<{ dmp: Plan }>;
+    total_items: number;
+  };
+  error: null | {
+    errorMessages: Array<string>;
+  };
+};
 
 export class DmpListing {
   dmps: Array<DmpSummary>;
@@ -113,14 +110,14 @@ export class DmpListing {
   page: number;
   pageSize: number;
 
-  #idMapping: { [string]: DmpSummary };
-  #addAlert: (Alert) => void;
+  #idMapping: { [id: string]: DmpSummary };
+  #addAlert: (alert: Alert) => void;
 
   constructor(
     data: ListPlansResponse["data"],
     page: number,
     pageSize: number,
-    addAlert: (Alert) => void
+    addAlert: (alert: Alert) => void
   ) {
     this.dmps = data.items.map(({ dmp }) => new DmpSummary(dmp, addAlert));
     this.totalCount = data.total_items;
@@ -147,39 +144,42 @@ export class DmpListing {
 
 // do we want to expose a function that takes pagination args?
 async function listPlans(
-  addAlert: (Alert) => void,
+  addAlert: (alert: Alert) => void,
   page: number = 0,
   pageSize: number = 20
 ): Promise<DmpListing> {
   try {
     const {
       data: { data, error },
-    } = await axios.get<{|
-      data: {|
-        items: Array<{| dmp: Plan |}>,
-        total_items: number,
-      |},
-      error: null | {|
-        errorMessages: Array<string>,
-      |},
-    |}>(`/apps/dmponline/plans?page=${page + 1}&per_page=${pageSize}`);
+    } = await axios.get<{
+      data: {
+        items: Array<{ dmp: Plan }>;
+        total_items: number;
+      };
+      error: null | {
+        errorMessages: Array<string>;
+      };
+    }>(`/apps/dmponline/plans?page=${page + 1}&per_page=${pageSize}`);
     if (error !== null) throw new Error(error.errorMessages[0]);
     return new DmpListing(data, page, pageSize, addAlert);
   } catch (error) {
-    addAlert(
-      mkAlert({
-        title: "Failed to get available dmps.",
-        message: error.message,
-        variant: "error",
-      })
-    );
-    throw new Error(error.message);
+    if (error instanceof Error) {
+      addAlert(
+        mkAlert({
+          title: "Failed to get available dmps.",
+          message: error.message,
+          variant: "error",
+        })
+      );
+      throw new Error(error.message);
+    }
+    throw new Error("Unknown error");
   }
 }
 
-export function useDmpOnlineEndpoint(): {|
-  firstPage: FetchingData.Fetched<DmpListing>,
-|} {
+export function useDmpOnlineEndpoint(): {
+  firstPage: FetchingData.Fetched<DmpListing>;
+} {
   const { addAlert } = React.useContext(AlertContext);
 
   const [firstPage, setFirstPage] = React.useState<
@@ -192,7 +192,8 @@ export function useDmpOnlineEndpoint(): {|
         const newListing = await listPlans(addAlert);
         setFirstPage({ tag: "success", value: newListing });
       } catch (error) {
-        setFirstPage({ tag: "error", error: error.message });
+        if (error instanceof Error)
+          setFirstPage({ tag: "error", error: error.message });
       }
     })();
   }, []);
