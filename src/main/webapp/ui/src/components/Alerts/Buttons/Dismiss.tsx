@@ -1,15 +1,13 @@
-// @flow strict
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 import CloseIcon from "@mui/icons-material/Close";
 
-type DismissArgs = {|
-  onClose: () => void,
-|};
+type DismissArgs = {
+  onClose: () => void;
+};
 
-function Dismiss({ onClose }: DismissArgs): Node {
+function Dismiss({ onClose }: DismissArgs): React.ReactNode {
   return (
     <IconButtonWithTooltip
       title="Dismiss"
@@ -26,4 +24,4 @@ function Dismiss({ onClose }: DismissArgs): Node {
 /**
  * The dismiss button for the alert toasts.
  */
-export default (observer(Dismiss): ComponentType<DismissArgs>);
+export default observer(Dismiss);

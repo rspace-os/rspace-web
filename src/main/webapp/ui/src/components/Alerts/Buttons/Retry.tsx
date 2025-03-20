@@ -1,6 +1,4 @@
-// @flow strict
-
-import React, { type Node, type ComponentType, useState } from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -10,12 +8,12 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 library.add(faSpinner);
 import { doNotAwait } from "../../../util/Util";
 
-type RetryArgs = {|
-  retryFunction: () => Promise<void>,
-  onClose: () => void,
-|};
+type RetryArgs = {
+  retryFunction: () => Promise<void>;
+  onClose: () => void;
+};
 
-function Retry({ retryFunction, onClose }: RetryArgs): Node {
+function Retry({ retryFunction, onClose }: RetryArgs): React.ReactNode {
   const [retrying, setRetrying] = useState(false);
   return (
     <IconButtonWithTooltip
@@ -27,14 +25,16 @@ function Retry({ retryFunction, onClose }: RetryArgs): Node {
           <RefreshIcon />
         )
       }
-      onClick={doNotAwait(async () => {
-        setRetrying(true);
-        try {
-          await retryFunction();
-        } finally {
-          onClose();
+      onClick={doNotAwait(
+        async (_event: React.MouseEvent<HTMLButtonElement>) => {
+          setRetrying(true);
+          try {
+            await retryFunction();
+          } finally {
+            onClose();
+          }
         }
-      })}
+      )}
       sx={{ m: 0.5 }}
     />
   );
@@ -43,4 +43,4 @@ function Retry({ retryFunction, onClose }: RetryArgs): Node {
 /**
  * The retry button for the alert toasts.
  */
-export default (observer(Retry): ComponentType<RetryArgs>);
+export default observer(Retry);
