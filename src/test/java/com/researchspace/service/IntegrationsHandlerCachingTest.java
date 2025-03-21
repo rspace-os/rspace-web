@@ -92,10 +92,11 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
   // this should expire the cache for everyone.
   private void assertThatUpdatingAvailabilityTriggersCacheRefresh(
       User user, String propertyToUpdate, IntegrationInfo reloaded) {
-    SystemPropertyValue dropboxAvailable = sysPropMger.findByName("dropbox.available");
+    SystemPropertyValue dropboxAvailable =
+        sysPropMger.findByName(SystemPropertyName.DROPBOX_AVAILABLE);
     // save by name
     sysPropMger.save(
-        dropboxAvailable.getProperty().getName(),
+        SystemPropertyName.DROPBOX_AVAILABLE,
         dropboxAvailable.getValue(),
         user); // doesn't matter if value is different; just saving will trigger cache invalidation
     IntegrationInfo dropboxAvailableReloaded =
@@ -113,7 +114,8 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     assertThat(dropboxAvailableReloaded3, not(sameInstance(dropboxAvailableReloaded2)));
 
     // now let's update a child property; should refresh all properties
-    SystemPropertyValue dropboxLinking = sysPropMger.findByName("dropbox.linking.enabled");
+    SystemPropertyValue dropboxLinking =
+        sysPropMger.findByName(SystemPropertyName.DROPBOX_LINKING_ENABLED);
     sysPropMger.save(dropboxLinking, user);
     IntegrationInfo dropboxAvailableReloaded4 =
         integrationsHandler.getIntegration(user, propertyToUpdate);

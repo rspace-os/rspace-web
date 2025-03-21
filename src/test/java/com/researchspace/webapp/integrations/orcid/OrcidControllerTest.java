@@ -6,9 +6,11 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -28,7 +30,8 @@ public class OrcidControllerTest extends SpringTransactionalTest {
   public void setUp() throws Exception {
     super.setUp();
     User sysadmin = logoutAndLoginAsSysAdmin();
-    systemPropertyManager.save("orcid.available", "ALLOWED", sysadmin);
+    systemPropertyManager.save(
+        SystemPropertyName.ORCID_AVAILABLE, HierarchicalPermission.ALLOWED, sysadmin);
     RSpaceTestUtils.logout();
   }
 

@@ -45,12 +45,14 @@ import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.frontend.OAuthAppInfo;
 import com.researchspace.model.frontend.PublicOAuthApps;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.PreferenceCategory;
 import com.researchspace.model.preference.SettingsType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestGroup;
@@ -906,7 +908,10 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     User targetMember = tg.u1();
 
     logoutAndLoginAs(getSysAdminUser(), SYS_ADMIN_PWD);
-    systemPropertyManager.save("group_autosharing.available", "DENIED", getSysAdminUser());
+    systemPropertyManager.save(
+        SystemPropertyName.GROUP_AUTOSHARING_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
 
     // PIs and lab admins with view all can no longer change the autoshare status for their non-pi
     // members
@@ -917,7 +922,10 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
 
     // revert back, as the setting persists between test runs
     logoutAndLoginAs(getSysAdminUser(), SYS_ADMIN_PWD);
-    systemPropertyManager.save("group_autosharing.available", "ALLOWED", getSysAdminUser());
+    systemPropertyManager.save(
+        SystemPropertyName.GROUP_AUTOSHARING_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
   }
 
   // Attempt to set individual autoshare status for the targetUser as subject
@@ -999,11 +1007,17 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
   }
 
   private void allowPublicLastLogin() {
-    systemPropertyManager.save("publicLastLogin.available", "ALLOWED", getSysAdminUser());
+    systemPropertyManager.save(
+        SystemPropertyName.PUBLIC_LAST_LOGIN_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
   }
 
   private void denyPublicLastLogin() {
-    systemPropertyManager.save("publicLastLogin.available", "DENIED", getSysAdminUser());
+    systemPropertyManager.save(
+        SystemPropertyName.PUBLIC_LAST_LOGIN_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
   }
 
   private MvcResult getMiniProfile(User profileUser) throws Exception {

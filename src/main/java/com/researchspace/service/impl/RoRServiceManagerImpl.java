@@ -6,6 +6,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.RoRService;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import java.util.Iterator;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,6 @@ import org.springframework.util.StringUtils;
 @Service
 public class RoRServiceManagerImpl implements RoRService {
 
-  public static final String RORPROPERTYNAME = "rspaceinstance.ror";
   private final RoRClient rorClient;
   private final SystemPropertyManager systemPropertyManager;
 
@@ -31,7 +31,7 @@ public class RoRServiceManagerImpl implements RoRService {
 
   @Override
   public String getSystemRoRValue() {
-    SystemPropertyValue ror = systemPropertyManager.findByName(RORPROPERTYNAME);
+    SystemPropertyValue ror = systemPropertyManager.findByName(SystemPropertyName.RSPACE_ROR);
     if (ror != null) {
       return ror.getValue();
     }
@@ -40,7 +40,7 @@ public class RoRServiceManagerImpl implements RoRService {
 
   @Override
   public String getRorNameForSystemRoRValue() {
-    SystemPropertyValue ror = systemPropertyManager.findByName(RORPROPERTYNAME);
+    SystemPropertyValue ror = systemPropertyManager.findByName(SystemPropertyName.RSPACE_ROR);
     String rorID = ror.getValue();
     if (!StringUtils.hasText(rorID)) {
       return "";
@@ -63,6 +63,6 @@ public class RoRServiceManagerImpl implements RoRService {
 
   @Override
   public void updateSystemRoRValue(String rorID, User updater) {
-    systemPropertyManager.save(RORPROPERTYNAME, rorID, updater);
+    systemPropertyManager.save(SystemPropertyName.RSPACE_ROR, rorID, updater);
   }
 }

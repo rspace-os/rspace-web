@@ -13,7 +13,9 @@ import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
@@ -38,14 +40,12 @@ public class API_MVC_TestBase extends MVCTestBase {
 
   static final String STATUS = "/status";
 
-  static final String API_AVAILABLE = "api.available";
-
   protected void enableAPI(User apiUser) {
-    sysPropMgr.save(API_AVAILABLE, "ALLOWED", apiUser);
+    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.ALLOWED, apiUser);
   }
 
   protected void disableAPI(User apiUser) {
-    sysPropMgr.save(API_AVAILABLE, "DENIED", apiUser);
+    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.DENIED, apiUser);
   }
 
   /**

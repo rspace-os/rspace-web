@@ -37,6 +37,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.TestGroup;
 import java.util.List;
 import java.util.Map;
@@ -851,8 +852,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
   }
 
   private void enablePiEditAll(User sysadmin) {
-    SystemPropertyValue val =
-        sysPropMgr.findByName(Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.toString().toLowerCase());
+    SystemPropertyValue val = sysPropMgr.findByName(Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP);
     val.setValue(HierarchicalPermission.ALLOWED.name());
     sysPropMgr.save(val, sysadmin);
   }
@@ -1029,14 +1029,20 @@ public class GroupControllerMVCIT extends MVCTestBase {
     User pi = group.getOwner();
 
     logoutAndLoginAs(getSysAdminUser(), SYS_ADMIN_PWD);
-    sysPropMgr.save("group_autosharing.available", "DENIED", getSysAdminUser());
+    sysPropMgr.save(
+        SystemPropertyName.GROUP_AUTOSHARING_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
 
     // PIs and lab admins with view all can no longer change group-wide autoshare status
     requestAndAssertAutoshare(group, pi, true, false);
 
     // revert back, as the setting persists between test runs
     logoutAndLoginAs(getSysAdminUser(), SYS_ADMIN_PWD);
-    sysPropMgr.save("group_autosharing.available", "ALLOWED", getSysAdminUser());
+    sysPropMgr.save(
+        SystemPropertyName.GROUP_AUTOSHARING_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
   }
 
   @Test

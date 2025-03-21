@@ -1,6 +1,8 @@
 package com.researchspace.service;
 
 import com.researchspace.model.User;
+import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.SettingsType;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
@@ -21,18 +23,26 @@ public interface SystemPropertyManager extends GenericManager<SystemPropertyValu
   SystemPropertyValue save(Long sysPropertyValueId, String newValue, User subject);
 
   /**
-   * @param propertyUniqueName
+   * @param name
    * @param newValue
+   * @param subject
    * @return the updated SystemPropertyValue, or <code>null</code> if a property with <code>
    *     propertyUniqueName</code> doesn't exist
    * @throws IllegalArgumentException if <code>newValue</code> is not compatible with the underlying
    *     {@link SystemProperty} type
    */
+  SystemPropertyValue save(SystemPropertyName name, HierarchicalPermission newValue, User subject);
+
+  SystemPropertyValue save(SystemPropertyName name, String newValue, User subject);
+
+  SystemPropertyValue save(Preference preference, String newValue, User subject);
+
+  @Deprecated // use strongly-typed save method variant
   SystemPropertyValue save(String propertyUniqueName, String newValue, User subject);
 
   /**
-   * @param SystemPropertyValue the value to update
-   * @param User subject
+   * @param value the value to update
+   * @param subject
    * @return the updated SystemPropertyValue
    * @throws IllegalArgumentException if <code>newValue</code> is not compatible with the underlying
    *     {@link SystemProperty} type
@@ -52,6 +62,11 @@ public interface SystemPropertyManager extends GenericManager<SystemPropertyValu
    * @param name
    * @return a {@link SystemPropertyValue}
    */
+  SystemPropertyValue findByName(SystemPropertyName name);
+
+  SystemPropertyValue findByName(Preference name);
+
+  @Deprecated // use strongly-typed findByName method variant
   SystemPropertyValue findByName(String name);
 
   /**

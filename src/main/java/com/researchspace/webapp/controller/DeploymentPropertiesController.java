@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import com.researchspace.model.User;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +21,6 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 @RequestMapping("/deploymentproperties*")
 public class DeploymentPropertiesController extends BaseController {
-
-  public static final String SNAPGENE_AVAILABLE = "snapgene.available";
 
   @Autowired private SystemPropertyManager sysPropertyMgr;
 
@@ -216,8 +215,12 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("egnyte.available", rc.get("egnyte.available").getValue());
     properties.put("egnyte.client.id", egnyteClientId);
 
-    properties.put("chemistry.available", rc.get("chemistry.available").getValue());
-    properties.put(SNAPGENE_AVAILABLE, rc.get(SNAPGENE_AVAILABLE).getValue());
+    properties.put(
+        SystemPropertyName.CHEMISTRY_AVAILABLE.getPropertyName(),
+        rc.get(SystemPropertyName.CHEMISTRY_AVAILABLE.getPropertyName()).getValue());
+    properties.put(
+        SystemPropertyName.SNAPGENE_AVAILABLE.getPropertyName(),
+        rc.get(SystemPropertyName.SNAPGENE_AVAILABLE.getPropertyName()).getValue());
 
     properties.put("baseURL", baseURL);
 
