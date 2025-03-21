@@ -42,13 +42,3 @@ axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
  * header.
  */
 export default axios;
-
-/**
- * We re-export the axios types so that they can be used by the modules that
- * call this one.
- *
- * As per the default export, this is done so that we can prohibit the use of
- * axios directly in the rest of the codebase and ensure that the
- * X-Requested-With header is always set.
- */
-export { type Axios, type AxiosPromise, type AxiosRequestConfig } from "axios";
