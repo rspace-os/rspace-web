@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../__mocks__/matchMedia";
 import React from "react";
@@ -9,7 +8,7 @@ import { render, cleanup, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import DMPToolMenuItem from "../DMPToolMenuItem";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
