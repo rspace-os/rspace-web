@@ -5,7 +5,6 @@ import { defineConfig, devices } from '@playwright/experimental-ct-react';
  */
 export default defineConfig({
   testDir: './src',
-  /* The base directory, relative to the config file, for snapshot files created with toMatchSnapshot and toHaveScreenshot. */
   testMatch: '**/*.spec.tsx',
   tsconfig: './tsconfig.json',
   snapshotDir: './__snapshots__',

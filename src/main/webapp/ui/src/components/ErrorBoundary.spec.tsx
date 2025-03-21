@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import { type Locator } from "@playwright/test";
-import ErrorBoundary from "./components/ErrorBoundary";
+import ErrorBoundary from "./ErrorBoundary";
 import React from "react";
 import { ErrorComponent } from "./ErrorBoundary.story";
 
