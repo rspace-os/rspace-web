@@ -34,6 +34,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@types/axios": "^0.9.36",
     "@types/jest": "^29.5.14",
+    "@types/jest-axe": "^3.5.9",
     "axios-mock-adapter": "^1.20.0",
     "babel-loader": "=9.1.2",
     "babel-plugin-transform-import-meta": "^2.2.1",
@@ -156,7 +157,7 @@
       ]
     },
     "testMatch": [
-      "**/?*.test.(j|t)s"
+      "**/?*.test.(js|ts|tsx)"
     ],
     "testTimeout": 20000,
     "reporters": [
