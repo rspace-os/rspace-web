@@ -19,6 +19,7 @@ import com.researchspace.model.views.UserView;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -172,6 +173,21 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     // these are the two lab group members that aren't currently in the CG.
     assertTrue(userViewHasUser(u2, users));
     assertTrue(userViewHasUser(u4, users));
+  }
+
+  @Test
+  public void testGetByCommunalGroupFolderId() throws IllegalAddChildOperation {
+    User u1 = createAndSaveUserIfNotExists("u1", Constants.PI_ROLE);
+    User u2 = createAndSaveUserIfNotExists("u2", Constants.USER_ROLE);
+
+    Group grp = createGroup("group", u1);
+    grp.setCommunalGroupFolderId(new Random().nextLong());
+    grp.addMember(u2, RoleInGroup.DEFAULT);
+    grp = grpDao.save(grp);
+    Long communalFolderId = grp.getCommunalGroupFolderId();
+
+    Group result = grpDao.getByCommunalGroupFolderId(communalFolderId);
+    assertEquals(grp, result);
   }
 
   private boolean userViewHasUser(User user, List<UserView> users) {

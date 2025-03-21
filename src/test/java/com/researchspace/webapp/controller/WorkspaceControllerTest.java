@@ -463,7 +463,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     MockHttpServletRequest mockRequest = new MockHttpServletRequest();
     MockHttpServletResponse mockResponse = new MockHttpServletResponse();
 
-    setRequestAsAjaxREquest(mockRequest);
+    setRequestAsAjaxRequest(mockRequest);
     Exception e = new Exception("Test message");
     ModelAndView mav = workspaceController.handleExceptions(mockRequest, mockResponse, e);
     assertEquals(ControllerExceptionHandler.AJAX_ERROR_VIEW_NAME, mav.getViewName());
@@ -516,7 +516,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     assertEquals(ControllerExceptionHandler.NON_AJAX_ERROR_VIEW_NAME, mav.getViewName());
   }
 
-  private void setRequestAsAjaxREquest(MockHttpServletRequest mockRequest) {
+  private void setRequestAsAjaxRequest(MockHttpServletRequest mockRequest) {
     mockRequest.addHeader(RequestUtil.AJAX_REQUEST_HEADER_NAME, RequestUtil.AJAX_REQUEST_TYPE);
   }
 }

@@ -14,6 +14,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +35,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.BaseRecord.SharedStatus;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
@@ -47,6 +50,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserFolderSetup;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
 import com.researchspace.session.UserSessionTracker;
@@ -80,11 +84,13 @@ public class FolderApiControllerTest {
   @Mock RecordManager recordMgr;
   @Mock RecordDeletionManager deletionMgr;
   @Mock IPropertyHolder properties;
+  @Mock SharingHandler recordShareHandler;
 
   @InjectMocks FolderApiController controller;
   User subject;
   Folder root = null;
   Folder existingFolder = null;
+  Folder sharedFolder = null;
   Notebook createdNotebook, existingNotebook = null;
   Folder createdFolder;
   Folder topLevelGalleryFolder;
@@ -101,6 +107,10 @@ public class FolderApiControllerTest {
     this.existingFolder.setId(2L);
     this.createdFolder = TestFactory.createAFolder("createdFolder", subject);
     this.createdFolder.setId(6L);
+    this.sharedFolder = TestFactory.createAFolder("sharedFolder", subject);
+    this.sharedFolder.setSharedStatus(SharedStatus.SHARED);
+    this.sharedFolder.setType(RecordType.SHARED_GROUP_FOLDER_ROOT.getString());
+    this.sharedFolder.setId(2L);
     topLevelGalleryFolder = TestFactory.createASystemFolder("rootmedia", subject);
     topLevelGalleryFolder.addType(RecordType.ROOT_MEDIA);
     this.topLevelGalleryFolder.setId(6L);
@@ -123,12 +133,8 @@ public class FolderApiControllerTest {
     root.addChild(createdNotebook, subject);
     ApiFolder toCreate = createApiNotebookToPost();
     mockGetRootFolder();
-    Mockito.when(
-            folderMgr.createNewNotebook(
-                Mockito.eq(root.getId()),
-                Mockito.eq(toCreate.getName()),
-                Mockito.any(RecordContext.class),
-                Mockito.eq(subject)))
+    when(folderMgr.createNewNotebook(
+            eq(root.getId()), eq(toCreate.getName()), any(RecordContext.class), eq(subject)))
         .thenReturn(createdNotebook);
     mockBaseUrl();
     ApiFolder created =
@@ -144,14 +150,13 @@ public class FolderApiControllerTest {
     toCreate.setParentFolderId(existingFolder.getId());
     existingFolder.addChild(createdNotebook, subject);
 
-    Mockito.when(
-            folderMgr.createNewNotebook(
-                Mockito.eq(existingFolder.getId()),
-                Mockito.eq(toCreate.getName()),
-                Mockito.any(DefaultRecordContext.class),
-                Mockito.eq(subject)))
+    when(folderMgr.createNewNotebook(
+            eq(existingFolder.getId()),
+            eq(toCreate.getName()),
+            any(DefaultRecordContext.class),
+            eq(subject)))
         .thenReturn(createdNotebook);
-    Mockito.when(folderMgr.getFolder(existingFolder.getId(), subject)).thenReturn(existingFolder);
+    when(folderMgr.getFolder(existingFolder.getId(), subject)).thenReturn(existingFolder);
     mockBaseUrl();
     ApiFolder created =
         controller.createNewFolder(
@@ -161,12 +166,36 @@ public class FolderApiControllerTest {
     assertGetRootFolderNotCalled();
   }
 
+  @Test
+  public void createNotebookInSharedFolder() throws BindException {
+    root.addChild(createdNotebook, subject);
+    ApiFolder toCreate = createApiNotebookToPost();
+    toCreate.setParentFolderId(sharedFolder.getId());
+
+    when(folderMgr.getFolder(existingFolder.getId(), subject)).thenReturn(sharedFolder);
+    when(folderMgr.getRootFolderForUser(subject)).thenReturn(root);
+    when(folderMgr.createNewNotebook(
+            eq(root.getId()), eq(toCreate.getName()), any(DefaultRecordContext.class), eq(subject)))
+        .thenReturn(createdNotebook);
+    mockBaseUrl();
+    when(recordShareHandler.shareIntoSharedFolder(
+            eq(subject), eq(sharedFolder), eq(createdNotebook.getId())))
+        .thenReturn(new ServiceOperationResultCollection());
+
+    ApiFolder created =
+        controller.createNewFolder(
+            toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
+    assertTrue(created.isNotebook());
+    assertEquals(root.getId(), created.getParentFolderId());
+    verify(recordShareHandler)
+        .shareIntoSharedFolder(eq(subject), eq(sharedFolder), eq(createdNotebook.getId()));
+  }
+
   @Test(expected = BindException.class)
   public void createNestedNotebookNotAllowed() throws BindException {
     ApiFolder toCreate = createApiNotebookToPost();
     toCreate.setParentFolderId(existingNotebook.getId()); // this should not be allowed
-    Mockito.when(folderMgr.getFolder(existingNotebook.getId(), subject))
-        .thenReturn(existingNotebook);
+    when(folderMgr.getFolder(existingNotebook.getId(), subject)).thenReturn(existingNotebook);
     controller.createNewFolder(toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
   }
 
@@ -174,7 +203,7 @@ public class FolderApiControllerTest {
   public void createTopLevelGalleryFolder() throws BindException {
     ApiFolder toCreate = createApiFolderToPost();
     toCreate.setParentFolderId(topLevelGalleryFolder.getId()); // this should not be allowed
-    Mockito.when(folderMgr.getFolder(topLevelGalleryFolder.getId(), subject))
+    when(folderMgr.getFolder(topLevelGalleryFolder.getId(), subject))
         .thenReturn(topLevelGalleryFolder);
     controller.createNewFolder(toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
   }
@@ -183,8 +212,7 @@ public class FolderApiControllerTest {
   public void createNestedFolderInNotebookNotAllowed() throws BindException {
     ApiFolder toCreate = createApiFolderToPost();
     toCreate.setParentFolderId(existingNotebook.getId()); // this should not be allowed
-    Mockito.when(folderMgr.getFolder(existingNotebook.getId(), subject))
-        .thenReturn(existingNotebook);
+    when(folderMgr.getFolder(existingNotebook.getId(), subject)).thenReturn(existingNotebook);
     controller.createNewFolder(toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
   }
 
@@ -196,8 +224,7 @@ public class FolderApiControllerTest {
     BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
     errors.reject("some.value");
     controller.createNewFolder(toCreate, errors, subject);
-    verify(folderMgr, never())
-        .createNewFolder(Mockito.anyLong(), Mockito.anyString(), Mockito.eq(subject));
+    verify(folderMgr, never()).createNewFolder(Mockito.anyLong(), Mockito.anyString(), eq(subject));
   }
 
   @Test
@@ -218,7 +245,7 @@ public class FolderApiControllerTest {
   }
 
   private void assertGetRootFolderNotCalled() {
-    verify(folderMgr, never()).getRootFolderForUser(Mockito.any(User.class));
+    verify(folderMgr, never()).getRootFolderForUser(any(User.class));
   }
 
   private ApiFolder createApiNotebookToPost() {
@@ -234,15 +261,15 @@ public class FolderApiControllerTest {
   }
 
   private void assertTargetFolderNotCalled() {
-    Mockito.verify(folderMgr, Mockito.never()).getFolder(Mockito.anyLong(), Mockito.eq(subject));
+    Mockito.verify(folderMgr, Mockito.never()).getFolder(Mockito.anyLong(), eq(subject));
   }
 
   private void mockGetRootFolder() {
-    Mockito.when(folderMgr.getRootFolderForUser(subject)).thenReturn(root);
+    when(folderMgr.getRootFolderForUser(subject)).thenReturn(root);
   }
 
   private void mockBaseUrl() {
-    Mockito.when(properties.getServerUrl()).thenReturn("http://somewhere.com");
+    when(properties.getServerUrl()).thenReturn("http://somewhere.com");
   }
 
   @Test(expected = NotFoundException.class)
@@ -304,13 +331,12 @@ public class FolderApiControllerTest {
     final Long nbId = 4L;
     ISearchResults<BaseRecord> mockResults =
         createSearchResults_1OfEachWorkspaceType(docId, folderId, nbId);
-    Mockito.when(
-            recordMgr.listFolderRecords(
-                Mockito.eq(subject.getRootFolder().getId()),
-                Mockito.any(PaginationCriteria.class),
-                Mockito.any(RecordTypeFilter.class)))
+    when(recordMgr.listFolderRecords(
+            eq(subject.getRootFolder().getId()),
+            any(PaginationCriteria.class),
+            any(RecordTypeFilter.class)))
         .thenReturn(mockResults);
-    Mockito.when(folderMgr.getRootFolderForUser(subject)).thenReturn(root);
+    when(folderMgr.getRootFolderForUser(subject)).thenReturn(root);
     ApiRecordTreeItemListing listing =
         controller.rootFolderTree(null, pgCriteria, errorsObject(pgCriteria), subject);
     assertEquals(3, listing.getRecords().size());
@@ -338,11 +364,8 @@ public class FolderApiControllerTest {
     subFolder.setId(3L);
     root.addChild(subFolder, subject);
     ISearchResults<BaseRecord> mockResults = createEmptySearchResults();
-    Mockito.when(
-            recordMgr.listFolderRecords(
-                Mockito.eq(subFolder.getId()),
-                Mockito.any(PaginationCriteria.class),
-                Mockito.any(RecordTypeFilter.class)))
+    when(recordMgr.listFolderRecords(
+            eq(subFolder.getId()), any(PaginationCriteria.class), any(RecordTypeFilter.class)))
         .thenReturn(mockResults);
     mockFolderLoad(subFolder);
     ApiRecordTreeItemListing listing =
@@ -353,7 +376,7 @@ public class FolderApiControllerTest {
   }
 
   private void mockFolderLoad(Folder folder) {
-    Mockito.when(folderMgr.getFolderSafe(folder.getId(), subject)).thenReturn(Optional.of(folder));
+    when(folderMgr.getFolderSafe(folder.getId(), subject)).thenReturn(Optional.of(folder));
   }
 
   @Test
@@ -368,11 +391,10 @@ public class FolderApiControllerTest {
     folderSetup.getMediaImgExamples().addChild(imgFile, subject);
     ISearchResults<BaseRecord> mockResults = createMediaResults(imgFile);
     // set up mocks
-    Mockito.when(
-            recordMgr.listFolderRecords(
-                Mockito.eq(folderSetup.getMediaImgExamples().getId()),
-                Mockito.any(PaginationCriteria.class),
-                Mockito.any(RecordTypeFilter.class)))
+    when(recordMgr.listFolderRecords(
+            eq(folderSetup.getMediaImgExamples().getId()),
+            any(PaginationCriteria.class),
+            any(RecordTypeFilter.class)))
         .thenReturn(mockResults);
     mockFolderLoad(folderSetup.getMediaImgExamples());
 
@@ -447,11 +469,11 @@ public class FolderApiControllerTest {
     createdFolder.setSystemFolder(false);
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.of(createdFolder));
     when(deletionMgr.doDeletion(
-            Mockito.any(Long[].class),
-            Mockito.any(Supplier.class),
-            Mockito.any(DeletionSettings.class),
-            Mockito.eq(subject),
-            Mockito.any(ProgressMonitor.class)))
+            any(Long[].class),
+            any(Supplier.class),
+            any(DeletionSettings.class),
+            eq(subject),
+            any(ProgressMonitor.class)))
         .thenReturn(result);
     controller.deleteFolder(1L, subject);
 

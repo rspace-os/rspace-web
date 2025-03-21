@@ -2149,3 +2149,15 @@ window.addEventListener("ReactToolbarMounted", () => {
   });
 });
 
+$(document).ready(function () {
+  const searchParams = new URLSearchParams(window.location.search);
+  if (searchParams.has("sharedWithGroup")) {
+    RS.confirm(
+      "<b>This document has been automatically shared with all members of " +
+        RS.escapeHtml(searchParams.get("sharedWithGroup")) +
+        '</b><br />To amend the permissions, visit the <a href="/record/share/manage">Shared Documents</a> page.',
+      "success",
+      "infinite"
+    );
+  }
+});

@@ -1,5 +1,7 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.service.RecordDeletionManager.MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER;
+
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
@@ -14,15 +16,19 @@ import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.IdConstraint;
 import com.researchspace.model.permissions.PermissionDomain;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
+import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserManager;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +40,7 @@ public class SharingHandlerImpl implements SharingHandler {
   private @Autowired RecordSharingManager sharingManager;
   private @Autowired UserManager userManager;
   private @Autowired GroupManager groupManager;
+  private @Autowired FolderManager folderManager;
   private @Autowired IPermissionUtils permissionUtils;
 
   @Override
@@ -77,6 +84,31 @@ public class SharingHandlerImpl implements SharingHandler {
       permissionUtils.notifyUserOrGroupToRefreshCache(userORGroup);
     }
     return rc;
+  }
+
+  @Override
+  public ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
+      shareIntoSharedFolder(User user, Folder sharedFolder, Long recordId) {
+    Optional<Folder> sharedFolderRoot =
+        folderManager.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+            sharedFolder.getId(), user);
+    RSPath path = folderManager.getShortestPathToSharedRootFolder(sharedFolder.getId(), user);
+    if (path.isEmpty() || path.size() <= MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER) {
+      String msg =
+          String.format(
+              "The folder '%s' is not a shared subfolder - id [%d] is not in a shared folder!",
+              sharedFolder.getName(), sharedFolder.getId());
+      throw new IllegalArgumentException(msg);
+    }
+
+    Group sharedGroup =
+        groupManager.getGroupByCommunalGroupFolderId(sharedFolderRoot.get().getId());
+    ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "write");
+    shareConfigElement.setGroupFolderId(sharedFolder.getId());
+    ShareConfigCommand shareConfig =
+        new ShareConfigCommand(
+            new Long[] {recordId}, new ShareConfigElement[] {shareConfigElement});
+    return this.shareRecords(shareConfig, user);
   }
 
   @Override

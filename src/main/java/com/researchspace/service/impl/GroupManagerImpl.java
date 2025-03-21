@@ -1166,6 +1166,11 @@ public class GroupManagerImpl implements GroupManager {
     }
   }
 
+  @Override
+  public Group getGroupByCommunalGroupFolderId(Long communalGroupFolderId) {
+    return groupDao.getByCommunalGroupFolderId(communalGroupFolderId);
+  }
+
   private Folder doCreateAutoshareFolder(User user, Group group, UserGroup ug, String folderName) {
     Folder groupFolder = folderMgr.getFolder(group.getCommunalGroupFolderId(), user);
     Folder autoshareFolder = folderMgr.createNewFolder(groupFolder.getId(), folderName, user);

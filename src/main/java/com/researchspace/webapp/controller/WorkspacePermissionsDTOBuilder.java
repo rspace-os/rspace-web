@@ -17,6 +17,7 @@ import org.springframework.ui.Model;
  */
 @Service
 public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOBuilder {
+
   private FolderManager fMger;
 
   private RecordManager recMgr;
@@ -39,7 +40,9 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
       Long previousFolderId,
       boolean isSearch) {
 
-    boolean createRecord = parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE);
+    boolean createRecord =
+        parentFolder.isSharedFolder()
+            || parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE);
     boolean createFolder =
         parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE_FOLDER);
 
@@ -119,6 +122,8 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
     model.addAttribute("movetargetRoot", movetargetRoot);
     model.addAttribute("isNotebook", parentFolder.isNotebook());
     model.addAttribute("createPermission", dto);
+    model.addAttribute("allowThirdPartyImport", !parentFolder.isSharedFolder());
+    model.addAttribute("allowCreateForm", !parentFolder.isSharedFolder());
 
     return dto;
   }

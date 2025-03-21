@@ -18,6 +18,7 @@ import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.FormDao;
 import com.researchspace.dao.FormUsageDao;
+import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.NameDateFilter;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.RecordGroupSharingDao;
@@ -132,6 +133,7 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired MovePermissionChecker movePermissionChecker;
   private @Autowired IPermissionUtils permissnUtils;
   private @Autowired RecordDao recordDao;
+  private @Autowired GroupDao groupDao;
   private @Autowired UserManager userManager;
   private @Autowired UserDao userDao;
   private @Autowired AuditDao auditDao;
@@ -328,12 +330,20 @@ public class RecordManagerImpl implements RecordManager {
     if (parentId != null) {
       parentFolder = folderDao.get(parentId);
     }
-    if (!context.enableDirectTemplateCreationInTemplateFolder()
-        || !(parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true))) {
-      permissnUtils.assertIsPermitted(
-          parentFolder, PermissionType.CREATE, user, "create document in parent folder");
-    }
 
+    if (!parentFolder.isSharedFolder()) {
+      if (!context.enableDirectTemplateCreationInTemplateFolder()
+          || !(parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true))) {
+        permissnUtils.assertIsPermitted(
+            parentFolder, PermissionType.CREATE, user, "create document in parent folder");
+      }
+    } else {
+      log.warn(
+          "The record will be created inside the root folder since the"
+              + " specified one [{}] is a shared folder",
+          parentFolder.getName());
+      parentFolder = folderDao.get(user.getRootFolder().getId());
+    }
     RSForm form = formDao.get(formID);
 
     if (form.isPublishedAndHidden() && !context.ignoreUnpublishedForms()) {

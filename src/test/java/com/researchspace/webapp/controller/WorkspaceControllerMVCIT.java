@@ -1228,6 +1228,47 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void testCreateNotebookIntoSharedFolderMVC() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User user = group.u1();
+    initUser(user);
+    RSpaceTestUtils.login(user.getUsername(), TESTPASSWD);
+
+    openTransaction();
+    Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
+    Folder sharedFolder = folderDao.get(sharedFolderId);
+    Set<BaseRecord> orgChildren = folderDao.getRootRecordForUser(user).getChildrens();
+    commitTransaction();
+
+    String testName = "newTestNotebook";
+    this.mockMvc
+        .perform(
+            post("/workspace/create_notebook/{rootid}", sharedFolder.getId())
+                .principal(new MockPrincipal(user.getUsername()))
+                .param("notebookNameField", testName))
+        .andExpect(status().isFound())
+        .andReturn();
+
+    openTransaction();
+    Folder refreshedSharedFolder = folderDao.get(sharedFolderId);
+    Set<BaseRecord> newSharedChildren = refreshedSharedFolder.getChildrens();
+
+    Folder refreshedRootFolder = folderDao.getRootRecordForUser(user);
+    Set<BaseRecord> newRootChildren = refreshedRootFolder.getChildrens();
+    newRootChildren.removeAll(orgChildren);
+    commitTransaction();
+
+    assertEquals("no new child in root folder", 1, newRootChildren.size());
+    assertEquals("no new child in shared folder", 1, newSharedChildren.size());
+    BaseRecord newRecord = (BaseRecord) (newRootChildren.toArray())[0];
+    assertTrue("new record should be a folder", newRecord.isFolder());
+    assertTrue("new record should be a notebook", newRecord.isNotebook());
+    assertEquals("created notebook has different name", testName, newRecord.getName());
+
+    RSpaceTestUtils.logout();
+  }
+
+  @Test
   public void testCreateNotebooksInRootFolderWithAjax() throws Exception {
     User user = createAndSaveUser(getRandomName(10));
     initUser(user);
