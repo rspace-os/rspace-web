@@ -69,7 +69,7 @@ export class DmpSummary {
 
   async importIntoGallery(): Promise<void> {
     try {
-      await axios.post<void, void>(
+      await axios.post<void>(
         `apps/dmponline/importPlan?id=${encodeURIComponent(
           this.#dmp_id.identifier
         )}&filename=${this.#title}`

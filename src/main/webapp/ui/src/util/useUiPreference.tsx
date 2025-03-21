@@ -152,10 +152,7 @@ export default function useUiPreference<T>(
             },
           })
         );
-        await axios.post<unknown, unknown>(
-          "/userform/ajax/preference",
-          formData
-        );
+        await axios.post<unknown>("/userform/ajax/preference", formData);
       })();
     },
   ];
