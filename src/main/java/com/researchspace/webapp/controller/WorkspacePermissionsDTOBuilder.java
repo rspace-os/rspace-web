@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.model.core.RecordType.*;
+
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.PermissionType;
@@ -40,15 +42,15 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
       Long previousFolderId,
       boolean isSearch) {
 
-    boolean createRecord =
-        parentFolder.isSharedFolder()
-            || parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE);
+    boolean createRecord = (parentFolder.isSharedFolder() &&
+        !parentFolder.hasType(INDIVIDUAL_SHARED_FOLDER_ROOT)) || parentFolder.getSharingACL()
+        .isPermitted(usr, PermissionType.CREATE);
     boolean createFolder =
         parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE_FOLDER);
 
     boolean isParentFolderInSharedTree =
-        parentFolder.hasAncestorOfType(RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT, true)
-            || parentFolder.hasAncestorOfType(RecordType.SHARED_GROUP_FOLDER_ROOT, true);
+        parentFolder.hasAncestorOfType(INDIVIDUAL_SHARED_FOLDER_ROOT, true)
+            || parentFolder.hasAncestorOfType(SHARED_GROUP_FOLDER_ROOT, true);
     ActionPermissionsDTO dto = new ActionPermissionsDTO();
     if (records != null) {
       // allowed options per record in page.
@@ -65,7 +67,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
             !br.isMediaRecord()
                 && !br.isSnippet()
                 && recMgr.canMove(
-                    br, parentFolder, usr); // manager transaction as may need to query db
+                br, parentFolder, usr); // manager transaction as may need to query db
         if (isSearch) {
           move = move && usr.isOwnerOfRecord(br);
         }
@@ -96,15 +98,15 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
     }
 
     String movetargetRoot = "/"; // home folder by default
-    if (parentFolder.hasType(RecordType.SHARED_GROUP_FOLDER_ROOT)) {
+    if (parentFolder.hasType(SHARED_GROUP_FOLDER_ROOT)) {
       movetargetRoot = parentFolder.getId() + "";
-    } else if (parentFolder.hasType(RecordType.SHARED_FOLDER) && !parentFolder.isNotebook()) {
+    } else if (parentFolder.hasType(SHARED_FOLDER) && !parentFolder.isNotebook()) {
       Folder grpSharedFolder =
           fMger
               .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(parentFolder.getId(), usr)
               .get();
       movetargetRoot = grpSharedFolder.getId() + "";
-    } else if (parentFolder.hasType(RecordType.SHARED_FOLDER)
+    } else if (parentFolder.hasType(SHARED_FOLDER)
         && parentFolder.isNotebook()
         && previousFolderId != null) {
       // this seems redundant, we only use the ID, which we already have.
@@ -115,7 +117,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
               .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(previousFolder.getId(), usr)
               .get();
       movetargetRoot = grpSharedFolder.getId() + "";
-    } else if (parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true)) {
+    } else if (parentFolder.hasAncestorOfType(TEMPLATE, true)) {
       movetargetRoot = fMger.getTemplateFolderForUser(usr).getId() + "";
     }
 
@@ -130,12 +132,12 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
   private boolean calculateRenameEnabled(User usr, BaseRecord br) {
     return br.getSharingACL().isPermitted(usr, PermissionType.RENAME)
-        && !br.hasType(RecordType.SHARED_GROUP_FOLDER_ROOT); // rspac-1636
+        && !br.hasType(SHARED_GROUP_FOLDER_ROOT); // rspac-1636
   }
 
   private boolean calculateDeleteEnabled(User usr, BaseRecord br) {
     return br.getSharingACL().isPermitted(usr, PermissionType.DELETE)
-        && !br.hasType(RecordType.SHARED_GROUP_FOLDER_ROOT); // rspac-1636
+        && !br.hasType(SHARED_GROUP_FOLDER_ROOT); // rspac-1636
   }
 
   private boolean calculateCopyEnabled(
