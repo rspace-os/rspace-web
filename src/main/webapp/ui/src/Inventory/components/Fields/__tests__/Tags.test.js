@@ -11,7 +11,7 @@ import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { Optional } from "../../../../util/optional";
-import "../../../../../__mocks__/matchMedia.js";
+import "../../../../../__mocks__/matchMedia";
 
 window.fetch = jest.fn(() =>
   Promise.resolve({

@@ -12,7 +12,7 @@ import type { InventoryRecord } from "../../../../../stores/definitions/Inventor
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import "../../../../../../__mocks__/createObjectURL.js";
-import "../../../../../../__mocks__/matchMedia.js";
+import "../../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 

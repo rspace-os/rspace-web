@@ -3,7 +3,7 @@
  */
 //@flow
 /* eslint-env jest */
-import "../../../../../__mocks__/matchMedia.js";
+import "../../../../../__mocks__/matchMedia";
 import React, { useState } from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";

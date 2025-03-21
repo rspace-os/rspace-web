@@ -7,7 +7,7 @@ import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ZenodoRepo from "../ZenodoRepo";
-import "../../../../__mocks__/matchMedia.js";
+import "../../../../__mocks__/matchMedia";
 import { type Person } from "../common";
 import userEvent from "@testing-library/user-event";
 
