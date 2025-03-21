@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -20,9 +19,9 @@ afterEach(cleanup);
 describe("ScopeField", () => {
   each(["Mine", "Public", "Both"]).test(
     "getDMPs is called correctly when the scope is %s",
-    (scope) => {
+    (scope: string) => {
       cleanup();
-      const getDMPs = jest.fn<[Scope], void>();
+      const getDMPs = jest.fn<[Scope], unknown[]>();
 
       render(
         <ThemeProvider theme={materialTheme}>
