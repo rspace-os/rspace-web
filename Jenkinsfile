@@ -207,6 +207,23 @@ pipeline {
                 }
             }
         }
+        stage('Playwright Component Tests') {
+        		when {
+            		anyOf {
+                		expression { return params.FRONTEND_TESTS }
+                		changeset '**/*.ts'
+                		changeset '**/*.tsx'
+                		changeset '**/*.css'
+                		changeset '**/*.json'
+            		}
+            }
+            steps {
+                echo 'Running Playwright tests'
+                dir('src/main/webapp/ui') {
+                    sh 'npm run test-ct'
+                }
+            }
+        }
         stage('Build feature branch') {
             when {
                 anyOf {
