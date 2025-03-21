@@ -1,14 +1,4 @@
-// @flow
-
-import React, {
-  type Node,
-  useState,
-  useEffect,
-  useContext,
-  useRef,
-  type ComponentType,
-  type ElementProps,
-} from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
@@ -19,7 +9,6 @@ import { withStyles } from "Styles";
 import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
-import { type UseState } from "../../util/types";
 import ScopeField, { type Scope } from "./ScopeField";
 import useViewportDimensions from "../../util/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -34,7 +23,7 @@ import Link from "@mui/material/Link";
 import AppBar from "../../components/AppBar";
 import docLinks from "../../assets/DocLinks";
 import Stack from "@mui/material/Stack";
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import Radio from "@mui/material/Radio";
 import DOMPurify from "dompurify";
@@ -42,8 +31,8 @@ import { mapNullable } from "../../util/Util";
 import { ACCENT_COLOR } from "../../assets/branding/dmptool";
 
 const CustomDialog = withStyles<
-  {| fullScreen: boolean, ...ElementProps<typeof Dialog> |},
-  {| paper?: string |}
+  { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
+  { paper?: string }
 >((theme, { fullScreen }) => ({
   paper: {
     overflow: "hidden",
@@ -58,23 +47,26 @@ const CustomDialog = withStyles<
 }))(Dialog);
 
 export type Plan = {
-  id: number,
-  title: string,
-  description: string,
-  modified: string,
-  created: string,
+  id: number;
+  title: string;
+  description: string;
+  modified: string;
+  created: string;
 };
 
-function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
+function DMPDialogContent({
+  setOpen,
+}: {
+  setOpen: (open: boolean) => void;
+}): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
 
-  const [DMPHost, setDMPHost] = React.useState<?string>();
-  const [DMPs, setDMPs] = useState(([]: Array<Plan>));
-  const [selectedPlan, setSelectedPlan]: UseState<?Plan> = useState();
+  const [DMPHost, setDMPHost] = React.useState<string | null>();
+  const [DMPs, setDMPs] = useState<Array<Plan>>([]);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>();
 
   const [fetching, setFetching] = useState(false);
-  const [errorFetching, setErrorFetching] = useState(null);
   const fetchingId = useRef(0);
 
   const [importing, setImporting] = useState(false);
@@ -86,49 +78,59 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
       .catch((e) => console.error("Cannot establish DMP host", e));
   }, []);
 
-  const getDMPs = (scope: Scope) => {
-    setErrorFetching(null);
+  const getDMPs = async (scope: Scope) => {
     setFetching(true);
-    const promise = axios.get<{
-      success: true,
-      data: { items: Array<{ dmp: Plan }> },
-    }>(`/apps/dmptool/plans?scope=${scope}`);
     const thisId = fetchingId.current;
-    fetchingId.current += 1;
-    promise
-      .then((r) => {
-        if (thisId === fetchingId.current - 1) {
-          if (r.data.success) {
-            setDMPs(r.data.data.items.map((item) => item.dmp));
-          } else {
-            addAlert(
-              mkAlert({
-                title: "Fetch failed.",
-                message: r.data.error?.errorMessages[0] ?? "Could not get DMPs",
-                variant: "error",
-              })
-            );
-          }
+    try {
+      const r = await axios.get<{
+        success: true;
+        data: {
+          items: Array<{ dmp: Plan }>;
+        };
+        error?: { errorMessages: Array<string> };
+      }>(`/apps/dmptool/plans?scope=${scope}`);
+      fetchingId.current += 1;
+
+      if (thisId === fetchingId.current - 1) {
+        if (r.data.success) {
+          setDMPs(r.data.data.items.map((item) => item.dmp));
         } else {
-          console.info(
-            "The response from this request is being discarded because a different listing of plans has been requested whilst this network call was in flight."
+          addAlert(
+            mkAlert({
+              title: "Fetch failed.",
+              message: r.data?.error?.errorMessages[0] ?? "Could not get DMPs",
+              variant: "error",
+            })
           );
         }
-      })
-      .catch((e) => {
-        console.error("Could not get DMPs for scope", e);
-        setErrorFetching("Could not get DMPs: " + e.message);
-        if (thisId === fetchingId.current) {
-          setFetching(false);
-        }
-      })
-      .finally(() => {
+      } else {
+        console.info(
+          "The response from this request is being discarded because a different listing of plans has been requested whilst this network call was in flight."
+        );
+      }
+    } catch (e) {
+      console.error("Could not get DMPs for scope", e);
+      if (e instanceof Error)
+        addAlert(
+          mkAlert({
+            title: "Fetch failed.",
+            message: `Could not get DMPs: ${e.message}`,
+            variant: "error",
+          })
+        );
+      if (thisId === fetchingId.current) {
         setFetching(false);
-      });
+      }
+    } finally {
+      setFetching(false);
+    }
   };
 
   useEffect(() => {
-    getDMPs("MINE");
+    void getDMPs("MINE");
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
+     * - getDMPs will not meaningfully change
+     */
   }, []);
 
   const handleImport = async () => {
@@ -137,7 +139,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
       const selectedPlanId = Number(selectedPlan?.id);
       if (selectedPlan) {
         await axios
-          .post<{}, { success: true }>(
+          .post<{ success: true; error?: { errorMessages: string[] } }>(
             `/apps/dmptool/pdfById/${selectedPlanId}`,
             {}
           )
@@ -153,7 +155,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   : {
                       title: "Import failed.",
                       message:
-                        r.data.error.errorMessages[0] || "Could not import DMP",
+                        r.data.error?.errorMessages[0] ||
+                        "Could not import DMP",
                       variant: "error",
                     }
               )
@@ -222,7 +225,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                 {
                   field: "radio",
                   headerName: "Select",
-                  renderCell: (params: { row: Plan, ... }) => (
+                  renderCell: (params: { row: Plan }) => (
                     <Radio
                       color="primary"
                       value={selectedPlan?.id === params.row.id}
@@ -236,37 +239,40 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                   disableColumnMenu: true,
                   sortable: false,
                 },
-                DataGridColumn.newColumnWithFieldName<_, Plan>("title", {
+                DataGridColumn.newColumnWithFieldName<"title", Plan>("title", {
                   headerName: "Title",
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithFieldName("id", {
+                DataGridColumn.newColumnWithFieldName<"id", Plan>("id", {
                   headerName: "Id",
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithFieldName("description", {
-                  renderCell: (params: { row: Plan, ... }) => {
-                    const sanitized = DOMPurify.sanitize(
-                      params.row.description
-                    );
-                    return (
-                      <span
-                        dangerouslySetInnerHTML={{
-                          __html: `${sanitized.substring(0, 200)} ${
-                            sanitized.length > 200 ? "..." : ""
-                          }`,
-                        }}
-                      ></span>
-                    );
-                  },
-                  headerName: "Description",
-                  display: "flex",
-                  flex: 1,
-                  sortable: false,
-                }),
-                DataGridColumn.newColumnWithValueMapper<_, Plan>(
+                DataGridColumn.newColumnWithFieldName<"description", Plan>(
+                  "description",
+                  {
+                    renderCell: (params: { row: Plan }) => {
+                      const sanitized = DOMPurify.sanitize(
+                        params.row.description
+                      );
+                      return (
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: `${sanitized.substring(0, 200)} ${
+                              sanitized.length > 200 ? "..." : ""
+                            }`,
+                          }}
+                        ></span>
+                      );
+                    },
+                    headerName: "Description",
+                    display: "flex",
+                    flex: 1,
+                    sortable: false,
+                  }
+                ),
+                DataGridColumn.newColumnWithValueMapper<"created", Plan>(
                   "created",
                   (created) => new Date(created).toLocaleString(),
                   {
@@ -275,7 +281,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
                     sortable: false,
                   }
                 ),
-                DataGridColumn.newColumnWithValueMapper<_, Plan>(
+                DataGridColumn.newColumnWithValueMapper<"modified", Plan>(
                   "modified",
                   (modified) => new Date(modified).toLocaleString(),
                   {
@@ -308,7 +314,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
               loading={fetching}
               getRowId={(row) => row.id}
               onRowSelectionModelChange={(
-                newSelection: $ReadOnlyArray<Plan["id"]>
+                newSelection: GridRowSelectionModel
               ) => {
                 if (newSelection[0]) {
                   setSelectedPlan(DMPs.find((d) => d.id === newSelection[0]));
@@ -351,10 +357,10 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   );
 }
 
-type DMPDialogArgs = {|
-  open: boolean,
-  setOpen: (boolean) => void,
-|};
+type DMPDialogArgs = {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+};
 
 /*
  * This simple function just for the outer-most components is so that the
@@ -364,7 +370,7 @@ type DMPDialogArgs = {|
  * custom tabbing behaviour of the Gallery page takes control of the tab key
  * events away from the React+MUI tech stack. See ../../../../scripts/global.js
  */
-function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
+function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   /*
@@ -396,4 +402,4 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
   );
 }
 
-export default (observer(DMPDialog): ComponentType<DMPDialogArgs>);
+export default observer(DMPDialog);
