@@ -1,0 +1,13 @@
+// @flow strict
+
+import { type Node } from "react";
+import { type Alert as AlertType } from "../../stores/contexts/Alert";
+
+declare export default function SnackbarContentWrapper({|
+  className?: string,
+  onClose: () => void,
+  alert: AlertType,
+  setExpanded: (boolean) => void,
+  expanded: boolean,
+  onInteraction: () => void,
+|}): Node;

@@ -14,7 +14,7 @@ import { templateAttrs } from "../../../../stores/models/__tests__/TemplateModel
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import "__mocks__/resizeObserver";
-import "../../../../../__mocks__/matchMedia.js";
+import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../common/InvApiService", () => ({
