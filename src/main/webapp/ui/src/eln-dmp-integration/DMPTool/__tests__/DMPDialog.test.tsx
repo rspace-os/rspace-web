@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../__mocks__/matchMedia";
 import React from "react";
@@ -17,7 +16,7 @@ import DMPDialog from "../DMPDialog";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { sleep } from "../../../util/Util";
 
 const mockAxios = new MockAdapter(axios);
