@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import DMPDialog from "./DMPDialog";
 import AccentMenuItem from "../../components/AccentMenuItem";
 import DMPToolIcon from "../../assets/branding/dmptool/logo.svg";
@@ -8,16 +6,16 @@ import { LOGO_COLOR } from "../../assets/branding/dmptool";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
 
-type DMPToolAccentMenuItemArgs = {|
-  onDialogClose: () => void,
-|};
+type DMPToolAccentMenuItemArgs = {
+  onDialogClose: () => void;
+};
 
 /**
  * The menu item for the create menu for importing DMPs from DMPTool.
  */
 export default function DMPToolAccentMenuItem({
   onDialogClose,
-}: DMPToolAccentMenuItemArgs): Node {
+}: DMPToolAccentMenuItemArgs): React.ReactNode {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
