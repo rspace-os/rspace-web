@@ -1,4 +1,3 @@
-//@flow strict
 /* eslint-env jest */
 /*
  * This module is for defining custom queries as part of our unit testing
@@ -11,17 +10,25 @@ import {
   render,
   queries,
   type Queries,
-  type Element,
+  type RenderOptions,
 } from "@testing-library/react";
 
 export function getIndexOfTableCell(
-  tablerow: Element,
+  tablerow: HTMLElement,
   name: string | RegExp
 ): number {
   const cell = within(tablerow).getByRole("columnheader", { name });
   return within(tablerow)
     .getAllByRole("columnheader")
     .findIndex((c) => c === cell);
+}
+
+interface CustomQueries {
+  findTableCell: (opts: {
+    columnHeading: string;
+    rowIndex: number;
+  }) => Promise<HTMLElement>;
+  getIndexOfTableCell: (name: string | RegExp) => number;
 }
 
 /**
@@ -85,9 +92,9 @@ export function getIndexOfTableCell(
  * ).toHaveTextContent("Four");
  */
 async function findTableCell(
-  table: Element,
-  { columnHeading, rowIndex }: {| columnHeading: string, rowIndex: number |}
-): Promise<Element> {
+  table: HTMLElement,
+  { columnHeading, rowIndex }: { columnHeading: string; rowIndex: number }
+): Promise<HTMLElement> {
   const headingRow = (await within(table).findAllByRole("row"))[0];
   if (!headingRow) throw new Error("Table doesn't have a header row.");
 
@@ -113,15 +120,19 @@ async function findTableCell(
   return cells[indexOfColumnHeading];
 }
 
-const allQueries = { ...queries, findTableCell, getIndexOfTableCell };
-const customRender: typeof render = (ui, options) =>
-  //$FlowExpectedError[extra-arg] Only here are we allowed to pass additional queries
-  render(ui, { queries: { ...queries, findTableCell }, ...options });
+const allQueries = {
+  ...queries,
+  findTableCell,
+  getIndexOfTableCell,
+};
+const customRender = (
+  ui: React.ReactElement,
+  options: RenderOptions<typeof queries, HTMLElement, HTMLElement>
+) => render(ui, { queries: { ...queries, findTableCell }, ...options });
 
-const customWithin = (
-  element: Element,
-  //$FlowExpectedError[incompatible-return] Jest partially applied the custom queries with the element passed to `within`
-): {| ...Queries, findTableCell: ({| columnHeading: string, rowIndex: number |}) => Promise<Element>, getIndexOfTableCell: (string | RegExp) => number |} => within(element, { ...allQueries });
+const customWithin = (element: HTMLElement): Queries & CustomQueries =>
+  // @ts-expect-error Our queries are not compatible with the within function
+  within(element, { ...allQueries });
 
 // re-export everything
 export * from "@testing-library/react";
