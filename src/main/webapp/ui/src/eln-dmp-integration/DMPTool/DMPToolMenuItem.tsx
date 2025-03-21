@@ -1,5 +1,3 @@
-// @flow
-
 /*
  * This is a menu item that is included in the Import menu of the Gallery's
  * Toolbar. When the DMPTool integration is not enabled this menu item is
@@ -9,7 +7,7 @@
  * Gallery.
  */
 
-import React, { useState, useEffect, type Node } from "react";
+import React, { useState, useEffect } from "react";
 import DMPDialog from "./DMPDialog";
 import axios from "@/common/axios";
 import MenuItem from "@mui/material/MenuItem";
@@ -19,32 +17,29 @@ import {
   type IntegrationInfo,
 } from "../../common/integrationHelpers";
 import { mapNullable } from "../../util/Util";
-import { type UseState } from "../../util/types";
 import Alerts from "../../components/Alerts/Alerts";
 import ErrorBoundary from "../../components/ErrorBoundary";
 
-type DMPToolMenuItemArgs = {|
+type DMPToolMenuItemArgs = {
   /*
    * The rendering of the dialog when the menu item is clicked is managed by
    * this component. This callback should simply be used for any additional
    * behavior that should be triggered, such the closing of the menu.
    */
-  onClick: () => void,
-|};
+  onClick: () => void;
+};
 
 export default function DMPToolMenuItem({
   onClick,
-}: DMPToolMenuItemArgs): Node {
-  const [
-    dmpToolIntegrationInfo,
-    setDmpToolIntegrationInfo,
-  ]: UseState<?IntegrationInfo> = useState(null);
-  const [DMPHost, setDMPHost] = useState<?string>();
+}: DMPToolMenuItemArgs): React.ReactNode {
+  const [dmpToolIntegrationInfo, setDmpToolIntegrationInfo] =
+    useState<IntegrationInfo | null>(null);
+  const [DMPHost, setDMPHost] = useState<string | null>();
   const [showDMPDialog, setShowDMPDialog] = useState(false);
 
   useEffect(() => {
     axios
-      .get<void, string>("/apps/dmptool/baseUrlHost")
+      .get<string>("/apps/dmptool/baseUrlHost")
       .then((r) => setDMPHost(r.data))
       .catch((e) => console.error("Cannot establish DMP host", e));
   }, []);
