@@ -2,18 +2,9 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import { type Locator } from "@playwright/test";
 import ErrorBoundary from "./components/ErrorBoundary";
 import React from "react";
-import ErrorComponent from "./App.story";
+import { ErrorComponent } from "./ErrorBoundary.story";
 
-test("should work", async ({
-  mount,
-}: {
-  mount: (jsx: React.ReactElement) => Promise<Locator>;
-}) => {
-  const component = await mount(<h1>Hello World</h1>);
-  await expect(component).toContainText("Hello World");
-});
-
-test("should catch error", async ({
+test("When there is an error rendering one of its descendent components, ErrorBoundary should show an error message.", async ({
   mount,
 }: {
   mount: (jsx: React.ReactElement) => Promise<Locator>;

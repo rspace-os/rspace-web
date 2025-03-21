@@ -4,10 +4,10 @@ import { defineConfig, devices } from '@playwright/experimental-ct-react';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './',
+  testDir: './src',
   /* The base directory, relative to the config file, for snapshot files created with toMatchSnapshot and toHaveScreenshot. */
   testMatch: '**/*.spec.tsx',
-  // tsconfig: './tsconfig.json',
+  tsconfig: './tsconfig.json',
   snapshotDir: './__snapshots__',
   /* Maximum time one test can run for. */
   timeout: 10 * 1000,
