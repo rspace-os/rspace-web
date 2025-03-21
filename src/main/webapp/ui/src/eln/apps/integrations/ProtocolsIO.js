@@ -12,8 +12,9 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import ProtocolsIOIcon from "../icons/protocolsio.svg";
+import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
 import { useProtocolsioEndpoint } from "../useProtocolsio";
+import { LOGO_COLOR } from "../../../assets/branding/protocolsio";
 
 type ProtocolsIOArgs = {|
   integrationState: IntegrationStates["PROTOCOLS_IO"],
@@ -74,11 +75,7 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): Node {
         integrationState={integrationState}
         explanatoryText="Develop, organise, and share reproducible experimental protocols through a secure repository."
         image={ProtocolsIOIcon}
-        color={{
-          hue: 0,
-          saturation: 0,
-          lightness: 21,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }

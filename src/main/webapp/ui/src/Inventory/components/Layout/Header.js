@@ -6,7 +6,7 @@ import useStores from "../../../stores/use-stores";
 import AppBar from "../../../components/AppBar";
 import createAccentedTheme from "../../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
-import { COLOR } from "./Sidebar";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 
 type HeaderArgs = {|
@@ -21,7 +21,7 @@ function Header({ sidebarId }: HeaderArgs): Node {
   };
 
   return (
-    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <AppBar
         variant="page"
         currentPage="Inventory"

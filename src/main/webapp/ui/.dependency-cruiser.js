@@ -279,6 +279,7 @@ module.exports = {
       name: "Apps-only",
       comment:
         "Modules containing generic code, Inventory code, or other parts of the ELN should not depend on code specific to the apps page.",
+      severity: "error",
       from: {
         pathNot: "src/eln/apps",
       },
@@ -320,6 +321,18 @@ module.exports = {
       },
       to: {
         pathNot: "src/util|babel|jest-dom|fast-check|mobx|react",
+      },
+    },
+
+    {
+      name: "restrict-assets-dependencies",
+      comment: "src/assets should only depend on a small subset of the codebase.",
+      severity: "error",
+      from: {
+        path: "src/assets",
+      },
+      to: {
+        pathNot: "src/assets|src/util|react|node_modules/@mui/material/node/SvgIcon",
       },
     },
 

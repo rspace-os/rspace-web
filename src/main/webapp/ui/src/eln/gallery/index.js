@@ -6,11 +6,11 @@ import ErrorBoundary from "../../components/ErrorBoundary";
 import { ThemeProvider, styled, lighten, useTheme } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import {
-  COLOR,
   SELECTED_OR_FOCUS_BLUE,
   GALLERY_SECTION,
   type GallerySection,
 } from "./common";
+import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 import AppBar from "../../components/AppBar";
 import Sidebar from "./components/Sidebar";
 import MainPanel from "./components/MainPanel";
@@ -431,7 +431,7 @@ window.addEventListener("load", () => {
             <GoogleLoginProvider />
             <StyledEngineProvider injectFirst>
               <CssBaseline />
-              <ThemeProvider theme={createAccentedTheme(COLOR)}>
+              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
                 <Analytics>
                   <UiPreferences>
                     <DisableDragAndDropByDefault>
@@ -495,7 +495,7 @@ window.addEventListener("load", () => {
 
     const meta = document.createElement("meta");
     meta.name = "theme-color";
-    meta.content = `hsl(${COLOR.background.hue}, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`;
+    meta.content = `hsl(${ACCENT_COLOR.background.hue}, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`;
     document.head?.appendChild(meta);
   }
 });

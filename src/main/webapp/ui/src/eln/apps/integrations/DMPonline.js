@@ -4,22 +4,17 @@ import Grid from "@mui/material/Grid";
 import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import DMPonlineIcon from "../icons/dmponline.svg";
+import DMPonlineIcon from "../../../assets/branding/dmponline/logo.svg";
 import { observer } from "mobx-react-lite";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
 import { useDmpOnlineEndpoint } from "../useDmpOnlineEndpoint";
+import { LOGO_COLOR } from "../../../assets/branding/dmponline";
 
 type DMPOnlineArgs = {|
   integrationState: IntegrationStates["DMPONLINE"],
   update: (IntegrationStates["DMPONLINE"]) => void,
 |};
-
-export const COLOR = {
-  hue: 39,
-  saturation: 99,
-  lightness: 46,
-};
 
 /*
  * There is no authentication mechanism with DMPonline. All DMPs are public and by
@@ -54,7 +49,7 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): Node {
         name="DMPonline"
         explanatoryText="Create Data Management Plans for your research."
         image={DMPonlineIcon}
-        color={COLOR}
+        color={LOGO_COLOR}
         usageText="You can import Data Management Plans (DMPs) from DMPonline into RSpace. You can then reference DMPs in RSpace documents, and attach DMPs to data deposits when exporting to repositories."
         helpLinkText="DMPonline integration docs"
         website="dmponline.dcc.ac.uk"

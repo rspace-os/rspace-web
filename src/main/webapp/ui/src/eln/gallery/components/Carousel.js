@@ -31,7 +31,7 @@ import axios from "@/common/axios";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { styled } from "@mui/material/styles";
-import { COLOR } from "../common";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import ResetZoomIcon from "./ResetZoomIcon";
 import Typography from "@mui/material/Typography";
 import { useFolderOpen } from "./OpenFolderProvider";
@@ -106,7 +106,7 @@ const PreviewWrapper = ({
       tabIndex={0}
       style={{
         borderRadius: "3px",
-        border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+        border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
         position: "relative",
         height: "100%",
         overflow: "auto",
@@ -547,7 +547,7 @@ export default function Carousel({ listing }: CarouselArgs): Node {
           <ButtonGroup
             variant="outlined"
             sx={{
-              border: `2px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+              border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
               borderRadius: "8px",
             }}
           >

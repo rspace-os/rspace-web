@@ -1,7 +1,7 @@
 import * as trm from "tss-react/mui";
 import { type ComponentType } from "react";
-import { type Theme } from "../theme";
 import { CSSObject } from "tss-react/types";
+import { ThemeOptions, Theme } from "@mui/material";
 
 export function withStyles<Config extends object, Classes extends object>(
   styles:
@@ -37,11 +37,11 @@ export type Sx =
  * override where both have non-object values for a particular key.
  */
 export function mergeThemes(
-  themeA: object | undefined,
-  themeB: object | undefined
-): object | undefined {
-  if (typeof themeA === "undefined") return themeB;
-  if (typeof themeB === "undefined") return themeA;
+  themeA: ThemeOptions | Theme | undefined,
+  themeB: ThemeOptions | Theme | undefined
+): ThemeOptions | undefined {
+  if (typeof themeA === "undefined") return themeB as ThemeOptions;
+  if (typeof themeB === "undefined") return themeA as ThemeOptions;
   if (typeof themeA === "object" && typeof themeB === "object") {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const merged: { [key: string]: any } = {};
@@ -50,7 +50,7 @@ export function mergeThemes(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
       merged[k] = mergeThemes((themeA as any)[k], (themeB as any)[k]);
     }
-    return merged;
+    return merged as ThemeOptions;
   }
-  return themeB;
+  return themeB as ThemeOptions;
 }

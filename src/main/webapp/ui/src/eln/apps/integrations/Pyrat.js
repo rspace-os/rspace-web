@@ -13,7 +13,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import PyratIcon from "../icons/pyrat.svg";
+import PyratIcon from "../../../assets/branding/pyrat/logo.svg";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
@@ -23,6 +23,7 @@ import { runInAction } from "mobx";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Typography from "@mui/material/Typography";
 import RsSet from "../../../util/set";
+import { LOGO_COLOR } from "../../../assets/branding/pyrat";
 
 type PyratArgs = {|
   integrationState: IntegrationStates["PYRAT"],
@@ -54,11 +55,7 @@ function Pyrat({ integrationState, update }: PyratArgs): Node {
         integrationState={integrationState}
         explanatoryText="Increase efficiency, access, and ensure compliance through a lab animal colony management software."
         image={PyratIcon}
-        color={{
-          hue: 196,
-          saturation: 79,
-          lightness: 45,
-        }}
+        color={LOGO_COLOR}
         usageText="You can browse and link to animals in a PyRAT database directly from RSpace."
         helpLinkText="PyRAT integration docs"
         website="scionics.com/pyrat"

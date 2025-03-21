@@ -3,8 +3,8 @@
 import React, { type Node } from "react";
 import DMPDialog from "./DMPDialog";
 import AccentMenuItem from "../../components/AccentMenuItem";
-import DMPonlineIcon from "../../eln/apps/icons/dmponline.svg";
-import { COLOR } from "../../eln/apps/integrations/DMPonline";
+import DMPonlineIcon from "../../assets/branding/dmponline/logo.svg";
+import { LOGO_COLOR } from "../../assets/branding/dmponline";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
 
@@ -25,8 +25,8 @@ export default function DMPonlineAccentMenuItem({
       <AccentMenuItem
         title="DMPonline"
         avatar={<CardMedia image={DMPonlineIcon} />}
-        backgroundColor={COLOR}
-        foregroundColor={{ ...COLOR, lightness: 30 }}
+        backgroundColor={LOGO_COLOR}
+        foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}
         onClick={() => {
           setShowDMPDialog(true);
         }}

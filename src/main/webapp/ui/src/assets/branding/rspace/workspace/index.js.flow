@@ -1,0 +1,14 @@
+// @flow strict
+
+import { type Hsl } from "../../../../accentedTheme";
+
+// eslint-disable-next-line prettier/prettier
+declare export const ACCENT_COLOR: {|
+  main: Hsl,
+  darker: Hsl,
+  contrastText: Hsl,
+  background: Hsl,
+  backgroundContrastText: Hsl,
+|};
+
+

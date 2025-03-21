@@ -13,12 +13,12 @@ import Fade from "@mui/material/Fade";
 import {
   gallerySectionLabel,
   gallerySectionIcon,
-  COLOR,
   SELECTED_OR_FOCUS_BORDER,
   SELECTED_OR_FOCUS_BLUE,
   type GallerySection,
   GALLERY_SECTION,
 } from "../common";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { styled, alpha, lighten } from "@mui/material/styles";
 import useViewportDimensions from "../../../util/useViewportDimensions";
 import Card from "@mui/material/Card";
@@ -760,7 +760,7 @@ const FileCard = styled(
                                     "(prefers-contrast: more)"
                                   ).matches
                                     ? "white"
-                                    : `hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, 99%)`,
+                                    : `hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`,
                                 }
                               : {}),
                             fontSize: "0.8125rem",
@@ -811,8 +811,8 @@ const FileCard = styled(
     borderRadius: "5px",
     color: window.matchMedia("(prefers-contrast: more)").matches
       ? "rgb(255,255,255)"
-      : `hsl(${COLOR.contrastText.hue}deg, ${COLOR.contrastText.saturation}%, ${COLOR.contrastText.lightness}%, 100%)`,
-    border: `1px solid hsl(${COLOR.background.hue}deg, ${COLOR.background.saturation}%, ${COLOR.background.lightness}%)`,
+      : `hsl(${ACCENT_COLOR.contrastText.hue}deg, ${ACCENT_COLOR.contrastText.saturation}%, ${ACCENT_COLOR.contrastText.lightness}%, 100%)`,
+    border: `1px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
     ...(selected
       ? {
           borderColor: window.matchMedia("(prefers-contrast: more)").matches
@@ -841,7 +841,7 @@ const FileCard = styled(
   borderRadius: "8px",
   boxShadow: selected
     ? "none"
-    : `hsl(${COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
+    : `hsl(${ACCENT_COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
 }));
 FileCard.displayName = "FileCard";
 
@@ -1506,8 +1506,8 @@ function GalleryMainPanel({
                 <AccentMenuItem
                   title="Grid"
                   subheader="Browse by thumbnail previews."
-                  backgroundColor={COLOR.background}
-                  foregroundColor={COLOR.contrastText}
+                  backgroundColor={ACCENT_COLOR.background}
+                  foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={<GridIcon />}
                   onClick={() => {
                     setViewMode("grid");
@@ -1517,8 +1517,8 @@ function GalleryMainPanel({
                 <AccentMenuItem
                   title="Tree"
                   subheader="View and manage folder hierarchy."
-                  backgroundColor={COLOR.background}
-                  foregroundColor={COLOR.contrastText}
+                  backgroundColor={ACCENT_COLOR.background}
+                  foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={<TreeIcon />}
                   onClick={() => {
                     setViewMode("tree");
@@ -1528,8 +1528,8 @@ function GalleryMainPanel({
                 <AccentMenuItem
                   title="Carousel"
                   subheader="Flick through all files to find one."
-                  backgroundColor={COLOR.background}
-                  foregroundColor={COLOR.contrastText}
+                  backgroundColor={ACCENT_COLOR.background}
+                  foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={<ViewCarouselIcon />}
                   onClick={() => {
                     setViewMode("carousel");
@@ -1584,8 +1584,8 @@ function GalleryMainPanel({
                     [() => sortOrder === "ASC", "Tap to sort from Z to A"],
                     [() => sortOrder === "DESC", "Tap to sort from A to Z"],
                   ])()}
-                  backgroundColor={COLOR.background}
-                  foregroundColor={COLOR.contrastText}
+                  backgroundColor={ACCENT_COLOR.background}
+                  foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={match<void, Node>([
                     [
                       () => orderBy !== "name",
@@ -1638,8 +1638,8 @@ function GalleryMainPanel({
                     [() => sortOrder === "ASC", "Tap to sort newest first"],
                     [() => sortOrder === "DESC", "Tap to sort oldest first"],
                   ])()}
-                  backgroundColor={COLOR.background}
-                  foregroundColor={COLOR.contrastText}
+                  backgroundColor={ACCENT_COLOR.background}
+                  foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={match<void, Node>([
                     [
                       () => orderBy !== "modificationDate",

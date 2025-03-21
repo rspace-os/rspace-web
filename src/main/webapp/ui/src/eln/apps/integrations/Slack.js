@@ -25,11 +25,12 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import RsSet from "../../../util/set";
-import SlackIcon from "../icons/slack.svg";
+import SlackIcon from "../../../assets/branding/slack/logo.svg";
 import Link from "@mui/material/Link";
 import docLinks from "../../../assets/DocLinks";
 import Typography from "@mui/material/Typography";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import { LOGO_COLOR } from "../../../assets/branding/slack";
 
 type Channel = {|
   SLACK_TEAM_NAME: string,
@@ -406,11 +407,7 @@ function Slack({ integrationState, update }: SlackArgs): Node {
         integrationState={integrationState}
         explanatoryText="Message and collaborate with your team with a cloud-based communication tool."
         image={SlackIcon}
-        color={{
-          hue: 298,
-          saturation: 56,
-          lightness: 19,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }

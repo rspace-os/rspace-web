@@ -27,8 +27,9 @@ import { useGitHubEndpoint, type Repository } from "../useGitHubEndpoint";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import RsSet from "../../../util/set";
-import GitHubIcon from "../icons/github.svg";
+import GitHubIcon from "../../../assets/branding/github/logo.svg";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import { LOGO_COLOR } from "../../../assets/branding/github";
 
 const DialogContent = observer(
   ({
@@ -320,11 +321,7 @@ function GitHub({ integrationState, update }: GitHubArgs): Node {
         integrationState={integrationState}
         explanatoryText="Store and manage your code through a software development and Git version control platform."
         image={GitHubIcon}
-        color={{
-          hue: 0,
-          saturation: 4,
-          lightness: 9,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }

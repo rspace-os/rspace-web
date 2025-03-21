@@ -11,7 +11,8 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import ZenodoIcon from "../icons/zenodo.svg";
+import ZenodoIcon from "../../../assets/branding/zenodo/logo.svg";
+import { LOGO_COLOR } from "../../../assets/branding/zenodo";
 
 type ZenodoArgs = {|
   integrationState: IntegrationStates["ZENODO"],
@@ -33,11 +34,7 @@ function Zenodo({ integrationState, update }: ZenodoArgs): Node {
         integrationState={integrationState}
         explanatoryText="Deposit research papers and datasets into a general-purpose open repository with PIDs."
         image={ZenodoIcon}
-        color={{
-          hue: 209,
-          saturation: 100,
-          lightness: 39,
-        }}
+        color={LOGO_COLOR}
         usageText="You can export your files and data directly from RSpace to Zenodo. You can specify various metadata and controlled vocabulary terms for the deposit, and reference a DMP from Argos."
         helpLinkText="Zenodo integration docs"
         website="zenodo.org"

@@ -23,6 +23,7 @@ import "../../../../../__mocks__/matchMedia";
 import MockAdapter from "axios-mock-adapter";
 import * as axios from "axios";
 import Result from "../../../../util/result";
+import { ACCENT_COLOR } from "../../../../assets/branding/irods";
 
 jest.mock("../CallablePdfPreview", () => ({
   usePdfPreview: () => ({
@@ -30,38 +31,9 @@ jest.mock("../CallablePdfPreview", () => ({
   }),
 }));
 
-const COLOR = {
-  main: {
-    hue: 0,
-    saturation: 0,
-    lightness: 0,
-  },
-  darker: {
-    hue: 0,
-    saturation: 0,
-    lightness: 0,
-  },
-  contrastText: {
-    hue: 0,
-    saturation: 0,
-    lightness: 0,
-  },
-  background: {
-    hue: 0,
-    saturation: 0,
-    lightness: 0,
-  },
-  backgroundContrastText: {
-    hue: 0,
-    saturation: 0,
-    lightness: 0,
-  },
-};
-
 jest.mock("../MoveToIrods", () => ({
   __esModule: true,
   default: () => null,
-  COLOR,
 }));
 
 const mockAxios = new MockAdapter(axios);
@@ -107,7 +79,7 @@ describe("ActionsMenu", () => {
     });
 
     render(
-      <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <GallerySelection>
           <SetSelection
             files={[
@@ -189,7 +161,7 @@ describe("ActionsMenu", () => {
     });
 
     render(
-      <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <GallerySelection>
           <SetSelection
             files={[
@@ -269,7 +241,7 @@ describe("ActionsMenu", () => {
     });
 
     render(
-      <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <GallerySelection>
           <SetSelection
             files={[

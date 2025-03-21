@@ -8,7 +8,7 @@ import { type GalleryFile, Description } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import { COLOR } from "../common";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
@@ -281,7 +281,7 @@ const NameFieldForLargeViewports = styled(
 )(({ theme }) => ({
   "&.modified": {
     [`& .${outlinedInputClasses.root}`]: {
-      backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+      backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
       [`& .${outlinedInputClasses.notchedOutline}`]: {
         border: "none",
       },
@@ -300,7 +300,7 @@ const NameFieldForLargeViewports = styled(
     marginBottom: theme.spacing(0.5),
     transition: "all .3s ease-in-out",
     "&:hover, &:focus-within": {
-      backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+      backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
       [`& .${outlinedInputClasses.notchedOutline}`]: {
         border: "none !important",
       },
@@ -427,7 +427,7 @@ const DescriptionField = styled(
     fontSize: "0.9rem",
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
-    backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+    backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
   },
   [`& .${outlinedInputClasses.input}`]: {
     paddingLeft: theme.spacing(1),
@@ -435,7 +435,7 @@ const DescriptionField = styled(
   [`&.${MINIMAL_STYLING_CLASS}`]: {
     "&.modified": {
       [`& .${outlinedInputClasses.root}`]: {
-        backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+        backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
         [`& .${outlinedInputClasses.notchedOutline}`]: {
           border: "none",
         },
@@ -456,7 +456,7 @@ const DescriptionField = styled(
       marginBottom: theme.spacing(0.5),
       transition: "all .3s ease-in-out",
       "&:hover, &:focus-within": {
-        backgroundColor: `hsl(${COLOR.main.hue}deg, ${COLOR.main.saturation}%, 90%)`,
+        backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
         [`& .${outlinedInputClasses.notchedOutline}`]: {
           border: "none !important",
         },

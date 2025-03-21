@@ -10,7 +10,8 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import EgnyteIcon from "../icons/egnyte.svg";
+import EgnyteIcon from "../../../assets/branding/egnyte/logo.svg";
+import { LOGO_COLOR } from "../../../assets/branding/egnyte";
 
 type EgnyteArgs = {|
   integrationState: IntegrationStates["EGNYTE"],
@@ -30,11 +31,7 @@ function Egnyte({ integrationState, update }: EgnyteArgs): Node {
         integrationState={integrationState}
         explanatoryText="Collaborate, sync and share your files with a security-focused enterprise solution."
         image={EgnyteIcon}
-        color={{
-          hue: 176,
-          saturation: 89,
-          lightness: 41,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) => {
           return update({
             mode: newMode,

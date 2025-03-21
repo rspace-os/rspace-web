@@ -1,8 +1,6 @@
 import {
   createTheme,
-  Theme as MuiTheme,
-  PaletteColorOptions,
-  PaletteOptions,
+  ThemeOptions as MuiThemeOptions,
   TransitionsOptions,
 } from "@mui/material";
 import { makeStyles } from "tss-react/mui";
@@ -17,20 +15,37 @@ import { TypographyOptions } from "@mui/material/styles/createTypography";
 export type RecordPalette = {
   bg: string;
   fg: string;
-  lighter: string;
-};
-
-type Color = {
-  main: string;
-  light?: string;
-  contrastText?: string;
-  saturated?: string;
+  lighter?: string;
 };
 
 declare module "@mui/material/styles" {
   // eslint-disable-next-line no-unused-vars
-  interface ThemeOptions {
+  interface Theme {
     borders: {
+      table?: string;
+      descriptionList?: string;
+      floatingActions?: string;
+      menu?: string;
+      section?: string;
+      menuButton?: string;
+      card?: string;
+      themedDialog?: (hue: number, sat: number, lig: number) => string;
+      themedDialogTitle?: (hue: number, sat: number, lig: number) => string;
+    };
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  interface SimplePaletteColorOptions {
+    saturated?: string;
+    placeholderText?: string;
+    background?: string;
+  }
+}
+
+declare module "@mui/material/styles/createTheme" {
+  // eslint-disable-next-line no-unused-vars
+  interface ThemeOptions {
+    borders?: {
       table: string;
       descriptionList: string;
       floatingActions: string;
@@ -42,20 +57,54 @@ declare module "@mui/material/styles" {
       themedDialogTitle: (hue: number, sat: number, lig: number) => string;
     };
   }
+}
 
+declare module "@mui/material/styles/createPalette" {
   // eslint-disable-next-line no-unused-vars
-  interface Theme {
-    borders: {
-      table: string;
-      descriptionList: string;
-      floatingActions: string;
-      menu: string;
-      section: string;
-      menuButton: string;
-      card: string;
-      themedDialog: (hue: number, sat: number, lig: number) => string;
-      themedDialogTitle: (hue: number, sat: number, lig: number) => string;
+  interface Palette {
+    callToAction: PaletteColor;
+    standardIcon: PaletteColor;
+  }
+  interface PaletteOptions {
+    callToAction: PaletteColorOptions;
+    tertiary: PaletteColorOptions;
+    hover: {
+      tableRow: string;
+      iconButton: string;
     };
+    borders?: {
+      card?: string;
+    };
+    record: {
+      container: RecordPalette;
+      sample: RecordPalette;
+      subSample: RecordPalette;
+      sampleTemplate: RecordPalette;
+      document: RecordPalette;
+      mixed: RecordPalette;
+      attachment: Pick<RecordPalette, "fg">;
+      gallery: Pick<RecordPalette, "fg">;
+    };
+    standardIcon: PaletteColorOptions;
+    sidebar: {
+      selected: {
+        bg: string;
+        badge: string;
+      };
+    };
+    contextMenuButton: {
+      main: string;
+      border: string;
+    };
+    lightestGrey: string;
+    menuIconGrey: string;
+    faIconGrey: string;
+    modifiedHighlight: string;
+    warningRed: string;
+    deletedGrey: string;
+  }
+  interface TypeBackground {
+    alt?: string;
   }
 }
 
@@ -97,98 +146,6 @@ export const COLORS = {
   },
 };
 
-/**
- * The Theme type is used to define the colours and styles used throughout the
- * application.
- */
-export type Theme = {
-  palette: {
-    primary: Color & {
-      placeholderText: string;
-    };
-    secondary: Color;
-    tertiary: Color;
-    background: Color;
-    hover: {
-      tableRow: string;
-      iconButton: string;
-    };
-    record: {
-      container: RecordPalette;
-      sample: RecordPalette;
-      subSample: RecordPalette;
-      sampleTemplate: RecordPalette;
-      document: RecordPalette;
-      mixed: RecordPalette;
-      attachment: {
-        fg: string;
-      };
-      gallery: {
-        fg: string;
-      };
-    };
-    standardIcon: Color;
-    sidebar: {
-      selected: {
-        bg: string;
-        badge: string;
-      };
-    };
-    lightestGrey: string;
-    menuIconGrey: string;
-    faIconGrey: string;
-    modifiedHighlight: string;
-    warningRed: string;
-    deletedGrey: string;
-    text: string;
-  };
-  breakpoints: {
-    values: {
-      xs: number;
-      sm: number;
-      md: number;
-      lg: number;
-      xl: number;
-    };
-    up: (size: "sm") => string;
-  };
-  borders: {
-    table: string;
-    descriptionList: string;
-    menu: string;
-    section: string;
-    menuButton: string;
-    card: string;
-    themedDialog: (hue: number, sat: number, lig: number) => string;
-  };
-  transitions: {
-    iconTransformations: string;
-    filterToggle: string;
-    create: (
-      property: string | Array<string>,
-      options?: {
-        easing?: string;
-        duration?: string | number;
-        delay?: string | number;
-      }
-    ) => string;
-    easing: {
-      sharp: string;
-    };
-    duration: {
-      enteringScreen: string;
-      leavingScreen: string;
-    };
-  };
-  typography: {
-    hnumber: {
-      fontSize: string;
-    };
-  };
-  components: {};
-  spacing: (...dimensions: Array<number>) => number;
-};
-
 const baseTheme = createTheme({
   palette: {
     primary: {
@@ -203,7 +160,7 @@ const baseTheme = createTheme({
       background: "#00adef22",
       dark: "rgba(0, 121, 167, 1)",
       light: "rgba(51, 189, 242, 1)",
-    } as PaletteColorOptions & { saturated: string },
+    },
     callToAction: {
       main: hslToHex(
         COLORS.primary.hue,
@@ -303,7 +260,7 @@ const baseTheme = createTheme({
     modifiedHighlight: "teal",
     warningRed: red[500],
     deletedGrey: grey[700],
-  } as PaletteOptions & { callToAction: PaletteColorOptions },
+  },
   breakpoints: {
     values: {
       xs: 0,
@@ -345,7 +302,8 @@ const baseTheme = createTheme({
  * The standard theme used across the application.
  */
 export default createTheme({
-  ...baseTheme,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ...(baseTheme as any as MuiThemeOptions),
   components: {
     MuiFormLabel: {
       styleOverrides: {
@@ -453,7 +411,7 @@ export default createTheme({
       },
     },
   },
-}) as Theme & MuiTheme;
+} as MuiThemeOptions);
 
 /**
  * Some global styles used in various places

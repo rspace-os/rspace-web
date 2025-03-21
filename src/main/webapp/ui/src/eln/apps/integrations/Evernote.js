@@ -5,7 +5,8 @@ import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import { observer } from "mobx-react-lite";
-import EvernoteIcon from "../icons/evernote.svg";
+import EvernoteIcon from "../../../assets/branding/evernote/logo.svg";
+import { LOGO_COLOR } from "../../../assets/branding/evernote";
 
 type EvernoteArgs = {|
   integrationState: IntegrationStates["EVERNOTE"],
@@ -24,11 +25,7 @@ function Evernote({ integrationState, update }: EvernoteArgs): Node {
         integrationState={integrationState}
         explanatoryText="Take notes, manage tasks, and organise your notes into notebooks with embedded media."
         image={EvernoteIcon}
-        color={{
-          hue: 136,
-          saturation: 100,
-          lightness: 33,
-        }}
+        color={LOGO_COLOR}
         usageText="You can directly import Evernote XML exports into RSpace. The import creates a separate RSpace document for each Note, and images and attachments will also be imported."
         helpLinkText="Evernote integration docs"
         website="evernote.com"

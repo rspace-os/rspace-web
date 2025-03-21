@@ -26,15 +26,10 @@ import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useDataverseTestEndpoint } from "../useDataverseTestEndpoint";
 import RsSet from "../../../util/set";
-import DataverseIcon from "../icons/dataverse.svg";
+import DataverseIcon from "../../../assets/branding/dataverse/logo.svg";
 import Typography from "@mui/material/Typography";
 import * as ArrayUtils from "../../../util/ArrayUtils";
-
-const COLOR = {
-  hue: 19,
-  saturation: 66,
-  lightness: 46,
-};
+import { LOGO_COLOR } from "../../../assets/branding/dataverse";
 
 /*
  * This is the type of the configurations, as passed into this component. If
@@ -499,7 +494,7 @@ function Dataverse({ integrationState, update }: DataverseArgs): Node {
         name="Dataverse"
         explanatoryText="Explore, analyse, and share data through an open-source research data repository software."
         image={DataverseIcon}
-        color={COLOR}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }

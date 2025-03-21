@@ -33,37 +33,7 @@ import { useTheme, ThemeProvider } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import createAccentedTheme from "../../../accentedTheme";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-
-/**
- * Theme colour for the Inventory part of the product
- */
-export const COLOR = {
-  main: {
-    hue: 120,
-    saturation: 18,
-    lightness: 71,
-  },
-  darker: {
-    hue: 120,
-    saturation: 18,
-    lightness: 50,
-  },
-  contrastText: {
-    hue: 120,
-    saturation: 18,
-    lightness: 20,
-  },
-  background: {
-    hue: 120,
-    saturation: 18,
-    lightness: 81,
-  },
-  backgroundContrastText: {
-    hue: 120,
-    saturation: 4,
-    lightness: 29,
-  },
-};
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 
 const drawerWidth = 200;
 
@@ -507,7 +477,7 @@ function Sidebar({ id }: SidebarArgs): Node {
     <CustomDrawer id={id}>
       <div className={classes.drawerContainer}>
         <List component="nav" aria-label="Create new Inventory items">
-          <ThemeProvider theme={createAccentedTheme(COLOR)}>
+          <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
             <CreateNew onClick={afterClick} />
           </ThemeProvider>
         </List>

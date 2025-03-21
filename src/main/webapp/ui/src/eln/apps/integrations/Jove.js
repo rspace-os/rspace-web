@@ -4,7 +4,8 @@ import Grid from "@mui/material/Grid";
 import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import JoveIcon from "../icons/Jove.svg";
+import JoveIcon from "../../../assets/branding/jove/logo.svg";
+import { LOGO_COLOR } from "../../../assets/branding/jove";
 
 type JoveArgs = {|
   integrationState: IntegrationStates["JOVE"],
@@ -23,11 +24,7 @@ function Jove({ integrationState, update }: JoveArgs): Node {
         integrationState={integrationState}
         explanatoryText="Watch, reference, and teach research methods and technologies through detailed process videos."
         image={JoveIcon}
-        color={{
-          hue: 211,
-          saturation: 85,
-          lightness: 53,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
         usageText="You can search for JoVE videos and insert them into your RSpace documents, directly from RSpace. The embedded videos are directly playable from the document."
         helpLinkText="JoVE integration docs"

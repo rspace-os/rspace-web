@@ -89,6 +89,7 @@ import useUiPreference, {
   PREFERENCES,
   UiPreferences,
 } from "../../../util/useUiPreference";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 
 const Panel = ({
   anchorEl,
@@ -1999,40 +2000,12 @@ export const UsersPage = (): Node => {
   );
 };
 
-const COLOR = {
-  main: {
-    hue: 197,
-    saturation: 50,
-    lightness: 80,
-  },
-  darker: {
-    hue: 197,
-    saturation: 100,
-    lightness: 30,
-  },
-  contrastText: {
-    hue: 200,
-    saturation: 30,
-    lightness: 36,
-  },
-  background: {
-    hue: 200,
-    saturation: 20,
-    lightness: 82,
-  },
-  backgroundContrastText: {
-    hue: 203,
-    saturation: 17,
-    lightness: 35,
-  },
-};
-
 const wrapperDiv = document.getElementById("sysadminUsers");
 if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <UiPreferences>
           <UsersPage />
         </UiPreferences>

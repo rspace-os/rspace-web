@@ -46,34 +46,7 @@ import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
 import DialogTitle from "@mui/material/DialogTitle";
 import AppBar from "../../components/AppBar";
-
-const COLOR = {
-  main: {
-    hue: 179,
-    saturation: 46,
-    lightness: 70,
-  },
-  darker: {
-    hue: 179,
-    saturation: 93,
-    lightness: 33,
-  },
-  contrastText: {
-    hue: 179,
-    saturation: 35,
-    lightness: 26,
-  },
-  background: {
-    hue: 179,
-    saturation: 25,
-    lightness: 71,
-  },
-  backgroundContrastText: {
-    hue: 179,
-    saturation: 11,
-    lightness: 24,
-  },
-};
+import { ACCENT_COLOR } from "../../assets/branding/argos";
 
 const CustomTablePagination = withStyles<
   ElementProps<typeof TablePagination>,
@@ -718,7 +691,7 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Portal>
         <DialogBoundary>
           <CustomDialog

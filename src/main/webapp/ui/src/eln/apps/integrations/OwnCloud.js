@@ -12,8 +12,9 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import OwnCloudIcon from "../icons/owncloud.svg";
+import OwnCloudIcon from "../../../assets/branding/owncloud/logo.svg";
 import { useOwncloudEndpoint } from "../useOwncloud";
+import { LOGO_COLOR } from "../../../assets/branding/owncloud";
 
 type OwnCloudArgs = {|
   integrationState: IntegrationStates["OWNCLOUD"],
@@ -74,11 +75,7 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): Node {
         integrationState={integrationState}
         explanatoryText="Create, manage, and share your files through an open-source file hosting system."
         image={OwnCloudIcon}
-        color={{
-          hue: 217,
-          saturation: 36,
-          lightness: 20,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }

@@ -39,34 +39,7 @@ import { DataGridColumn } from "../../util/table";
 import Radio from "@mui/material/Radio";
 import DOMPurify from "dompurify";
 import { mapNullable } from "../../util/Util";
-
-const COLOR = {
-  main: {
-    hue: 208,
-    saturation: 46,
-    lightness: 70,
-  },
-  darker: {
-    hue: 208,
-    saturation: 93,
-    lightness: 33,
-  },
-  contrastText: {
-    hue: 208,
-    saturation: 35,
-    lightness: 26,
-  },
-  background: {
-    hue: 208,
-    saturation: 25,
-    lightness: 71,
-  },
-  backgroundContrastText: {
-    hue: 208,
-    saturation: 11,
-    lightness: 24,
-  },
-};
+import { ACCENT_COLOR } from "../../assets/branding/dmptool";
 
 const CustomDialog = withStyles<
   {| fullScreen: boolean, ...ElementProps<typeof Dialog> |},
@@ -403,7 +376,7 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): Node {
    */
 
   return (
-    <ThemeProvider theme={createAccentedTheme(COLOR)}>
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Portal>
         <DialogBoundary>
           <CustomDialog

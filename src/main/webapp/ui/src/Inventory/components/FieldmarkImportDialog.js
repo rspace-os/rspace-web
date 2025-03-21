@@ -34,34 +34,7 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import docLinks from "../../assets/DocLinks";
-
-export const FIELDMARK_COLOR = {
-  main: {
-    hue: 82,
-    saturation: 80,
-    lightness: 33,
-  },
-  darker: {
-    hue: 82,
-    saturation: 80,
-    lightness: 22,
-  },
-  contrastText: {
-    hue: 82,
-    saturation: 80,
-    lightness: 19,
-  },
-  background: {
-    hue: 82,
-    saturation: 46,
-    lightness: 66,
-  },
-  backgroundContrastText: {
-    hue: 82,
-    saturation: 70,
-    lightness: 22,
-  },
-};
+import { ACCENT_COLOR } from "../../assets/branding/fieldmark";
 
 /**
  * This class allows us to provide a link to the newly created container in the
@@ -263,7 +236,7 @@ export default function FieldmarkImportDialog({
   }
 
   return (
-    <ThemeProvider theme={createAccentedTheme(FIELDMARK_COLOR)}>
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Dialog
         open={open}
         onClose={onClose}

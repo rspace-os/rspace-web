@@ -12,8 +12,9 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import ClustermarketIcon from "../icons/clustermarket.svg";
+import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
 import { useClustermarketEndpoint } from "../useClustermarket";
+import { LOGO_COLOR } from "../../../assets/branding/clustermarket";
 
 type ClustermarketArgs = {|
   integrationState: IntegrationStates["CLUSTERMARKET"],
@@ -74,11 +75,7 @@ function Clustermarket({ integrationState, update }: ClustermarketArgs): Node {
         integrationState={integrationState}
         explanatoryText="Manage schedules of lab equipment, maintenance, and personnel through a web-based platform."
         image={ClustermarketIcon}
-        color={{
-          hue: 0,
-          saturation: 0,
-          lightness: 7,
-        }}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }

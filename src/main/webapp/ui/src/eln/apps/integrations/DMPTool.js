@@ -5,20 +5,15 @@ import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import DMPToolIcon from "../icons/dmptool.svg";
+import DMPToolIcon from "../../../assets/branding/dmptool/logo.svg";
 import { useDmptoolEndpoint } from "../useDmptoolEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { LOGO_COLOR } from "../../../assets/branding/dmptool";
 
 type DMPToolArgs = {|
   integrationState: IntegrationStates["DMPTOOL"],
   update: (IntegrationStates["DMPTOOL"]) => void,
 |};
-
-export const COLOR = {
-  hue: 208,
-  saturation: 60,
-  lightness: 65,
-};
 
 /*
  * DMPTool uses OAuth based authentication, as implemeted by the form below.
@@ -53,7 +48,7 @@ function DMPTool({ integrationState, update }: DMPToolArgs): Node {
         integrationState={integrationState}
         explanatoryText="Create Data Management Plans for your research through a guided web-based tool with templates."
         image={DMPToolIcon}
-        color={COLOR}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }

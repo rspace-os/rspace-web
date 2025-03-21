@@ -5,20 +5,15 @@ import React, { type Node, type AbstractComponent } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import DcdIcon from "../icons/dcd.svg";
+import DcdIcon from "../../../assets/branding/digitalcommonsdata/logo.svg";
 import { useDigitalCommonsDataEndpoint } from "../useDigitalCommonsDataEndpoint";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { LOGO_COLOR } from "../../../assets/branding/digitalcommonsdata";
 
 type DigitalCommonsDataArgs = {|
   integrationState: IntegrationStates["DIGITALCOMMONSDATA"],
   update: (IntegrationStates["DIGITALCOMMONSDATA"]) => void,
 |};
-
-export const COLOR = {
-  hue: 26,
-  saturation: 100,
-  lightness: 50,
-};
 
 /*
  * Digital Commons Data uses OAuth based authentication, as implemeted by the form below.
@@ -56,7 +51,7 @@ function DigitalCommonsData({
         integrationState={integrationState}
         explanatoryText="Export datasets to the data repository, with persistent unique identifiers to enable referencing and citation."
         image={DcdIcon}
-        color={COLOR}
+        color={LOGO_COLOR}
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }

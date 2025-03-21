@@ -1,15 +1,14 @@
 //@flow
 
 import { type Node } from "react";
+import { type Hsl } from "../accentedTheme";
 
 declare export default function AccentMenuItem({|
   title: string,
   avatar: Node,
   subheader?: Node,
-  foregroundColor?: | string
-    | {| hue: number, saturation: number, lightness: number |},
-  backgroundColor?: | string
-    | {| hue: number, saturation: number, lightness: number |},
+  foregroundColor?: string | Hsl,
+  backgroundColor?: string | Hsl,
   onClick?: (Event) => void,
   onKeyDown?: (KeyboardEvent) => void,
   compact?: boolean,

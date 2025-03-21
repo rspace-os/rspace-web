@@ -3,8 +3,8 @@
 import React, { type Node } from "react";
 import DMPDialog from "./DMPDialog";
 import AccentMenuItem from "../../components/AccentMenuItem";
-import ArgosIcon from "../../eln/apps/icons/Argos.svg";
-import { COLOR } from "../../eln/apps/integrations/Argos";
+import ArgosIcon from "../../assets/branding/argos/logo.svg";
+import { LOGO_COLOR } from "../../assets/branding/argos";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
 
@@ -25,8 +25,8 @@ export default function ArgosMenuItem({
       <AccentMenuItem
         title="Argos"
         avatar={<CardMedia image={ArgosIcon} />}
-        backgroundColor={COLOR}
-        foregroundColor={{ ...COLOR, lightness: 28 }}
+        backgroundColor={LOGO_COLOR}
+        foregroundColor={{ ...LOGO_COLOR, lightness: 28 }}
         onClick={() => {
           setShowDMPDialog(true);
         }}

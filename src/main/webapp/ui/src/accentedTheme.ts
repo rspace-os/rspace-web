@@ -1,9 +1,13 @@
-//@flow strict
-
-import { createTheme } from "@mui/material";
+import {
+  createTheme,
+  PaletteOptions,
+  SimplePaletteColorOptions,
+} from "@mui/material";
+import { ThemeOptions } from "@mui/material/styles/createTheme";
+import { PaletteColorOptions } from "@mui/material/styles/createPalette";
 import baseTheme from "./theme";
 import { mergeThemes } from "./util/styles";
-import { darken, alpha, lighten } from "@mui/system";
+import { darken, alpha, lighten, Theme } from "@mui/system";
 import { toolbarClasses } from "@mui/material/Toolbar";
 import { typographyClasses } from "@mui/material/Typography";
 import { svgIconClasses } from "@mui/material/SvgIcon";
@@ -26,26 +30,65 @@ import { inputLabelClasses } from "@mui/material/InputLabel";
 import { inputAdornmentClasses } from "@mui/material/InputAdornment";
 import { linkClasses } from "@mui/material/Link";
 
-type Hsl = {|
-  hue: number,
-  saturation: number,
-  lightness: number,
-  opacity?: number,
-|};
+/**
+ * Represents an HSL color.
+ */
+export type Hsl = {
+  hue: number;
+  saturation: number;
+  lightness: number;
+  opacity?: number;
+};
 
-type AccentColor = {|
+declare module "@mui/material/Button" {
+  interface ButtonClasses {
+    containedCallToAction: string;
+  }
+}
+declare module "@mui/material/styles/components" {
+  interface Components {
+    MuiDataGrid?: {
+      defaultProps?: {
+        getRowClassName: (params: {
+          indexRelativeToCurrentPage: number;
+        }) => string;
+      };
+      styleOverrides?: {
+        root: unknown;
+      };
+      variants?: object;
+    };
+    MuiTreeItem?: {
+      styleOverrides?: {
+        root: unknown;
+        content: unknown;
+        label: unknown;
+        iconContainer: unknown;
+        groupTransition: unknown;
+      };
+      variants?: object;
+    };
+  }
+}
+
+/**
+ * The definition of an accent colour, which is to say a colour that is used to
+ * adjust the appearance of various elements in the application in accordance
+ * with some branding; be it ours or that of a third-party.
+ */
+export type AccentColor = {
   /**
    * This the main accent colour from which various variants are derived.
    * The lightness MUST not be less than 5.
    * DO NOT specify an opacity.
    */
-  main: Hsl,
+  main: Hsl;
 
   /**
    * A darker variant used for link text, icons, etc.
    * DO NOT specify an opacity.
    */
-  darker: Hsl,
+  darker: Hsl;
 
   /**
    * Used where text appears atop a background of the main color, and thus MUST
@@ -53,7 +96,7 @@ type AccentColor = {|
    * dark then an almost-white is recommended, otherwise an almost-black.
    * DO NOT specify an opacity.
    */
-  contrastText: Hsl,
+  contrastText: Hsl;
 
   /**
    * Used when the background of an element should have the accent, such as app
@@ -63,7 +106,7 @@ type AccentColor = {|
    * Satuation SHOULD be around 30 and MUST be greater than 10.
    * Lightness SHOULD be around 80 and MUST be greater than 20.
    */
-  background: Hsl,
+  background: Hsl;
 
   /**
    * The colour of general text. This SHOULD be pretty close to black.
@@ -71,8 +114,8 @@ type AccentColor = {|
    * Saturation SHOULD be around 20.
    * Lightness SHOULD be around 30.
    */
-  backgroundContrastText: Hsl,
-|};
+  backgroundContrastText: Hsl;
+};
 
 /**
  * The accented theme is used for pages that use the new styling, wherein the
@@ -83,7 +126,7 @@ type AccentColor = {|
  * This function creates a new theme, given an accent colour.
  */
 // eslint-disable-next-line complexity -- This is going to be complex because it's defining a lot of styles and a lot of those styles are conditioned on the user's preferences.
-export default function createAccentedTheme(accent: AccentColor): { ... } {
+export default function createAccentedTheme(accent: AccentColor): Theme {
   const prefersMoreContrast = window.matchMedia(
     "(prefers-contrast: more)"
   ).matches;
@@ -175,17 +218,18 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
           contrastText: contrastTextColor,
           saturated: linkColor,
           dark: linkColor,
-        },
+        } as PaletteColorOptions,
         callToAction: {
-          main: baseTheme.palette.callToAction.main,
-        },
+          main: (baseTheme.palette.callToAction as SimplePaletteColorOptions)
+            .main,
+        } as PaletteColorOptions,
         standardIcon: {
           main: interactiveColor,
-        },
-      },
+        } as PaletteColorOptions,
+      } as PaletteOptions,
       borders: {
         card: accentedBorder,
-      },
+      } as ThemeOptions["borders"],
       components: {
         MuiAppBar: {
           styleOverrides: {
@@ -491,14 +535,22 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
               border: `2px solid ${
                 prefersMoreContrast
                   ? "black"
-                  : baseTheme.palette.callToAction.main
+                  : (
+                      baseTheme.palette
+                        .callToAction as SimplePaletteColorOptions
+                    ).main
               }`,
               backgroundColor: prefersMoreContrast
                 ? "black"
-                : baseTheme.palette.callToAction.main,
-              color: baseTheme.palette.callToAction.contrastText,
+                : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
+                    .main,
+              color: (
+                baseTheme.palette.callToAction as SimplePaletteColorOptions
+              ).contrastText,
               "&:hover": {
-                borderColor: baseTheme.palette.callToAction.main,
+                borderColor: (
+                  baseTheme.palette.callToAction as SimplePaletteColorOptions
+                ).main,
               },
               [`&.${buttonClasses.disabled}`]: {
                 borderColor: darken(disabledColor, 0.1),
@@ -635,10 +687,7 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
         },
         MuiDataGrid: {
           defaultProps: {
-            getRowClassName: (params: {
-              indexRelativeToCurrentPage: number,
-              ...
-            }) =>
+            getRowClassName: (params: { indexRelativeToCurrentPage: number }) =>
               params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd",
           },
           styleOverrides: {
@@ -708,10 +757,6 @@ export default function createAccentedTheme(accent: AccentColor): { ... } {
                   ),
                 },
               },
-              [`& .${gridClasses.cellContent}, & .${gridClasses["cell--withRenderer"]}`]:
-                {
-                  color: backgroundContrastTextColor,
-                },
             },
           },
         },

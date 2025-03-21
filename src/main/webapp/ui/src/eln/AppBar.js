@@ -10,91 +10,10 @@ import createAccentedTheme from "../accentedTheme";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
-import { COLOR as GALLERY_COLOR } from "./gallery/common";
-
-const WORKSPACE_COLOR = {
-  main: {
-    hue: 197,
-    saturation: 33,
-    lightness: 75,
-  },
-  darker: {
-    hue: 197,
-    saturation: 100,
-    lightness: 30,
-  },
-  contrastText: {
-    hue: 200,
-    saturation: 30,
-    lightness: 25,
-  },
-  background: {
-    hue: 200,
-    saturation: 33,
-    lightness: 83,
-  },
-  backgroundContrastText: {
-    hue: 203,
-    saturation: 17,
-    lightness: 35,
-  },
-};
-
-const INVENTORY_COLOR = {
-  main: {
-    hue: 120,
-    saturation: 18,
-    lightness: 71,
-  },
-  darker: {
-    hue: 120,
-    saturation: 18,
-    lightness: 50,
-  },
-  contrastText: {
-    hue: 120,
-    saturation: 18,
-    lightness: 20,
-  },
-  background: {
-    hue: 120,
-    saturation: 18,
-    lightness: 81,
-  },
-  backgroundContrastText: {
-    hue: 120,
-    saturation: 4,
-    lightness: 29,
-  },
-};
-
-const OTHER_COLOR = {
-  main: {
-    hue: 200,
-    saturation: 10,
-    lightness: 70,
-  },
-  darker: {
-    hue: 200,
-    saturation: 10,
-    lightness: 50,
-  },
-  contrastText: {
-    hue: 200,
-    saturation: 10,
-    lightness: 20,
-  },
-  background: {
-    hue: 200,
-    saturation: 10,
-    lightness: 81,
-  },
-  backgroundContrastText: {
-    hue: 200,
-    saturation: 4,
-    lightness: 29,
-  },
-};
+import { ACCENT_COLOR as GALLERY_COLOR } from "../assets/branding/rspace/gallery";
+import { ACCENT_COLOR as INVENTORY_COLOR } from "../assets/branding/rspace/inventory";
+import { ACCENT_COLOR as WORKSPACE_COLOR } from "../assets/branding/rspace/workspace";
+import { ACCENT_COLOR as OTHER_COLOR } from "../assets/branding/rspace/other";
 
 function currentPage() {
   const pages = {

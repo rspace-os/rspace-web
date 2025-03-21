@@ -31,37 +31,7 @@ import AppBar from "../../components/AppBar";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import GoogleLoginProvider from "../../components/GoogleLoginProvider";
-
-/**
- * The theme colour of the apps page.
- */
-export const COLOR = {
-  main: {
-    hue: 200,
-    saturation: 10,
-    lightness: 70,
-  },
-  darker: {
-    hue: 200,
-    saturation: 10,
-    lightness: 50,
-  },
-  contrastText: {
-    hue: 200,
-    saturation: 10,
-    lightness: 20,
-  },
-  background: {
-    hue: 200,
-    saturation: 10,
-    lightness: 81,
-  },
-  backgroundContrastText: {
-    hue: 200,
-    saturation: 4,
-    lightness: 29,
-  },
-};
+import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 
 function LoadingSkeleton() {
   return (
@@ -132,7 +102,7 @@ function App(): Node {
   return (
     <>
       <GoogleLoginProvider />
-      <ThemeProvider theme={createAccentedTheme(COLOR)}>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <DialogBoundary>
           <AnalyticsContext.Provider
             value={{
