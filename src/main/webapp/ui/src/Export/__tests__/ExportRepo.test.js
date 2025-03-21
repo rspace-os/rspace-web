@@ -19,7 +19,7 @@ import funders from "./funders.json";
 import zenodoRepoList from "./zenodoRepoList";
 import fc, { type Arbitrary } from "fast-check";
 import { mkValidator } from "../../util/Validator";
-import "../../../__mocks__/matchMedia.js";
+import "../../../__mocks__/matchMedia";
 import { type Tag } from "../repositories/Tags";
 
 type DMP = {|

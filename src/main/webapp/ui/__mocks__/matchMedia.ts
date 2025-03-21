@@ -1,4 +1,3 @@
-//@flow
 /* eslint-env jest */
 
 /*
@@ -9,7 +8,7 @@
  */
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: jest.fn<[string], { ... }>().mockImplementation((query: string) => ({
+  value: jest.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,

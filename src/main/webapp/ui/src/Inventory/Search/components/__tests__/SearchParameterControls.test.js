@@ -14,7 +14,7 @@ import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mo
 import SearchParameterControls from "../SearchParameterControls";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-import "../../../../../__mocks__/matchMedia.js";
+import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 
 jest.mock("../../../../common/InvApiService", () => {});

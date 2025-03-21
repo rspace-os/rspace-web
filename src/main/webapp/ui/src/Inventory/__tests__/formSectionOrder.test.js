@@ -4,7 +4,7 @@
 //@flow
 /* eslint-env jest */
 import "../../../__mocks__/createObjectURL.js";
-import "../../../__mocks__/matchMedia.js";
+import "../../../__mocks__/matchMedia";
 import React, { type Node } from "react";
 import { render, cleanup, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom";
