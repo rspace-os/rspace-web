@@ -108,7 +108,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
 
   React.useEffect(() => {
     axios
-      .get<void, string>("/apps/dmptool/baseUrlHost")
+      .get<string>("/apps/dmptool/baseUrlHost")
       .then((r) => setDMPHost(r.data))
       .catch((e) => console.error("Cannot establish DMP host", e));
   }, []);
@@ -145,7 +145,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
       .catch((e) => {
         console.error("Could not get DMPs for scope", e);
         setErrorFetching("Could not get DMPs: " + e.message);
-        if (thisId === fetchingId) {
+        if (thisId === fetchingId.current) {
           setFetching(false);
         }
       })
@@ -155,8 +155,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (boolean) => void }): Node {
   };
 
   useEffect(() => {
-    if (open) getDMPs("MINE");
-  }, [open]);
+    getDMPs("MINE");
+  }, []);
 
   const handleImport = async () => {
     try {
