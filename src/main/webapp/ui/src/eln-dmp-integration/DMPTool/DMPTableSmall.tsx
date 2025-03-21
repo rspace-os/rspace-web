@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node } from "react";
+import React from "react";
 import Checkbox from "@mui/material/Checkbox";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -15,9 +13,9 @@ type DMPId = number | string;
 type DMPUserInternalId = number;
 
 type Plan = {
-  dmpId: DMPId,
-  dmpTitle: string,
-  dmpUserInternalId: DMPUserInternalId,
+  dmpId: DMPId;
+  dmpTitle: string;
+  dmpUserInternalId: DMPUserInternalId;
 };
 
 const useStyles = makeStyles()((theme) => ({
@@ -89,12 +87,12 @@ function PlanHeaderRow() {
   );
 }
 
-type BodyRowArgs = {|
-  plan: Plan,
-  selectedPlans: Array<DMPUserInternalId>,
-  addSelectedPlan: (id: DMPUserInternalId) => void,
-  removeSelectedPlan: (id: DMPUserInternalId) => void,
-|};
+type BodyRowArgs = {
+  plan: Plan;
+  selectedPlans: Array<DMPUserInternalId>;
+  addSelectedPlan: (id: DMPUserInternalId) => void;
+  removeSelectedPlan: (id: DMPUserInternalId) => void;
+};
 
 function PlanRow({
   plan,
@@ -133,10 +131,7 @@ function PlanRow({
           />
         </span>
 
-        <span
-          style={{ flex: 5 }}
-          className={clsx(classes.tableSubCel, classes.primary)}
-        >
+        <span style={{ flex: 5 }} className={classes.primary}>
           {plan.dmpTitle}
         </span>
         <span className={classes.tableSubCell} style={{ flex: 3 }}>
@@ -147,19 +142,19 @@ function PlanRow({
   );
 }
 
-type TableArgs = {|
-  plans: Array<Plan>,
-  selectedPlans: Array<DMPUserInternalId>,
-  addSelectedPlan: (id: DMPUserInternalId) => void,
-  removeSelectedPlan: (id: DMPUserInternalId) => void,
-|};
+type TableArgs = {
+  plans: Array<Plan>;
+  selectedPlans: Array<DMPUserInternalId>;
+  addSelectedPlan: (id: DMPUserInternalId) => void;
+  removeSelectedPlan: (id: DMPUserInternalId) => void;
+};
 
 export default function DMPTableSmall({
   plans,
   selectedPlans,
   addSelectedPlan,
   removeSelectedPlan,
-}: TableArgs): Node {
+}: TableArgs): React.ReactNode {
   return (
     <TableContainer style={{ overflowX: "hidden" }}>
       <Table size="small">
