@@ -220,6 +220,7 @@ pipeline {
             steps {
                 echo 'Running Playwright tests'
                 dir('src/main/webapp/ui') {
+                    sh 'npx playwright install'
                     sh 'npm run test-ct'
                 }
             }
