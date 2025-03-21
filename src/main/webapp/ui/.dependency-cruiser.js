@@ -224,7 +224,7 @@ module.exports = {
       from: {
         path: "^(src)",
         pathNot:
-          "__tests__|.(spec|test).(js|mjs|cjs|ts|ls|coffee|litcoffee|coffee.md)$",
+          "__tests__|.(spec|test).(js|mjs|cjs|ts|tsx|ls|coffee|litcoffee|coffee.md)$",
       },
       to: {
         dependencyTypes: ["npm-dev"],
