@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import "../../../../__mocks__/matchMedia";
 import React from "react";
@@ -9,7 +8,7 @@ import { cleanup, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import MockAdapter from "axios-mock-adapter";
 import DMPDialog from "../DMPDialog";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 import { within, render } from "../../../__tests__/customQueries";
@@ -68,7 +67,14 @@ describe("DMPDialog", () => {
     );
 
     expect(
-      await within(screen.getByRole("grid")).findTableCell({
+      await (
+        within as (element: HTMLElement) => {
+          findTableCell: (options: {
+            columnHeading: string;
+            rowIndex: number;
+          }) => Promise<HTMLElement>;
+        }
+      )(screen.getByRole("grid")).findTableCell({
         columnHeading: "Label",
         rowIndex: 0,
       })
@@ -115,15 +121,22 @@ describe("DMPDialog", () => {
         expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
         // i.e. the table body has been rendered
       });
-
-      await user.click(
-        await within(
-          await within(screen.getByRole("grid")).findTableCell({
-            columnHeading: "Select",
-            rowIndex: 0,
-          })
-        ).findByRole("radio")
-      );
+      const grid = screen.getByRole("grid");
+      const within2 = (
+        within as (element: HTMLElement) => {
+          findTableCell: (options: {
+            columnHeading: string;
+            rowIndex: number;
+          }) => Promise<HTMLElement>;
+        }
+      )(grid);
+      const tableCell: HTMLElement = await within2.findTableCell({
+        columnHeading: "Select",
+        rowIndex: 0,
+      });
+      const within3 = within(tableCell);
+      const radio = await within3.findByRole("radio");
+      await user.click(radio);
 
       mockAxios.resetHistory();
 
@@ -185,14 +198,14 @@ describe("DMPDialog", () => {
         );
 
         const plansRequests = mockAxios.history.get.filter(({ url }) =>
-          /\/apps\/argos\/plans/.test(url)
+          /\/apps\/argos\/plans/.test(url ?? "")
         );
         expect(plansRequests.length).toBe(3);
         expect(
           plansRequests.map(({ url }) =>
-            new URLSearchParams(url.match(/\/apps\/argos\/plans?(.*)$/)[1]).get(
-              "page"
-            )
+            new URLSearchParams(
+              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]
+            ).get("page")
           )
         ).toEqual(["0", "1", "0"]);
       },
@@ -265,14 +278,14 @@ describe("DMPDialog", () => {
         );
 
         const plansRequests = mockAxios.history.get.filter(({ url }) =>
-          /\/apps\/argos\/plans/.test(url)
+          /\/apps\/argos\/plans/.test(url ?? "")
         );
         expect(plansRequests.length).toBe(2);
         expect(
           plansRequests.map(({ url }) =>
-            new URLSearchParams(url.match(/\/apps\/argos\/plans?(.*)$/)[1]).get(
-              "pageSize"
-            )
+            new URLSearchParams(
+              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]
+            ).get("pageSize")
           )
         ).toEqual(["10", "5"]);
       },
@@ -344,14 +357,14 @@ describe("DMPDialog", () => {
         });
 
         const plansRequests = mockAxios.history.get.filter(({ url }) =>
-          /\/apps\/argos\/plans/.test(url)
+          /\/apps\/argos\/plans/.test(url ?? "")
         );
         expect(plansRequests.length).toBe(2);
         expect(
           plansRequests.map(({ url }) =>
-            new URLSearchParams(url.match(/\/apps\/argos\/plans?(.*)$/)[1]).get(
-              "like"
-            )
+            new URLSearchParams(
+              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]
+            ).get("like")
           )
         ).toEqual([null, "Foo"]);
       },

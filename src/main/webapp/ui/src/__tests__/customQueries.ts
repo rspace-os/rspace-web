@@ -9,8 +9,8 @@ import {
   within,
   render,
   queries,
-  type Queries,
   type RenderOptions,
+  getQueriesForElement,
 } from "@testing-library/react";
 
 export function getIndexOfTableCell(
@@ -21,14 +21,6 @@ export function getIndexOfTableCell(
   return within(tablerow)
     .getAllByRole("columnheader")
     .findIndex((c) => c === cell);
-}
-
-interface CustomQueries {
-  findTableCell: (opts: {
-    columnHeading: string;
-    rowIndex: number;
-  }) => Promise<HTMLElement>;
-  getIndexOfTableCell: (name: string | RegExp) => number;
 }
 
 /**
@@ -127,12 +119,21 @@ const allQueries = {
 };
 const customRender = (
   ui: React.ReactElement,
-  options: RenderOptions<typeof queries, HTMLElement, HTMLElement>
+  options?: RenderOptions<typeof queries, HTMLElement, HTMLElement>
 ) => render(ui, { queries: { ...queries, findTableCell }, ...options });
 
-const customWithin = (element: HTMLElement): Queries & CustomQueries =>
-  // @ts-expect-error Our queries are not compatible with the within function
-  within(element, { ...allQueries });
+// @ts-expect-error Our queries are not compatible with the within function
+const customWithin: typeof getQueriesForElement &
+  ((element: HTMLElement) => {
+    findTableCell: (options: {
+      columnHeading: string;
+      rowIndex: number;
+    }) => Promise<HTMLElement>;
+    getIndexOfTableCell: (
+      tablerow: HTMLElement,
+      name: string | RegExp
+    ) => number;
+  }) = (element: HTMLElement) => within(element, { ...allQueries });
 
 // re-export everything
 export * from "@testing-library/react";
