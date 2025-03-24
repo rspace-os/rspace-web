@@ -401,7 +401,7 @@ function PrintDialog({
                       index={0}
                       printOptions={printOptions}
                       printType={printType}
-                      item={barcode}
+                      barcode={barcode}
                       itemOwner={inventoryRecord}
                       imageLinks={imageLinks}
                       target="screen"

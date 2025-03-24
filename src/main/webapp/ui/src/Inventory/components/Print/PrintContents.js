@@ -106,7 +106,7 @@ type PreviewPrintItemArgs = {|
   index: number,
   printOptions: PrintOptions,
   printType: PrintType,
-  item: BarcodeRecord, // LoM ...
+  barcode: BarcodeRecord, // LoM ...
 
   /*
    * If `printOptions.printIdentifierType` is "IGSN", then `itemOwner` MUST
@@ -123,7 +123,7 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
   index,
   printOptions,
   printType,
-  item,
+  barcode,
   itemOwner,
   imageLinks,
   target,
@@ -188,7 +188,7 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
                   spacing={1}
                   className={clsx(classes.centeredText, classes.smallText)}
                 >
-                  <Grid item>{item.description.split("//")[1]}</Grid>
+                  <Grid item>{barcode.description.split("//")[1]}</Grid>
                   <Grid item>
                     <strong>Item:</strong>
                     <br />
@@ -241,14 +241,14 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
           printOptions.printerType === "LABEL" && classes.block
         )}
       >
-        {itemsToPrint.map(([item, itemOwner], i) => (
+        {itemsToPrint.map(([barcode, itemOwner], i) => (
           <>
             <Grid item key={`${i}.1`}>
               <PreviewPrintItem
                 index={i}
                 printOptions={printOptions}
                 printType={printType}
-                item={item}
+                barcode={barcode}
                 itemOwner={itemOwner}
                 imageLinks={imageLinks}
                 target={target}
@@ -261,7 +261,7 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
                     index={i}
                     printOptions={printOptions}
                     printType={printType}
-                    item={item}
+                    barcode={barcode}
                     itemOwner={itemOwner}
                     imageLinks={imageLinks}
                     target={target}
