@@ -14,6 +14,8 @@ import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import { Optional } from "../../../util/optional";
 import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManagementPage";
 import Button from "@mui/material/Button";
+import useOauthToken from "../../../common/useOauthToken";
+import axios from "@/common/axios";
 
 type Editor = {
   ui: {
@@ -44,6 +46,56 @@ function IdentifiersDialog({
   editor: Editor,
 |}) {
   const [selectedIgsns, setSelectedIgsns] = React.useState(new Set<string>());
+  const getToken = useOauthToken();
+
+  const getBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        if (typeof reader.result !== "string") {
+          reject(new Error("Expected reader.result to be a string"));
+          return;
+        }
+        resolve(reader.result);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+
+  const [tableData, setTableData] = React.useState<
+    Array<{| igsn: string, barcodeUrl: string |}>
+  >([]);
+  React.useEffect(() => {
+    void (async () => {
+      try {
+        const reader = new FileReader();
+        const token = await getToken.getToken();
+        setTableData(
+          await Promise.all(
+            ["10.5/431235", "10.5/124567"].map(async (igsn) => {
+              const { data } = await axios.get<Blob>(`/api/inventory/v1/barcodes`, {
+                params: new URLSearchParams({
+                  content: `https://doi.org/${igsn}`,
+                  barcodeType: "QR",
+                }),
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: "blob",
+              });
+              const file = new File([data], "", { type: "image/png" });
+              const dataUrl = await getBase64(file);
+              return {
+                barcodeUrl: dataUrl,
+                igsn,
+              };
+            })
+          )
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, []);
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
       <AppBar
@@ -67,7 +119,9 @@ function IdentifiersDialog({
             editor.execCommand(
               "mceInsertContent",
               false,
-              tableHtml().outerHTML
+              tableHtml({
+                data: tableData,
+              }).outerHTML
             );
             onClose();
           }}
@@ -165,7 +219,11 @@ class IdentifiersPlugin {
 // $FlowExpectedError[cannot-resolve-name]
 tinyMCE.PluginManager.add("identifiers", IdentifiersPlugin);
 
-function tableHtml() {
+function tableHtml({
+  data,
+}: {|
+  data: Array<{| igsn: string, barcodeUrl: string |}>,
+|}): HTMLTableElement {
   const identifiersTable = document.createElement("table");
   identifiersTable.setAttribute("data-tableSource", "identifiers");
   const tableHeader = document.createElement("tr");
@@ -175,13 +233,16 @@ function tableHtml() {
     tableHeader.appendChild(columnName);
   });
   identifiersTable.appendChild(tableHeader);
-  ["10.5/431235", "10.5/124567"].forEach((igsn) => {
+  data.forEach(({ igsn, barcodeUrl }) => {
     const row = document.createElement("tr");
     const igsnCell = document.createElement("td");
     igsnCell.textContent = igsn;
     row.appendChild(igsnCell);
     const barcodeCell = document.createElement("td");
-    barcodeCell.textContent = "[barcode to go here]";
+    const img = document.createElement("img");
+    img.src = barcodeUrl;
+    img.width = 100;
+    barcodeCell.appendChild(img);
     row.appendChild(barcodeCell);
     identifiersTable.appendChild(row);
   });
