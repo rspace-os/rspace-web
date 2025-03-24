@@ -66,6 +66,12 @@ export type PrintLayout = "BASIC" | "FULL";
 export type PrintSize = "SMALL" | "LARGE";
 
 export type PrintOptions = {
+  /*
+   * All records have a global ID, but some also have an IGSN. The print dialog
+   * should support printing either, where possible.
+   */
+  printIdentifierType?: "GLOBAL ID" | "IGSN",
+
   printerType: PrinterType,
   printLayout: PrintLayout,
   printSize: PrintSize,
@@ -105,17 +111,24 @@ type PrintDialogArgs = {|
 |};
 
 type OptionsWrapperArgs = {|
+  itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>,
   printOptions: PrintOptions,
   setPrintOptions: (PrintOptions) => void,
   printType: PrintType,
 |};
 
 export const PrintOptionsWrapper = ({
+  itemsToPrint,
   printOptions,
   setPrintOptions,
 }: OptionsWrapperArgs): Node => {
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { classes } = useStyles();
+
+  const printIdentifierTypeOptions: Array<RadioOption<"GLOBAL ID" | "IGSN">> = [
+    { value: "GLOBAL ID", label: "Global ID" },
+    { value: "IGSN", label: "IGSN" },
+  ];
 
   const printerTypeOptions: Array<RadioOption<PrinterType>> = [
     { value: "GENERIC", label: "Standard Printer" },
@@ -149,6 +162,35 @@ export const PrintOptionsWrapper = ({
       component="fieldset"
       className={isSingleColumnLayout ? classes.fullWidth : classes.halfWidth}
     >
+      <Box className={classes.optionModuleWrapper}>
+        <FormLabel id="identifiers-type-radiogroup-label">
+          Identifier Type
+        </FormLabel>
+        <RadioField
+          name={"Identifier Type Options"}
+          value={printOptions.printIdentifierType ?? "GLOBAL ID"}
+          onChange={({ target }) => {
+            if (target.value)
+              setPrintOptions({
+                ...printOptions,
+                printIdentifierType: target.value,
+              });
+          }}
+          options={printIdentifierTypeOptions}
+          disabled={false}
+          labelPlacement="bottom"
+          row
+          smallText={true}
+        />
+        {printOptions.printIdentifierType === "IGSN" &&
+          itemsToPrint.some(
+            ([_, record]) => record.identifiers.length === 0
+          ) && (
+            <Alert severity="error">
+              Some of the selected records do not have an IGSN.
+            </Alert>
+          )}
+      </Box>
       <Box className={classes.optionModuleWrapper}>
         <FormLabel id="printer-type-radiogroup-label">Printer Type</FormLabel>
         <RadioField
@@ -272,9 +314,9 @@ export const PrintOptionsWrapper = ({
           />
         )}
         {printOptions.printerType === "LABEL" && (
-        <Alert severity="info">
-          For label printers, the number of copies is set to 1 per item.
-        </Alert>
+          <Alert severity="info">
+            For label printers, the number of copies is set to 1 per item.
+          </Alert>
         )}
       </Box>
     </FormControl>
@@ -300,6 +342,7 @@ function PrintDialog({
   const [item, itemOwner] = itemsToPrint[0];
 
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
+    printIdentifierType: "GLOBAL ID",
     printerType: printerType ?? "GENERIC",
     printLayout: "FULL",
     printSize: printSize ?? "LARGE",
@@ -337,6 +380,7 @@ function PrintDialog({
           }
         >
           <PrintOptionsWrapper
+            itemsToPrint={itemsToPrint}
             printOptions={printOptions}
             setPrintOptions={setPrintOptions}
             printType={printType}
@@ -349,15 +393,22 @@ function PrintDialog({
           >
             <HelperText />
             {/* we preview only one item, resulting from choice of print options */}
-            <PreviewPrintItem
-              index={0}
-              printOptions={printOptions}
-              printType={printType}
-              item={item}
-              itemOwner={itemOwner}
-              imageLinks={imageLinks}
-              target="screen"
-            />
+            {printOptions.printIdentifierType === "IGSN" &&
+            itemsToPrint.some(
+              ([_, record]) => record.identifiers.length === 0
+            ) ? (
+              "Please resolve error."
+            ) : (
+              <PreviewPrintItem
+                index={0}
+                printOptions={printOptions}
+                printType={printType}
+                item={item}
+                itemOwner={itemOwner}
+                imageLinks={imageLinks}
+                target="screen"
+              />
+            )}
           </div>
           {/* we need the whole component for ReactToPrint, but not visible here */}
           <div className={classes.hidden}>
@@ -387,7 +438,12 @@ function PrintDialog({
               color="primary"
               variant="contained"
               disableElevation
-              disabled={false}
+              disabled={
+                printOptions.printIdentifierType === "IGSN" &&
+                itemsToPrint.some(
+                  ([_, record]) => record.identifiers.length === 0
+                )
+              }
             >
               {`Print selected (${itemsToPrint.length})`}
             </Button>

@@ -107,7 +107,13 @@ type PreviewPrintItemArgs = {|
   printOptions: PrintOptions,
   printType: PrintType,
   item: BarcodeRecord, // LoM ...
+
+  /*
+   * If `printOptions.printIdentifierType` is "IGSN", then `itemOwner` MUST
+   * have at least one identifier. Do not render this component if it does not.
+   */
   itemOwner: InventoryRecord,
+
   imageLinks?: Array<string>,
   forPrint?: boolean, // false for screen preview
   target: Target,
@@ -140,6 +146,10 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
       : target === "multiplePrint" && printSize === "LARGE"
       ? classes.largeMm
       : classes.singlePc; // no small and large for singlePrint case
+  const header =
+    printOptions.printIdentifierType === "GLOBAL ID"
+      ? itemOwner.globalId
+      : `IGSN ID: ${itemOwner.identifiers[0].doi}`;
   return (
     isBarcodePrint && (
       <>
@@ -163,9 +173,9 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
                   className={clsx(classes.centeredText, classes.bottomSpaced)}
                 >
                   {target === "singlePrint" ? (
-                    itemOwner.globalId
+                    header
                   ) : (
-                    <Typography variant={"h6"}>{itemOwner.globalId}</Typography>
+                    <Typography variant={"h6"}>{header}</Typography>
                   )}
                 </Grid>
               </>
