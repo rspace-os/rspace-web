@@ -25,6 +25,7 @@ import docLinks from "../../../assets/DocLinks";
 import clsx from "clsx";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
+import * as ArrayUtils from "../../../util/ArrayUtils";
 
 const useStyles = makeStyles()((theme) => ({
   optionModuleWrapper: {
@@ -339,8 +340,6 @@ function PrintDialog({
   const componentToPrint = useRef<mixed>();
   const barcodePrint = ["contextMenu", "barcodeLabel"].includes(printType);
 
-  const [item, itemOwner] = itemsToPrint[0];
-
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
     printIdentifierType: "GLOBAL ID",
     printerType: printerType ?? "GENERIC",
@@ -394,21 +393,21 @@ function PrintDialog({
             <HelperText />
             {/* we preview only one item, resulting from choice of print options */}
             {printOptions.printIdentifierType === "IGSN" &&
-            itemsToPrint.some(
-              ([_, record]) => record.identifiers.length === 0
-            ) ? (
-              "Please resolve error."
-            ) : (
-              <PreviewPrintItem
-                index={0}
-                printOptions={printOptions}
-                printType={printType}
-                item={item}
-                itemOwner={itemOwner}
-                imageLinks={imageLinks}
-                target="screen"
-              />
-            )}
+            itemsToPrint.some(([_, record]) => record.identifiers.length === 0)
+              ? "Please resolve error."
+              : ArrayUtils.head(itemsToPrint)
+                  .map(([barcode, inventoryRecord]) => (
+                    <PreviewPrintItem
+                      index={0}
+                      printOptions={printOptions}
+                      printType={printType}
+                      item={barcode}
+                      itemOwner={inventoryRecord}
+                      imageLinks={imageLinks}
+                      target="screen"
+                    />
+                  ))
+                  .elseThrow()}
           </div>
           {/* we need the whole component for ReactToPrint, but not visible here */}
           <div className={classes.hidden}>
