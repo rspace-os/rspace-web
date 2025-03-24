@@ -68,7 +68,7 @@ describe("Print Tests", () => {
     it("renders, has radio options for printerType, printMode, printSize (plus help text)", () => {
       render(<Dialog printType="contextMenu" />);
 
-      expect(screen.getAllByRole("radio")).toHaveLength(6);
+      expect(screen.getAllByRole("radio")).toHaveLength(8);
 
       const standardOption = screen.getByLabelText("Standard Printer");
       expect(standardOption).toBeInTheDocument();

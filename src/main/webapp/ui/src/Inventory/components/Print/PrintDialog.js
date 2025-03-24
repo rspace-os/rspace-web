@@ -69,6 +69,15 @@ export type PrintOptions = {
   printerType: PrinterType,
   printLayout: PrintLayout,
   printSize: PrintSize,
+
+  /*
+   * Each label can be printed multiple times (e.g. for raffle books).
+   * - If the number is 1 then the labels are printed in a grid layout. and if
+   * - If the number is 2 then each label is printed on its own row, wrapping
+   *   where necessary.
+   * - Any other numberical value is invalid.
+   */
+  printCopies?: "1" | "2",
 };
 
 /**
@@ -121,6 +130,18 @@ export const PrintOptionsWrapper = ({
   const printSizeOptions: Array<RadioOption<PrintSize>> = [
     { value: "LARGE", label: "Large" },
     { value: "SMALL", label: "Small" },
+  ];
+
+  /*
+   * Whilst the rest of the code handles any arbitrary number of copies, the
+   * UI only allows for 1 or 2 copies. This is because the only use case for
+   * multiple copies is for raffle books, where each identifier is printed
+   * twice. This is a common use case, and so is the only one that is
+   * implemented for now.
+   */
+  const printCopiesOptions: Array<RadioOption<"1" | "2">> = [
+    { value: "1", label: "Each identifier once" },
+    { value: "2", label: "Each identifier twice (raffle book)" },
   ];
 
   return (
@@ -230,6 +251,32 @@ export const PrintOptionsWrapper = ({
             : "Half width (2cm)."}
         </Alert>
       </Box>
+      <Box className={classes.optionModuleWrapper}>
+        <FormLabel id="print-copties-radiogroup-label">Print Copies</FormLabel>
+        {printOptions.printerType === "GENERIC" && (
+          <RadioField
+            name={"Print Copies Options"}
+            value={printOptions.printCopies ?? "1"}
+            onChange={({ target }) => {
+              if (target.value)
+                setPrintOptions({
+                  ...printOptions,
+                  printCopies: target.value,
+                });
+            }}
+            options={printCopiesOptions}
+            disabled={false}
+            labelPlacement="bottom"
+            row
+            smallText={true}
+          />
+        )}
+        {printOptions.printerType === "LABEL" && (
+        <Alert severity="info">
+          For label printers, the number of copies is set to 1 per item.
+        </Alert>
+        )}
+      </Box>
     </FormControl>
   );
 };
@@ -256,6 +303,7 @@ function PrintDialog({
     printerType: printerType ?? "GENERIC",
     printLayout: "FULL",
     printSize: printSize ?? "LARGE",
+    printCopies: "1",
   });
 
   const handleClose = () => {

@@ -232,18 +232,37 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
         )}
       >
         {itemsToPrint.map(([item, itemOwner], i) => (
-          <Grid item key={i}>
-            <PreviewPrintItem
-              index={i}
-              printOptions={printOptions}
-              printType={printType}
-              item={item}
-              itemOwner={itemOwner}
-              imageLinks={imageLinks}
-              target={target}
-            />
-          </Grid>
+          <>
+            <Grid item key={`${i}.1`}>
+              <PreviewPrintItem
+                index={i}
+                printOptions={printOptions}
+                printType={printType}
+                item={item}
+                itemOwner={itemOwner}
+                imageLinks={imageLinks}
+                target={target}
+              />
+            </Grid>
+            {printOptions.printCopies === "2" && (
+              <>
+                <Grid item key={`${i}.2`}>
+                  <PreviewPrintItem
+                    index={i}
+                    printOptions={printOptions}
+                    printType={printType}
+                    item={item}
+                    itemOwner={itemOwner}
+                    imageLinks={imageLinks}
+                    target={target}
+                  />
+                </Grid>
+                <Grid item sx={{ width: "100%" }}></Grid>
+              </>
+            )}
+          </>
         ))}
+        ;
       </Grid>
     );
   }
