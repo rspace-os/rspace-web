@@ -97,7 +97,7 @@ type Target = "screen" | "multiplePrint" | "singlePrint";
 type PrintContentsArgs = {|
   printOptions: PrintOptions,
   printType: PrintType,
-  itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>, // LoM ...
+  itemsToPrint: $ReadOnlyArray<[BarcodeRecord, InventoryRecord]>, // LoM ...
   imageLinks?: Array<string>,
   target: Target,
 |};

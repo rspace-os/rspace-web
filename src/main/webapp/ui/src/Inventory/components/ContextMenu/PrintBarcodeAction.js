@@ -99,7 +99,7 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef(
                 onClose={() => setShowPrintDialog(false)}
                 printType="contextMenu"
                 imageLinks={previewImages}
-                itemsToPrint={selectedResults.map((s) => [s.barcodes[0], s])}
+                itemsToPrint={selectedResults}
                 closeMenu={closeMenu}
               />
             )}

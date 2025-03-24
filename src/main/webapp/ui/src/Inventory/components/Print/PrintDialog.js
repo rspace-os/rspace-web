@@ -104,7 +104,7 @@ type PrintDialogArgs = {|
   onClose: () => void,
   imageLinks: Array<string>,
   printType: PrintType,
-  itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>, // LoM ...
+  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
   printerType?: PrinterType,
   printSize?: PrintSize,
   /* n/a for non-contextMenu cases */
@@ -112,7 +112,7 @@ type PrintDialogArgs = {|
 |};
 
 type OptionsWrapperArgs = {|
-  itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>,
+  itemsToPrint: $ReadOnlyArray<[BarcodeRecord, InventoryRecord]>,
   printOptions: PrintOptions,
   setPrintOptions: (PrintOptions) => void,
   printType: PrintType,
@@ -340,6 +340,11 @@ function PrintDialog({
   const componentToPrint = useRef<mixed>();
   const barcodePrint = ["contextMenu", "barcodeLabel"].includes(printType);
 
+  const itemsAndTheirBarcodes: $ReadOnlyArray<[ BarcodeRecord, InventoryRecord ]> = itemsToPrint.map((record) => [
+    record.barcodes[0],
+    record,
+  ]);
+
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
     printIdentifierType: "GLOBAL ID",
     printerType: printerType ?? "GENERIC",
@@ -379,7 +384,7 @@ function PrintDialog({
           }
         >
           <PrintOptionsWrapper
-            itemsToPrint={itemsToPrint}
+            itemsToPrint={itemsAndTheirBarcodes}
             printOptions={printOptions}
             setPrintOptions={setPrintOptions}
             printType={printType}
@@ -393,9 +398,9 @@ function PrintDialog({
             <HelperText />
             {/* we preview only one item, resulting from choice of print options */}
             {printOptions.printIdentifierType === "IGSN" &&
-            itemsToPrint.some(([_, record]) => record.identifiers.length === 0)
+            itemsToPrint.some((record) => record.identifiers.length === 0)
               ? "Please resolve error."
-              : ArrayUtils.head(itemsToPrint)
+              : ArrayUtils.head(itemsAndTheirBarcodes)
                   .map(([barcode, inventoryRecord]) => (
                     <PreviewPrintItem
                       index={0}
@@ -415,7 +420,7 @@ function PrintDialog({
               ref={componentToPrint}
               printOptions={printOptions}
               printType={printType}
-              itemsToPrint={itemsToPrint}
+              itemsToPrint={itemsAndTheirBarcodes}
               imageLinks={imageLinks}
               target={
                 printOptions.printerType === "GENERIC"
@@ -440,7 +445,7 @@ function PrintDialog({
               disabled={
                 printOptions.printIdentifierType === "IGSN" &&
                 itemsToPrint.some(
-                  ([_, record]) => record.identifiers.length === 0
+                  (record) => record.identifiers.length === 0
                 )
               }
             >

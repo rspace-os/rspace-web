@@ -30,13 +30,14 @@ const mockRootStore = (mockedStores: ?MockStores): StoreContainer => {
 };
 
 const mockContainer = makeMockContainer();
+mockContainer.barcodes = [persistedBarcode1];
 
-let generatedBarcode1;
 if (mockContainer.globalId) {
-  generatedBarcode1 = generatedBarcode(
+  const generatedBarcode1 = generatedBarcode(
     mockContainer.recordType,
     mockContainer.globalId
   );
+  mockContainer.barcodes.push(generatedBarcode1);
 }
 
 describe("Print Tests", () => {
@@ -54,8 +55,7 @@ describe("Print Tests", () => {
             imageLinks={[]}
             printType={printType}
             itemsToPrint={[
-              [generatedBarcode1, mockContainer],
-              [persistedBarcode1, mockContainer],
+              mockContainer
             ]}
             onClose={() => {}}
           />
