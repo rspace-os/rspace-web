@@ -19,13 +19,12 @@ import useStores from "../../../../stores/use-stores";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import Alert from "@mui/material/Alert";
 import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
-import PrintContents, { PreviewPrintItem } from "../../Print/PrintContents";
+import PrintContents, { PreviewPrintItem } from "./PrintContents";
 import ReactToPrint from "react-to-print";
 import docLinks from "../../../../assets/DocLinks";
 import clsx from "clsx";
 import { mkAlert } from "../../../../stores/contexts/Alert";
 import { useIsSingleColumnLayout } from "../../Layout/Layout2x1";
-import { type PrintOptions } from "../../Print/PrintDialog";
 
 const useStyles = makeStyles()((theme) => ({
   optionModuleWrapper: {
@@ -65,6 +64,13 @@ const useStyles = makeStyles()((theme) => ({
 export type PrinterType = "GENERIC" | "LABEL";
 export type PrintLayout = "BASIC" | "FULL";
 export type PrintSize = "SMALL" | "LARGE";
+
+export type PrintOptions = {
+  printerType: PrinterType,
+  printLayout: PrintLayout,
+  printSize: PrintSize,
+};
+
 
 /**
  * PrintDialog is intended to be used - in the future - for more than barcodes
