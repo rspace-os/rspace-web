@@ -26,6 +26,7 @@ import clsx from "clsx";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import ApiService from "../../../common/InvApiService";
 
 const useStyles = makeStyles()((theme) => ({
   optionModuleWrapper: {
@@ -102,7 +103,6 @@ export type PrintType =
 type PrintDialogArgs = {|
   showPrintDialog: boolean,
   onClose: () => void,
-  imageLinks: Array<string>,
   printType: PrintType,
   itemsToPrint: $ReadOnlyArray<InventoryRecord>,
   printerType?: PrinterType,
@@ -327,7 +327,6 @@ export const PrintOptionsWrapper = ({
 function PrintDialog({
   showPrintDialog,
   onClose,
-  imageLinks,
   printType,
   itemsToPrint,
   printerType,
@@ -368,6 +367,47 @@ function PrintDialog({
       </Typography>
     </>
   );
+
+  const [imageLinks, setImageLinks] = React.useState<$ReadOnlyArray<string>>([]);
+  React.useEffect(() => {
+    if (printOptions.printIdentifierType === "IGSN" && itemsToPrint.some(
+      (record) => record.identifiers.length === 0
+    )) {
+      return;
+    }
+    if (printOptions.printIdentifierType === "GLOBAL ID" && itemsToPrint.some(
+      (record) => record.barcodes.length === 0
+    )) {
+      return;
+    }
+
+    imageLinks.forEach((img) => URL.revokeObjectURL(img));
+
+    const getImageUrl = async (record: InventoryRecord) => {
+      if (printOptions.printIdentifierType === "IGSN") {
+        const { data } = await ApiService.query<{||}, Blob>("/barcodes", new URLSearchParams({
+          content: `https://doi.org/${record.identifiers[0].doi}`,
+          barcodeType: "QR",
+        }), true);
+        const file = new File([data], "", { type: "image/png" });
+        return URL.createObjectURL(file);
+      }
+      return URL.createObjectURL(await record.barcodes[0].fetchImage());
+    }
+
+    Promise.all(itemsToPrint.map(getImageUrl)).then((imageUrls) => {
+      setImageLinks(imageUrls);
+    }).catch((e) => {
+      uiStore.addAlert(
+        mkAlert({
+          title: "Unable to retrieve barcode images.",
+          message: e.message || "",
+          variant: "error",
+          isInfinite: true,
+        })
+      );
+    });
+  }, [itemsToPrint, printOptions]);
 
   return (
     <ContextDialog

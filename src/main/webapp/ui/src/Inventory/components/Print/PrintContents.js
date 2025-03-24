@@ -98,7 +98,7 @@ type PrintContentsArgs = {|
   printOptions: PrintOptions,
   printType: PrintType,
   itemsToPrint: $ReadOnlyArray<[BarcodeRecord, InventoryRecord]>, // LoM ...
-  imageLinks?: Array<string>,
+  imageLinks?: $ReadOnlyArray<string>,
   target: Target,
 |};
 
@@ -114,7 +114,7 @@ type PreviewPrintItemArgs = {|
    */
   itemOwner: InventoryRecord,
 
-  imageLinks?: Array<string>,
+  imageLinks?: $ReadOnlyArray<string>,
   forPrint?: boolean, // false for screen preview
   target: Target,
 |};

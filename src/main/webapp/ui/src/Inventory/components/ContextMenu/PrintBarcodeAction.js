@@ -2,7 +2,6 @@
 
 import React, { type ComponentType, forwardRef, useState } from "react";
 import useStores from "../../../stores/use-stores";
-import { mkAlert } from "../../../stores/contexts/Alert";
 import ContextMenuAction, {
   type ContextMenuRenderOptions,
 } from "./ContextMenuAction";
@@ -24,9 +23,8 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef(
     { as, closeMenu, disabled, selectedResults }: PrintBarcodeActionArgs,
     ref
   ) => {
-    const { uiStore, searchStore } = useStores();
+    const { searchStore } = useStores();
 
-    const [previewImages, setPreviewImages] = useState<Array<string>>([]);
     const [showPrintDialog, setShowPrintDialog] = useState(false);
 
     const disabledHelp = match<void, string>([
@@ -48,38 +46,8 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef(
       [() => true, ""],
     ])();
 
-    const barcodes = selectedResults.map((r) => r.barcodes[0]);
-
-    // check for b as barcodes[0] is undefined in public view
-    const imgUrlsAvailable = barcodes.every((b) => b && b.imageUrl);
-
-    const getImageUrls = async (): Promise<Array<string> | void> => {
-      if (imgUrlsAvailable) {
-        const images = await Promise.all(barcodes.map((b) => b.fetchImage()));
-        const imageUrls = images.map((img) => URL.createObjectURL(img));
-        return imageUrls;
-      }
-    };
-
     const handleOpen = () => {
-      try {
-        void getImageUrls().then((imageUrls) => {
-          if (imageUrls && imageUrls.length > 0) {
-            setPreviewImages(imageUrls);
-          }
-        });
-      } catch (e) {
-        uiStore.addAlert(
-          mkAlert({
-            title: "Unable to retrieve barcode images.",
-            message: e.message || "",
-            variant: "error",
-            isInfinite: true,
-          })
-        );
-      } finally {
-        setShowPrintDialog(true);
-      }
+      setShowPrintDialog(true);
     };
 
     return (
@@ -98,7 +66,6 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef(
                 showPrintDialog={showPrintDialog}
                 onClose={() => setShowPrintDialog(false)}
                 printType="contextMenu"
-                imageLinks={previewImages}
                 itemsToPrint={selectedResults}
                 closeMenu={closeMenu}
               />

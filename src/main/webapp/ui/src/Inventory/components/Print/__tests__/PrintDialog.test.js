@@ -19,6 +19,7 @@ import {
 } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import "../../../../../__mocks__/createObjectURL";
 
 const mockRootStore = (mockedStores: ?MockStores): StoreContainer => {
   return makeMockRootStore({
@@ -52,7 +53,6 @@ describe("Print Tests", () => {
         <storesContext.Provider value={mockRootStore()}>
           <PrintDialog
             showPrintDialog={openDialog}
-            imageLinks={[]}
             printType={printType}
             itemsToPrint={[
               mockContainer
