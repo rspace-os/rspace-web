@@ -3,29 +3,29 @@
  */
 export const ACCENT_COLOR = {
   main: {
-    hue: 120,
-    saturation: 18,
-    lightness: 71,
+    hue: 197,
+    saturation: 33,
+    lightness: 75,
   },
   darker: {
-    hue: 120,
-    saturation: 18,
-    lightness: 50,
+    hue: 197,
+    saturation: 100,
+    lightness: 30,
   },
   contrastText: {
-    hue: 120,
-    saturation: 18,
-    lightness: 20,
+    hue: 200,
+    saturation: 30,
+    lightness: 25,
   },
   background: {
-    hue: 120,
-    saturation: 18,
-    lightness: 81,
+    hue: 200,
+    saturation: 33,
+    lightness: 83,
   },
   backgroundContrastText: {
-    hue: 120,
-    saturation: 4,
-    lightness: 29,
+    hue: 203,
+    saturation: 17,
+    lightness: 35,
   },
 };
 

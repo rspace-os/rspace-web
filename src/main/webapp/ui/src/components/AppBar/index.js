@@ -29,6 +29,9 @@ import FlaskIcon from "@mui/icons-material/Science";
 import AppsIcon from "@mui/icons-material/AppRegistration";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../../assets/branding/rspace/gallery";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
+import { ACCENT_COLOR as WORKSPACE_COLOR } from "../../assets/branding/rspace/workspace";
+import { ACCENT_COLOR as SYSADMIN_COLOR } from "../../assets/branding/rspace/sysadmin";
+import { ACCENT_COLOR as OTHER_COLOR } from "../../assets/branding/rspace/other";
 import MessageIcon from "@mui/icons-material/Message";
 import ProfileIcon from "@mui/icons-material/ManageAccounts";
 import PublicIcon from "@mui/icons-material/Public";
@@ -525,16 +528,8 @@ function GalleryAppBar({
                 title="Workspace"
                 avatar={<NotebookIcon />}
                 subheader="Notebooks and documents"
-                foregroundColor={{
-                  hue: 200,
-                  saturation: 30,
-                  lightness: 25,
-                }}
-                backgroundColor={{
-                  hue: 197,
-                  saturation: 33,
-                  lightness: 75,
-                }}
+                foregroundColor={WORKSPACE_COLOR.contrastText}
+                backgroundColor={WORKSPACE_COLOR.main}
                 onClick={() => {
                   window.location = "/workspace";
                   handleAppMenuClose();
@@ -568,16 +563,8 @@ function GalleryAppBar({
                 title="My RSpace"
                 avatar={<ProfileIcon />}
                 subheader="Your profile details, labgroups, and preferences"
-                foregroundColor={{
-                  hue: 200,
-                  saturation: 10,
-                  lightness: 20,
-                }}
-                backgroundColor={{
-                  hue: 200,
-                  saturation: 10,
-                  lightness: 70,
-                }}
+                foregroundColor={OTHER_COLOR.contrastText}
+                backgroundColor={OTHER_COLOR.main}
                 onClick={() => {
                   window.location = showMyLabGroups
                     ? "/groups/viewPIGroup"
@@ -590,16 +577,8 @@ function GalleryAppBar({
                   title="System"
                   avatar={<SystemIcon />}
                   subheader="System administration"
-                  foregroundColor={{
-                    hue: 200,
-                    saturation: 10,
-                    lightness: 20,
-                  }}
-                  backgroundColor={{
-                    hue: 200,
-                    saturation: 10,
-                    lightness: 70,
-                  }}
+                  foregroundColor={SYSADMIN_COLOR.contrastText}
+                  backgroundColor={SYSADMIN_COLOR.main}
                   onClick={() => {
                     window.location = "/system";
                     handleAppMenuClose();
