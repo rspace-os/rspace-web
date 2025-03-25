@@ -1,0 +1,35 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2025-03-26-update" context="run" author="nico">
+        <comment>Update correct DigitalObjectIdentifier user into owner_id column</comment>
+        <customChange
+                class="com.researchspace.dao.customliquibaseupdates.UpdatingOwnerIdColumnOnDigitalObjectIdentifier_RSDEV607">
+        </customChange>
+    </changeSet>
+
+    <changeSet id="2025-03-26b-a" context="run" author="nico">
+        <comment>RSDEV-607 add columns owner_id in the DigitalObjectIdentifier table</comment>
+        <sql>
+            alter table DigitalObjectIdentifier modify owner_id bigint(20) not null;
+        </sql>
+        <addForeignKeyConstraint baseColumnNames="owner_id"
+          baseTableName="DigitalObjectIdentifier" constraintName="FK60DF21A7DE6F978E"
+          deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+          onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+    </changeSet>
+
+    <changeSet id="2025-03-26b-b" context="run" author="nico">
+        <comment>RSDEV-607 add columns owner_id in the DigitalObjectIdentifier_AUD table</comment>
+        <sql>
+            alter table DigitalObjectIdentifier_AUD modify owner_id bigint(20) not null;
+        </sql>
+        <addForeignKeyConstraint baseColumnNames="owner_id"
+          baseTableName="DigitalObjectIdentifier_AUD" constraintName="FK60DF68E7DE6F978E"
+          deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+          onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User" />
+    </changeSet>
+
+</databaseChangeLog>

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.datacite.model.DataCiteDoiAttributes;
+import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierOtherProperty;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
       "id",
       "doiType",
       "doi",
+      "associatedGlobalId",
       "creatorName",
       "creatorType",
       "creatorAffiliation",
@@ -118,8 +120,13 @@ public class ApiInventoryDOI extends LinkableApiObject {
   @JsonProperty("doi")
   private String doi;
 
+  @JsonProperty("associatedGlobalId")
+  private String associatedGlobalId;
+
   @JsonProperty("creatorName")
   private String creatorName;
+
+  @JsonIgnore private User owner;
 
   @JsonProperty("creatorType")
   private String creatorType;
@@ -175,12 +182,19 @@ public class ApiInventoryDOI extends LinkableApiObject {
   @JsonProperty("dates")
   private List<ApiInventoryDOIDate> dates;
 
+  @JsonIgnore
+  public User getOwner() {
+    return owner;
+  }
+
   public ApiInventoryDOI(DigitalObjectIdentifier identifier) {
     setId(identifier.getId());
     setDoi(identifier.getIdentifier());
     setDoiType(identifier.getType().toString());
+    setAssociatedGlobalId(identifier.getConnectedRecordGlobalIdentifier());
     setState(identifier.getState());
     setCreatorName(identifier.getOtherData(IdentifierOtherProperty.CREATOR_NAME));
+    setOwner(identifier.getOwner());
     setCreatorType(identifier.getOtherData(IdentifierOtherProperty.CREATOR_TYPE));
     setCreatorAffiliation(identifier.getOtherData(IdentifierOtherProperty.CREATOR_AFFILIATION));
     setCreatorAffiliationIdentifier(
@@ -218,10 +232,11 @@ public class ApiInventoryDOI extends LinkableApiObject {
                 DigitalObjectIdentifier.IdentifierOtherListProperty.GEOLOCATIONS)));
   }
 
-  public ApiInventoryDOI(DataCiteDoi dataCiteDoi) {
+  public ApiInventoryDOI(User createdBy, DataCiteDoi dataCiteDoi) {
     setDoi(dataCiteDoi.getId());
     setDoiType(dataCiteDoi.getType().toString());
     setState(dataCiteDoi.getAttributes().getState());
+    setOwner(createdBy);
     if (CollectionUtils.isNotEmpty(dataCiteDoi.getAttributes().getCreators())) {
       DataCiteDoiAttributes.Creator creator = dataCiteDoi.getAttributes().getCreators().get(0);
       setCreatorName(creator.getName());
@@ -275,6 +290,12 @@ public class ApiInventoryDOI extends LinkableApiObject {
       if (!getCreatorName()
           .equals(dbIdentifier.getOtherData(IdentifierOtherProperty.CREATOR_NAME))) {
         dbIdentifier.addOtherData(IdentifierOtherProperty.CREATOR_NAME, getCreatorName());
+        contentChanged = true;
+      }
+    }
+    if (getOwner() != null) {
+      if (!getOwner().equals(dbIdentifier.getOwner())) {
+        dbIdentifier.setOwner(getOwner());
         contentChanged = true;
       }
     }
@@ -593,5 +614,10 @@ public class ApiInventoryDOI extends LinkableApiObject {
       }
     }
     return dataCiteDoi;
+  }
+
+  @JsonIgnore
+  public boolean isAssociated() {
+    return associatedGlobalId != null;
   }
 }

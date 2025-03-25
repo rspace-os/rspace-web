@@ -5,7 +5,7 @@ info:
   description: >
     Welcome to the RSpace Inventory API.
 
-  version: "1.104"
+  version: "1.109"
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit headers.
   license:
@@ -2185,12 +2185,64 @@ paths:
           schema:
             "$ref": "#/definitions/BasicObject"
       responses:
-        '200':
+        '201':
           description: Identifier is created
+
+
+    get:
+      summary: Get all the identifiers created by the `user` with a given `state`
+      description: >
+        It will return a list of identifiers that are created by the specific `user` 
+        and having the specific `state`. 
+        
+        Moreover you can specify the filter `isAssociated` in case you want ONLY the Identifiers 
+        that have already been bound to a record
+
+      produces:
+        - application/json
+      tags:
+        - IGSN Identifiers
+      parameters:
+        - name: state
+          description: The state of the Identifier you want to filter in the list
+          type: string
+          in: query
+          required: false
+        - name: isAssociated
+          in: query
+          type: boolean
+          required: false
+          description: Filter only the Identifiers that are already associated to a record
+      responses:
+        '200':
+          description: The list is successfully returned
+
+
+  '/identifiers/bulk/{count}':
+    post:
+      summary: Register a number of DataCite IGSN identifier without associating them to any inventory item
+      description: >
+        Register a number of DataCite IGSN identifier without associating them to any inventory item
+
+      produces:
+        - application/json
+      tags:
+        - IGSN Identifiers
+      parameters:
+        - name: count
+          description: The id for the formIcon
+          type: integer
+          format: int64
+          in: path
+          required: true
+      responses:
+        '201':
+          description: Identifiers are created
+
 
   '/identifiers/{doiId}':
     delete:
-      summary: Delete a draft DataCite IGSN identifier registered for the inventory item
+      summary: Delete a draft DataCite IGSN identifier that was not associated or that was registered for the inventory item
       description: >
         Attempts to delete a connected DataCite IGSN identifier.
 

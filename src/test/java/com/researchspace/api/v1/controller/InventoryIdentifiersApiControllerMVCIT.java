@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -12,6 +13,7 @@ import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.model.User;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
@@ -19,6 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -82,6 +85,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     assertNotNull(registeredDoi);
     assertNotNull(registeredDoi.getDoi());
     assertEquals("draft", registeredDoi.getState());
+    assertEquals(draftContainer.getGlobalId(), registeredDoi.getAssociatedGlobalId());
 
     draftContainer = containerApiMgr.getApiContainerById(draftContainer.getId(), anyUser);
     assertEquals(1, draftContainer.getIdentifiers().size());
@@ -90,6 +94,36 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     deleteDraftDataCiteDoiForItem(anyUser, apiKey, registeredDoi.getId());
     draftContainer = containerApiMgr.getApiContainerById(draftContainer.getId(), anyUser);
     assertEquals(0, draftContainer.getIdentifiers().size());
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined("nightly")
+  public void realConnectionBulkCreateFindAndDeleteDataciteIdentifier() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    List<ApiInventoryDOI> registeredDoiList = bulkRegisterIdentifiers(anyUser, apiKey, 2);
+    assertNotNull(registeredDoiList);
+    assertEquals(2, registeredDoiList.size());
+    assertEquals("draft", registeredDoiList.get(0).getState());
+    assertNull(registeredDoiList.get(0).getAssociatedGlobalId());
+    assertEquals("draft", registeredDoiList.get(1).getState());
+    assertNull(registeredDoiList.get(1).getAssociatedGlobalId());
+
+    List<ApiInventoryDOI> fetchedUserAll = findIdentifiers(anyUser, apiKey, null, null);
+    List<ApiInventoryDOI> fetchedUserDraftNotAssociated =
+        findIdentifiers(anyUser, apiKey, "draft", false);
+    List<ApiInventoryDOI> fetchedUserFindableNotAssociated =
+        findIdentifiers(anyUser, apiKey, "findable", false);
+    List<ApiInventoryDOI> fetchedUserAssociated = findIdentifiers(anyUser, apiKey, null, true);
+    assertEquals(2, fetchedUserAll.size());
+    assertEquals(2, fetchedUserDraftNotAssociated.size());
+    assertTrue(fetchedUserFindableNotAssociated.isEmpty());
+    assertTrue(fetchedUserAssociated.isEmpty());
+
+    // cleanup datacite
+    assertTrue(deleteDraftDataCiteDoiForItem(anyUser, apiKey, registeredDoiList.get(0).getId()));
+    assertTrue(deleteDraftDataCiteDoiForItem(anyUser, apiKey, registeredDoiList.get(1).getId()));
   }
 
   @Test
@@ -158,12 +192,42 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     return registeredDoi;
   }
 
-  private void deleteDraftDataCiteDoiForItem(User anyUser, String apiKey, Long identifierId)
+  private List<ApiInventoryDOI> findIdentifiers(
+      User user, String apiKey, String state, Boolean isAssociated) throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/identifiers", user)
+                    // mix up from and to date
+                    .param("isAssociated", isAssociated == null ? null : isAssociated.toString())
+                    .param("state", state))
+            .andExpect(status().is(HttpStatus.OK.value()))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return Arrays.asList(getFromJsonResponseBody(result, ApiInventoryDOI[].class));
+  }
+
+  private List<ApiInventoryDOI> bulkRegisterIdentifiers(User user, String apiKey, Integer count)
       throws Exception {
-    mockMvc
-        .perform(createBuilderForDelete(apiKey, "/identifiers/{id}", anyUser, identifierId))
-        .andExpect(status().is2xxSuccessful())
-        .andReturn();
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPost(API_VERSION.ONE, apiKey, "/identifiers/bulk/" + count, user))
+            .andExpect(status().is(HttpStatus.CREATED.value()))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return Arrays.asList(getFromJsonResponseBody(result, ApiInventoryDOI[].class));
+  }
+
+  private Boolean deleteDraftDataCiteDoiForItem(User anyUser, String apiKey, Long identifierId)
+      throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForDelete(apiKey, "/identifiers/{id}", anyUser, identifierId))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return getFromJsonResponseBody(result, Boolean.class);
   }
 
   private ApiInventoryDOI publishDraftIdentifier(User anyUser, String apiKey, Long identifierId)

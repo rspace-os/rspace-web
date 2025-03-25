@@ -62,8 +62,18 @@ public class ApiIdentifiersHelper {
     newDoi.addOtherData(
         DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL,
         properties.getServerUrl() + "/public/inventory/" + newDoi.getPublicLink());
-
+    newDoi.setOwner(parentInvRec.getOwner());
     apiIdentifier.applyChangesToDatabaseDOI(newDoi);
     parentInvRec.addIdentifier(newDoi);
+  }
+
+  public DigitalObjectIdentifier createDoiToSave(ApiInventoryDOI apiIdentifier, User creator) {
+    DigitalObjectIdentifier newDoi = new DigitalObjectIdentifier(null, null);
+    newDoi.addOtherData(
+        DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL,
+        properties.getServerUrl() + "/public/inventory/" + newDoi.getPublicLink());
+    newDoi.setOwner(creator);
+    apiIdentifier.applyChangesToDatabaseDOI(newDoi);
+    return newDoi;
   }
 }
