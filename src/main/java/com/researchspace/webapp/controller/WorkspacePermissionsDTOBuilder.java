@@ -3,7 +3,6 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.model.core.RecordType.*;
 
 import com.researchspace.model.User;
-import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
@@ -42,9 +41,9 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
       Long previousFolderId,
       boolean isSearch) {
 
-    boolean createRecord = (parentFolder.isSharedFolder() &&
-        !parentFolder.hasType(INDIVIDUAL_SHARED_FOLDER_ROOT)) || parentFolder.getSharingACL()
-        .isPermitted(usr, PermissionType.CREATE);
+    boolean createRecord =
+        (parentFolder.isSharedFolder() && !parentFolder.hasType(INDIVIDUAL_SHARED_FOLDER_ROOT))
+            || parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE);
     boolean createFolder =
         parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE_FOLDER);
 
@@ -67,7 +66,7 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
             !br.isMediaRecord()
                 && !br.isSnippet()
                 && recMgr.canMove(
-                br, parentFolder, usr); // manager transaction as may need to query db
+                    br, parentFolder, usr); // manager transaction as may need to query db
         if (isSearch) {
           move = move && usr.isOwnerOfRecord(br);
         }
