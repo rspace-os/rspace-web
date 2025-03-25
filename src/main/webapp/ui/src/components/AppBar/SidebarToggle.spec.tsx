@@ -22,3 +22,29 @@ test("Should have no axe violations.", async ({ mount, page }) => {
   const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
   expect(accessibilityScanResults.violations).toEqual([]);
 });
+
+test("When tapped, setSidebarOpen should be called.", async ({
+  mount,
+  page,
+}) => {
+  let clicked = false;
+  await mount(
+    <body>
+      <header>
+        <h1>A simple page</h1>
+        <SidebarToggle
+          sidebarOpen={true}
+          setSidebarOpen={() => {
+            clicked = true;
+          }}
+          sidebarId={"sidebar"}
+        />
+      </header>
+      <main>
+        <div id="sidebar"></div>
+      </main>
+    </body>
+  );
+  await page.click("button");
+  expect(clicked).toBe(true);
+});
