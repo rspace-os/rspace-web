@@ -1,24 +1,10 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
-import SidebarToggle from "./SidebarToggle";
 import AxeBuilder from "@axe-core/playwright";
+import { SimplePageWithSidebarToggle } from "./SidebarToggle.story";
 
 test("Should have no axe violations.", async ({ mount, page }) => {
-  await mount(
-    <body>
-      <header>
-        <h1>A simple page</h1>
-        <SidebarToggle
-          sidebarOpen={true}
-          setSidebarOpen={() => {}}
-          sidebarId={"sidebar"}
-        />
-      </header>
-      <main>
-        <div id="sidebar"></div>
-      </main>
-    </body>
-  );
+  await mount(<SimplePageWithSidebarToggle />);
   const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
   expect(accessibilityScanResults.violations).toEqual([]);
 });
@@ -29,21 +15,11 @@ test("When tapped, setSidebarOpen should be called.", async ({
 }) => {
   let clicked = false;
   await mount(
-    <body>
-      <header>
-        <h1>A simple page</h1>
-        <SidebarToggle
-          sidebarOpen={true}
-          setSidebarOpen={() => {
-            clicked = true;
-          }}
-          sidebarId={"sidebar"}
-        />
-      </header>
-      <main>
-        <div id="sidebar"></div>
-      </main>
-    </body>
+    <SimplePageWithSidebarToggle
+      setSidebarOpen={() => {
+        clicked = true;
+      }}
+    />
   );
   await page.click("button");
   expect(clicked).toBe(true);
