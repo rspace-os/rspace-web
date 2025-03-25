@@ -8,6 +8,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
+import java.util.List;
 import javax.ws.rs.NotFoundException;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,6 +34,11 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   }
 
   @Override
+  public List<ApiInventoryDOI> getUserIdentifiers(Boolean isAssociated, User user) {
+    return null;
+  }
+
+  @Override
   public ApiInventoryDOI registerNewIdentifier(
       @RequestBody ApiInventoryIdentifierPost registerPost,
       @RequestAttribute(name = "user") User user) {
@@ -46,6 +52,12 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     ApiInventoryDOI mintedDoi =
         identifierMgr.registerNewIdentifier(oid, user).getIdentifiers().get(0);
     return mintedDoi;
+  }
+
+  @Override
+  public List<ApiInventoryDOI> bulkAllocateIdentifiers(ApiInventoryIdentifierPost parentGlobalId,
+      User user) {
+    return null;
   }
 
   @Override

@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
       "id",
       "doiType",
       "doi",
+      "associatedGlobalId",
       "creatorName",
       "creatorType",
       "creatorAffiliation",
@@ -117,6 +118,9 @@ public class ApiInventoryDOI extends LinkableApiObject {
 
   @JsonProperty("doi")
   private String doi;
+
+  @JsonProperty("associatedGlobalId")
+  private String associatedGlobalIdL;
 
   @JsonProperty("creatorName")
   private String creatorName;
