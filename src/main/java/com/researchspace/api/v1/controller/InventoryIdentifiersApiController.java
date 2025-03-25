@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.api.v1.InventoryIdentifiersApi;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @ApiController
 public class InventoryIdentifiersApiController extends BaseApiInventoryController
@@ -33,9 +35,23 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     private String parentGlobalId;
   }
 
+  @Data
+  @NoArgsConstructor
+  public static class ApiIdentifierSearch {
+
+    @JsonProperty("state")
+    private String state;
+
+    @JsonProperty("isAssociated")
+    private boolean isAssociated;
+  }
+
   @Override
-  public List<ApiInventoryDOI> getUserIdentifiers(Boolean isAssociated, User user) {
-    return null;
+  public List<ApiInventoryDOI> getUserIdentifiers(
+      @PathVariable String state,
+      @RequestParam(value = "isAssociated") Boolean isAssociated,
+      @RequestAttribute(name = "user") User user) {
+    return identifierMgr.findIdentifiersByStateAndCreator(state, user, isAssociated);
   }
 
   @Override
@@ -49,15 +65,15 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     GlobalIdentifier oid = new GlobalIdentifier(globalId);
     assertUserCanEditInventoryRecord(oid, user);
 
-    ApiInventoryDOI mintedDoi =
-        identifierMgr.registerNewIdentifier(oid, user).getIdentifiers().get(0);
-    return mintedDoi;
+    ApiInventoryRecordInfo result = identifierMgr.registerNewIdentifier(oid, user);
+    return result.getIdentifiers().get(0);
   }
 
   @Override
-  public List<ApiInventoryDOI> bulkAllocateIdentifiers(ApiInventoryIdentifierPost parentGlobalId,
-      User user) {
-    return null;
+  public List<ApiInventoryDOI> bulkAllocateIdentifiers(
+      @PathVariable Integer count, @RequestAttribute(name = "user") User user) {
+    Validate.isTrue(count > 0, "not a valid number to IGSN to allocate: " + count);
+    return identifierMgr.registerBulkIdentifiers(count, user);
   }
 
   @Override

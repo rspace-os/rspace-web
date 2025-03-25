@@ -2,6 +2,7 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.dao.GenericDaoHibernate;
+import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import java.util.List;
 import java.util.Optional;
@@ -63,6 +64,19 @@ public class DigitalObjectIdentifierDaoHibernate
       }
     }
     return lastPublishedDoi == null ? Optional.empty() : Optional.of(lastPublishedDoi);
+  }
+
+  @Override
+  public List<DigitalObjectIdentifier> getActiveByStateAndCreator(String state, User creator) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from DigitalObjectIdentifier where state=:state and creator.id=:creatorId "
+                + " and deleted = false",
+            DigitalObjectIdentifier.class)
+        .setParameter("state", state)
+        .setParameter("creatorId", creator.getId())
+        .getResultList();
   }
 
   private Optional<DigitalObjectIdentifier> getLatestIdentifierByPublicLink(String publicLink) {
