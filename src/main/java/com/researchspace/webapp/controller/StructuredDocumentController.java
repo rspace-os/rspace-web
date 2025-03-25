@@ -376,7 +376,7 @@ public class StructuredDocumentController extends BaseController {
     Folder originalParentFolder = null;
     List<RecordGroupSharing> sharedWithGroup = null;
     try {
-      if (targetFolderId != null) {
+      if (targetFolderId != null && targetFolderId != -1) {
         originalParentFolder = folderManager.getFolder(parentRecordId, user);
       }
       if ((targetFolderId == null || targetFolderId == -1)
@@ -392,12 +392,13 @@ public class StructuredDocumentController extends BaseController {
           recordManager.createFromTemplate(templateid, newname, user, targetFolderId);
       rc = (StructuredDocument) fromTemplate.getUniqueCopy();
 
-      if (rc != null && (originalParentFolder != null && originalParentFolder.isSharedFolder())) {
+      if (rc == null) {
+        throw new RecordAccessDeniedException(getResourceNotFoundMessage("Template", templateid));
+
+      } else if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
         ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult =
             recordShareHandler.shareIntoSharedFolder(user, originalParentFolder, rc.getId());
         sharedWithGroup = sharingResult.getResults();
-      } else {
-        throw new RecordAccessDeniedException(getResourceNotFoundMessage("Template", templateid));
       }
 
     } catch (AuthorizationException ae) {
