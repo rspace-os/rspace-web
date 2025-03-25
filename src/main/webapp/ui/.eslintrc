@@ -33,7 +33,7 @@
       }
     },
     {
-      "files": ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
+      "files": ["**/__tests__/**/*.[jt]s?(x)"],
       "extends": ["plugin:testing-library/react", "plugin:jest-dom/recommended"]
     },
     {
@@ -48,6 +48,17 @@
       "rules": {
         "react/prop-types": "off"
       }
+    },
+    {
+        "files": ["**/*.spec.ts", "**/*.spec.tsx"],
+        "rules": {
+            // This is because playwright requires that we destructure "mount"
+            // in the callback of the test invocation but at the same time
+            // eslint complains about the class being unbound. This is not an
+            // actual problem and so it is easier to just disable the rule for
+            // all test files.
+            "@typescript-eslint/unbound-method": "off"
+        }
     }
   ],
   "rules": {

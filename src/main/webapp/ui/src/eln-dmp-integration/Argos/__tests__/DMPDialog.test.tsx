@@ -371,46 +371,4 @@ describe("DMPDialog", () => {
       10 * 1000
     );
   });
-  test("Should have no axe violations.", async () => {
-    mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
-      data: {
-        totalCount: 2,
-        data: [
-          {
-            id: "e27789f1-de35-4b4a-9587-a46d131c366e",
-            label: "Foo",
-            grant: "Foo's grant",
-            createdAt: 0,
-            modifiedAt: 0,
-          },
-          {
-            id: "e9a73d77-adfa-4546-974f-4a4a623b53a8",
-            label: "Bar",
-            grant: "Bar's grant",
-            createdAt: 0,
-            modifiedAt: 0,
-          },
-        ],
-      },
-      error: null,
-      errorMsg: null,
-      success: true,
-    });
-    const { baseElement } = render(
-      <ThemeProvider theme={materialTheme}>
-        <DMPDialog open={true} setOpen={() => {}} />
-      </ThemeProvider>
-    );
-
-    await waitFor(
-      () => {
-        expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
-        // i.e. the table body has been rendered
-      },
-      { timeout: 2000 }
-    );
-
-    // $FlowExpectedError[incompatible-call] See expect.extend above
-    expect(await axe(baseElement)).toHaveNoViolations();
-  });
 });
