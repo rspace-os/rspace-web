@@ -239,41 +239,6 @@ export const PrintOptionsWrapper = ({
           )}
         </FormControl>
         <FormControl>
-          <FormLabel id="print-size-radiogroup-label">Print Size</FormLabel>
-          {printOptions.printerType === "GENERIC" && (
-            <RadioGroup
-              aria-labelledby="print-size-radiogroup-label"
-              value={printOptions.printSize}
-              onChange={({ target }) => {
-                if (target.value)
-                  setPrintOptions({
-                    ...printOptions,
-                    printSize: target.value,
-                  });
-              }}
-              row
-            >
-              <FormControlLabel
-                value="LARGE"
-                control={<Radio size="small" />}
-                label="Large"
-              />
-              <FormControlLabel
-                value="SMALL"
-                control={<Radio size="small" />}
-                label="Small"
-              />
-            </RadioGroup>
-          )}
-          <Alert severity="info">
-            {printOptions.printerType === "LABEL"
-              ? "For label printers size is set automatically (to match a range of label sizes)."
-              : printOptions.printSize === "LARGE"
-              ? "Full width (4cm)."
-              : "Half width (2cm)."}
-          </Alert>
-        </FormControl>
-        <FormControl>
           <FormLabel id="print-copties-radiogroup-label">
             Print Copies
           </FormLabel>
@@ -306,6 +271,43 @@ export const PrintOptionsWrapper = ({
               For label printers, the number of copies is set to 1 per item.
             </Alert>
           )}
+        </FormControl>
+        <FormControl>
+          <FormLabel id="print-size-radiogroup-label">Print Size</FormLabel>
+          {printOptions.printerType === "GENERIC" && printOptions.printCopies === "1" && (
+            <RadioGroup
+              aria-labelledby="print-size-radiogroup-label"
+              value={printOptions.printSize}
+              onChange={({ target }) => {
+                if (target.value)
+                  setPrintOptions({
+                    ...printOptions,
+                    printSize: target.value,
+                  });
+              }}
+              row
+            >
+              <FormControlLabel
+                value="LARGE"
+                control={<Radio size="small" />}
+                label="Large"
+              />
+              <FormControlLabel
+                value="SMALL"
+                control={<Radio size="small" />}
+                label="Small"
+              />
+            </RadioGroup>
+          )}
+          <Alert severity="info">
+            {printOptions.printerType === "LABEL"
+              ? "For label printers size is set automatically (to match a range of label sizes)."
+              : printOptions.printCopies === "2"
+              ? "Applying a horizontal layout."
+              : printOptions.printSize === "LARGE"
+              ? "Full width (4cm)."
+              : "Half width (2cm)."}
+          </Alert>
         </FormControl>
       </Stack>
     </FormControl>
