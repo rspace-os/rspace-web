@@ -10,9 +10,6 @@ import ContextDialog from "../../ContextMenu/ContextDialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
-import RadioField, {
-  type RadioOption,
-} from "../../../../components/Inputs/RadioField";
 import Typography from "@mui/material/Typography";
 import { makeStyles } from "tss-react/mui";
 import useStores from "../../../../stores/use-stores";
@@ -25,14 +22,12 @@ import docLinks from "../../../../assets/DocLinks";
 import clsx from "clsx";
 import { mkAlert } from "../../../../stores/contexts/Alert";
 import { useIsSingleColumnLayout } from "../../Layout/Layout2x1";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Radio from "@mui/material/Radio";
+import Stack from "@mui/material/Stack";
 
 const useStyles = makeStyles()((theme) => ({
-  optionModuleWrapper: {
-    border: `1px solid ${theme.palette.sidebar.selected.bg}`,
-    borderRadius: theme.spacing(0.5),
-    padding: theme.spacing(1),
-    marginBottom: theme.spacing(2),
-  },
   rowWrapper: {
     display: "flex",
     flexDirection: "row",
@@ -71,7 +66,6 @@ export type PrintOptions = {
   printSize: PrintSize,
 };
 
-
 /**
  * PrintDialog is intended to be used - in the future - for more than barcodes
  * itemsToPrint are connected to printType
@@ -109,128 +103,123 @@ export const PrintOptionsWrapper = ({
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { classes } = useStyles();
 
-  const printerTypeOptions: Array<RadioOption<PrinterType>> = [
-    { value: "GENERIC", label: "Standard Printer" },
-    { value: "LABEL", label: "Label Printer" },
-  ];
-
-  const printLayoutOptions: Array<RadioOption<PrintLayout>> = [
-    { value: "FULL", label: "Full" },
-    { value: "BASIC", label: "Basic" },
-  ];
-
-  const printSizeOptions: Array<RadioOption<PrintSize>> = [
-    { value: "LARGE", label: "Large" },
-    { value: "SMALL", label: "Small" },
-  ];
-
   return (
     <FormControl
       component="fieldset"
       className={isSingleColumnLayout ? classes.fullWidth : classes.halfWidth}
     >
-      <Box className={classes.optionModuleWrapper}>
-        <FormLabel id="printer-type-radiogroup-label">Printer Type</FormLabel>
-        <RadioField
-          name={"Printer Type Options"}
-          value={printOptions.printerType}
-          onChange={({ target }) => {
-            if (target.value)
-              setPrintOptions({
-                ...printOptions,
-                printerType: target.value,
-              });
-          }}
-          options={printerTypeOptions}
-          disabled={false}
-          labelPlacement="bottom"
-          row
-          smallText={true}
-        />
-        {printOptions.printerType === "GENERIC" ? (
-          <Alert severity="info">
-            Print multiple labels per sheet (e.g. A4 / A3 / Letter).
-          </Alert>
-        ) : (
-          <Alert severity="info">
-            Print one label per sticker (Zebra printer).
-          </Alert>
-        )}
-      </Box>
-      <Box className={classes.optionModuleWrapper}>
-        <FormLabel id="print-layout-radiogroup-label">Print Layout</FormLabel>
-        <RadioField
-          name={"Print Layout Options"}
-          value={printOptions.printLayout}
-          onChange={({ target }) => {
-            if (target.value)
-              setPrintOptions({
-                ...printOptions,
-                printLayout: target.value,
-              });
-          }}
-          options={printLayoutOptions}
-          disabled={false}
-          labelPlacement="bottom"
-          row
-          smallText={true}
-        />
-        <Alert severity="info">
-          {printOptions.printLayout === "FULL"
-            ? `Barcode and record details${
-                printOptions.printerType === "LABEL"
-                  ? " (rectangular label required)."
-                  : "."
-              }`
-            : `Barcode and global ID${
-                printOptions.printerType === "LABEL"
-                  ? " (square or rectangular label)."
-                  : "."
-              }`}
-        </Alert>
-        {printOptions.printerType === "LABEL" && (
-          <Alert severity="info" className={classes.topSpaced}>
-            The label shape should match the selected layout. Also, you might
-            have problems when using Safari. Please check barcodes{" "}
-            <a
-              href={docLinks.barcodesPrinting}
-              target="_blank"
-              rel="noreferrer"
-            >
-              documentation
-            </a>
-            .
-          </Alert>
-        )}
-      </Box>
-      <Box className={classes.optionModuleWrapper}>
-        <FormLabel id="print-size-radiogroup-label">Print Size</FormLabel>
-        {printOptions.printerType === "GENERIC" && (
-          <RadioField
-            name={"Print Size Options"}
-            value={printOptions.printSize}
+      <Stack spacing={3}>
+        <FormControl>
+          <FormLabel id="printer-type-radiogroup-label">Printer Type</FormLabel>
+          <RadioGroup
+            aria-labelledby="printer-type-radiogroup-label"
+            value={printOptions.printerType}
             onChange={({ target }) => {
               if (target.value)
                 setPrintOptions({
                   ...printOptions,
-                  printSize: target.value,
+                  printerType: target.value,
                 });
             }}
-            options={printSizeOptions}
-            disabled={false}
-            labelPlacement="bottom"
             row
-            smallText={true}
-          />
-        )}
-        <Alert severity="info">
-          {printOptions.printerType === "LABEL"
-            ? "For label printers size is set automatically (to match a range of label sizes)."
-            : printOptions.printSize === "LARGE"
-            ? "Full width (4cm)."
-            : "Half width (2cm)."}
-        </Alert>
-      </Box>
+          >
+            <FormControlLabel
+              value="GENERIC"
+              control={<Radio size="small" />}
+              label="Standard Printer"
+            />
+            <FormControlLabel
+              value="LABEL"
+              control={<Radio size="small" />}
+              label="Label Printer"
+            />
+          </RadioGroup>
+          {printOptions.printerType === "GENERIC" ? (
+            <Alert severity="info">
+              Print multiple labels per sheet (e.g. A4 / A3 / Letter).
+            </Alert>
+          ) : (
+            <Alert severity="info">
+              Print one label per sticker (Zebra printer).
+            </Alert>
+          )}
+        </FormControl>
+        <FormControl>
+          <FormLabel id="print-layout-radiogroup-label">Print Layout</FormLabel>
+          <RadioGroup
+            aria-labelledby="print-layout-radiogroup-label"
+            value={printOptions.printLayout}
+            onChange={({ target }) => {
+              if (target.value)
+                setPrintOptions({
+                  ...printOptions,
+                  printLayout: target.value,
+                });
+            }}
+            row
+          >
+            <FormControlLabel
+              value="FULL"
+              control={<Radio size="small" />}
+              label="Full"
+            />
+            <FormControlLabel
+              value="BASIC"
+              control={<Radio size="small" />}
+              label="Basic"
+            />
+          </RadioGroup>
+          {printOptions.printerType === "LABEL" && (
+            <Alert severity="info" className={classes.topSpaced}>
+              The label shape should match the selected layout. Also, you might
+              have problems when using Safari. Please check barcodes{" "}
+              <a
+                href={docLinks.barcodesPrinting}
+                target="_blank"
+                rel="noreferrer"
+              >
+                documentation
+              </a>
+              .
+            </Alert>
+          )}
+        </FormControl>
+        <FormControl>
+          <FormLabel id="print-size-radiogroup-label">Print Size</FormLabel>
+          {printOptions.printerType === "GENERIC" && (
+            <RadioGroup
+              aria-labelledby="print-size-radiogroup-label"
+              value={printOptions.printSize}
+              onChange={({ target }) => {
+                if (target.value)
+                  setPrintOptions({
+                    ...printOptions,
+                    printSize: target.value,
+                  });
+              }}
+              row
+            >
+              <FormControlLabel
+                value="LARGE"
+                control={<Radio size="small" />}
+                label="Large"
+              />
+              <FormControlLabel
+                value="SMALL"
+                control={<Radio size="small" />}
+                label="Small"
+              />
+            </RadioGroup>
+          )}
+          <Alert severity="info">
+            {printOptions.printerType === "LABEL"
+              ? "For label printers size is set automatically (to match a range of label sizes)."
+              : printOptions.printSize === "LARGE"
+              ? "Full width (4cm)."
+              : "Half width (2cm)."}
+          </Alert>
+        </FormControl>
+      </Stack>
     </FormControl>
   );
 };
@@ -366,4 +355,3 @@ function PrintDialog({
 }
 
 export default (observer(PrintDialog): ComponentType<PrintDialogArgs>);
-

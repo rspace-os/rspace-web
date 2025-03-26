@@ -54,9 +54,7 @@ describe("Print Tests", () => {
           <PrintDialog
             showPrintDialog={openDialog}
             printType={printType}
-            itemsToPrint={[
-              mockContainer
-            ]}
+            itemsToPrint={[mockContainer]}
             onClose={() => {}}
           />
         </storesContext.Provider>
@@ -78,9 +76,6 @@ describe("Print Tests", () => {
       expect(labelOption).toBeInTheDocument();
       expect(labelOption).not.toBeChecked();
 
-      /* assert help text for default mode option, and preview header */
-      const defaultModeHint = "Barcode and record details.";
-      expect(screen.getByText(defaultModeHint)).toBeInTheDocument();
       const previewHeader = "Preview: Barcode Label Layout";
       expect(screen.getByText(previewHeader)).toBeInTheDocument();
     });
