@@ -12,12 +12,17 @@ import { type InventoryRecord } from "../../../stores/definitions/InventoryRecor
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
 
-const itemPxWidths = {
+const itemPxWidth = {
   small: "110px",
   full: "220px",
 };
 
-const itemMmWidths = {
+const itemPxHeight = {
+  small: "150px",
+  full: "150px",
+};
+
+const itemMmSize = {
   small: "19mm",
   large: "38mm",
 };
@@ -42,24 +47,44 @@ const useStyles = makeStyles()((theme) => ({
   },
   /* for screen mode */
   smallPx: {
-    width: itemPxWidths.small,
-    maxWidth: itemPxWidths.small,
+    width: itemPxWidth.small,
+    maxWidth: itemPxWidth.small,
     padding: theme.spacing(0.25),
   },
   largePx: {
-    width: itemPxWidths.full,
-    maxWidth: itemPxWidths.full,
+    width: itemPxWidth.full,
+    maxWidth: itemPxWidth.full,
+    padding: theme.spacing(0.25),
+  },
+  smallPxHorz: {
+    height: itemPxHeight.small,
+    maxHeight: itemPxHeight.small,
+    padding: theme.spacing(0.25),
+  },
+  largePxHorz: {
+    height: itemPxHeight.full,
+    maxHeight: itemPxHeight.full,
     padding: theme.spacing(0.25),
   },
   /* for grid/generic mode */
   smallMm: {
-    width: itemMmWidths.small,
-    maxWidth: itemMmWidths.small,
+    width: itemMmSize.small,
+    maxWidth: itemMmSize.small,
     padding: theme.spacing(0.25),
   },
   largeMm: {
-    width: itemMmWidths.large,
-    maxWidth: itemMmWidths.large,
+    width: itemMmSize.large,
+    maxWidth: itemMmSize.large,
+    padding: theme.spacing(0.5),
+  },
+  smallMmHorz: {
+    height: itemMmSize.small,
+    maxHeight: itemMmSize.small,
+    padding: theme.spacing(0.25),
+  },
+  largeMmHorz: {
+    height: itemMmSize.large,
+    maxHeight: itemMmSize.large,
     padding: theme.spacing(0.5),
   },
   /* for single/zebra mode */
@@ -146,10 +171,18 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
 
   const sizeClass = () => {
     if (target === "screen") {
+      if (printOptions.printCopies === "2") {
+        if (printSize === "SMALL") return classes.smallPxHorz;
+        if (printSize === "LARGE") return classes.largePxHorz;
+      }
       if (printSize === "SMALL") return classes.smallPx;
       if (printSize === "LARGE") return classes.largePx;
     }
     if (target === "multiplePrint") {
+      if (printOptions.printCopies === "2") {
+        if (printSize === "SMALL") return classes.smallMmHorz;
+        if (printSize === "LARGE") return classes.largeMmHorz;
+      }
       if (printSize === "SMALL") return classes.smallMm;
       if (printSize === "LARGE") return classes.largeMm;
     }
@@ -173,18 +206,30 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
         <div className={clsx(classes.printItemWrapper, sizeClass())}>
           <Grid
             container
-            direction="column"
+            direction={printOptions.printCopies === "2" ? "row" : "column"}
+            flexWrap="nowrap"
             spacing={1}
             className={classes.wrappingText}
           >
             {imageLinks && (
-              <>
+              <Grid item>
                 <img
                   className={classes.centeredSelf}
                   src={imageLinks[index]}
                   title="Barcode Image"
-                  width="75%"
+                  {...(printOptions.printCopies === "1"
+                    ? { width: "75%" }
+                    : { height: "75%" })}
                 />
+              </Grid>
+            )}
+            <Grid item>
+              <Grid
+                container
+                direction="column"
+                spacing={1}
+                className={clsx(classes.centeredText, classes.smallText)}
+              >
                 <Grid
                   item
                   className={clsx(classes.centeredText, classes.bottomSpaced)}
@@ -195,38 +240,31 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
                     <Typography variant={"h6"}>{header}</Typography>
                   )}
                 </Grid>
-              </>
-            )}
-            {printLayout === "FULL" && (
-              <Grid item>
-                <Grid
-                  container
-                  direction="column"
-                  spacing={1}
-                  className={clsx(classes.centeredText, classes.smallText)}
-                >
-                  <Grid item>{barcode.description.split("//")[1]}</Grid>
-                  <Grid item>
-                    <strong>Item:</strong>
-                    <br />
-                    {recordString}
-                  </Grid>
-                  <Grid item>
-                    <strong>Location:</strong>{" "}
-                    {itemOwner instanceof ContainerModel ||
-                    itemOwner instanceof SubSampleModel
-                      ? `${window.location.origin}${itemOwner.immediateParentContainer?.permalinkURL}` ||
-                        "-"
-                      : "-"}
-                  </Grid>
-                  <Grid item>
-                    <strong>Printed:</strong>
-                    <br />
-                    {now.toLocaleString()}
-                  </Grid>
-                </Grid>
+                {printLayout === "FULL" && (
+                  <>
+                    <Grid item>{barcode.description.split("//")[1]}</Grid>
+                    <Grid item>
+                      <strong>Item:</strong>
+                      {printOptions.printCopies === "1" && <br />}
+                      {recordString}
+                    </Grid>
+                    <Grid item>
+                      <strong>Location:</strong>{" "}
+                      {itemOwner instanceof ContainerModel ||
+                      itemOwner instanceof SubSampleModel
+                        ? `${window.location.origin}${itemOwner.immediateParentContainer?.permalinkURL}` ||
+                          "-"
+                        : "-"}
+                    </Grid>
+                    <Grid item>
+                      <strong>Printed:</strong>
+                      {printOptions.printCopies === "1" && <br />}
+                      {now.toLocaleString()}
+                    </Grid>
+                  </>
+                )}
               </Grid>
-            )}
+            </Grid>
           </Grid>
         </div>
         {/* force page break after item (when wrapper in display block) */}
