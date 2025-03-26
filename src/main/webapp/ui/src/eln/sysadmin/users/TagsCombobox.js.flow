@@ -1,0 +1,11 @@
+//@flow
+
+import { type Node } from "react";
+import RsSet from "../../../util/set";
+
+declare export default function TagsCombobox({|
+  value: RsSet<string>,
+  anchorEl: ?Element,
+  onSelection: (string) => void,
+  onClose: () => void,
+|}): Node;
