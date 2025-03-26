@@ -23,6 +23,7 @@
 /src/main/webapp/ui/node/
 /src/main/webapp/ui/node_modules/
 node_modules
+src/main/webapp/ui/playwright/
 /.classpath
 /.project
 /.settings
