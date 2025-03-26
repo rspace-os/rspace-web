@@ -193,7 +193,7 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
                       : "-"}
                   </Grid>
                   <Grid item>
-                    <strong>Created:</strong>
+                    <strong>Printed:</strong>
                     <br />
                     {now.toLocaleString()}
                   </Grid>
