@@ -1,17 +1,10 @@
-//@flow
-
-import React, {
-  type Node,
-  useEffect,
-  useState,
-  useRef,
-  useMemo,
-  useId,
-  type ElementRef,
-} from "react";
+import React, { useEffect, useState, useRef, useMemo, useId } from "react";
 import TextField from "@mui/material/TextField";
-import useAutocomplete from "@mui/material/useAutocomplete";
-import { VariableSizeList as List } from "react-window";
+import useAutocomplete, {
+  AutocompleteCloseReason,
+  AutocompleteGroupedOption,
+} from "@mui/material/useAutocomplete";
+import { VariableSizeList } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import Popover from "@mui/material/Popover";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -82,29 +75,42 @@ const POPOVER_WIDTH = 300;
  */
 const OPTION_HEIGHT = 36;
 
-type InternalTag = {|
-  value: string,
-  selected: boolean,
-|};
+type InternalTag = {
+  value: string;
+  selected: boolean;
+};
 
 /*
  * makeStyles is used because withStyles is not performant enough to render the
  * menu items as the user scrolls the virtualised list
  */
-const useStyles = makeStyles()((theme, { index, keyboardFocusIndex }) => ({
-  menuItem: {
-    padding: "8px",
-    cursor: "default",
+const useStyles = makeStyles<{
+  index: number;
+  keyboardFocusIndex: number | null;
+}>()(
+  (
+    theme,
+    {
+      index,
+      keyboardFocusIndex,
+    }: { index: number; keyboardFocusIndex: number | null }
+  ) => ({
+    menuItem: {
+      padding: "8px",
+      cursor: "default",
 
-    border:
-      index === keyboardFocusIndex
-        ? `2px solid ${theme.palette.primary.main}`
-        : "none",
-    backgroundColor:
-      index === keyboardFocusIndex ? theme.palette.hover.iconButton : "default",
-    borderRadius: "4px",
-  },
-}));
+      border:
+        index === keyboardFocusIndex
+          ? `2px solid ${theme.palette.primary.main}`
+          : "none",
+      backgroundColor:
+        index === keyboardFocusIndex
+          ? theme.palette.hover.iconButton
+          : "default",
+      borderRadius: "4px",
+    },
+  })
+);
 
 function OptionsListing({
   sortedOptions,
@@ -115,20 +121,31 @@ function OptionsListing({
   keyboardFocusIndex,
   filter,
 }: {
-  sortedOptions: Array<InternalTag>,
-  getOptionProps: ({ option: InternalTag, index: number, ... }) => { ... },
-  groupedOptions: Array<InternalTag>,
-  listboxProps: { ... },
-  listRef: ElementRef<typeof List>,
-  keyboardFocusIndex: ?number,
-  filter: string,
+  sortedOptions: Array<InternalTag>;
+  getOptionProps: (optionAndIndex: {
+    option: InternalTag;
+    index: number;
+  }) => object;
+  groupedOptions:
+    | Array<InternalTag>
+    | Array<AutocompleteGroupedOption<InternalTag>>;
+  listboxProps: object;
+  listRef: React.MutableRefObject<VariableSizeList | null>;
+  keyboardFocusIndex: number | null;
+  filter: string;
 }) {
-  const Item = ({ index, style }: { index: number, style: mixed }) => {
+  const Item = ({
+    index,
+    style,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  }) => {
     const { classes } = useStyles({ index, keyboardFocusIndex });
     if (!groupedOptions || index >= groupedOptions.length)
       return <li style={style} />;
 
-    const option = groupedOptions[index];
+    const option = groupedOptions[index] as InternalTag;
     const name = option.value || "no name";
     const tagIsAllowed = !option.selected;
 
@@ -191,7 +208,7 @@ function OptionsListing({
       loadMoreItems={() => {}}
     >
       {({ onItemsRendered, ref }) => (
-        <List
+        <VariableSizeList
           {...listboxProps}
           height={300}
           itemCount={sortedOptions.length}
@@ -205,34 +222,34 @@ function OptionsListing({
            * more information on exactly how this works see this StackOverflow
            * answer https://stackoverflow.com/a/70284705
            */
-          ref={(node) => {
-            ref.current = node;
+          ref={(node: VariableSizeList) => {
+            ref(node);
             listRef.current = node;
           }}
           itemSize={() => OPTION_HEIGHT}
         >
           {Item}
-        </List>
+        </VariableSizeList>
       )}
     </InfiniteLoader>
   );
 }
 
-type TagsComboboxArgs = {|
+type TagsComboboxArgs = {
   /*
    * This is the set of currently selected tags. It is a Set because this UI
    * component does not care about the order of the tags that the parent
    * component may or may not persist. This parameter is solely used to prevent
    * the user from choosing a tag that they have already selected.
    */
-  value: RsSet<string>,
+  value: RsSet<string>;
 
   /*
    * Identifies if the popup should be open and if so where it should be
    * positioned. If null then the popup is not shown. If an element then the
    * popup is shown adjacent to that element.
    */
-  anchorEl: ?Element,
+  anchorEl: Element | null;
 
   /*
    * When the user chooses a tag from the suggestions, or enters a new one of
@@ -242,7 +259,7 @@ type TagsComboboxArgs = {|
    * that the parent component should update the `value` prop above in this
    * callback by appending this new tag.
    */
-  onSelection: (string) => void,
+  onSelection: (tagAsString: string) => void;
 
   /*
    * If the user chooses to close the popup, either with or without making a
@@ -250,15 +267,15 @@ type TagsComboboxArgs = {|
    * component will set the `anchorEl` prop to null as it is this that will
    * actually close the popup.
    */
-  onClose: () => void,
-|};
+  onClose: () => void;
+};
 
 export default function TagsCombobox({
   onSelection,
   value,
   anchorEl,
   onClose,
-}: TagsComboboxArgs): Node {
+}: TagsComboboxArgs): React.ReactNode {
   const [tags, setTags] = useState<Array<InternalTag>>([]);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
   const [filter, setFilter] = useState("");
@@ -266,36 +283,35 @@ export default function TagsCombobox({
   const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(
     null
   );
-  const listRef = useRef();
+  const listRef = useRef<VariableSizeList | null>(null);
 
-  const loadPage = (): Promise<{|
-    tags: Array<InternalTag>,
-    lastPage: boolean,
-  |}> => {
-    if (filter.length < 2) return Promise.resolve({ tags: [], lastPage: true });
+  const loadPage = async (): Promise<{
+    tags: Array<InternalTag>;
+    lastPage: boolean;
+  }> => {
+    if (filter.length < 2) return { tags: [], lastPage: true };
     setIsNextPageLoading(true);
     setError(false);
-    return axios
-      .get<Array<string>>(`/system/users/allUserTags?tagFilter=${filter}`)
-      .then(({ data }) => {
-        return {
-          lastPage: true,
-          tags: data.map((tag: string): InternalTag => ({
-            value: tag,
-            selected: value.has(tag),
-          })),
-        };
-      })
-      .catch(() => {
-        setError(true);
-        return {
-          tags: ([]: Array<InternalTag>),
-          lastPage: true,
-        };
-      })
-      .finally(() => {
-        setIsNextPageLoading(false);
-      });
+    try {
+      const { data } = await axios.get<Array<string>>(
+        `/system/users/allUserTags?tagFilter=${filter}`
+      );
+      return {
+        lastPage: true,
+        tags: data.map((tag) => ({
+          value: tag,
+          selected: value.has(tag),
+        })),
+      };
+    } catch {
+      setError(true);
+      return {
+        tags: [] as Array<InternalTag>,
+        lastPage: true,
+      };
+    } finally {
+      setIsNextPageLoading(false);
+    }
   };
 
   const sortedOptions = useMemo(() => {
@@ -349,22 +365,8 @@ export default function TagsCombobox({
        */
     },
     onClose: (
-      event: {
-        relatedTarget: ?{
-          dataset: {
-            tagValue: string,
-          },
-          nodeName: string,
-        },
-        currentTarget: {
-          dataset: {
-            tagValue: string,
-          },
-          nodeName: string,
-        },
-        ...
-      },
-      reason: "toggleInput" | "escape" | "selectOption" | "blur"
+      event: React.SyntheticEvent<Element, Event>,
+      reason: AutocompleteCloseReason
     ) => {
       /*
        * This event is fired whenever the user taps inside the Popover. There
@@ -373,19 +375,20 @@ export default function TagsCombobox({
        * <li> tag -- is the target.
        */
       let li = null;
+      const relatedTarget = (event as React.FocusEvent).relatedTarget;
       if (
         event.currentTarget.nodeName === "INPUT" &&
-        event.relatedTarget?.nodeName === "LI"
+        relatedTarget?.nodeName === "LI"
       ) {
-        li = event.relatedTarget;
+        li = relatedTarget;
       }
       if (event.currentTarget.nodeName === "LI") {
         li = event.currentTarget;
       }
 
       if ((reason === "blur" || reason === "selectOption") && li) {
-        const { tagValue } = li.dataset;
-        onSelection(tagValue);
+        const { tagValue } = (li as HTMLLIElement).dataset;
+        onSelection(tagValue as string);
         onClose();
       }
     },
@@ -406,13 +409,17 @@ export default function TagsCombobox({
     listRef.current?.resetAfterIndex(0);
   }, [value]);
 
-  const [debounceTimeout, setDebounceTimeout] = useState<?TimeoutID>(null);
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
   function debounce<FuncReturn>(
     func: () => FuncReturn,
     timeout: number = 1000
   ): () => void {
     return () => {
-      clearTimeout(debounceTimeout);
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       setDebounceTimeout(setTimeout(() => func(), timeout));
     };
   }
@@ -420,7 +427,7 @@ export default function TagsCombobox({
   useEffect(() => {
     debounce(() => {
       // this assumes that the code that called `setFilter` also reset `page` to 0
-      void loadPage().then(({ lastPage, tags: newPageOfTags }) => {
+      void loadPage().then(({ tags: newPageOfTags }) => {
         setTags(newPageOfTags);
         listRef.current?.resetAfterIndex(0);
       });
@@ -441,7 +448,9 @@ export default function TagsCombobox({
        * already be set.
        */
       setTimeout(() => {
-        getInputProps().ref.current?.focus();
+        (
+          getInputProps().ref as React.RefObject<HTMLInputElement>
+        ).current?.focus();
       }, 0);
     }
   }, [anchorEl]);
@@ -618,10 +627,7 @@ export default function TagsCombobox({
         </div>
         {groupedOptions.length > 0 && (
           <OptionsListing
-            hasNextPage={false}
-            isNextPageLoading={isNextPageLoading}
             sortedOptions={sortedOptions}
-            loadNextPage={() => {}}
             getOptionProps={getOptionProps}
             groupedOptions={groupedOptions}
             listboxProps={getListboxProps()}
