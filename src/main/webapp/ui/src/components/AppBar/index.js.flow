@@ -1,0 +1,20 @@
+//@flow
+
+import { type Node, type Element } from "react";
+import docLinks from "../../assets/DocLinks";
+import SidebarToggle from "./SidebarToggle";
+
+type GalleryAppBarArgs = {|
+  variant: "page" | "dialog",
+  currentPage: "Gallery" | "Inventory" | "Workspace" | string,
+  sidebarToggle?: Element<typeof SidebarToggle>,
+  accessibilityTips: {|
+    supportsReducedMotion?: boolean,
+    supportsHighContrastMode?: boolean,
+    supports2xZoom?: boolean,
+  |},
+  helpPage?: {| docLink: $Values<typeof docLinks>, title: string |},
+|};
+
+declare export default function GalleryAppBar(GalleryAppBarArgs): Node;
+

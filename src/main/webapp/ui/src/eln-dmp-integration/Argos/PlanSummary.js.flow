@@ -1,0 +1,25 @@
+// @flow
+
+export type PlanSummary = {
+  id: string,
+  label: string,
+  grant: string,
+  createdAt: number,
+  modifiedAt: number,
+};
+
+export type SearchParameters = {|
+  like: ?string,
+  grantsLike: ?string,
+  fundersLike: ?string,
+  collaboratorsLike: ?string,
+  page: number,
+  pageSize: number,
+|};
+
+export type Plans = {|
+  totalCount: number,
+  data: Array<PlanSummary>,
+|};
+
+declare export function fetchPlanSummaries(SearchParameters): Promise<Plans>;

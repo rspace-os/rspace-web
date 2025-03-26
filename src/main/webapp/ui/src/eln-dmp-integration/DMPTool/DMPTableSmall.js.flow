@@ -1,0 +1,19 @@
+// @flow
+
+import { type Node } from "react";
+
+type DMPId = number | string;
+type DMPUserInternalId = number;
+
+type Plan = {
+  dmpId: DMPId,
+  dmpTitle: string,
+  dmpUserInternalId: DMPUserInternalId,
+};
+
+declare export default function DMPTableSmall({|
+  plans: Array<Plan>,
+  selectedPlans: Array<DMPUserInternalId>,
+  addSelectedPlan: (id: DMPUserInternalId) => void,
+  removeSelectedPlan: (id: DMPUserInternalId) => void,
+|}): Node;

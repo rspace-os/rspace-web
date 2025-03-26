@@ -1,0 +1,11 @@
+// @flow strict
+
+import { type Node } from "react";
+import { type RecordIconData } from "../stores/definitions/BaseRecord";
+
+declare export default function RecordTypeIcon({|
+  record: RecordIconData,
+  color?: ?string,
+  "aria-hidden"?: boolean,
+  style?: { ... },
+|}): Node;

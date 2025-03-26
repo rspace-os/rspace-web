@@ -1,0 +1,13 @@
+//@flow strict
+
+import React, { type ComponentType, type Node } from "react";
+
+type DropdownButtonArgs = {|
+  name: Node,
+  children: Node,
+  onClick: ({| target: HTMLElement, currentTarget: HTMLElement |}) => void,
+  disabled?: boolean,
+  title?: string,
+|};
+
+declare export default function DropdownButton(DropdownButtonArgs): Node;

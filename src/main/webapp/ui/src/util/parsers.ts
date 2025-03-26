@@ -191,11 +191,11 @@ export function isTrue(b: boolean): Result<true> {
  * ```
  */
 export const getValueWithKey =
-  <Key extends string>(
-    key: Key
-  ): ((obj: Record<Key, unknown>) => Result<unknown>) =>
-  (obj: Record<Key, unknown>): Result<unknown> =>
-    getByKey(key, obj).toResult(() => new Error(`key '${key}' is missing`));
+  (key: string): ((obj: object) => Result<unknown>) =>
+  (obj: object): Result<unknown> =>
+    getByKey(key as never, obj).toResult(
+      () => new Error(`key '${key}' is missing`)
+    );
 /**
  * Traverses a series of nested objects, only returning Result.Ok if each is an
  * object, is not null, and contains the specified key.

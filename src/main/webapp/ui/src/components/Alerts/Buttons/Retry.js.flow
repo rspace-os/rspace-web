@@ -1,0 +1,9 @@
+// @flow strict
+
+import { type Node } from "react";
+
+declare export default function Retry({|
+  retryFunction: () => Promise<void>,
+  onClose: () => void,
+|}): Node;
+

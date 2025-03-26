@@ -78,7 +78,11 @@
 
     "max-statements-per-line": ["warn", { "max": 2 }],
     "no-alert": "error",
-    "no-console": ["warn", { "allow": ["warn", "error"] }],
+
+    // permenant logging statements should indicate a severity with `.info`, `.warn`, or `.error`;
+    // `.log`, `.debug`, and `.trace` should not be left in the codebase
+    "no-console": ["warn", { "allow": ["info", "warn", "error"] }],
+
     "no-constant-binary-expression": "error",
     "no-duplicate-imports": "warn",
     "no-else-return": ["error", { "allowElseIf": false }],

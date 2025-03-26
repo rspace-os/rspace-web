@@ -1,0 +1,28 @@
+//@flow
+
+import * as FetchingData from "../../util/fetchingData";
+
+/**
+ * The state requried to display the conditional parts of the AppBar.
+ */
+export type UiNavigationData = {|
+  userDetails: {|
+    email: string,
+    orcidId: null | string,
+    orcidAvailable: boolean,
+    fullName: string,
+    username: string,
+    profileImgSrc: null | string,
+  |},
+  visibleTabs: {|
+    published: boolean,
+    inventory: boolean,
+    system: boolean,
+    myLabGroups: boolean,
+  |},
+  bannerImgSrc: string,
+  operatedAs: boolean,
+  nextMaintenance: null | {| startDate: Date |},
+|};
+
+declare export default function useUiNavigationData(): FetchingData.Fetched<UiNavigationData>;

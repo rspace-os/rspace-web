@@ -1,0 +1,9 @@
+//@flow
+
+import { type Node } from "react";
+
+export type Scope = "MINE" | "PUBLIC" | "BOTH";
+
+declare export default function ScopeField({|
+  getDMPs: (Scope) => void,
+|}): Node;

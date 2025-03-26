@@ -7,7 +7,7 @@ import React, { useState } from "react";
 import { render, cleanup, screen, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import StepperPanel from "../StepperPanel";
-import "../../../../../__mocks__/matchMedia.js";
+import "../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import SynchroniseFormSections from "../SynchroniseFormSections";
