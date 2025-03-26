@@ -95,3 +95,24 @@ test("Should have no axe violations.", async ({ mount, page }) => {
     })
   ).toEqual([]);
 });
+
+test("Importing a selected DMP should call the import endpoint.", async ({
+  mount,
+  page,
+}) => {
+  await mount(<DMPDialog open={true} setOpen={() => {}} />);
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByText("foo")).toBeVisible();
+
+  const cell = page.getByRole("gridcell", { name: "Plan selection" }).first();
+  await cell.getByRole("radio").click();
+
+  const [request] = await Promise.all([
+    page.waitForRequest(/\/apps\/argos\/importPlan/),
+    page.getByRole("button", { name: "Import" }).click(),
+  ]);
+
+  expect(request.url()).toMatch(
+    new RegExp("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e")
+  );
+});
