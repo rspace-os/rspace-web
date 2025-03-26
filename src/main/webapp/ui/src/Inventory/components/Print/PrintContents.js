@@ -92,6 +92,12 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
+/*
+ * "screen"        - for previewing print on screen
+ * "multiplePrint" - for printing multiple items in a grid for a
+ *                   regular printer
+ * "singlePrint"   - for printing single items for a zebra printer
+ */
 type Target = "screen" | "multiplePrint" | "singlePrint";
 
 type PrintContentsArgs = {|
@@ -137,17 +143,24 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
   const now = new Date();
 
   const { classes } = useStyles();
-  const sizePerTarget = () =>
-    target === "screen" && printSize === "SMALL"
-      ? classes.smallPx
-      : target === "screen" && printSize === "LARGE"
-      ? classes.largePx
-      : target === "multiplePrint" && printSize === "SMALL"
-      ? classes.smallMm
-      : target === "multiplePrint" && printSize === "LARGE"
-      ? classes.largeMm
-      : classes.singlePc; // no small and large for singlePrint case
-  if (printOptions.printIdentifierType === "IGSN" && !itemOwner.identifiers[0]) {
+
+  const sizeClass = () => {
+    if (target === "screen") {
+      if (printSize === "SMALL") return classes.smallPx;
+      if (printSize === "LARGE") return classes.largePx;
+    }
+    if (target === "multiplePrint") {
+      if (printSize === "SMALL") return classes.smallMm;
+      if (printSize === "LARGE") return classes.largeMm;
+    }
+    // else singlePrint
+    return classes.singlePc;
+  };
+
+  if (
+    printOptions.printIdentifierType === "IGSN" &&
+    !itemOwner.identifiers[0]
+  ) {
     return null;
   }
   const header =
@@ -157,7 +170,7 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
   return (
     isBarcodePrint && (
       <>
-        <div className={clsx(classes.printItemWrapper, sizePerTarget())}>
+        <div className={clsx(classes.printItemWrapper, sizeClass())}>
           <Grid
             container
             direction="column"
