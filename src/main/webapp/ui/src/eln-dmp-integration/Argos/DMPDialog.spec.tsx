@@ -3,7 +3,7 @@ import React from "react";
 import DMPDialog from "./DMPDialog";
 import AxeBuilder from "@axe-core/playwright";
 
-test("Should have no axe violations.", async ({ mount, page, router }) => {
+test.beforeEach(async ({ router }) => {
   await router.route(/\/apps\/argos\/plans.*/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -69,7 +69,9 @@ test("Should have no axe violations.", async ({ mount, page, router }) => {
       }),
     });
   });
+});
 
+test("Should have no axe violations.", async ({ mount, page }) => {
   await mount(<DMPDialog open={true} setOpen={() => {}} />);
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByText("foo")).toBeVisible();
