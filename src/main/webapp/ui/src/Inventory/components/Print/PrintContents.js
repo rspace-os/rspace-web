@@ -299,7 +299,7 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
       >
         {itemsToPrint.map(([barcode, itemOwner], i) => (
           <>
-            <Grid item key={`${i}.1`}>
+            <Grid item key={`${i}.1`} sx={printOptions.printCopies === "2" && target === "multiplePrint" ? { width: "50vw" } : {}}>
               <PreviewPrintItem
                 index={i}
                 printOptions={printOptions}
