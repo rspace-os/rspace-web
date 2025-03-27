@@ -18,7 +18,6 @@ import { makeStyles } from "tss-react/mui";
 import useStores from "../../../stores/use-stores";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import Alert from "@mui/material/Alert";
-import { type BarcodeRecord } from "../../../stores/definitions/Barcode";
 import PrintContents, { PreviewPrintItem } from "./PrintContents";
 import ReactToPrint from "react-to-print";
 import docLinks from "../../../assets/DocLinks";
@@ -107,7 +106,7 @@ type PrintDialogArgs = {|
 |};
 
 type OptionsWrapperArgs = {|
-  itemsToPrint: $ReadOnlyArray<[BarcodeRecord, InventoryRecord]>,
+  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
   printOptions: PrintOptions,
   setPrintOptions: (PrintOptions) => void,
   printType: PrintType,
@@ -155,9 +154,7 @@ export const PrintOptionsWrapper = ({
             />
           </RadioGroup>
           {printOptions.printIdentifierType === "IGSN" &&
-            itemsToPrint.some(
-              ([_, record]) => record.identifiers.length === 0
-            ) && (
+            itemsToPrint.some((record) => record.identifiers.length === 0) && (
               <Alert severity="error">
                 Some of the selected records do not have an IGSN.
               </Alert>
@@ -274,31 +271,32 @@ export const PrintOptionsWrapper = ({
         </FormControl>
         <FormControl>
           <FormLabel id="print-size-radiogroup-label">Print Size</FormLabel>
-          {printOptions.printerType === "GENERIC" && printOptions.printCopies === "1" && (
-            <RadioGroup
-              aria-labelledby="print-size-radiogroup-label"
-              value={printOptions.printSize}
-              onChange={({ target }) => {
-                if (target.value)
-                  setPrintOptions({
-                    ...printOptions,
-                    printSize: target.value,
-                  });
-              }}
-              row
-            >
-              <FormControlLabel
-                value="LARGE"
-                control={<Radio size="small" />}
-                label="Large"
-              />
-              <FormControlLabel
-                value="SMALL"
-                control={<Radio size="small" />}
-                label="Small"
-              />
-            </RadioGroup>
-          )}
+          {printOptions.printerType === "GENERIC" &&
+            printOptions.printCopies === "1" && (
+              <RadioGroup
+                aria-labelledby="print-size-radiogroup-label"
+                value={printOptions.printSize}
+                onChange={({ target }) => {
+                  if (target.value)
+                    setPrintOptions({
+                      ...printOptions,
+                      printSize: target.value,
+                    });
+                }}
+                row
+              >
+                <FormControlLabel
+                  value="LARGE"
+                  control={<Radio size="small" />}
+                  label="Large"
+                />
+                <FormControlLabel
+                  value="SMALL"
+                  control={<Radio size="small" />}
+                  label="Small"
+                />
+              </RadioGroup>
+            )}
           <Alert severity="info">
             {printOptions.printerType === "LABEL"
               ? "For label printers size is set automatically (to match a range of label sizes)."
@@ -328,9 +326,6 @@ function PrintDialog({
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const componentToPrint = useRef<mixed>();
   const barcodePrint = ["contextMenu", "barcodeLabel"].includes(printType);
-
-  const itemsAndTheirBarcodes: $ReadOnlyArray<
-    [BarcodeRecord, InventoryRecord]> = itemsToPrint.map((record) => [record.barcodes[0], record]);
 
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
     printIdentifierType: "GLOBAL ID",
@@ -422,7 +417,7 @@ function PrintDialog({
           }
         >
           <PrintOptionsWrapper
-            itemsToPrint={itemsAndTheirBarcodes}
+            itemsToPrint={itemsToPrint}
             printOptions={printOptions}
             setPrintOptions={setPrintOptions}
             printType={printType}
@@ -438,14 +433,13 @@ function PrintDialog({
             {printOptions.printIdentifierType === "IGSN" &&
             itemsToPrint.some((record) => record.identifiers.length === 0)
               ? "Please resolve error."
-              : ArrayUtils.head(itemsAndTheirBarcodes)
-                  .map(([barcode, inventoryRecord]) => (
+              : ArrayUtils.head(itemsToPrint)
+                  .map((inventoryRecord) => (
                     <PreviewPrintItem
                       key={inventoryRecord.globalId}
                       index={0}
                       printOptions={printOptions}
                       printType={printType}
-                      barcode={barcode}
                       itemOwner={inventoryRecord}
                       imageLinks={imageLinks}
                       target="screen"
@@ -459,7 +453,7 @@ function PrintDialog({
               ref={componentToPrint}
               printOptions={printOptions}
               printType={printType}
-              itemsToPrint={itemsAndTheirBarcodes}
+              itemsToPrint={itemsToPrint}
               imageLinks={imageLinks}
               target={
                 printOptions.printerType === "GENERIC"

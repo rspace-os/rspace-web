@@ -1,7 +1,6 @@
 //@flow
 
 import React, { forwardRef, type ComponentType } from "react";
-import { type BarcodeRecord } from "../../../stores/definitions/Barcode";
 import { type PrintOptions, type PrintType } from "./PrintDialog";
 import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
@@ -112,7 +111,7 @@ type Target = "screen" | "multiplePrint" | "singlePrint";
 type PrintContentsArgs = {|
   printOptions: PrintOptions,
   printType: PrintType,
-  itemsToPrint: $ReadOnlyArray<[BarcodeRecord, InventoryRecord]>, // LoM ...
+  itemsToPrint: $ReadOnlyArray<InventoryRecord>,
   imageLinks?: $ReadOnlyArray<string>,
   target: Target,
 |};
@@ -121,7 +120,6 @@ type PreviewPrintItemArgs = {|
   index: number,
   printOptions: PrintOptions,
   printType: PrintType,
-  barcode: BarcodeRecord, // LoM ...
 
   /*
    * If `printOptions.printIdentifierType` is "IGSN", then `itemOwner` SHOULD
@@ -139,7 +137,6 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
   index,
   printOptions,
   printType,
-  barcode,
   itemOwner,
   imageLinks,
   target,
@@ -181,25 +178,31 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
     return null;
   }
   const header =
-    printOptions.printIdentifierType === "GLOBAL ID"
-      ? (
-        <>
-          <strong style={{
+    printOptions.printIdentifierType === "GLOBAL ID" ? (
+      <>
+        <strong
+          style={{
             fontSize: "0.8em",
-          }}>RSPACE GLOBAL ID</strong>
-          <br />
-          {itemOwner.globalId}
-        </>
-      )
-      : (
-        <>
-          <strong style={{
+          }}
+        >
+          RSPACE GLOBAL ID
+        </strong>
+        <br />
+        {itemOwner.globalId}
+      </>
+    ) : (
+      <>
+        <strong
+          style={{
             fontSize: "0.8em",
-          }}>IGSN</strong>
-          <br />
-          {itemOwner.identifiers[0].doi}
-        </>
-      );
+          }}
+        >
+          IGSN
+        </strong>
+        <br />
+        {itemOwner.identifiers[0].doi}
+      </>
+    );
   return (
     isBarcodePrint && (
       <>
@@ -232,21 +235,25 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
                   p: 1,
                 }}
               >
-                <Grid
-                  item
-                  className={clsx(classes.bottomSpaced)}
-                >
+                <Grid item className={clsx(classes.bottomSpaced)}>
                   {target === "singlePrint" ? (
                     header
                   ) : (
-                    <Typography variant={"h6"} sx={{
-                      lineHeight: "1.1",
-                    }}>{header}</Typography>
+                    <Typography
+                      variant={"h6"}
+                      sx={{
+                        lineHeight: "1.1",
+                      }}
+                    >
+                      {header}
+                    </Typography>
                   )}
                 </Grid>
                 {printLayout === "FULL" && (
                   <>
-                    <Grid item>{`${window.location.origin}/globalId/${itemOwner.globalId ?? ""}`}</Grid>
+                    <Grid item>{`${window.location.origin}/globalId/${
+                      itemOwner.globalId ?? ""
+                    }`}</Grid>
                     <Grid item>
                       <strong>Item:</strong>{" "}
                       {printOptions.printCopies === "1" && <br />}
@@ -256,7 +263,7 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
                       <strong>Location:</strong>{" "}
                       {itemOwner instanceof ContainerModel ||
                       itemOwner instanceof SubSampleModel
-                        ? `${window.location.origin}/globalId/${itemOwner.immediateParentContainer?.globalId}` ||
+                        ? `${window.location.origin}/globalId/${itemOwner.immediateParentContainer?.globalId}` ??
                           "-"
                         : "-"}
                     </Grid>
@@ -301,14 +308,21 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
           printOptions.printerType === "LABEL" && classes.block
         )}
       >
-        {itemsToPrint.map(([barcode, itemOwner], i) => (
+        {itemsToPrint.map((itemOwner, i) => (
           <>
-            <Grid item key={`${i}.1`} sx={printOptions.printCopies === "2" && target === "multiplePrint" ? { width: "50vw" } : {}}>
+            <Grid
+              item
+              key={`${i}.1`}
+              sx={
+                printOptions.printCopies === "2" && target === "multiplePrint"
+                  ? { width: "50vw" }
+                  : {}
+              }
+            >
               <PreviewPrintItem
                 index={i}
                 printOptions={printOptions}
                 printType={printType}
-                barcode={barcode}
                 itemOwner={itemOwner}
                 imageLinks={imageLinks}
                 target={target}
@@ -321,7 +335,6 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
                     index={i}
                     printOptions={printOptions}
                     printType={printType}
-                    barcode={barcode}
                     itemOwner={itemOwner}
                     imageLinks={imageLinks}
                     target={target}
