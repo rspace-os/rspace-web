@@ -263,8 +263,7 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
                       <strong>Location:</strong>{" "}
                       {itemOwner instanceof ContainerModel ||
                       itemOwner instanceof SubSampleModel
-                        ? `${window.location.origin}/globalId/${itemOwner.immediateParentContainer?.globalId}` ??
-                          "-"
+                        ? itemOwner.immediateParentContainer?.globalId ?? "-"
                         : "-"}
                     </Grid>
                     <Grid item>
