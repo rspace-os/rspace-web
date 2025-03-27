@@ -1,6 +1,4 @@
-// @flow strict
-
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
@@ -40,16 +38,16 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-type DescriptionListArgs = {|
-  content: Array<{|
-    label: string,
-    value: Node,
-    below?: boolean,
-    reducedPadding?: boolean,
-  |}>,
-  dividers?: boolean,
-  sx?: { ... },
-|};
+type DescriptionListArgs = {
+  content: Array<{
+    label: string;
+    value: React.ReactNode;
+    below?: boolean;
+    reducedPadding?: boolean;
+  }>;
+  dividers?: boolean;
+  sx?: object;
+};
 
 // This is used so that we can attach sx to the <dl>
 const Dl = styled("dl")``;
@@ -75,7 +73,7 @@ function DescriptionList({
   content,
   dividers = false,
   sx,
-}: DescriptionListArgs): Node {
+}: DescriptionListArgs): React.ReactNode {
   const { classes } = useStyles();
 
   return (
@@ -97,7 +95,6 @@ function DescriptionList({
               className={clsx(
                 classes.dt,
                 reducedPadding && classes.dtReducedPadding,
-                below && classes.dtBelow,
                 below && "below"
               )}
             >
@@ -125,4 +122,4 @@ function DescriptionList({
  *
  * This component MUST ONLY have a dependency on this directory and ../util.
  */
-export default (observer(DescriptionList): ComponentType<DescriptionListArgs>);
+export default observer(DescriptionList);
