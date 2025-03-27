@@ -1,0 +1,69 @@
+{
+  "id": "10.82316/2s5b-6z98",
+  "type": "dois",
+  "attributes": {
+    "doi": "10.82316/2s5b-6z98",
+    "event": null,
+    "prefix": "10.82316",
+    "suffix": "2s5b-6z98",
+    "identifiers": [],
+    "alternateIdentifiers": [],
+    "creators": [],
+    "titles": [],
+    "publisher": null,
+    "publicationYear": 0,
+    "subjects": [],
+    "descriptions": [],
+    "geoLocations": [],
+    "dates": [],
+    "contributors": [],
+    "types": {
+      "resourceType": null,
+      "resourceTypeGeneral": null
+    },
+    "version": null,
+    "xml": "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHJlc291cmNlIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhtbG5zPSJodHRwOi8vZGF0YWNpdGUub3JnL3NjaGVtYS9rZXJuZWwtNCIgeHNpOnNjaGVtYUxvY2F0aW9uPSJodHRwOi8vZGF0YWNpdGUub3JnL3NjaGVtYS9rZXJuZWwtNCBodHRwOi8vc2NoZW1hLmRhdGFjaXRlLm9yZy9tZXRhL2tlcm5lbC00L21ldGFkYXRhLnhzZCI+CiAgPGlkZW50aWZpZXIgaWRlbnRpZmllclR5cGU9IkRPSSI+MTAuODIzMTYvMlM1Qi02Wjk4PC9pZGVudGlmaWVyPgogIDxjcmVhdG9ycy8+CiAgPHRpdGxlcy8+CiAgPHB1Ymxpc2hlci8+CiAgPHB1YmxpY2F0aW9uWWVhcj4wPC9wdWJsaWNhdGlvblllYXI+CiAgPHNpemVzLz4KICA8Zm9ybWF0cy8+CiAgPHZlcnNpb24vPgo8L3Jlc291cmNlPgo=",
+    "url": null,
+    "contentUrl": [],
+    "metadataVersion": 0,
+    "schemaVersion": null,
+    "source": "api",
+    "state": "draft",
+    "reason": null,
+    "landingPage": null,
+    "viewCount": 0,
+    "downloadCount": 0,
+    "referenceCount": 0,
+    "citationCount": 0,
+    "partCount": 0,
+    "partOfCount": 0,
+    "versionCount": 0,
+    "versionOfCount": 0,
+    "created": 1743091540000,
+    "registered": null,
+    "published": "0",
+    "updated": 1743091540000,
+    "active": false
+  },
+  "relationships": {
+    "client": {
+      "data": {
+        "id": "ajfo.jijemd",
+        "type": "clients"
+      }
+    },
+    "provider": {
+      "data": {
+        "id": "ajfo",
+        "type": "providers"
+      }
+    },
+    "media": {
+      "data": {
+        "id": "10.82316/2s5b-6z98",
+        "type": "media"
+      }
+    }
+  },
+  "validForPublish": false
+}
