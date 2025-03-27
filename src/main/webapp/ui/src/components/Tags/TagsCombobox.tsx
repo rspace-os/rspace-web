@@ -1,17 +1,10 @@
-//@flow
-
-import React, {
-  type Node,
-  useEffect,
-  useState,
-  useRef,
-  useMemo,
-  useId,
-  type ElementRef,
-} from "react";
+import React, { useEffect, useState, useRef, useMemo, useId } from "react";
 import TextField from "@mui/material/TextField";
-import useAutocomplete from "@mui/material/useAutocomplete";
-import { VariableSizeList as List } from "react-window";
+import useAutocomplete, {
+  AutocompleteCloseReason,
+  AutocompleteGroupedOption,
+} from "@mui/material/useAutocomplete";
+import { VariableSizeList as List, VariableSizeList } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import Popover from "@mui/material/Popover";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -92,16 +85,18 @@ const POPOVER_WIDTH = 300;
  */
 const OPTION_HEIGHT = 36;
 
-type InternalTag = {|
-  ...Tag,
-  selected: boolean,
-|};
+type InternalTag = Tag & {
+  selected: boolean;
+};
 
 /*
  * makeStyles is used because withStyles is not performant enough to render the
  * menu items as the user scrolls the virtualised list
  */
-const useStyles = makeStyles()((theme, { index, keyboardFocusIndex }) => ({
+const useStyles = makeStyles<{
+  index: number;
+  keyboardFocusIndex: number | null;
+}>()((theme, { index, keyboardFocusIndex }) => ({
   menuItem: {
     padding: "8px",
     cursor: "default",
@@ -129,17 +124,22 @@ function OptionsListing({
   filter,
   enforceOntologies,
 }: {
-  hasNextPage: boolean,
-  isNextPageLoading: boolean,
-  loadNextPage: () => void,
-  sortedOptions: Array<InternalTag>,
-  getOptionProps: ({ option: InternalTag, index: number, ... }) => { ... },
-  groupedOptions: Array<InternalTag>,
-  listboxProps: { ... },
-  listRef: ElementRef<typeof List>,
-  keyboardFocusIndex: ?number,
-  filter: string,
-  enforceOntologies: boolean,
+  hasNextPage: boolean;
+  isNextPageLoading: boolean;
+  loadNextPage: () => void;
+  sortedOptions: Array<InternalTag>;
+  getOptionProps: (optionAndIndex: {
+    option: InternalTag;
+    index: number;
+  }) => object;
+  groupedOptions:
+    | Array<InternalTag>
+    | Array<AutocompleteGroupedOption<InternalTag>>;
+  listboxProps: object;
+  listRef: React.MutableRefObject<VariableSizeList | null>;
+  keyboardFocusIndex: number | null;
+  filter: string;
+  enforceOntologies: boolean;
 }) {
   const itemCount = hasNextPage
     ? sortedOptions.length + 1
@@ -148,7 +148,13 @@ function OptionsListing({
   const isItemLoaded = (index: number) =>
     !hasNextPage || index < sortedOptions.length;
 
-  const Item = ({ index, style }: { index: number, style: mixed }) => {
+  const Item = ({
+    index,
+    style,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  }) => {
     const { classes } = useStyles({ index, keyboardFocusIndex });
     if (!isItemLoaded(index) && isNextPageLoading) {
       return <li style={style}>Loading...</li>;
@@ -156,7 +162,7 @@ function OptionsListing({
     if (!groupedOptions || index >= groupedOptions.length)
       return <li style={style} />;
 
-    const option = groupedOptions[index];
+    const option = groupedOptions[index] as InternalTag;
     const name = option.value || "no name";
     const tagIsAllowed = isAllowed(
       checkInternalTag(option, { enforceOntologies })
@@ -259,8 +265,8 @@ function OptionsListing({
            * more information on exactly how this works see this StackOverflow
            * answer https://stackoverflow.com/a/70284705
            */
-          ref={(node) => {
-            ref.current = node;
+          ref={(node: VariableSizeList) => {
+            ref(node);
             listRef.current = node;
           }}
           /*
@@ -288,8 +294,8 @@ function OptionsListing({
             ArrayUtils.getAt(i, sortedOptions)
               .map((tag) => {
                 const tagHasHelpText =
-                  null ===
-                  helpText(checkInternalTag(tag, { enforceOntologies }));
+                  helpText(checkInternalTag(tag, { enforceOntologies })) ===
+                  null;
                 return tagHasHelpText ? 0 : 20;
               })
               .orElse(0)
@@ -312,31 +318,31 @@ function OptionsListing({
  * ontologies are not enforced this metadata may or may not be available.
  */
 type TagsComboboxArgs<
-  Toggle:
-    | {|
-        enforce: true,
-        tag: {|
-          value: string,
-          vocabulary: string,
-          uri: string,
-          version: string,
-        |},
-      |}
-    | {|
-        enforce: false,
-        tag: {|
-          value: string,
-          vocabulary: Optional<string>,
-          uri: Optional<string>,
-          version: Optional<string>,
-        |},
-      |}
-> = {|
+  Toggle extends
+    | {
+        enforce: true;
+        tag: {
+          value: string;
+          vocabulary: string;
+          uri: string;
+          version: string;
+        };
+      }
+    | {
+        enforce: false;
+        tag: {
+          value: string;
+          vocabulary: Optional<string>;
+          uri: Optional<string>;
+          version: Optional<string>;
+        };
+      }
+> = {
   /*
    * Sets which branch of the Toggle type that is being applied, and therefore
    * sets the type of what `onSelection` is called with.
    */
-  enforceOntologies: Toggle["enforce"],
+  enforceOntologies: Toggle["enforce"];
 
   /*
    * This is the set of currently selected tags. It is a Set because this UI
@@ -344,14 +350,14 @@ type TagsComboboxArgs<
    * component may or may not persist. This parameter is solely used to prevent
    * the user from choosing a tag that they have already selected.
    */
-  value: RsSet<Toggle["tag"]>,
+  value: RsSet<Toggle["tag"]>;
 
   /*
    * Identifies if the popup should be open and if so where it should be
    * positioned. If null then the popup is not shown. If an element then the
    * popup is shown adjacent to that element.
    */
-  anchorEl: ?Element,
+  anchorEl: Element | null;
 
   /*
    * When the user chooses a tag from the suggestions, or enters a new one of
@@ -364,7 +370,7 @@ type TagsComboboxArgs<
    * being enforced and thus whether the additional metadata is certain to be
    * available.
    */
-  onSelection: (Toggle["tag"]) => void,
+  onSelection: (selectedTag: Toggle["tag"]) => void;
 
   /*
    * If the user chooses to close the popup, either with or without making a
@@ -372,36 +378,36 @@ type TagsComboboxArgs<
    * component will set the `anchorEl` prop to null as it is this that will
    * actually close the popup.
    */
-  onClose: () => void,
-|};
+  onClose: () => void;
+};
 
 export default function TagsCombobox<
-  Toggle:
-    | {|
-        enforce: true,
-        tag: {|
-          value: string,
-          vocabulary: string,
-          uri: string,
-          version: string,
-        |},
-      |}
-    | {|
-        enforce: false,
-        tag: {|
-          value: string,
-          vocabulary: Optional<string>,
-          uri: Optional<string>,
-          version: Optional<string>,
-        |},
-      |}
+  Toggle extends
+    | {
+        enforce: true;
+        tag: {
+          value: string;
+          vocabulary: string;
+          uri: string;
+          version: string;
+        };
+      }
+    | {
+        enforce: false;
+        tag: {
+          value: string;
+          vocabulary: Optional<string>;
+          uri: Optional<string>;
+          version: Optional<string>;
+        };
+      }
 >({
   onSelection,
   value,
   anchorEl,
   onClose,
   enforceOntologies,
-}: TagsComboboxArgs<Toggle>): Node {
+}: TagsComboboxArgs<Toggle>): React.ReactNode {
   const [tags, setTags] = useState<Array<InternalTag>>([]);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -411,12 +417,12 @@ export default function TagsCombobox<
   const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(
     null
   );
-  const listRef = useRef();
+  const listRef = useRef<VariableSizeList | null>(null);
 
-  const loadPage = (): Promise<{|
-    tags: Array<InternalTag>,
-    lastPage: boolean,
-  |}> => {
+  const loadPage = (): Promise<{
+    tags: Array<InternalTag>;
+    lastPage: boolean;
+  }> => {
     if (reachedEnd) return Promise.resolve({ tags: [], lastPage: true });
     setIsNextPageLoading(true);
     setError(false);
@@ -424,22 +430,24 @@ export default function TagsCombobox<
       `/workspace/editor/structuredDocument/userTagsAndOntologies?pos=${page}&tagFilter=${filter}`
     )
       .then((response) => response.json())
-      .then(({ data }) => {
+      .then(({ data }: { data: Array<string> }) => {
         const alreadySelectedTagValues = value.map((v) => v.value);
         return {
           lastPage:
             data.includes(SMALL_DATASET_SIGNAL) ||
             data.includes(FINAL_DATA_SIGNAL),
-          tags: parseEncodedTags(data).map((tag: Tag): InternalTag => ({
-            ...tag,
-            selected: alreadySelectedTagValues.has(tag.value),
-          })),
+          tags: parseEncodedTags(data).map(
+            (tag: Tag): InternalTag => ({
+              ...tag,
+              selected: alreadySelectedTagValues.has(tag.value),
+            })
+          ),
         };
       })
       .catch(() => {
         setError(true);
         return {
-          tags: ([]: Array<InternalTag>),
+          tags: [] as Array<InternalTag>,
           lastPage: true,
         };
       })
@@ -527,28 +535,8 @@ export default function TagsCombobox<
        */
     },
     onClose: (
-      event: {
-        relatedTarget: ?{
-          dataset: {
-            tagValue: string,
-            tagVocabulary: string,
-            tagUri: string,
-            tagVersion: string,
-          },
-          nodeName: string,
-        },
-        currentTarget: {
-          dataset: {
-            tagValue: string,
-            tagVocabulary: string,
-            tagUri: string,
-            tagVersion: string,
-          },
-          nodeName: string,
-        },
-        ...
-      },
-      reason: "toggleInput" | "escape" | "selectOption" | "blur"
+      event: React.SyntheticEvent<Element, Event>,
+      reason: AutocompleteCloseReason
     ) => {
       /*
        * This event is fired whenever the user taps inside the Popover. There
@@ -557,43 +545,46 @@ export default function TagsCombobox<
        * <li> tag -- is the target.
        */
       let li = null;
+      const relatedTarget = (event as React.FocusEvent).relatedTarget;
       if (
         event.currentTarget.nodeName === "INPUT" &&
-        event.relatedTarget?.nodeName === "LI"
+        relatedTarget?.nodeName === "LI"
       ) {
-        li = event.relatedTarget;
+        li = relatedTarget;
       }
       if (event.currentTarget.nodeName === "LI") {
         li = event.currentTarget;
       }
 
       if ((reason === "blur" || reason === "selectOption") && li) {
-        const { tagValue, tagVocabulary, tagUri, tagVersion } = li.dataset;
+        const { tagValue, tagVocabulary, tagUri, tagVersion } = (
+          li as HTMLLIElement
+        ).dataset;
         if (enforceOntologies) {
           if (tagVocabulary === "") throw new Error("Missing tag's vocabulary");
           if (tagUri === "") throw new Error("Missing tag's vocabulary URI");
           if (tagVersion === "") throw new Error("Missing tag's version");
           onSelection({
-            value: tagValue,
-            vocabulary: (tagVocabulary: string),
-            uri: (tagUri: string),
-            version: (tagVersion: string),
+            value: tagValue as string,
+            vocabulary: tagVocabulary as string,
+            uri: tagUri as string,
+            version: tagVersion as string,
           });
         } else {
           onSelection({
-            value: tagValue,
+            value: tagValue as string,
             vocabulary:
               tagVocabulary === ""
-                ? (Optional.empty(): Optional<string>)
-                : Optional.present(tagVocabulary),
+                ? Optional.empty()
+                : Optional.present(tagVocabulary as string),
             uri:
               tagUri === ""
-                ? (Optional.empty(): Optional<string>)
-                : Optional.present(tagUri),
+                ? Optional.empty()
+                : Optional.present(tagUri as string),
             version:
               tagVersion === ""
-                ? (Optional.empty(): Optional<string>)
-                : Optional.present(tagVersion),
+                ? Optional.empty()
+                : Optional.present(tagVersion as string),
           });
         }
         onClose();
@@ -616,13 +607,17 @@ export default function TagsCombobox<
     listRef.current?.resetAfterIndex(0);
   }, [value]);
 
-  const [debounceTimeout, setDebounceTimeout] = useState<?TimeoutID>(null);
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
   function debounce<FuncReturn>(
     func: () => FuncReturn,
     timeout: number = 1000
   ): () => void {
     return () => {
-      clearTimeout(debounceTimeout);
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       setDebounceTimeout(setTimeout(() => func(), timeout));
     };
   }
@@ -653,7 +648,9 @@ export default function TagsCombobox<
        * already be set.
        */
       setTimeout(() => {
-        getInputProps().ref.current?.focus();
+        (
+          getInputProps().ref as React.RefObject<HTMLInputElement>
+        ).current?.focus();
       }, 0);
     }
   }, [anchorEl]);
@@ -775,9 +772,9 @@ export default function TagsCombobox<
                   } else {
                     onSelection({
                       value: chosenTag.value,
-                      vocabulary: (chosenTag.vocabulary: Optional<string>),
-                      uri: (chosenTag.uri: Optional<string>),
-                      version: (chosenTag.version: Optional<string>),
+                      vocabulary: chosenTag.vocabulary,
+                      uri: chosenTag.uri,
+                      version: chosenTag.version,
                     });
                   }
                   setKeyboardFocusIndex(null);
@@ -794,9 +791,9 @@ export default function TagsCombobox<
                   if (!enforceOntologies) {
                     onSelection({
                       value: filter,
-                      vocabulary: (Optional.empty(): Optional<string>),
-                      uri: (Optional.empty(): Optional<string>),
-                      version: (Optional.empty(): Optional<string>),
+                      vocabulary: Optional.empty(),
+                      uri: Optional.empty(),
+                      version: Optional.empty(),
                     });
                     setKeyboardFocusIndex(null);
                     onClose();
