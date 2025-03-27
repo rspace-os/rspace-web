@@ -17,11 +17,6 @@ const itemPxWidth = {
   full: "220px",
 };
 
-const itemPxHeight = {
-  small: "150px",
-  full: "150px",
-};
-
 const itemMmSize = {
   small: "19mm",
   large: "38mm",
@@ -57,14 +52,10 @@ const useStyles = makeStyles()((theme) => ({
     padding: theme.spacing(0.25),
   },
   smallPxHorz: {
-    height: itemPxHeight.small,
-    maxHeight: itemPxHeight.small,
     maxWidth: "47vw",
     padding: theme.spacing(0.25),
   },
   largePxHorz: {
-    height: itemPxHeight.full,
-    maxHeight: itemPxHeight.full,
     maxWidth: "47vw",
     padding: theme.spacing(0.25),
   },
@@ -80,14 +71,10 @@ const useStyles = makeStyles()((theme) => ({
     padding: theme.spacing(0.5),
   },
   smallMmHorz: {
-    height: itemMmSize.small,
-    maxHeight: itemMmSize.small,
     maxWidth: "47vw",
     padding: theme.spacing(0.25),
   },
   largeMmHorz: {
-    height: itemMmSize.large,
-    maxHeight: itemMmSize.large,
     maxWidth: "47vw",
     padding: theme.spacing(0.5),
   },
