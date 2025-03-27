@@ -1,5 +1,3 @@
-//@flow
-
 import { type Tag } from "../../stores/definitions/Tag";
 import { Optional, lift3 } from "../../util/optional";
 import * as ArrayUtils from "../../util/ArrayUtils";
