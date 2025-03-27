@@ -59,11 +59,13 @@ const useStyles = makeStyles()((theme) => ({
   smallPxHorz: {
     height: itemPxHeight.small,
     maxHeight: itemPxHeight.small,
+    maxWidth: "47vw",
     padding: theme.spacing(0.25),
   },
   largePxHorz: {
     height: itemPxHeight.full,
     maxHeight: itemPxHeight.full,
+    maxWidth: "47vw",
     padding: theme.spacing(0.25),
   },
   /* for grid/generic mode */
@@ -80,11 +82,13 @@ const useStyles = makeStyles()((theme) => ({
   smallMmHorz: {
     height: itemMmSize.small,
     maxHeight: itemMmSize.small,
+    maxWidth: "47vw",
     padding: theme.spacing(0.25),
   },
   largeMmHorz: {
     height: itemMmSize.large,
     maxHeight: itemMmSize.large,
+    maxWidth: "47vw",
     padding: theme.spacing(0.5),
   },
   /* for single/zebra mode */
@@ -95,13 +99,6 @@ const useStyles = makeStyles()((theme) => ({
   },
   bottomSpaced: {
     marginBottom: theme.spacing(0),
-  },
-  centeredSelf: {
-    alignSelf: "center",
-    marginTop: theme.spacing(0.25),
-  },
-  centeredText: {
-    textAlign: "center",
   },
   wrappingText: {
     // "break-word" deprecated but seems to help safari 16 on mac
@@ -198,8 +195,24 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
   }
   const header =
     printOptions.printIdentifierType === "GLOBAL ID"
-      ? itemOwner.globalId
-      : `IGSN ID: ${itemOwner.identifiers[0].doi}`;
+      ? (
+        <>
+          <strong style={{
+            fontSize: "0.8em",
+          }}>RSPACE GLOBAL ID</strong>
+          <br />
+          {itemOwner.globalId}
+        </>
+      )
+      : (
+        <>
+          <strong style={{
+            fontSize: "0.8em",
+          }}>IGSN</strong>
+          <br />
+          {itemOwner.identifiers[0].doi}
+        </>
+      );
   return (
     isBarcodePrint && (
       <>
@@ -208,18 +221,16 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
             container
             direction={printOptions.printCopies === "2" ? "row" : "column"}
             flexWrap="nowrap"
-            spacing={1}
             className={classes.wrappingText}
           >
             {imageLinks && (
               <Grid item>
                 <img
-                  className={classes.centeredSelf}
                   src={imageLinks[index]}
                   title="Barcode Image"
                   {...(printOptions.printCopies === "1"
                     ? { width: "75%" }
-                    : { height: "75%" })}
+                    : { height: "80%" })}
                 />
               </Grid>
             )}
@@ -227,24 +238,30 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
               <Grid
                 container
                 direction="column"
-                spacing={1}
-                className={clsx(classes.centeredText, classes.smallText)}
+                spacing={0.5}
+                className={clsx(classes.smallText)}
+                sx={{
+                  lineHeight: "1.2",
+                  p: 1,
+                }}
               >
                 <Grid
                   item
-                  className={clsx(classes.centeredText, classes.bottomSpaced)}
+                  className={clsx(classes.bottomSpaced)}
                 >
                   {target === "singlePrint" ? (
                     header
                   ) : (
-                    <Typography variant={"h6"}>{header}</Typography>
+                    <Typography variant={"h6"} sx={{
+                      lineHeight: "1.1",
+                    }}>{header}</Typography>
                   )}
                 </Grid>
                 {printLayout === "FULL" && (
                   <>
-                    <Grid item>{barcode.description.split("//")[1]}</Grid>
+                    <Grid item>{`${window.location.origin}/globalId/${itemOwner.globalId ?? ""}`}</Grid>
                     <Grid item>
-                      <strong>Item:</strong>
+                      <strong>Item:</strong>{" "}
                       {printOptions.printCopies === "1" && <br />}
                       {recordString}
                     </Grid>
@@ -252,12 +269,12 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
                       <strong>Location:</strong>{" "}
                       {itemOwner instanceof ContainerModel ||
                       itemOwner instanceof SubSampleModel
-                        ? `${window.location.origin}${itemOwner.immediateParentContainer?.permalinkURL}` ||
+                        ? `${window.location.origin}/globalId/${itemOwner.immediateParentContainer?.globalId}` ||
                           "-"
                         : "-"}
                     </Grid>
                     <Grid item>
-                      <strong>Printed:</strong>
+                      <strong>Printed:</strong>{" "}
                       {printOptions.printCopies === "1" && <br />}
                       {now.toLocaleString()}
                     </Grid>
