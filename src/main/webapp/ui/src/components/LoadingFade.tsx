@@ -1,14 +1,12 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import LinearProgress from "@mui/material/LinearProgress";
 import Fade from "@mui/material/Fade";
 
-type LoadingFadeArgs = {|
-  loading: boolean,
-|};
+type LoadingFadeArgs = {
+  loading: boolean;
+};
 
-const LoadingFade = (props: LoadingFadeArgs): Node => {
+const LoadingFade = (props: LoadingFadeArgs): React.ReactNode => {
   const styles = {
     loadingBar: {
       width: "100%",
