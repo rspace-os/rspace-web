@@ -96,8 +96,6 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     for (int i = 0; i < igsnsToAllocate; i++) {
       try {
         currentDoi = createNewDoi(user);
-
-        // TODO[nik]: save the new DOI into DB
         DigitalObjectIdentifier dbObj = apiIdentifiersHelper.createDoiToSave(currentDoi, user);
         dbObj = doiDao.save(dbObj);
 
