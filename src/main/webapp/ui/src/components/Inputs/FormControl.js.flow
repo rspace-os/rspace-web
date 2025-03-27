@@ -1,0 +1,20 @@
+// @flow
+
+import { type Node } from "react";
+
+export type FormControlArgs = {|
+  label?: string,
+  children: Node,
+  error?: boolean,
+  helperText?: string,
+  inline?: boolean,
+  actions?: Node,
+  classes?: { formLabel?: string, formControl?: string },
+  dataTestId?: string,
+  required?: boolean,
+  explanation?: Node,
+  "aria-label"?: string,
+|};
+
+declare export default function FormControl(FormControlArgs): Node;
+

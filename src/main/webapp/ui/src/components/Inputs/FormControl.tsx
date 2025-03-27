@@ -1,6 +1,4 @@
-// @flow
-
-import React, { type Node, type ComponentType, useId } from "react";
+import React, { useId } from "react";
 import { observer } from "mobx-react-lite";
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
@@ -38,7 +36,7 @@ const useStyles = makeStyles()(() => ({
 }));
 
 const FullLabel = withStyles<
-  {| explanation?: Node, explanationId: string, label?: string |},
+  { explanation?: React.ReactNode; explanationId: string; label?: string },
   { explanationText: string }
 >((theme) => ({
   explanationText: {
@@ -57,19 +55,19 @@ const FullLabel = withStyles<
   );
 });
 
-export type FormControlArgs = {|
-  label?: string,
-  children: Node,
-  error?: boolean,
-  helperText?: string,
-  inline?: boolean,
-  actions?: Node,
-  classes?: { formLabel?: string, formControl?: string },
-  dataTestId?: string,
-  required?: boolean,
-  explanation?: Node,
-  "aria-label"?: string,
-|};
+export type FormControlArgs = {
+  label?: string;
+  children: React.ReactNode;
+  error?: boolean;
+  helperText?: string;
+  inline?: boolean;
+  actions?: React.ReactNode;
+  classes?: { formLabel?: string; formControl?: string };
+  dataTestId?: string;
+  required?: boolean;
+  explanation?: React.ReactNode;
+  "aria-label"?: string;
+};
 
 function CustomFormControl({
   label,
@@ -83,7 +81,7 @@ function CustomFormControl({
   required,
   explanation,
   ["aria-label"]: ariaLabel,
-}: FormControlArgs): Node {
+}: FormControlArgs): React.ReactNode {
   const { classes: additionalClasses } = useStyles();
   const explanationId = useId();
 
@@ -104,7 +102,7 @@ function CustomFormControl({
       data-test-id={dataTestId}
       required={required}
       aria-label={ariaLabel ?? label}
-      aria-describedby={explanation ? explanationId : null}
+      {...(explanation ? { "aria-describedby": explanationId } : {})}
       fullWidth
       className={clsx(additionalClasses.formGroup, classes.formControl)}
     >
@@ -128,4 +126,4 @@ function CustomFormControl({
   );
 }
 
-export default (observer(CustomFormControl): ComponentType<FormControlArgs>);
+export default observer(CustomFormControl);
