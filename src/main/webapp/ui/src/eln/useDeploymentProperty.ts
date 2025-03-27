@@ -1,9 +1,23 @@
-//@flow strict
-
 import React, { type Context } from "react";
 import axios from "@/common/axios";
 import * as FetchingData from "../util/fetchingData";
 import * as MapUtils from "../util/MapUtils";
+
+/**
+ * This context acts as a cache for the fetched deployment properties so that
+ * they need not be fetched more than once each per page load. If the same
+ * deployment property is used in multiple components, or in a single component
+ * is that un-mounted and re-mounted, then only the first call to
+ * useDeploymentProperty will trigger a network call.
+ *
+ * Whilst this context is exported, there is no need to instantiate it on most
+ * pages with the DeploymentPropertyContext.Provider component; the default
+ * value of an empty Map suffices as a page-wide cache. However each test of
+ * any component that uses this hook should be wrapped my this context to
+ * ensure that test don't pollute one another with the shared state.
+ */
+export const DeploymentPropertyContext: Context<Map<string, unknown>> =
+  React.createContext(new Map<string, unknown>());
 
 /**
  * The RSpace product has a wide variety of configuration options that allow
@@ -70,11 +84,11 @@ import * as MapUtils from "../util/MapUtils";
  */
 export function useDeploymentProperty(
   name: string
-): FetchingData.Fetched<mixed> {
+): FetchingData.Fetched<unknown> {
   const map = React.useContext(DeploymentPropertyContext);
-  const [value, setValue] = React.useState<FetchingData.Fetched<mixed>>(
-    MapUtils.get(map, name)
-      .map((value) => ({ tag: "success", value }))
+  const [value, setValue] = React.useState<FetchingData.Fetched<unknown>>(
+    MapUtils.get<string, unknown>(map, name)
+      .map((v) => ({ tag: "success" as const, value: v }))
       .orElse({ tag: "loading" })
   );
 
@@ -85,17 +99,19 @@ export function useDeploymentProperty(
     }
     void (async () => {
       try {
-        const { data } = await axios.get<mixed>(
+        const { data } = await axios.get<unknown>(
           `/deploymentproperties/ajax/property`,
           { params: new URLSearchParams({ name }) }
         );
         setValue({ tag: "success", value: data });
         map.set(name, data);
       } catch (error) {
-        setValue({ tag: "error", error: error.message });
+        if (error instanceof Error) {
+          setValue({ tag: "error", error: error.message });
+        }
       }
     })();
-    /*
+    /* eslint-disable-next-line react-hooks/exhaustive-deps --
      * Only fetching the value on first re-render is fine as deployment
      * properties can only be changed with a server restart.
      */
@@ -103,19 +119,3 @@ export function useDeploymentProperty(
 
   return value;
 }
-
-/**
- * This context acts as a cache for the fetched deployment properties so that
- * they need not be fetched more than once each per page load. If the same
- * deployment property is used in multiple components, or in a single component
- * is that un-mounted and re-mounted, then only the first call to
- * useDeploymentProperty will trigger a network call.
- *
- * Whilst this context is exported, there is no need to instantiate it on most
- * pages with the DeploymentPropertyContext.Provider component; the default
- * value of an empty Map suffices as a page-wide cache. However each test of
- * any component that uses this hook should be wrapped my this context to
- * ensure that test don't pollute one another with the shared state.
- */
-export const DeploymentPropertyContext: Context<Map<string, mixed>> =
-  React.createContext(new Map<string, mixed>());
