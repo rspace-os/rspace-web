@@ -1,24 +1,22 @@
-//@flow
-
 import FormControl from "./FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import { observer } from "mobx-react-lite";
-import React, { type Node, type ComponentType } from "react";
+import React from "react";
 
-export type InputWrapperArgs = {|
-  label?: string,
-  children: ?Node,
-  value?: mixed,
-  error?: boolean,
-  helperText?: ?string,
-  maxLength?: number,
-  disabled?: boolean,
-  actions?: Node,
-  inline?: boolean,
-  explanation?: ?Node,
-  dataTestId?: string,
-  required?: boolean,
-|};
+export type InputWrapperArgs = {
+  label?: string;
+  children: React.ReactNode;
+  value?: unknown;
+  error?: boolean;
+  helperText?: string | null;
+  maxLength?: number;
+  disabled?: boolean;
+  actions?: React.ReactNode;
+  inline?: boolean;
+  explanation?: React.ReactNode;
+  dataTestId?: string;
+  required?: boolean;
+};
 
 function InputWrapper({
   label,
@@ -33,13 +31,13 @@ function InputWrapper({
   explanation,
   dataTestId,
   required,
-}: InputWrapperArgs): Node {
+}: InputWrapperArgs): React.ReactNode {
   /*
    * We pass `value` as `mightBeString`, rather than pulling from props, so
    * that the information about whether it is a string or not is preserved by
    * the type checker. See flow docs on `%checks`.
    */
-  function showCharacterCount(mightBeString: ?mixed): implies mightBeString is string {
+  function showCharacterCount(mightBeString: unknown): mightBeString is string {
     return (
       !disabled &&
       typeof maxLength === "number" &&
@@ -78,4 +76,4 @@ function InputWrapper({
   );
 }
 
-export default (observer(InputWrapper): ComponentType<InputWrapperArgs>);
+export default observer(InputWrapper);
