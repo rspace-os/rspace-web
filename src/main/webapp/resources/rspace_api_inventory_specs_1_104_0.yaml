@@ -2185,8 +2185,60 @@ paths:
           schema:
             "$ref": "#/definitions/BasicObject"
       responses:
-        '200':
+        '201':
           description: Identifier is created
+
+
+    get:
+      summary: Get all the identifiers created bu the `user` with a given `state`
+      description: >
+        It will return a list of identifiers that are created by the specific `user` 
+        and having the specific `state`. 
+        
+        Moreover you can specify the filter `isAssociated` in case you want ONLY the Identifiers 
+        that have already been bound to a record
+
+      produces:
+        - application/json
+      tags:
+        - IGSN Identifiers
+      parameters:
+        - name: state
+          description: The state of the Identifier you want to filter in the list
+          type: string
+          in: query
+          required: false
+        - name: isAssociated
+          in: query
+          type: boolean
+          required: true
+          description: Filter only the Identifiers that are already associated to a record
+      responses:
+        '200':
+          description: The list is successfully returned
+
+
+  '/identifiers/bulk/{count}':
+    post:
+      summary: Register a number of DataCite IGSN identifier without associating them to any inventory item
+      description: >
+        Register a number of DataCite IGSN identifier without associating them to any inventory item
+
+      produces:
+        - application/json
+      tags:
+        - IGSN Identifiers
+      parameters:
+        - name: count
+          description: The id for the formIcon
+          type: integer
+          format: int64
+          in: path
+          required: true
+      responses:
+        '201':
+          description: Identifiers are created
+
 
   '/identifiers/{doiId}':
     delete:

@@ -7,6 +7,7 @@ package com.researchspace.api.v1;
 import com.researchspace.api.v1.controller.InventoryIdentifiersApiController.ApiInventoryIdentifierPost;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.model.User;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,10 +21,19 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @RequestMapping("/api/inventory/v1/identifiers")
 public interface InventoryIdentifiersApi {
 
+  @GetMapping
+  @ResponseStatus(HttpStatus.OK)
+  List<ApiInventoryDOI> getUserIdentifiers(String state, Boolean isAssociated, User user);
+
   /** Register new IGSN identifier for record with given globalId */
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   ApiInventoryDOI registerNewIdentifier(ApiInventoryIdentifierPost parentGlobalId, User user);
+
+  /** Allocate a number of IGSN not associated with any globalId */
+  @PostMapping(value = "/bulk/{count}")
+  @ResponseStatus(HttpStatus.CREATED)
+  List<ApiInventoryDOI> bulkAllocateIdentifiers(Integer count, User user);
 
   @DeleteMapping(value = "/{identifierId}")
   boolean deleteIdentifier(Long identifierId, User user);

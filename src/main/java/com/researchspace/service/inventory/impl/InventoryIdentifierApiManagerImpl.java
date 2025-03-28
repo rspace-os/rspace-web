@@ -1,5 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.apache.commons.lang3.StringUtils.*;
+
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
@@ -14,6 +16,7 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.RoRService;
+import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
@@ -21,11 +24,16 @@ import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.time.Year;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service("inventoryIdentifierApiManager")
 public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApiManager {
 
@@ -33,6 +41,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private @Autowired SubSampleApiManager subSampleApiMgr;
   private @Autowired ContainerApiManager containerApiMgr;
   private @Autowired DigitalObjectIdentifierDao doiDao;
+  private @Autowired ApiIdentifiersHelper apiIdentifiersHelper;
 
   @Autowired private RoRService rorService;
 
@@ -64,6 +73,16 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   }
 
   @Override
+  public List<ApiInventoryDOI> findIdentifiersByStateAndOwner(
+      String state, User owner, Boolean isAssociated) {
+    return doiDao.getActiveIdentifiersByOwner(owner).stream()
+        .filter(r -> isAssociated.equals(r.isAssociated()))
+        .filter(r -> isBlank(state) || (isNotBlank(state) && state.equals(r.getState())))
+        .map(ApiInventoryDOI::new)
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public ApiInventoryRecordInfo registerNewIdentifier(GlobalIdentifier invRecOid, User user) {
     InventoryRecord invRec = invRecRetriever.getInvRecordByGlobalId(invRecOid);
     if (!invRec.getActiveIdentifiers().isEmpty()) {
@@ -71,6 +90,24 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
           "record " + invRecOid.toString() + " already has an identifier");
     }
     return updateInventoryRecordWithDoiUpdate(user, invRec, createUpdateWithNewDoi(invRec, user));
+  }
+
+  @Override
+  public List<ApiInventoryDOI> registerBulkIdentifiers(Integer igsnsToAllocate, User user) {
+    List<ApiInventoryDOI> result = new LinkedList<>();
+    ApiInventoryDOI currentDoi;
+    for (int i = 0; i < igsnsToAllocate; i++) {
+      try {
+        currentDoi = createNewDoi(user);
+        DigitalObjectIdentifier dbObj = apiIdentifiersHelper.createDoiToSave(currentDoi, user);
+        dbObj = doiDao.save(dbObj);
+
+        result.add(new ApiInventoryDOI(dbObj));
+      } catch (Exception ex) {
+        log.warn("It was not possible to allocate IGSN: {}", ex.getMessage(), ex);
+      }
+    }
+    return result;
   }
 
   private ApiInventoryRecordInfo updateInventoryRecordWithDoiUpdate(
@@ -153,7 +190,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   }
 
   @SneakyThrows
-  private ApiInventoryDOI createUpdateWithNewDoi(InventoryRecord invRec, User user) {
+  private ApiInventoryDOI createNewDoi(User user) {
     DataCiteDoi createdDoi;
     try {
       createdDoi = dataCiteConnector.registerDoi(new DataCiteDoi());
@@ -167,9 +204,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       throw new IllegalStateException("DataCite registration failed");
     }
 
-    ApiInventoryDOI newDoi = new ApiInventoryDOI(createdDoi);
+    ApiInventoryDOI newDoi = new ApiInventoryDOI(user, createdDoi);
     newDoi.setRegisterIdentifierRequest(true);
-    newDoi.setTitle(invRec.getName());
     newDoi.setCreatorName(user.getFullName());
     newDoi.setCreatorType("Personal");
     newDoi.setPublisher(properties.getCustomerName());
@@ -177,6 +213,19 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     newDoi.setResourceType("Material Sample");
     newDoi.setResourceTypeGeneral("PhysicalObject");
     return newDoi;
+  }
+
+  @SneakyThrows
+  private ApiInventoryDOI updateNewAssosiatedDoi(InventoryRecord invRec, ApiInventoryDOI doi) {
+    doi.setTitle(invRec.getName());
+    doi.setAssociatedGlobalId(invRec.getGlobalIdentifier());
+    return doi;
+  }
+
+  @SneakyThrows
+  private ApiInventoryDOI createUpdateWithNewDoi(InventoryRecord invRec, User user) {
+    ApiInventoryDOI newDoi = createNewDoi(user);
+    return updateNewAssosiatedDoi(invRec, newDoi);
   }
 
   @SneakyThrows
@@ -271,5 +320,10 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   @Autowired
   public void setDataCiteConnector(DataCiteConnector dataCiteConnector) {
     this.dataCiteConnector = dataCiteConnector;
+  }
+
+  @Override
+  public DataCiteConnector getDataCiteConnector() {
+    return dataCiteConnector;
   }
 }
