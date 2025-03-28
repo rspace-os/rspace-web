@@ -22,6 +22,7 @@ import MenuItem from "@mui/material/MenuItem";
 import DropdownButton from "../../../components/DropdownButton";
 import Box from "@mui/material/Box";
 import Main from "../../Main";
+import { useIdentifiers } from "../../useIdentifiers";
 
 type Igsn = {|
   igsn: string,
@@ -60,6 +61,8 @@ export default function IgsnManagementPage({
   selectedIgsns: Set<string>,
   setSelectedIgsns: (Set<string>) => void,
 |}): Node {
+  const { identifiers } = useIdentifiers();
+  console.log(identifiers);
   return (
     <Main sx={{ overflowY: "auto" }}>
       <Stack spacing={2} sx={{ my: 2, mr: 1 }}>
