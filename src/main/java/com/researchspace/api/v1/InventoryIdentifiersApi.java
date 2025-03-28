@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @RequestMapping("/api/inventory/v1/identifiers")
 public interface InventoryIdentifiersApi {
 
-  @GetMapping("/{state}")
+  @GetMapping
   @ResponseStatus(HttpStatus.OK)
   List<ApiInventoryDOI> getUserIdentifiers(String state, Boolean isAssociated, User user);
 

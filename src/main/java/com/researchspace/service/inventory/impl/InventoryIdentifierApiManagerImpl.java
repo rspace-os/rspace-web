@@ -1,5 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.apache.commons.lang3.StringUtils.*;
+
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
@@ -71,10 +73,11 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   }
 
   @Override
-  public List<ApiInventoryDOI> findIdentifiersByStateAndCreator(
-      String state, User creator, Boolean isAssociated) {
-    return doiDao.getActiveByStateAndCreator(state, creator).stream()
+  public List<ApiInventoryDOI> findIdentifiersByStateAndOwner(
+      String state, User owner, Boolean isAssociated) {
+    return doiDao.getActiveIdentifiersByOwner(owner).stream()
         .filter(r -> isAssociated.equals(r.isAssociated()))
+        .filter(r -> isBlank(state) || (isNotBlank(state) && state.equals(r.getState())))
         .map(ApiInventoryDOI::new)
         .collect(Collectors.toList());
   }

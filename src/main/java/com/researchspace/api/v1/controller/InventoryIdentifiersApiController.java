@@ -48,10 +48,10 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
 
   @Override
   public List<ApiInventoryDOI> getUserIdentifiers(
-      @PathVariable String state,
+      @RequestParam(value = "state", required = false) String state,
       @RequestParam(value = "isAssociated") Boolean isAssociated,
       @RequestAttribute(name = "user") User user) {
-    return identifierMgr.findIdentifiersByStateAndCreator(state, user, isAssociated);
+    return identifierMgr.findIdentifiersByStateAndOwner(state, user, isAssociated);
   }
 
   @Override

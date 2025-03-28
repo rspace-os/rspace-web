@@ -15,8 +15,8 @@ public interface InventoryIdentifierApiManager {
 
   ApiInventoryRecordInfo findPublishedItemVersionByPublicLink(String publicLink);
 
-  List<ApiInventoryDOI> findIdentifiersByStateAndCreator(
-      String state, User creator, Boolean isAssociated);
+  List<ApiInventoryDOI> findIdentifiersByStateAndOwner(
+      String state, User owner, Boolean isAssociated);
 
   ApiInventoryRecordInfo registerNewIdentifier(GlobalIdentifier invRecOid, User user);
 

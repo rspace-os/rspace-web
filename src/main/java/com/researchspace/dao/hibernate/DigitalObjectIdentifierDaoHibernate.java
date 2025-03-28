@@ -67,14 +67,12 @@ public class DigitalObjectIdentifierDaoHibernate
   }
 
   @Override
-  public List<DigitalObjectIdentifier> getActiveByStateAndCreator(String state, User owner) {
+  public List<DigitalObjectIdentifier> getActiveIdentifiersByOwner(User owner) {
     return sessionFactory
         .getCurrentSession()
         .createQuery(
-            "from DigitalObjectIdentifier where state=:state and owner.id=:ownerId "
-                + " and deleted = false",
+            "from DigitalObjectIdentifier where owner.id=:ownerId and deleted = false",
             DigitalObjectIdentifier.class)
-        .setParameter("state", state)
         .setParameter("ownerId", owner.getId())
         .getResultList();
   }

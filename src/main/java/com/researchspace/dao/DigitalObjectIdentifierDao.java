@@ -10,5 +10,5 @@ public interface DigitalObjectIdentifierDao extends GenericDao<DigitalObjectIden
 
   Optional<DigitalObjectIdentifier> getLastPublishedIdentifierByPublicLink(String publicLink);
 
-  List<DigitalObjectIdentifier> getActiveByStateAndCreator(String state, User creator);
+  List<DigitalObjectIdentifier> getActiveIdentifiersByOwner(User owner);
 }
