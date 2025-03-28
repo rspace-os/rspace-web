@@ -17,18 +17,13 @@ import { DataGridColumn } from "../../../util/table";
 import Checkbox from "@mui/material/Checkbox";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import GlobalId from "../../../components/GlobalId";
-import { type LinkableRecord } from "../../../stores/definitions/LinkableRecord";
 import MenuItem from "@mui/material/MenuItem";
 import DropdownButton from "../../../components/DropdownButton";
 import Box from "@mui/material/Box";
 import Main from "../../Main";
-import { useIdentifiers } from "../../useIdentifiers";
-
-type Igsn = {|
-  igsn: string,
-  state: string,
-  linkedItem: LinkableRecord | null,
-|};
+import { useIdentifiers, type Identifier } from "../../useIdentifiers";
+import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
+import { toTitleCase } from "../../../util/Util";
 
 function Toolbar(): React.Node {
   const columnMenuRef = React.useRef();
@@ -62,7 +57,6 @@ export default function IgsnManagementPage({
   setSelectedIgsns: (Set<string>) => void,
 |}): Node {
   const { identifiers } = useIdentifiers();
-  console.log(identifiers);
   return (
     <Main sx={{ overflowY: "auto" }}>
       <Stack spacing={2} sx={{ my: 2, mr: 1 }}>
@@ -125,20 +119,20 @@ export default function IgsnManagementPage({
                   {
                     field: "checkbox",
                     headerName: "Select",
-                    renderCell: (params: { row: Igsn, ... }) => (
+                    renderCell: (params: { row: Identifier, ... }) => (
                       <Checkbox
                         color="primary"
-                        value={selectedIgsns.has(params.row.igsn)}
-                        checked={selectedIgsns.has(params.row.igsn)}
+                        value={selectedIgsns.has(params.row.doi)}
+                        checked={selectedIgsns.has(params.row.doi)}
                         inputProps={{ "aria-label": "IGSN selection" }}
                         onChange={(e) => {
                           if (e.target.checked) {
                             setSelectedIgsns(
-                              new Set(selectedIgsns).add(params.row.igsn)
+                              new Set(selectedIgsns).add(params.row.doi)
                             );
                           } else {
                             const newSet = new Set(selectedIgsns);
-                            newSet.delete(params.row.igsn);
+                            newSet.delete(params.row.doi);
                             setSelectedIgsns(newSet);
                           }
                         }}
@@ -151,62 +145,46 @@ export default function IgsnManagementPage({
                     disableColumnMenu: true,
                     sortable: false,
                   },
-                  DataGridColumn.newColumnWithFieldName<_, Igsn>("igsn", {
-                    headerName: "IGSN",
+                  DataGridColumn.newColumnWithFieldName<_, Identifier>("doi", {
+                    headerName: "DOI",
                     flex: 1,
                     sortable: false,
                     resizable: true,
                   }),
-                  DataGridColumn.newColumnWithFieldName<_, Igsn>("state", {
-                    headerName: "State",
-                    flex: 1,
-                    resizable: true,
-                    sortable: false,
-                  }),
-                  DataGridColumn.newColumnWithFieldName<_, Igsn>("linkedItem", {
-                    headerName: "Linked Item",
-                    flex: 1,
-                    resizable: true,
-                    sortable: false,
-                    renderCell: ({ row }) =>
-                      row.linkedItem && (
-                        <GlobalId record={row.linkedItem} onClick={() => {}} />
+                  DataGridColumn.newColumnWithFieldName<_, Identifier>(
+                    "state",
+                    {
+                      headerName: "State",
+                      flex: 1,
+                      resizable: true,
+                      sortable: false,
+                      renderCell: ({ row }) => (
+                        toTitleCase(row.state)
                       ),
-                  }),
+                    }
+                  ),
+                  DataGridColumn.newColumnWithFieldName<_, Identifier>(
+                    "associatedGlobalId",
+                    {
+                      headerName: "Linked Item",
+                      flex: 1,
+                      resizable: true,
+                      sortable: false,
+                      renderCell: ({ row }) => (
+                        <GlobalId
+                          record={
+                            new LinkableRecordFromGlobalId(
+                              row.associatedGlobalId
+                            )
+                          }
+                          onClick={() => {}}
+                        />
+                      ),
+                    }
+                  ),
                 ]}
-                rows={[
-                  {
-                    igsn: "10.5/431235",
-                    state: "Draft",
-                    linkedItem: null,
-                  },
-                  {
-                    igsn: "10.5/124567",
-                    state: "Registered",
-                    linkedItem: {
-                      id: 79832,
-                      globalId: "SA79832",
-                      name: "A sample",
-                      permalinkURL: "/inventory/samples/79832",
-                      iconName: "sample",
-                      recordTypeLabel: "Sample",
-                      recordType: "SAMPLES",
-                    },
-                  },
-                  {
-                    igsn: "10.5/453481",
-                    state: "Findable",
-                    linkedItem: {
-                      id: 92873,
-                      globalId: "SA92873",
-                      name: "A sample",
-                      permalinkURL: "/inventory/samples/92873",
-                      iconName: "sample",
-                      recordTypeLabel: "Sample",
-                      recordType: "SAMPLES",
-                    },
-                  },
-                ]}
+                rows={identifiers}
+                getRowId={(row) => row.doi}
                 initialState={{
                   columns: {},
                 }}
@@ -222,7 +200,6 @@ export default function IgsnManagementPage({
                   noRowsLabel: "No IGSNs",
                 }}
                 loading={false}
-                getRowId={(row) => row.igsn}
               />
             </div>
           </Stack>
