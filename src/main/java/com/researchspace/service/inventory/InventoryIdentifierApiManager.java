@@ -30,4 +30,6 @@ public interface InventoryIdentifierApiManager {
 
   /* for testing */
   void setDataCiteConnector(DataCiteConnector dataCiteConnector);
+
+  DataCiteConnector getDataCiteConnector();
 }

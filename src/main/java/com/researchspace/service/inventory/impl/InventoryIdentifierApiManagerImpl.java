@@ -321,4 +321,9 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   public void setDataCiteConnector(DataCiteConnector dataCiteConnector) {
     this.dataCiteConnector = dataCiteConnector;
   }
+
+  @Override
+  public DataCiteConnector getDataCiteConnector() {
+    return dataCiteConnector;
+  }
 }

@@ -12,6 +12,7 @@ import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.model.User;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
@@ -82,6 +83,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     assertNotNull(registeredDoi);
     assertNotNull(registeredDoi.getDoi());
     assertEquals("draft", registeredDoi.getState());
+    assertEquals(draftContainer.getGlobalId(), registeredDoi.getAssociatedGlobalId());
 
     draftContainer = containerApiMgr.getApiContainerById(draftContainer.getId(), anyUser);
     assertEquals(1, draftContainer.getIdentifiers().size());
@@ -90,6 +92,26 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     deleteDraftDataCiteDoiForItem(anyUser, apiKey, registeredDoi.getId());
     draftContainer = containerApiMgr.getApiContainerById(draftContainer.getId(), anyUser);
     assertEquals(0, draftContainer.getIdentifiers().size());
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined("nightly")
+  public void realConnectionBulkCreateAndDeleteDataciteIdentifier() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    List<ApiInventoryDOI> registeredDoiList = bulkRegisterIdentifiers(anyUser, apiKey, 2);
+    assertNotNull(registeredDoiList);
+    assertEquals(2, registeredDoiList.size());
+    assertEquals("draft", registeredDoiList.get(0).getState());
+    assertNull(registeredDoiList.get(0).getAssociatedGlobalId());
+    assertEquals("draft", registeredDoiList.get(1).getState());
+    assertNull(registeredDoiList.get(1).getAssociatedGlobalId());
+
+    // TODO[nik]: cleanup
+    // cleanup datacite
+    //    inventoryIdentifierApiMgr.deleteDoiFromDatacite(registeredDoiList.get(0).getDoi());
+    //    inventoryIdentifierApiMgr.deleteDoiFromDatacite(registeredDoiList.get(1).getDoi());
   }
 
   @Test
@@ -128,6 +150,10 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     assertEquals("registered", retractedDoi.getState());
   }
 
+  // TODO[nik]: add @GetMapping("/{state}") test
+
+  // TODO[nik]: add @PostMapping(value = "/bulk/{count}") test
+
   private void addRecommendedFieldsToDOi(ApiInventoryDOI registeredDoi) {
     ApiInventoryDOI.ApiInventoryDOISubject testSubject =
         new ApiInventoryDOI.ApiInventoryDOISubject("test subject", "", "", "", "");
@@ -156,6 +182,17 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     assertNull(result.getResolvedException());
     ApiInventoryDOI registeredDoi = getFromJsonResponseBody(result, ApiInventoryDOI.class);
     return registeredDoi;
+  }
+
+  private List<ApiInventoryDOI> bulkRegisterIdentifiers(User user, String apiKey, Integer count)
+      throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPost(API_VERSION.ONE, apiKey, "/identifiers/bulk/" + count, user))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return Arrays.asList(getFromJsonResponseBody(result, ApiInventoryDOI[].class));
   }
 
   private void deleteDraftDataCiteDoiForItem(User anyUser, String apiKey, Long identifierId)
