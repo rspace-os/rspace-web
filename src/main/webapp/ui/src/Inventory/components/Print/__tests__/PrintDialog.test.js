@@ -19,6 +19,7 @@ import {
 } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import "../../../../../__mocks__/createObjectURL";
 
 const mockRootStore = (mockedStores: ?MockStores): StoreContainer => {
   return makeMockRootStore({
@@ -30,13 +31,14 @@ const mockRootStore = (mockedStores: ?MockStores): StoreContainer => {
 };
 
 const mockContainer = makeMockContainer();
+mockContainer.barcodes = [persistedBarcode1];
 
-let generatedBarcode1;
 if (mockContainer.globalId) {
-  generatedBarcode1 = generatedBarcode(
+  const generatedBarcode1 = generatedBarcode(
     mockContainer.recordType,
     mockContainer.globalId
   );
+  mockContainer.barcodes.push(generatedBarcode1);
 }
 
 describe("Print Tests", () => {
@@ -51,12 +53,8 @@ describe("Print Tests", () => {
         <storesContext.Provider value={mockRootStore()}>
           <PrintDialog
             showPrintDialog={openDialog}
-            imageLinks={[]}
             printType={printType}
-            itemsToPrint={[
-              [generatedBarcode1, mockContainer],
-              [persistedBarcode1, mockContainer],
-            ]}
+            itemsToPrint={[mockContainer]}
             onClose={() => {}}
           />
         </storesContext.Provider>
@@ -68,7 +66,7 @@ describe("Print Tests", () => {
     it("renders, has radio options for printerType, printMode, printSize (plus help text)", () => {
       render(<Dialog printType="contextMenu" />);
 
-      expect(screen.getAllByRole("radio")).toHaveLength(6);
+      expect(screen.getAllByRole("radio")).toHaveLength(10);
 
       const standardOption = screen.getByLabelText("Standard Printer");
       expect(standardOption).toBeInTheDocument();
@@ -78,9 +76,6 @@ describe("Print Tests", () => {
       expect(labelOption).toBeInTheDocument();
       expect(labelOption).not.toBeChecked();
 
-      /* assert help text for default mode option, and preview header */
-      const defaultModeHint = "Barcode and record details.";
-      expect(screen.getByText(defaultModeHint)).toBeInTheDocument();
       const previewHeader = "Preview: Barcode Label Layout";
       expect(screen.getByText(previewHeader)).toBeInTheDocument();
     });
