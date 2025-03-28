@@ -322,7 +322,7 @@ function PrintDialog({
   closeMenu,
 }: PrintDialogArgs): Node {
   const { classes } = useStyles();
-  const { uiStore } = useStores();
+  const { uiStore, trackingStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const componentToPrint = useRef<mixed>();
   const barcodePrint = ["contextMenu", "barcodeLabel"].includes(printType);
@@ -486,6 +486,14 @@ function PrintDialog({
           content={() => componentToPrint.current}
           onAfterPrint={() => {
             handleClose();
+            trackingStore.trackEvent("user:print:barcodeLabel", {
+              count: itemsToPrint.length,
+              printIdentifierType: printOptions.printIdentifierType,
+              printerType: printOptions.printerType,
+              printLayout: printOptions.printLayout,
+              printSize: printOptions.printSize,
+              printCopies: printOptions.printCopies,
+            });
           }}
           onPrintError={(e) => {
             uiStore.addAlert(

@@ -23,7 +23,7 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef(
     { as, closeMenu, disabled, selectedResults }: PrintBarcodeActionArgs,
     ref
   ) => {
-    const { searchStore } = useStores();
+    const { searchStore, trackingStore } = useStores();
 
     const [showPrintDialog, setShowPrintDialog] = useState(false);
 
@@ -48,6 +48,7 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef(
 
     const handleOpen = () => {
       setShowPrintDialog(true);
+      trackingStore.trackEvent("user:open:printDialog:inventoryContextMenu");
     };
 
     return (
