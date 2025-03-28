@@ -9,6 +9,7 @@ import docLinks from "../../../assets/DocLinks";
 import Button from "@mui/material/Button";
 import {
   DataGrid,
+  useGridApiContext,
   GridToolbarContainer,
   GridToolbarColumnsButton,
   GridToolbarExportContainer,
@@ -27,6 +28,7 @@ import { toTitleCase } from "../../../util/Util";
 
 function Toolbar(): React.Node {
   const columnMenuRef = React.useRef();
+  const apiRef = useGridApiContext();
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
       <DropdownButton onClick={() => {}} name="State">
@@ -43,7 +45,11 @@ function Toolbar(): React.Node {
         }}
       />
       <GridToolbarExportContainer variant="outlined">
-        <MenuItem onClick={() => {}}>Export all rows to CSV</MenuItem>
+        <MenuItem onClick={() => {
+          apiRef.current?.exportDataAsCsv({
+            allColumns: true,
+          });
+        }}>Export to CSV</MenuItem>
       </GridToolbarExportContainer>
     </GridToolbarContainer>
   );
@@ -144,6 +150,7 @@ export default function IgsnManagementPage({
                     flex: 0,
                     disableColumnMenu: true,
                     sortable: false,
+                    disableExport: true,
                   },
                   DataGridColumn.newColumnWithFieldName<_, Identifier>("doi", {
                     headerName: "DOI",
