@@ -80,6 +80,7 @@ function Toolbar({
           setStateAnchorEl(event.currentTarget);
         }}
         name="State"
+        sx={{ textTransform: "uppercase", px: 1.5 }}
       >
         <Menu
           anchorEl={stateAnchorEl}
@@ -134,6 +135,7 @@ function Toolbar({
           setIsAssociatedAnchorEl(event.currentTarget);
         }}
         name="Linked Item"
+        sx={{ textTransform: "uppercase", px: 1.5 }}
       >
         <Menu
           anchorEl={isAssociatedAnchorEl}
@@ -453,11 +455,11 @@ export default function IgsnManagementPage({
                       setState,
                       isAssociated,
                       setIsAssociated,
-                          setColumnsMenuAnchorEl,
+                      setColumnsMenuAnchorEl,
                     },
                     panel: {
                       anchorEl: columnsMenuAnchorEl,
-                    }
+                    },
                   }}
                   localeText={{
                     noRowsLabel: "No IGSNs",
