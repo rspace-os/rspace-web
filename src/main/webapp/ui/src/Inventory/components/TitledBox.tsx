@@ -27,6 +27,7 @@ const useStyles = makeStyles<{ allowOverflow: boolean }>()(
     border: {
       border: theme.borders.section,
       margin: theme.spacing(1, 0),
+      borderRadius: theme.spacing(0.5),
     },
   })
 );
