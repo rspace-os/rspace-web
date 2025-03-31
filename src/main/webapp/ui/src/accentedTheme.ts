@@ -229,6 +229,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
       } as PaletteOptions,
       borders: {
         card: accentedBorder,
+        section: accentedBorder,
       } as ThemeOptions["borders"],
       components: {
         MuiAppBar: {
