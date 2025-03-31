@@ -27,7 +27,7 @@ import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFro
 import { toTitleCase, doNotAwait } from "../../../util/Util";
 import Menu from "@mui/material/Menu";
 import AccentMenuItem from "../../../components/AccentMenuItem";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider, useTheme, lighten, darken } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import Dialog from "@mui/material/Dialog";
@@ -37,6 +37,7 @@ import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import RsSet from "../../../util/set";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 
 function Toolbar({
   state,
@@ -185,7 +186,7 @@ export default function IgsnManagementPage({
     "draft" | "findable" | "registered" | null
   >(null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const { identifiers, loading, bulkRegister } = useIdentifiers({
+  const { identifiers, loading, bulkRegister, deleteIdentifiers } = useIdentifiers({
     state,
     isAssociated,
   });
@@ -194,6 +195,9 @@ export default function IgsnManagementPage({
   const [numberOfNewIdentifiers, setNumberOfNewIdentifiers] = React.useState(1);
   const [registeringInProgress, setRegisteringInProgress] =
     React.useState(false);
+  const [actionsAnchorEl, setActionsAnchorEl] =
+    React.useState<HTMLElement | null>(null);
+  const theme = useTheme();
 
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -285,13 +289,39 @@ export default function IgsnManagementPage({
                   color="primary"
                   disableElevation
                   startIcon={<ChecklistIcon />}
-                  onClick={() => {}}
                   aria-label="Actions menu for selected IGSNs"
                   aria-haspopup="menu"
                   aria-expanded={false}
+                  id="actions-menu"
+                  disabled={selectedIgsns.size === 0}
+                  onClick={(event) => {
+                    setActionsAnchorEl(event.currentTarget);
+                  }}
                 >
                   Actions
                 </Button>
+                <Menu
+                  anchorEl={actionsAnchorEl}
+                  open={Boolean(actionsAnchorEl)}
+                  onClose={() => setActionsAnchorEl(null)}
+                  MenuListProps={{
+                    "aria-labelledby": "actions-menu",
+                    disablePadding: true,
+                  }}
+                >
+                  <AccentMenuItem
+                    title="Delete"
+                    subheader="Does not delete any linked item."
+                    onClick={() => {
+                      deleteIdentifiers(selectedIgsns);
+                      setActionsAnchorEl(null);
+                    }}
+                    backgroundColor={lighten(theme.palette.error.light, 0.5)}
+                    foregroundColor={darken(theme.palette.error.dark, 0.3)}
+                    avatar={<DeleteOutlineOutlinedIcon />}
+                    compact
+                  />
+                </Menu>
               </Stack>
               <div style={{ width: "100%" }}>
                 <DataGrid
