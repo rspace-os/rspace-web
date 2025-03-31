@@ -20,17 +20,15 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class SysAdminDevOpsController extends BaseController {
 
   /**
-   * This is to fix SUPPORT-522 issue i.e. problem with duplication of document shared into
-   * somebody else's notebook, where the copy was sometimes ending inside shard notebook.
+   * This is to fix SUPPORT-522 issue i.e. problem with duplication of document shared into somebody
+   * else's notebook, where the copy was sometimes ending inside shard notebook.
    *
-   * The code locates such problematic copies belonging to the particular user, and
-   * moves them out of notebook into user's own Workspace.
+   * <p>The code locates such problematic copies belonging to the particular user, and moves them
+   * out of notebook into user's own Workspace.
    *
-   * This code is intended to be triggered from browser, by sysadmin who is logged into RSpace
-   * by navigating to the particular endpoint. E.g. to run the code for user with id 4,
-   * login as sysadmin and navigate browser to:
-   * <rspace>/system/devops/ajax/support-552/4
-   * then
+   * <p>This code is intended to be triggered from browser, by sysadmin who is logged into RSpace by
+   * navigating to the particular endpoint. E.g. to run the code for user with id 4, login as
+   * sysadmin and navigate browser to: <rspace>/system/devops/ajax/support-552/4 then
    * <rspace>/system/devops/ajax/support-552/4?update=true
    */
   @GetMapping("/ajax/support-522/{userId}")
@@ -40,7 +38,8 @@ public class SysAdminDevOpsController extends BaseController {
     assertSubjectIsSysadmin();
 
     User user = userManager.get(userId);
-    String result = "Starting SUPPORT-552 fix process for user: " + user.getUsername() + ".<br />\n";
+    String result =
+        "Starting SUPPORT-552 fix process for user: " + user.getUsername() + ".<br />\n";
 
     List<Long> allDocIds = recordManager.getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(user);
     result += "Found total of " + allDocIds.size() + " documents owned by the user.<br />\n";
