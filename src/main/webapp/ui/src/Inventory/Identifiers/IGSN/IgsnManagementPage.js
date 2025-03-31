@@ -172,7 +172,7 @@ export default function IgsnManagementPage({
     "draft" | "findable" | "registered" | null
   >(null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const { identifiers } = useIdentifiers({ state, isAssociated });
+  const { identifiers, loading } = useIdentifiers({ state, isAssociated });
 
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -312,6 +312,7 @@ export default function IgsnManagementPage({
                   disableColumnFilter
                   hideFooter
                   autoHeight
+                  loading={loading}
                   slots={{
                     pagination: null,
                     toolbar: Toolbar,
@@ -327,7 +328,6 @@ export default function IgsnManagementPage({
                   localeText={{
                     noRowsLabel: "No IGSNs",
                   }}
-                  loading={false}
                 />
               </div>
             </Stack>
