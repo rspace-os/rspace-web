@@ -6,6 +6,7 @@ import useOauthToken from "../common/useOauthToken";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
+import RsSet from "../util/set";
 
 export type Identifier = {|
   id: number,
@@ -30,6 +31,7 @@ export function useIdentifiers({
   loading: boolean,
   error: Error | null,
   bulkRegister: ({| count: number |}) => Promise<void>,
+  deleteIdentifiers: (RsSet<Identifier>) => Promise<void>,
 |} {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -179,5 +181,60 @@ export function useIdentifiers({
     }
   }
 
-  return { identifiers, loading, error, bulkRegister };
+  async function deleteIdentifiers(identifiers: RsSet<Identifier>) {
+    try {
+      const token = await getToken();
+      const failed: Array<Identifier["doi"]> = [];
+      const success: Array<Identifier["doi"]> = [];
+      for (const identifier of identifiers) {
+        try {
+          await axios.delete<mixed>(`/api/inventory/v1/identifiers/${identifier.id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          success.push(identifier.doi);
+        } catch (e) {
+          failed.push(identifier.doi);
+        }
+      }
+      if (failed.length > 0) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error deleting identifiers",
+            message: "Failed to delete some of the identifiers.",
+            details: failed.map((doi) => ({
+              title: `Failed to delete "${doi}"`,
+              variant: "error",
+            })),
+          })
+        );
+      }
+      if (success.length > 0) {
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: "Successfully deleted the identifiers.",
+            details: success.map((doi) => ({
+              title: `Deleted "${doi}"`,
+              variant: "success",
+            }))
+          })
+        );
+      }
+      void fetchIdentifiers();
+    } catch (e) {
+      setError(e);
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Error deleting identifiers",
+          message: e.message,
+        })
+      );
+    }
+  };
+
+  return { identifiers, loading, error, bulkRegister, deleteIdentifiers };
 }
