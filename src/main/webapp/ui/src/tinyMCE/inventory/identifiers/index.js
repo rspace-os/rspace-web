@@ -19,6 +19,7 @@ import axios from "@/common/axios";
 import { doNotAwait } from "../../../util/Util";
 import RsSet from "../../../util/set";
 import { type Identifier } from "../../../Inventory/useIdentifiers";
+import Typography from "@mui/material/Typography";
 
 type Editor = {
   ui: {
@@ -89,8 +90,12 @@ function IdentifiersDialog({
         currentPage="Inventory Identifiers"
         accessibilityTips={{}}
       />
-      <DialogTitle>Insert Identifiers Table</DialogTitle>
+      <DialogTitle>Insert Barcodes Table</DialogTitle>
       <DialogContent>
+        <Typography variant="body1">
+          Select from newly registered IGSNs or those already with linked items,
+          and insert a table into your document, each with a QR code.
+        </Typography>
         <IgsnManagementPage
           selectedIgsns={selectedIgsns}
           setSelectedIgsns={setSelectedIgsns}
@@ -121,7 +126,7 @@ function IdentifiersDialog({
             onClose();
           }}
         >
-          Insert Table
+          Insert Barcode Table
         </Button>
       </DialogActions>
     </Dialog>
