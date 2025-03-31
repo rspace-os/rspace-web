@@ -28,8 +28,8 @@ public class SysAdminDevOpsController extends BaseController {
    *
    * <p>This code is intended to be triggered from browser, by sysadmin who is logged into RSpace by
    * navigating to the particular endpoint. E.g. to run the code for user with id 4, login as
-   * sysadmin and navigate browser to: <rspace>/system/devops/ajax/support-552/4 then
-   * <rspace>/system/devops/ajax/support-552/4?update=true
+   * sysadmin and navigate browser to: /system/devops/ajax/support-522/4, then eventually to
+   * /system/devops/ajax/support-522/4?update=true
    */
   @GetMapping("/ajax/support-522/{userId}")
   @ResponseBody
