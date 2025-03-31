@@ -186,10 +186,11 @@ export default function IgsnManagementPage({
     "draft" | "findable" | "registered" | null
   >(null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const { identifiers, loading, bulkRegister, deleteIdentifiers } = useIdentifiers({
-    state,
-    isAssociated,
-  });
+  const { identifiers, loading, bulkRegister, deleteIdentifiers } =
+    useIdentifiers({
+      state,
+      isAssociated,
+    });
   const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] =
     React.useState(false);
   const [numberOfNewIdentifiers, setNumberOfNewIdentifiers] = React.useState(1);
@@ -277,16 +278,18 @@ export default function IgsnManagementPage({
             </Stack>
           </TitledBox>
           <TitledBox title="Manage IGSNs" border>
-            <Stack spacing={2} alignItems="flex-start">
+            <Stack spacing={0.5} alignItems="flex-start">
               <Typography>
                 To access actions such as editing metadata and publishing,
                 please use the <strong>Identifiers</strong> section of the{" "}
                 <strong>Linked Item</strong>.
               </Typography>
-              <Stack orientation="horizontal" spacing={2}>
+              <Box height={12}></Box>
+              <Stack orientation="horizontal">
                 <Button
                   variant="contained"
-                  color="primary"
+                  color="callToAction"
+                  size="small"
                   disableElevation
                   startIcon={<ChecklistIcon />}
                   aria-label="Actions menu for selected IGSNs"
