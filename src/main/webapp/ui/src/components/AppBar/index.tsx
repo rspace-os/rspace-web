@@ -555,6 +555,7 @@ function GalleryAppBar({
                   window.location.href = "/workspace";
                   handleAppMenuClose();
                 }}
+                current={currentPage === "Workspace" ? "page" : false}
               />
               <AccentMenuItem
                 title="Gallery"
@@ -566,6 +567,7 @@ function GalleryAppBar({
                   window.location.href = "/gallery";
                   handleAppMenuClose();
                 }}
+                current={currentPage === "Gallery" ? "page" : false}
               />
               {showInventory && (
                 <AccentMenuItem
@@ -578,6 +580,7 @@ function GalleryAppBar({
                     window.location.href = "/inventory";
                     handleAppMenuClose();
                   }}
+                  current={currentPage === "Inventory" ? "page" : false}
                 />
               )}
               <AccentMenuItem
@@ -592,6 +595,7 @@ function GalleryAppBar({
                     : "/userform";
                   setAccountMenuAnchorEl(null);
                 }}
+                current={currentPage === "My RSpace" ? "page" : false}
               />
               {showSystem && (
                 <AccentMenuItem
@@ -604,6 +608,7 @@ function GalleryAppBar({
                     window.location.href = "/system";
                     handleAppMenuClose();
                   }}
+                  current={currentPage === "System" ? "page" : false}
                 />
               )}
             </Menu>
