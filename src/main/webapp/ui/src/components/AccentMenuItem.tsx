@@ -6,7 +6,7 @@ import { alpha, SxProps, Theme } from "@mui/system";
 
 type AccentMenuItemArgs = {
   title: string;
-  avatar: React.ReactNode;
+  avatar?: React.ReactNode;
   subheader?: React.ReactNode;
   foregroundColor?:
     | string

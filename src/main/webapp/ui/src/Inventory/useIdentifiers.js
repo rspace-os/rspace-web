@@ -19,14 +19,20 @@ export type Identifier = {|
 /**
  * Custom hook for working with the /identifiers endpoints
  */
-export const useIdentifiers = (): {|
+export const useIdentifiers = ({
+  state,
+}: {|
+  state?: "draft" | "findable" | "registered" | null,
+|}): {|
   identifiers: $ReadOnlyArray<Identifier>,
   loading: boolean,
   error: Error | null,
 |} => {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
-  const [identifiers, setIdentifiers] = React.useState<$ReadOnlyArray<Identifier>>([]);
+  const [identifiers, setIdentifiers] = React.useState<
+    $ReadOnlyArray<Identifier>
+  >([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
 
@@ -35,12 +41,18 @@ export const useIdentifiers = (): {|
       setLoading(true);
       try {
         const token = await getToken();
+        const searchParams = new URLSearchParams();
+        if (state) {
+          searchParams.append("state", state);
+        }
+        searchParams.append("isAssociated", "true");
         const response = await axios.get<mixed>(
-          "/api/inventory/v1/identifiers?isAssociated=true",
+          "/api/inventory/v1/identifiers",
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
+            params: searchParams,
           }
         );
         const parsedIdentifiers = Parsers.isArray(response.data)
@@ -129,7 +141,7 @@ export const useIdentifiers = (): {|
      * - addAlert wont meaningfully change between renders
      * - getToken wont meaningfully change between renders
      */
-  }, []);
+  }, [state]);
 
   return { identifiers, loading, error };
 };
