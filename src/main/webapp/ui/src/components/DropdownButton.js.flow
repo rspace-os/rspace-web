@@ -8,6 +8,7 @@ type DropdownButtonArgs = {|
   onClick: ({| target: HTMLElement, currentTarget: HTMLElement |}) => void,
   disabled?: boolean,
   title?: string,
+  sx?: { ... },
 |};
 
 declare export default function DropdownButton(DropdownButtonArgs): Node;
