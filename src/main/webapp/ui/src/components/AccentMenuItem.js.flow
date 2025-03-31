@@ -5,7 +5,7 @@ import { type Hsl } from "../accentedTheme";
 
 declare export default function AccentMenuItem({|
   title: string,
-  avatar: Node,
+  avatar?: Node,
   subheader?: Node,
   foregroundColor?: string | Hsl,
   backgroundColor?: string | Hsl,
