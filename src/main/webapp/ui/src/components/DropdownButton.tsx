@@ -4,8 +4,8 @@ import React from "react";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { withStyles } from "Styles";
 import CustomTooltip from "./CustomTooltip";
+import { styled, type SxProps } from "@mui/system";
 
 type DropdownButtonArgs = {
   name: React.ReactNode;
@@ -13,49 +13,44 @@ type DropdownButtonArgs = {
   onClick: (event: React.MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
   title?: string;
+  sx?: SxProps;
 };
 
-const DropdownButton: React.ComponentType<DropdownButtonArgs> = withStyles<
-  DropdownButtonArgs,
-  { root: string; endIcon: string }
->((theme) => ({
-  root: {
-    padding: theme.spacing(0, 0.75),
-    minWidth: "unset",
-    height: 32,
-    textTransform: "none",
-    letterSpacing: "0.04em",
+const StyledButton = styled(Button)(({ theme }) => ({
+  padding: theme.spacing(0, 0.75),
+  minWidth: "unset",
+  height: 32,
+  textTransform: "none",
+  letterSpacing: "0.04em",
+  "& .MuiButton-endIcon": {
+    marginLeft: theme.spacing(0.5),
   },
-  endIcon: {
-    marginLeft: 0.5,
-  },
-}))(
-  ({
-    name,
-    classes,
-    children,
-    onClick,
-    disabled,
-    title,
-  }: DropdownButtonArgs & { classes: { root: string; endIcon: string } }) => (
-    <Grid item>
-      <CustomTooltip title={title ?? ""} aria-label="">
-        <Button
-          className={classes.root}
-          classes={classes}
-          endIcon={<KeyboardArrowDownIcon />}
-          size="small"
-          onClick={onClick}
-          disabled={disabled}
-          aria-label={title}
-          color="standardIcon"
-        >
-          {name}
-        </Button>
-      </CustomTooltip>
-      {children}
-    </Grid>
-  )
+}));
+
+const DropdownButton = ({
+  name,
+  children,
+  onClick,
+  disabled,
+  title,
+  sx,
+}: DropdownButtonArgs) => (
+  <Grid item>
+    <CustomTooltip title={title ?? ""} aria-label="">
+      <StyledButton
+        endIcon={<KeyboardArrowDownIcon />}
+        size="small"
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={title}
+        color="standardIcon"
+        sx={sx}
+      >
+        {name}
+      </StyledButton>
+    </CustomTooltip>
+    {children}
+  </Grid>
 );
 
 export default DropdownButton;
