@@ -184,13 +184,17 @@ public class RecordManagerImpl implements RecordManager {
       for (RecordToFolder rtf : original.getParents()) {
         if (rtf.getUserName().equals(user.getUsername())) {
           parent = rtf.getFolder();
-          if (!parent.isSharedFolder()) {
+          if (!parent.isSharedFolder() && !isFolderANotebookSharedWithCurrentUser(parent, user)) {
             return parent;
           }
         }
       }
     }
     return parent;
+  }
+
+  private boolean isFolderANotebookSharedWithCurrentUser(Folder folder, User user) {
+    return folder.isNotebook() && !user.getUsername().equals(folder.getOwner().getUsername());
   }
 
   /** Convenience method to get a subclass of record already cast to the appropriate type. */

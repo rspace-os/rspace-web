@@ -1631,4 +1631,48 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertNotNull(newCreatedDocument.getId());
     assertEquals(initialCountRootFolder + 1, rootFolder.getChildren().size());
   }
+
+  @Test
+  public void RSDEV_613_getParentPreferNonSharedHandlesDocSharedIntoNotebook() throws Exception {
+
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
+    initialiseContentWithEmptyContent(pi, user);
+    Group labGroup = createGroup("g1", pi);
+    addUsersToGroup(pi, labGroup, user);
+
+    // pi creates a notebook and shares it with groups for edit
+    logoutAndLoginAs(pi);
+    Long piRootId = pi.getRootFolder().getId();
+    Notebook sharedNotebook = createNotebookWithNEntries(piRootId, "shared nbook", 1, pi);
+    assertEquals(1, sharedNotebook.getEntryCount());
+    StructuredDocument entryInSharedNotebook =
+        sharedNotebook.getChildrens().iterator().next().asStrucDoc();
+    shareNotebookWithGroup(pi, sharedNotebook, labGroup, "write");
+
+    // user creates a document and shares it into pi's notebook
+    logoutAndLoginAs(user);
+    BaseRecord doc = createBasicDocumentInRootFolderWithText(user, "any");
+    assertEquals(1, doc.getParents().size());
+
+    shareRecordIntoGroupNotebook(doc, sharedNotebook, labGroup, user).get().getShared();
+    // user's doc know understand it has two parents now
+    doc = recordMgr.get(doc.getId());
+    assertEquals(2, doc.getParents().size());
+    // shared notebook should show two entries now
+    sharedNotebook = folderMgr.getNotebook(sharedNotebook.getId());
+    assertEquals(2, sharedNotebook.getEntryCount());
+
+    // check that when asked for non-shared parent, user's doc shared into notebook returns user's
+    // workspace
+    Folder nonSharedParentForDocSharedIntoNotebook =
+        recordMgr.getRecordParentPreferNonShared(user, doc);
+    assertEquals(user.getUsername(), nonSharedParentForDocSharedIntoNotebook.getName());
+
+    /* confirm that when asked for non-shared parent, pi's entry which wasn't explicitly shared (just a part of PI's shared notebook)
+     * returns a notebook (it is both shared and exists on PI workspace) */
+    Folder nonSharedParentForImplicitlySharedEntry =
+        recordMgr.getRecordParentPreferNonShared(user, entryInSharedNotebook);
+    assertEquals("shared nbook", nonSharedParentForImplicitlySharedEntry.getName());
+  }
 }
