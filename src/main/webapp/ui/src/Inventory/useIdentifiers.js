@@ -21,8 +21,10 @@ export type Identifier = {|
  */
 export const useIdentifiers = ({
   state,
+  isAssociated,
 }: {|
   state?: "draft" | "findable" | "registered" | null,
+  isAssociated?: boolean | null,
 |}): {|
   identifiers: $ReadOnlyArray<Identifier>,
   loading: boolean,
@@ -45,7 +47,9 @@ export const useIdentifiers = ({
         if (state) {
           searchParams.append("state", state);
         }
-        searchParams.append("isAssociated", "true");
+        if (typeof isAssociated !== undefined && isAssociated !== null) {
+          searchParams.append("isAssociated", isAssociated ? "true" : "false");
+        }
         const response = await axios.get<mixed>(
           "/api/inventory/v1/identifiers",
           {
@@ -141,7 +145,7 @@ export const useIdentifiers = ({
      * - addAlert wont meaningfully change between renders
      * - getToken wont meaningfully change between renders
      */
-  }, [state]);
+  }, [state, isAssociated]);
 
   return { identifiers, loading, error };
 };

@@ -34,13 +34,18 @@ import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 function Toolbar({
   state,
   setState,
+  isAssociated,
+  setIsAssociated,
 }: {
   state: "draft" | "findable" | "registered" | null,
   setState: ("draft" | "findable" | "registered" | null) => void,
+  isAssociated: boolean | null,
+  setIsAssociated: (boolean | null) => void,
 }): React.Node {
   const columnMenuRef = React.useRef();
   const apiRef = useGridApiContext();
   const [stateAnchorEl, setStateAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [isAssociatedAnchorEl, setIsAssociatedAnchorEl] = React.useState<HTMLElement | null>(null);
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
       <DropdownButton
@@ -97,8 +102,42 @@ function Toolbar({
           />
         </Menu>
       </DropdownButton>
-      <DropdownButton onClick={() => {}} name="Linked Item">
-        {null}
+      <DropdownButton onClick={(event) => {
+        setIsAssociatedAnchorEl(event.currentTarget);
+      }} name="Linked Item">
+        <Menu
+          anchorEl={isAssociatedAnchorEl}
+          open={Boolean(isAssociatedAnchorEl)}
+          onClose={() => setIsAssociatedAnchorEl(null)}
+          MenuListProps={{
+            disablePadding: true,
+          }}
+        >
+          <AccentMenuItem
+            title="All Identifiers"
+            onClick={() => {
+              setIsAssociated(null);
+              setIsAssociatedAnchorEl(null);
+            }}
+            current={isAssociated === null}
+          />
+          <AccentMenuItem
+            title="No Linked Item"
+            onClick={() => {
+              setIsAssociated(false);
+              setIsAssociatedAnchorEl(null);
+            }}
+            current={isAssociated === false}
+          />
+          <AccentMenuItem
+            title="Has Linked Item"
+            onClick={() => {
+              setIsAssociated(true);
+              setIsAssociatedAnchorEl(null);
+            }}
+            current={isAssociated === true}
+          />
+        </Menu>
       </DropdownButton>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
@@ -132,7 +171,8 @@ export default function IgsnManagementPage({
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
   >(null);
-  const { identifiers } = useIdentifiers({ state });
+  const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
+  const { identifiers } = useIdentifiers({ state, isAssociated });
 
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -280,6 +320,8 @@ export default function IgsnManagementPage({
                     toolbar: {
                       state,
                       setState,
+                      isAssociated,
+                      setIsAssociated,
                     },
                   }}
                   localeText={{
