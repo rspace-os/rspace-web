@@ -631,8 +631,18 @@ public interface RecordManager {
    */
   Long getRecordCountForUser(RecordTypeFilter recordTypes, User user);
 
+  List<Long> getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(User user);
+
   List<BaseRecord> getOntologyTagsFilesForUserCalled(User user, String userTagsontologyDocument);
 
   List<StructuredDocument> getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(
       String uName);
+
+  /**
+   * This method added to address support-522 ticket: Assuming the document has just one parent,
+   * this parent is updated to be a document owner's Workspace, with appropriate permission change.
+   *
+   * @return whether the move/permission change action was successful
+   */
+  boolean forceMoveDocumentToOwnerWorkspace(StructuredDocument userDoc);
 }
