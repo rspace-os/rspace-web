@@ -21,7 +21,7 @@ export const ACCENT_COLOR = {
     saturation: 93,
     lightness: 33,
   },
-  contrasttext: {
+  contrastText: {
     hue: 39,
     saturation: 35,
     lightness: 26,
@@ -31,10 +31,9 @@ export const ACCENT_COLOR = {
     saturation: 100,
     lightness: 68,
   },
-  backgroundcontrasttext: {
+  backgroundContrastText: {
     hue: 39,
     saturation: 20,
     lightness: 35,
   },
 };
-
