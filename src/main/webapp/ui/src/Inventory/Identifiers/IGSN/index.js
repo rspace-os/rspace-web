@@ -5,6 +5,7 @@ import Header from "../../components/Layout/Header";
 import Sidebar from "../../components/Layout/Sidebar";
 import IgsnManagementPage from "./IgsnManagementPage";
 import Box from "@mui/material/Box";
+import RsSet from "../../../util/set";
 
 /**
  * This is the page where researchers can manage their IGSNs.
@@ -16,7 +17,7 @@ export default function IGSN(): Node {
       <Header sidebarId={sidebarId} />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <Sidebar id={sidebarId} />
-        <IgsnManagementPage selectedIgsns={new Set()} setSelectedIgsns={() => {}}/>
+        <IgsnManagementPage selectedIgsns={new RsSet()} setSelectedIgsns={() => {}}/>
       </Box>
     </>
   );

@@ -36,6 +36,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import RsSet from "../../../util/set";
 
 function Toolbar({
   state,
@@ -177,8 +178,8 @@ export default function IgsnManagementPage({
   selectedIgsns,
   setSelectedIgsns,
 }: {|
-  selectedIgsns: Set<string>,
-  setSelectedIgsns: (Set<string>) => void,
+  selectedIgsns: RsSet<Identifier>,
+  setSelectedIgsns: (RsSet<Identifier>) => void,
 |}): Node {
   const [state, setState] = React.useState<
     "draft" | "findable" | "registered" | null
@@ -301,18 +302,30 @@ export default function IgsnManagementPage({
                       renderCell: (params: { row: Identifier, ... }) => (
                         <Checkbox
                           color="primary"
-                          value={selectedIgsns.has(params.row.doi)}
-                          checked={selectedIgsns.has(params.row.doi)}
+                          value={selectedIgsns.hasWithEq(
+                            params.row,
+                            (a, b) => a.doi === b.doi
+                          )}
+                          checked={selectedIgsns.hasWithEq(
+                            params.row,
+                            (a, b) => a.doi === b.doi
+                          )}
                           inputProps={{ "aria-label": "IGSN selection" }}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setSelectedIgsns(
-                                new Set(selectedIgsns).add(params.row.doi)
+                                selectedIgsns.unionWithEq(
+                                  new RsSet([params.row]),
+                                  (a, b) => a.doi === b.doi
+                                )
                               );
                             } else {
-                              const newSet = new Set(selectedIgsns);
-                              newSet.delete(params.row.doi);
-                              setSelectedIgsns(newSet);
+                              setSelectedIgsns(
+                                selectedIgsns.subtractWithEq(
+                                  new RsSet([params.row]),
+                                  (a, b) => a.doi === b.doi
+                                )
+                              );
                             }
                           }}
                           sx={{ p: 0.5 }}
