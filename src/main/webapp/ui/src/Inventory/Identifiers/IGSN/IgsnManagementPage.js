@@ -24,12 +24,18 @@ import Box from "@mui/material/Box";
 import Main from "../../Main";
 import { useIdentifiers, type Identifier } from "../../useIdentifiers";
 import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
-import { toTitleCase } from "../../../util/Util";
+import { toTitleCase, doNotAwait } from "../../../util/Util";
 import Menu from "@mui/material/Menu";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import TextField from "@mui/material/TextField";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 
 function Toolbar({
   state,
@@ -44,8 +50,11 @@ function Toolbar({
 }): React.Node {
   const columnMenuRef = React.useRef();
   const apiRef = useGridApiContext();
-  const [stateAnchorEl, setStateAnchorEl] = React.useState<HTMLElement | null>(null);
-  const [isAssociatedAnchorEl, setIsAssociatedAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [stateAnchorEl, setStateAnchorEl] = React.useState<HTMLElement | null>(
+    null
+  );
+  const [isAssociatedAnchorEl, setIsAssociatedAnchorEl] =
+    React.useState<HTMLElement | null>(null);
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
       <DropdownButton
@@ -102,9 +111,12 @@ function Toolbar({
           />
         </Menu>
       </DropdownButton>
-      <DropdownButton onClick={(event) => {
-        setIsAssociatedAnchorEl(event.currentTarget);
-      }} name="Linked Item">
+      <DropdownButton
+        onClick={(event) => {
+          setIsAssociatedAnchorEl(event.currentTarget);
+        }}
+        name="Linked Item"
+      >
         <Menu
           anchorEl={isAssociatedAnchorEl}
           open={Boolean(isAssociatedAnchorEl)}
@@ -172,7 +184,15 @@ export default function IgsnManagementPage({
     "draft" | "findable" | "registered" | null
   >(null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(null);
-  const { identifiers, loading } = useIdentifiers({ state, isAssociated });
+  const { identifiers, loading, bulkRegister } = useIdentifiers({
+    state,
+    isAssociated,
+  });
+  const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] =
+    React.useState(false);
+  const [numberOfNewIdentifiers, setNumberOfNewIdentifiers] = React.useState(1);
+  const [registeringInProgress, setRegisteringInProgress] =
+    React.useState(false);
 
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -205,9 +225,50 @@ export default function IgsnManagementPage({
                 You can also bulk-register IGSN IDs to be used at a later date,
                 such as a field collection trip:
               </Typography>
-              <Button variant="contained" color="primary" disableElevation>
+              <Button
+                variant="contained"
+                color="primary"
+                disableElevation
+                onClick={() => setBulkRegisterDialogOpen(true)}
+              >
                 Bulk Register
               </Button>
+              <Dialog
+                open={bulkRegisterDialogOpen}
+                onClose={() => setBulkRegisterDialogOpen(false)}
+              >
+                <DialogTitle>Bulk Register IGSNs</DialogTitle>
+                <DialogContent>
+                  <TextField
+                    label="Number of new IGSNs"
+                    type="number"
+                    inputProps={{ min: 1, max: 100 }}
+                    value={numberOfNewIdentifiers}
+                    onChange={(e) => setNumberOfNewIdentifiers(e.target.value)}
+                    fullWidth
+                    sx={{ mt: 1 }}
+                    error={
+                      numberOfNewIdentifiers < 1 || numberOfNewIdentifiers > 100
+                    }
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setBulkRegisterDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <SubmitSpinnerButton
+                    onClick={doNotAwait(async () => {
+                      setRegisteringInProgress(true);
+                      await bulkRegister({ count: numberOfNewIdentifiers });
+                      setRegisteringInProgress(false);
+                      setBulkRegisterDialogOpen(false);
+                    })}
+                    disabled={registeringInProgress}
+                    loading={registeringInProgress}
+                    label="Register"
+                  />
+                </DialogActions>
+              </Dialog>
             </Stack>
           </TitledBox>
           <TitledBox title="Manage IGSNs" border>
@@ -290,16 +351,21 @@ export default function IgsnManagementPage({
                         flex: 1,
                         resizable: true,
                         sortable: false,
-                        renderCell: ({ row }) => (
-                          <GlobalId
-                            record={
-                              new LinkableRecordFromGlobalId(
-                                row.associatedGlobalId
-                              )
-                            }
-                            onClick={() => {}}
-                          />
-                        ),
+                        renderCell: ({ row }) => {
+                          if (row.associatedGlobalId === null) {
+                            return "None";
+                          }
+                          return (
+                            <GlobalId
+                              record={
+                                new LinkableRecordFromGlobalId(
+                                  row.associatedGlobalId
+                                )
+                              }
+                              onClick={() => {}}
+                            />
+                          );
+                        },
                       }
                     ),
                   ]}
