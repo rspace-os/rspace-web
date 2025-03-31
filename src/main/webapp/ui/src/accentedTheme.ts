@@ -731,6 +731,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 paddingRight: 0,
                 marginRight: "-2px",
                 marginLeft: "-4px",
+                marginBottom: baseTheme.spacing(1),
               },
               [`& .${buttonClasses.root}`]: {
                 "&:hover": {
