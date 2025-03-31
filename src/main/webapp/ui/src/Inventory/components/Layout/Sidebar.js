@@ -22,7 +22,6 @@ import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
 import Badge from "@mui/material/Badge";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
-import { isImportPage } from "../../../stores/stores/ImportStore";
 import ExportDialog from "../../components/Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
 import { mapNullable } from "../../../util/Util";
@@ -34,6 +33,12 @@ import useNavigateHelpers from "../../useNavigateHelpers";
 import createAccentedTheme from "../../../accentedTheme";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
+import NavigateContext from "../../../stores/contexts/Navigate";
+import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/igsn";
+
+function isSearchListing() {
+  return /inventory\/search/.test(window.location.pathname);
+}
 
 const drawerWidth = 200;
 
@@ -225,7 +230,7 @@ const MyBenchNavItem = observer(() => {
       label="My Bench"
       datatestid="MyBenchNavFilter"
       selected={
-        !isImportPage() &&
+        isSearchListing() &&
         currentUser &&
         searchStore.search.onUsersBench(currentUser)
       }
@@ -254,7 +259,7 @@ const ContainersNavItem = observer(() => {
       datatestid="ContainersNavFilter"
       selected={
         !benchSearch &&
-        !isImportPage() &&
+        isSearchListing() &&
         searchStore.isTypeSelected("CONTAINER")
       }
       icon={
@@ -290,7 +295,7 @@ const SampleNavItem = observer(() => {
       label="Samples"
       datatestid="SamplesNavFilter"
       selected={
-        !benchSearch && !isImportPage() && searchStore.isTypeSelected("SAMPLE")
+        !benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE")
       }
       icon={
         <RecordTypeIcon
@@ -325,7 +330,7 @@ const TemplateNavItem = observer(() => {
       datatestid="TemplatesNavFilter"
       selected={
         !benchSearch &&
-        !isImportPage() &&
+        isSearchListing() &&
         searchStore.isTypeSelected("TEMPLATE")
       }
       icon={
@@ -349,6 +354,31 @@ const TemplateNavItem = observer(() => {
   );
 });
 
+const IgsnNavItem = observer(() => {
+  const theme = useTheme();
+  const { useNavigate } = React.useContext(NavigateContext);
+  const navigate = useNavigate();
+
+  return (
+    <NavItem
+      label="IGSN IDs"
+      selected={
+        /identifiers\/igsn/.test(window.location.pathname)
+      }
+      icon={
+        <IgsnIcon 
+          style={{ width: "28px", height: "18px" }}
+        />
+      }
+      badge={0}
+      onClick={(e: Event) => {
+        e.stopPropagation();
+        navigate("/inventory/identifiers/igsn");
+      }}
+    />
+  );
+});
+
 const SubsampleNavItem = observer(() => {
   const { searchStore } = useStores();
   const theme = useTheme();
@@ -361,7 +391,7 @@ const SubsampleNavItem = observer(() => {
       datatestid="SubsamplesNavFilter"
       selected={
         !benchSearch &&
-        !isImportPage() &&
+        isSearchListing() &&
         searchStore.isTypeSelected("SUBSAMPLE")
       }
       icon={
@@ -491,6 +521,7 @@ function Sidebar({ id }: SidebarArgs): Node {
           <SampleNavItem />
           <SubsampleNavItem />
           <TemplateNavItem />
+          <IgsnNavItem />
         </List>
         <List component="nav" aria-label="Other places and action">
           <ExportNavItem />
