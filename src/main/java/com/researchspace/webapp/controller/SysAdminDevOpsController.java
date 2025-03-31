@@ -69,8 +69,7 @@ public class SysAdminDevOpsController extends BaseController {
     } else {
       if (update) {
         result +=
-            "Updated " + movedCount + " docs (out of " + foundCount
-                + " that should be updated).<br />\n";
+            "Updated " + movedCount + " docs (out of " + foundCount + " that should be updated)";
       } else {
         result += "To update problematic documents call the current URL with '?update=true' suffix";
       }
