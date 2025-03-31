@@ -16,6 +16,9 @@ import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManageme
 import Button from "@mui/material/Button";
 import useOauthToken from "../../../common/useOauthToken";
 import axios from "@/common/axios";
+import { doNotAwait } from "../../../util/Util";
+import RsSet from "../../../util/set";
+import { type Identifier } from "../../../Inventory/useIdentifiers";
 
 type Editor = {
   ui: {
@@ -45,8 +48,10 @@ function IdentifiersDialog({
   onClose: () => void,
   editor: Editor,
 |}) {
-  const [selectedIgsns, setSelectedIgsns] = React.useState(new Set<string>());
-  const getToken = useOauthToken();
+  const [selectedIgsns, setSelectedIgsns] = React.useState(
+    new RsSet<Identifier>()
+  );
+  const { getToken } = useOauthToken();
 
   const getBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -62,39 +67,20 @@ function IdentifiersDialog({
       reader.onerror = (error) => reject(error);
     });
 
-  const [tableData, setTableData] = React.useState<
-    Array<{| igsn: string, barcodeUrl: string |}>
-  >([]);
-  React.useEffect(() => {
-    void (async () => {
-      try {
-        const reader = new FileReader();
-        const token = await getToken.getToken();
-        setTableData(
-          await Promise.all(
-            ["10.5/431235", "10.5/124567"].map(async (igsn) => {
-              const { data } = await axios.get<Blob>(`/api/inventory/v1/barcodes`, {
-                params: new URLSearchParams({
-                  content: `https://doi.org/${igsn}`,
-                  barcodeType: "QR",
-                }),
-                headers: { Authorization: `Bearer ${token}` },
-                responseType: "blob",
-              });
-              const file = new File([data], "", { type: "image/png" });
-              const dataUrl = await getBase64(file);
-              return {
-                barcodeUrl: dataUrl,
-                igsn,
-              };
-            })
-          )
-        );
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-  }, []);
+  async function fetchBarcodeUrl(igsn: Identifier) {
+    const token = await getToken();
+    const { data } = await axios.get<Blob>(`/api/inventory/v1/barcodes`, {
+      params: new URLSearchParams({
+        content: `https://doi.org/${igsn.doi}`,
+        barcodeType: "QR",
+      }),
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "blob",
+    });
+    const file = new File([data], "", { type: "image/png" });
+    const dataUrl = await getBase64(file);
+    return dataUrl;
+  }
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
@@ -116,13 +102,22 @@ function IdentifiersDialog({
           variant="contained"
           color="primary"
           onClick={() => {
-            editor.execCommand(
-              "mceInsertContent",
-              false,
-              tableHtml({
-                data: tableData,
-              }).outerHTML
-            );
+            void Promise.all(
+              [...selectedIgsns].map((igsn) =>
+                fetchBarcodeUrl(igsn).then((barcodeUrl) => ({
+                  igsn,
+                  barcodeUrl,
+                }))
+              )
+            ).then((data) => {
+              editor.execCommand(
+                "mceInsertContent",
+                false,
+                tableHtml({
+                  data,
+                }).outerHTML
+              );
+            });
             onClose();
           }}
         >
@@ -222,7 +217,7 @@ tinyMCE.PluginManager.add("identifiers", IdentifiersPlugin);
 function tableHtml({
   data,
 }: {|
-  data: Array<{| igsn: string, barcodeUrl: string |}>,
+  data: Array<{| igsn: Identifier, barcodeUrl: string |}>,
 |}): HTMLTableElement {
   const identifiersTable = document.createElement("table");
   identifiersTable.setAttribute("data-tableSource", "identifiers");
@@ -233,10 +228,10 @@ function tableHtml({
     tableHeader.appendChild(columnName);
   });
   identifiersTable.appendChild(tableHeader);
-  data.forEach(({ igsn, barcodeUrl }) => {
+  return data.reduce((table, { igsn, barcodeUrl }) => {
     const row = document.createElement("tr");
     const igsnCell = document.createElement("td");
-    igsnCell.textContent = igsn;
+    igsnCell.textContent = igsn.doi;
     row.appendChild(igsnCell);
     const barcodeCell = document.createElement("td");
     const img = document.createElement("img");
@@ -244,7 +239,7 @@ function tableHtml({
     img.width = 100;
     barcodeCell.appendChild(img);
     row.appendChild(barcodeCell);
-    identifiersTable.appendChild(row);
-  });
-  return identifiersTable;
+    table.appendChild(row);
+    return table;
+  }, identifiersTable);
 }
