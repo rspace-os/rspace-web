@@ -35,7 +35,7 @@ import ValidatingSubmitButton, {
   IsInvalid,
 } from "../../components/ValidatingSubmitButton";
 import { DataGridColumn } from "../../util/table";
-import { ACCENT_COLOR } from "../../assets/branding/argos";
+import { ACCENT_COLOR } from "../../assets/branding/dmponline";
 
 const useStyles = makeStyles<{ listing: FetchingData.Fetched<unknown> }>()(
   (theme, props: { listing: FetchingData.Fetched<unknown> }) => ({
