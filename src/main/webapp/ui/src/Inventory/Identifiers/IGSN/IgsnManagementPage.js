@@ -44,19 +44,35 @@ function Toolbar({
   setState,
   isAssociated,
   setIsAssociated,
+  setColumnsMenuAnchorEl,
 }: {
   state: "draft" | "findable" | "registered" | null,
   setState: ("draft" | "findable" | "registered" | null) => void,
   isAssociated: boolean | null,
   setIsAssociated: (boolean | null) => void,
+  setColumnsMenuAnchorEl: (HTMLElement) => void,
 }): React.Node {
-  const columnMenuRef = React.useRef();
   const apiRef = useGridApiContext();
   const [stateAnchorEl, setStateAnchorEl] = React.useState<HTMLElement | null>(
     null
   );
   const [isAssociatedAnchorEl, setIsAssociatedAnchorEl] =
     React.useState<HTMLElement | null>(null);
+
+  /**
+   * The columns menu can be opened by either tapping the "Columns" toolbar
+   * button or by tapping the "Manage columns" menu item in each column's menu,
+   * logic that is handled my MUI. We provide a custom `anchorEl` so that the
+   * menu is positioned beneath the "Columns" toolbar button to be consistent
+   * with the other toolbar menus, otherwise is appears far to the left. Rather
+   * than having to hook into the logic that triggers the opening of the
+   * columns menu in both places, we just set the `anchorEl` pre-emptively.
+   */
+  const columnMenuRef = React.useRef();
+  React.useEffect(() => {
+    if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
+  }, [setColumnsMenuAnchorEl]);
+
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
       <DropdownButton
@@ -199,6 +215,8 @@ export default function IgsnManagementPage({
   const [actionsAnchorEl, setActionsAnchorEl] =
     React.useState<HTMLElement | null>(null);
   const theme = useTheme();
+  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
+    React.useState<?HTMLElement>(null);
 
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -435,7 +453,11 @@ export default function IgsnManagementPage({
                       setState,
                       isAssociated,
                       setIsAssociated,
+                          setColumnsMenuAnchorEl,
                     },
+                    panel: {
+                      anchorEl: columnsMenuAnchorEl,
+                    }
                   }}
                   localeText={{
                     noRowsLabel: "No IGSNs",
