@@ -55,6 +55,8 @@ declare module "@mui/material/styles/components" {
       };
       styleOverrides?: {
         root: unknown;
+        paper: unknown;
+        menu: unknown;
       };
       variants?: object;
     };
@@ -758,6 +760,18 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                     hoverDarkenCoefficient
                   ),
                 },
+              },
+            },
+            paper: {
+              boxShadow: "none",
+              border: accentedBorder,
+            },
+            menu: {
+              "& .MuiPaper-root": {
+                boxShadow: "none",
+              },
+              "& .MuiDataGrid-menuList": {
+                border: accentedBorder,
               },
             },
           },

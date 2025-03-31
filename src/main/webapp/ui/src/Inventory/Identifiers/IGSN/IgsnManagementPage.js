@@ -334,7 +334,7 @@ export default function IgsnManagementPage({
                     title="Delete"
                     subheader="Does not delete any linked item."
                     onClick={() => {
-                      deleteIdentifiers(selectedIgsns);
+                      void deleteIdentifiers(selectedIgsns);
                       setActionsAnchorEl(null);
                     }}
                     backgroundColor={lighten(theme.palette.error.light, 0.5)}
