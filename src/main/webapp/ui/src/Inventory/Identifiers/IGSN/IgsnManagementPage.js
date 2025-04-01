@@ -227,7 +227,7 @@ export default function IgsnManagementPage({
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Main sx={{ overflowY: "auto" }}>
         <Stack spacing={2} sx={{ my: 2, mr: 1 }}>
-          <TitledBox title="IGSNs" border>
+          <TitledBox title="IGSN IDs" border>
             <Typography>
               The RSpace IGSN ID integration enables researchers to create,
               publish and update IGSN ID metadata all within Inventory. IGSN IDs
@@ -243,12 +243,13 @@ export default function IgsnManagementPage({
               .
             </Typography>
           </TitledBox>
-          <TitledBox title="Register IGSNs" border>
+          <TitledBox title="Register IGSN IDs" border>
             <Stack spacing={2} alignItems="flex-start">
               <Typography>
-                You can register and associate an IGSN with an existing item in
-                Inventory by selecting <strong>Create a new Identifier</strong>{" "}
-                under its <strong>Identifiers</strong> heading.
+                You can register and associate an IGSN ID with an existing item
+                in Inventory by selecting{" "}
+                <strong>Create a new Identifier</strong> under its{" "}
+                <strong>Identifiers</strong> heading.
               </Typography>
               <Typography>
                 You can also bulk-register IGSN IDs to be used at a later date,
@@ -266,10 +267,10 @@ export default function IgsnManagementPage({
                 open={bulkRegisterDialogOpen}
                 onClose={() => setBulkRegisterDialogOpen(false)}
               >
-                <DialogTitle>Bulk Register IGSNs</DialogTitle>
+                <DialogTitle>Bulk Register IGSN IDs</DialogTitle>
                 <DialogContent>
                   <TextField
-                    label="Number of new IGSNs"
+                    label="Number of new IGSN IDs"
                     type="number"
                     inputProps={{ min: 1, max: 100 }}
                     value={numberOfNewIdentifiers}
@@ -300,7 +301,7 @@ export default function IgsnManagementPage({
               </Dialog>
             </Stack>
           </TitledBox>
-          <TitledBox title="Manage IGSNs" border>
+          <TitledBox title="Manage IGSN IDs" border>
             <Stack spacing={0.5} alignItems="flex-start">
               <Typography>
                 To access actions such as editing metadata and publishing,
@@ -315,7 +316,7 @@ export default function IgsnManagementPage({
                   size="small"
                   disableElevation
                   startIcon={<ChecklistIcon />}
-                  aria-label="Actions menu for selected IGSNs"
+                  aria-label="Actions menu for selected IGSN IDs"
                   aria-haspopup="menu"
                   aria-expanded={false}
                   id="actions-menu"
@@ -337,7 +338,7 @@ export default function IgsnManagementPage({
                 >
                   <AccentMenuItem
                     title="Print"
-                    subheader="Print barcode labels for selected IGSNs."
+                    subheader="Print barcode labels for selected IGSN IDs."
                     onClick={() => {
                       setPrintDialogOpen(true);
                     }}
@@ -383,7 +384,7 @@ export default function IgsnManagementPage({
                             params.row,
                             (a, b) => a.doi === b.doi
                           )}
-                          inputProps={{ "aria-label": "IGSN selection" }}
+                          inputProps={{ "aria-label": "IGSN ID selection" }}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setSelectedIgsns(
@@ -482,7 +483,7 @@ export default function IgsnManagementPage({
                     },
                   }}
                   localeText={{
-                    noRowsLabel: "No IGSNs",
+                    noRowsLabel: "No IGSN IDs",
                   }}
                 />
               </div>
