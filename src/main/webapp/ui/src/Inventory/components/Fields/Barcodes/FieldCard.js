@@ -39,7 +39,7 @@ import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip"
 import ImagePreview from "../../../../components/ImagePreview";
 import PreviewIcon from "@mui/icons-material/Visibility";
 import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
-import PrintDialog from "../../Print/PrintDialog";
+import PrintDialog from "./PrintDialog";
 import PrintIcon from "@mui/icons-material/Print";
 import PrintDisabledIcon from "@mui/icons-material/PrintDisabled";
 import Grid from "@mui/material/Grid";
