@@ -35,6 +35,17 @@ type AccentMenuItemArgs = {
    */
   autoFocus?: boolean;
   tabIndex?: number;
+
+  /*
+   * Use this property to indicate that this menu item is the "current" item.
+   * It will be styled with a slightly different background colour, and so may
+   * not be obvious to all users, but will be exposed to screen readers as the
+   * aria-current attribute. To find out more about what it means for an menu
+   * item to be "current", see https://www.w3.org/TR/wai-aria-1.1/#aria-current.
+   * Examples include the current page in a navigation menu, the current tab in
+   * a tabbed interface, the applied sort order in a list, etc.
+   */
+  current?: boolean | "page" | "step" | "location" | "date" | "time";
 };
 
 /**
@@ -67,6 +78,7 @@ export default styled(
         titleTypographyProps,
         component = "li",
         href,
+        current,
       },
       ref
     ) => (
@@ -82,6 +94,15 @@ export default styled(
         aria-haspopup={ariaHasPopup}
         component={component}
         href={href}
+        selected={
+          current === true ||
+          current === "page" ||
+          current === "step" ||
+          current === "location" ||
+          current === "date" ||
+          current === "time"
+        }
+        aria-current={current}
       >
         <CardHeader
           title={title}
@@ -120,10 +141,16 @@ export default styled(
       padding: 0,
       borderRadius: "2px",
       border: prefersMoreContrast ? "2px solid #000" : "none",
-      backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.24),
+      backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.12),
       transition: "background-color ease-in-out .2s",
       "&:hover": {
         backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.36),
+      },
+      "&.Mui-selected": {
+        backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.5),
+        "&:hover": {
+          backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.72),
+        },
       },
       "& .MuiCardHeader-root": {
         padding: theme.spacing(compact ? 1 : 2),

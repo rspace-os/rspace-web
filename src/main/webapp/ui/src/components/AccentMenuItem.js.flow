@@ -29,4 +29,6 @@ declare export default function AccentMenuItem({|
    */
   autoFocus?: boolean,
   tabIndex?: number,
+
+  current?: boolean | "page" | "step" | "location" | "date" | "time",
 |}): Node;

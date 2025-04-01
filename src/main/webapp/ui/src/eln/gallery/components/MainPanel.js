@@ -1513,6 +1513,7 @@ function GalleryMainPanel({
                     setViewMode("grid");
                     selection.clear();
                   }}
+                  current={viewMode === "grid"}
                 />
                 <AccentMenuItem
                   title="Tree"
@@ -1524,6 +1525,7 @@ function GalleryMainPanel({
                     setViewMode("tree");
                     selection.clear();
                   }}
+                  current={viewMode === "tree"}
                 />
                 <AccentMenuItem
                   title="Carousel"
@@ -1539,6 +1541,7 @@ function GalleryMainPanel({
                      * if there is one
                      */
                   }}
+                  current={viewMode === "carousel"}
                 />
               </StyledMenu>
               <Button
@@ -1613,6 +1616,7 @@ function GalleryMainPanel({
                     });
                   }}
                   titleTypographyProps={{ sx: { whiteSpace: "break-spaces" } }}
+                  current={orderBy === "name"}
                 />
                 <AccentMenuItem
                   title={`Modification Date${match<void, string>([
@@ -1667,6 +1671,7 @@ function GalleryMainPanel({
                     });
                   }}
                   titleTypographyProps={{ sx: { whiteSpace: "break-spaces" } }}
+                  current={orderBy === "modificationDate"}
                 />
               </StyledMenu>
             </Stack>
