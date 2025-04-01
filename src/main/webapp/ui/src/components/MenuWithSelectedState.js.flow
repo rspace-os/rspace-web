@@ -1,0 +1,10 @@
+// @flow
+
+import { type Node, type Element } from "react";
+import AccentMenuItem from "./AccentMenuItem";
+
+declare export default function MenuWithSelectedState({|
+  label: string;
+  currentState: string;
+  children: $ReadOnlyArray<Element<typeof AccentMenuItem>>;
+|}): Node;

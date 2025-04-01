@@ -219,6 +219,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
           main: mainAccentColor,
           contrastText: contrastTextColor,
           saturated: linkColor,
+          background: accentedBackground,
           dark: linkColor,
         } as PaletteColorOptions,
         callToAction: {
@@ -560,9 +561,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               },
             },
             containedPrimary: {
-              backgroundColor: mainAccentColor,
+              backgroundColor: accentedBackground,
               color: contrastTextColor,
-              borderColor: mainAccentColor,
+              borderColor: accentedBackground,
               "&:hover": {
                 borderColor: darken(mainAccentColor, hoverDarkenCoefficient),
                 backgroundColor: darken(
