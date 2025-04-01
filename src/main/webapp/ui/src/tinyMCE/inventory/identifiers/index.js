@@ -93,8 +93,8 @@ function IdentifiersDialog({
       <DialogTitle>Insert Barcodes Table</DialogTitle>
       <DialogContent>
         <Typography variant="body1">
-          Select from newly registered IGSNs or those already with linked items,
-          and insert a table into your document, each with a QR code.
+          Select from newly registered IGSN IDs or those already with linked
+          items, and insert a table into your document, each with a QR code.
         </Typography>
         <IgsnManagementPage
           selectedIgsns={selectedIgsns}
@@ -227,7 +227,7 @@ function tableHtml({
   const identifiersTable = document.createElement("table");
   identifiersTable.setAttribute("data-tableSource", "identifiers");
   const tableHeader = document.createElement("tr");
-  ["IGSN", "barcode"].forEach((cell) => {
+  ["IGSN ID", "barcode"].forEach((cell) => {
     const columnName = document.createElement("th");
     columnName.textContent = cell;
     tableHeader.appendChild(columnName);
