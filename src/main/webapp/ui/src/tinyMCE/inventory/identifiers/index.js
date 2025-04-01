@@ -203,6 +203,7 @@ class IdentifiersPlugin {
     if (!window.insertActions) window.insertActions = new Map();
     window.insertActions.set("optIdentifiers", {
       text: "Inventory Identifiers",
+      aliases: ["IGSN"],
       icon: "inventory_identifiers",
       action: () => {
         identifiersRenderer.next({

@@ -342,7 +342,8 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
         // Normalize the input to match the same action regardless if the end-user used upper or lowercase.
         return (
             action.type === 'separator' ||
-            action.text.toLowerCase().indexOf(pattern.toLowerCase()) !== -1
+            action.text.toLowerCase().indexOf(pattern.toLowerCase()) !== -1 ||
+            action.aliases?.some(alias => alias.toLowerCase().indexOf(pattern.toLowerCase()) !== -1)
         );
       }).filter((action, i, actions) => {
         // As the end-user filters the list, separators can end up adjacent to
