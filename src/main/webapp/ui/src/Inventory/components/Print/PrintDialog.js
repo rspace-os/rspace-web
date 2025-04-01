@@ -27,6 +27,10 @@ import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import ApiService from "../../../common/InvApiService";
 import Stack from "@mui/material/Stack";
+import { toTitleCase } from "../../../util/Util";
+import ContainerModel from "../../../stores/models/ContainerModel";
+import SubSampleModel from "../../../stores/models/SubSampleModel";
+import { Optional } from "../../../util/optional";
 
 const useStyles = makeStyles()((theme) => ({
   rowWrapper: {
@@ -402,36 +406,76 @@ function PrintDialog({
             )}
           >
             <HelperText />
-            {/* we preview only one item, resulting from choice of print options */}
-            {printOptions.printIdentifierType === "IGSN" &&
-            itemsToPrint.some((record) => record.identifiers.length === 0)
-              ? "Please resolve error."
-              : ArrayUtils.head(itemsToPrint)
-                  .map((inventoryRecord) => (
-                    <PreviewPrintItem
-                      key={inventoryRecord.globalId}
-                      index={0}
-                      printOptions={printOptions}
-                      itemOwner={inventoryRecord}
-                      imageLinks={imageLinks}
-                      target="screen"
-                    />
-                  ))
-                  .elseThrow()}
-          </div>
-          {/* we need the whole component for ReactToPrint, but not visible here */}
-          <div className={classes.hidden}>
-            <PrintContents
-              ref={componentToPrint}
-              printOptions={printOptions}
-              itemsToPrint={itemsToPrint}
-              imageLinks={imageLinks}
-              target={
-                printOptions.printerType === "GENERIC"
-                  ? "multiplePrint"
-                  : "singlePrint"
-              }
-            />
+            {imageLinks.length === itemsToPrint.length ? (
+              <>
+                {/* we preview only one item, resulting from choice of print options */}
+                {printOptions.printIdentifierType === "IGSN" &&
+                itemsToPrint.some((record) => record.identifiers.length === 0)
+                  ? "Please resolve error."
+                  : ArrayUtils.head(itemsToPrint)
+                      .map((inventoryRecord) => (
+                        <PreviewPrintItem
+                          key={inventoryRecord.globalId}
+                          index={0}
+                          printOptions={printOptions}
+                          printLabelContents={{
+                            itemLabel: `${toTitleCase(
+                              inventoryRecord.type
+                            )} - ${inventoryRecord.name}`,
+                            locationLabel:
+                              inventoryRecord instanceof ContainerModel ||
+                              inventoryRecord instanceof SubSampleModel
+                                ? inventoryRecord.immediateParentContainer
+                                    ?.globalId ?? "-"
+                                : "-",
+                            identifier: ArrayUtils.getAt(
+                              0,
+                              inventoryRecord.identifiers
+                            ),
+                            globalId: Optional.fromNullable(
+                              inventoryRecord.globalId
+                            ),
+                            barcodeUrl: imageLinks[0],
+                          }}
+                          imageLinks={imageLinks}
+                          target="screen"
+                        />
+                      ))
+                      .elseThrow()}
+                {/* we need the whole component for ReactToPrint, but not visible here */}
+                <div className={classes.hidden}>
+                  <PrintContents
+                    ref={componentToPrint}
+                    printOptions={printOptions}
+                    itemsToPrint={ArrayUtils.zipWith(
+                      itemsToPrint,
+                      imageLinks,
+                      (record, barcodeUrl) => ({
+                        itemLabel: `${toTitleCase(record.type)} - ${
+                          record.name
+                        }`,
+                        locationLabel:
+                          record instanceof ContainerModel ||
+                          record instanceof SubSampleModel
+                            ? record.immediateParentContainer?.globalId ?? "-"
+                            : "-",
+                        identifier: ArrayUtils.getAt(0, record.identifiers),
+                        globalId: Optional.fromNullable(record.globalId),
+                        barcodeUrl,
+                      })
+                    )}
+                    imageLinks={imageLinks}
+                    target={
+                      printOptions.printerType === "GENERIC"
+                        ? "multiplePrint"
+                        : "singlePrint"
+                    }
+                  />
+                </div>
+              </>
+            ) : (
+              <Typography variant="body2">Loading...</Typography>
+            )}
           </div>
         </Box>
       </DialogContent>
