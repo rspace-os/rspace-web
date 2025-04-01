@@ -66,23 +66,10 @@ export type PrintOptions = {
   printSize: PrintSize,
 };
 
-/**
- * PrintDialog is intended to be used - in the future - for more than barcodes
- * itemsToPrint are connected to printType
- * last 2 print types are probably going to be implemented later
- */
-
-export type PrintType =
-  | "barcodeLabel"
-  | "contextMenu"
-  | "recordDetails"
-  | "listOfMaterials";
-
 type PrintDialogArgs = {|
   showPrintDialog: boolean,
   onClose: () => void,
   imageLinks: Array<string>,
-  printType: PrintType,
   itemsToPrint: Array<[BarcodeRecord, InventoryRecord]>, // LoM ...
   printerType?: PrinterType,
   printSize?: PrintSize,
@@ -93,7 +80,6 @@ type PrintDialogArgs = {|
 type OptionsWrapperArgs = {|
   printOptions: PrintOptions,
   setPrintOptions: (PrintOptions) => void,
-  printType: PrintType,
 |};
 
 export const PrintOptionsWrapper = ({
@@ -228,7 +214,6 @@ function PrintDialog({
   showPrintDialog,
   onClose,
   imageLinks,
-  printType,
   itemsToPrint,
   printerType,
   printSize,
@@ -238,7 +223,6 @@ function PrintDialog({
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const componentToPrint = useRef<mixed>();
-  const barcodePrint = ["contextMenu", "barcodeLabel"].includes(printType);
 
   const [item, itemOwner] = itemsToPrint[0];
 
@@ -257,8 +241,7 @@ function PrintDialog({
     <>
       <Typography variant="body2" className={classes.centered}>
         <strong>
-          Preview
-          {barcodePrint ? `: Barcode Label Layout` : ""}
+          Preview Barcode Label Layout
         </strong>
       </Typography>
     </>
@@ -281,7 +264,6 @@ function PrintDialog({
           <PrintOptionsWrapper
             printOptions={printOptions}
             setPrintOptions={setPrintOptions}
-            printType={printType}
           />
           <div
             className={clsx(
@@ -294,7 +276,6 @@ function PrintDialog({
             <PreviewPrintItem
               index={0}
               printOptions={printOptions}
-              printType={printType}
               item={item}
               itemOwner={itemOwner}
               imageLinks={imageLinks}
@@ -306,7 +287,6 @@ function PrintDialog({
             <PrintContents
               ref={componentToPrint}
               printOptions={printOptions}
-              printType={printType}
               itemsToPrint={itemsToPrint}
               imageLinks={imageLinks}
               target={

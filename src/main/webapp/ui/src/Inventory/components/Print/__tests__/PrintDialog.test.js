@@ -10,7 +10,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
-import PrintDialog, { type PrintType } from "../PrintDialog";
+import PrintDialog from "../PrintDialog";
 import { generatedBarcode, persistedBarcode1 } from "./mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import {
@@ -47,13 +47,12 @@ describe("Print Tests", () => {
   const modalRoot = document.createElement("div");
   modalRoot.setAttribute("id", "modal-root");
 
-  const Dialog = ({ printType }: { printType: PrintType }) => {
+  const Dialog = () => {
     return (
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={mockRootStore()}>
           <PrintDialog
             showPrintDialog={openDialog}
-            printType={printType}
             itemsToPrint={[mockContainer]}
             onClose={() => {}}
           />
@@ -64,7 +63,7 @@ describe("Print Tests", () => {
 
   describe("PrintDialog with items to print (barcodes)", () => {
     it("renders, has radio options for printerType, printMode, printSize (plus help text)", () => {
-      render(<Dialog printType="contextMenu" />);
+      render(<Dialog />);
 
       expect(screen.getAllByRole("radio")).toHaveLength(10);
 
@@ -83,7 +82,7 @@ describe("Print Tests", () => {
 
   describe("PrintDialog with items to print (barcodes)", () => {
     it("renders, content responds to clicked options", () => {
-      render(<Dialog printType="barcodeLabel" />);
+      render(<Dialog />);
 
       const globalId = mockContainer.globalId;
       const location = "Location:";

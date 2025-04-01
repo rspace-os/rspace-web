@@ -1,7 +1,7 @@
 //@flow
 
 import React, { forwardRef, type ComponentType } from "react";
-import { type PrintOptions, type PrintType } from "./PrintDialog";
+import { type PrintOptions } from "./PrintDialog";
 import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
@@ -110,7 +110,6 @@ type Target = "screen" | "multiplePrint" | "singlePrint";
 
 type PrintContentsArgs = {|
   printOptions: PrintOptions,
-  printType: PrintType,
   itemsToPrint: $ReadOnlyArray<InventoryRecord>,
   imageLinks?: $ReadOnlyArray<string>,
   target: Target,
@@ -119,7 +118,6 @@ type PrintContentsArgs = {|
 type PreviewPrintItemArgs = {|
   index: number,
   printOptions: PrintOptions,
-  printType: PrintType,
 
   /*
    * If `printOptions.printIdentifierType` is "IGSN", then `itemOwner` SHOULD
@@ -136,12 +134,10 @@ type PreviewPrintItemArgs = {|
 export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
   index,
   printOptions,
-  printType,
   itemOwner,
   imageLinks,
   target,
 }) => {
-  const isBarcodePrint = ["contextMenu", "barcodeLabel"].includes(printType);
   const { printerType, printLayout, printSize } = printOptions;
 
   const recordString = `${toTitleCase(itemOwner.type)} - ${itemOwner.name}`;
@@ -204,7 +200,6 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
       </>
     );
   return (
-    isBarcodePrint && (
       <>
         <div className={clsx(classes.printItemWrapper, sizeClass())}>
           <Grid
@@ -280,7 +275,6 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
         {/* force page break after item (when wrapper in display block) */}
         {printerType === "LABEL" && <div className={classes.pageBreak}></div>}
       </>
-    )
   );
 };
 
@@ -288,7 +282,6 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
   (
     {
       printOptions,
-      printType,
       itemsToPrint,
       imageLinks,
       target,
@@ -321,7 +314,6 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
               <PreviewPrintItem
                 index={i}
                 printOptions={printOptions}
-                printType={printType}
                 itemOwner={itemOwner}
                 imageLinks={imageLinks}
                 target={target}
@@ -333,7 +325,6 @@ const PrintContents: ComponentType<PrintContentsArgs> = forwardRef(
                   <PreviewPrintItem
                     index={i}
                     printOptions={printOptions}
-                    printType={printType}
                     itemOwner={itemOwner}
                     imageLinks={imageLinks}
                     target={target}

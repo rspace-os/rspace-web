@@ -82,22 +82,9 @@ export type PrintOptions = {
   printCopies?: "1" | "2",
 };
 
-/**
- * PrintDialog is intended to be used - in the future - for more than barcodes
- * itemsToPrint are connected to printType
- * last 2 print types are probably going to be implemented later
- */
-
-export type PrintType =
-  | "barcodeLabel"
-  | "contextMenu"
-  | "recordDetails"
-  | "listOfMaterials";
-
 type PrintDialogArgs = {|
   showPrintDialog: boolean,
   onClose: () => void,
-  printType: PrintType,
   itemsToPrint: $ReadOnlyArray<InventoryRecord>,
   printerType?: PrinterType,
   printSize?: PrintSize,
@@ -109,7 +96,6 @@ type OptionsWrapperArgs = {|
   itemsToPrint: $ReadOnlyArray<InventoryRecord>,
   printOptions: PrintOptions,
   setPrintOptions: (PrintOptions) => void,
-  printType: PrintType,
 |};
 
 export const PrintOptionsWrapper = ({
@@ -315,7 +301,6 @@ export const PrintOptionsWrapper = ({
 function PrintDialog({
   showPrintDialog,
   onClose,
-  printType,
   itemsToPrint,
   printerType,
   printSize,
@@ -325,7 +310,6 @@ function PrintDialog({
   const { uiStore, trackingStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const componentToPrint = useRef<mixed>();
-  const barcodePrint = ["contextMenu", "barcodeLabel"].includes(printType);
 
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
     printIdentifierType: "GLOBAL ID",
@@ -344,8 +328,7 @@ function PrintDialog({
     <>
       <Typography variant="body2" className={classes.centered}>
         <strong>
-          Preview
-          {barcodePrint ? `: Barcode Label Layout` : ""}
+          Preview Barcode Label Layout
         </strong>
       </Typography>
     </>
@@ -420,7 +403,6 @@ function PrintDialog({
             itemsToPrint={itemsToPrint}
             printOptions={printOptions}
             setPrintOptions={setPrintOptions}
-            printType={printType}
           />
           <div
             className={clsx(
@@ -439,7 +421,6 @@ function PrintDialog({
                       key={inventoryRecord.globalId}
                       index={0}
                       printOptions={printOptions}
-                      printType={printType}
                       itemOwner={inventoryRecord}
                       imageLinks={imageLinks}
                       target="screen"
@@ -452,7 +433,6 @@ function PrintDialog({
             <PrintContents
               ref={componentToPrint}
               printOptions={printOptions}
-              printType={printType}
               itemsToPrint={itemsToPrint}
               imageLinks={imageLinks}
               target={

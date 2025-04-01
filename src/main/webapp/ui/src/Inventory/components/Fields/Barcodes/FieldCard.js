@@ -324,7 +324,6 @@ const CollapseContents = observer(
           Boolean(connectedItem) && (
             <PrintDialog
               showPrintDialog={showPrintDialog}
-              printType="barcodeLabel"
               onClose={() => {
                 if (previewImages.length > 0) {
                   previewImages.forEach((pi) => URL.revokeObjectURL(pi));

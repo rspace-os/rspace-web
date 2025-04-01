@@ -66,7 +66,6 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef(
               <PrintDialog
                 showPrintDialog={showPrintDialog}
                 onClose={() => setShowPrintDialog(false)}
-                printType="contextMenu"
                 itemsToPrint={selectedResults}
                 closeMenu={closeMenu}
               />
