@@ -19,7 +19,6 @@ import Checkbox from "@mui/material/Checkbox";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import GlobalId from "../../../components/GlobalId";
 import MenuItem from "@mui/material/MenuItem";
-import DropdownButton from "../../../components/DropdownButton";
 import Box from "@mui/material/Box";
 import Main from "../../Main";
 import { useIdentifiers, type Identifier } from "../../useIdentifiers";
@@ -40,6 +39,7 @@ import RsSet from "../../../util/set";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import PrintDialog from "./PrintDialog";
 import PrintIcon from "@mui/icons-material/Print";
+import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
 
 function Toolbar({
   state,
@@ -55,11 +55,6 @@ function Toolbar({
   setColumnsMenuAnchorEl: (HTMLElement) => void,
 }): React.Node {
   const apiRef = useGridApiContext();
-  const [stateAnchorEl, setStateAnchorEl] = React.useState<HTMLElement | null>(
-    null
-  );
-  const [isAssociatedAnchorEl, setIsAssociatedAnchorEl] =
-    React.useState<HTMLElement | null>(null);
 
   /**
    * The columns menu can be opened by either tapping the "Columns" toolbar
@@ -75,104 +70,74 @@ function Toolbar({
     if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
   }, [setColumnsMenuAnchorEl]);
 
+  const linkedItemStateLabel = (() => {
+    if (isAssociated === null) return "All";
+    if (isAssociated === true) return "Yes";
+    return "No";
+  })();
+
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
-      <DropdownButton
-        onClick={(event) => {
-          setStateAnchorEl(event.currentTarget);
-        }}
-        name="State"
-        sx={{ textTransform: "uppercase", px: 1.5 }}
+      <MenuWithSelectedState label="State" currentState={state ?? "All"}>
+        <AccentMenuItem
+          title="All"
+          subheader="Show all IGSN IDs"
+          onClick={() => {
+            setState(null);
+          }}
+          current={state === null}
+        />
+        <AccentMenuItem
+          title="Draft"
+          subheader="A newly created IGSN ID without any public metadata."
+          onClick={() => {
+            setState("draft");
+          }}
+          current={state === "draft"}
+        />
+        <AccentMenuItem
+          title="Findable"
+          subheader="A published, searchable IGSN ID with a public landing page."
+          onClick={() => {
+            setState("findable");
+          }}
+          current={state === "findable"}
+        />
+        <AccentMenuItem
+          title="Registered"
+          subheader="An IGSN ID that has been retracted from public access."
+          onClick={() => {
+            setState("registered");
+          }}
+          current={state === "registered"}
+        />
+      </MenuWithSelectedState>
+      <MenuWithSelectedState
+        label="Linked Item"
+        currentState={linkedItemStateLabel}
       >
-        <Menu
-          anchorEl={stateAnchorEl}
-          open={Boolean(stateAnchorEl)}
-          MenuListProps={{
-            disablePadding: true,
+        <AccentMenuItem
+          title="All Identifiers"
+          onClick={() => {
+            setIsAssociated(null);
           }}
-          onClose={() => {
-            setStateAnchorEl(null);
+          current={isAssociated === null}
+        />
+        <AccentMenuItem
+          title="No Linked Item"
+          onClick={() => {
+            setIsAssociated(false);
           }}
-        >
-          <AccentMenuItem
-            title="All"
-            subheader="Show all IGSN IDs"
-            onClick={() => {
-              setState(null);
-              setStateAnchorEl(null);
-            }}
-            current={state === null}
-          />
-          <AccentMenuItem
-            title="Draft"
-            subheader="A newly created IGSN ID without any public metadata."
-            onClick={() => {
-              setState("draft");
-              setStateAnchorEl(null);
-            }}
-            current={state === "draft"}
-          />
-          <AccentMenuItem
-            title="Findable"
-            subheader="A published, searchable IGSN ID with a public landing page."
-            onClick={() => {
-              setState("findable");
-              setStateAnchorEl(null);
-            }}
-            current={state === "findable"}
-          />
-          <AccentMenuItem
-            title="Registered"
-            subheader="An IGSN ID that has been retracted from public access."
-            onClick={() => {
-              setState("registered");
-              setStateAnchorEl(null);
-            }}
-            current={state === "registered"}
-          />
-        </Menu>
-      </DropdownButton>
-      <DropdownButton
-        onClick={(event) => {
-          setIsAssociatedAnchorEl(event.currentTarget);
-        }}
-        name="Linked Item"
-        sx={{ textTransform: "uppercase", px: 1.5 }}
-      >
-        <Menu
-          anchorEl={isAssociatedAnchorEl}
-          open={Boolean(isAssociatedAnchorEl)}
-          onClose={() => setIsAssociatedAnchorEl(null)}
-          MenuListProps={{
-            disablePadding: true,
+          current={isAssociated === false}
+        />
+        <AccentMenuItem
+          title="Has Linked Item"
+          onClick={() => {
+            setIsAssociated(true);
           }}
-        >
-          <AccentMenuItem
-            title="All Identifiers"
-            onClick={() => {
-              setIsAssociated(null);
-              setIsAssociatedAnchorEl(null);
-            }}
-            current={isAssociated === null}
-          />
-          <AccentMenuItem
-            title="No Linked Item"
-            onClick={() => {
-              setIsAssociated(false);
-              setIsAssociatedAnchorEl(null);
-            }}
-            current={isAssociated === false}
-          />
-          <AccentMenuItem
-            title="Has Linked Item"
-            onClick={() => {
-              setIsAssociated(true);
-              setIsAssociatedAnchorEl(null);
-            }}
-            current={isAssociated === true}
-          />
-        </Menu>
-      </DropdownButton>
+          current={isAssociated === true}
+        />
+      </MenuWithSelectedState>
       <Box flexGrow={1}></Box>
       <GridToolbarColumnsButton
         variant="outlined"
