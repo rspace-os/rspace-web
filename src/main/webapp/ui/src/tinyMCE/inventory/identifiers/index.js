@@ -16,7 +16,7 @@ import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManageme
 import Button from "@mui/material/Button";
 import useOauthToken from "../../../common/useOauthToken";
 import axios from "@/common/axios";
-import { doNotAwait } from "../../../util/Util";
+import { doNotAwait, toTitleCase } from "../../../util/Util";
 import RsSet from "../../../util/set";
 import { type Identifier } from "../../../Inventory/useIdentifiers";
 import Typography from "@mui/material/Typography";
@@ -227,7 +227,7 @@ function tableHtml({
   const identifiersTable = document.createElement("table");
   identifiersTable.setAttribute("data-tableSource", "identifiers");
   const tableHeader = document.createElement("tr");
-  ["IGSN ID", "barcode"].forEach((cell) => {
+  ["IGSN DOI", "State", "Linked Item", "Barcode"].forEach((cell) => {
     const columnName = document.createElement("th");
     columnName.textContent = cell;
     tableHeader.appendChild(columnName);
@@ -238,6 +238,12 @@ function tableHtml({
     const igsnCell = document.createElement("td");
     igsnCell.textContent = igsn.doi;
     row.appendChild(igsnCell);
+    const stateCell = document.createElement("td");
+    stateCell.textContent = toTitleCase(igsn.state);
+    row.appendChild(stateCell);
+    const linkedItemCell = document.createElement("td");
+    linkedItemCell.textContent = igsn.associatedGlobalId ?? "NONE";
+    row.appendChild(linkedItemCell);
     const barcodeCell = document.createElement("td");
     const img = document.createElement("img");
     img.src = barcodeUrl;
