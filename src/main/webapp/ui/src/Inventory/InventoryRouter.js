@@ -15,8 +15,7 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import Alerts from "./components/Alerts";
 import Analytics from "./Analytics";
 import Box from "@mui/material/Box";
-
-const IdentifiersRouter = React.lazy(() => import("./Identifiers/Router"));
+import IdentifiersRouter from "./Identifiers/Router";
 
 const RedirectToBench = () => {
   const {
