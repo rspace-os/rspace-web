@@ -65,12 +65,6 @@ export type PrintLayout = "BASIC" | "FULL";
 export type PrintSize = "SMALL" | "LARGE";
 
 export type PrintOptions = {
-  /*
-   * All records have a global ID, but some also have an IGSN. The print dialog
-   * should support printing either, where possible.
-   */
-  printIdentifierType?: "GLOBAL ID" | "IGSN",
-
   printerType: PrinterType,
   printLayout: PrintLayout,
   printSize: PrintSize,
@@ -279,7 +273,6 @@ function PrintDialog({
   const componentToPrint = useRef<mixed>();
 
   const [printOptions, setPrintOptions] = useState<PrintOptions>({
-    printIdentifierType: "IGSN", // TODO: make this constant
     printerType: printerType ?? "GENERIC",
     printLayout: "FULL",
     printSize: printSize ?? "LARGE",
@@ -367,7 +360,10 @@ function PrintDialog({
                     <PreviewPrintItem
                       key={identifier.doi}
                       index={0}
-                      printOptions={printOptions}
+                      printOptions={{
+                        ...printOptions,
+                        printIdentifierType: "IGSN",
+                      }}
                       printLabelContents={{
                         itemLabel: "-",
                         locationLabel: "-",
@@ -384,7 +380,10 @@ function PrintDialog({
                 <div className={classes.hidden}>
                   <PrintContents
                     ref={componentToPrint}
-                    printOptions={printOptions}
+                    printOptions={{
+                      ...printOptions,
+                      printIdentifierType: "IGSN",
+                    }}
                     itemsToPrint={ArrayUtils.zipWith(
                       itemsToPrint,
                       imageLinks,
@@ -431,7 +430,7 @@ function PrintDialog({
             handleClose();
             trackingStore.trackEvent("user:print:barcodeLabel", {
               count: itemsToPrint.length,
-              printIdentifierType: printOptions.printIdentifierType,
+              printIdentifierType: "IGSN",
               printerType: printOptions.printerType,
               printLayout: printOptions.printLayout,
               printSize: printOptions.printSize,
