@@ -17,7 +17,7 @@ import { type GlobalId } from "../../../stores/definitions/BaseRecord";
 export type PrintLabelContents = {|
   itemLabel: string,
   locationLabel: string,
-  identifier: Optional<Identifier>,
+  identifier: Optional<{ doi: string }>,
   globalId: Optional<GlobalId>,
   barcodeUrl: string,
 |};

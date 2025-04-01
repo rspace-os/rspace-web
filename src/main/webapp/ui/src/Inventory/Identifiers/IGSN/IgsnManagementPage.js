@@ -38,6 +38,8 @@ import TextField from "@mui/material/TextField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import RsSet from "../../../util/set";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import PrintDialog from "./PrintDialog";
+import PrintIcon from "@mui/icons-material/Print";
 
 function Toolbar({
   state,
@@ -219,6 +221,7 @@ export default function IgsnManagementPage({
   const theme = useTheme();
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<?HTMLElement>(null);
+  const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
 
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -332,6 +335,23 @@ export default function IgsnManagementPage({
                     disablePadding: true,
                   }}
                 >
+                  <AccentMenuItem
+                    title="Print"
+                    subheader="Print barcode labels for selected IGSNs."
+                    onClick={() => {
+                      setPrintDialogOpen(true);
+                    }}
+                    avatar={<PrintIcon />}
+                    compact
+                  />
+                  <PrintDialog
+                    showPrintDialog={printDialogOpen}
+                    onClose={() => {
+                      setPrintDialogOpen(false);
+                      setActionsAnchorEl(null);
+                    }}
+                    itemsToPrint={selectedIgsns.toArray()}
+                  />
                   <AccentMenuItem
                     title="Delete"
                     subheader="Does not delete any linked item."
