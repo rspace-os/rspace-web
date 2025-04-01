@@ -136,13 +136,13 @@ export const PrintOptionsWrapper = ({
             <FormControlLabel
               value="IGSN"
               control={<Radio size="small" />}
-              label="IGSN"
+              label="IGSN ID"
             />
           </RadioGroup>
           {printOptions.printIdentifierType === "IGSN" &&
             itemsToPrint.some((record) => record.identifiers.length === 0) && (
               <Alert severity="error">
-                Some of the selected records do not have an IGSN.
+                Some of the selected records do not have an IGSN ID.
               </Alert>
             )}
         </FormControl>

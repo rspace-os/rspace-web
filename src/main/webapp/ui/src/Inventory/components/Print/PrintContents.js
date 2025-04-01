@@ -193,7 +193,7 @@ export const PreviewPrintItem: ComponentType<PreviewPrintItemArgs> = ({
             fontSize: "0.8em",
           }}
         >
-          IGSN
+          IGSN ID
         </strong>
         <br />
         {itemOwner.identifiers[0].doi}
