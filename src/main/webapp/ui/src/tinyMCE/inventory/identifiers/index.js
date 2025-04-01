@@ -178,7 +178,7 @@ class IdentifiersPlugin {
 
     editor.ui.registry.addMenuItem("optIdentifiers", {
       text: "Inventory Identifiers",
-      icon: "newPlugin",
+      icon: "inventory_identifiers",
       onAction: () => {
         identifiersRenderer.next({
           open: true,
@@ -190,7 +190,7 @@ class IdentifiersPlugin {
     });
     editor.ui.registry.addButton("identifiers", {
       tooltip: "Inventory Identifiers",
-      icon: "newPlugin",
+      icon: "inventory_identifiers",
       onAction: () => {
         identifiersRenderer.next({
           open: true,
@@ -203,7 +203,7 @@ class IdentifiersPlugin {
     if (!window.insertActions) window.insertActions = new Map();
     window.insertActions.set("optIdentifiers", {
       text: "Inventory Identifiers",
-      icon: "newPlugin",
+      icon: "inventory_identifiers",
       action: () => {
         identifiersRenderer.next({
           open: true,
