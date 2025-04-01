@@ -16,7 +16,6 @@ import Radio from "@mui/material/Radio";
 import Typography from "@mui/material/Typography";
 import { makeStyles } from "tss-react/mui";
 import useStores from "../../../stores/use-stores";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import Alert from "@mui/material/Alert";
 import PrintContents, {
   PreviewPrintItem,
@@ -29,9 +28,6 @@ import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import ApiService from "../../../common/InvApiService";
 import Stack from "@mui/material/Stack";
-import { toTitleCase } from "../../../util/Util";
-import ContainerModel from "../../../stores/models/ContainerModel";
-import SubSampleModel from "../../../stores/models/SubSampleModel";
 import { Optional } from "../../../util/optional";
 import { type Identifier } from "../../useIdentifiers";
 
@@ -100,13 +96,11 @@ type PrintDialogArgs = {|
 |};
 
 type OptionsWrapperArgs = {|
-  itemsToPrint: $ReadOnlyArray<Identifier>,
   printOptions: PrintOptions,
   setPrintOptions: (PrintOptions) => void,
 |};
 
 export const PrintOptionsWrapper = ({
-  itemsToPrint,
   printOptions,
   setPrintOptions,
 }: OptionsWrapperArgs): Node => {
@@ -300,9 +294,7 @@ function PrintDialog({
   const HelperText = () => (
     <>
       <Typography variant="body2" className={classes.centered}>
-        <strong>
-          Preview Barcode Label Layout
-        </strong>
+        <strong>Preview Barcode Label Layout</strong>
       </Typography>
     </>
   );
@@ -314,16 +306,16 @@ function PrintDialog({
     imageLinks.forEach((img) => URL.revokeObjectURL(img));
 
     const getImageUrl = async (identifier: Identifier) => {
-        const { data } = await ApiService.query<{||}, Blob>(
-          "/barcodes",
-          new URLSearchParams({
-            content: `https://doi.org/${identifier.doi}`,
-            barcodeType: "QR",
-          }),
-          true
-        );
-        const file = new File([data], "", { type: "image/png" });
-        return URL.createObjectURL(file);
+      const { data } = await ApiService.query<{||}, Blob>(
+        "/barcodes",
+        new URLSearchParams({
+          content: `https://doi.org/${identifier.doi}`,
+          barcodeType: "QR",
+        }),
+        true
+      );
+      const file = new File([data], "", { type: "image/png" });
+      return URL.createObjectURL(file);
     };
 
     Promise.all(itemsToPrint.map(getImageUrl))
@@ -357,7 +349,6 @@ function PrintDialog({
           }
         >
           <PrintOptionsWrapper
-            itemsToPrint={itemsToPrint}
             printOptions={printOptions}
             setPrintOptions={setPrintOptions}
           />
@@ -371,24 +362,24 @@ function PrintDialog({
             {imageLinks.length === itemsToPrint.length ? (
               <>
                 {/* we preview only one item, resulting from choice of print options */}
-                  {ArrayUtils.head(itemsToPrint)
-                      .map((identifier) => (
-                        <PreviewPrintItem
-                          key={identifier.doi}
-                          index={0}
-                          printOptions={printOptions}
-                          printLabelContents={{
-                            itemLabel: "-",
-                            locationLabel: "-",
-                            identifier: Optional.present(identifier),
-                            globalId: Optional.empty(),
-                            barcodeUrl: imageLinks[0],
-                          }}
-                          imageLinks={imageLinks}
-                          target="screen"
-                        />
-                      ))
-                      .elseThrow()}
+                {ArrayUtils.head(itemsToPrint)
+                  .map((identifier) => (
+                    <PreviewPrintItem
+                      key={identifier.doi}
+                      index={0}
+                      printOptions={printOptions}
+                      printLabelContents={{
+                        itemLabel: "-",
+                        locationLabel: "-",
+                        identifier: Optional.present(identifier),
+                        globalId: Optional.empty(),
+                        barcodeUrl: imageLinks[0],
+                      }}
+                      imageLinks={imageLinks}
+                      target="screen"
+                    />
+                  ))
+                  .elseThrow()}
                 {/* we need the whole component for ReactToPrint, but not visible here */}
                 <div className={classes.hidden}>
                   <PrintContents
