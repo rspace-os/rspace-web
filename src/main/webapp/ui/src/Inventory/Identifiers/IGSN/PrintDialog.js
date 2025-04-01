@@ -430,7 +430,7 @@ function PrintDialog({
             handleClose();
             trackingStore.trackEvent("user:print:barcodeLabel", {
               count: itemsToPrint.length,
-              printIdentifierType: "IGSN",
+              printIdentifierType: "IGSN ID",
               printerType: printOptions.printerType,
               printLayout: printOptions.printLayout,
               printSize: printOptions.printSize,
