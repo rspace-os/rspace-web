@@ -160,6 +160,10 @@ function Toolbar({
   );
 }
 
+/**
+ * The IGSN Management page allows users to view, bulk register, print, and
+ * otherwise manage IGSN IDs.
+ */
 export default function IgsnManagementPage({
   selectedIgsns,
   setSelectedIgsns,
