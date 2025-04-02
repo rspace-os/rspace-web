@@ -2158,7 +2158,36 @@ paths:
         '200':
           description: Details of connected attachment (ApiInventoryFile object).
 
+
   '/identifiers':
+    get:
+      summary: Get all the identifiers created by the `user` with a given `state`
+      description: >
+        It will return a list of identifiers that are created by the specific `user` 
+        and having the specific `state`. 
+
+        Moreover you can specify the filter `isAssociated` in case you want ONLY the Identifiers 
+        that have already been bound to a record
+
+      produces:
+        - application/json
+      tags:
+        - IGSN Identifiers
+      parameters:
+        - name: state
+          description: The state of the Identifier you want to filter in the list
+          type: string
+          in: query
+          required: false
+        - name: isAssociated
+          in: query
+          type: boolean
+          required: false
+          description: Filter only the Identifiers that are already associated to a record
+      responses:
+        '200':
+          description: The list is successfully returned
+
     post:
       summary: Register a new DataCite IGSN identifier for an inventory item
       description: >
@@ -2187,35 +2216,6 @@ paths:
       responses:
         '201':
           description: Identifier is created
-
-
-    get:
-      summary: Get all the identifiers created by the `user` with a given `state`
-      description: >
-        It will return a list of identifiers that are created by the specific `user` 
-        and having the specific `state`. 
-        
-        Moreover you can specify the filter `isAssociated` in case you want ONLY the Identifiers 
-        that have already been bound to a record
-
-      produces:
-        - application/json
-      tags:
-        - IGSN Identifiers
-      parameters:
-        - name: state
-          description: The state of the Identifier you want to filter in the list
-          type: string
-          in: query
-          required: false
-        - name: isAssociated
-          in: query
-          type: boolean
-          required: false
-          description: Filter only the Identifiers that are already associated to a record
-      responses:
-        '200':
-          description: The list is successfully returned
 
 
   '/identifiers/bulk/{count}':
