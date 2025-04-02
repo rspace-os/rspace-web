@@ -75,7 +75,7 @@ describe("Print Tests", () => {
       expect(labelOption).toBeInTheDocument();
       expect(labelOption).not.toBeChecked();
 
-      const previewHeader = "Preview: Barcode Label Layout";
+      const previewHeader = "Preview Barcode Label Layout";
       expect(screen.getByText(previewHeader)).toBeInTheDocument();
     });
   });
