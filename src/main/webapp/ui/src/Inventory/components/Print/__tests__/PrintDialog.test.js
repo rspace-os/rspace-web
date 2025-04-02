@@ -7,7 +7,7 @@
 
 import "@testing-library/jest-dom";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import PrintDialog from "../PrintDialog";
@@ -20,6 +20,7 @@ import {
 import { storesContext } from "../../../../stores/stores-context";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import "../../../../../__mocks__/createObjectURL";
+import "../../../../../__mocks__/revokeObjectURL";
 
 const mockRootStore = (mockedStores: ?MockStores): StoreContainer => {
   return makeMockRootStore({
@@ -81,7 +82,7 @@ describe("Print Tests", () => {
   });
 
   describe("PrintDialog with items to print (barcodes)", () => {
-    it("renders, content responds to clicked options", () => {
+    it("renders, content responds to clicked options", async () => {
       render(<Dialog />);
 
       const globalId = mockContainer.globalId;
@@ -89,7 +90,9 @@ describe("Print Tests", () => {
       if (!globalId) throw new Error("Missing globalId");
 
       // on default "full" option elements are rendered, on "basic" they are not
-      expect(screen.getAllByText(globalId)[0]).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getAllByText(globalId)[0]).toBeInTheDocument();
+      });
 
       const basicOption = screen.getByLabelText("Basic");
       fireEvent.click(basicOption);
