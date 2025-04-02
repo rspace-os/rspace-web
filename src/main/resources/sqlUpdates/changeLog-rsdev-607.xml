@@ -1,0 +1,25 @@
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+	<changeSet id="2025-03-26a-a" context="run" author="nico">
+		<comment>RSDEV-607 add columns owner_id in the DigitalObjectIdentifier table</comment>
+		<addColumn tableName="DigitalObjectIdentifier">
+			<column type="bigint(20)" name="owner_id">
+				<constraints nullable="true" />
+			</column>
+		</addColumn>
+	</changeSet>
+	
+	<changeSet id="2025-03-26a-b" context="run" author="nico">
+		<comment>RSDEV-607 add columns owner_id in the DigitalObjectIdentifier_AUD table</comment>
+		<addColumn tableName="DigitalObjectIdentifier_AUD">
+			<column type="bigint(20)" name="owner_id">
+				<constraints nullable="true" />
+			</column>
+		</addColumn>
+	</changeSet>
+
+</databaseChangeLog>
