@@ -184,13 +184,17 @@ public class RecordManagerImpl implements RecordManager {
       for (RecordToFolder rtf : original.getParents()) {
         if (rtf.getUserName().equals(user.getUsername())) {
           parent = rtf.getFolder();
-          if (!parent.isSharedFolder()) {
+          if (!parent.isSharedFolder() && !isFolderANotebookSharedWithCurrentUser(parent, user)) {
             return parent;
           }
         }
       }
     }
     return parent;
+  }
+
+  private boolean isFolderANotebookSharedWithCurrentUser(Folder folder, User user) {
+    return folder.isNotebook() && !user.equals(folder.getOwner());
   }
 
   /** Convenience method to get a subclass of record already cast to the appropriate type. */
@@ -1327,6 +1331,11 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
+  public List<Long> getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(User user) {
+    return recordDao.getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(user);
+  }
+
+  @Override
   public List<BaseRecord> getOntologyTagsFilesForUserCalled(
       User user, String userTagsontologyDocument) {
     return recordDao.getOntologyTagsFilesForUserCalled(user, userTagsontologyDocument);
@@ -1336,5 +1345,25 @@ public class RecordManagerImpl implements RecordManager {
   public List<StructuredDocument> getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(
       String uName) {
     return recordDao.getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(uName);
+  }
+
+  @Override
+  public boolean forceMoveDocumentToOwnerWorkspace(StructuredDocument userDoc) {
+    User owner = userDoc.getOwner();
+    Folder ownerWorkspace = owner.getRootFolder();
+
+    if (userDoc.hasSingleParent()) {
+      userDoc.setSharingACL(ownerWorkspace.getSharingACL());
+      recordDao.save(userDoc);
+
+      RecordToFolder recToFolder = userDoc.getParents().iterator().next();
+      recordDao.updateRecordToFolder(recToFolder, ownerWorkspace.getId());
+
+      log.warn(
+          "executed forceMoveDocumentToOwnerWorkspace for doc " + userDoc.getGlobalIdentifier());
+      return true;
+    }
+
+    return false;
   }
 }

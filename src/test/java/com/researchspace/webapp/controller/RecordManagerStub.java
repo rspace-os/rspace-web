@@ -390,6 +390,11 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
+  public List<Long> getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(User user) {
+    return null;
+  }
+
+  @Override
   public List<BaseRecord> getOntologyTagsFilesForUserCalled(
       User user, String userTagsontologyDocument) {
     return null;
@@ -399,6 +404,11 @@ public class RecordManagerStub implements RecordManager {
   public List<StructuredDocument> getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(
       String uName) {
     return null;
+  }
+
+  @Override
+  public boolean forceMoveDocumentToOwnerWorkspace(StructuredDocument userDoc) {
+    return false;
   }
 
   @Override
