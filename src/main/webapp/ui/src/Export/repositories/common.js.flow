@@ -1,0 +1,37 @@
+// @flow
+
+export type Person = {|
+  uniqueName: string,
+  email: string,
+  type: string,
+|};
+type DMPId = number | string;
+export type DMPUserInternalId = number;
+export type Plan = {
+  dmpId: DMPId,
+  dmpTitle: string,
+  dmpUserInternalId: DMPUserInternalId,
+};
+export type Repo = {|
+  repoName: string,
+  displayName: string,
+  subjects: Array<{ id: string, name: string, parentSubject: number }>,
+  license: {
+    licenseRequired: boolean,
+    otherLicensePermitted: boolean,
+    licenses: Array<{
+      licenseDefinition: { url: string, name: string },
+      defaultLicense: boolean,
+    }>,
+  },
+  linkedDMPs: ?Array<Plan>,
+  label?: string,
+  repoCfg: mixed,
+|};
+export type StandardValidations = {|
+  description: boolean,
+  title: boolean,
+  author: boolean,
+  contact: boolean,
+  subject: boolean,
+|};
