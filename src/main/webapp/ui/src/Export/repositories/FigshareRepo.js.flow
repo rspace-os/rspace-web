@@ -1,0 +1,24 @@
+// @flow
+
+import { type Node } from "react";
+import { type Person, type Repo, type StandardValidations } from "./common";
+
+declare export default function FigshareRepo({|
+  repo: Repo,
+  handleChange: (event: {
+    target: {
+      name: "title" | "description" | "subject" | "license" | "publish",
+      value: string,
+    },
+  }) => void,
+  inputValidations: StandardValidations,
+  submitAttempt: boolean,
+  updatePeople: (people: Array<Person>) => void,
+  contacts: Array<Person>,
+  authors: Array<Person>,
+  title: string,
+  description: string,
+  subject: string,
+  license: number,
+  publish: "false" | "true",
+|}): Node;
