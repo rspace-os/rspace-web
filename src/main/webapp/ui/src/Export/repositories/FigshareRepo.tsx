@@ -1,6 +1,4 @@
-// @flow
-
-import { default as React, type Node, type ComponentType } from "react";
+import React from "react";
 import Users from "../ExportRepoUser";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -12,27 +10,31 @@ import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
 import { type Person, type Repo, type StandardValidations } from "./common";
 
-type FigshareArgs = {|
-  repo: Repo,
+type FigshareArgs = {
+  repo: Repo;
   handleChange: (event: {
     target: {
-      name: "title" | "description" | "subject" | "license" | "publish",
-      value: string,
-    },
-  }) => void,
-  inputValidations: StandardValidations,
-  submitAttempt: boolean,
-  updatePeople: (people: Array<Person>) => void,
-  contacts: Array<Person>,
-  authors: Array<Person>,
-  title: string,
-  description: string,
-  subject: string,
-  license: number,
-  publish: "false" | "true",
-|};
+      name: "title" | "description" | "subject" | "license" | "publish";
+      value: string;
+    };
+  }) => void;
+  inputValidations: StandardValidations;
+  submitAttempt: boolean;
+  updatePeople: (people: Array<Person>) => void;
+  contacts: Array<Person>;
+  authors: Array<Person>;
+  title: string;
+  description: string;
+  subject: string;
+  license: number;
+  publish: "false" | "true";
+};
 
-function FigshareRepo({
+/**
+ * This components provides a form for the user to fill in the details of the
+ * deposit that will be made with Figshare.
+ */
+export default function FigshareRepo({
   repo,
   handleChange,
   inputValidations,
@@ -45,13 +47,7 @@ function FigshareRepo({
   subject,
   license,
   publish,
-}: FigshareArgs): Node {
-  const styles = {
-    radio: {
-      flexDirection: "row",
-    },
-  };
-
+}: FigshareArgs): React.ReactNode {
   return (
     <Grid container style={{ width: "100%" }}>
       <Grid item xs={12}>
@@ -59,6 +55,7 @@ function FigshareRepo({
           error={submitAttempt && !inputValidations.title}
           name="title"
           label="Title *"
+          // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
           helperText="Please choose a title, >3 symbols"
@@ -73,6 +70,7 @@ function FigshareRepo({
           label="Description *"
           multiline
           maxRows="4"
+          // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
           helperText="Please add a relevant description for your export"
@@ -87,6 +85,7 @@ function FigshareRepo({
           select
           label="Subject *"
           defaultValue={""}
+          // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           helperText="Please select your subject"
           margin="normal"
@@ -107,6 +106,7 @@ function FigshareRepo({
           select
           label="License *"
           defaultValue={0}
+          // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           helperText="Please select your license"
           margin="normal"
@@ -126,8 +126,11 @@ function FigshareRepo({
           <RadioGroup
             aria-label="Publishing status"
             name="publish"
+            // @ts-expect-error React event handlers are not parameterised by the name prop
             onChange={handleChange}
-            style={styles.radio}
+            style={{
+              flexDirection: "row",
+            }}
             value={publish}
           >
             <FormControlLabel
@@ -152,9 +155,3 @@ function FigshareRepo({
     </Grid>
   );
 }
-
-/**
- * This components provides a form for the user to fill in the details of the
- * deposit that will be made with Figshare.
- */
-export default (FigshareRepo: ComponentType<FigshareArgs>);
