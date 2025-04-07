@@ -21,6 +21,7 @@ scripts/externalTinymcePlugins/protocols_io/plugin.min.js
 scripts/externalTinymcePlugins/sketch/plugin.min.js
 scripts/externalTinymcePlugins/snip/plugin.min.js
 scripts/externalTinymcePlugins/toolbar/styles/main.css
+scripts/externalTinymcePlugins/tools/plugin.min.js
 scripts/global.js
 scripts/global.settingsStorage.js
 scripts/pages/admin.js
