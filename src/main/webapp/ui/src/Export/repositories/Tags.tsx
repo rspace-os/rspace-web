@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import { type HasEditableFields } from "../../stores/definitions/Editable";
 import InputWrapper from "../../components/Inputs/InputWrapper";
@@ -17,26 +15,23 @@ import { Optional } from "../../util/optional";
 /**
  * The definition of a tag as used in the export flow.
  */
-export type Tag = {|
-  value: string,
-  vocabulary: string,
-  uri: string,
-  version: string,
-|};
+export type Tag = {
+  value: string;
+  vocabulary: string;
+  uri: string;
+  version: string;
+};
 
 function Tags<
-  Fields: {
-    tags: Array<Tag>,
-    ...
-  },
-  FieldOwner: HasEditableFields<Fields>
+  Fields extends { tags: Array<Tag> },
+  FieldOwner extends HasEditableFields<Fields>
 >({
   fieldOwner,
   loading,
-}: {|
-  fieldOwner: FieldOwner,
-  loading: boolean,
-|}): Node {
+}: {
+  fieldOwner: FieldOwner;
+  loading: boolean;
+}): React.ReactNode {
   return (
     <InputWrapper
       error={false}
@@ -48,7 +43,7 @@ function Tags<
         <Button
           variant="outlined"
           size="small"
-          onClick={() => fieldOwner.setFieldsDirty({ tags: ([]: Array<Tag>) })}
+          onClick={() => fieldOwner.setFieldsDirty({ tags: [] })}
           sx={{ py: 0 }}
           disabled={fieldOwner.fieldValues.tags.length === 0}
         >
@@ -96,7 +91,15 @@ function Tags<
         endAdornment={
           fieldOwner.isFieldEditable("tags") && (
             <Grid item>
-              <AddTag
+              <AddTag<{
+                enforce: true;
+                tag: {
+                  value: string;
+                  vocabulary: string;
+                  uri: string;
+                  version: string;
+                };
+              }>
                 enforceOntologies={true}
                 onSelection={(tag: Tag) => {
                   if (fieldOwner.fieldValues.tags.includes(tag)) {
@@ -125,4 +128,4 @@ function Tags<
  * tags/controlled vocabulary terms for the deposit that will be made with the
  * chosen repository.
  */
-export default (observer(Tags): typeof Tags);
+export default observer(Tags);
