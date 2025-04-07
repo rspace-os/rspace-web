@@ -1,0 +1,11 @@
+//@flow
+
+import { type Node } from "react";
+import { type Person } from "./repositories/common";
+
+declare export default function ExportRepoUser({|
+  submitAttempt: boolean,
+  inputValidations: { author: boolean, contact: boolean, ... },
+  initialPeople: Array<Person>,
+  updatePeople: (Array<Person>) => void,
+|}): Node;
