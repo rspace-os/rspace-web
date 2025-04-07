@@ -1,0 +1,23 @@
+// @flow
+
+import { type Node } from "react";
+import { type Tag } from "./Tags";
+import { type Person, type StandardValidations } from "./common";
+
+declare export default function ZenodoRepo({|
+  updatePeople: (people: Array<Person>) => void,
+  handleChange: (event: {
+    target: { name: "subject" | "title" | "description", value: string },
+  }) => void,
+  inputValidations: StandardValidations,
+  submitAttempt: boolean,
+  title: string,
+  description: string,
+  tags: Array<Tag>,
+  onTagsChange: ({
+    target: {
+      value: Array<Tag>,
+    },
+  }) => void,
+  fetchingTags: boolean,
+|}): Node;
