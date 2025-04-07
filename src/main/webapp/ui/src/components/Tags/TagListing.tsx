@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useState } from "react";
+import React, { useState } from "react";
 import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
@@ -35,20 +33,20 @@ function cardContent(tag: Tag) {
   ];
 }
 
-type TagListingArgs = {|
-  tags: Array<Tag>,
-  size?: "small" | "medium",
+type TagListingArgs = {
+  tags: Array<Tag>;
+  size?: "small" | "medium";
 
   /*
    * Additional content may be added inline to the end of the listing, such as
    * a button to add more tags. The content MUST be wrapped in a <Grid item>
    */
-  endAdornment?: Node,
+  endAdornment?: React.ReactNode;
 
-  showMetadataPopup?: boolean,
-  onDelete?: (number, Tag) => void,
-  onClick?: (Tag) => void,
-|};
+  showMetadataPopup?: boolean;
+  onDelete?: (index: number, tag: Tag) => void;
+  onClick?: (tag: Tag) => void;
+};
 
 /**
  * This component provides a listing of tags, with the ability to delete tags
@@ -63,9 +61,11 @@ export default function TagListing({
   showMetadataPopup = true,
   onDelete,
   onClick = () => {},
-}: TagListingArgs): Node {
-  const [metadataPopup, setMetadataPopup] =
-    useState<?{| anchorEl: EventTarget, tag: Tag |}>(null);
+}: TagListingArgs): React.ReactNode {
+  const [metadataPopup, setMetadataPopup] = useState<{
+    anchorEl: HTMLElement;
+    tag: Tag;
+  } | null>(null);
 
   return (
     <Grid container direction="row" spacing={1}>
@@ -81,11 +81,6 @@ export default function TagListing({
              * search.
              */
             component={onDelete ? "div" : "a"}
-            href={
-              onDelete
-                ? null
-                : `/inventory/search?query=l: (tags:"${tag.value}")`
-            }
             variant={
               tag.uri.isPresent() &&
               tag.version.isPresent() &&
@@ -102,43 +97,37 @@ export default function TagListing({
               userSelect: "unset",
               cursor: onDelete ? "default" : "pointer",
             }}
-            onClick={
-              onDelete
-                ? null
-                : (e) => {
+            {...(onDelete
+              ? { onDelete: () => onDelete(index, tag) }
+              : {
+                  href: `/inventory/search?query=l: (tags:"${tag.value}")`,
+                  onClick: (e: React.MouseEvent<HTMLDivElement>) => {
                     e.preventDefault();
                     e.stopPropagation();
                     onClick(tag);
-                  }
-            }
-            onDelete={
-              onDelete
-                ? () => {
-                    onDelete(index, tag);
-                  }
-                : null
-            }
-            icon={
-              showMetadataPopup &&
+                  },
+                })}
+            {...(showMetadataPopup &&
               tag.uri.isPresent() &&
               tag.vocabulary.isPresent() &&
-              tag.version.isPresent() ? (
-                <IconButtonWithTooltip
-                  title="View metadata"
-                  icon={<FontAwesomeIcon icon={faSitemap} />}
-                  size="small"
-                  color="primary"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setMetadataPopup({
-                      anchorEl: e.target,
-                      tag,
-                    });
-                  }}
-                />
-              ) : null
-            }
+              tag.version.isPresent() && {
+                icon: (
+                  <IconButtonWithTooltip
+                    title="View metadata"
+                    icon={<FontAwesomeIcon icon={faSitemap} />}
+                    size="small"
+                    color="primary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMetadataPopup({
+                        anchorEl: e.currentTarget,
+                        tag,
+                      });
+                    }}
+                  />
+                ),
+              })}
           />
         </Grid>
       ))}
