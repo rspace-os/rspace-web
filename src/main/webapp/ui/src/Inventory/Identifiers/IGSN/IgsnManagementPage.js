@@ -191,7 +191,7 @@ export default function IgsnManagementPage({
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<?HTMLElement>(null);
   const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
-
+ 
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Main sx={{ overflowY: "auto" }}>
@@ -326,7 +326,9 @@ export default function IgsnManagementPage({
                     title="Delete"
                     subheader="Does not delete any linked item."
                     onClick={() => {
-                      void deleteIdentifiers(selectedIgsns);
+                      void deleteIdentifiers(selectedIgsns).then(() => {
+                        setSelectedIgsns(new RsSet());
+                      });
                       setActionsAnchorEl(null);
                     }}
                     backgroundColor={lighten(theme.palette.error.light, 0.5)}
