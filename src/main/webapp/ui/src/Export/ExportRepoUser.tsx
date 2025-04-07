@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useState, type Node, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import TextField from "@mui/material/TextField";
@@ -28,7 +26,6 @@ import axios from "@/common/axios";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
-import { type UseState } from "../util/types";
 import { type Person } from "./repositories/common";
 import * as ArrayUtils from "../util/ArrayUtils";
 library.add(faUserPlus);
@@ -43,14 +40,15 @@ function AdditionalUserDialog({
   onAddUser,
   onClose,
   open,
-}: {|
-  onAddUser: (Person) => void,
-  onClose: () => void,
-  open: boolean,
-|}) {
+}: {
+  onAddUser: (person: Person) => void;
+  onClose: () => void;
+  open: boolean;
+}) {
   const [contactsName, setContactsName] = useState("");
-  const [contactsType, setContactsType]: UseState<"" | "Author" | "Contact"> =
-    useState("");
+  const [contactsType, setContactsType] = useState<"" | "Author" | "Contact">(
+    ""
+  );
   const [contactsEmail, setContactsEmail] = useState("");
 
   /*
@@ -140,7 +138,13 @@ function AdditionalUserDialog({
             select
             label="Type *"
             value={contactsType}
-            onChange={({ target: { value } }) => setContactsType(value)}
+            onChange={({ target: { value } }) => {
+              if (value === "" || value === "Author" || value === "Contact") {
+                setContactsType(value);
+                return;
+              }
+              throw new Error("Invalid type");
+            }}
             margin="normal"
             data-test-id="user-type"
           >
@@ -173,12 +177,12 @@ function AdditionalUserDialog({
   );
 }
 
-type ExportRepoUserArgs = {|
-  submitAttempt: boolean,
-  inputValidations: { author: boolean, contact: boolean, ... },
-  initialPeople: Array<Person>,
-  updatePeople: (Array<Person>) => void,
-|};
+type ExportRepoUserArgs = {
+  submitAttempt: boolean;
+  inputValidations: { author: boolean; contact: boolean };
+  initialPeople: Array<Person>;
+  updatePeople: (contactAndAuthor: Array<Person>) => void;
+};
 
 /*
  * This component a widget for selecting another user who should be associated
@@ -197,13 +201,13 @@ export default function ExportRepoUser({
   inputValidations,
   initialPeople,
   updatePeople,
-}: ExportRepoUserArgs): Node {
+}: ExportRepoUserArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
   const [people, setPeople] = useState(initialPeople);
 
   const getCurrentUser = () => {
     void axios
-      .get<{ fullName: string, email: string, ... }>("/directory/ajax/subject")
+      .get<{ fullName: string; email: string }>("/directory/ajax/subject")
       .then((response) => {
         const user = response.data;
         const currentUserRoles = [
