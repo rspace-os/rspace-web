@@ -1,5 +1,3 @@
-// @flow
-
 /*
  * Each of the Repository components in this directory collect various pieces
  * of metadata to be attached to export and included by the backend in the
@@ -13,11 +11,11 @@
  * The definition of a person when collecting metadata such as author and
  * contact.
  */
-export type Person = {|
-  uniqueName: string,
-  email: string,
-  type: string,
-|};
+export type Person = {
+  uniqueName: string;
+  email: string;
+  type: string;
+};
 
 /**
  * The Id of DMP, according to the service from which is originated.
@@ -34,37 +32,37 @@ export type DMPUserInternalId = number;
  * deposit to a repository.
  */
 export type Plan = {
-  dmpId: DMPId,
-  dmpTitle: string,
-  dmpUserInternalId: DMPUserInternalId,
+  dmpId: DMPId;
+  dmpTitle: string;
+  dmpUserInternalId: DMPUserInternalId;
 };
 
 /**
  * The definition of a repository, for the purposes of selecting one to
  * deposit to.
  */
-export type Repo = {|
-  repoName: string,
-  displayName: string,
-  subjects: Array<{ id: string, name: string, parentSubject: number }>,
+export type Repo = {
+  repoName: string;
+  displayName: string;
+  subjects: Array<{ id: string; name: string; parentSubject: number }>;
   license: {
-    licenseRequired: boolean,
-    otherLicensePermitted: boolean,
+    licenseRequired: boolean;
+    otherLicensePermitted: boolean;
     licenses: Array<{
-      licenseDefinition: { url: string, name: string },
-      defaultLicense: boolean,
-    }>,
-  },
+      licenseDefinition: { url: string; name: string };
+      defaultLicense: boolean;
+    }>;
+  };
 
   /*
    * The set of DMPs from the user's Gallery, from which they can pick some to
    * associate with the export.
    */
-  linkedDMPs: ?Array<Plan>,
+  linkedDMPs: Array<Plan> | null;
 
-  label?: string,
-  repoCfg: mixed,
-|};
+  label?: string;
+  repoCfg: unknown;
+};
 
 /**
  * These are the standard fields that each of the Repositories have to
@@ -75,10 +73,10 @@ export type Repo = {|
  * directory should render the respective fields in an error state when the
  * value in this object is false.
  */
-export type StandardValidations = {|
-  description: boolean,
-  title: boolean,
-  author: boolean,
-  contact: boolean,
-  subject: boolean,
-|};
+export type StandardValidations = {
+  description: boolean;
+  title: boolean;
+  author: boolean;
+  contact: boolean;
+  subject: boolean;
+};
