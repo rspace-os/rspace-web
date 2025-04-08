@@ -26,7 +26,12 @@ import {
   getIndexOfPane,
   getPaneByKey,
 } from "./WizardPanes";
-import { type Person, type Repo } from "./repositories/common";
+import {
+  type Person,
+  type Repo,
+  DEFAULT_REPO_CONFIG,
+  type RepoDetails,
+} from "./repositories/common";
 import { lift3 } from "../util/optional";
 import { type Tag } from "./repositories/Tags";
 import * as ArrayUtils from "../util/ArrayUtils";
@@ -36,23 +41,6 @@ import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
 import Divider from "@mui/material/Divider";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import useViewportDimensions from "../util/useViewportDimensions";
-
-const DEFAULT_REPO_CONFIG = {
-  repoChoice: 0,
-  meta: {
-    title: "",
-    description: "",
-    subject: "",
-    licenseName: "",
-    authors: ([]: Array<Person>),
-    contacts: ([]: Array<Person>),
-    publish: "false",
-    otherProperties: {},
-  },
-  depositToRepository: false,
-};
-
-export type RepoDetails = typeof DEFAULT_REPO_CONFIG;
 
 type ExportConfig = {|
   archiveType: string,

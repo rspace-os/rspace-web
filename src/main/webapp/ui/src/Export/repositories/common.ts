@@ -80,3 +80,20 @@ export type StandardValidations = {
   contact: boolean;
   subject: boolean;
 };
+
+export const DEFAULT_REPO_CONFIG = {
+  repoChoice: 0,
+  meta: {
+    title: "",
+    description: "",
+    subject: "",
+    licenseName: "",
+    authors: [] as Array<Person>,
+    contacts: [] as Array<Person>,
+    publish: false,
+    otherProperties: {},
+  },
+  depositToRepository: false,
+};
+
+export type RepoDetails = typeof DEFAULT_REPO_CONFIG;

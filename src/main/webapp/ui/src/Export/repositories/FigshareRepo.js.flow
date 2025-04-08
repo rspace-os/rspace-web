@@ -20,5 +20,5 @@ declare export default function FigshareRepo({|
   description: string,
   subject: string,
   license: number,
-  publish: "false" | "true",
+  publish: boolean,
 |}): Node;
