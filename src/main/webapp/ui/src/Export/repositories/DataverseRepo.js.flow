@@ -1,0 +1,36 @@
+// @flow
+
+import { type Node } from "react";
+import { type Person, type Repo, type StandardValidations } from "./common";
+import { type Tag } from "./Tags";
+
+declare export default function DataverseRepo({|
+  repo: Repo,
+  onTagsChange: ({
+    target: {
+      value: Array<Tag>,
+    },
+  }) => void,
+  handleChange: (event: {
+    target: {
+      name: "title" | "description" | "subject" | "license",
+      value: string,
+    },
+  }) => void,
+  inputValidations: StandardValidations,
+  submitAttempt: boolean,
+  updatePeople: (people: Array<Person>) => void,
+  contacts: Array<Person>,
+  authors: Array<Person>,
+  title: string,
+  description: string,
+  subject: string,
+  license: number,
+  tags: Array<{|
+    value: string,
+    vocabulary: string,
+    uri: string,
+    version: string,
+  |}>,
+  fetchingTags: boolean,
+|}): Node;

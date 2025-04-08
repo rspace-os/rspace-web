@@ -1,6 +1,4 @@
-// @flow
-
-import { default as React, type Node, type ComponentType } from "react";
+import React from "react";
 import Users from "../ExportRepoUser";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
@@ -8,38 +6,42 @@ import Grid from "@mui/material/Grid";
 import { type Person, type Repo, type StandardValidations } from "./common";
 import Tags, { type Tag } from "./Tags";
 
-type DataverseArgs = {|
-  repo: Repo,
-  onTagsChange: ({
+type DataverseArgs = {
+  repo: Repo;
+  onTagsChange: (event: {
     target: {
-      value: Array<Tag>,
-    },
-  }) => void,
+      value: Array<Tag>;
+    };
+  }) => void;
   handleChange: (event: {
     target: {
-      name: "title" | "description" | "subject" | "license",
-      value: string,
-    },
-  }) => void,
-  inputValidations: StandardValidations,
-  submitAttempt: boolean,
-  updatePeople: (people: Array<Person>) => void,
-  contacts: Array<Person>,
-  authors: Array<Person>,
-  title: string,
-  description: string,
-  subject: string,
-  license: number,
-  tags: Array<{|
-    value: string,
-    vocabulary: string,
-    uri: string,
-    version: string,
-  |}>,
-  fetchingTags: boolean,
-|};
+      name: "title" | "description" | "subject" | "license";
+      value: string;
+    };
+  }) => void;
+  inputValidations: StandardValidations;
+  submitAttempt: boolean;
+  updatePeople: (people: Array<Person>) => void;
+  contacts: Array<Person>;
+  authors: Array<Person>;
+  title: string;
+  description: string;
+  subject: string;
+  license: number;
+  tags: Array<{
+    value: string;
+    vocabulary: string;
+    uri: string;
+    version: string;
+  }>;
+  fetchingTags: boolean;
+};
 
-function DataverseRepo({
+/**
+ * This components provides a form for the user to fill in the details of the
+ * deposit that will be made with Dataverse.
+ */
+export default function DataverseRepo({
   repo,
   handleChange,
   inputValidations,
@@ -54,7 +56,7 @@ function DataverseRepo({
   tags,
   onTagsChange,
   fetchingTags,
-}: DataverseArgs): Node {
+}: DataverseArgs): React.ReactNode {
   return (
     <Grid container sx={{ width: "100%" }}>
       <Grid item xs={12}>
@@ -62,6 +64,7 @@ function DataverseRepo({
           error={submitAttempt && !inputValidations.title}
           name="title"
           label="Title *"
+          // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
           helperText="Please choose a title, >3 symbols"
@@ -76,6 +79,7 @@ function DataverseRepo({
           label="Description *"
           multiline
           maxRows="4"
+          // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
           helperText="Please add a relevant description for your export"
@@ -90,6 +94,7 @@ function DataverseRepo({
           select
           label="Subject *"
           defaultValue={""}
+          // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           helperText="Please select your subject"
           margin="normal"
@@ -110,6 +115,7 @@ function DataverseRepo({
           select
           label="License *"
           defaultValue={0}
+          // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           helperText="Please select your license"
           margin="normal"
@@ -149,9 +155,3 @@ function DataverseRepo({
     </Grid>
   );
 }
-
-/**
- * This components provides a form for the user to fill in the details of the
- * deposit that will be made with Dataverse.
- */
-export default (DataverseRepo: ComponentType<DataverseArgs>);
