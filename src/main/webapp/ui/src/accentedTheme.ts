@@ -55,6 +55,8 @@ declare module "@mui/material/styles/components" {
       };
       styleOverrides?: {
         root: unknown;
+        paper: unknown;
+        menu: unknown;
       };
       variants?: object;
     };
@@ -217,6 +219,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
           main: mainAccentColor,
           contrastText: contrastTextColor,
           saturated: linkColor,
+          background: accentedBackground,
           dark: linkColor,
         } as PaletteColorOptions,
         callToAction: {
@@ -229,6 +232,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
       } as PaletteOptions,
       borders: {
         card: accentedBorder,
+        section: accentedBorder,
       } as ThemeOptions["borders"],
       components: {
         MuiAppBar: {
@@ -557,9 +561,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               },
             },
             containedPrimary: {
-              backgroundColor: mainAccentColor,
+              backgroundColor: accentedBackground,
               color: contrastTextColor,
-              borderColor: mainAccentColor,
+              borderColor: accentedBackground,
               "&:hover": {
                 borderColor: darken(mainAccentColor, hoverDarkenCoefficient),
                 backgroundColor: darken(
@@ -757,6 +761,18 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                     hoverDarkenCoefficient
                   ),
                 },
+              },
+            },
+            paper: {
+              boxShadow: "none",
+              border: accentedBorder,
+            },
+            menu: {
+              "& .MuiPaper-root": {
+                boxShadow: "none",
+              },
+              "& .MuiDataGrid-menuList": {
+                border: accentedBorder,
               },
             },
           },

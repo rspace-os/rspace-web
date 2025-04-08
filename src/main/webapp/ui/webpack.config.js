@@ -61,6 +61,7 @@ module.exports = {
     tinymceClustermarket: "./src/tinyMCE/clustermarket/index.js",
     tinymceOmero: "./src/tinyMCE/omero/index.js",
     tinymceJove: "./src/tinyMCE/jove/index.js",
+    tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.js",
     baseSearch: "./src/components/BaseSearch.js",
     confirmationDialog: "./src/components/ConfirmationDialog.js",
     imageEditor: "./src/Gallery/imageEditorDialog.js",

@@ -66,6 +66,9 @@ declare module "@mui/material/styles/createTheme" {
 
 declare module "@mui/material/styles/createPalette" {
   // eslint-disable-next-line no-unused-vars
+  interface PaletteColor {
+    background: string;
+  }
   interface Palette {
     callToAction: PaletteColor;
     standardIcon: PaletteColor;

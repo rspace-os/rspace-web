@@ -15,6 +15,7 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import Alerts from "./components/Alerts";
 import Analytics from "./Analytics";
 import Box from "@mui/material/Box";
+import IdentifiersRouter from "./Identifiers/Router";
 
 const RedirectToBench = () => {
   const {
@@ -63,6 +64,7 @@ function InventoryRouter(): Node {
               />
               <Route path="/search/*" element={<SearchRouter />} />
               <Route path="/import/*" element={<ImportRouter />} />
+              <Route path="/identifiers/*" element={<IdentifiersRouter />} />
               <Route path="*" element={<PageNotFoundScreen />} />
             </Routes>
           </Box>
