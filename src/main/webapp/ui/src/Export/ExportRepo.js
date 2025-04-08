@@ -270,7 +270,9 @@ function ExportRepo({
     try {
       const { data } = await axios.get<{|
         message: {| items: Array<{ name: string, ... }> |},
-      |}>("https://api.crossref.org/funders", query ? { query } : {});
+      |}>("https://api.crossref.org/funders", {
+        params: query ? { query } : {},
+      });
       runInAction(() => {
         state.crossrefFunders = data.message.items;
       });
