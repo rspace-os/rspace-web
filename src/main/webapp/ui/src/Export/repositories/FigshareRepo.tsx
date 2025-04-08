@@ -27,7 +27,7 @@ type FigshareArgs = {
   description: string;
   subject: string;
   license: number;
-  publish: "false" | "true";
+  publish: boolean;
 };
 
 /**

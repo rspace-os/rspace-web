@@ -90,10 +90,10 @@ export const DEFAULT_REPO_CONFIG = {
     licenseName: "",
     authors: [] as Array<Person>,
     contacts: [] as Array<Person>,
-    publish: false,
+    publish: false as boolean,
     otherProperties: {},
   },
-  depositToRepository: false,
+  depositToRepository: false as boolean,
 };
 
 export type RepoDetails = typeof DEFAULT_REPO_CONFIG;

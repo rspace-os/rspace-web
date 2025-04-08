@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useEffect, useState, type Node } from "react";
+import React, { useEffect, useState } from "react";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Grid from "@mui/material/Grid";
@@ -29,6 +27,7 @@ import { observer } from "mobx-react-lite";
 import axios from "@/common/axios";
 import Divider from "@mui/material/Divider";
 import { type Tag } from "./repositories/Tags";
+import { AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
 
 const STANDARD_VALIDATIONS = {
   description: false,
@@ -43,13 +42,13 @@ const DRYAD_VALIDATIONS = {
   crossrefFunder: false,
 };
 
-type ExportRepoArgs = {|
-  validator: Validator,
-  repoList: Array<Repo>,
-  repoDetails: RepoDetails,
-  updateRepoConfig: (RepoDetails) => void,
-  fetchTags: () => Promise<Array<Tag>>,
-|};
+type ExportRepoArgs = {
+  validator: Validator;
+  repoList: Array<Repo>;
+  repoDetails: RepoDetails;
+  updateRepoConfig: (repoDetails: RepoDetails) => void;
+  fetchTags: () => Promise<Array<Tag>>;
+};
 
 const DmpSelector = observer(
   ({
@@ -57,9 +56,11 @@ const DmpSelector = observer(
     handleSwitch,
     repo,
   }: {
-    state: { selectedPlans: Array<DMPUserInternalId>, linkDMP: boolean },
-    handleSwitch: ("linkDMP") => ({ target: { checked: boolean } }) => void,
-    repo: Repo,
+    state: { selectedPlans: Array<DMPUserInternalId>; linkDMP: boolean };
+    handleSwitch: (
+      foo: "linkDMP"
+    ) => (event: { target: { checked: boolean } }) => void;
+    repo: Repo;
   }) => {
     const addSelectedPlan = (id: DMPUserInternalId) => {
       if (!state.selectedPlans.includes(id)) {
@@ -125,10 +126,12 @@ function ExportRepo({
   repoDetails,
   updateRepoConfig,
   fetchTags,
-}: ExportRepoArgs): Node {
+}: ExportRepoArgs): React.ReactNode {
   const [state] = useState(
     observable({
-      inputValidations: STANDARD_VALIDATIONS,
+      inputValidations: STANDARD_VALIDATIONS as
+        | typeof STANDARD_VALIDATIONS
+        | typeof DRYAD_VALIDATIONS,
       submitAttempt: false,
       repoChoice: repoDetails.repoChoice,
       title: repoDetails.meta.title,
@@ -138,12 +141,12 @@ function ExportRepo({
       publish: repoDetails.meta.publish,
       authors: repoDetails.meta.authors,
       contacts: repoDetails.meta.contacts,
-      otherProperties: {},
+      otherProperties: {} as Record<string, string>,
       linkDMP: false,
-      selectedPlans: ([]: Array<DMPUserInternalId>),
-      crossrefFunders: ([]: Array<{ name: string }>),
+      selectedPlans: [] as Array<DMPUserInternalId>,
+      crossrefFunders: [] as Array<{ name: string }>,
       selectedFunder: {},
-      tags: ([]: Array<Tag>),
+      tags: [] as Array<Tag>,
     })
   );
   const [fetchingTags, setFetchingTags] = useState(false);
@@ -162,12 +165,10 @@ function ExportRepo({
   useEffect(() => {
     validator.setValidFunc(() => {
       const repo = repoList[state.repoChoice];
-      let validations = { ...STANDARD_VALIDATIONS };
+      let validations: Record<string, boolean> = { ...STANDARD_VALIDATIONS };
 
       if (repo.repoName === "app.dryad") {
         validations = { ...DRYAD_VALIDATIONS };
-        // $FlowExpectedError[not-an-object]
-        // $FlowExpectedError[prop-missing]
         if (Object.keys(state.otherProperties.funder).length !== 0)
           validations.crossrefFunder = true;
       }
@@ -179,7 +180,9 @@ function ExportRepo({
       if (state.contacts.length) validations.contact = true;
 
       runInAction(() => {
-        state.inputValidations = validations;
+        state.inputValidations = validations as
+          | typeof STANDARD_VALIDATIONS
+          | typeof DRYAD_VALIDATIONS;
         state.submitAttempt = true;
       });
 
@@ -221,30 +224,22 @@ function ExportRepo({
     updateRepoConfig(getParams());
   };
 
-  const handleChange = <
-    Key: $Keys<typeof state>,
-    Value: (typeof state)[Key]
-  >(event: {
-    target: { name: Key, value: Value },
+  const handleChange = <Key extends keyof typeof state>(event: {
+    target: { name: Key; value: (typeof state)[Key] };
   }) => {
     runInAction(() => {
-      // $FlowExpectedError[incompatible-type]
-      // $FlowExpectedError[prop-missing]
-      // $FlowExpectedError[incompatible-exact]
       state[event.target.name] = event.target.value;
     });
     updateRemoteConfig();
   };
 
   const handleSwitch =
-    <Key: $Keys<typeof state>>(
+    <Key extends keyof typeof state>(
       name: Key
-    ): ((event: {
-      target: { checked: (typeof state)[Key] & boolean },
-    }) => void) =>
+    ): ((event: { target: { checked: boolean } }) => void) =>
     (event) => {
       runInAction(() => {
-        // $FlowExpectedError[incompatible-type]
+        // @ts-expect-error the type of state[name] might not be a boolean
         state[name] = event.target.checked;
       });
     };
@@ -257,7 +252,7 @@ function ExportRepo({
     updateRemoteConfig();
   };
 
-  const handleCrossrefFunderChange = (_: mixed, values: { name: string }) => {
+  const handleCrossrefFunderChange = (_: unknown, values: { name: string }) => {
     runInAction(() => {
       state.otherProperties = {
         funder: JSON.stringify(values),
@@ -272,9 +267,9 @@ function ExportRepo({
       if (query) {
         searchParams.append("query", query);
       }
-      const { data } = await axios.get<{|
-        message: {| items: Array<{ name: string, ... }> |},
-      |}>("https://api.crossref.org/funders", {
+      const { data } = await axios.get<{
+        message: { items: Array<{ name: string }> };
+      }>("https://api.crossref.org/funders", {
         params: searchParams,
       });
       runInAction(() => {
@@ -287,11 +282,10 @@ function ExportRepo({
   };
 
   const handleFetchCrossrefFunder = (
-    event: { target: { value: string } },
-    _: mixed,
-    reason: string
+    event: React.SyntheticEvent<Element, Event>,
+    searchTerm: string,
+    reason: AutocompleteInputChangeReason
   ) => {
-    const searchTerm = event.target.value;
     if (searchTerm && searchTerm.length > 2 && reason === "input") {
       void fetchCrossrefFunders(searchTerm);
     }
@@ -311,6 +305,7 @@ function ExportRepo({
             aria-label="Repository choice"
             name="repoChoice"
             value={state.repoChoice.toString()}
+            // @ts-expect-error React event handlers are not parameterised by the name prop
             onChange={handleChange}
           >
             {repoList.map((r, i) => (
@@ -321,6 +316,7 @@ function ExportRepo({
                     <Radio
                       color="primary"
                       inputProps={{
+                        // @ts-expect-error Extra props are just passed through to the underlying DOM element
                         "data-testid": `radio-button-${r.repoName}`,
                       }}
                     />
@@ -351,8 +347,9 @@ function ExportRepo({
               handleCrossrefFunderChange={handleCrossrefFunderChange}
               handleFetchCrossrefFunder={handleFetchCrossrefFunder}
               crossrefFunders={state.crossrefFunders}
-              // $FlowExpectedError[prop-missing]
-              inputValidations={state.inputValidations}
+              inputValidations={
+                state.inputValidations as typeof DRYAD_VALIDATIONS
+              }
               submitAttempt={state.submitAttempt}
               contacts={state.contacts}
               authors={state.authors}
@@ -447,7 +444,7 @@ function ExportRepo({
             description={state.description}
             tags={state.tags}
             fetchingTags={fetchingTags}
-            onTagsChange={({ target: { value } }) => {}}
+            onTagsChange={() => {}}
           />
         )}
       </Grid>
@@ -455,4 +452,4 @@ function ExportRepo({
   );
 }
 
-export default (observer(ExportRepo): typeof ExportRepo);
+export default observer(ExportRepo);
