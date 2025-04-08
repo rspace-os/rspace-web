@@ -175,7 +175,7 @@ export function useIdentifiers({
         mkAlert({
           variant: "error",
           title: "Error registering identifiers",
-          message: e.message,
+          message: e.response.data.message ?? e.message,
         })
       );
     }
