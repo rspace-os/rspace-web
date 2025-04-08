@@ -1,7 +1,6 @@
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import {
@@ -14,7 +13,7 @@ import {
 import "@testing-library/jest-dom";
 import DryadRepo from "../DryadRepo";
 import MockAdapter from "axios-mock-adapter";
-import * as axios from "axios";
+import axios from "@/common/axios";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -82,7 +81,7 @@ describe("DryadRepo", () => {
   });
 
   test("Upon editing, title should be set to the entered value.", async () => {
-    const handleChange = jest.fn<[], void>();
+    const handleChange = jest.fn();
     await act(() => void renderDryadRepo({ handleChange }));
 
     fireEvent.change(screen.getByRole("textbox", { name: /Title/ }), {
@@ -100,7 +99,7 @@ describe("DryadRepo", () => {
   });
 
   test("Upon editing, description should be set to the entered value.", async () => {
-    const handleChange = jest.fn<[], void>();
+    const handleChange = jest.fn();
     await act(() => void renderDryadRepo({ handleChange }));
 
     fireEvent.change(screen.getByRole("textbox", { name: /Add an abstract/ }), {
