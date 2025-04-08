@@ -48,12 +48,12 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   @Before
   public void setup() throws Exception {
     super.setUp();
-    enableDataCiteRealConnectionSettings();
+    enableDataCiteRealConnectionSettings(true);
   }
 
-  private void enableDataCiteRealConnectionSettings() throws BindException {
+  private void enableDataCiteRealConnectionSettings(boolean enabled) throws BindException {
     ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getDatacite().setEnabled("true");
+    update.getDatacite().setEnabled(String.valueOf(enabled));
     update.getDatacite().setServerUrl("https://api.test.datacite.org");
     update.getDatacite().setUsername(testDataciteUsername);
     update.getDatacite().setPassword(testDatacitePassword);
@@ -68,6 +68,16 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     update.getDatacite().setEnabled("false");
     settingsController.updateInventorySettings(
         new MockHttpServletRequest(), update, mockBindingResult, getSysAdminUser());
+  }
+
+  @Test
+  public void testBulkCreateThrowsErrorIfNotEnabled() throws Exception {
+    enableDataCiteRealConnectionSettings(false);
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    this.mockMvc
+        .perform(createBuilderForPost(API_VERSION.ONE, apiKey, "/identifiers/bulk/" + 2, anyUser))
+        .andExpect(status().is(HttpStatus.NOT_FOUND.value()));
   }
 
   @Test

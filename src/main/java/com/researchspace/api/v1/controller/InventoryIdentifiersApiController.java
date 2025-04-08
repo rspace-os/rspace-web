@@ -10,6 +10,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.util.List;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -61,13 +62,24 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public List<ApiInventoryDOI> bulkAllocateIdentifiers(
       @PathVariable Integer count, @RequestAttribute(name = "user") User user) {
+    assertDataCiteConnectorEnabled();
     Validate.isTrue(
         count > 0,
         "not a valid number to IGSN to allocate: \""
             + count
             + "\""
             + " The number must be greater than 0");
-    return identifierMgr.registerBulkIdentifiers(count, user);
+    List<ApiInventoryDOI> result = identifierMgr.registerBulkIdentifiers(count, user);
+    if (!count.equals(result.size())) {
+      log.error("Requested registration of {} draft IGSNs, but only managed to register {}",
+          count, result.size());
+      throw new InternalServerErrorException(
+          "Requested registration of "
+              + count
+              + " draft IGSNs, but only managed to register "
+              + result.size());
+    }
+    return result;
   }
 
   @Override
