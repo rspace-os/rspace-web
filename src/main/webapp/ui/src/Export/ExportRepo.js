@@ -21,12 +21,12 @@ import {
   type Repo,
   type Person,
   type DMPUserInternalId,
+  type RepoDetails,
 } from "./repositories/common";
 import { runInAction, observable } from "mobx";
 import { mapNullable } from "../util/Util";
 import { observer } from "mobx-react-lite";
 import axios from "@/common/axios";
-import { type RepoDetails } from "./ExportDialog";
 import Divider from "@mui/material/Divider";
 import { type Tag } from "./repositories/Tags";
 
