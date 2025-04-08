@@ -105,11 +105,13 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       try {
         currentDoi = createNewDoi(user);
         DigitalObjectIdentifier dbObj = apiIdentifiersHelper.createDoiToSave(currentDoi, user);
-        dbObj = doiDao.save(dbObj);
+        log.info("New IGSN allocated: {}", dbObj.getIdentifier());
 
+        dbObj = doiDao.save(dbObj);
         result.add(new ApiInventoryDOI(dbObj));
       } catch (Exception ex) {
         log.warn("It was not possible to allocate IGSN: {}", ex.getMessage(), ex);
+        throw ex;
       }
     }
     return result;
@@ -256,6 +258,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     try {
       dataCiteDeleteResult = dataCiteConnector.deleteDoi(doi.getIdentifier());
     } catch (DataCiteConnectionException dcException) {
+      log.error("Error when deleting the DOI from DataCite: ", dcException.getCause());
       throw new DataCiteConnectionException(
           "Error when deleting the DOI from DataCite. "
               + "If the problem persists, please contact your System Admin",
