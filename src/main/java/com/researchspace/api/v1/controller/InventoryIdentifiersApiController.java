@@ -61,6 +61,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public List<ApiInventoryDOI> bulkAllocateIdentifiers(
       @PathVariable Integer count, @RequestAttribute(name = "user") User user) {
+    assertDataCiteConnectorEnabled();
     Validate.isTrue(
         count > 0,
         "not a valid number to IGSN to allocate: \""
