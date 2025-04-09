@@ -1,0 +1,10 @@
+//@flow
+
+import { type Node } from "react";
+import { type FileSystemId } from "./common";
+
+declare export default function FileStoreLogin({|
+  hideCancelButton: boolean,
+  callBack: () => void,
+  fileSystemId: FileSystemId,
+|}): Node;
