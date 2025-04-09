@@ -1,0 +1,24 @@
+//@flow
+
+import { type Node } from "react";
+import { type Repo } from "./repositories/common";
+import { type Validator } from "../util/Validator";
+import { type ExportSelection } from "./common";
+
+export type ArchiveType = "pdf" | "doc" | "xml" | "html" | "eln";
+
+declare export default function FormatChoice({|
+  exportConfigUpdate: (("repoData", $ReadOnlyArray<Repo>) => void) &
+    (("archiveType", ArchiveType) => void) &
+    (("fileStores", boolean) => void) &
+    (("allVersions", boolean) => void) &
+    (("repository", boolean) => void),
+  exportSelection: ExportSelection,
+  validator: Validator,
+  archiveType: ArchiveType | "",
+  allowFileStores: boolean,
+  repoSelected: boolean,
+  allVersions: boolean,
+  fileStoresSelected: boolean,
+  updateFileStores: ("includeNfsFiles", boolean) => void,
+|}): Node;
