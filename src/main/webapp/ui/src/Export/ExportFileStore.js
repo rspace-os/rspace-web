@@ -17,7 +17,7 @@ import { type Validator } from "../util/Validator";
 import { useConfirm } from "../components/ConfirmProvider";
 import { Optional } from "../util/optional";
 import { runInAction, observable } from "mobx";
-import { type ExportSelection } from "./ExportDialog";
+import { type ExportSelection } from "./common";
 
 /*
  * When exporting RSpace documents that contain references to files in

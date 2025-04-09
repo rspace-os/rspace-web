@@ -1,0 +1,21 @@
+// @flow
+
+export type ExportSelection =
+  | {|
+      type: "selection",
+      exportTypes: Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">,
+      exportNames: Array<string>,
+      exportIds: $ReadOnlyArray<string>,
+    |}
+  | {|
+      type: "group",
+      groupId: string,
+      groupName: string,
+      exportIds: Array<mixed>,
+    |}
+  | {|
+      type: "user",
+      username: string,
+      exportIds: Array<mixed>,
+    |};
+
