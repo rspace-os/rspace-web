@@ -17,7 +17,7 @@ import { type Validator } from "../util/Validator";
 import { useConfirm } from "../components/ConfirmProvider";
 import { Optional } from "../util/optional";
 import { runInAction, observable } from "mobx";
-import { type ExportSelection } from "./common";
+import { type ExportSelection, type FileLink, type FolderLink, type FileSystem, type MixedLink } from "./common";
 
 /*
  * When exporting RSpace documents that contain references to files in
@@ -44,38 +44,6 @@ import { type ExportSelection } from "./common";
  * [HowlerSambaSetupConstants.java]: src/test/java/com/researchspace/netfiles/samba/HowlerSambaSetupConstants.java
  *
  */
-
-type Path = string;
-export type FileLink = {
-  type: "file",
-  size: number,
-  fileSystemFullPath: Path,
-  path: Path,
-};
-type FolderLink = {
-  type: "folder",
-  // eslint-disable-next-line no-use-before-define
-  content: Array<MixedLink>,
-  fileSystemFullPath: Path,
-  size: null,
-};
-
-type MixedLink = FileLink | FolderLink;
-
-type FoundFileLink = {|
-  linkType: "file" | "directory",
-  path: Path,
-|};
-
-export type FileSystemId = string;
-export type FileSystem = {|
-  id: FileSystemId,
-  name: string,
-  foundNfsLinks: Array<FoundFileLink>,
-  loggedAs: ?string,
-  checkedNfsLinks: Array<?MixedLink>,
-  checkedNfsLinkMessages: { [Path]: string },
-|};
 
 type ExportConfig = {|
   archiveType: string,
