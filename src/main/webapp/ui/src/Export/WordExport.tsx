@@ -1,6 +1,4 @@
-//@flow
-
-import React, { type Node, useId } from "react";
+import React, { useId } from "react";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import InputLabel from "@mui/material/InputLabel";
@@ -10,31 +8,30 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import { type PageSize } from "./common";
 
-export type WordExportDetails = {|
-  exportFormat: "WORD",
-  exportName: string,
-  pageSize: PageSize,
-  defaultPageSize: PageSize,
-  setPageSizeAsDefault: boolean,
-|};
+export type WordExportDetails = {
+  exportFormat: "WORD";
+  exportName: string;
+  pageSize: PageSize;
+  defaultPageSize: PageSize;
+  setPageSizeAsDefault: boolean;
+};
 
-export type WordExportDetailsArgs = {|
-  exportDetails: WordExportDetails,
-  updateExportDetails: <T: $Keys<WordExportDetails>>(
-    T,
-    WordExportDetails[T]
-  ) => void,
-|};
+export type WordExportDetailsArgs = {
+  exportDetails: WordExportDetails;
+  updateExportDetails: <T extends keyof WordExportDetails>(
+    key: T,
+    value: WordExportDetails[T]
+  ) => void;
+};
 
-type WordExportArgs = {|
-  ...WordExportDetailsArgs,
-  validations: {|
-    submitAttempt: boolean,
-    inputValidations: {|
-      exportName: boolean,
-    |},
-  |},
-|};
+type WordExportArgs = WordExportDetailsArgs & {
+  validations: {
+    submitAttempt: boolean;
+    inputValidations: {
+      exportName: boolean;
+    };
+  };
+};
 
 export default function WordExport({
   exportDetails: {
@@ -45,7 +42,7 @@ export default function WordExport({
   },
   updateExportDetails,
   validations,
-}: WordExportArgs): Node {
+}: WordExportArgs): React.ReactNode {
   const pageSizeId = useId();
   return (
     <Grid container spacing={1}>
@@ -74,7 +71,7 @@ export default function WordExport({
             fullWidth
             value={pageSize}
             onChange={({ target: { value } }) =>
-              updateExportDetails("pageSize", value)
+              updateExportDetails("pageSize", value as PageSize)
             }
             inputProps={{ id: pageSizeId }}
             data-test-id="word-size"
