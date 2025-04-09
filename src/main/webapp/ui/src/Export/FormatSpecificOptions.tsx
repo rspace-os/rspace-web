@@ -1,6 +1,4 @@
-//@flow
-
-import React, { useState, useEffect, type Node } from "react";
+import React, { useState, useEffect } from "react";
 import HtmlXmlExport, { type HtmlXmlExportDetailsArgs } from "./HtmlXmlExport";
 import PdfExport, {
   type PdfExportDetailsArgs,
@@ -14,23 +12,19 @@ import { type Validator } from "../util/Validator";
 import { type PageSize } from "./common";
 
 type FormatSpecificArgs =
-  | {|
-      exportType: "pdf",
-      ...PdfExportDetailsArgs,
-    |}
-  | {|
-      exportType: "doc",
-      ...WordExportDetailsArgs,
-    |}
-  | {|
-      exportType: "html" | "xml",
-      ...HtmlXmlExportDetailsArgs,
-    |};
+  | ({
+      exportType: "pdf";
+    } & PdfExportDetailsArgs)
+  | ({
+      exportType: "doc";
+    } & WordExportDetailsArgs)
+  | ({
+      exportType: "html" | "xml";
+    } & HtmlXmlExportDetailsArgs);
 
-type FormatSpecificOptionsArgs = {|
-  ...FormatSpecificArgs,
-  validator: Validator,
-|};
+type FormatSpecificOptionsArgs = FormatSpecificArgs & {
+  validator: Validator;
+};
 
 export default function FormatSpecificOptions(
   /*
@@ -40,7 +34,7 @@ export default function FormatSpecificOptions(
    * information about the types of the other props.
    */
   props: FormatSpecificOptionsArgs
-): Node {
+): React.ReactNode {
   const [inputValidations, setInputValidations] = useState({
     exportName: false,
   });
@@ -61,10 +55,12 @@ export default function FormatSpecificOptions(
         <PdfExport
           validations={{ inputValidations, submitAttempt }}
           exportDetails={props.exportDetails}
-          updateExportDetails={<T: $Keys<PdfExportDetails>>(key: T, value) => {
+          updateExportDetails={<T extends keyof PdfExportDetails>(
+            key: T,
+            value: PdfExportDetails[T]
+          ) => {
             props.updateExportDetails(key, value);
             const newExportName =
-              // For some reason, Flow needs this typeof check. Likely a bug
               key === "exportName" && typeof value === "string"
                 ? value
                 : props.exportDetails.exportName;
@@ -79,10 +75,12 @@ export default function FormatSpecificOptions(
         <WordExport
           validations={{ inputValidations, submitAttempt }}
           exportDetails={props.exportDetails}
-          updateExportDetails={<T: $Keys<WordExportDetails>>(key: T, value) => {
+          updateExportDetails={<T extends keyof WordExportDetails>(
+            key: T,
+            value: WordExportDetails[T]
+          ) => {
             props.updateExportDetails(key, value);
             const newExportName =
-              // For some reason, Flow needs this typeof check. Likely a bug
               key === "exportName" && typeof value === "string"
                 ? value
                 : props.exportDetails.exportName;
