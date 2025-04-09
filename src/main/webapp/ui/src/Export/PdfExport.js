@@ -9,7 +9,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
-import { type PageSize } from "./FormatSpecificOptions";
+import { type PageSize } from "./common";
 
 export type PdfExportDetails = {|
   exportFormat: "PDF",

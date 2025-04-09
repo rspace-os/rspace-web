@@ -28,3 +28,8 @@ export type ExportSelection =
       username: string;
       exportIds: Array<unknown>;
     };
+
+/**
+ * When generating PDFs, the user can select between A4 and LETTER page sizes.
+ */
+export type PageSize = "A4" | "LETTER";

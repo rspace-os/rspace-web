@@ -11,8 +11,7 @@ import WordExport, {
   type WordExportDetails,
 } from "./WordExport";
 import { type Validator } from "../util/Validator";
-
-export type PageSize = "A4" | "LETTER";
+import { type PageSize } from "./common";
 
 type FormatSpecificArgs =
   | {|
