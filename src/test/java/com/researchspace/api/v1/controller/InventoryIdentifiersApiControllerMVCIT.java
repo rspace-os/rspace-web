@@ -53,7 +53,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
 
   private void enableDataCiteRealConnectionSettings(boolean enabled) throws BindException {
     ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getDatacite().setEnabled(enabled + "");
+    update.getDatacite().setEnabled(String.valueOf(enabled));
     update.getDatacite().setServerUrl("https://api.test.datacite.org");
     update.getDatacite().setUsername(testDataciteUsername);
     update.getDatacite().setPassword(testDatacitePassword);
